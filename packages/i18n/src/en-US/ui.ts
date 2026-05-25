@@ -37,7 +37,11 @@ const translations = {
         // warning is appended so users see consequence + identity together.
         description:
           'Are you sure you want to delete <strong>{{name}}</strong>? This action cannot be undone.',
-        confirm: 'Delete',
+        // Confirm button mirrors the title's action+object pattern so the
+        // button label, the title, and screen-reader output stay aligned.
+        // The {{resource}} interpolation is required at every call site;
+        // omitting it leaves the placeholder unrendered.
+        confirm: 'Delete {{resource}}',
       },
       description: 'Description',
       descriptionPlaceholder: 'Optional description',

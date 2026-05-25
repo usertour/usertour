@@ -57,7 +57,9 @@ export const AttributeDeleteDialog = ({
           components={{ strong: <strong className="font-bold text-foreground" /> }}
         />
       }
-      confirmLabel={t('settings.common.deleteConfirm.confirm')}
+      confirmLabel={t('settings.common.deleteConfirm.confirm', {
+        resource: t('settings.attributes.deleteResource'),
+      })}
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}

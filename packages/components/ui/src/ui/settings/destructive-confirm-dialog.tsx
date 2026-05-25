@@ -28,10 +28,14 @@ export interface DestructiveConfirmDialogProps {
    */
   description: ReactNode;
   /**
-   * Localised confirm-button label. Use the action verb ('Delete',
-   * 'Remove member', 'Transfer ownership') — not a generic 'OK'. Defaults
-   * to 'Confirm' as a non-translated last-resort fallback; every real
-   * consumer should pass a t() string.
+   * Localised confirm-button label. Convention: action verb + object,
+   * matching the title's action ('Delete API key', 'Remove member',
+   * 'Transfer ownership', 'End session'). Not a generic 'OK' or
+   * standalone 'Delete' — a destructive button label should stand on
+   * its own for screen readers and for users who scan the button
+   * without re-reading the title. Defaults to 'Confirm' as a non-
+   * translated last-resort fallback; every real consumer passes a
+   * t() string.
    */
   confirmLabel?: ReactNode;
   /**
@@ -52,10 +56,39 @@ export interface DestructiveConfirmDialogProps {
 
 /**
  * The destructive confirmation shell used by every "delete X / remove X /
- * transfer X" flow in settings. Owns chrome (warning badge + row header
- * layout + `max-w-xl` width + `<AlertDialog>` strict dismiss + destructive
- * `LoadingButton`); does not own copy or mutation logic — those flow in via
- * props so the consumer's i18n layer stays the source of truth.
+ * transfer X / end X" flow across the app. Owns chrome (warning badge +
+ * row header layout + `max-w-xl` width + `<AlertDialog>` strict dismiss +
+ * destructive `LoadingButton`); does not own copy or mutation logic —
+ * those flow in via props so the consumer's i18n layer stays the source
+ * of truth.
+ *
+ * Copy conventions (settled across all current consumers — see ADR 0003):
+ *
+ * - **Title** is action-named with the object: `'Delete API key'`,
+ *   `'Remove member'`, `'End session'`, `'Transfer ownership'`. Never
+ *   `'Are you absolutely sure?'` or `'Confirm'` — the question lives in
+ *   the description.
+ * - **Description** is one sentence: the action question with the
+ *   entity name bolded inline (when there's a single entity) plus the
+ *   consequence. Bold the name via `<Trans>` + `{ strong: <strong
+ *   className="font-bold text-foreground" /> }`, not by writing literal
+ *   markup in the i18n string.
+ * - **Confirm button** mirrors the title — `'Delete API key'`, not
+ *   `'Delete'` alone. This keeps the button informative on its own (for
+ *   screen readers and quick scans) and matches the modern SaaS
+ *   pattern (Linear, Notion, GitHub, the two competitor screenshots
+ *   referenced in ADR 0003).
+ * - **Cancel button** is always the plain word — `'Cancel'` / `'取消'`.
+ *   Never `'No, do nothing'`, `'Keep X'`, etc. The destructive button
+ *   already carries enough emphasis; pairing a styled red button with a
+ *   neutral 'Cancel' is the established balance.
+ * - **i18n placement**: settings reuses one shared key tree
+ *   `settings.common.deleteConfirm.{title, description, confirm}` with
+ *   `{{resource}}` interpolation drawn from each section's
+ *   `deleteResource` key. Non-settings consumers (sessions, users,
+ *   companies, contents) define their own per-section keys because the
+ *   description copy is domain-specific (multi-entity counts, segment
+ *   re-add hints, content-type interpolation, etc.).
  *
  * Canonical wiring, from `attribute-delete-dialog.tsx`:
  *
@@ -70,17 +103,15 @@ export interface DestructiveConfirmDialogProps {
  *           components={{ strong: <strong className="font-bold text-foreground" /> }}
  *         />
  *       }
- *       confirmLabel={t('settings.common.deleteConfirm.confirm')}
+ *       confirmLabel={t('settings.common.deleteConfirm.confirm', {
+ *         resource: t('settings.attributes.deleteResource'),
+ *       })}
  *       cancelLabel={t('settings.common.cancel')}
  *       open={open}
  *       onOpenChange={onOpenChange}
  *       onConfirm={handleDelete}
  *       loading={isDeleting}
  *     />
- *
- * Non-delete destructive actions (member remove, ownership transfer,
- * eventually disable-2FA / reset-license / etc.) follow the same shape
- * with per-section i18n keys instead of the shared `settings.common.deleteConfirm.*`.
  *
  * Do not reach for raw `<Dialog>` or `<AlertDialog>` for a destructive
  * confirm. If you find this primitive's shape doesn't fit (multi-step

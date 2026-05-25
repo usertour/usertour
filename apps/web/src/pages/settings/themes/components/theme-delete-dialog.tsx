@@ -48,7 +48,9 @@ export const ThemeDeleteDialog = ({
         resource: t('settings.themes.deleteResource'),
       })}
       description={t('settings.themes.deleteDescription')}
-      confirmLabel={t('settings.common.deleteConfirm.confirm')}
+      confirmLabel={t('settings.common.deleteConfirm.confirm', {
+        resource: t('settings.themes.deleteResource'),
+      })}
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}

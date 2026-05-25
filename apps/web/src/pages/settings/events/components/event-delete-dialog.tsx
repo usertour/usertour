@@ -58,7 +58,9 @@ export const EventDeleteDialog = ({
           components={{ strong: <strong className="font-bold text-foreground" /> }}
         />
       }
-      confirmLabel={t('settings.common.deleteConfirm.confirm')}
+      confirmLabel={t('settings.common.deleteConfirm.confirm', {
+        resource: t('settings.events.deleteResource'),
+      })}
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}

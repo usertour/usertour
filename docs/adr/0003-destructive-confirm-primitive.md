@@ -113,6 +113,21 @@ Let consumers customize the small things they want while still inheriting most o
 - **Costs:** every escape-hatch prop is a future divergence vector. The eight current consumers don't need any of them — every one of them is happy with the shared chrome. Adding props for hypothetical future consumers is the "theoretical UI guard rail" pattern that this codebase has explicitly rejected.
 - **Rejected because:** if a real future consumer needs a different shape, the right answer is to write a sibling primitive (or evolve this one through a separate ADR), not to make the shared primitive endlessly configurable.
 
+## Copy conventions
+
+The chrome consolidation revealed a second consistency problem: each consumer was inventing its own button-label vocabulary. The first wave of cleanup landed three different patterns — `'Yes, delete this user'` (Y/N), `'Delete'` (short verb), `'Delete user'` (verb + object) — depending on which engineer wrote each dialog and whether it reused the shared `settings.common.deleteConfirm` keys. After the round-2 consolidation (19 consumers all routing through this primitive), the conventions below are settled and considered part of this decision. New consumers must follow them; revisions to a single rule re-open this ADR rather than fork locally.
+
+- **Title** is action-named with the object — `'Delete API key'`, `'Remove member'`, `'End session'`, `'Transfer ownership'`. Never `'Are you absolutely sure?'` / `'Confirm'`; the question lives in the description, not the title.
+- **Description** is one sentence carrying the entity name + the consequence. When there's a single named entity (an API key, a member, a segment), bold its name inline via `<Trans>` + `{ strong: <strong className="font-bold text-foreground" /> }` — never by writing literal HTML in the i18n string. When there isn't a single named entity (multi-entity counts, "this session"), skip the bold and rely on the description text + the count interpolation.
+- **Confirm button** mirrors the title's verb + object — `'Delete API key'`, not the standalone `'Delete'`. A destructive button label should stand on its own for screen readers and for users who scan the button without re-reading the title. This was the v0.7-era convention this ADR settled in a follow-up; the shared `settings.common.deleteConfirm.confirm` key takes a `{{resource}}` interpolation so a single key serves all six settings sections.
+- **Cancel button** is always the plain word — `'Cancel'` / `'取消'`. Never `'No, do nothing'`, `'Keep X'`, `'Nevermind'`, etc. The styled destructive button already carries the visual emphasis; pairing it with a neutral 'Cancel' is the deliberate balance.
+- **i18n placement**:
+  - **Settings sections** (attributes, environments, events, localizations, themes, api) all share `settings.common.deleteConfirm.{title, description, confirm}` keys, parameterised by a per-section `<section>.deleteResource` noun (e.g. `'attribute'`, `'API key'`). Description interpolates `{{name}}`. Adding a new settings section means adding a `deleteResource` string only.
+  - **Non-settings consumers** (sessions, users, companies, contents, members) define their own per-section i18n key tree because the description copy is genuinely domain-specific (multi-entity counts, segment re-add hints, content-type interpolation, ownership-loss warnings). They still follow the same vocabulary above.
+- **Pluralization** is handled by i18next's count-aware suffixes (`X_one` / `X_other`), not by stitching English-only suffixes (`+ 's'`) at the call site. The `count` param is passed to `t()` and the right form is selected automatically. Chinese locale only needs `_other`.
+
+The primitive's JSDoc carries the same conventions plus a concrete copy-paste example at hover-time; this section captures the architectural _why_ each rule exists.
+
 ## Triggers to Revisit
 
 Reopen this decision when any of:

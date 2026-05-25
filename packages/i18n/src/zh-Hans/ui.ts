@@ -32,7 +32,7 @@ const translations = {
       deleteConfirm: {
         title: '删除{{resource}}',
         description: '确定要删除 <strong>{{name}}</strong> 吗?此操作不可撤销。',
-        confirm: '删除',
+        confirm: '删除{{resource}}',
       },
       description: '描述',
       descriptionPlaceholder: '可选描述',
