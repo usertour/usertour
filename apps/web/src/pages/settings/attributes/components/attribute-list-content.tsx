@@ -11,14 +11,16 @@ interface AttributeListContentProps {
   bizType: number;
 }
 
-const DATA_TYPE_LABEL: Record<number, string> = {
-  1: 'Number',
-  2: 'String',
-  3: 'Boolean',
-  4: 'List',
-  5: 'DateTime',
-  6: 'RandomAB',
-  7: 'RandomNumber',
+// AttributeBizType numeric ids → i18n key under `settings.attributes.form.dataTypes`.
+// Resolved at render via `t()` rather than at module load so locale switches take effect.
+const DATA_TYPE_I18N_KEY: Record<number, string> = {
+  1: 'settings.attributes.form.dataTypes.number',
+  2: 'settings.attributes.form.dataTypes.string',
+  3: 'settings.attributes.form.dataTypes.boolean',
+  4: 'settings.attributes.form.dataTypes.list',
+  5: 'settings.attributes.form.dataTypes.dateTime',
+  6: 'settings.attributes.form.dataTypes.randomAB',
+  7: 'settings.attributes.form.dataTypes.randomNumber',
 };
 
 // Predefined-first ordering keeps system attributes grouped at the top
@@ -70,7 +72,10 @@ export const AttributeListContent = ({ bizType }: AttributeListContentProps) => 
       header: t('settings.attributes.columns.dataType'),
       headerClassName: 'w-28 hidden sm:table-cell',
       className: 'hidden sm:table-cell',
-      cell: (attribute) => DATA_TYPE_LABEL[attribute.dataType] ?? '',
+      cell: (attribute) => {
+        const key = DATA_TYPE_I18N_KEY[attribute.dataType];
+        return key ? t(key) : '';
+      },
     },
     {
       header: '',
@@ -84,6 +89,7 @@ export const AttributeListContent = ({ bizType }: AttributeListContentProps) => 
       columns={columns}
       rows={rows}
       loading={loading}
+      empty={t('settings.attributes.empty')}
       getRowKey={(attribute) => attribute.id}
     />
   );

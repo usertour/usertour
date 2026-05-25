@@ -6,6 +6,8 @@ import { useAppContext } from '@/contexts/app-context';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { updateUser } from '@usertour/gql';
 import { Input } from '@usertour/input';
+import { Separator } from '@usertour/separator';
+import { Skeleton } from '@usertour/skeleton';
 import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
@@ -15,8 +17,26 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+// Mirrors `ProjectNameFormSkeleton` — single-field form skeleton sized
+// to the rendered Save button so the layout doesn't jump after hydration.
+const AccountProfileFormSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex h-10 flex-row items-center justify-between">
+      <Skeleton className="h-8 w-48" />
+    </div>
+    <Separator />
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <Skeleton className="h-10 w-20" />
+    </div>
+  </div>
+);
+
 export const AccountProfileForm = () => {
-  const { userInfo, refetch } = useAppContext();
+  const { userInfo, refetch, loading } = useAppContext();
   const [updateMutation] = useMutation(updateUser);
   const { t } = useTranslation();
 
@@ -29,6 +49,12 @@ export const AccountProfileForm = () => {
     },
     successMessage: t('settings.account.profile.successToast'),
   });
+
+  // Guard on loading because `defaultValues` is captured at mount —
+  // rendering before `userInfo` is hydrated would baseline to `''`.
+  if (loading) {
+    return <AccountProfileFormSkeleton />;
+  }
 
   return (
     <SettingsFormSection title={t('settings.account.profile.title')} state={state}>

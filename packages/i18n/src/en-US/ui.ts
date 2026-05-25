@@ -133,11 +133,14 @@ const translations = {
           boolean: 'Boolean',
           dateTime: 'DateTime',
           list: 'List',
+          randomAB: 'Random A/B',
+          randomNumber: 'Random number',
         },
         createTitle: 'Create New Attribute',
         createSubmit: 'Create Attribute',
         createSuccess: 'The attribute has been successfully created',
       },
+      empty: 'No attributes yet.',
     },
     events: {
       title: 'Events',
@@ -152,8 +155,12 @@ const translations = {
       deleteResource: 'event',
       deleteSuccess: 'The event has been successfully deleted',
       editTitle: 'Edit event',
+      createTitle: 'Create New Event',
       saveButton: 'Save Event',
+      createButton: 'Create Event',
       updateSuccess: 'The event has been successfully updated',
+      createSuccess: 'The event has been successfully created',
+      createFailure: 'Failed to create event.',
       attributeAlreadyAssociated: 'That attribute is already associated with the event.',
       invalidData: 'Invalid event data',
       deleteFailure: 'Failed to delete event',
@@ -172,6 +179,7 @@ const translations = {
         attributesPlaceholder: 'Select an attribute',
         addAttribute: 'Add attribute',
       },
+      empty: 'No events yet.',
     },
     environments: {
       title: 'Environments',
@@ -204,6 +212,7 @@ const translations = {
         "You have reached the maximum number of environments allowed on your current plan. To add more environments, you'll have to ",
       upgrade: 'Upgrade',
       upgradeLink: 'Upgrade your plan',
+      empty: 'No environments yet.',
     },
     localizations: {
       title: 'Localization',
@@ -215,6 +224,7 @@ const translations = {
       },
       defaultBadge: 'Default',
       editMenuItem: 'Edit localization',
+      deleteMenuItem: 'Delete localization',
       setDefaultMenuItem: 'Set as company default',
       setDefaultSuccess: 'The localization has been successfully set as default',
       deleteResource: 'localization',
@@ -225,6 +235,9 @@ const translations = {
       createButton: 'Create Localization',
       description:
         "Localization enables you to tailor your Usertour content to align with your users' language and regional preferences. A locale defines the user's specific language and region settings.",
+      descriptionContinuation:
+        "By including the user's locale through the <code>locale_code</code> attribute in your app's Usertour.js setup, you ensure that Usertour delivers content in the appropriate language seamlessly.",
+      empty: 'No localizations yet.',
       form: {
         localeLabel: 'Locale',
         localeTooltip: "A locale represents a user's language and region.",
@@ -255,6 +268,7 @@ const translations = {
     team: {
       title: 'Team',
       newButton: 'Add Team Member',
+      empty: 'No team members yet.',
       columns: {
         name: 'Name',
         email: 'Email',
@@ -279,6 +293,7 @@ const translations = {
         roleLabel: 'Role',
         rolePlaceholder: 'Select a role',
         submit: 'Send invite',
+        failure: 'Failed to send invite.',
         limitTitle: 'Maximum team members reached',
         limitDescriptionPrefix:
           "You have reached the maximum number of members allowed on your current plan. To add more members, you'll have to ",
@@ -290,6 +305,7 @@ const translations = {
         roleLabel: 'Role',
         rolePlaceholder: 'Select a role',
         submit: 'Change role',
+        failure: 'Failed to change role.',
       },
       cancelInvite: {
         title: 'Cancel invite',

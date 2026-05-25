@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { MemberProvider, useMemberContext } from '@/contexts/member-context';
@@ -25,9 +25,22 @@ const AddTeamMemberButton = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
+// Pending invites first (matches the existing `[...invites, ...teamMembers]`
+// shape of `useMemberContext`), then name-asc within each group so refetches
+// don't reshuffle rows.
+const sortMembers = (members: readonly TeamMember[]) =>
+  [...members].sort((left, right) => {
+    if (left.isInvite !== right.isInvite) {
+      return left.isInvite ? -1 : 1;
+    }
+    return (left.name ?? '').localeCompare(right.name ?? '');
+  });
+
 const MemberListPage = () => {
   const { members, loading, refetch } = useMemberContext();
   const { t } = useTranslation();
+
+  const rows = useMemo(() => sortMembers(members ?? []), [members]);
 
   const columns: ResourceTableColumn<TeamMember>[] = [
     {
@@ -65,8 +78,9 @@ const MemberListPage = () => {
       title={t('settings.team.title')}
       actions={<AddTeamMemberButton onSuccess={refetch} />}
       columns={columns}
-      rows={members}
+      rows={rows}
       loading={loading}
+      empty={t('settings.team.empty')}
       getRowKey={(member) => (member.isInvite ? member.inviteId : member.userId) ?? ''}
     />
   );

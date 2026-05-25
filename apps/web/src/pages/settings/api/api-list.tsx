@@ -26,7 +26,11 @@ const NewApiKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 const ApiListPage = () => {
-  const { accessTokens, loading, isRefetching, refetch } = useApiContext();
+  // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
+  // false for refetches, so the table updates in place instead of flashing
+  // back to the skeleton when a token is created/deleted. `!environment`
+  // is still part of `loading` to cover initial environment hydration.
+  const { accessTokens, loading, refetch } = useApiContext();
   const { environment } = useAppContext();
   const { t } = useTranslation();
 
@@ -80,7 +84,7 @@ const ApiListPage = () => {
       }
       columns={columns}
       rows={accessTokens}
-      loading={loading || isRefetching || !environment}
+      loading={loading || !environment}
       empty={t('settings.api.empty')}
       getRowKey={(token) => token.id}
     />

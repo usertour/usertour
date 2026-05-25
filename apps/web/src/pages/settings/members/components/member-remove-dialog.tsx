@@ -10,14 +10,20 @@ import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberRemoveDialogProps {
   projectId: string;
-  isOpen: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  onSuccess: () => void;
-  onCancel: () => void;
+  /** Called only after a successful remove — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
-export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
-  const { onSuccess, onCancel, isOpen, data, projectId } = props;
+export const MemberRemoveDialog = ({
+  projectId,
+  open,
+  onOpenChange,
+  data,
+  onSubmit,
+}: MemberRemoveDialogProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -31,7 +37,8 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
     try {
       const response = await invoke(projectId, data.userId);
       if (response) {
-        onSuccess();
+        onSubmit?.(true);
+        onOpenChange(false);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -52,8 +59,8 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
       }
       confirmLabel={t('settings.team.remove.confirmButton')}
       cancelLabel={t('settings.team.remove.cancelButton')}
-      open={isOpen}
-      onOpenChange={(op) => !op && onCancel()}
+      open={open}
+      onOpenChange={onOpenChange}
       onConfirm={handleSubmit}
       loading={isLoading}
     />

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/contexts/app-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { StarFilledIcon } from '@radix-ui/react-icons';
-import { EditIcon } from '@usertour/icons';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { useSetDefaultLocalizationMutation } from '@usertour/hooks';
 import { Localization } from '@usertour/types';
@@ -19,6 +20,7 @@ export const LocalizationRowActions = ({ localization }: LocalizationRowActionsP
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useLocalizationListContext();
+  const { isViewOnly } = useAppContext();
   const { invoke: setDefaultLocalization } = useSetDefaultLocalizationMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -40,6 +42,7 @@ export const LocalizationRowActions = ({ localization }: LocalizationRowActionsP
     <>
       <ResourceRowActions
         align="start"
+        disabled={isViewOnly}
         items={[
           {
             key: 'edit',
@@ -54,6 +57,17 @@ export const LocalizationRowActions = ({ localization }: LocalizationRowActionsP
             onSelect: handleSetDefault,
             disabled: localization.isDefault,
             separatorBefore: true,
+          },
+          {
+            key: 'delete',
+            icon: <Delete2Icon className="w-6" width={16} height={16} />,
+            label: t('settings.localizations.deleteMenuItem'),
+            destructive: true,
+            // Default locale can't be deleted — server rejects and the UI
+            // would otherwise let the user reach a doomed confirm dialog.
+            disabled: localization.isDefault,
+            separatorBefore: true,
+            onSelect: () => setDeleteOpen(true),
           },
         ]}
       />

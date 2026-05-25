@@ -8,16 +8,22 @@ import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-interface EditFormProps {
+interface MemberTransferOwnerDialogProps {
   projectId: string;
-  isOpen: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  onSuccess: () => void;
-  onCancel: () => void;
+  /** Called only after a successful transfer — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
-export const MemberTransferOwnerDialog = (props: EditFormProps) => {
-  const { onSuccess, onCancel, isOpen, data, projectId } = props;
+export const MemberTransferOwnerDialog = ({
+  projectId,
+  open,
+  onOpenChange,
+  data,
+  onSubmit,
+}: MemberTransferOwnerDialogProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -31,7 +37,8 @@ export const MemberTransferOwnerDialog = (props: EditFormProps) => {
     try {
       const response = await invoke(projectId, data.userId, TeamMemberRole.OWNER);
       if (response) {
-        onSuccess();
+        onSubmit?.(true);
+        onOpenChange(false);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -52,8 +59,8 @@ export const MemberTransferOwnerDialog = (props: EditFormProps) => {
       }
       confirmLabel={t('settings.team.transferOwner.confirmButton')}
       cancelLabel={t('settings.team.transferOwner.cancelButton')}
-      open={isOpen}
-      onOpenChange={(op) => !op && onCancel()}
+      open={open}
+      onOpenChange={onOpenChange}
       onConfirm={handleSubmit}
       loading={isLoading}
     />

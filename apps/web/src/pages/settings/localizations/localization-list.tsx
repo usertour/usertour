@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import {
   LocalizationListProvider,
@@ -64,11 +64,11 @@ const LocalizationsListPage = () => {
       actions={<NewLocalizationButton onSuccess={refetch} />}
       description={
         <p>
-          Localization enables you to tailor your Usertour content to align with your users'
-          language and regional preferences. A locale defines the user's specific language and
-          region settings. By including the user's locale through the <b>locale_code</b> attribute
-          in your app's Usertour.js setup, you ensure that Usertour delivers content in the
-          appropriate language seamlessly.
+          {t('settings.localizations.description')}{' '}
+          <Trans
+            i18nKey="settings.localizations.descriptionContinuation"
+            components={{ code: <b /> }}
+          />
         </p>
       }
       docs={{
@@ -78,6 +78,7 @@ const LocalizationsListPage = () => {
       columns={columns}
       rows={localizationList}
       loading={loading}
+      empty={t('settings.localizations.empty')}
       getRowKey={(item) => item.id}
     />
   );

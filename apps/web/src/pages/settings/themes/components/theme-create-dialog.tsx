@@ -1,167 +1,107 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
-import { defaultSettings } from '@usertour/types';
 import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/contexts/app-context';
 import { Checkbox } from '@usertour/checkbox';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { createTheme } from '@usertour/gql';
 import { Input } from '@usertour/input';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
+import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
+import { defaultSettings } from '@usertour/types';
 import { z } from 'zod';
 
-interface CreateFormProps {
-  isOpen: boolean;
-  onDialogClose: () => void;
-  onClose: () => void;
+interface ThemeCreateDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
-type FormValues = {
-  name: string;
-  isDefault: boolean;
-};
+const schema = z.object({
+  name: z.string().max(30).min(1),
+  isDefault: z.boolean(),
+});
 
-const defaultValues: Partial<FormValues> = {
+type FormValues = z.infer<typeof schema>;
+
+const defaultValues: FormValues = {
   name: '',
   isDefault: false,
 };
 
-export const ThemeCreateDialog = ({ onDialogClose, onClose, isOpen }: CreateFormProps) => {
+export const ThemeCreateDialog = ({ open, onOpenChange, onSubmit }: ThemeCreateDialogProps) => {
   const { t } = useTranslation();
   const { project } = useAppContext();
-  const { toast } = useToast();
+  const [createMutation] = useMutation(createTheme);
 
-  const formSchema = useMemo(
-    () =>
-      z.object({
-        name: z.string().max(30).min(1),
-        isDefault: z.boolean(),
-      }),
-    [t],
-  );
-
-  const [createMutation, { loading }] = useMutation(createTheme);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const state = useSettingsForm<FormValues>({
+    schema,
     defaultValues,
-    mode: 'onChange',
+    submit: async (values) => {
+      if (!project?.id) {
+        throw new Error(t('themes.createForm.toast.projectMissing'));
+      }
+      const result = await createMutation({
+        variables: { ...values, projectId: project.id, settings: defaultSettings },
+      });
+      if (!result.data?.createTheme?.id) {
+        throw new Error(t('themes.createForm.toast.createFailed'));
+      }
+      onSubmit?.(true);
+      onOpenChange(false);
+    },
+    successMessage: t('themes.createForm.toast.success'),
   });
 
   useEffect(() => {
-    if (isOpen) {
-      form.reset();
+    if (open) {
+      state.form.reset(defaultValues);
     }
-  }, [isOpen, form]);
-
-  async function handleOnSubmit(formValues: FormValues) {
-    if (!project?.id) {
-      toast({
-        variant: 'destructive',
-        title: t('themes.createForm.toast.projectMissing'),
-      });
-      return;
-    }
-
-    try {
-      const data = {
-        ...formValues,
-        projectId: project.id,
-        settings: defaultSettings,
-      };
-      const ret = await createMutation({ variables: data });
-      if (!ret.data?.createTheme?.id) {
-        toast({
-          variant: 'destructive',
-          title: t('themes.createForm.toast.createFailed'),
-        });
-        return;
-      }
-      toast({
-        variant: 'success',
-        title: t('themes.createForm.toast.success'),
-      });
-      onClose();
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onDialogClose()}>
-      <DialogContent aria-describedby={undefined}>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOnSubmit)}>
-            <DialogHeader>
-              <DialogTitle>{t('themes.createForm.title')}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2 pb-4 pt-4">
-              <div className="space-y-2">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('themes.createForm.name.label')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('themes.createForm.name.placeholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    <SettingsDialogForm
+      title={t('themes.createForm.title')}
+      open={open}
+      onOpenChange={onOpenChange}
+      state={state}
+      submitLabel={t('themes.createForm.submit')}
+      cancelLabel={t('themes.createForm.cancel')}
+    >
+      <div className="space-y-4">
+        <FormField
+          control={state.form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('themes.createForm.name.label')}</FormLabel>
+              <FormControl>
+                <Input placeholder={t('themes.createForm.name.placeholder')} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={state.form.control}
+          name="isDefault"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <div className="leading-none">
+                <FormLabel>{t('themes.createForm.isDefault.label')}</FormLabel>
               </div>
-              <div className="space-y-2">
-                <FormField
-                  control={form.control}
-                  name="isDefault"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <div className="leading-none">
-                        <FormLabel>{t('themes.createForm.isDefault.label')}</FormLabel>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" type="button">
-                  {t('themes.createForm.cancel')}
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={loading || !form.formState.isValid}>
-                {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                {t('themes.createForm.submit')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </SettingsDialogForm>
   );
 };
 

@@ -56,13 +56,14 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
   const { attributeList } = useAttributeListContext();
   const { toast } = useToast();
 
-  const {
-    data: attributeOnEventsData,
-    loading: loadingEventAttrs,
-    refetch,
-  } = useQuery(listAttributeOnEvents, {
-    variables: { eventId: event.id },
-  });
+  // Apollo handles caching per-eventId, so the initial query covers the
+  // first open. Subsequent re-opens of the same row should not re-hit
+  // the network — `useQuery` returns the cached data and reflects any
+  // server changes via subscription/refetchQueries elsewhere.
+  const { data: attributeOnEventsData, loading: loadingEventAttrs } = useQuery(
+    listAttributeOnEvents,
+    { variables: { eventId: event.id } },
+  );
 
   useEffect(() => {
     const rows = attributeOnEventsData?.listAttributeOnEvents;
@@ -96,7 +97,6 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
     if (open) {
       state.form.reset(toFormValues(event));
       setSelectMode(false);
-      refetch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, event]);

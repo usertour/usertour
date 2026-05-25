@@ -32,7 +32,10 @@ const NewEventButton = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 const EventsListPage = () => {
-  const { eventList, loading, isRefetching, refetch } = useEventListContext();
+  // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
+  // false for refetches, so the table updates in place instead of flashing
+  // back to the skeleton when a row is added/edited/deleted.
+  const { eventList, loading, refetch } = useEventListContext();
   const { t } = useTranslation();
 
   const rows = useMemo(() => sortEvents(eventList ?? []), [eventList]);
@@ -79,7 +82,8 @@ const EventsListPage = () => {
       actions={<NewEventButton onSuccess={refetch} />}
       columns={columns}
       rows={rows}
-      loading={loading || isRefetching}
+      loading={loading}
+      empty={t('settings.events.empty')}
       getRowKey={(event) => event.id}
     />
   );

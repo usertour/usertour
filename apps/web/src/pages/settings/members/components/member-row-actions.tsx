@@ -16,7 +16,7 @@ interface MemberRowActionsProps {
 }
 
 export const MemberRowActions = ({ data }: MemberRowActionsProps) => {
-  const { project } = useAppContext();
+  const { project, isViewOnly, refetch: refetchAppContext } = useAppContext();
   const { refetch } = useMemberContext();
   const { t } = useTranslation();
   const [cancelInviteOpen, setCancelInviteOpen] = useState(false);
@@ -65,46 +65,40 @@ export const MemberRowActions = ({ data }: MemberRowActionsProps) => {
 
   return (
     <>
-      <ResourceRowActions items={items} contentClassName="min-w-[200px]" />
+      <ResourceRowActions items={items} contentClassName="min-w-[200px]" disabled={isViewOnly} />
       <MemberCancelInviteDialog
         projectId={projectId}
         data={data}
-        isOpen={cancelInviteOpen}
-        onSuccess={() => {
-          setCancelInviteOpen(false);
-          refetch();
-        }}
-        onCancel={() => setCancelInviteOpen(false)}
+        open={cancelInviteOpen}
+        onOpenChange={setCancelInviteOpen}
+        onSubmit={() => refetch()}
       />
       <MemberChangeRoleDialog
         projectId={projectId}
-        isOpen={changeRoleOpen}
+        open={changeRoleOpen}
+        onOpenChange={setChangeRoleOpen}
         data={data}
-        onSuccess={() => {
-          setChangeRoleOpen(false);
-          refetch();
-        }}
-        onCancel={() => setChangeRoleOpen(false)}
+        onSubmit={() => refetch()}
       />
       <MemberRemoveDialog
         projectId={projectId}
-        isOpen={removeOpen}
+        open={removeOpen}
+        onOpenChange={setRemoveOpen}
         data={data}
-        onSuccess={() => {
-          setRemoveOpen(false);
-          refetch();
-        }}
-        onCancel={() => setRemoveOpen(false)}
+        onSubmit={() => refetch()}
       />
       <MemberTransferOwnerDialog
         projectId={projectId}
-        isOpen={transferOwnerOpen}
+        open={transferOwnerOpen}
+        onOpenChange={setTransferOwnerOpen}
         data={data}
-        onSuccess={() => {
-          setTransferOwnerOpen(false);
-          window.location.reload();
+        // Transfer flips the current user out of OWNER. Refetch the app
+        // context so `isViewOnly` / capabilities re-derive and the
+        // sidebar/route gates update without a full reload.
+        onSubmit={async () => {
+          await refetchAppContext();
+          await refetch();
         }}
-        onCancel={() => setTransferOwnerOpen(false)}
       />
     </>
   );

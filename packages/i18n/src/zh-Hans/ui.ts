@@ -120,11 +120,14 @@ const translations = {
           boolean: '布尔',
           dateTime: '日期时间',
           list: '列表',
+          randomAB: '随机 A/B',
+          randomNumber: '随机数字',
         },
         createTitle: '新建属性',
         createSubmit: '创建属性',
         createSuccess: '属性已创建',
       },
+      empty: '暂无属性。',
     },
     events: {
       title: '事件',
@@ -139,8 +142,12 @@ const translations = {
       deleteResource: '事件',
       deleteSuccess: '事件已删除',
       editTitle: '编辑事件',
+      createTitle: '新建事件',
       saveButton: '保存事件',
+      createButton: '创建事件',
       updateSuccess: '事件已更新',
+      createSuccess: '事件已创建',
+      createFailure: '创建事件失败。',
       attributeAlreadyAssociated: '该属性已与此事件关联。',
       invalidData: '事件数据无效',
       deleteFailure: '删除事件失败',
@@ -156,6 +163,7 @@ const translations = {
         attributesPlaceholder: '请选择属性',
         addAttribute: '添加属性',
       },
+      empty: '暂无事件。',
     },
     environments: {
       title: '环境',
@@ -184,6 +192,7 @@ const translations = {
       limitDescriptionPrefix: '当前套餐已达到环境数量上限。如需添加更多环境,请',
       upgrade: '升级',
       upgradeLink: '升级套餐',
+      empty: '暂无环境。',
     },
     localizations: {
       title: '本地化',
@@ -195,6 +204,7 @@ const translations = {
       },
       defaultBadge: '默认',
       editMenuItem: '编辑本地化',
+      deleteMenuItem: '删除本地化',
       setDefaultMenuItem: '设为公司默认',
       setDefaultSuccess: '已设为默认本地化',
       deleteResource: '本地化',
@@ -205,6 +215,9 @@ const translations = {
       createButton: '创建本地化',
       description:
         '通过本地化,您可以根据用户的语言和区域偏好定制 Usertour 内容。locale 表示用户的语言和地区。',
+      descriptionContinuation:
+        '在 Usertour.js 中通过 <code>locale_code</code> 属性传入用户的 locale,即可让 Usertour 自动以对应语言推送内容。',
+      empty: '暂无本地化。',
       form: {
         localeLabel: '语言区域',
         localeTooltip: 'locale 表示一种语言 + 地区的组合。',
@@ -234,6 +247,7 @@ const translations = {
     team: {
       title: '团队',
       newButton: '添加团队成员',
+      empty: '暂无团队成员。',
       columns: {
         name: '姓名',
         email: '邮箱',
@@ -258,6 +272,7 @@ const translations = {
         roleLabel: '角色',
         rolePlaceholder: '请选择角色',
         submit: '发送邀请',
+        failure: '发送邀请失败。',
         limitTitle: '已达到团队成员上限',
         limitDescriptionPrefix: '当前套餐已达到成员数量上限。如需添加更多成员,请',
         upgradeInline: '升级套餐',
@@ -268,6 +283,7 @@ const translations = {
         roleLabel: '角色',
         rolePlaceholder: '请选择角色',
         submit: '修改角色',
+        failure: '修改角色失败。',
       },
       cancelInvite: {
         title: '取消邀请',

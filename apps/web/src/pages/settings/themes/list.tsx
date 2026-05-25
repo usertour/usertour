@@ -21,20 +21,16 @@ const NewThemeButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('themes.listHeader.newTheme')}
       </Button>
-      <ThemeCreateDialog
-        isOpen={open}
-        onDialogClose={() => setOpen(false)}
-        onClose={() => {
-          setOpen(false);
-          onSuccess();
-        }}
-      />
+      <ThemeCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
 };
 
 const ThemeListPage = () => {
-  const { themeList, loading, isRefetching, refetch } = useThemeListContext();
+  // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
+  // false for refetches, so the grid updates in place instead of flashing
+  // back to the skeleton when a theme is created/duplicated/deleted.
+  const { themeList, loading, refetch } = useThemeListContext();
   const { t } = useTranslation();
 
   return (
@@ -43,8 +39,10 @@ const ThemeListPage = () => {
       actions={<NewThemeButton onSuccess={refetch} />}
       description={<p>{t('themes.listHeader.description')}</p>}
     >
-      {loading || isRefetching ? (
-        <ThemeListSkeleton count={9} />
+      {loading ? (
+        // 3 cards is a closer match to the typical project (1 default
+        // theme + maybe 1–2 custom) than the previous fixed 9 placeholder.
+        <ThemeListSkeleton count={3} />
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
           {themeList?.map((theme: Theme) => (

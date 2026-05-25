@@ -49,7 +49,10 @@ const EnvironmentTokenCell = ({ token }: { token: string }) => {
 };
 
 export const SettingsEnvironmentList = () => {
-  const { environmentList, loading, isRefetching, refetch } = useEnvironmentListContext();
+  // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
+  // false for refetches, so the table updates in place instead of flashing
+  // back to the skeleton when a row is added/edited/deleted.
+  const { environmentList, loading, refetch } = useEnvironmentListContext();
   const { t } = useTranslation();
   const environmentCount = environmentList?.length ?? 0;
 
@@ -96,7 +99,8 @@ export const SettingsEnvironmentList = () => {
       }}
       columns={columns}
       rows={environmentList ?? undefined}
-      loading={loading || isRefetching}
+      loading={loading}
+      empty={t('settings.environments.empty')}
       getRowKey={(environment) => environment.id}
     />
   );

@@ -1,11 +1,14 @@
 'use client';
 
 import { useMutation } from '@apollo/client';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { updateEmail } from '@usertour/gql';
 import { Input } from '@usertour/input';
+import { Separator } from '@usertour/separator';
+import { Skeleton } from '@usertour/skeleton';
 import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
@@ -17,10 +20,37 @@ const emailSchema = z.object({
 
 type EmailFormValues = z.infer<typeof emailSchema>;
 
+// Two-field equivalent of `AccountProfileFormSkeleton`.
+const AccountEmailFormSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex h-10 flex-row items-center justify-between">
+      <Skeleton className="h-8 w-48" />
+    </div>
+    <Separator />
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <Skeleton className="h-10 w-20" />
+    </div>
+  </div>
+);
+
 export const AccountEmailForm = () => {
-  const { userInfo, refetch } = useAppContext();
+  const { userInfo, refetch, loading } = useAppContext();
   const [updateMutation] = useMutation(updateEmail);
   const { t } = useTranslation();
+
+  // After a successful email change we want the password field empty
+  // again — re-baselining to the just-submitted credential would let a
+  // subsequent edit replay it. The ref dodges the "use before init" TS
+  // error of self-referencing `state` inside its own `onSuccess`.
+  const resetRef = useRef<((email: string) => void) | null>(null);
 
   const state = useSettingsForm<EmailFormValues>({
     schema: emailSchema,
@@ -32,7 +62,21 @@ export const AccountEmailForm = () => {
       }
     },
     successMessage: t('settings.account.email.successToast'),
+    // Opt out of the default re-baseline; we clear `password` explicitly.
+    resetOnSuccess: false,
+    onSuccess: () => {
+      const nextEmail = state.form.getValues('email');
+      resetRef.current?.(nextEmail);
+    },
   });
+
+  resetRef.current = (email) => state.form.reset({ email, password: '' });
+
+  // Guard on loading: `defaultValues` is captured at mount, so rendering
+  // before `userInfo` lands would baseline `email` to `''`.
+  if (loading) {
+    return <AccountEmailFormSkeleton />;
+  }
 
   return (
     <SettingsFormSection title={t('settings.account.email.title')} state={state}>
