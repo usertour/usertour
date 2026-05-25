@@ -54,11 +54,15 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
   const { attributeList } = useAttributeListContext();
   const { toast } = useToast();
 
-  // Apollo handles caching per-eventId, so the initial query covers the
-  // first open. Subsequent re-opens of the same row should not re-hit
-  // the network — `useListAttributeOnEventsQuery` returns the cached
-  // data and reflects any server changes via refetchQueries elsewhere.
-  const { attributeOnEvents, loading: loadingEventAttrs } = useListAttributeOnEventsQuery(event.id);
+  // Skip the query until the dialog actually opens — otherwise every row
+  // on /settings/events mounts an EventEditDialog and fires this query in
+  // parallel on page load, even though the user typically opens zero or
+  // one of them. Apollo's cache-first policy keeps subsequent re-opens of
+  // the same row free.
+  const { attributeOnEvents, loading: loadingEventAttrs } = useListAttributeOnEventsQuery(
+    event.id,
+    { skip: !open },
+  );
 
   useEffect(() => {
     if (!attributeOnEvents || !attributeList) {

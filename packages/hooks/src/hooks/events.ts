@@ -65,10 +65,14 @@ export const useListEventsQuery = (projectId: string | undefined, options?: Quer
   return { eventList, refetch, loading, error, isRefetching };
 };
 
-export const useListAttributeOnEventsQuery = (eventId: string | undefined) => {
+export const useListAttributeOnEventsQuery = (
+  eventId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error } = useQuery(listAttributeOnEvents, {
     variables: { eventId },
     skip: !eventId,
+    ...options,
   });
   const attributeOnEvents = data?.listAttributeOnEvents as
     | { id: string; eventId: string; attributeId: string }[]
