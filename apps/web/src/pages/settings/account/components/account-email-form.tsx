@@ -56,9 +56,14 @@ export const AccountEmailForm = () => {
     defaultValues: { email: userInfo?.email ?? '', password: '' },
     submit: async ({ email, password }) => {
       const success = await updateEmail(email, password);
-      if (success) {
-        await refetch();
+      if (!success) {
+        // useSettingsForm treats non-throw as success — without this
+        // guard, a soft-failure response would fire the success toast
+        // and clear the password field while the server kept the old
+        // email.
+        throw new Error(t('settings.account.email.failureToast'));
       }
+      await refetch();
     },
     successMessage: t('settings.account.email.successToast'),
     // Opt out of the default re-baseline; we clear `password` explicitly.

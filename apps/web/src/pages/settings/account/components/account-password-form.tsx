@@ -46,7 +46,14 @@ export const AccountPasswordForm = () => {
     schema: passwordSchema,
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
     submit: async ({ newPassword, currentPassword }) => {
-      await changePassword(currentPassword, newPassword);
+      const success = await changePassword(currentPassword, newPassword);
+      if (!success) {
+        // useSettingsForm treats non-throw as success — without this
+        // guard, a soft-failure response (e.g. `{ changePassword: null }`)
+        // would fire the success toast and clear the fields while the
+        // server still has the old password.
+        throw new Error(t('settings.account.password.failureToast'));
+      }
     },
     successMessage: t('settings.account.password.successToast'),
     // Opt out of the default re-baseline-to-submitted-values behavior:

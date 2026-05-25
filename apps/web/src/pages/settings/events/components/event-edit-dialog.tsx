@@ -95,6 +95,12 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
     if (open) {
       state.form.reset(toFormValues(event));
       setSelectMode(false);
+      // Defensive: clear any in-flight local edits to the attribute pills
+      // so reopening a row doesn't surface "ghost" state from the
+      // previous interaction. The post-query effect above will repopulate
+      // from canonical attributeOnEvents once data arrives.
+      setEventsOnAttributes([]);
+      setSelectedAttributeValue('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, event]);
@@ -127,6 +133,11 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.events.saveButton')}
+      // Without this guard, a fast user can submit while
+      // `attributeOnEvents` is still in flight — `eventsOnAttributes`
+      // would be the empty initial state, silently wiping the row's
+      // attribute associations on the server.
+      submitDisabled={loadingEventAttrs}
       contentClassName="max-w-5xl"
     >
       <div className="flex">

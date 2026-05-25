@@ -53,6 +53,7 @@ const translations = {
         passwordLabel: '确认密码',
         passwordPlaceholder: '当前密码',
         successToast: '邮箱已修改',
+        failureToast: '修改邮箱失败。',
       },
       password: {
         title: '修改密码',
@@ -63,6 +64,7 @@ const translations = {
         confirmLabel: '确认密码',
         confirmPlaceholder: '再次输入新密码',
         successToast: '密码已修改',
+        failureToast: '修改密码失败。',
       },
     },
     project: {

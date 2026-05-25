@@ -66,17 +66,39 @@ export const RegenerateDialog = ({ open, onOpenChange }: RegenerateDialogProps) 
     toast({ title: t('twoFactor.setup.copiedToast') });
   };
 
+  // Once `newCodes` has been minted, the server has already invalidated
+  // the previous batch — closing the dialog without explicit acknowledgement
+  // means the user loses their only copy of any working recovery code.
+  // Block Esc / click-outside while codes are on screen; the "Finish"
+  // button (gated by `savedConfirmed`) is the only legitimate exit.
+  const isShowingCodes = newCodes !== null;
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (!next && isShowingCodes) {
+          return;
+        }
         onOpenChange(next);
         if (!next) {
           reset();
         }
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onEscapeKeyDown={(event) => {
+          if (isShowingCodes) {
+            event.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(event) => {
+          if (isShowingCodes) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{t('twoFactor.regenerate.title')}</DialogTitle>
           <DialogDescription>{t('twoFactor.regenerate.description')}</DialogDescription>

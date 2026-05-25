@@ -62,6 +62,7 @@ const translations = {
         passwordLabel: 'Confirm password',
         passwordPlaceholder: 'Current password',
         successToast: 'The email has been successfully updated',
+        failureToast: 'Failed to update email.',
       },
       password: {
         title: 'Change password',
@@ -72,6 +73,7 @@ const translations = {
         confirmLabel: 'Confirm password',
         confirmPlaceholder: 'Repeat the same new password',
         successToast: 'The password has been successfully updated',
+        failureToast: 'Failed to update password.',
       },
     },
     project: {

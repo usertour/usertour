@@ -48,12 +48,16 @@ export function useIntegrationConfig<TConfig>(
   );
   const [integration, setIntegration] = useState<IntegrationModel | undefined>(currentIntegration);
 
-  // Re-seed the local copy whenever the server response changes (initial
-  // load + post-save refetch). Any user-in-flight edits are intentionally
-  // dropped here because save already merged them.
+  // Re-seed the local copy only when the underlying integration identity
+  // shifts (initial hydration, environment switch). Depending on the full
+  // object reference would have effect fire on every Apollo cache emit —
+  // including unrelated refetches on the same env — and wipe whatever the
+  // user is mid-typing into key/region fields. Saving owns its own flush
+  // via `refetch()` + whichever post-save tick the consumer wants.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setIntegration(currentIntegration);
-  }, [currentIntegration]);
+  }, [currentIntegration?.id, environmentId]);
 
   const setLocal = useCallback((updates: Partial<IntegrationModel>) => {
     setIntegration((previous) =>

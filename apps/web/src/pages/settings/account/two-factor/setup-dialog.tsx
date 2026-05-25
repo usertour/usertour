@@ -109,17 +109,39 @@ export const SetupDialog = ({ open, onOpenChange, onEnabled }: SetupDialogProps)
     reset();
   };
 
+  // Stage 2 has shown the recovery codes; the server has already
+  // committed them as the user's only valid backup set. Esc / click
+  // outside would discard them silently, so block dismissal here — the
+  // "Finish" button (gated by `savedConfirmed`) is the only legitimate
+  // exit out of the codes stage.
+  const isShowingCodes = stage === 'codes';
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (!next && isShowingCodes) {
+          return;
+        }
         onOpenChange(next);
         if (!next) {
           reset();
         }
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onEscapeKeyDown={(event) => {
+          if (isShowingCodes) {
+            event.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(event) => {
+          if (isShowingCodes) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{t('twoFactor.setup.title')}</DialogTitle>
           {/* Always render DialogDescription so Radix's aria-describedby

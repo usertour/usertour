@@ -30,6 +30,12 @@ export interface SettingsDialogFormProps<TValues extends FieldValues> {
   submitLabel?: ReactNode;
   /** Cancel button label. Defaults to "Cancel". */
   cancelLabel?: ReactNode;
+  /**
+   * Extra disabled gate for the submit button — on top of the built-in
+   * `isSubmitting` lock. Use when dependent data (e.g. a sibling query)
+   * must finish loading before submit is safe.
+   */
+  submitDisabled?: boolean;
   /** Width override for the dialog content (Tailwind classes). */
   contentClassName?: string;
   children: ReactNode;
@@ -47,6 +53,7 @@ export function SettingsDialogForm<TValues extends FieldValues>({
   state,
   submitLabel,
   cancelLabel,
+  submitDisabled,
   contentClassName,
   children,
 }: SettingsDialogFormProps<TValues>) {
@@ -70,7 +77,7 @@ export function SettingsDialogForm<TValues extends FieldValues>({
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 {cancelLabel ?? 'Cancel'}
               </Button>
-              <LoadingButton type="submit" loading={state.isSubmitting}>
+              <LoadingButton type="submit" loading={state.isSubmitting} disabled={submitDisabled}>
                 {submitLabel ?? 'Save'}
               </LoadingButton>
             </DialogFooter>
