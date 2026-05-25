@@ -844,23 +844,26 @@ const translations = {
     },
     dialogs: {
       removeUsersFromSegment: {
-        title: 'Confirm removing users from segment',
-        description: 'Confirm removing the selected users from {{segmentName}}?',
-        confirmButton: 'Yes, remove {{count}} users',
+        title: 'Remove from segment',
+        description:
+          'Remove the selected users from <strong>{{segmentName}}</strong>? They will no longer match this segment until added again.',
+        confirmButton_one: 'Remove user',
+        confirmButton_other: 'Remove {{count}} users',
       },
       deleteUsers: {
-        titleSingle: 'Confirm deleting the user',
-        titleMultiple: 'Confirm deleting the users',
-        description:
-          'This will delete all traces of the {{userType}} from your account. Including in analytics.',
-        descriptionConfirm: 'Confirm deleting the {{userType}}?',
-        confirmButtonSingle: 'Yes, delete this user',
-        confirmButtonMultiple: 'Yes, delete {{count}} users',
+        title_one: 'Delete user',
+        title_other: 'Delete users',
+        description_one:
+          'Delete this user and all their analytics data? This action cannot be undone.',
+        description_other:
+          'Delete these {{count}} users and all their analytics data? This action cannot be undone.',
+        confirmButton_one: 'Delete user',
+        confirmButton_other: 'Delete {{count}} users',
       },
       deleteSegment: {
         title: 'Delete segment',
-        description: 'Confirm deleting {{segmentName}}?',
-        confirmButton: 'Yes, delete segment',
+        description: 'Delete <strong>{{segmentName}}</strong>? This action cannot be undone.',
+        confirmButton: 'Delete segment',
       },
     },
     empty: {
@@ -986,7 +989,8 @@ const translations = {
         addFailed: 'Failed to add users to segment.',
       },
       users: {
-        usersDeleted: '{{count}} {{userType}} has been successfully deleted',
+        usersDeleted_one: 'User deleted',
+        usersDeleted_other: '{{count}} users deleted',
       },
     },
   },
@@ -1037,6 +1041,18 @@ const translations = {
         emptyConditionsHint: "Rule won't activate until you add at least one condition.",
       },
     },
+    deleteDialog: {
+      // {{contentType}} is the lowercased noun for the content kind
+      // — 'flow', 'checklist', 'banner', 'launcher', etc.
+      title: 'Delete {{contentType}}',
+      description:
+        'Delete <strong>{{name}}</strong> and all its data? This action cannot be undone.',
+      confirmButton: 'Delete {{contentType}}',
+      cancelButton: 'Cancel',
+      invalidData: 'Invalid content data',
+      deleteSuccess: '{{contentType}} "{{name}}" deleted',
+      deleteFailure: 'Failed to delete content',
+    },
   },
   companies: {
     actions: {
@@ -1049,23 +1065,29 @@ const translations = {
     },
     dialogs: {
       removeCompaniesFromSegment: {
-        title: 'Confirm removing companies from segment',
-        description: 'Confirm removing the selected companies from {{segmentName}}?',
-        confirmButton: 'Yes, remove {{count}} companies',
+        title: 'Remove from segment',
+        description:
+          'Remove the selected companies from <strong>{{segmentName}}</strong>? They will no longer match this segment until added again.',
+        confirmButton_one: 'Remove company',
+        confirmButton_other: 'Remove {{count}} companies',
       },
       deleteCompanies: {
-        titleSingle: 'Confirm deleting the company',
-        titleMultiple: 'Confirm deleting the companies',
-        description:
-          'This will delete all traces of the {{companyType}} from your account. Including in analytics.',
-        descriptionConfirm: 'Confirm deleting the {{companyType}}?',
-        confirmButtonSingle: 'Yes, delete this company',
-        confirmButtonMultiple: 'Yes, delete {{count}} companies',
+        title_one: 'Delete company',
+        title_other: 'Delete companies',
+        description_one:
+          'Delete this company and all its analytics data? This action cannot be undone.',
+        description_other:
+          'Delete these {{count}} companies and all their analytics data? This action cannot be undone.',
+        confirmButton_one: 'Delete company',
+        confirmButton_other: 'Delete {{count}} companies',
       },
       deleteSegment: {
         title: 'Delete segment',
-        description: 'Confirm deleting {{segmentName}}?',
-        confirmButton: 'Yes, delete segment',
+        description: 'Delete <strong>{{segmentName}}</strong>? This action cannot be undone.',
+        confirmButton: 'Delete segment',
+        deleteSuccess: 'Segment "{{segmentName}}" deleted',
+        invalidData: 'Invalid segment data',
+        deleteFailure: 'Failed to delete segment',
       },
     },
     empty: {
@@ -1149,7 +1171,8 @@ const translations = {
         addFailed: 'Failed to add companies to segment.',
       },
       companies: {
-        companiesDeleted: '{{count}} {{companyType}} has been successfully deleted',
+        companiesDeleted_one: 'Company deleted',
+        companiesDeleted_other: '{{count}} companies deleted',
       },
     },
   },

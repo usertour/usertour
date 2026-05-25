@@ -796,22 +796,20 @@ const translations = {
     },
     dialogs: {
       removeUsersFromSegment: {
-        title: '确认从细分中移除用户',
-        description: '确认从 {{segmentName}} 中移除选定的用户？',
-        confirmButton: '是的，移除 {{count}} 个用户',
+        title: '从细分中移除',
+        description:
+          '将选定的用户从 <strong>{{segmentName}}</strong> 中移除?移除后,这些用户在重新加入前不会再匹配该细分。',
+        confirmButton_other: '移除 {{count}} 个用户',
       },
       deleteUsers: {
-        titleSingle: '确认删除用户',
-        titleMultiple: '确认删除用户',
-        description: '这将从您的账户中删除{{userType}}的所有痕迹，包括分析数据。',
-        descriptionConfirm: '确认删除{{userType}}？',
-        confirmButtonSingle: '是的，删除此用户',
-        confirmButtonMultiple: '是的，删除 {{count}} 个用户',
+        title_other: '删除用户',
+        description_other: '删除这 {{count}} 个用户及其所有分析数据?此操作不可撤销。',
+        confirmButton_other: '删除 {{count}} 个用户',
       },
       deleteSegment: {
         title: '删除细分',
-        description: '确认删除 {{segmentName}}？',
-        confirmButton: '是的，删除细分',
+        description: '删除 <strong>{{segmentName}}</strong>?此操作不可撤销。',
+        confirmButton: '删除细分',
       },
     },
     empty: {
@@ -931,7 +929,7 @@ const translations = {
         addFailed: '添加用户到细分失败。',
       },
       users: {
-        usersDeleted: '{{count}} 个{{userType}}已成功删除',
+        usersDeleted_other: '已删除 {{count}} 个用户',
       },
     },
   },
@@ -981,6 +979,15 @@ const translations = {
         emptyConditionsHint: '至少添加一个条件,这条规则才会生效。',
       },
     },
+    deleteDialog: {
+      title: '删除{{contentType}}',
+      description: '删除 <strong>{{name}}</strong> 及其所有数据?此操作不可撤销。',
+      confirmButton: '删除{{contentType}}',
+      cancelButton: '取消',
+      invalidData: '内容数据无效',
+      deleteSuccess: '{{contentType}}「{{name}}」已删除',
+      deleteFailure: '删除内容失败',
+    },
   },
   companies: {
     actions: {
@@ -993,22 +1000,23 @@ const translations = {
     },
     dialogs: {
       removeCompaniesFromSegment: {
-        title: '确认从细分中移除公司',
-        description: '确认从 {{segmentName}} 中移除选定的公司？',
-        confirmButton: '是的，移除 {{count}} 个公司',
+        title: '从细分中移除',
+        description:
+          '将选定的公司从 <strong>{{segmentName}}</strong> 中移除?移除后,这些公司在重新加入前不会再匹配该细分。',
+        confirmButton_other: '移除 {{count}} 个公司',
       },
       deleteCompanies: {
-        titleSingle: '确认删除公司',
-        titleMultiple: '确认删除公司',
-        description: '这将从您的账户中删除{{companyType}}的所有痕迹，包括分析数据。',
-        descriptionConfirm: '确认删除{{companyType}}？',
-        confirmButtonSingle: '是的，删除此公司',
-        confirmButtonMultiple: '是的，删除 {{count}} 个公司',
+        title_other: '删除公司',
+        description_other: '删除这 {{count}} 个公司及其所有分析数据?此操作不可撤销。',
+        confirmButton_other: '删除 {{count}} 个公司',
       },
       deleteSegment: {
         title: '删除细分',
-        description: '确认删除 {{segmentName}}？',
-        confirmButton: '是的，删除细分',
+        description: '删除 <strong>{{segmentName}}</strong>?此操作不可撤销。',
+        confirmButton: '删除细分',
+        deleteSuccess: '细分「{{segmentName}}」已删除',
+        invalidData: '细分数据无效',
+        deleteFailure: '删除细分失败',
       },
     },
     empty: {
@@ -1091,7 +1099,7 @@ const translations = {
         addFailed: '添加公司到细分失败。',
       },
       companies: {
-        companiesDeleted: '{{count}} 个{{companyType}}已成功删除',
+        companiesDeleted_other: '已删除 {{count}} 个公司',
       },
     },
   },

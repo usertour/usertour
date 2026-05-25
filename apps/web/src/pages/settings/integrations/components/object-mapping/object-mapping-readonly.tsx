@@ -27,16 +27,7 @@ import { useDeleteIntegrationObjectMappingMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
-import { LoadingButton } from '@usertour/ui';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { ObjectMappingDialog } from './object-mapping-dialog';
 import { Switch } from '@usertour/switch';
 
@@ -161,33 +152,25 @@ export const ObjectMappingReadonly = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {t('settings.integrations.objectMapping.readonly.deleteDialogTitle')}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    <Trans
-                      i18nKey="settings.integrations.objectMapping.readonly.deleteDialogDescription"
-                      values={{
-                        source: mapping.sourceObjectType,
-                        target: mapping.destinationObjectType,
-                      }}
-                      components={{ strong: <strong /> }}
-                    />
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={loading}>
-                    {t('settings.common.cancel')}
-                  </AlertDialogCancel>
-                  <LoadingButton onClick={handleDelete} loading={loading} variant="destructive">
-                    {t('settings.integrations.objectMapping.readonly.deleteAction')}
-                  </LoadingButton>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <DestructiveConfirmDialog
+              title={t('settings.integrations.objectMapping.readonly.deleteDialogTitle')}
+              description={
+                <Trans
+                  i18nKey="settings.integrations.objectMapping.readonly.deleteDialogDescription"
+                  values={{
+                    source: mapping.sourceObjectType,
+                    target: mapping.destinationObjectType,
+                  }}
+                  components={{ strong: <strong className="font-bold text-foreground" /> }}
+                />
+              }
+              confirmLabel={t('settings.integrations.objectMapping.readonly.deleteAction')}
+              cancelLabel={t('settings.common.cancel')}
+              open={showDeleteDialog}
+              onOpenChange={setShowDeleteDialog}
+              onConfirm={handleDelete}
+              loading={loading}
+            />
           </CardTitle>
           {mapping.lastSyncedAt && (
             <p className="text-sm text-muted-foreground">

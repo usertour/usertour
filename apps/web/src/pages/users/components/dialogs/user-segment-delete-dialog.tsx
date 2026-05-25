@@ -1,18 +1,8 @@
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useDeleteSegment } from '@/hooks/use-delete-segment';
 import { Segment } from '@usertour/types';
-import { useCallback } from 'react';
-import { memo } from 'react';
-import { LoadingButton } from '@usertour/ui';
-import { useTranslation } from 'react-i18next';
+import { memo, useCallback } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useToast } from '@usertour/use-toast';
 
 interface UserSegmentDeleteDialogProps {
@@ -28,59 +18,42 @@ export const UserSegmentDeleteDialog = memo((props: UserSegmentDeleteDialogProps
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleSuccess = useCallback(
-    (segmentName: string) => {
-      toast({
-        variant: 'success',
-        title: t('users.toast.segments.segmentDeleted', { segmentName }),
-      });
-      onSubmit();
-      onOpenChange(false);
-    },
-    [onSubmit, onOpenChange, toast, t],
-  );
-
-  const handleError = useCallback(
-    (errorMessage: string) => {
-      toast({
-        variant: 'destructive',
-        title: errorMessage,
-      });
-    },
-    [toast],
-  );
-
   const handleConfirm = useCallback(async () => {
     if (!segment?.id) {
-      handleError('Invalid segment data');
+      toast({ variant: 'destructive', title: 'Invalid segment data' });
       return;
     }
 
     const result = await deleteSegmentById(segment.id);
     if (result.success) {
-      handleSuccess(segment.name);
+      toast({
+        variant: 'success',
+        title: t('users.toast.segments.segmentDeleted', { segmentName: segment.name }),
+      });
+      onSubmit();
+      onOpenChange(false);
     } else {
-      handleError(result.error ?? 'Unknown error');
+      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
     }
-  }, [segment?.id, segment?.name, deleteSegmentById, handleSuccess, handleError]);
+  }, [segment?.id, segment?.name, deleteSegmentById, onSubmit, onOpenChange, toast, t]);
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t('users.dialogs.deleteSegment.title')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('users.dialogs.deleteSegment.description', { segmentName: segment?.name ?? '' })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
-          <LoadingButton onClick={handleConfirm} loading={loading} variant="destructive">
-            {t('users.dialogs.deleteSegment.confirmButton')}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t('users.dialogs.deleteSegment.title')}
+      description={
+        <Trans
+          i18nKey="users.dialogs.deleteSegment.description"
+          values={{ segmentName: segment?.name ?? '' }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('users.dialogs.deleteSegment.confirmButton')}
+      cancelLabel={t('users.actions.cancel')}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleConfirm}
+      loading={loading}
+    />
   );
 });
 

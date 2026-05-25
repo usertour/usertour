@@ -1,17 +1,8 @@
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
-import { LoadingButton } from '@usertour/ui';
 import { useDeleteSegmentMutation } from '@usertour/hooks';
 import { memo, useCallback } from 'react';
 
@@ -28,61 +19,57 @@ export const CompanySegmentDeleteDialog = memo(
     const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
     const { toast } = useToast();
 
-    const handleSuccess = useCallback(() => {
-      toast({
-        variant: 'success',
-        title: `The segment "${segment.name}" has been successfully deleted`,
-      });
-      onSubmit(true);
-      onOpenChange(false);
-    }, [segment.name, onSubmit, onOpenChange, toast]);
-
-    const handleError = useCallback(
-      (errorMessage: string) => {
+    const handleConfirm = useCallback(async () => {
+      if (!segment?.id) {
         toast({
           variant: 'destructive',
-          title: errorMessage,
+          title: t('companies.dialogs.deleteSegment.invalidData'),
         });
         onSubmit(false);
-      },
-      [onSubmit, toast],
-    );
-
-    const handleDeleteSubmit = useCallback(async () => {
-      if (!segment?.id) {
-        handleError('Invalid segment data');
         return;
       }
 
       try {
         const success = await deleteSegment(segment.id);
         if (success) {
-          handleSuccess();
+          toast({
+            variant: 'success',
+            title: t('companies.dialogs.deleteSegment.deleteSuccess', {
+              segmentName: segment.name,
+            }),
+          });
+          onSubmit(true);
+          onOpenChange(false);
         } else {
-          handleError('Failed to delete segment');
+          toast({
+            variant: 'destructive',
+            title: t('companies.dialogs.deleteSegment.deleteFailure'),
+          });
+          onSubmit(false);
         }
       } catch (error) {
-        handleError(getErrorMessage(error));
+        toast({ variant: 'destructive', title: getErrorMessage(error) });
+        onSubmit(false);
       }
-    }, [segment?.id, segment.name, deleteSegment, handleSuccess, handleError]);
+    }, [segment?.id, segment?.name, deleteSegment, onSubmit, onOpenChange, toast, t]);
 
     return (
-      <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('companies.dialogs.deleteSegment.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('companies.dialogs.deleteSegment.description', { segmentName: segment.name })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
-            <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
-              {t('companies.dialogs.deleteSegment.confirmButton')}
-            </LoadingButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DestructiveConfirmDialog
+        title={t('companies.dialogs.deleteSegment.title')}
+        description={
+          <Trans
+            i18nKey="companies.dialogs.deleteSegment.description"
+            values={{ segmentName: segment.name }}
+            components={{ strong: <strong className="font-bold text-foreground" /> }}
+          />
+        }
+        confirmLabel={t('companies.dialogs.deleteSegment.confirmButton')}
+        cancelLabel={t('companies.actions.cancel')}
+        open={open}
+        onOpenChange={onOpenChange}
+        onConfirm={handleConfirm}
+        loading={loading}
+      />
     );
   },
 );

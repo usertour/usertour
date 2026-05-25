@@ -1,16 +1,6 @@
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useDeleteBizUser } from '@/hooks/use-delete-biz-user';
-import { useCallback } from 'react';
-import { memo } from 'react';
-import { LoadingButton } from '@usertour/ui';
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@usertour/use-toast';
 
@@ -26,85 +16,38 @@ export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
   const { deleteUsers, loading } = useDeleteBizUser();
   const { toast } = useToast();
   const { t } = useTranslation();
-
-  const handleSuccess = useCallback(
-    (count: number) => {
-      const userType =
-        count === 1
-          ? t('users.actions.deleteUser').toLowerCase()
-          : t('users.dialogs.deleteUsers.titleMultiple').toLowerCase();
-      toast({
-        variant: 'success',
-        title: t('users.toast.users.usersDeleted', { count, userType }),
-      });
-      onSuccess();
-      onOpenChange(false);
-    },
-    [onSuccess, onOpenChange, toast, t],
-  );
-
-  const handleError = useCallback(
-    (errorMessage: string) => {
-      toast({
-        variant: 'destructive',
-        title: errorMessage,
-      });
-    },
-    [toast],
-  );
+  const count = bizUserIds.length;
 
   const handleConfirm = useCallback(async () => {
-    if (!bizUserIds || bizUserIds.length === 0) {
-      handleError('No users selected');
+    if (!bizUserIds || count === 0) {
+      toast({ variant: 'destructive', title: 'No users selected' });
       return;
     }
 
     const result = await deleteUsers(bizUserIds);
     if (result.success) {
-      handleSuccess(result.count ?? 0);
+      toast({
+        variant: 'success',
+        title: t('users.toast.users.usersDeleted', { count: result.count ?? 0 }),
+      });
+      onSuccess();
+      onOpenChange(false);
     } else {
-      handleError(result.error ?? 'Unknown error');
+      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
     }
-  }, [bizUserIds, deleteUsers, handleSuccess, handleError]);
-
-  const isSingleUser = bizUserIds.length === 1;
-  const actionText = isSingleUser
-    ? t('users.dialogs.deleteUsers.confirmButtonSingle')
-    : t('users.dialogs.deleteUsers.confirmButtonMultiple', { count: bizUserIds.length });
+  }, [bizUserIds, count, deleteUsers, onSuccess, onOpenChange, toast, t]);
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {isSingleUser
-              ? t('users.dialogs.deleteUsers.titleSingle')
-              : t('users.dialogs.deleteUsers.titleMultiple')}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('users.dialogs.deleteUsers.description', {
-              userType: isSingleUser
-                ? t('users.actions.deleteUser').toLowerCase()
-                : t('users.dialogs.deleteUsers.titleMultiple').toLowerCase(),
-            })}
-            <br />
-            {isSingleUser
-              ? t('users.dialogs.deleteUsers.descriptionConfirm', {
-                  userType: t('users.actions.deleteUser').toLowerCase(),
-                })
-              : t('users.dialogs.deleteUsers.descriptionConfirm', {
-                  userType: t('users.dialogs.deleteUsers.titleMultiple').toLowerCase(),
-                })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
-          <LoadingButton onClick={handleConfirm} loading={loading} variant="destructive">
-            {actionText}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t('users.dialogs.deleteUsers.title', { count })}
+      description={t('users.dialogs.deleteUsers.description', { count })}
+      confirmLabel={t('users.dialogs.deleteUsers.confirmButton', { count })}
+      cancelLabel={t('users.actions.cancel')}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleConfirm}
+      loading={loading}
+    />
   );
 });
 

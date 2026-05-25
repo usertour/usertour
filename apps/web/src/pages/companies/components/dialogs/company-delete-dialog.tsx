@@ -1,18 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import { useCallback } from 'react';
-import { LoadingButton } from '@usertour/ui';
+import { memo, useCallback } from 'react';
 import { useDeleteCompany } from '@/hooks/use-delete-company';
-import { memo } from 'react';
 
 interface BizCompanyDeleteDialogProps {
   bizCompanyIds: string[];
@@ -26,76 +16,39 @@ export const BizCompanyDeleteDialog = memo((props: BizCompanyDeleteDialogProps) 
   const { t } = useTranslation();
   const { deleteCompanies, loading } = useDeleteCompany();
   const { toast } = useToast();
+  const count = bizCompanyIds.length;
 
-  const handleSuccess = useCallback(
-    async (count: number) => {
-      toast({
-        variant: 'success',
-        title: t('companies.toast.companies.companiesDeleted', {
-          count,
-          companyType: count === 1 ? 'company' : 'companies',
-        }),
-      });
-      await onSubmit(true);
-    },
-    [onSubmit, toast, t],
-  );
-
-  const handleError = useCallback(
-    async (errorMessage: string) => {
-      toast({
-        variant: 'destructive',
-        title: errorMessage,
-      });
-      onSubmit(false);
-    },
-    [onSubmit, toast],
-  );
-
-  const handleDeleteSubmit = useCallback(async () => {
-    if (!bizCompanyIds || bizCompanyIds.length === 0) {
-      await handleError('No companies selected');
+  const handleConfirm = useCallback(async () => {
+    if (!bizCompanyIds || count === 0) {
+      toast({ variant: 'destructive', title: 'No companies selected' });
+      await onSubmit(false);
       return;
     }
 
     const result = await deleteCompanies(bizCompanyIds);
     if (result.success) {
-      await handleSuccess(result.count ?? 0);
+      toast({
+        variant: 'success',
+        title: t('companies.toast.companies.companiesDeleted', { count: result.count ?? 0 }),
+      });
+      await onSubmit(true);
     } else {
-      await handleError(result.error ?? 'Unknown error');
+      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
+      await onSubmit(false);
     }
-  }, [bizCompanyIds, deleteCompanies, handleSuccess, handleError]);
-
-  const isSingle = bizCompanyIds.length === 1;
-  const companyType = isSingle ? 'company' : 'companies';
+  }, [bizCompanyIds, count, deleteCompanies, onSubmit, toast, t]);
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {isSingle
-              ? t('companies.dialogs.deleteCompanies.titleSingle')
-              : t('companies.dialogs.deleteCompanies.titleMultiple')}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('companies.dialogs.deleteCompanies.description', { companyType })}
-            <br />
-            {t('companies.dialogs.deleteCompanies.descriptionConfirm', { companyType })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
-          <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
-            {isSingle
-              ? t('companies.dialogs.deleteCompanies.confirmButtonSingle')
-              : t('companies.dialogs.deleteCompanies.confirmButtonMultiple', {
-                  count: bizCompanyIds.length,
-                })}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t('companies.dialogs.deleteCompanies.title', { count })}
+      description={t('companies.dialogs.deleteCompanies.description', { count })}
+      confirmLabel={t('companies.dialogs.deleteCompanies.confirmButton', { count })}
+      cancelLabel={t('companies.actions.cancel')}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleConfirm}
+      loading={loading}
+    />
   );
 });
 
