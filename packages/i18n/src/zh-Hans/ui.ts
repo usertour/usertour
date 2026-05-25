@@ -56,7 +56,7 @@ const translations = {
       },
       password: {
         title: '修改密码',
-        currentLabel: '原密码',
+        currentLabel: '当前密码',
         currentPlaceholder: '请输入当前密码',
         newLabel: '新密码',
         newPlaceholder: '请输入一个强密码',
@@ -74,7 +74,7 @@ const translations = {
     attributes: {
       title: '属性',
       newButton: '新建属性',
-      description: '您可以通过 Usertour.js 上报用户/公司属性',
+      description: '您可以通过 Usertour.js 上报用户/公司属性。',
       predefinedResource: '属性',
       tabs: {
         user: '用户',
@@ -176,7 +176,7 @@ const translations = {
       invalidData: '环境数据无效',
       setPrimarySuccess: '已设为主环境。',
       createTitle: '新建环境',
-      editTitle: '重命名环境',
+      editTitle: '编辑环境',
       nameLabel: '环境名称',
       namePlaceholder: '请输入环境名称',
       limitTitle: '已达到环境上限',
@@ -200,7 +200,7 @@ const translations = {
       deleteResource: '本地化',
       deleteSuccess: '本地化已删除',
       createTitle: '新建本地化',
-      editTitle: '重命名本地化',
+      editTitle: '编辑本地化',
       saveButton: '保存本地化',
       createButton: '创建本地化',
       description:
@@ -209,7 +209,7 @@ const translations = {
         localeLabel: '语言区域',
         localeTooltip: 'locale 表示一种语言 + 地区的组合。',
         nameLabel: '名称',
-        nameTooltip: 'locale 的可读名称',
+        nameTooltip: 'locale 的可读名称。',
         namePlaceholder: '请输入显示名',
         codeLabel: '代码',
         codeTooltip:
@@ -242,7 +242,7 @@ const translations = {
       invitePending: '邀请待接受',
       cancelInviteMenuItem: '取消邀请',
       changeRoleMenuItem: '修改角色',
-      transferOwnerMenuItem: '转让所有权给此用户',
+      transferOwnerMenuItem: '转让所有权',
       removeMenuItem: '移除成员',
       roles: {
         admin: '管理员',
@@ -270,10 +270,11 @@ const translations = {
         submit: '修改角色',
       },
       cancelInvite: {
-        title: '确认',
-        description: '确认取消对 {{email}} 的邀请?',
-        cancelButton: '不,什么都不做',
-        confirmButton: '是的,取消邀请',
+        title: '取消邀请',
+        description:
+          '取消发给 <strong>{{email}}</strong> 的待接受邀请?该用户除非被重新邀请,否则无法加入。',
+        cancelButton: '取消',
+        confirmButton: '取消邀请',
       },
       remove: {
         title: '移除成员',

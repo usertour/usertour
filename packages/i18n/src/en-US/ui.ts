@@ -42,7 +42,7 @@ const translations = {
       description: 'Description',
       descriptionPlaceholder: 'Optional description',
       changeableLater: 'Can be changed later',
-      notChangeableLater: 'Can NOT be changed later',
+      notChangeableLater: 'Cannot be changed later',
     },
     account: {
       profile: {
@@ -57,17 +57,17 @@ const translations = {
         emailPlaceholder: 'Your email',
         passwordLabel: 'Confirm password',
         passwordPlaceholder: 'Current password',
-        successToast: 'Modified email successfully',
+        successToast: 'The email has been successfully updated',
       },
       password: {
         title: 'Change password',
-        currentLabel: 'Old password',
+        currentLabel: 'Current password',
         currentPlaceholder: 'Enter your current password',
         newLabel: 'New password',
         newPlaceholder: 'Pick a strong password',
         confirmLabel: 'Confirm password',
         confirmPlaceholder: 'Repeat the same new password',
-        successToast: 'Modified password successfully',
+        successToast: 'The password has been successfully updated',
       },
     },
     project: {
@@ -79,7 +79,7 @@ const translations = {
     attributes: {
       title: 'Attributes',
       newButton: 'New Attribute',
-      description: 'You can send user/company attributes via the Usertour.js',
+      description: 'You can send user and company attributes via Usertour.js.',
       predefinedResource: 'attributes',
       tabs: {
         user: 'User',
@@ -147,7 +147,7 @@ const translations = {
       deleteMenuItem: 'Delete event',
       deleteResource: 'event',
       deleteSuccess: 'The event has been successfully deleted',
-      editTitle: 'Edit Event',
+      editTitle: 'Edit event',
       saveButton: 'Save Event',
       updateSuccess: 'The event has been successfully updated',
       attributeAlreadyAssociated: 'That attribute is already associated with the event.',
@@ -190,7 +190,7 @@ const translations = {
       invalidData: 'Invalid environment data',
       setPrimarySuccess: 'Environment set as primary successfully.',
       createTitle: 'Create New Environment',
-      editTitle: 'Rename Environment',
+      editTitle: 'Edit environment',
       nameLabel: 'Environment name',
       namePlaceholder: 'Enter environment name',
       limitTitle: 'Maximum environments reached',
@@ -207,7 +207,7 @@ const translations = {
       columns: {
         code: 'Code',
         name: 'Name',
-        createdAt: 'CreatedAt',
+        createdAt: 'Created at',
       },
       defaultBadge: 'Default',
       editMenuItem: 'Edit localization',
@@ -216,7 +216,7 @@ const translations = {
       deleteResource: 'localization',
       deleteSuccess: 'The localization has been successfully deleted',
       createTitle: 'Create New Localization',
-      editTitle: 'Rename Localization',
+      editTitle: 'Edit localization',
       saveButton: 'Save Localization',
       createButton: 'Create Localization',
       description:
@@ -225,12 +225,12 @@ const translations = {
         localeLabel: 'Locale',
         localeTooltip: "A locale represents a user's language and region.",
         nameLabel: 'Name',
-        nameTooltip: 'Human-readable name of the locale',
+        nameTooltip: 'Human-readable name of the locale.',
         namePlaceholder: 'Enter display name',
         codeLabel: 'Code',
         codeTooltip:
           "The value that users of this locale must have in their locale_code attribute in your Usertour.js installation. It's important that this code matches exactly.",
-        codePlaceholder: 'Enter code name',
+        codePlaceholder: 'Enter code',
       },
     },
     themes: {
@@ -259,7 +259,7 @@ const translations = {
       invitePending: 'Invite pending',
       cancelInviteMenuItem: 'Cancel invite',
       changeRoleMenuItem: 'Change role',
-      transferOwnerMenuItem: 'Transfer ownership to this user',
+      transferOwnerMenuItem: 'Transfer ownership',
       removeMenuItem: 'Remove member',
       roles: {
         admin: 'Admin',
@@ -269,9 +269,9 @@ const translations = {
       invite: {
         title: 'Add Team Member',
         nameLabel: 'Name',
-        namePlaceholder: 'Enter Member name',
+        namePlaceholder: 'Enter member name',
         emailLabel: 'Email',
-        emailPlaceholder: 'Enter Member email',
+        emailPlaceholder: 'Enter member email',
         roleLabel: 'Role',
         rolePlaceholder: 'Select a role',
         submit: 'Send invite',
@@ -288,10 +288,11 @@ const translations = {
         submit: 'Change role',
       },
       cancelInvite: {
-        title: 'Confirm',
-        description: 'Confirm canceling invite to {{email}}?',
-        cancelButton: 'No, do nothing',
-        confirmButton: 'Yes, cancel invite',
+        title: 'Cancel invite',
+        description:
+          "Cancel the pending invite to <strong>{{email}}</strong>? They won't be able to join unless you re-invite them.",
+        cancelButton: 'Cancel',
+        confirmButton: 'Cancel invite',
       },
       remove: {
         title: 'Remove member',
@@ -370,7 +371,7 @@ const translations = {
         efficientUsage: 'Efficient usage',
         considerUpgrading: 'Consider upgrading',
         exceededWarning:
-          'Usage exceeded limit. Please upgrade your plan to continue using all features. ',
+          'Usage exceeded limit. Please upgrade your plan to continue using all features.',
         hiddenAfterExceed: 'All content will be hidden after exceeding the limit.',
       },
       comparison: {
@@ -403,9 +404,9 @@ const translations = {
           flowTriggering: 'Automatic, segmented flow triggering',
           versionHistory: 'Version history',
           companyProfiles: 'Company profiles and events',
-          localization: 'Localization(coming soon)',
-          integrations: 'Integrations(coming soon)',
-          alerting: 'Alerting(coming soon)',
+          localization: 'Localization (coming soon)',
+          integrations: 'Integrations (coming soon)',
+          alerting: 'Alerting (coming soon)',
         },
       },
     },
@@ -418,7 +419,7 @@ const translations = {
       expiresOn: 'Expires on {{date}}',
       daysRemaining: 'Days Remaining: {{count}}',
       projectIdLabel: 'Project ID',
-      projectIdDescription: 'The unique , read-only project id.',
+      projectIdDescription: 'The unique, read-only project ID.',
       copy: 'Copy',
       projectIdCopiedToast: 'Project ID {{id}} has been copied to clipboard',
       uploadLicenseLabel: 'Upload License',
@@ -436,7 +437,7 @@ const translations = {
       columns: {
         name: 'Name',
         key: 'Key',
-        createdAt: 'CreatedAt',
+        createdAt: 'Created at',
       },
       revealMenuItem: 'Reveal API key',
       deleteMenuItem: 'Delete',
@@ -484,7 +485,7 @@ const translations = {
         tooltip:
           'When enabled, Usertour-generated events will be continuously streamed into your {{provider}} project.',
         configureSettings: 'Configure event streaming settings',
-        apiKeyLabel: 'API Key :',
+        apiKeyLabel: 'API Key:',
         apiKeyPlaceholder: 'Type API Key here',
         regionLabel: 'Region:',
         save: 'Save',
@@ -492,11 +493,11 @@ const translations = {
         saveFailedToast: 'Failed to save settings',
         // Per-provider overrides for the key input label / placeholder.
         // Used by Heap (App ID), Mixpanel (Project Token), Segment (Write Key).
-        heapKeyLabel: 'Heap App ID :',
+        heapKeyLabel: 'Heap App ID:',
         heapKeyPlaceholder: 'Type Heap App ID here',
-        mixpanelKeyLabel: 'Project Token :',
+        mixpanelKeyLabel: 'Project Token:',
         mixpanelKeyPlaceholder: 'Type Project Token here',
-        segmentKeyLabel: 'Write Key :',
+        segmentKeyLabel: 'Write Key:',
         segmentKeyPlaceholder: 'Type Write Key here',
       },
       providerHeaderReadGuide: 'Read the {{provider}} guide',
@@ -538,10 +539,10 @@ const translations = {
         // to the raw name (e.g. for custom objects).
         objectLabels: {
           salesforce: {
-            Contact: 'Contacts',
-            Account: 'Accounts',
-            Lead: 'Leads',
-            Opportunity: 'Opportunities',
+            Contact: 'Contact',
+            Account: 'Account',
+            Lead: 'Lead',
+            Opportunity: 'Opportunity',
           },
           usertour: {
             User: 'User',
@@ -553,8 +554,8 @@ const translations = {
           usertourObjectLabel: 'Usertour Object',
           salesforceObjectPlaceholder: 'Select Salesforce object',
           usertourObjectPlaceholder: 'Select Usertour object',
-          titleSelectObjects: 'Select Objects',
-          titleEditMapping: 'Edit Object Mapping',
+          titleSelectObjects: 'Select objects',
+          titleEditMapping: 'Edit object mapping',
           descriptionSelectObjects:
             'Choose which Salesforce object to map to which Usertour object.',
           descriptionEditMapping: 'Modify the mapping between Salesforce and Usertour objects.',
@@ -587,7 +588,7 @@ const translations = {
         configureSettings: 'Configure cohort synchronization settings',
         webhookUrlLabel: 'Webhook URL',
         webhookCopiedToast: 'Webhook URL copied to clipboard',
-        userIdPropertyLabel: 'Mixpanel User ID Property (for cohort sync) :',
+        userIdPropertyLabel: 'Mixpanel User ID Property (for cohort sync):',
         userIdPropertyPlaceholder: 'Type Mixpanel User ID Property here',
         save: 'Save',
       },

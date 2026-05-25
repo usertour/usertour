@@ -1,21 +1,12 @@
 'use client';
 
 import type { TeamMember } from '@usertour/types';
-import { Button } from '@usertour/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour/dialog';
-import { SpinnerIcon } from '@usertour/icons';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useCancelInviteMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 interface EditFormProps {
   projectId: string;
@@ -27,54 +18,45 @@ interface EditFormProps {
 
 export const MemberCancelInviteDialog = (props: EditFormProps) => {
   const { onSuccess, onCancel, isOpen, data, projectId } = props;
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const { t } = useTranslation();
   const { invoke } = useCancelInviteMutation();
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  async function handleOnSubmit() {
+  const handleSubmit = async () => {
+    if (!data.inviteId) {
+      return;
+    }
     setIsLoading(true);
     try {
-      if (!data.inviteId) {
-        return;
-      }
       const response = await invoke(projectId, data.inviteId);
       if (response) {
         onSuccess();
       }
     } catch (error) {
-      showError(getErrorMessage(error));
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('settings.team.cancelInvite.title')}</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>
-          {t('settings.team.cancelInvite.description', { email: data.email })}
-        </DialogDescription>
-        <DialogFooter>
-          <Button variant="outline" type="button" onClick={onCancel}>
-            {t('settings.team.cancelInvite.cancelButton')}
-          </Button>
-          <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            {t('settings.team.cancelInvite.confirmButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DestructiveConfirmDialog
+      title={t('settings.team.cancelInvite.title')}
+      description={
+        <Trans
+          i18nKey="settings.team.cancelInvite.description"
+          values={{ email: data.email }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('settings.team.cancelInvite.confirmButton')}
+      cancelLabel={t('settings.team.cancelInvite.cancelButton')}
+      open={isOpen}
+      onOpenChange={(op) => !op && onCancel()}
+      onConfirm={handleSubmit}
+      loading={isLoading}
+    />
   );
 };
 
