@@ -50,6 +50,10 @@ export const AccountPasswordForm = () => {
       await updateMutation({ variables: { newPassword, oldPassword: currentPassword } });
     },
     successMessage: t('settings.account.password.successToast'),
+    // Opt out of the default re-baseline-to-submitted-values behavior:
+    // password fields should clear after a successful change, not retain
+    // the just-submitted credentials in form state.
+    resetOnSuccess: false,
     onSuccess: () => resetRef.current?.(),
   });
 

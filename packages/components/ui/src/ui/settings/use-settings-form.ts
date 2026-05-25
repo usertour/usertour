@@ -39,6 +39,22 @@ export interface UseSettingsFormOptions<TValues extends FieldValues> {
    * which matches what every settings form currently uses.
    */
   mode?: UseFormProps<TValues>['mode'];
+  /**
+   * Re-baseline the form to the submitted values after a successful
+   * submit so `formState.isDirty` flips back to false and the Save
+   * button disables.
+   *
+   * Defaults to `true`, which is what almost every settings form wants:
+   * after saving "NewName" the user shouldn't see the Save button still
+   * highlighted as if there were unsaved changes.
+   *
+   * Set to `false` for forms that want the inputs cleared on success
+   * rather than re-baselined to the submitted values — e.g. the password
+   * change form, where leaving the submitted password sitting in form
+   * state would mean a (briefly) re-displayable sensitive value. Those
+   * forms typically reset to blank inside their own `onSuccess`.
+   */
+  resetOnSuccess?: boolean;
 }
 
 export interface UseSettingsFormResult<TValues extends FieldValues> {
@@ -65,6 +81,7 @@ export function useSettingsForm<TValues extends FieldValues>({
   successMessage,
   onSuccess,
   mode = 'onChange',
+  resetOnSuccess = true,
 }: UseSettingsFormOptions<TValues>): UseSettingsFormResult<TValues> {
   const form = useForm<TValues>({
     resolver: zodResolver(schema),
@@ -79,6 +96,15 @@ export function useSettingsForm<TValues extends FieldValues>({
       setIsSubmitting(true);
       try {
         await submit(values);
+        // Re-baseline before firing the success toast / `onSuccess`.
+        // react-hook-form's `defaultValues` is captured once at mount, so
+        // `formState.isDirty` stays true after a successful save — the
+        // Save button would otherwise look active for unsaved changes
+        // that don't exist. `reset(values)` updates the baseline to what
+        // we just submitted and clears the dirty flag.
+        if (resetOnSuccess) {
+          form.reset(values);
+        }
         if (successMessage) {
           toast({ variant: 'success', title: successMessage });
         }
@@ -89,7 +115,7 @@ export function useSettingsForm<TValues extends FieldValues>({
         setIsSubmitting(false);
       }
     },
-    [submit, successMessage, onSuccess, toast],
+    [submit, successMessage, onSuccess, toast, form, resetOnSuccess],
   );
 
   const onSubmit = useCallback(
