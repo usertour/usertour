@@ -11,12 +11,12 @@ import {
 import { RiAlertFill } from '@usertour/icons';
 import { LoadingButton } from '../loading-button';
 
-export interface DeleteConfirmDialogProps {
+export interface DestructiveConfirmDialogProps {
   /** Localised dialog title. */
   title: ReactNode;
   /** Localised description body. Consumers compose this with their own resource/name copy. */
   description: ReactNode;
-  /** Localised confirm-button label. Defaults to 'Delete' as a non-translated fallback. */
+  /** Localised confirm-button label. Defaults to 'Confirm' as a non-translated fallback. */
   confirmLabel?: ReactNode;
   /** Localised cancel-button label. Defaults to 'Cancel' as a non-translated fallback. */
   cancelLabel?: ReactNode;
@@ -31,7 +31,7 @@ export interface DeleteConfirmDialogProps {
  * The primitive deliberately holds no copy of its own — every string is
  * supplied by the consumer so the surrounding i18n layer owns translation.
  */
-export const DeleteConfirmDialog = ({
+export const DestructiveConfirmDialog = ({
   title,
   description,
   confirmLabel,
@@ -40,7 +40,7 @@ export const DeleteConfirmDialog = ({
   onOpenChange,
   onConfirm,
   loading,
-}: DeleteConfirmDialogProps) => {
+}: DestructiveConfirmDialogProps) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       {/* Widen past AlertDialog's default max-w-lg (512px). The icon
@@ -64,7 +64,7 @@ export const DeleteConfirmDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>{cancelLabel ?? 'Cancel'}</AlertDialogCancel>
           <LoadingButton variant="destructive" onClick={onConfirm} loading={loading}>
-            {confirmLabel ?? 'Delete'}
+            {confirmLabel ?? 'Confirm'}
           </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -72,4 +72,4 @@ export const DeleteConfirmDialog = ({
   );
 };
 
-DeleteConfirmDialog.displayName = 'DeleteConfirmDialog';
+DestructiveConfirmDialog.displayName = 'DestructiveConfirmDialog';

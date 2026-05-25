@@ -1,7 +1,7 @@
 import { useDeleteThemeMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
-import { DeleteConfirmDialog } from '@usertour/ui';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -43,7 +43,7 @@ export const ThemeDeleteDialog = ({
   };
 
   return (
-    <DeleteConfirmDialog
+    <DestructiveConfirmDialog
       title={t('settings.common.deleteConfirm.title', {
         resource: t('settings.themes.deleteResource'),
       })}

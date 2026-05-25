@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client';
 import { deleteLocalization } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { Localization } from '@usertour/types';
-import { DeleteConfirmDialog } from '@usertour/ui';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -49,7 +49,7 @@ export const LocalizationDeleteDialog = ({
   };
 
   return (
-    <DeleteConfirmDialog
+    <DestructiveConfirmDialog
       title={t('settings.common.deleteConfirm.title', {
         resource: t('settings.localizations.deleteResource'),
       })}

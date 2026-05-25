@@ -1,7 +1,7 @@
 import { Event } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteEventMutation } from '@usertour/hooks';
-import { DeleteConfirmDialog } from '@usertour/ui';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -47,7 +47,7 @@ export const EventDeleteDialog = ({
   };
 
   return (
-    <DeleteConfirmDialog
+    <DestructiveConfirmDialog
       title={t('settings.common.deleteConfirm.title', {
         resource: t('settings.events.deleteResource'),
       })}

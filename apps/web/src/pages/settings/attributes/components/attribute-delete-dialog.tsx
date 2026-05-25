@@ -1,7 +1,7 @@
 import { Attribute } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteAttributeMutation } from '@usertour/hooks';
-import { DeleteConfirmDialog } from '@usertour/ui';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -46,7 +46,7 @@ export const AttributeDeleteDialog = ({
   };
 
   return (
-    <DeleteConfirmDialog
+    <DestructiveConfirmDialog
       title={t('settings.common.deleteConfirm.title', {
         resource: t('settings.attributes.deleteResource'),
       })}

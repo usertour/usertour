@@ -294,8 +294,9 @@ const translations = {
         confirmButton: 'Yes, cancel invite',
       },
       remove: {
-        title: 'Confirm',
-        description: 'Confirm removing member, {{email}}?',
+        title: 'Remove member',
+        description:
+          "Remove <strong>{{email}}</strong> from this team? They'll lose access to this project immediately. You can re-invite them later.",
         cancelButton: 'Cancel',
         confirmButton: 'Remove member',
       },

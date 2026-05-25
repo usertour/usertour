@@ -7,7 +7,7 @@ import {
   useDeleteAccessTokenMutation,
   useGetAccessTokenQuery,
 } from '@usertour/hooks';
-import { DeleteConfirmDialog, ResourceRowActions } from '@usertour/ui';
+import { DestructiveConfirmDialog, ResourceRowActions } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { useApiContext } from '@/contexts/api-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -73,7 +73,7 @@ export const ApiRowActions = ({ token, environmentId }: ApiRowActionsProps) => {
           },
         ]}
       />
-      <DeleteConfirmDialog
+      <DestructiveConfirmDialog
         title={t('settings.common.deleteConfirm.title', {
           resource: t('settings.api.deleteResource'),
         })}

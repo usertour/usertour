@@ -276,8 +276,9 @@ const translations = {
         confirmButton: '是的,取消邀请',
       },
       remove: {
-        title: '确认',
-        description: '确认移除成员 {{email}}?',
+        title: '移除成员',
+        description:
+          '将 <strong>{{email}}</strong> 从团队中移除?该成员会立即失去本项目的访问权限,后续可以重新邀请。',
         cancelButton: '取消',
         confirmButton: '移除成员',
       },
