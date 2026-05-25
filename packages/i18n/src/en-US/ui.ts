@@ -1002,17 +1002,15 @@ const translations = {
       empty: 'No questions found',
     },
     delete: {
-      title: 'Confirm',
+      title: 'Delete session',
       description:
-        'This will delete all traces of this session from your account, including in analytics. You should probably only do this for testing reasons.',
-      descriptionConfirm: 'Confirm deleting the session?',
-      confirmButton: 'Yes, delete session',
+        "Delete this session and all its analytics traces? Intended for testing — this can't be undone.",
+      confirmButton: 'Delete session',
     },
     end: {
-      title: 'Confirm',
-      description: 'This will close the content for the user.',
-      descriptionConfirm: 'Confirm ending the session?',
-      confirmButton: 'Yes, end session',
+      title: 'End session',
+      description: 'End this session for the user? The content closes immediately.',
+      confirmButton: 'End session',
     },
     cancel: 'Cancel',
     toast: {

@@ -947,16 +947,14 @@ const translations = {
       empty: '未找到问题',
     },
     delete: {
-      title: '确认',
-      description: '这将从您的账户中删除此会话的所有痕迹，包括分析数据。建议仅在测试时执行此操作。',
-      descriptionConfirm: '确认删除此会话？',
-      confirmButton: '是的，删除会话',
+      title: '删除会话',
+      description: '删除该会话及其分析数据?仅建议用于测试 —— 不可恢复。',
+      confirmButton: '删除会话',
     },
     end: {
-      title: '确认',
-      description: '这将为该用户关闭内容。',
-      descriptionConfirm: '确认结束此会话？',
-      confirmButton: '是的，结束会话',
+      title: '结束会话',
+      description: '立即结束该用户的会话?内容会立即关闭。',
+      confirmButton: '结束会话',
     },
     cancel: '取消',
     toast: {

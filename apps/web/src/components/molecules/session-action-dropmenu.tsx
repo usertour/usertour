@@ -1,14 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogTitle,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogFooter,
-} from '@usertour/alert-dialog';
-import { LoadingButton } from '@usertour/ui';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,51 +24,6 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
 import { getOrderedQuestionAnswers, QuestionWithAnswer } from '@/utils/session';
-
-// Create a custom hook for form handling
-const useSessionForm = (
-  session: BizSession,
-  action: 'delete' | 'end',
-  onSubmit: (success: boolean) => void,
-) => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const { invoke: deleteSession, loading: deleteLoading } = useDeleteSessionMutation();
-  const { invoke: endSession, loading: endLoading } = useEndSessionMutation();
-
-  const handleSubmit = async () => {
-    try {
-      const invoke = action === 'delete' ? deleteSession : endSession;
-      const result = await invoke(session.id);
-
-      if (result) {
-        toast({
-          variant: 'success',
-          title:
-            action === 'delete'
-              ? t('sessionActions.toast.deleteSuccess')
-              : t('sessionActions.toast.endSuccess'),
-        });
-        onSubmit(true);
-        return;
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({
-        variant: 'destructive',
-        title:
-          getErrorMessage(error) ||
-          (action === 'delete'
-            ? t('sessionActions.toast.deleteFailed')
-            : t('sessionActions.toast.endFailed')),
-      });
-    }
-  };
-
-  const loading = action === 'delete' ? deleteLoading : endLoading;
-
-  return { handleSubmit, loading };
-};
 
 // Type definitions for all components
 type SessionFormProps = {
@@ -238,33 +184,59 @@ const DropdownMenuItems = ({
   );
 };
 
-// Form component for session actions (delete/end)
+// Thin wrapper over DestructiveConfirmDialog. Both delete-session and
+// end-session go through the same destructive confirm chrome (icon
+// badge, red button, max-w-xl) — they only differ in mutation hook and
+// i18n key namespace. End-session uses the same destructive styling as
+// delete because both are admin-driven, one-way state changes; whether
+// the user can re-trigger the content later depends on its trigger
+// rules and content type, not on this dialog.
 const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFormProps) => {
   const { t } = useTranslation();
-  const { handleSubmit, loading } = useSessionForm(session, type, onSubmit);
+  const { toast } = useToast();
+  const { invoke: deleteSession, loading: deleteLoading } = useDeleteSessionMutation();
+  const { invoke: endSession, loading: endLoading } = useEndSessionMutation();
+
+  const loading = type === 'delete' ? deleteLoading : endLoading;
+
+  const handleConfirm = async () => {
+    try {
+      const invoke = type === 'delete' ? deleteSession : endSession;
+      const result = await invoke(session.id);
+      if (result) {
+        toast({
+          variant: 'success',
+          title:
+            type === 'delete'
+              ? t('sessionActions.toast.deleteSuccess')
+              : t('sessionActions.toast.endSuccess'),
+        });
+        onSubmit(true);
+      }
+    } catch (error) {
+      onSubmit(false);
+      toast({
+        variant: 'destructive',
+        title:
+          getErrorMessage(error) ||
+          (type === 'delete'
+            ? t('sessionActions.toast.deleteFailed')
+            : t('sessionActions.toast.endFailed')),
+      });
+    }
+  };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t(`sessionActions.${type}.title`)}</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <span className="block">{t(`sessionActions.${type}.description`)}</span>
-            <span className="block">{t(`sessionActions.${type}.descriptionConfirm`)}</span>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('sessionActions.cancel')}</AlertDialogCancel>
-          <LoadingButton
-            variant={type === 'delete' ? 'destructive' : undefined}
-            onClick={handleSubmit}
-            loading={loading}
-          >
-            {t(`sessionActions.${type}.confirmButton`)}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t(`sessionActions.${type}.title`)}
+      description={t(`sessionActions.${type}.description`)}
+      confirmLabel={t(`sessionActions.${type}.confirmButton`)}
+      cancelLabel={t('sessionActions.cancel')}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleConfirm}
+      loading={loading}
+    />
   );
 };
 
