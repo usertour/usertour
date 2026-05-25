@@ -1,9 +1,6 @@
 import { useDeleteLocalizationMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
 import { Localization } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface LocalizationDeleteDialogProps {
@@ -20,32 +17,7 @@ export const LocalizationDeleteDialog = ({
   onSubmit,
 }: LocalizationDeleteDialogProps) => {
   const { invoke: deleteLocalization } = useDeleteLocalizationMutation();
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const { t } = useTranslation();
-
-  const handleDelete = async () => {
-    if (!data) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const success = await deleteLocalization(data.id);
-      if (success) {
-        toast({
-          variant: 'success',
-          title: t('settings.localizations.deleteSuccess'),
-        });
-        onSubmit(true);
-        onOpenChange(false);
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <DestructiveConfirmDialog
@@ -65,8 +37,10 @@ export const LocalizationDeleteDialog = ({
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleDelete}
-      loading={loading}
+      invoke={() => deleteLocalization(data.id)}
+      successToast={t('settings.localizations.deleteSuccess')}
+      failureToast={t('settings.localizations.deleteFailure')}
+      onSettled={onSubmit}
     />
   );
 };

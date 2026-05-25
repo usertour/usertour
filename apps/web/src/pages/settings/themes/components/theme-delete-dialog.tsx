@@ -1,8 +1,6 @@
 import { useDeleteThemeMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
 import { useTranslation } from 'react-i18next';
 
 interface ThemeDeleteDialogProps {
@@ -18,29 +16,8 @@ export const ThemeDeleteDialog = ({
   onOpenChange,
   onSubmit,
 }: ThemeDeleteDialogProps) => {
-  const { invoke: deleteTheme, loading } = useDeleteThemeMutation();
-  const { toast } = useToast();
+  const { invoke: deleteTheme } = useDeleteThemeMutation();
   const { t } = useTranslation();
-
-  const handleDelete = async () => {
-    if (!data) {
-      return;
-    }
-    try {
-      const success = await deleteTheme(data.id);
-      if (success) {
-        toast({
-          variant: 'success',
-          title: t('settings.themes.deleteSuccess'),
-        });
-        onSubmit(true);
-        onOpenChange(false);
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    }
-  };
 
   return (
     <DestructiveConfirmDialog
@@ -54,8 +31,10 @@ export const ThemeDeleteDialog = ({
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleDelete}
-      loading={loading}
+      invoke={() => deleteTheme(data.id)}
+      successToast={t('settings.themes.deleteSuccess')}
+      failureToast={t('settings.themes.deleteFailure')}
+      onSettled={onSubmit}
     />
   );
 };

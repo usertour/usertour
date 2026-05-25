@@ -103,6 +103,7 @@ const translations = {
       deleteMenuItem: 'Delete attribute',
       deleteResource: 'attribute',
       deleteSuccess: 'The attribute has been successfully deleted',
+      deleteFailure: 'Failed to delete attribute.',
       editTitle: 'Edit attribute',
       saveButton: 'Save Attribute',
       updateSuccess: 'The attribute has been successfully updated',
@@ -231,6 +232,7 @@ const translations = {
       setDefaultSuccess: 'The localization has been successfully set as default',
       deleteResource: 'localization',
       deleteSuccess: 'The localization has been successfully deleted',
+      deleteFailure: 'Failed to delete localization.',
       createFailure: 'Failed to create localization.',
       updateFailure: 'Failed to update localization.',
       createTitle: 'Create New Localization',
@@ -264,7 +266,9 @@ const translations = {
       deleteDescription:
         'This action cannot be undone. This will permanently delete the theme and all its variations.',
       deleteSuccess: 'The theme has been successfully deleted',
+      deleteFailure: 'Failed to delete theme.',
       duplicateSuccess: 'The theme has been successfully created',
+      duplicateFailure: 'Failed to duplicate theme.',
       duplicateTitle: 'Create New Theme',
       duplicateNameLabel: 'Theme name',
       duplicateNamePlaceholder: 'Enter theme name',
@@ -317,6 +321,7 @@ const translations = {
           "Cancel the pending invite to <strong>{{email}}</strong>? They won't be able to join unless you re-invite them.",
         cancelButton: 'Cancel',
         confirmButton: 'Cancel invite',
+        failure: 'Failed to cancel invite.',
       },
       remove: {
         title: 'Remove member',
@@ -324,6 +329,7 @@ const translations = {
           "Remove <strong>{{email}}</strong> from this team? They'll lose access to this project immediately. You can re-invite them later.",
         cancelButton: 'Cancel',
         confirmButton: 'Remove member',
+        failure: 'Failed to remove member.',
       },
       transferOwner: {
         title: 'Transfer account ownership',
@@ -331,6 +337,7 @@ const translations = {
           "Make <strong>{{name}}</strong> the new owner? You'll lose your owner privileges and won't be able to undo this.",
         cancelButton: 'Cancel',
         confirmButton: 'Transfer ownership',
+        failure: 'Failed to transfer ownership.',
       },
     },
     billing: {

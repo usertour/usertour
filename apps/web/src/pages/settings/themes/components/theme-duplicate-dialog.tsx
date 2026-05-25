@@ -68,8 +68,15 @@ export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
           variant: 'success',
           title: t('settings.themes.duplicateSuccess'),
         });
+        // onSuccess closes the dialog and triggers the parent's refetch;
+        // both should only fire when the server actually created the
+        // duplicate. Previously this ran unconditionally, so a
+        // soft-failure (success=false) closed the dialog with no toast
+        // and refreshed an unchanged list.
+        onSuccess();
+      } else {
+        showError(t('settings.themes.duplicateFailure'));
       }
-      onSuccess();
     } catch (error) {
       showError(getErrorMessage(error));
     }

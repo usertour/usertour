@@ -3,9 +3,6 @@
 import type { TeamMember } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useRemoveTeamMemberMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberRemoveDialogProps {
@@ -24,28 +21,8 @@ export const MemberRemoveDialog = ({
   data,
   onSubmit,
 }: MemberRemoveDialogProps) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { toast } = useToast();
   const { t } = useTranslation();
-  const { invoke } = useRemoveTeamMemberMutation();
-
-  const handleSubmit = async () => {
-    if (!data.userId) {
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await invoke(projectId, data.userId);
-      if (response) {
-        onSubmit?.(true);
-        onOpenChange(false);
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { invoke: removeTeamMember } = useRemoveTeamMemberMutation();
 
   return (
     <DestructiveConfirmDialog
@@ -61,8 +38,12 @@ export const MemberRemoveDialog = ({
       cancelLabel={t('settings.team.remove.cancelButton')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleSubmit}
-      loading={isLoading}
+      // Success is obvious from the member-list refresh below — no toast.
+      invoke={() =>
+        data.userId ? removeTeamMember(projectId, data.userId) : Promise.resolve(false)
+      }
+      failureToast={t('settings.team.remove.failure')}
+      onSettled={onSubmit}
     />
   );
 };

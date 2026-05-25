@@ -3,9 +3,6 @@
 import { TeamMemberRole, type TeamMember } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberTransferOwnerDialogProps {
@@ -24,28 +21,8 @@ export const MemberTransferOwnerDialog = ({
   data,
   onSubmit,
 }: MemberTransferOwnerDialogProps) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { toast } = useToast();
   const { t } = useTranslation();
-  const { invoke } = useChangeTeamMemberRoleMutation();
-
-  const handleSubmit = async () => {
-    if (!data.userId) {
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await invoke(projectId, data.userId, TeamMemberRole.OWNER);
-      if (response) {
-        onSubmit?.(true);
-        onOpenChange(false);
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { invoke: changeRole } = useChangeTeamMemberRoleMutation();
 
   return (
     <DestructiveConfirmDialog
@@ -61,8 +38,15 @@ export const MemberTransferOwnerDialog = ({
       cancelLabel={t('settings.team.transferOwner.cancelButton')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleSubmit}
-      loading={isLoading}
+      // Success is obvious from the owner badge moving in the list + the
+      // current user losing owner-only menu items — no toast.
+      invoke={() =>
+        data.userId
+          ? changeRole(projectId, data.userId, TeamMemberRole.OWNER)
+          : Promise.resolve(false)
+      }
+      failureToast={t('settings.team.transferOwner.failure')}
+      onSettled={onSubmit}
     />
   );
 };

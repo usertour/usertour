@@ -1,8 +1,6 @@
 import { Event } from '@usertour/types';
-import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteEventMutation } from '@usertour/hooks';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface EventDeleteDialogProps {
@@ -18,33 +16,8 @@ export const EventDeleteDialog = ({
   onOpenChange,
   onSubmit,
 }: EventDeleteDialogProps) => {
-  const { invoke: deleteEvent, loading } = useDeleteEventMutation();
-  const { toast } = useToast();
+  const { invoke: deleteEvent } = useDeleteEventMutation();
   const { t } = useTranslation();
-
-  const handleDelete = async () => {
-    if (!data?.id) {
-      toast({ variant: 'destructive', title: t('settings.events.invalidData') });
-      return;
-    }
-    try {
-      const success = await deleteEvent(data.id);
-      if (success) {
-        toast({
-          variant: 'success',
-          title: t('settings.events.deleteSuccess'),
-        });
-        onSubmit(true);
-        onOpenChange(false);
-        return;
-      }
-      toast({ variant: 'destructive', title: t('settings.events.deleteFailure') });
-      onSubmit(false);
-    } catch (error) {
-      onSubmit(false);
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    }
-  };
 
   return (
     <DestructiveConfirmDialog
@@ -64,8 +37,10 @@ export const EventDeleteDialog = ({
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleDelete}
-      loading={loading}
+      invoke={() => deleteEvent(data.id)}
+      successToast={t('settings.events.deleteSuccess')}
+      failureToast={t('settings.events.deleteFailure')}
+      onSettled={onSubmit}
     />
   );
 };

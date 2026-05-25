@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -8,10 +8,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour/alert-dialog';
+import { getErrorMessage } from '@usertour/helpers';
 import { RiAlertFill } from '@usertour/icons';
+import { useToast } from '@usertour/use-toast';
 import { LoadingButton } from '../loading-button';
 
-export interface DestructiveConfirmDialogProps {
+interface ChromeProps {
   /**
    * Localised dialog title. Use the action-named pattern shared across
    * consumers: 'Delete {{resource}}', 'Remove member', 'Transfer ownership'.
@@ -30,12 +32,8 @@ export interface DestructiveConfirmDialogProps {
   /**
    * Localised confirm-button label. Convention: action verb + object,
    * matching the title's action ('Delete API key', 'Remove member',
-   * 'Transfer ownership', 'End session'). Not a generic 'OK' or
-   * standalone 'Delete' — a destructive button label should stand on
-   * its own for screen readers and for users who scan the button
-   * without re-reading the title. Defaults to 'Confirm' as a non-
-   * translated last-resort fallback; every real consumer passes a
-   * t() string.
+   * 'Transfer ownership', 'End session'). Defaults to 'Confirm' as a
+   * non-translated last-resort fallback.
    */
   confirmLabel?: ReactNode;
   /**
@@ -45,52 +43,73 @@ export interface DestructiveConfirmDialogProps {
   cancelLabel?: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+interface ManagedProps {
+  /**
+   * The mutation to run on confirm. Resolve to `true` on success, `false`
+   * on recognised soft-failure (server returned but did not confirm).
+   * Throwing surfaces the error message via destructive toast. The
+   * primitive owns the loading spinner, the success-on-close, and the
+   * toast triage.
+   *
+   * Mutually exclusive with `onConfirm` — pick one.
+   */
+  invoke: () => Promise<boolean>;
+  /**
+   * Success-toast title (already i18n'd). Omit to stay silent on
+   * success — appropriate when the surrounding list refresh already
+   * communicates the outcome (e.g. the member-* dialogs).
+   */
+  successToast?: string;
+  /**
+   * Destructive-toast title shown when `invoke` resolves `false`.
+   * Required — soft-failure without feedback is what produced the
+   * "spinner stops, dialog stays, nothing happens" UX bug this mode is
+   * here to prevent.
+   */
+  failureToast: string;
+  /**
+   * Called once the action settles, with whether it succeeded. Use for
+   * parent refetch or row state cleanup — fires on both the success and
+   * soft-failure branches and after the throw branch.
+   */
+  onSettled?: (success: boolean) => void;
+  onConfirm?: never;
+  loading?: never;
+}
+
+interface UnmanagedProps {
   /**
    * Runs on confirm-button click. Throw / reject to surface an error
-   * toast at the call site; the primitive does not toast on its own.
+   * toast at the call site; the primitive does not toast on its own in
+   * this mode. Use the managed-mode props (`invoke` + `failureToast`)
+   * instead unless your action shape doesn't fit `Promise<boolean>`.
    */
   onConfirm: () => void | Promise<void>;
   /** Reflected on the confirm button as spinner + disabled. */
   loading?: boolean;
+  invoke?: never;
+  successToast?: never;
+  failureToast?: never;
+  onSettled?: never;
 }
+
+export type DestructiveConfirmDialogProps = ChromeProps & (ManagedProps | UnmanagedProps);
 
 /**
  * The destructive confirmation shell used by every "delete X / remove X /
  * transfer X / end X" flow across the app. Owns chrome (warning badge +
  * row header layout + `max-w-xl` width + `<AlertDialog>` strict dismiss +
- * destructive `LoadingButton`); does not own copy or mutation logic —
- * those flow in via props so the consumer's i18n layer stays the source
- * of truth.
+ * destructive `LoadingButton`).
  *
- * Copy conventions (settled across all current consumers — see ADR 0003):
+ * Two modes:
  *
- * - **Title** is action-named with the object: `'Delete API key'`,
- *   `'Remove member'`, `'End session'`, `'Transfer ownership'`. Never
- *   `'Are you absolutely sure?'` or `'Confirm'` — the question lives in
- *   the description.
- * - **Description** is one sentence: the action question with the
- *   entity name bolded inline (when there's a single entity) plus the
- *   consequence. Bold the name via `<Trans>` + `{ strong: <strong
- *   className="font-bold text-foreground" /> }`, not by writing literal
- *   markup in the i18n string.
- * - **Confirm button** mirrors the title — `'Delete API key'`, not
- *   `'Delete'` alone. This keeps the button informative on its own (for
- *   screen readers and quick scans) and matches the modern SaaS
- *   pattern (Linear, Notion, GitHub, the two competitor screenshots
- *   referenced in ADR 0003).
- * - **Cancel button** is always the plain word — `'Cancel'` / `'取消'`.
- *   Never `'No, do nothing'`, `'Keep X'`, etc. The destructive button
- *   already carries enough emphasis; pairing a styled red button with a
- *   neutral 'Cancel' is the established balance.
- * - **i18n placement**: settings reuses one shared key tree
- *   `settings.common.deleteConfirm.{title, description, confirm}` with
- *   `{{resource}}` interpolation drawn from each section's
- *   `deleteResource` key. Non-settings consumers (sessions, users,
- *   companies, contents) define their own per-section keys because the
- *   description copy is domain-specific (multi-entity counts, segment
- *   re-add hints, content-type interpolation, etc.).
- *
- * Canonical wiring, from `attribute-delete-dialog.tsx`:
+ * **Managed** (preferred) — pass `invoke` + `failureToast` (+ optional
+ * `successToast` / `onSettled`). The primitive runs the mutation, shows
+ * the appropriate toast for each branch (success / soft-failure / throw),
+ * closes itself on success, and threads `loading` through the confirm
+ * button. Use this for any `Promise<boolean>`-returning mutation.
  *
  *     <DestructiveConfirmDialog
  *       title={t('settings.common.deleteConfirm.title', {
@@ -109,9 +128,39 @@ export interface DestructiveConfirmDialogProps {
  *       cancelLabel={t('settings.common.cancel')}
  *       open={open}
  *       onOpenChange={onOpenChange}
- *       onConfirm={handleDelete}
- *       loading={isDeleting}
+ *       invoke={() => deleteAttribute(data.id)}
+ *       successToast={t('settings.attributes.deleteSuccess')}
+ *       failureToast={t('settings.attributes.deleteFailure')}
+ *       onSettled={onSubmit}
  *     />
+ *
+ * **Unmanaged** (legacy) — pass `onConfirm` (+ optional `loading`).
+ * Useful when the action shape doesn't reduce to `Promise<boolean>` (e.g.
+ * `{ success, count }` from a bulk delete, or non-mutation flows like
+ * "navigate after confirm").
+ *
+ * Copy conventions (settled across all current consumers — see ADR 0003):
+ *
+ * - **Title** is action-named with the object: `'Delete API key'`,
+ *   `'Remove member'`, `'End session'`, `'Transfer ownership'`. Never
+ *   `'Are you absolutely sure?'` or `'Confirm'` — the question lives in
+ *   the description.
+ * - **Description** is one sentence: the action question with the
+ *   entity name bolded inline (when there's a single entity) plus the
+ *   consequence. Bold the name via `<Trans>` + `{ strong: <strong
+ *   className="font-bold text-foreground" /> }`, not by writing literal
+ *   markup in the i18n string.
+ * - **Confirm button** mirrors the title — `'Delete API key'`, not
+ *   `'Delete'` alone. This keeps the button informative on its own (for
+ *   screen readers and quick scans) and matches the modern SaaS
+ *   pattern (Linear, Notion, GitHub).
+ * - **Cancel button** is always the plain word — `'Cancel'` / `'取消'`.
+ * - **i18n placement**: settings reuses one shared key tree
+ *   `settings.common.deleteConfirm.{title, description, confirm}` with
+ *   `{{resource}}` interpolation drawn from each section's
+ *   `deleteResource` key. Non-settings consumers (sessions, users,
+ *   companies, contents) define their own per-section keys because the
+ *   description copy is domain-specific.
  *
  * Do not reach for raw `<Dialog>` or `<AlertDialog>` for a destructive
  * confirm. If you find this primitive's shape doesn't fit (multi-step
@@ -120,16 +169,45 @@ export interface DestructiveConfirmDialogProps {
  * `docs/adr/0003-destructive-confirm-primitive.md` for the rules around
  * when divergence is and isn't appropriate.
  */
-export const DestructiveConfirmDialog = ({
-  title,
-  description,
-  confirmLabel,
-  cancelLabel,
-  open,
-  onOpenChange,
-  onConfirm,
-  loading,
-}: DestructiveConfirmDialogProps) => {
+export const DestructiveConfirmDialog = (props: DestructiveConfirmDialogProps) => {
+  const { title, description, confirmLabel, cancelLabel, open, onOpenChange } = props;
+  const { toast } = useToast();
+  const [managedLoading, setManagedLoading] = useState(false);
+
+  // Managed-mode action loop — primitive owns success / failure / throw triage.
+  const runManaged = useCallback(async () => {
+    if (!('invoke' in props) || props.invoke === undefined) {
+      return;
+    }
+    const { invoke, successToast, failureToast, onSettled } = props;
+    setManagedLoading(true);
+    try {
+      const success = await invoke();
+      if (success) {
+        if (successToast !== undefined) {
+          toast({ variant: 'success', title: successToast });
+        }
+        onSettled?.(true);
+        onOpenChange(false);
+      } else {
+        // Soft-failure: the mutation resolved but didn't confirm. Leave
+        // the dialog open so the user gets feedback + can retry instead
+        // of staring at a half-stopped spinner.
+        toast({ variant: 'destructive', title: failureToast });
+        onSettled?.(false);
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+      onSettled?.(false);
+    } finally {
+      setManagedLoading(false);
+    }
+  }, [props, onOpenChange, toast]);
+
+  const isManaged = 'invoke' in props && props.invoke !== undefined;
+  const handleConfirm = isManaged ? runManaged : (props as UnmanagedProps).onConfirm;
+  const effectiveLoading = isManaged ? managedLoading : (props as UnmanagedProps).loading;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       {/* Widen past AlertDialog's default max-w-lg (512px). The icon
@@ -151,8 +229,10 @@ export const DestructiveConfirmDialog = ({
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>{cancelLabel ?? 'Cancel'}</AlertDialogCancel>
-          <LoadingButton variant="destructive" onClick={onConfirm} loading={loading}>
+          <AlertDialogCancel disabled={effectiveLoading}>
+            {cancelLabel ?? 'Cancel'}
+          </AlertDialogCancel>
+          <LoadingButton variant="destructive" onClick={handleConfirm} loading={effectiveLoading}>
             {confirmLabel ?? 'Confirm'}
           </LoadingButton>
         </AlertDialogFooter>

@@ -21,7 +21,12 @@ export const ApiCopyButton = ({ token }: ApiCopyButtonProps) => {
   };
 
   return (
-    <Button variant="ghost" size="icon" onClick={handleCopy}>
+    // Guard against the open-while-loading window in `api-row-actions`:
+    // the parent flips `revealOpen=true` + `shouldFetchToken=true` in the
+    // same frame, so the dialog mounts with `token=''` before the query
+    // returns. Without this guard, a fast user could copy an empty string
+    // and still see the success toast.
+    <Button variant="ghost" size="icon" onClick={handleCopy} disabled={!token}>
       <CopyIcon className="h-4 w-4" />
     </Button>
   );

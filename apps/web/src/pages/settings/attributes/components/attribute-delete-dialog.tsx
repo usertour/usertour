@@ -1,8 +1,6 @@
 import { Attribute } from '@usertour/types';
-import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteAttributeMutation } from '@usertour/hooks';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface AttributeDeleteDialogProps {
@@ -18,32 +16,8 @@ export const AttributeDeleteDialog = ({
   onOpenChange,
   onSubmit,
 }: AttributeDeleteDialogProps) => {
-  const { invoke: deleteAttribute, loading: isDeleting } = useDeleteAttributeMutation();
-  const { toast } = useToast();
+  const { invoke: deleteAttribute } = useDeleteAttributeMutation();
   const { t } = useTranslation();
-
-  const handleDelete = async () => {
-    if (!data) {
-      return;
-    }
-    try {
-      const success = await deleteAttribute(data.id);
-      if (success) {
-        toast({
-          variant: 'success',
-          title: t('settings.attributes.deleteSuccess'),
-        });
-        onSubmit(true);
-        onOpenChange(false);
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-    }
-  };
 
   return (
     <DestructiveConfirmDialog
@@ -63,8 +37,10 @@ export const AttributeDeleteDialog = ({
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleDelete}
-      loading={isDeleting}
+      invoke={() => deleteAttribute(data.id)}
+      successToast={t('settings.attributes.deleteSuccess')}
+      failureToast={t('settings.attributes.deleteFailure')}
+      onSettled={onSubmit}
     />
   );
 };

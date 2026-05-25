@@ -3,9 +3,6 @@
 import type { TeamMember } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useCancelInviteMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberCancelInviteDialogProps {
@@ -24,28 +21,8 @@ export const MemberCancelInviteDialog = ({
   data,
   onSubmit,
 }: MemberCancelInviteDialogProps) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { toast } = useToast();
   const { t } = useTranslation();
-  const { invoke } = useCancelInviteMutation();
-
-  const handleSubmit = async () => {
-    if (!data.inviteId) {
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await invoke(projectId, data.inviteId);
-      if (response) {
-        onSubmit?.(true);
-        onOpenChange(false);
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { invoke: cancelInvite } = useCancelInviteMutation();
 
   return (
     <DestructiveConfirmDialog
@@ -61,8 +38,12 @@ export const MemberCancelInviteDialog = ({
       cancelLabel={t('settings.team.cancelInvite.cancelButton')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleSubmit}
-      loading={isLoading}
+      // Success is obvious from the invite-list refresh below — no toast.
+      invoke={() =>
+        data.inviteId ? cancelInvite(projectId, data.inviteId) : Promise.resolve(false)
+      }
+      failureToast={t('settings.team.cancelInvite.failure')}
+      onSettled={onSubmit}
     />
   );
 };

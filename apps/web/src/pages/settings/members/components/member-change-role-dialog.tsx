@@ -52,7 +52,11 @@ export const MemberChangeRoleDialog = ({
     defaultValues: { role: data.role },
     submit: async ({ role }) => {
       if (!data.userId) {
-        return;
+        // A bare `return` here would land in useSettingsForm's success
+        // path — success toast + form reset, dialog stays open. Treat
+        // it as an outright failure instead so the user sees what's
+        // happening.
+        throw new Error(t('settings.team.changeRole.failure'));
       }
       const success = await invoke(projectId, data.userId, role);
       if (!success) {
