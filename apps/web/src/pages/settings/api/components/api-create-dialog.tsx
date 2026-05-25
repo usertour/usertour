@@ -1,11 +1,11 @@
-import { useMutation } from '@apollo/client';
 import { Button } from '@usertour/button';
 import { Input } from '@usertour/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@usertour/use-toast';
-import { CreateAccessToken } from '@usertour/gql';
+import { useCreateAccessTokenMutation } from '@usertour/hooks';
+import { getErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiKeyDialog } from './api-key-dialog';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,12 +27,6 @@ interface ApiCreateDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Called only after a successful create — consumers refetch here. */
   onSubmit?: (success: boolean) => void;
-}
-
-interface CreateTokenResponse {
-  createAccessToken: {
-    accessToken: string;
-  };
 }
 
 const formSchema = z.object({
@@ -57,42 +51,30 @@ export const ApiCreateDialog = ({ open, onOpenChange, onSubmit }: ApiCreateDialo
     mode: 'onChange',
   });
 
-  const [createToken, { loading: creating }] = useMutation<CreateTokenResponse>(CreateAccessToken, {
-    onCompleted: (data) => {
-      setNewToken(data.createAccessToken.accessToken);
-      form.reset();
-      onSubmit?.(true);
-      onOpenChange(false);
-      toast({
-        variant: 'success',
-        title: 'API key created successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: error.message || 'Failed to create API key',
-        variant: 'destructive',
-      });
-    },
-  });
+  const { invoke: createAccessToken, loading: creating } = useCreateAccessTokenMutation();
 
   const handleSubmit = async (values: FormValues) => {
     if (!environment) {
       toast({
-        title: 'Environment not found',
+        title: t('settings.api.environmentMissing'),
         variant: 'destructive',
       });
       return;
     }
-
-    createToken({
-      variables: {
-        environmentId: environment.id,
-        input: {
-          name: values.name.trim(),
-        },
-      },
-    });
+    try {
+      const accessToken = await createAccessToken(environment.id, values.name.trim());
+      if (!accessToken) {
+        toast({ title: t('settings.api.createFailure'), variant: 'destructive' });
+        return;
+      }
+      setNewToken(accessToken);
+      form.reset();
+      onSubmit?.(true);
+      onOpenChange(false);
+      toast({ variant: 'success', title: t('settings.api.createSuccess') });
+    } catch (error) {
+      toast({ title: getErrorMessage(error), variant: 'destructive' });
+    }
   };
 
   return (

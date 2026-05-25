@@ -1,4 +1,3 @@
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { StarFilledIcon } from '@radix-ui/react-icons';
 import {
@@ -8,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour/dropdown-menu';
-import { setDefaultTheme } from '@usertour/gql';
+import { useSetDefaultThemeMutation } from '@usertour/hooks';
 import { CopyIcon, Delete2Icon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
@@ -25,7 +24,7 @@ type ThemeEditDropdownMenuProps = {
 };
 export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
   const { theme, children, onSubmit, disabled = false } = props;
-  const [setDefaultThemeMutation] = useMutation(setDefaultTheme);
+  const { invoke: setDefaultTheme } = useSetDefaultThemeMutation();
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
   const { toast } = useToast();
@@ -45,11 +44,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
 
   const handleSetAsDefault = async () => {
     try {
-      await setDefaultThemeMutation({
-        variables: {
-          themeId: theme.id,
-        },
-      });
+      await setDefaultTheme(theme.id);
       onSubmit('setAsDefault');
       toast({
         variant: 'success',

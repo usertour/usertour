@@ -1,5 +1,4 @@
-import { useMutation } from '@apollo/client';
-import { deleteLocalization } from '@usertour/gql';
+import { useDeleteLocalizationMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { Localization } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
@@ -20,7 +19,7 @@ export const LocalizationDeleteDialog = ({
   onOpenChange,
   onSubmit,
 }: LocalizationDeleteDialogProps) => {
-  const [deleteMutation] = useMutation(deleteLocalization);
+  const { invoke: deleteLocalization } = useDeleteLocalizationMutation();
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -31,8 +30,8 @@ export const LocalizationDeleteDialog = ({
     }
     setLoading(true);
     try {
-      const result = await deleteMutation({ variables: { id: data.id } });
-      if (result.data?.deleteLocalization?.id) {
+      const success = await deleteLocalization(data.id);
+      if (success) {
         toast({
           variant: 'success',
           title: t('settings.localizations.deleteSuccess'),

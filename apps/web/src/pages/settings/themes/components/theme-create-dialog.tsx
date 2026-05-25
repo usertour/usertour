@@ -1,12 +1,11 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { Checkbox } from '@usertour/checkbox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { createTheme } from '@usertour/gql';
+import { useCreateThemeMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { defaultSettings } from '@usertour/types';
@@ -34,7 +33,7 @@ const defaultValues: FormValues = {
 export const ThemeCreateDialog = ({ open, onOpenChange, onSubmit }: ThemeCreateDialogProps) => {
   const { t } = useTranslation();
   const { project } = useAppContext();
-  const [createMutation] = useMutation(createTheme);
+  const { invoke: createTheme } = useCreateThemeMutation();
 
   const state = useSettingsForm<FormValues>({
     schema,
@@ -43,10 +42,12 @@ export const ThemeCreateDialog = ({ open, onOpenChange, onSubmit }: ThemeCreateD
       if (!project?.id) {
         throw new Error(t('themes.createForm.toast.projectMissing'));
       }
-      const result = await createMutation({
-        variables: { ...values, projectId: project.id, settings: defaultSettings },
+      const success = await createTheme({
+        ...values,
+        projectId: project.id,
+        settings: defaultSettings,
       });
-      if (!result.data?.createTheme?.id) {
+      if (!success) {
         throw new Error(t('themes.createForm.toast.createFailed'));
       }
       onSubmit?.(true);

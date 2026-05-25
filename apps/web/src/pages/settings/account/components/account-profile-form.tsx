@@ -1,10 +1,9 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { updateUser } from '@usertour/gql';
+import { useUpdateUserMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { Separator } from '@usertour/separator';
 import { Skeleton } from '@usertour/skeleton';
@@ -37,14 +36,14 @@ const AccountProfileFormSkeleton = () => (
 
 export const AccountProfileForm = () => {
   const { userInfo, refetch, loading } = useAppContext();
-  const [updateMutation] = useMutation(updateUser);
+  const { invoke: updateUser } = useUpdateUserMutation();
   const { t } = useTranslation();
 
   const state = useSettingsForm<ProfileFormValues>({
     schema: profileSchema,
     defaultValues: { name: userInfo?.name ?? '' },
     submit: async ({ name }) => {
-      await updateMutation({ variables: { name, avatarUrl: '' } });
+      await updateUser(name);
       await refetch();
     },
     successMessage: t('settings.account.profile.successToast'),

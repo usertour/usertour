@@ -1,10 +1,9 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { updateProjectName } from '@usertour/gql';
+import { useUpdateProjectNameMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { Separator } from '@usertour/separator';
 import { Skeleton } from '@usertour/skeleton';
@@ -35,7 +34,7 @@ const ProjectNameFormSkeleton = () => (
 
 export const ProjectNameForm = () => {
   const { project, refetch, loading } = useAppContext();
-  const [updateMutation] = useMutation(updateProjectName);
+  const { invoke: updateProjectName } = useUpdateProjectNameMutation();
   const { t } = useTranslation();
 
   const state = useSettingsForm<ProjectNameValues>({
@@ -45,7 +44,7 @@ export const ProjectNameForm = () => {
       if (!project?.id) {
         return;
       }
-      await updateMutation({ variables: { projectId: project.id, name } });
+      await updateProjectName(project.id, name);
       await refetch();
     },
     successMessage: t('settings.project.successToast'),

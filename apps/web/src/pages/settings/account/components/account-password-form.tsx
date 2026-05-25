@@ -1,10 +1,9 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { changePassword } from '@usertour/gql';
+import { useChangePasswordMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
@@ -20,7 +19,7 @@ interface PasswordFormValues {
 }
 
 export const AccountPasswordForm = () => {
-  const [updateMutation] = useMutation(changePassword);
+  const { invoke: changePassword } = useChangePasswordMutation();
   const { t } = useTranslation();
 
   const passwordSchema = useMemo(
@@ -47,7 +46,7 @@ export const AccountPasswordForm = () => {
     schema: passwordSchema,
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
     submit: async ({ newPassword, currentPassword }) => {
-      await updateMutation({ variables: { newPassword, oldPassword: currentPassword } });
+      await changePassword(currentPassword, newPassword);
     },
     successMessage: t('settings.account.password.successToast'),
     // Opt out of the default re-baseline-to-submitted-values behavior:

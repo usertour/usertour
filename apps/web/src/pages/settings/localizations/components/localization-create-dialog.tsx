@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { createLocalization } from '@usertour/gql';
+import { useCreateLocalizationMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { QuestionTooltip } from '@usertour/tooltip';
@@ -31,7 +30,7 @@ export const LocalizationCreateDialog = ({
   onOpenChange,
   onSubmit,
 }: LocalizationCreateDialogProps) => {
-  const [createMutation] = useMutation(createLocalization);
+  const { invoke: createLocalization } = useCreateLocalizationMutation();
   const { project } = useAppContext();
   const { t } = useTranslation();
 
@@ -39,11 +38,9 @@ export const LocalizationCreateDialog = ({
     schema,
     defaultValues: { locale: '', name: '', code: '' },
     submit: async (values) => {
-      const result = await createMutation({
-        variables: { data: { ...values, projectId: project?.id } },
-      });
-      if (!result.data?.createLocalization?.id) {
-        throw new Error('Create Localization failed.');
+      const success = await createLocalization({ ...values, projectId: project?.id ?? '' });
+      if (!success) {
+        throw new Error(t('settings.localizations.createFailure'));
       }
       onSubmit?.(true);
       onOpenChange(false);

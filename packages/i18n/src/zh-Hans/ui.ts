@@ -209,6 +209,8 @@ const translations = {
       setDefaultSuccess: '已设为默认本地化',
       deleteResource: '本地化',
       deleteSuccess: '本地化已删除',
+      createFailure: '创建本地化失败。',
+      updateFailure: '更新本地化失败。',
       createTitle: '新建本地化',
       editTitle: '编辑本地化',
       saveButton: '保存本地化',
@@ -451,6 +453,9 @@ const translations = {
       createNamePlaceholder: '请输入密钥名称',
       createButton: '创建',
       creating: '创建中…',
+      createSuccess: 'API 密钥已创建',
+      createFailure: '创建 API 密钥失败。',
+      environmentMissing: '未找到环境。',
       headerBody:
         '使用 API 密钥认证你的后端服务调用 Usertour 的 REST API,可用于更新用户属性、上报事件。',
       headerEnvironmentNote:

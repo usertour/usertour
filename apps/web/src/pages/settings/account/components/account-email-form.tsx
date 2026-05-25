@@ -1,11 +1,10 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { updateEmail } from '@usertour/gql';
+import { useUpdateEmailMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { Separator } from '@usertour/separator';
 import { Skeleton } from '@usertour/skeleton';
@@ -43,7 +42,7 @@ const AccountEmailFormSkeleton = () => (
 
 export const AccountEmailForm = () => {
   const { userInfo, refetch, loading } = useAppContext();
-  const [updateMutation] = useMutation(updateEmail);
+  const { invoke: updateEmail } = useUpdateEmailMutation();
   const { t } = useTranslation();
 
   // After a successful email change we want the password field empty
@@ -56,8 +55,8 @@ export const AccountEmailForm = () => {
     schema: emailSchema,
     defaultValues: { email: userInfo?.email ?? '', password: '' },
     submit: async ({ email, password }) => {
-      const result = await updateMutation({ variables: { email, password } });
-      if (result.data?.changeEmail?.id) {
+      const success = await updateEmail(email, password);
+      if (success) {
         await refetch();
       }
     },

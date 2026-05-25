@@ -1,10 +1,8 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { getApolloClient } from '@/apollo';
 import { Button } from '@usertour/button';
 import {
   FormControl,
@@ -14,11 +12,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour/form';
-import { createEvent, listAttributes } from '@usertour/gql';
+import { useCreateEventMutation, useListAttributesQuery } from '@usertour/hooks';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { QuestionTooltip } from '@usertour/tooltip';
-import { type Attribute } from '@usertour/types';
+import { AttributeBizTypes, type Attribute } from '@usertour/types';
 import { SelectPopover, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { z } from 'zod';
@@ -58,8 +56,7 @@ export const EventCreateDialog = ({
   onSubmit,
   onCreated,
 }: EventCreateDialogProps) => {
-  const [createMutation] = useMutation(createEvent);
-  const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
+  const { invoke: createEvent } = useCreateEventMutation();
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedAttributeValue, setSelectedAttributeValue] = useState('');
@@ -67,33 +64,29 @@ export const EventCreateDialog = ({
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const getEventAttrs = useCallback(async () => {
-    const client = await getApolloClient();
-    const { data } = await client.query({
-      query: listAttributes,
-      variables: { projectId: project?.id, bizType: 4 },
-    });
-    setEventAttrs((data?.listAttributes ?? []) as Attribute[]);
-  }, [project?.id]);
+  // Only fetch when the dialog is open — closing the dialog should not
+  // keep a live subscription against the attributes query.
+  const { attributes } = useListAttributesQuery(project?.id ?? '', AttributeBizTypes.Event, {
+    skip: !open || !project?.id,
+  });
+  const eventAttrs = useMemo(() => attributes ?? [], [attributes]);
 
   const state = useSettingsForm<FormValues>({
     schema,
     defaultValues,
     submit: async (values) => {
-      const attributeIds = eventsOnAttributes.map((attr) => attr.id);
-      const result = await createMutation({
-        variables: {
-          data: { ...values, projectId: project?.id, attributeIds },
-        },
+      const id = await createEvent({
+        ...values,
+        projectId: project?.id ?? '',
+        attributeIds: eventsOnAttributes.map((attr) => attr.id),
       });
-      const created = result.data?.createEvent;
-      if (!created?.id) {
+      if (!id) {
         throw new Error(t('settings.events.createFailure'));
       }
       onCreated?.({
-        id: created.id,
-        displayName: created.displayName,
-        codeName: created.codeName,
+        id,
+        displayName: values.displayName,
+        codeName: values.codeName,
       });
       onSubmit?.(true);
       onOpenChange(false);
@@ -101,15 +94,12 @@ export const EventCreateDialog = ({
     successMessage: t('settings.events.createSuccess'),
   });
 
-  // Only refetch attributes when the dialog actually opens — closing
-  // should not re-trigger the query (regression seen pre-refactor).
   useEffect(() => {
     if (open) {
       state.form.reset(defaultValues);
       setEventsOnAttributes([]);
       setSelectMode(false);
       setSelectedAttributeValue('');
-      getEventAttrs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);

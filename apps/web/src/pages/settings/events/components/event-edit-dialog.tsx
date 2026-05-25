@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useQuery } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { ListSkeletonCount } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
@@ -14,8 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour/form';
-import { listAttributeOnEvents } from '@usertour/gql';
-import { useUpdateEventMutation } from '@usertour/hooks';
+import { useListAttributeOnEventsQuery, useUpdateEventMutation } from '@usertour/hooks';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { QuestionTooltip } from '@usertour/tooltip';
@@ -58,22 +56,18 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
 
   // Apollo handles caching per-eventId, so the initial query covers the
   // first open. Subsequent re-opens of the same row should not re-hit
-  // the network — `useQuery` returns the cached data and reflects any
-  // server changes via subscription/refetchQueries elsewhere.
-  const { data: attributeOnEventsData, loading: loadingEventAttrs } = useQuery(
-    listAttributeOnEvents,
-    { variables: { eventId: event.id } },
-  );
+  // the network — `useListAttributeOnEventsQuery` returns the cached
+  // data and reflects any server changes via refetchQueries elsewhere.
+  const { attributeOnEvents, loading: loadingEventAttrs } = useListAttributeOnEventsQuery(event.id);
 
   useEffect(() => {
-    const rows = attributeOnEventsData?.listAttributeOnEvents;
-    if (!rows || !attributeList) {
+    if (!attributeOnEvents || !attributeList) {
       return;
     }
-    const currentIds = new Set(rows.map((row: { attributeId: string }) => row.attributeId));
+    const currentIds = new Set(attributeOnEvents.map((row) => row.attributeId));
     setEventAttrs(attributeList.filter((attr) => attr.bizType === 4));
     setEventsOnAttributes(attributeList.filter((attr) => currentIds.has(attr.id)));
-  }, [attributeOnEventsData, attributeList]);
+  }, [attributeOnEvents, attributeList]);
 
   const state = useSettingsForm<FormValues>({
     schema,

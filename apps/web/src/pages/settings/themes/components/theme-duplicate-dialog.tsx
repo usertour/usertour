@@ -1,7 +1,6 @@
 'use client';
 
 import { SpinnerIcon } from '@usertour/icons';
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
@@ -14,7 +13,7 @@ import {
   DialogTitle,
 } from '@usertour/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { copyTheme } from '@usertour/gql';
+import { useCopyThemeMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
@@ -39,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
   const { onSuccess, duplicateTheme, open, onOpenChange } = props;
-  const [copyMutation] = useMutation(copyTheme);
+  const { invoke: copyTheme } = useCopyThemeMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -63,12 +62,8 @@ export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
     try {
-      const variables = {
-        id: duplicateTheme.id,
-        name: formValues.name,
-      };
-      const response = await copyMutation({ variables });
-      if (response.data.copyTheme.id) {
+      const success = await copyTheme(duplicateTheme.id, formValues.name);
+      if (success) {
         toast({
           variant: 'success',
           title: t('settings.themes.duplicateSuccess'),

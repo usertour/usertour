@@ -229,6 +229,8 @@ const translations = {
       setDefaultSuccess: 'The localization has been successfully set as default',
       deleteResource: 'localization',
       deleteSuccess: 'The localization has been successfully deleted',
+      createFailure: 'Failed to create localization.',
+      updateFailure: 'Failed to update localization.',
       createTitle: 'Create New Localization',
       editTitle: 'Edit localization',
       saveButton: 'Save Localization',
@@ -474,6 +476,9 @@ const translations = {
       createNamePlaceholder: 'Enter key name',
       createButton: 'Create',
       creating: 'Creating...',
+      createSuccess: 'API key created successfully',
+      createFailure: 'Failed to create API key.',
+      environmentMissing: 'Environment not found.',
       headerBody:
         "The API key is used to authenticate your backend application via Usertour's REST API, which can be used to update user properties and track events.",
       headerEnvironmentNote:

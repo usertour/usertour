@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { updateLocalization } from '@usertour/gql';
+import { useUpdateLocalizationMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
 import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { QuestionTooltip } from '@usertour/tooltip';
@@ -39,18 +38,16 @@ export const LocalizationEditDialog = ({
   onOpenChange,
   onSubmit,
 }: LocalizationEditDialogProps) => {
-  const [updateMutation] = useMutation(updateLocalization);
+  const { invoke: updateLocalization } = useUpdateLocalizationMutation();
   const { t } = useTranslation();
 
   const state = useSettingsForm<FormValues>({
     schema,
     defaultValues: toFormValues(localization),
     submit: async (values) => {
-      const result = await updateMutation({
-        variables: { data: { id: localization.id, ...values } },
-      });
-      if (!result.data?.updateLocalization?.id) {
-        throw new Error('Update localization failed.');
+      const success = await updateLocalization({ id: localization.id, ...values });
+      if (!success) {
+        throw new Error(t('settings.localizations.updateFailure'));
       }
       onSubmit?.(true);
       onOpenChange(false);
