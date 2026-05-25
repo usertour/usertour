@@ -5,7 +5,7 @@ import { Attribute } from '@usertour/types';
 import { Badge } from '@usertour/badge';
 import { RiShieldCheckFill } from '@usertour/icons';
 import { ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
-import { AttributeListAction } from './attribute-list-action';
+import { AttributeRowActions } from './attribute-row-actions';
 
 interface AttributeListContentProps {
   bizType: number;
@@ -75,7 +75,7 @@ export const AttributeListContent = ({ bizType }: AttributeListContentProps) => 
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (attribute) => <AttributeListAction attribute={attribute} />,
+      cell: (attribute) => <AttributeRowActions attribute={attribute} />,
     },
   ];
 

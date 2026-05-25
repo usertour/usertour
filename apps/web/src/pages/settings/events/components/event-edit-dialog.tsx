@@ -24,7 +24,7 @@ import { SelectPopover, SettingsDialogForm, useSettingsForm } from '@usertour/ui
 import { useToast } from '@usertour/use-toast';
 import { z } from 'zod';
 
-interface EventEditFormProps {
+interface EventEditDialogProps {
   isOpen: boolean;
   event: Event;
   onClose: () => void;
@@ -44,7 +44,7 @@ const toFormValues = (event: Event): FormValues => ({
   description: event.description ?? '',
 });
 
-export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) => {
+export const EventEditDialog = ({ event, isOpen, onClose }: EventEditDialogProps) => {
   const { invoke: updateEvent } = useUpdateEventMutation();
   const { t } = useTranslation();
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
@@ -270,4 +270,4 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
   );
 };
 
-EventEditForm.displayName = 'EventEditForm';
+EventEditDialog.displayName = 'EventEditDialog';

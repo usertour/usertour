@@ -11,11 +11,11 @@ import { MemberChangeRoleDialog } from './member-change-role-dialog';
 import { MemberRemoveDialog } from './member-remove-dialog';
 import { TransferOwnerDialog } from './member-transfer-owner-dialog';
 
-interface MemberListActionProps {
+interface MemberRowActionsProps {
   data: TeamMember;
 }
 
-export const MemberListAction = ({ data }: MemberListActionProps) => {
+export const MemberRowActions = ({ data }: MemberRowActionsProps) => {
   const { project } = useAppContext();
   const { refetch } = useMemberContext();
   const { t } = useTranslation();
@@ -110,4 +110,4 @@ export const MemberListAction = ({ data }: MemberListActionProps) => {
   );
 };
 
-MemberListAction.displayName = 'MemberListAction';
+MemberRowActions.displayName = 'MemberRowActions';

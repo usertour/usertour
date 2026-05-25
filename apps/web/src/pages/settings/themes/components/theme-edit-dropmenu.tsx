@@ -14,8 +14,8 @@ import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
 import { ReactNode, useState } from 'react';
-import { ThemeDeleteForm } from './theme-delete-form';
-import { ThemeDuplicateForm } from './theme-duplicate-form';
+import { ThemeDeleteDialog } from './theme-delete-dialog';
+import { ThemeDuplicateDialog } from './theme-duplicate-dialog';
 
 type ThemeEditDropdownMenuProps = {
   theme: Theme;
@@ -90,13 +90,13 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ThemeDuplicateForm
+      <ThemeDuplicateDialog
         duplicateTheme={theme}
         open={openDuplicate}
         onOpenChange={setOpenDuplicate}
         onSuccess={handleDuplicateSuccess}
       />
-      <ThemeDeleteForm
+      <ThemeDeleteDialog
         data={theme}
         open={openDelete}
         onOpenChange={setOpenDelete}

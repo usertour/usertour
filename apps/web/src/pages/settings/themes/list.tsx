@@ -7,7 +7,7 @@ import { Button } from '@usertour/button';
 import { RiAddLine } from '@usertour/icons';
 import { SettingsPage } from '@usertour/ui';
 import type { Theme } from '@usertour/types';
-import { ThemeCreateForm } from './components/theme-create-form';
+import { ThemeCreateDialog } from './components/theme-create-dialog';
 import { ThemeCardPreview } from './components/theme-card-preview';
 
 const NewThemeButton = ({ onSuccess }: { onSuccess: () => void }) => {
@@ -21,7 +21,7 @@ const NewThemeButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('themes.listHeader.newTheme')}
       </Button>
-      <ThemeCreateForm
+      <ThemeCreateDialog
         isOpen={open}
         onDialogClose={() => setOpen(false)}
         onClose={() => {

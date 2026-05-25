@@ -7,19 +7,19 @@ import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface LocalizationDeleteFormProps {
+interface LocalizationDeleteDialogProps {
   data: Localization;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
 }
 
-export const LocalizationDeleteForm = ({
+export const LocalizationDeleteDialog = ({
   data,
   open,
   onOpenChange,
   onSubmit,
-}: LocalizationDeleteFormProps) => {
+}: LocalizationDeleteDialogProps) => {
   const [deleteMutation] = useMutation(deleteLocalization);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -61,4 +61,4 @@ export const LocalizationDeleteForm = ({
   );
 };
 
-LocalizationDeleteForm.displayName = 'LocalizationDeleteForm';
+LocalizationDeleteDialog.displayName = 'LocalizationDeleteDialog';

@@ -9,18 +9,18 @@ import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { Environment } from '@usertour/types';
 import { ResourceRowActions } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import { EnvironmentDeleteForm } from './environment-delete-form';
-import { EnvironmentEditForm } from './environment-edit-form';
+import { EnvironmentDeleteDialog } from './environment-delete-dialog';
+import { EnvironmentEditDialog } from './environment-edit-dialog';
 
-interface EnvironmentListActionProps {
+interface EnvironmentRowActionsProps {
   environment: Environment;
   environmentCount?: number;
 }
 
-export const EnvironmentListAction = ({
+export const EnvironmentRowActions = ({
   environment,
   environmentCount = 0,
-}: EnvironmentListActionProps) => {
+}: EnvironmentRowActionsProps) => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useEnvironmentListContext();
@@ -88,7 +88,7 @@ export const EnvironmentListAction = ({
           },
         ]}
       />
-      <EnvironmentEditForm
+      <EnvironmentEditDialog
         environment={environment}
         isOpen={editOpen}
         onClose={() => {
@@ -96,7 +96,7 @@ export const EnvironmentListAction = ({
           refetch();
         }}
       />
-      <EnvironmentDeleteForm
+      <EnvironmentDeleteDialog
         data={environment}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -109,4 +109,4 @@ export const EnvironmentListAction = ({
   );
 };
 
-EnvironmentListAction.displayName = 'EnvironmentListAction';
+EnvironmentRowActions.displayName = 'EnvironmentRowActions';

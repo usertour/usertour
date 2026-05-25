@@ -5,14 +5,19 @@ import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { useTranslation } from 'react-i18next';
 
-interface ThemeDeleteFormProps {
+interface ThemeDeleteDialogProps {
   data: Theme;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
 }
 
-export const ThemeDeleteForm = ({ data, open, onOpenChange, onSubmit }: ThemeDeleteFormProps) => {
+export const ThemeDeleteDialog = ({
+  data,
+  open,
+  onOpenChange,
+  onSubmit,
+}: ThemeDeleteDialogProps) => {
   const { invoke: deleteTheme, loading } = useDeleteThemeMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -49,4 +54,4 @@ export const ThemeDeleteForm = ({ data, open, onOpenChange, onSubmit }: ThemeDel
   );
 };
 
-ThemeDeleteForm.displayName = 'ThemeDeleteForm';
+ThemeDeleteDialog.displayName = 'ThemeDeleteDialog';

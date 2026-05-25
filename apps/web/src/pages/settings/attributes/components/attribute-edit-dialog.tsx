@@ -19,7 +19,7 @@ import { type Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
-interface AttributeEditFormProps {
+interface AttributeEditDialogProps {
   isOpen: boolean;
   attribute: Attribute;
   onClose: () => void;
@@ -99,7 +99,7 @@ const toFormValues = (attribute: Attribute): FormValues => ({
   description: attribute.description ?? '',
 });
 
-export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditFormProps) => {
+export const AttributeEditDialog = ({ attribute, isOpen, onClose }: AttributeEditDialogProps) => {
   const { invoke: updateAttribute } = useUpdateAttributeMutation();
   const { t } = useTranslation();
 
@@ -295,4 +295,4 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
   );
 };
 
-AttributeEditForm.displayName = 'AttributeEditForm';
+AttributeEditDialog.displayName = 'AttributeEditDialog';

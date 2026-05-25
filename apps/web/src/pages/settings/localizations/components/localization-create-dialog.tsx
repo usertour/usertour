@@ -11,7 +11,7 @@ import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } fr
 import { QuestionTooltip } from '@usertour/tooltip';
 import { z } from 'zod';
 
-interface LocalizationCreateFormProps {
+interface LocalizationCreateDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -24,7 +24,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const LocalizationCreateForm = ({ isOpen, onClose }: LocalizationCreateFormProps) => {
+export const LocalizationCreateDialog = ({ isOpen, onClose }: LocalizationCreateDialogProps) => {
   const [createMutation] = useMutation(createLocalization);
   const { project } = useAppContext();
   const { t } = useTranslation();
@@ -123,4 +123,4 @@ export const LocalizationCreateForm = ({ isOpen, onClose }: LocalizationCreateFo
   );
 };
 
-LocalizationCreateForm.displayName = 'LocalizationCreateForm';
+LocalizationCreateDialog.displayName = 'LocalizationCreateDialog';

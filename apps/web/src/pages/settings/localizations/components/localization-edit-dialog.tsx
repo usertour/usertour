@@ -11,7 +11,7 @@ import { QuestionTooltip } from '@usertour/tooltip';
 import { Localization } from '@usertour/types';
 import { z } from 'zod';
 
-interface LocalizationEditFormProps {
+interface LocalizationEditDialogProps {
   isOpen: boolean;
   localization: Localization;
   onClose: () => void;
@@ -31,11 +31,11 @@ const toFormValues = (localization: Localization): FormValues => ({
   code: localization.code,
 });
 
-export const LocalizationEditForm = ({
+export const LocalizationEditDialog = ({
   isOpen,
   localization,
   onClose,
-}: LocalizationEditFormProps) => {
+}: LocalizationEditDialogProps) => {
   const [updateMutation] = useMutation(updateLocalization);
   const { t } = useTranslation();
 
@@ -135,4 +135,4 @@ export const LocalizationEditForm = ({
   );
 };
 
-LocalizationEditForm.displayName = 'LocalizationEditForm';
+LocalizationEditDialog.displayName = 'LocalizationEditDialog';

@@ -9,7 +9,7 @@ import { Environment } from '@usertour/types';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
-interface EnvironmentEditFormProps {
+interface EnvironmentEditDialogProps {
   isOpen: boolean;
   environment: Environment;
   onClose: () => void;
@@ -21,7 +21,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const EnvironmentEditForm = ({ environment, isOpen, onClose }: EnvironmentEditFormProps) => {
+export const EnvironmentEditDialog = ({
+  environment,
+  isOpen,
+  onClose,
+}: EnvironmentEditDialogProps) => {
   const { invoke: updateEnvironment } = useUpdateEnvironmentMutation();
   const { t } = useTranslation();
 
@@ -71,4 +75,4 @@ export const EnvironmentEditForm = ({ environment, isOpen, onClose }: Environmen
   );
 };
 
-EnvironmentEditForm.displayName = 'EnvironmentEditForm';
+EnvironmentEditDialog.displayName = 'EnvironmentEditDialog';

@@ -9,7 +9,7 @@ import { RiAddLine } from '@usertour/icons';
 import type { TeamMember } from '@usertour/types';
 import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { MemberInviteDialog } from './components/member-invite-dialog';
-import { MemberListAction } from './components/member-list-action';
+import { MemberRowActions } from './components/member-row-actions';
 
 const AddTeamMemberButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
@@ -62,7 +62,7 @@ const MemberListPage = () => {
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (member) => <MemberListAction data={member} />,
+      cell: (member) => <MemberRowActions data={member} />,
     },
   ];
 

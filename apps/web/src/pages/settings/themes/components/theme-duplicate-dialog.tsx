@@ -24,7 +24,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-interface ThemeDuplicateFormProps {
+interface ThemeDuplicateDialogProps {
   duplicateTheme: Theme;
   onSuccess: () => void;
   open: boolean;
@@ -37,7 +37,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
+export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
   const { onSuccess, duplicateTheme, open, onOpenChange } = props;
   const [copyMutation] = useMutation(copyTheme);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -129,4 +129,4 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
   );
 };
 
-ThemeDuplicateForm.displayName = 'ThemeDuplicateForm';
+ThemeDuplicateDialog.displayName = 'ThemeDuplicateDialog';

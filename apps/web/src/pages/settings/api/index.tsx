@@ -8,8 +8,8 @@ import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiProvider, useApiContext } from '@/contexts/api-context';
 import type { AccessToken } from '@usertour/hooks';
-import { ApiCreateForm } from './components/api-create-form';
-import { ApiListAction } from './components/api-list-action';
+import { ApiCreateDialog } from './components/api-create-dialog';
+import { ApiRowActions } from './components/api-row-actions';
 
 const NewApiKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ const NewApiKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.api.newButton')}
       </Button>
-      <ApiCreateForm
+      <ApiCreateDialog
         visible={open}
         onClose={() => {
           setOpen(false);
@@ -53,7 +53,7 @@ const ApiListPage = () => {
       header: '',
       headerClassName: 'w-20',
       cell: (token) =>
-        environment ? <ApiListAction token={token} environmentId={environment.id} /> : null,
+        environment ? <ApiRowActions token={token} environmentId={environment.id} /> : null,
     },
   ];
 

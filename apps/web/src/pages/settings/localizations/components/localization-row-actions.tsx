@@ -8,14 +8,14 @@ import { useSetDefaultLocalizationMutation } from '@usertour/hooks';
 import { Localization } from '@usertour/types';
 import { ResourceRowActions } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import { LocalizationDeleteForm } from './localization-delete-form';
-import { LocalizationEditForm } from './localization-edit-form';
+import { LocalizationDeleteDialog } from './localization-delete-dialog';
+import { LocalizationEditDialog } from './localization-edit-dialog';
 
-interface LocalizationListActionProps {
+interface LocalizationRowActionsProps {
   localization: Localization;
 }
 
-export const LocalizationListAction = ({ localization }: LocalizationListActionProps) => {
+export const LocalizationRowActions = ({ localization }: LocalizationRowActionsProps) => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useLocalizationListContext();
@@ -57,7 +57,7 @@ export const LocalizationListAction = ({ localization }: LocalizationListActionP
           },
         ]}
       />
-      <LocalizationEditForm
+      <LocalizationEditDialog
         localization={localization}
         isOpen={editOpen}
         onClose={() => {
@@ -65,7 +65,7 @@ export const LocalizationListAction = ({ localization }: LocalizationListActionP
           refetch();
         }}
       />
-      <LocalizationDeleteForm
+      <LocalizationDeleteDialog
         data={localization}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -78,4 +78,4 @@ export const LocalizationListAction = ({ localization }: LocalizationListActionP
   );
 };
 
-LocalizationListAction.displayName = 'LocalizationListAction';
+LocalizationRowActions.displayName = 'LocalizationRowActions';

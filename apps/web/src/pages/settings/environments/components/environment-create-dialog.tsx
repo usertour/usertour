@@ -15,7 +15,7 @@ import { Input } from '@usertour/input';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
-interface EnvironmentCreateFormProps {
+interface EnvironmentCreateDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -26,7 +26,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateFormProps) => {
+export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDialogProps) => {
   const { invoke: createEnvironment } = useCreateEnvironmentMutation();
   const { project } = useAppContext();
   const navigate = useNavigate();
@@ -122,4 +122,4 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
   );
 };
 
-EnvironmentCreateForm.displayName = 'EnvironmentCreateForm';
+EnvironmentCreateDialog.displayName = 'EnvironmentCreateDialog';

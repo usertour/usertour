@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEventListContext } from '@/contexts/event-list-context';
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
-import { Event } from '@usertour/types';
+import { Attribute } from '@usertour/types';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { ResourceRowActions } from '@usertour/ui';
-import { EventDeleteForm } from './event-delete-form';
-import { EventEditForm } from './event-edit-form';
+import { AttributeDeleteDialog } from './attribute-delete-dialog';
+import { AttributeEditDialog } from './attribute-edit-dialog';
 
-interface EventListActionProps {
-  event: Event;
+interface AttributeRowActionsProps {
+  attribute: Attribute;
 }
 
-export const EventListAction = ({ event }: EventListActionProps) => {
+export const AttributeRowActions = ({ attribute }: AttributeRowActionsProps) => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { refetch } = useEventListContext();
+  const { refetch } = useAttributeListContext();
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
@@ -27,12 +27,12 @@ export const EventListAction = ({ event }: EventListActionProps) => {
   return (
     <>
       <ResourceRowActions
-        disabled={event.predefined || isViewOnly}
+        disabled={attribute.predefined || isViewOnly}
         disabledHint={
-          event.predefined ? (
+          attribute.predefined ? (
             <p>
               {t('settings.common.predefinedTooltip', {
-                resource: t('settings.events.predefinedResource'),
+                resource: t('settings.attributes.predefinedResource'),
               })}
             </p>
           ) : undefined
@@ -41,22 +41,26 @@ export const EventListAction = ({ event }: EventListActionProps) => {
           {
             key: 'edit',
             icon: <EditIcon className="w-6" width={12} height={12} />,
-            label: t('settings.events.editMenuItem'),
+            label: t('settings.attributes.editMenuItem'),
             onSelect: () => setEditOpen(true),
           },
           {
             key: 'delete',
             icon: <Delete2Icon className="w-6" width={16} height={16} />,
-            label: t('settings.events.deleteMenuItem'),
+            label: t('settings.attributes.deleteMenuItem'),
             destructive: true,
             separatorBefore: true,
             onSelect: () => setDeleteOpen(true),
           },
         ]}
       />
-      <EventEditForm event={event} isOpen={editOpen} onClose={closeAfterRefetch(setEditOpen)} />
-      <EventDeleteForm
-        data={event}
+      <AttributeEditDialog
+        attribute={attribute}
+        isOpen={editOpen}
+        onClose={closeAfterRefetch(setEditOpen)}
+      />
+      <AttributeDeleteDialog
+        data={attribute}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onSubmit={closeAfterRefetch(setDeleteOpen)}
@@ -65,4 +69,4 @@ export const EventListAction = ({ event }: EventListActionProps) => {
   );
 };
 
-EventListAction.displayName = 'EventListAction';
+AttributeRowActions.displayName = 'AttributeRowActions';

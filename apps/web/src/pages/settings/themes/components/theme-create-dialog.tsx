@@ -41,7 +41,7 @@ const defaultValues: Partial<FormValues> = {
   isDefault: false,
 };
 
-export const ThemeCreateForm = ({ onDialogClose, onClose, isOpen }: CreateFormProps) => {
+export const ThemeCreateDialog = ({ onDialogClose, onClose, isOpen }: CreateFormProps) => {
   const { t } = useTranslation();
   const { project } = useAppContext();
   const { toast } = useToast();
@@ -165,4 +165,4 @@ export const ThemeCreateForm = ({ onDialogClose, onClose, isOpen }: CreateFormPr
   );
 };
 
-ThemeCreateForm.displayName = 'ThemeCreateForm';
+ThemeCreateDialog.displayName = 'ThemeCreateDialog';

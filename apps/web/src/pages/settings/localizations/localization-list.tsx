@@ -11,8 +11,8 @@ import { RiAddLine } from '@usertour/icons';
 import { Localization } from '@usertour/types';
 import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { format } from 'date-fns';
-import { LocalizationCreateForm } from './components/localization-create-form';
-import { LocalizationListAction } from './components/localization-list-action';
+import { LocalizationCreateDialog } from './components/localization-create-dialog';
+import { LocalizationRowActions } from './components/localization-row-actions';
 
 const LOCALIZATION_DOCS_HREF =
   'https://docs.usertour.io/building-experiences/creating-your-first-flow/';
@@ -26,7 +26,7 @@ const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.localizations.newButton')}
       </Button>
-      <LocalizationCreateForm
+      <LocalizationCreateDialog
         isOpen={open}
         onClose={() => {
           setOpen(false);
@@ -60,7 +60,7 @@ const LocalizationsListPage = () => {
     },
     {
       header: '',
-      cell: (item) => <LocalizationListAction localization={item} />,
+      cell: (item) => <LocalizationRowActions localization={item} />,
     },
   ];
 

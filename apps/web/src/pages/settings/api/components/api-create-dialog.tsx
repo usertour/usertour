@@ -23,7 +23,7 @@ import {
 } from '@usertour/form';
 import { SpinnerIcon } from '@usertour/icons';
 
-interface ApiCreateFormProps {
+interface ApiCreateDialogProps {
   visible: boolean;
   onClose: () => void;
 }
@@ -44,7 +44,7 @@ const defaultValues: Partial<FormValues> = {
   name: '',
 };
 
-export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
+export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
   const [newToken, setNewToken] = useState('');
   const { environment } = useAppContext();
   const { refetch } = useApiContext();

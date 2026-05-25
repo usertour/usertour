@@ -5,19 +5,19 @@ import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { useTranslation } from 'react-i18next';
 
-interface AttributeDeleteFormProps {
+interface AttributeDeleteDialogProps {
   data: Attribute;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
 }
 
-export const AttributeDeleteForm = ({
+export const AttributeDeleteDialog = ({
   data,
   open,
   onOpenChange,
   onSubmit,
-}: AttributeDeleteFormProps) => {
+}: AttributeDeleteDialogProps) => {
   const { invoke: deleteAttribute, loading: isDeleting } = useDeleteAttributeMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -58,4 +58,4 @@ export const AttributeDeleteForm = ({
   );
 };
 
-AttributeDeleteForm.displayName = 'AttributeDeleteForm';
+AttributeDeleteDialog.displayName = 'AttributeDeleteDialog';

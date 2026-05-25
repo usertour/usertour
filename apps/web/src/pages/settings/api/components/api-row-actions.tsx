@@ -13,12 +13,12 @@ import { useApiContext } from '@/contexts/api-context';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiKeyDialog } from './api-key-dialog';
 
-interface ApiListActionProps {
+interface ApiRowActionsProps {
   token: AccessToken;
   environmentId: string;
 }
 
-export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
+export const ApiRowActions = ({ token, environmentId }: ApiRowActionsProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [revealOpen, setRevealOpen] = useState(false);
   const [shouldFetchToken, setShouldFetchToken] = useState(false);
@@ -97,4 +97,4 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
   );
 };
 
-ApiListAction.displayName = 'ApiListAction';
+ApiRowActions.displayName = 'ApiRowActions';

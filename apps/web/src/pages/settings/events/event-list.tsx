@@ -8,7 +8,7 @@ import { Button } from '@usertour/button';
 import { RiAddLine, RiShieldCheckFill } from '@usertour/icons';
 import { Event } from '@usertour/types';
 import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
-import { EventListAction } from './components/event-list-action';
+import { EventRowActions } from './components/event-row-actions';
 
 const sortEvents = (events: readonly Event[]) =>
   [...events].sort((left, right) =>
@@ -75,7 +75,7 @@ const EventsListPage = () => {
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (event) => <EventListAction event={event} />,
+      cell: (event) => <EventRowActions event={event} />,
     },
   ];
 

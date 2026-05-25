@@ -10,8 +10,8 @@ import { RiAddLine } from '@usertour/icons';
 import { QuestionTooltip } from '@usertour/tooltip';
 import { Environment } from '@usertour/types';
 import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
-import { EnvironmentCreateForm } from './components/environment-create-form';
-import { EnvironmentListAction } from './components/environment-list-action';
+import { EnvironmentCreateDialog } from './components/environment-create-dialog';
+import { EnvironmentRowActions } from './components/environment-row-actions';
 
 const ENVIRONMENTS_DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
@@ -26,7 +26,7 @@ const NewEnvironmentButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.environments.newButton')}
       </Button>
-      <EnvironmentCreateForm
+      <EnvironmentCreateDialog
         isOpen={open}
         onClose={() => {
           setOpen(false);
@@ -86,7 +86,7 @@ export const SettingsEnvironmentList = () => {
       header: '',
       headerClassName: 'w-20',
       cell: (environment) => (
-        <EnvironmentListAction environment={environment} environmentCount={environmentCount} />
+        <EnvironmentRowActions environment={environment} environmentCount={environmentCount} />
       ),
     },
   ];
