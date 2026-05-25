@@ -18,7 +18,11 @@ interface ContentConfig {
   emptyTitle: string;
   emptyDescription: string;
   createButtonText: string;
-  createForm: (props: { isOpen: boolean; onClose: () => void }) => ReactNode;
+  createForm: (props: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit?: (success: boolean) => void;
+  }) => ReactNode;
   buttonId?: string;
 }
 
@@ -58,8 +62,13 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyTitle: 'No flows added',
     emptyDescription: 'You have not added any flows. Add one below.',
     createButtonText: 'Create Flow',
-    createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType={ContentDataType.FLOW} isOpen={isOpen} onClose={onClose} />
+    createForm: ({ open, onOpenChange, onSubmit }) => (
+      <ContentCreateForm
+        contentType={ContentDataType.FLOW}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+      />
     ),
     buttonId: 'create-flow-button',
   },
@@ -75,11 +84,12 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyTitle: 'No checklists added',
     emptyDescription: 'You have not added any checklists. Add one below.',
     createButtonText: 'Create Checklist',
-    createForm: ({ isOpen, onClose }) => (
+    createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.CHECKLIST}
-        isOpen={isOpen}
-        onClose={onClose}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
       />
     ),
   },
@@ -95,8 +105,13 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyTitle: 'No launchers added',
     emptyDescription: 'You have not added any launchers. Add one below.',
     createButtonText: 'Create Launcher',
-    createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType={ContentDataType.LAUNCHER} isOpen={isOpen} onClose={onClose} />
+    createForm: ({ open, onOpenChange, onSubmit }) => (
+      <ContentCreateForm
+        contentType={ContentDataType.LAUNCHER}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+      />
     ),
   },
   banners: {
@@ -111,8 +126,13 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyTitle: 'No banners added',
     emptyDescription: 'You have not added any banners. Add one below.',
     createButtonText: 'Create Banner',
-    createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType={ContentDataType.BANNER} isOpen={isOpen} onClose={onClose} />
+    createForm: ({ open, onOpenChange, onSubmit }) => (
+      <ContentCreateForm
+        contentType={ContentDataType.BANNER}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+      />
     ),
   },
   trackers: {
@@ -127,8 +147,13 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyTitle: 'No event trackers added',
     emptyDescription: 'You have not added any event trackers. Add one below.',
     createButtonText: 'Create event tracker',
-    createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType={ContentDataType.TRACKER} isOpen={isOpen} onClose={onClose} />
+    createForm: ({ open, onOpenChange, onSubmit }) => (
+      <ContentCreateForm
+        contentType={ContentDataType.TRACKER}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+      />
     ),
   },
   'resource-centers': {
@@ -143,11 +168,12 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyTitle: 'No resource centers added',
     emptyDescription: 'You have not added any resource centers. Add one below.',
     createButtonText: 'Create Resource Center',
-    createForm: ({ isOpen, onClose }) => (
+    createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.RESOURCE_CENTER}
-        isOpen={isOpen}
-        onClose={onClose}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
       />
     ),
   },

@@ -21,13 +21,15 @@ import { useForm } from 'react-hook-form';
 import { memo } from 'react';
 
 interface CreateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
   environmentId: string | undefined;
 }
 
 export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
-  const { onClose, isOpen, environmentId } = props;
+  const { open, onOpenChange, onSubmit, environmentId } = props;
   const { createSegmentAsync, loading } = useCreateSegment();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -39,8 +41,11 @@ export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
   });
 
   useEffect(() => {
-    form.reset();
-  }, [isOpen]);
+    if (open) {
+      form.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSuccess = useCallback(
     (segmentName: string) => {
@@ -48,9 +53,10 @@ export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
         variant: 'success',
         title: t('users.toast.segments.segmentCreated', { segmentName }),
       });
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     },
-    [onClose, toast, t],
+    [onSubmit, onOpenChange, toast, t],
   );
 
   const handleError = useCallback(
@@ -77,7 +83,7 @@ export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -142,7 +148,7 @@ export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 {t('users.actions.cancel')}
               </Button>
               <Button type="submit" disabled={loading}>

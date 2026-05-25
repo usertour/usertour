@@ -17,7 +17,11 @@ interface ContentListLayoutProps {
   emptyTitle: string;
   emptyDescription: string;
   createButtonText: string;
-  createForm: (props: { isOpen: boolean; onClose: () => void }) => ReactNode;
+  createForm: (props: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit?: (success: boolean) => void;
+  }) => ReactNode;
   buttonId?: string;
   // Optional: custom filtered empty state messages
   filteredEmptyTitle?: string;
@@ -89,8 +93,10 @@ export const ContentListLayout = memo(
       setOpen(true);
     }, []);
 
-    const handleOnClose = useCallback(() => {
-      setOpen(false);
+    // Cancel/ESC/click-outside only flips the local state — no refetch.
+    // `onSubmit` fires the refetch on success so adjusting the form
+    // shouldn't kick off network traffic on the list page.
+    const handleSubmitSuccess = useCallback(() => {
       refetch();
     }, [refetch]);
 
@@ -218,7 +224,7 @@ export const ContentListLayout = memo(
 
         {renderContent}
 
-        {createForm({ isOpen: open, onClose: handleOnClose })}
+        {createForm({ open, onOpenChange: setOpen, onSubmit: handleSubmitSuccess })}
       </div>
     );
   },

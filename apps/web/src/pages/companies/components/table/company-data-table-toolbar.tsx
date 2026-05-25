@@ -11,7 +11,6 @@ import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AddCompanyManualSegment } from '../operations';
-import { CompanySegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
 import { CollapsibleSearch } from '@/components/molecules/collapsible-search';
 import { DeleteCompanyFromSegment } from '../operations';
@@ -50,7 +49,7 @@ export const CompanyDataTableToolbar = ({
   const { setQuery, refetch: refetchCompanyList } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection, getSelectedCount } = useTableSelection(table);
-  const { isViewOnly, environment } = useAppContext();
+  const { isViewOnly } = useAppContext();
 
   // Use ref to store currentSegment to avoid recreating the change handler
   // when segment object changes
@@ -70,11 +69,6 @@ export const CompanyDataTableToolbar = ({
     setConditions(JSON.parse(JSON.stringify(currentSegment.data || [])));
     lastProcessedConditionsRef.current = null;
   }, [currentSegment.id]);
-
-  const [open, setOpen] = useState(false);
-  const handleOnClose = () => {
-    setOpen(false);
-  };
 
   const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
 
@@ -202,12 +196,6 @@ export const CompanyDataTableToolbar = ({
             table={table}
             onColumnsChange={updateSegmentColumns}
             disabled={isViewOnly}
-          />
-
-          <CompanySegmentCreateDialog
-            isOpen={open}
-            onClose={handleOnClose}
-            environmentId={environment?.id}
           />
         </div>
       </div>

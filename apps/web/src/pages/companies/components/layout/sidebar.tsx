@@ -16,11 +16,6 @@ export const CompanyListSidebar = ({ environmentId }: CompanyListSidebarProps) =
   const { refetch } = useSegmentListContext();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    refetch();
-  };
-
   return (
     <>
       <SegmentSidebar
@@ -31,8 +26,9 @@ export const CompanyListSidebar = ({ environmentId }: CompanyListSidebarProps) =
         disabled={isViewOnly}
       />
       <CompanySegmentCreateDialog
-        isOpen={dialogOpen}
-        onClose={handleDialogClose}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSubmit={() => refetch()}
         environmentId={environmentId}
       />
     </>

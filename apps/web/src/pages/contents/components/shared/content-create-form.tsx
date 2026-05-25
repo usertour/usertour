@@ -19,8 +19,15 @@ import { z } from 'zod';
 import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentCreateFormProps {
-  isOpen: boolean;
-  onClose: (contentId?: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /**
+   * Called only after a successful create. The submit flow navigates
+   * the user to the builder so the list page can skip its refetch — the
+   * callback exists for parity with other create dialogs in case a
+   * consumer wants to refresh without navigating.
+   */
+  onSubmit?: (success: boolean) => void;
   contentType: ContentDataType;
 }
 
@@ -39,7 +46,12 @@ const defaultValues: Partial<FormValues> = {
   name: '',
 };
 
-export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreateFormProps) => {
+export const ContentCreateForm = ({
+  open,
+  onOpenChange,
+  onSubmit,
+  contentType,
+}: ContentCreateFormProps) => {
   const [createContentMutation] = useMutation(createContent);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { environment } = useAppContext();
@@ -94,6 +106,7 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
         showError(copy.createErrorMessage);
         return;
       }
+      onSubmit?.(true);
       if (!contentTypeMeta.hasBuilder) {
         const path = `/env/${content.environmentId ?? ''}/${contentTypeMeta.builderPathSegment}/${content.id}/detail`;
         navigate(path);
@@ -112,7 +125,7 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
   const nameInputId = contentType === ContentDataType.FLOW ? 'flow-name-input' : undefined;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -137,7 +150,7 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading || isNameEmpty} id={submitButtonId}>
