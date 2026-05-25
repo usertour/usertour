@@ -12,8 +12,10 @@ import { QuestionTooltip } from '@usertour/tooltip';
 import { z } from 'zod';
 
 interface LocalizationCreateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const schema = z.object({
@@ -24,7 +26,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const LocalizationCreateDialog = ({ isOpen, onClose }: LocalizationCreateDialogProps) => {
+export const LocalizationCreateDialog = ({
+  open,
+  onOpenChange,
+  onSubmit,
+}: LocalizationCreateDialogProps) => {
   const [createMutation] = useMutation(createLocalization);
   const { project } = useAppContext();
   const { t } = useTranslation();
@@ -39,16 +45,17 @@ export const LocalizationCreateDialog = ({ isOpen, onClose }: LocalizationCreate
       if (!result.data?.createLocalization?.id) {
         throw new Error('Create Localization failed.');
       }
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     },
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       state.form.reset({ locale: '', name: '', code: '' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [open]);
 
   const handleOnSelect = (item: LocateItem) => {
     state.form.setValue('name', `${item.language.name} (${item.country.code})`);
@@ -59,8 +66,8 @@ export const LocalizationCreateDialog = ({ isOpen, onClose }: LocalizationCreate
   return (
     <SettingsDialogForm
       title={t('settings.localizations.createTitle')}
-      open={isOpen}
-      onOpenChange={(next) => !next && onClose()}
+      open={open}
+      onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.localizations.createButton')}
       contentClassName="!w-auto"

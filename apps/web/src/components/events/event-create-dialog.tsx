@@ -32,8 +32,11 @@ import { z } from 'zod';
 import { ScrollArea } from '@usertour/scroll-area';
 
 interface CreateFormProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
+  /** Optional handoff of the freshly-created event (tracker editor uses this). */
   onCreated?: (event: CreatedEvent) => void;
 }
 
@@ -59,7 +62,7 @@ const defaultValues: Partial<FormValues> = {
   attributeIds: [],
 };
 
-export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProps) => {
+export const EventCreateDialog = ({ open, onOpenChange, onSubmit, onCreated }: CreateFormProps) => {
   const [createMutation] = useMutation(createEvent);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
@@ -92,12 +95,18 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
     mode: 'onChange',
   });
 
+  // Only fetch attributes when the dialog actually opens. The previous
+  // version ran this effect on every isOpen toggle, so closing also
+  // triggered a fresh attribute fetch.
   useEffect(() => {
-    form.reset();
-    setEventsOnAttributes([]);
-    setSelectAttributeStatus(false);
-    getEventAttrs();
-  }, [form, getEventAttrs, isOpen]);
+    if (open) {
+      form.reset();
+      setEventsOnAttributes([]);
+      setSelectAttributeStatus(false);
+      getEventAttrs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
     try {
@@ -123,7 +132,8 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
         variant: 'success',
         title: 'The event has been successfully created',
       });
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     } catch (error) {
       showError(getErrorMessage(error));
     } finally {
@@ -160,7 +170,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -320,7 +330,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>

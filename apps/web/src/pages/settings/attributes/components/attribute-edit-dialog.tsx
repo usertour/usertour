@@ -20,9 +20,11 @@ import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
 interface AttributeEditDialogProps {
-  isOpen: boolean;
   attribute: Attribute;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful save — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const schema = z.object({
@@ -99,7 +101,12 @@ const toFormValues = (attribute: Attribute): FormValues => ({
   description: attribute.description ?? '',
 });
 
-export const AttributeEditDialog = ({ attribute, isOpen, onClose }: AttributeEditDialogProps) => {
+export const AttributeEditDialog = ({
+  attribute,
+  open,
+  onOpenChange,
+  onSubmit,
+}: AttributeEditDialogProps) => {
   const { invoke: updateAttribute } = useUpdateAttributeMutation();
   const { t } = useTranslation();
 
@@ -118,23 +125,24 @@ export const AttributeEditDialog = ({ attribute, isOpen, onClose }: AttributeEdi
       if (!success) {
         throw new Error('Update attribute failed.');
       }
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     },
     successMessage: t('settings.attributes.updateSuccess'),
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       state.form.reset(toFormValues(attribute));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, attribute]);
+  }, [open, attribute]);
 
   return (
     <SettingsDialogForm
       title={t('settings.attributes.editTitle')}
-      open={isOpen}
-      onOpenChange={(next) => !next && onClose()}
+      open={open}
+      onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.attributes.saveButton')}
       contentClassName="max-w-2xl"

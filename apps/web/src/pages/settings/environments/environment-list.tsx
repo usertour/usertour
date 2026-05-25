@@ -26,13 +26,7 @@ const NewEnvironmentButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.environments.newButton')}
       </Button>
-      <EnvironmentCreateDialog
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          onSuccess();
-        }}
-      />
+      <EnvironmentCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
 };

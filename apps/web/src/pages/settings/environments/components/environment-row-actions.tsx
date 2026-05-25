@@ -90,11 +90,9 @@ export const EnvironmentRowActions = ({
       />
       <EnvironmentEditDialog
         environment={environment}
-        isOpen={editOpen}
-        onClose={() => {
-          setEditOpen(false);
-          refetch();
-        }}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSubmit={() => refetch()}
       />
       <EnvironmentDeleteDialog
         data={environment}

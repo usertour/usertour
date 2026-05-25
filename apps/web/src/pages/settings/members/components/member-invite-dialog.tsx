@@ -35,8 +35,10 @@ const ROLE_OPTIONS = [
 ] as const;
 
 interface InviteDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful invite — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const formSchema = z.object({
@@ -53,7 +55,7 @@ const defaultValues: Partial<FormValues> = {
   role: TeamMemberRole.ADMIN,
 };
 
-export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
+export const MemberInviteDialog = ({ open, onOpenChange, onSubmit }: InviteDialogProps) => {
   const { invoke } = useInviteTeamMemberMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
@@ -76,10 +78,10 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       form.reset();
     }
-  }, [form, isOpen]);
+  }, [form, open]);
 
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
@@ -92,8 +94,10 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
       );
       if (!success) {
         showError('Create Member failed.');
+      } else {
+        onSubmit?.(true);
       }
-      onClose();
+      onOpenChange(false);
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -102,7 +106,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
 
   if (!canInviteMembers) {
     return (
-      <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('settings.team.invite.title')}</DialogTitle>
@@ -116,7 +120,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
                 variant="link"
                 className="p-0 h-auto font-normal inline"
                 onClick={() => {
-                  onClose();
+                  onOpenChange(false);
                   navigate(`/project/${project?.id}/settings/billing`);
                 }}
               >
@@ -128,7 +132,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
             <Button
               type="button"
               onClick={() => {
-                onClose();
+                onOpenChange(false);
                 navigate(`/project/${project?.id}/settings/billing`);
               }}
             >
@@ -141,7 +145,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -233,7 +237,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 {t('settings.common.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>

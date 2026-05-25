@@ -12,9 +12,11 @@ import { Localization } from '@usertour/types';
 import { z } from 'zod';
 
 interface LocalizationEditDialogProps {
-  isOpen: boolean;
   localization: Localization;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful save — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const schema = z.object({
@@ -32,9 +34,10 @@ const toFormValues = (localization: Localization): FormValues => ({
 });
 
 export const LocalizationEditDialog = ({
-  isOpen,
   localization,
-  onClose,
+  open,
+  onOpenChange,
+  onSubmit,
 }: LocalizationEditDialogProps) => {
   const [updateMutation] = useMutation(updateLocalization);
   const { t } = useTranslation();
@@ -49,22 +52,23 @@ export const LocalizationEditDialog = ({
       if (!result.data?.updateLocalization?.id) {
         throw new Error('Update localization failed.');
       }
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     },
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       state.form.reset(toFormValues(localization));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, localization]);
+  }, [open, localization]);
 
   return (
     <SettingsDialogForm
       title={t('settings.localizations.editTitle')}
-      open={isOpen}
-      onOpenChange={(next) => !next && onClose()}
+      open={open}
+      onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.localizations.saveButton')}
       contentClassName="max-w-2xl"

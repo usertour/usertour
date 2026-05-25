@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@usertour/use-toast';
 import { CreateAccessToken } from '@usertour/gql';
 import { useAppContext } from '@/contexts/app-context';
-import { useApiContext } from '@/contexts/api-context';
 import { ApiKeyDialog } from './api-key-dialog';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -24,8 +23,10 @@ import {
 import { SpinnerIcon } from '@usertour/icons';
 
 interface ApiCreateDialogProps {
-  visible: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 interface CreateTokenResponse {
@@ -44,10 +45,9 @@ const defaultValues: Partial<FormValues> = {
   name: '',
 };
 
-export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
+export const ApiCreateDialog = ({ open, onOpenChange, onSubmit }: ApiCreateDialogProps) => {
   const [newToken, setNewToken] = useState('');
   const { environment } = useAppContext();
-  const { refetch } = useApiContext();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -58,11 +58,11 @@ export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
   });
 
   const [createToken, { loading: creating }] = useMutation<CreateTokenResponse>(CreateAccessToken, {
-    onCompleted: async (data) => {
+    onCompleted: (data) => {
       setNewToken(data.createAccessToken.accessToken);
       form.reset();
-      onClose();
-      await refetch();
+      onSubmit?.(true);
+      onOpenChange(false);
       toast({
         variant: 'success',
         title: 'API key created successfully',
@@ -76,7 +76,7 @@ export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const handleSubmit = async (values: FormValues) => {
     if (!environment) {
       toast({
         title: 'Environment not found',
@@ -97,10 +97,10 @@ export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
 
   return (
     <>
-      <Dialog open={visible} onOpenChange={onClose}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent aria-describedby={undefined}>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
               <DialogHeader>
                 <DialogTitle>{t('settings.api.createTitle')}</DialogTitle>
               </DialogHeader>
@@ -121,7 +121,12 @@ export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
                 />
               </div>
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={onClose} disabled={creating}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => onOpenChange(false)}
+                  disabled={creating}
+                >
                   {t('settings.common.cancel')}
                 </Button>
                 <Button type="submit" disabled={creating}>

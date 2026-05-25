@@ -26,13 +26,7 @@ const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.localizations.newButton')}
       </Button>
-      <LocalizationCreateDialog
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          onSuccess();
-        }}
-      />
+      <LocalizationCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
 };

@@ -25,9 +25,11 @@ import { useToast } from '@usertour/use-toast';
 import { z } from 'zod';
 
 interface EventEditDialogProps {
-  isOpen: boolean;
   event: Event;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful save — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const schema = z.object({
@@ -44,7 +46,7 @@ const toFormValues = (event: Event): FormValues => ({
   description: event.description ?? '',
 });
 
-export const EventEditDialog = ({ event, isOpen, onClose }: EventEditDialogProps) => {
+export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEditDialogProps) => {
   const { invoke: updateEvent } = useUpdateEventMutation();
   const { t } = useTranslation();
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
@@ -84,19 +86,20 @@ export const EventEditDialog = ({ event, isOpen, onClose }: EventEditDialogProps
       if (!success) {
         throw new Error('Update Event failed.');
       }
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     },
     successMessage: 'The event has been successfully updated',
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       state.form.reset(toFormValues(event));
       setSelectMode(false);
       refetch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, event]);
+  }, [open, event]);
 
   const handleAttributeSelect = useCallback(
     (attributeId: string) => {
@@ -122,8 +125,8 @@ export const EventEditDialog = ({ event, isOpen, onClose }: EventEditDialogProps
   return (
     <SettingsDialogForm
       title={t('settings.events.editTitle')}
-      open={isOpen}
-      onOpenChange={(next) => !next && onClose()}
+      open={open}
+      onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.events.saveButton')}
       contentClassName="max-w-5xl"

@@ -19,11 +19,6 @@ export const AttributeRowActions = ({ attribute }: AttributeRowActionsProps) => 
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
-  const closeAfterRefetch = (setter: (next: boolean) => void) => () => {
-    setter(false);
-    refetch();
-  };
-
   return (
     <>
       <ResourceRowActions
@@ -56,14 +51,15 @@ export const AttributeRowActions = ({ attribute }: AttributeRowActionsProps) => 
       />
       <AttributeEditDialog
         attribute={attribute}
-        isOpen={editOpen}
-        onClose={closeAfterRefetch(setEditOpen)}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSubmit={() => refetch()}
       />
       <AttributeDeleteDialog
         data={attribute}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={closeAfterRefetch(setDeleteOpen)}
+        onSubmit={() => refetch()}
       />
     </>
   );

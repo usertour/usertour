@@ -26,13 +26,7 @@ const NewEventButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.events.newButton')}
       </Button>
-      <EventCreateDialog
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          onSuccess();
-        }}
-      />
+      <EventCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
 };

@@ -10,9 +10,11 @@ import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
 interface EnvironmentEditDialogProps {
-  isOpen: boolean;
   environment: Environment;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful save — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const schema = z.object({
@@ -23,8 +25,9 @@ type FormValues = z.infer<typeof schema>;
 
 export const EnvironmentEditDialog = ({
   environment,
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
+  onSubmit,
 }: EnvironmentEditDialogProps) => {
   const { invoke: updateEnvironment } = useUpdateEnvironmentMutation();
   const { t } = useTranslation();
@@ -35,7 +38,8 @@ export const EnvironmentEditDialog = ({
     submit: async ({ name }) => {
       const success = await updateEnvironment({ id: environment.id, name });
       if (success) {
-        onClose();
+        onSubmit?.(true);
+        onOpenChange(false);
       }
     },
   });
@@ -43,18 +47,18 @@ export const EnvironmentEditDialog = ({
   // Re-seed the form whenever the dialog re-opens against a different
   // environment record.
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       state.form.reset({ name: environment.name });
     }
     // intentionally not depending on `state.form` — reset identity is stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, environment]);
+  }, [open, environment]);
 
   return (
     <SettingsDialogForm
       title={t('settings.environments.editTitle')}
-      open={isOpen}
-      onOpenChange={(next) => !next && onClose()}
+      open={open}
+      onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.common.submit')}
     >

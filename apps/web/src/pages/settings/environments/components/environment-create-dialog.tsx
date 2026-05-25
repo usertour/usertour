@@ -16,8 +16,10 @@ import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
 interface EnvironmentCreateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
 }
 
 const schema = z.object({
@@ -26,7 +28,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDialogProps) => {
+export const EnvironmentCreateDialog = ({
+  open,
+  onOpenChange,
+  onSubmit,
+}: EnvironmentCreateDialogProps) => {
   const { invoke: createEnvironment } = useCreateEnvironmentMutation();
   const { project } = useAppContext();
   const navigate = useNavigate();
@@ -42,7 +48,8 @@ export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDi
       }
       const id = await createEnvironment({ name, projectId: project.id });
       if (id) {
-        onClose();
+        onSubmit?.(true);
+        onOpenChange(false);
       }
     },
   });
@@ -50,15 +57,15 @@ export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDi
   // The dialog can be reopened back-to-back; reset to defaults each open
   // so a previous create attempt doesn't seed the next one.
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       state.form.reset({ name: '' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [open]);
 
   if (!canUseMore) {
     return (
-      <Dialog open={isOpen} onOpenChange={(next) => !next && onClose()}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('settings.environments.createTitle')}</DialogTitle>
@@ -72,7 +79,7 @@ export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDi
                 variant="link"
                 className="p-0 h-auto font-normal inline"
                 onClick={() => {
-                  onClose();
+                  onOpenChange(false);
                   navigate(`/project/${project?.id}/settings/billing`);
                 }}
               >
@@ -84,7 +91,7 @@ export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDi
             <Button
               type="button"
               onClick={() => {
-                onClose();
+                onOpenChange(false);
                 navigate(`/project/${project?.id}/settings/billing`);
               }}
             >
@@ -99,8 +106,8 @@ export const EnvironmentCreateDialog = ({ isOpen, onClose }: EnvironmentCreateDi
   return (
     <SettingsDialogForm
       title={t('settings.environments.createTitle')}
-      open={isOpen}
-      onOpenChange={(next) => !next && onClose()}
+      open={open}
+      onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.common.submit')}
       contentClassName="max-w-xl"

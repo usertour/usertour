@@ -20,13 +20,7 @@ const NewApiKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.api.newButton')}
       </Button>
-      <ApiCreateDialog
-        visible={open}
-        onClose={() => {
-          setOpen(false);
-          onSuccess();
-        }}
-      />
+      <ApiCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
 };

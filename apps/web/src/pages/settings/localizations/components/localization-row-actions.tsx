@@ -59,20 +59,15 @@ export const LocalizationRowActions = ({ localization }: LocalizationRowActionsP
       />
       <LocalizationEditDialog
         localization={localization}
-        isOpen={editOpen}
-        onClose={() => {
-          setEditOpen(false);
-          refetch();
-        }}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSubmit={() => refetch()}
       />
       <LocalizationDeleteDialog
         data={localization}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={() => {
-          setDeleteOpen(false);
-          refetch();
-        }}
+        onSubmit={() => refetch()}
       />
     </>
   );

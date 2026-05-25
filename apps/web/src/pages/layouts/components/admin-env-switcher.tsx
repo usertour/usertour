@@ -55,8 +55,7 @@ export const AdminEnvSwitcher = () => {
   const handleCreate = () => {
     setShowNewEnvDialog(true);
   };
-  const handleOnClose = () => {
-    setShowNewEnvDialog(false);
+  const handleOnSubmit = () => {
     refetch();
   };
 
@@ -117,7 +116,11 @@ export const AdminEnvSwitcher = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <EnvironmentCreateDialog isOpen={showNewEnvDialog} onClose={handleOnClose} />
+      <EnvironmentCreateDialog
+        open={showNewEnvDialog}
+        onOpenChange={setShowNewEnvDialog}
+        onSubmit={handleOnSubmit}
+      />
     </>
   );
 };

@@ -20,13 +20,7 @@ const AddTeamMemberButton = ({ onSuccess }: { onSuccess: () => void }) => {
         <RiAddLine className="mr-2 h-4 w-4" />
         {t('settings.team.newButton')}
       </Button>
-      <MemberInviteDialog
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          onSuccess();
-        }}
-      />
+      <MemberInviteDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
 };

@@ -19,11 +19,6 @@ export const EventRowActions = ({ event }: EventRowActionsProps) => {
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
-  const closeAfterRefetch = (setter: (next: boolean) => void) => () => {
-    setter(false);
-    refetch();
-  };
-
   return (
     <>
       <ResourceRowActions
@@ -54,12 +49,17 @@ export const EventRowActions = ({ event }: EventRowActionsProps) => {
           },
         ]}
       />
-      <EventEditDialog event={event} isOpen={editOpen} onClose={closeAfterRefetch(setEditOpen)} />
+      <EventEditDialog
+        event={event}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSubmit={() => refetch()}
+      />
       <EventDeleteDialog
         data={event}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={closeAfterRefetch(setDeleteOpen)}
+        onSubmit={() => refetch()}
       />
     </>
   );
