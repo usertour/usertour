@@ -44,7 +44,9 @@ export const ThemeDeleteDialog = ({
 
   return (
     <DeleteConfirmDialog
-      title={t('settings.common.deleteConfirm.title')}
+      title={t('settings.common.deleteConfirm.title', {
+        resource: t('settings.themes.deleteResource'),
+      })}
       description={t('settings.themes.deleteDescription')}
       confirmLabel={t('settings.common.deleteConfirm.confirm')}
       cancelLabel={t('settings.common.cancel')}

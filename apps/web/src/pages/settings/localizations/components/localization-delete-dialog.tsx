@@ -50,14 +50,13 @@ export const LocalizationDeleteDialog = ({
 
   return (
     <DeleteConfirmDialog
-      title={t('settings.common.deleteConfirm.title')}
+      title={t('settings.common.deleteConfirm.title', {
+        resource: t('settings.localizations.deleteResource'),
+      })}
       description={
         <Trans
           i18nKey="settings.common.deleteConfirm.description"
-          values={{
-            resource: t('settings.localizations.deleteResource'),
-            name: data.name,
-          }}
+          values={{ name: data.name }}
           components={{ strong: <strong className="font-bold text-foreground" /> }}
         />
       }

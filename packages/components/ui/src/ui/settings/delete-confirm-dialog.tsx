@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour/alert-dialog';
+import { RiAlertFill } from '@usertour/icons';
 import { LoadingButton } from '../loading-button';
 
 export interface DeleteConfirmDialogProps {
@@ -42,10 +43,23 @@ export const DeleteConfirmDialog = ({
 }: DeleteConfirmDialogProps) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+      {/* Widen past AlertDialog's default max-w-lg (512px). The icon
+          column eats ~56px on the left, so the default leaves a single
+          short sentence wrapping mid-word ("cannot be / undone."). 576px
+          fits the common case on one line; the global
+          `[overflow-wrap:anywhere]` still catches extreme names. */}
+      <AlertDialogContent className="max-w-xl">
+        {/* Header overrides AlertDialogHeader's default column layout to
+            row-align the warning badge with the title+description column.
+            shadcn's `cn()` uses tailwind-merge so the override wins. */}
+        <AlertDialogHeader className="flex-row gap-4 space-y-0 text-left sm:text-left">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+            <RiAlertFill className="h-5 w-5 text-destructive" />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <AlertDialogTitle>{title}</AlertDialogTitle>
+            <AlertDialogDescription>{description}</AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>{cancelLabel ?? 'Cancel'}</AlertDialogCancel>

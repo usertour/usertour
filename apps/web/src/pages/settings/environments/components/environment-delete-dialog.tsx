@@ -48,14 +48,13 @@ export const EnvironmentDeleteDialog = ({
 
   return (
     <DeleteConfirmDialog
-      title={t('settings.common.deleteConfirm.title')}
+      title={t('settings.common.deleteConfirm.title', {
+        resource: t('settings.environments.deleteResource'),
+      })}
       description={
         <Trans
           i18nKey="settings.common.deleteConfirm.description"
-          values={{
-            resource: t('settings.environments.deleteResource'),
-            name: data.name,
-          }}
+          values={{ name: data.name }}
           components={{ strong: <strong className="font-bold text-foreground" /> }}
         />
       }

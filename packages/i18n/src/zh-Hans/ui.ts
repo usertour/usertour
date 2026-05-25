@@ -30,8 +30,8 @@ const translations = {
       readGuide: '阅读「{{topic}}」指南',
       predefinedTooltip: '系统预定义的{{resource}}不可编辑。',
       deleteConfirm: {
-        title: '确认要删除吗?',
-        description: '此操作不可撤销。这将永久删除{{resource}} <strong>{{name}}</strong>。',
+        title: '删除{{resource}}',
+        description: '确定要删除 <strong>{{name}}</strong> 吗?此操作不可撤销。',
         confirm: '删除',
       },
       description: '描述',
@@ -223,6 +223,7 @@ const translations = {
       setDefaultSuccess: '已将该主题设为默认',
       duplicateMenuItem: '复制主题',
       deleteMenuItem: '删除主题',
+      deleteResource: '主题',
       deleteDescription: '该操作不可撤销。此主题及其所有变体将被永久删除。',
       deleteSuccess: '主题已删除',
       duplicateSuccess: '主题已创建',

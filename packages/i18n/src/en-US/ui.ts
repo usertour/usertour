@@ -30,9 +30,13 @@ const translations = {
       readGuide: 'Read the {{topic}} guide',
       predefinedTooltip: "Predefined {{resource}} can't be edited.",
       deleteConfirm: {
-        title: 'Are you absolutely sure?',
+        // Title uses {{resource}} so it reads "Delete attribute" / "Delete API key"
+        // — action-named, matches the modern SaaS pattern (Linear, Notion, Vercel).
+        title: 'Delete {{resource}}',
+        // Name appears bold inside the question; the "cannot be undone"
+        // warning is appended so users see consequence + identity together.
         description:
-          'This action cannot be undone. This will permanently delete the {{resource}} <strong>{{name}}</strong>.',
+          'Are you sure you want to delete <strong>{{name}}</strong>? This action cannot be undone.',
         confirm: 'Delete',
       },
       description: 'Description',
@@ -235,6 +239,7 @@ const translations = {
       setDefaultSuccess: 'The theme has been successfully set as default',
       duplicateMenuItem: 'Duplicate theme',
       deleteMenuItem: 'Delete theme',
+      deleteResource: 'theme',
       deleteDescription:
         'This action cannot be undone. This will permanently delete the theme and all its variations.',
       deleteSuccess: 'The theme has been successfully deleted',

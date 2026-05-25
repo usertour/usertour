@@ -74,11 +74,13 @@ export const ApiRowActions = ({ token, environmentId }: ApiRowActionsProps) => {
         ]}
       />
       <DeleteConfirmDialog
-        title={t('settings.common.deleteConfirm.title')}
+        title={t('settings.common.deleteConfirm.title', {
+          resource: t('settings.api.deleteResource'),
+        })}
         description={
           <Trans
             i18nKey="settings.common.deleteConfirm.description"
-            values={{ resource: t('settings.api.deleteResource'), name: token.name }}
+            values={{ name: token.name }}
             components={{ strong: <strong className="font-bold text-foreground" /> }}
           />
         }
