@@ -1,6 +1,5 @@
 import { ThemeDetailProvider, useThemeDetailContext } from '@/contexts/theme-detail-context';
-import { useMutation } from '@apollo/client';
-import { updateTheme } from '@usertour/gql';
+import { useUpdateThemeMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
@@ -14,20 +13,18 @@ const ThemeDetailInner = () => {
   const { loading, theme, refetch } = useThemeDetailContext();
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const [updateMutation] = useMutation(updateTheme);
+  const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
 
   const handleSave = useCallback(
     async (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => {
       if (!theme) return;
       try {
-        await updateMutation({
-          variables: {
-            id: theme.id,
-            name: theme.name,
-            settings: payload.settings,
-            variations: payload.variations,
-          },
+        await updateTheme({
+          id: theme.id,
+          name: theme.name,
+          settings: payload.settings,
+          variations: payload.variations,
         });
         await refetch();
       } catch (error) {
@@ -35,20 +32,18 @@ const ThemeDetailInner = () => {
         throw error;
       }
     },
-    [theme, updateMutation, refetch, toast],
+    [theme, updateTheme, refetch, toast],
   );
 
   const handleRename = useCallback(
     async (name: string) => {
       if (!theme) return;
       try {
-        await updateMutation({
-          variables: {
-            id: theme.id,
-            name,
-            settings: theme.settings,
-            variations: theme.variations ?? [],
-          },
+        await updateTheme({
+          id: theme.id,
+          name,
+          settings: theme.settings,
+          variations: theme.variations ?? [],
         });
         await refetch();
       } catch (error) {
@@ -56,7 +51,7 @@ const ThemeDetailInner = () => {
         throw error;
       }
     },
-    [theme, updateMutation, refetch, toast],
+    [theme, updateTheme, refetch, toast],
   );
 
   if (loading) {

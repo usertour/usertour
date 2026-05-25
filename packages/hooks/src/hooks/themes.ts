@@ -1,6 +1,13 @@
 import { NetworkStatus, useMutation, useQuery } from '@apollo/client';
-import { copyTheme, createTheme, deleteTheme, listThemes, setDefaultTheme } from '@usertour/gql';
-import type { Theme } from '@usertour/types';
+import {
+  copyTheme,
+  createTheme,
+  deleteTheme,
+  listThemes,
+  setDefaultTheme,
+  updateTheme,
+} from '@usertour/gql';
+import type { Theme, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 
 export interface CreateThemeInput {
   name: string;
@@ -9,11 +16,27 @@ export interface CreateThemeInput {
   isDefault: boolean;
 }
 
+export interface UpdateThemeInput {
+  id: string;
+  name: string;
+  settings: ThemeTypesSetting;
+  variations: ThemeVariation[];
+}
+
 export const useCreateThemeMutation = () => {
   const [mutation, { loading, error }] = useMutation(createTheme);
   const invoke = async (input: CreateThemeInput): Promise<boolean> => {
     const response = await mutation({ variables: input });
     return !!response.data?.createTheme?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateThemeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateTheme);
+  const invoke = async (input: UpdateThemeInput): Promise<boolean> => {
+    const response = await mutation({ variables: input });
+    return !!response.data?.updateTheme?.id;
   };
   return { invoke, loading, error };
 };
