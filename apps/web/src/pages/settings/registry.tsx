@@ -17,8 +17,8 @@ import { Capability, type GlobalConfig } from '@usertour/types';
  * Single source of truth for every Settings section.
  *
  * Consumed by:
- *   - `admin-setting.tsx`            (route component dispatch)
- *   - `admin-setting-detail.tsx`     (sub-route dispatch)
+ *   - `settings-dispatcher.tsx`        (route component dispatch)
+ *   - `settings-detail-dispatcher.tsx` (sub-route dispatch)
  *   - `settings-sidebar-nav.tsx`     (sidebar items + grouping + capability gate)
  *   - `admin-settings-layout.tsx`    (muted vs default surface)
  *
@@ -103,7 +103,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     surface: 'muted',
     component: lazy(() =>
-      import('./projects').then((module) => ({ default: module.SettingsProjectsDetail })),
+      import('./projects').then((module) => ({ default: module.SettingsProjectDetail })),
     ),
   },
   {
@@ -147,7 +147,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     component: lazy(() =>
-      import('./events').then((module) => ({ default: module.SettingsEventsList })),
+      import('./events').then((module) => ({ default: module.SettingsEventList })),
     ),
   },
   {

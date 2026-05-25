@@ -1,1 +1,1 @@
-export { SettingsProjectsDetail } from './project-detail';
+export { SettingsProjectDetail } from './project-detail';

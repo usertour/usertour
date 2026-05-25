@@ -91,7 +91,7 @@ const EventsListPage = () => {
   );
 };
 
-export const SettingsEventsList = () => {
+export const SettingsEventList = () => {
   const { project } = useAppContext();
   return (
     <EventListProvider projectId={project?.id}>
@@ -100,4 +100,4 @@ export const SettingsEventsList = () => {
   );
 };
 
-SettingsEventsList.displayName = 'SettingsEventsList';
+SettingsEventList.displayName = 'SettingsEventList';

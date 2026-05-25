@@ -188,13 +188,13 @@ const config: RouteObject[] = [
             children: [
               {
                 path: '/project/:projectId/settings/:settingType',
-                lazy: lazyComponent(() => import('@/pages/settings'), 'AdminSettings'),
+                lazy: lazyComponent(() => import('@/pages/settings'), 'SettingsDispatcher'),
               },
               {
                 path: '/project/:projectId/settings/:settingType/:settingSubType',
                 lazy: lazyComponent(
-                  () => import('@/pages/settings/admin-setting-detail'),
-                  'AdminSettingsDetail',
+                  () => import('@/pages/settings/settings-detail-dispatcher'),
+                  'SettingsDetailDispatcher',
                 ),
               },
             ],

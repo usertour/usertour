@@ -8,7 +8,7 @@ import { RiAddLine } from '@usertour/icons';
 import { SettingsPage } from '@usertour/ui';
 import type { Theme } from '@usertour/types';
 import { ThemeCreateForm } from './components/theme-create-form';
-import { ThemeListPreview } from './components/theme-list-preview';
+import { ThemeCardPreview } from './components/theme-card-preview';
 
 const NewThemeButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { isViewOnly } = useAppContext();
@@ -48,7 +48,7 @@ const ThemeListPage = () => {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
           {themeList?.map((theme: Theme) => (
-            <ThemeListPreview theme={theme} key={theme.id} />
+            <ThemeCardPreview theme={theme} key={theme.id} />
           ))}
         </div>
       )}

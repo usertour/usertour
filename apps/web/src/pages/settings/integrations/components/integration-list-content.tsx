@@ -163,7 +163,7 @@ const integrationConfigs: Record<string, React.ComponentType<IntegrationConfigPr
   'salesforce-sandbox': SalesforceConfig,
 };
 
-export const IntegrationsListContent = () => {
+export const IntegrationListContent = () => {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   const { environment } = useAppContext();

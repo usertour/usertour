@@ -16,10 +16,10 @@ import { Button } from '@usertour/button';
 import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
 
-type ThemeListPreviewProps = {
+type ThemeCardPreviewProps = {
   theme: Theme;
 };
-export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
+export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
   const { theme } = props;
   const containerRef = useRef(null);
 
@@ -95,4 +95,4 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
   );
 });
 
-ThemeListPreview.displayName = 'ThemeListPreview';
+ThemeCardPreview.displayName = 'ThemeCardPreview';

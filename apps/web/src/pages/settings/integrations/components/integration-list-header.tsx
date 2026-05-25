@@ -2,7 +2,7 @@ import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 
-export const IntegrationsListHeader = () => {
+export const IntegrationListHeader = () => {
   const { environment } = useAppContext();
   const { t } = useTranslation();
 

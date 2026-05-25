@@ -1,16 +1,16 @@
 import { Separator } from '@usertour/separator';
 import { SettingsContent } from '../components/content';
-import { IntegrationsListContent } from './components/integrations-list-content';
-import { IntegrationsListHeader } from './components/integrations-list-header';
+import { IntegrationListContent } from './components/integration-list-content';
+import { IntegrationListHeader } from './components/integration-list-header';
 import { ApiProvider } from '@/contexts/api-context';
 
 export const SettingsIntegrationsList = () => {
   return (
     <SettingsContent>
       <ApiProvider>
-        <IntegrationsListHeader />
+        <IntegrationListHeader />
         <Separator />
-        <IntegrationsListContent />
+        <IntegrationListContent />
       </ApiProvider>
     </SettingsContent>
   );

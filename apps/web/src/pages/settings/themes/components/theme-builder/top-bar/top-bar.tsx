@@ -25,7 +25,7 @@ interface Props {
   // Delete / Set-as-default). Distinct from `isReadOnly` because a system
   // theme should still expose the dropdown so non-Viewer users can
   // Duplicate it — only Viewers lose the menu entirely. Mirrors the
-  // ThemeEditDropdownMenu `disabled` prop usage in theme-list-preview.
+  // ThemeEditDropdownMenu `disabled` prop usage in theme-card-preview.
   isViewOnly: boolean;
 }
 

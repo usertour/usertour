@@ -1,7 +1,7 @@
 import { SettingsCard, SettingsCardStack } from '@usertour/ui';
 import { ProjectNameForm } from './components/project-name-form';
 
-export const SettingsProjectsDetail = () => {
+export const SettingsProjectDetail = () => {
   return (
     <SettingsCardStack>
       <SettingsCard>
@@ -11,4 +11,4 @@ export const SettingsProjectsDetail = () => {
   );
 };
 
-SettingsProjectsDetail.displayName = 'SettingsProjectsDetail';
+SettingsProjectDetail.displayName = 'SettingsProjectDetail';

@@ -3,7 +3,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { useAppContext } from '@/contexts/app-context';
 import { findSettingsSection } from './registry';
 
-export const AdminSettingsDetail = () => {
+export const SettingsDetailDispatcher = () => {
   const { settingType, projectId } = useParams();
   const { can, project, loading } = useAppContext();
 
@@ -26,4 +26,4 @@ export const AdminSettingsDetail = () => {
   );
 };
 
-AdminSettingsDetail.displayName = 'AdminSettingsDetail';
+SettingsDetailDispatcher.displayName = 'SettingsDetailDispatcher';
