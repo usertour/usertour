@@ -144,7 +144,7 @@ export const SetupDialog = ({ open, onOpenChange, onEnabled }: SetupDialogProps)
                 <div className="flex justify-center">
                   <img
                     src={payload.qrDataUri}
-                    alt="QR code"
+                    alt={t('twoFactor.setup.qrCodeAlt')}
                     className="h-44 w-44 rounded border border-border bg-white p-2"
                   />
                 </div>

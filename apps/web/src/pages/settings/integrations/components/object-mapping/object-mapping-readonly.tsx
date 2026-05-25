@@ -26,6 +26,7 @@ import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { useDeleteIntegrationObjectMappingMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -77,6 +78,7 @@ export const ObjectMappingReadonly = ({
   onUpdate,
 }: ObjectMappingReadonlyProps) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { invoke: deleteMapping, loading } = useDeleteIntegrationObjectMappingMutation();
@@ -94,20 +96,20 @@ export const ObjectMappingReadonly = ({
       if (success) {
         toast({
           variant: 'success',
-          title: 'Object mapping deleted successfully',
+          title: t('settings.integrations.objectMapping.readonly.deleteSuccessToast'),
         });
         onDelete?.(mapping.id);
         setShowDeleteDialog(false);
       } else {
         toast({
-          title: 'Failed to delete object mapping',
+          title: t('settings.integrations.objectMapping.readonly.deleteFailureToast'),
           variant: 'destructive',
         });
       }
     } catch (error) {
       console.error('Failed to delete mapping:', error);
       toast({
-        title: 'Failed to delete object mapping',
+        title: t('settings.integrations.objectMapping.readonly.deleteFailureToast'),
         variant: 'destructive',
       });
     }
@@ -142,7 +144,7 @@ export const ObjectMappingReadonly = ({
                   onClick={() => setIsEditDialogOpen(true)}
                 >
                   <EditIcon className="w-4 h-4 mr-2" />
-                  Edit
+                  {t('settings.integrations.objectMapping.readonly.editAction')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive"
@@ -154,7 +156,7 @@ export const ObjectMappingReadonly = ({
                   ) : (
                     <Delete2Icon className="w-4 h-4 mr-2" />
                   )}
-                  Delete
+                  {t('settings.integrations.objectMapping.readonly.deleteAction')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -162,17 +164,26 @@ export const ObjectMappingReadonly = ({
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Object Mapping</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {t('settings.integrations.objectMapping.readonly.deleteDialogTitle')}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete the mapping between{' '}
-                    <strong>{mapping.sourceObjectType}</strong> and{' '}
-                    <strong>{mapping.destinationObjectType}</strong>? This action cannot be undone.
+                    <Trans
+                      i18nKey="settings.integrations.objectMapping.readonly.deleteDialogDescription"
+                      values={{
+                        source: mapping.sourceObjectType,
+                        target: mapping.destinationObjectType,
+                      }}
+                      components={{ strong: <strong /> }}
+                    />
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={loading}>
+                    {t('settings.common.cancel')}
+                  </AlertDialogCancel>
                   <LoadingButton onClick={handleDelete} loading={loading} variant="destructive">
-                    Delete
+                    {t('settings.integrations.objectMapping.readonly.deleteAction')}
                   </LoadingButton>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -180,7 +191,9 @@ export const ObjectMappingReadonly = ({
           </CardTitle>
           {mapping.lastSyncedAt && (
             <p className="text-sm text-muted-foreground">
-              Last synced: {format(new Date(mapping.lastSyncedAt), 'MMM dd, yyyy HH:mm')}
+              {t('settings.integrations.objectMapping.readonly.lastSynced', {
+                date: format(new Date(mapping.lastSyncedAt), 'MMM dd, yyyy HH:mm'),
+              })}
             </p>
           )}
         </CardHeader>
@@ -189,7 +202,9 @@ export const ObjectMappingReadonly = ({
           {matchObjects && (
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Match objects by</span>
+                <span className="font-medium">
+                  {t('settings.integrations.objectMapping.matchBy')}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <ObjectMappingReadonlyButton
@@ -209,7 +224,9 @@ export const ObjectMappingReadonly = ({
           {sourceToTarget.length > 0 && (
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Fields to sync from source to target</span>
+                <span className="font-medium">
+                  {t('settings.integrations.objectMapping.sourceToTargetTitle')}
+                </span>
               </div>
               {sourceToTarget.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1">
@@ -231,7 +248,9 @@ export const ObjectMappingReadonly = ({
           {targetToSource.length > 0 && (
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Fields to sync from target to source</span>
+                <span className="font-medium">
+                  {t('settings.integrations.objectMapping.targetToSourceTitle')}
+                </span>
               </div>
               {targetToSource.map((mappingItem: IntegrationObjectMappingItem, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1">
@@ -251,9 +270,13 @@ export const ObjectMappingReadonly = ({
           <div className="flex items-center gap-3 mb-4">
             <Switch className="data-[state=unchecked]:bg-input" checked={isSyncStream} disabled />
             <span>
-              Stream <span className="font-semibold text-primary">User events</span>
-              <span className="mx-1">→</span>
-              <span className="font-semibold text-blue-500">Contact activity</span>
+              <Trans
+                i18nKey="settings.integrations.objectMapping.streamSwitch"
+                components={{
+                  user: <span className="font-semibold text-primary" />,
+                  contact: <span className="font-semibold text-blue-500" />,
+                }}
+              />
             </span>
           </div>
         </CardContent>

@@ -304,6 +304,7 @@ const translations = {
     },
     billing: {
       title: 'Billing',
+      upgradeIconLabel: 'Upgrade',
       plans: {
         hobby: 'Hobby',
         starter: 'Starter',
@@ -440,11 +441,19 @@ const translations = {
       tokenCopiedToast: 'Token copied to clipboard',
       keyDialogDescription: 'Please copy your API key now.',
       keyDialogLoading: 'Loading...',
+      keyDialogCreatedTitle: 'New API key created',
       createTitle: 'New API key',
       createNameLabel: 'Key Name',
       createNamePlaceholder: 'Enter key name',
       createButton: 'Create',
       creating: 'Creating...',
+      headerBody:
+        "The API key is used to authenticate your backend application via Usertour's REST API, which can be used to update user properties and track events.",
+      headerEnvironmentNote:
+        'Please note that API keys are environment-specific — you are currently viewing the <strong>{{environment}}</strong> environment.',
+      headerEnvironmentSwitch:
+        'Use the environment menu in the top-left corner to switch environments.',
+      headerDocs: 'Read the API documentation.',
     },
     integrations: {
       title: 'Integrations for {{environment}}',
@@ -461,6 +470,7 @@ const translations = {
       enableFailedToast: 'Failed to enable integration',
       disableFailedToast: 'Failed to disable integration',
       providerCard: {
+        usertourLogoAlt: 'Usertour logo',
         // {{provider}} resolves to the provider's display name
         // (e.g. "Mixpanel", "Heap"). The headline is the toggle label
         // shown next to the on/off switch.
@@ -491,6 +501,80 @@ const translations = {
         connectButton: 'Connect to Salesforce',
         loading: 'Loading...',
         authUrlFailedToast: 'Failed to get Salesforce auth URL',
+        // Salesforce connection card on the integration detail page.
+        connectionTitle: '{{name}} connection',
+        connectedAs: 'Connected as <strong>{{email}}</strong> at <strong>{{organization}}</strong>',
+        reconnect: 'Reconnect',
+        disconnect: 'Disconnect',
+        disconnectSuccessToast: 'Successfully disconnected from Salesforce',
+        disconnectFailureToast: 'Failed to disconnect from Salesforce',
+        existingMappingsTitle: 'Existing Object Mappings',
+        newMappingCta: 'Set up a new mapping between Salesforce and Usertour objects',
+      },
+      objectMapping: {
+        // Shared section labels used by both the editable panel and the
+        // read-only summary.
+        matchBy: 'Match objects by',
+        sourceToTargetTitle: 'Fields to sync from source to target',
+        targetToSourceTitle: 'Fields to sync from target to source',
+        // Inline switch label with two highlighted spans. `<user>` slot
+        // wraps "User events" (Usertour side), `<contact>` wraps "Contact
+        // activity" (Salesforce side).
+        streamSwitch: 'Stream <user>User events</user> → <contact>Contact activity</contact>',
+        fieldPlaceholder: 'Select field',
+        addButton: 'Add',
+        newBadge: 'New',
+        searchPlaceholder: 'Search {{kind}}...',
+        selectEmpty: 'No items found.',
+        selectCreateAttribute: 'Create new attribute',
+        // Salesforce + Usertour object names rendered in the picker.
+        // Keys match the technical `name` field; missing keys fall back
+        // to the raw name (e.g. for custom objects).
+        objectLabels: {
+          salesforce: {
+            Contact: 'Contacts',
+            Account: 'Accounts',
+            Lead: 'Leads',
+            Opportunity: 'Opportunities',
+          },
+          usertour: {
+            User: 'User',
+            Company: 'Company',
+          },
+        },
+        dialog: {
+          salesforceObjectLabel: 'Salesforce Object',
+          usertourObjectLabel: 'Usertour Object',
+          salesforceObjectPlaceholder: 'Select Salesforce object',
+          usertourObjectPlaceholder: 'Select Usertour object',
+          titleSelectObjects: 'Select Objects',
+          titleEditMapping: 'Edit Object Mapping',
+          descriptionSelectObjects:
+            'Choose which Salesforce object to map to which Usertour object.',
+          descriptionEditMapping: 'Modify the mapping between Salesforce and Usertour objects.',
+          descriptionEditFields: 'Modify the field mappings and settings.',
+          cancelButton: 'Cancel',
+          continueButton: 'Continue',
+          backButton: 'Back',
+          saveMappingButton: 'Save mapping',
+          updateMappingButton: 'Update mapping',
+          bothObjectsRequiredToast: 'Please select both Salesforce and Usertour objects',
+          missingDataToast: 'Missing integration or mapping data',
+          saveSuccessToastCreate: 'Object mapping created successfully',
+          saveSuccessToastUpdate: 'Object mapping updated successfully',
+          saveFailureToastCreate: 'Failed to create object mapping',
+          saveFailureToastUpdate: 'Failed to update object mapping',
+        },
+        readonly: {
+          editAction: 'Edit',
+          deleteAction: 'Delete',
+          deleteDialogTitle: 'Delete Object Mapping',
+          deleteDialogDescription:
+            'Are you sure you want to delete the mapping between <strong>{{source}}</strong> and <strong>{{target}}</strong>? This action cannot be undone.',
+          deleteSuccessToast: 'Object mapping deleted successfully',
+          deleteFailureToast: 'Failed to delete object mapping',
+          lastSynced: 'Last synced: {{date}}',
+        },
       },
       mixpanelCohorts: {
         toggleLabel: 'Cohort sync from Mixpanel',
@@ -520,6 +604,7 @@ const translations = {
       'Two-factor authentication is an enterprise feature in self-hosted mode. Upgrade your license to unlock it.',
     setup: {
       title: 'Set up two-factor authentication',
+      qrCodeAlt: 'QR code',
       step1Title: '1. Scan QR code',
       step1Description:
         'Scan this QR code with an authenticator app such as Google Authenticator, 1Password, or Authy.',

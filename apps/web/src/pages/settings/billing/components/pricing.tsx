@@ -195,7 +195,7 @@ function buildCardFeatures(meta: PlanMeta, features: PlanFeatures, t: TFunction)
   items.push({
     icon: RiBarChartLine,
     text: t('settings.billing.cardFeatures.sessions', {
-      value: formatLimit(features.sessionsLimit),
+      value: localizedLimit(features.sessionsLimit, t),
     }),
   });
   items.push({
@@ -383,10 +383,6 @@ const COMPARISON_PLANS: PlanType[] = [
   PlanType.GROWTH,
   PlanType.BUSINESS,
 ];
-
-const formatLimit = (
-  value: PlanFeatures['sessionsLimit'] | PlanFeatures['teamMemberLimit'],
-): string => (value === 'unlimited' ? 'Unlimited' : String(value));
 
 const localizedLimit = (
   value: PlanFeatures['sessionsLimit'] | PlanFeatures['teamMemberLimit'],
@@ -791,7 +787,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     strokeLinejoin="round"
                     className="lucide lucide-arrow-up-right"
                   >
-                    <title>Upgrade</title>
+                    <title>{t('settings.billing.upgradeIconLabel')}</title>
                     <path d="M7 7h10v10" />
                     <path d="M7 17 17 7" />
                   </svg>

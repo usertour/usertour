@@ -136,7 +136,7 @@ export const ApiCreateDialog = ({ visible, onClose }: ApiCreateDialogProps) => {
 
       <ApiKeyDialog
         token={newToken}
-        title="New API key Created"
+        title={t('settings.api.keyDialogCreatedTitle')}
         open={!!newToken}
         onOpenChange={() => setNewToken('')}
       />

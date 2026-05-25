@@ -121,7 +121,11 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
         <DialogTitle className="flex flex-col gap-2 pt-4">
           <div className="flex items-center justify-center gap-x-4">
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">
-              <img src="/images/logo.png" className="w-full h-full" alt="Logo" />
+              <img
+                src="/images/logo.png"
+                className="w-full h-full"
+                alt={t('settings.integrations.providerCard.usertourLogoAlt')}
+              />
             </div>
             <DotsHorizontalIcon className="w-6 h-6" />
             <div className="h-12 w-12 rounded-lg border border-accent-light p-1.5">

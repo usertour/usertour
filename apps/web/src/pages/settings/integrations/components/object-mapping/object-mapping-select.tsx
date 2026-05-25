@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { PlusIcon } from '@usertour/icons';
@@ -37,6 +38,7 @@ export function ObjectMappingFieldSelect({
   disabled = false,
 }: ObjectMappingFieldSelectProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const selectedItem = items.find((item) => item.value === value);
 
   const handleSelect = (selectedValue: string) => {
@@ -73,8 +75,12 @@ export function ObjectMappingFieldSelect({
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0 z-50" withoutPortal>
         <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
-          <CommandEmpty>No items found.</CommandEmpty>
+          <CommandInput
+            placeholder={t('settings.integrations.objectMapping.searchPlaceholder', {
+              kind: placeholder.toLowerCase(),
+            })}
+          />
+          <CommandEmpty>{t('settings.integrations.objectMapping.selectEmpty')}</CommandEmpty>
           <CommandGroup>
             <ScrollArea className="h-64">
               {items.map((item) => (
@@ -99,7 +105,7 @@ export function ObjectMappingFieldSelect({
                 <CommandItem onSelect={handleCreateAttribute}>
                   <div className="flex items-center gap-2">
                     <PlusIcon className="w-4 h-4" />
-                    <span>Create new attribute</span>
+                    <span>{t('settings.integrations.objectMapping.selectCreateAttribute')}</span>
                   </div>
                 </CommandItem>
               )}
@@ -119,6 +125,7 @@ export function ObjectMappingObjectSelect({
   className,
 }: ObjectMappingObjectSelectProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const selectedItem = items.find((item) => item.name === value);
 
   const handleSelect = (selectedValue: string) => {
@@ -149,8 +156,12 @@ export function ObjectMappingObjectSelect({
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0 z-50" withoutPortal>
         <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
-          <CommandEmpty>No items found.</CommandEmpty>
+          <CommandInput
+            placeholder={t('settings.integrations.objectMapping.searchPlaceholder', {
+              kind: placeholder.toLowerCase(),
+            })}
+          />
+          <CommandEmpty>{t('settings.integrations.objectMapping.selectEmpty')}</CommandEmpty>
           <CommandGroup>
             <ScrollArea className="h-64">
               {items.map((item) => (

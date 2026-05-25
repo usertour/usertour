@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/button';
 import { format } from 'date-fns';
@@ -63,12 +63,15 @@ const ApiListPage = () => {
       actions={<NewApiKeyButton onSuccess={refetch} />}
       description={
         <>
-          The API key is used to authenticate your backend application via Usertour's REST API,
-          which can be used to update user properties and track events.
+          {t('settings.api.headerBody')}
           <br />
-          Please note that API keys are environment-specific — you are currently viewing the{' '}
-          <span className="font-bold text-foreground">{environment?.name}</span> environment. <br />
-          Use the environment menu in the top-left corner to switch environments.
+          <Trans
+            i18nKey="settings.api.headerEnvironmentNote"
+            values={{ environment: environment?.name ?? '' }}
+            components={{ strong: <span className="font-bold text-foreground" /> }}
+          />{' '}
+          <br />
+          {t('settings.api.headerEnvironmentSwitch')}
           <br />
           <a
             href="https://docs.usertour.io/api-reference/introduction"
@@ -76,7 +79,7 @@ const ApiListPage = () => {
             target="_blank"
             rel="noreferrer"
           >
-            <span>Read the API documentation.</span>
+            <span>{t('settings.api.headerDocs')}</span>
             <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
           </a>
         </>
