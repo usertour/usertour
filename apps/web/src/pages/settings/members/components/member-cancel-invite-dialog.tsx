@@ -25,7 +25,7 @@ interface EditFormProps {
   onCancel: () => void;
 }
 
-export const CancelInviteDialog = (props: EditFormProps) => {
+export const MemberCancelInviteDialog = (props: EditFormProps) => {
   const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -78,4 +78,4 @@ export const CancelInviteDialog = (props: EditFormProps) => {
   );
 };
 
-CancelInviteDialog.displayName = 'CancelInviteDialog';
+MemberCancelInviteDialog.displayName = 'MemberCancelInviteDialog';

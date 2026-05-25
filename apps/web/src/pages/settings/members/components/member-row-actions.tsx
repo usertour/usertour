@@ -6,10 +6,10 @@ import { useMemberContext } from '@/contexts/member-context';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { type TeamMember, TeamMemberRole } from '@usertour/types';
 import { ResourceRowActions, type ResourceRowActionItem } from '@usertour/ui';
-import { CancelInviteDialog } from './member-cancel-dialog';
+import { MemberCancelInviteDialog } from './member-cancel-invite-dialog';
 import { MemberChangeRoleDialog } from './member-change-role-dialog';
 import { MemberRemoveDialog } from './member-remove-dialog';
-import { TransferOwnerDialog } from './member-transfer-owner-dialog';
+import { MemberTransferOwnerDialog } from './member-transfer-owner-dialog';
 
 interface MemberRowActionsProps {
   data: TeamMember;
@@ -66,7 +66,7 @@ export const MemberRowActions = ({ data }: MemberRowActionsProps) => {
   return (
     <>
       <ResourceRowActions items={items} contentClassName="min-w-[200px]" />
-      <CancelInviteDialog
+      <MemberCancelInviteDialog
         projectId={projectId}
         data={data}
         isOpen={cancelInviteOpen}
@@ -96,7 +96,7 @@ export const MemberRowActions = ({ data }: MemberRowActionsProps) => {
         }}
         onCancel={() => setRemoveOpen(false)}
       />
-      <TransferOwnerDialog
+      <MemberTransferOwnerDialog
         projectId={projectId}
         isOpen={transferOwnerOpen}
         data={data}

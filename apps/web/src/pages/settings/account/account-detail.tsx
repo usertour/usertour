@@ -3,7 +3,7 @@ import { SettingsCard, SettingsCardStack } from '@usertour/ui';
 import { AccountEmailForm } from './components/account-email-form';
 import { AccountPasswordForm } from './components/account-password-form';
 import { AccountProfileForm } from './components/account-profile-form';
-import { AccountTwoFactorForm } from './two-factor';
+import { AccountTwoFactor } from './two-factor';
 
 export const SettingsAccountDetail = () => {
   const { userInfo } = useAppContext();
@@ -23,7 +23,7 @@ export const SettingsAccountDetail = () => {
         </>
       )}
       <SettingsCard>
-        <AccountTwoFactorForm />
+        <AccountTwoFactor />
       </SettingsCard>
     </SettingsCardStack>
   );

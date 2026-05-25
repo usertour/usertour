@@ -8,7 +8,7 @@ import {
 import { integrations } from '@/utils/integration';
 import { useIntegrationConfig } from '../hooks/use-integration-config';
 
-interface PosthogIntegrationConfig {
+interface PostHogIntegrationConfig {
   region?: string;
   exportEvents?: boolean;
 }
@@ -17,8 +17,8 @@ const INTEGRATION_PROVIDER = 'posthog' as const;
 const PROVIDER_NAME = 'PostHog';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
-export const PosthogIntegration = () => {
-  const config = useIntegrationConfig<PosthogIntegrationConfig>(INTEGRATION_PROVIDER);
+export const PostHogIntegration = () => {
+  const config = useIntegrationConfig<PostHogIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
   const { t } = useTranslation();
 
@@ -61,4 +61,4 @@ export const PosthogIntegration = () => {
   );
 };
 
-PosthogIntegration.displayName = 'PosthogIntegration';
+PostHogIntegration.displayName = 'PostHogIntegration';

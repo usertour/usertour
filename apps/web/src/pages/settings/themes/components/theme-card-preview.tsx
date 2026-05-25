@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@usertour/button';
 
 import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
-import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
+import { ThemeEditDropdownMenu } from './theme-edit-dropdown-menu';
 
 type ThemeCardPreviewProps = {
   theme: Theme;

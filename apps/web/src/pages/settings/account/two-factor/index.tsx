@@ -14,7 +14,7 @@ import { SetupDialog } from './setup-dialog';
 import { StepUpDialog } from './step-up-dialog';
 import { useRefreshMe } from './use-refresh-me';
 
-export const AccountTwoFactorForm = () => {
+export const AccountTwoFactor = () => {
   const { t } = useTranslation('ui');
   const { userInfo, globalConfig } = useAppContext();
   const { toast } = useToast();
@@ -120,4 +120,4 @@ export const AccountTwoFactorForm = () => {
   );
 };
 
-AccountTwoFactorForm.displayName = 'AccountTwoFactorForm';
+AccountTwoFactor.displayName = 'AccountTwoFactor';

@@ -226,7 +226,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     hideFromSidebar: true,
     component: lazy(() =>
-      import('./integrations').then((module) => ({ default: module.SettingsIntegrationsList })),
+      import('./integrations').then((module) => ({ default: module.SettingsIntegrationList })),
     ),
     detail: {
       component: lazy(() =>

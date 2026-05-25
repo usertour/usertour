@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usert
 import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
+import { ThemeEditDropdownMenu } from '../../theme-edit-dropdown-menu';
 import { BuilderSaveButton } from '../ui';
 import { EditableTitle } from '@/components/molecules/editable-title';
 import { MoreButton } from '@/components/molecules/section-breadcrumb-header';

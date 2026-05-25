@@ -25,7 +25,7 @@ interface EditFormProps {
   onCancel: () => void;
 }
 
-export const TransferOwnerDialog = (props: EditFormProps) => {
+export const MemberTransferOwnerDialog = (props: EditFormProps) => {
   const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -83,4 +83,4 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
   );
 };
 
-TransferOwnerDialog.displayName = 'TransferOwnerDialog';
+MemberTransferOwnerDialog.displayName = 'MemberTransferOwnerDialog';
