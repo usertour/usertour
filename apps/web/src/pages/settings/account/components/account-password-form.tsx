@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
@@ -9,32 +9,34 @@ import { Input } from '@usertour/input';
 import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
-const passwordSchema = z
-  .object({
-    currentPassword: z
-      .string()
-      .min(2, { message: 'Password must be at least 6 characters.' })
-      .max(30, { message: 'Password must not be longer than 30 characters.' }),
-    newPassword: z
-      .string()
-      .min(2, { message: 'Password must be at least 6 characters.' })
-      .max(30, { message: 'Password must not be longer than 30 characters.' }),
-    confirmPassword: z
-      .string()
-      .min(2, { message: 'Password must be at least 6 characters.' })
-      .max(30, { message: 'Password must not be longer than 30 characters.' }),
-  })
-  .superRefine(({ confirmPassword, newPassword }, ctx) => {
-    if (confirmPassword !== newPassword) {
-      ctx.addIssue({ code: 'custom', message: 'The passwords did not match' });
-    }
-  });
-
-type PasswordFormValues = z.infer<typeof passwordSchema>;
+// Bounds match the auth module's password schema (registration / reset)
+// so a password accepted at sign-up can be re-entered as the current
+// password here. The mismatch message goes through i18n via the auth
+// errors key already used by the sign-up / reset flows.
+interface PasswordFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 
 export const AccountPasswordForm = () => {
   const [updateMutation] = useMutation(changePassword);
   const { t } = useTranslation();
+
+  const passwordSchema = useMemo(
+    () =>
+      z
+        .object({
+          currentPassword: z.string().min(8).max(160),
+          newPassword: z.string().min(8).max(160),
+          confirmPassword: z.string().min(8).max(160),
+        })
+        .refine((values) => values.confirmPassword === values.newPassword, {
+          message: t('auth.errors.passwordsDoNotMatch'),
+          path: ['confirmPassword'],
+        }),
+    [t],
+  );
 
   // The form must clear on success so a stale value can't be replayed.
   // `useRef` lets us reach back into the hook result inside `onSuccess`

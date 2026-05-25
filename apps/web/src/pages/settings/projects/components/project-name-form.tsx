@@ -12,10 +12,7 @@ import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
 const projectNameSchema = z.object({
-  name: z
-    .string()
-    .min(2, { message: 'Project name must be at least 2 characters.' })
-    .max(30, { message: 'Project name must not be longer than 30 characters.' }),
+  name: z.string().min(2).max(30),
 });
 
 type ProjectNameValues = z.infer<typeof projectNameSchema>;

@@ -10,10 +10,7 @@ import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
 const profileSchema = z.object({
-  name: z
-    .string()
-    .min(2, { message: 'Name must be at least 2 characters.' })
-    .max(30, { message: 'Name must not be longer than 30 characters.' }),
+  name: z.string().min(2).max(30),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;

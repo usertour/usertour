@@ -10,15 +10,9 @@ import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
 const emailSchema = z.object({
-  email: z
-    .string()
-    .email({ message: 'Please enter a valid email address.' })
-    .min(3, { message: 'Email must be at least 3 characters.' })
-    .max(255, { message: 'Email must not be longer than 255 characters.' }),
-  password: z
-    .string()
-    .min(2, { message: 'Password must be at least 2 characters.' })
-    .max(100, { message: 'Password must not be longer than 100 characters.' }),
+  email: z.string().email().min(3).max(255),
+  // Backend re-verifies the current password — schema is just a sanity gate.
+  password: z.string().min(1).max(160),
 });
 
 type EmailFormValues = z.infer<typeof emailSchema>;
