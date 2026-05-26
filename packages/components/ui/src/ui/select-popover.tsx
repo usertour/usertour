@@ -32,18 +32,19 @@ export interface SelectPopoverProps {
   withoutPortal?: boolean;
 }
 
-export const SelectPopover = ({
-  options,
-  value,
-  onValueChange,
-  placeholder = 'Select option',
-  emptyText = 'No items found.',
-  className,
-  contentClassName,
-  contentStyle,
-  disabled = false,
-  withoutPortal = false,
-}: SelectPopoverProps) => {
+export const SelectPopover = (props: SelectPopoverProps) => {
+  const {
+    options,
+    value,
+    onValueChange,
+    placeholder = 'Select option',
+    emptyText = 'No items found.',
+    className,
+    contentClassName,
+    contentStyle,
+    disabled = false,
+    withoutPortal = false,
+  } = props;
   const [open, setOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
 

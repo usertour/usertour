@@ -117,41 +117,37 @@ interface ScaledPreviewContainerProps {
  * Uses smooth transition animation when scale changes
  */
 const ScaledPreviewContainer = memo(
-  forwardRef<HTMLDivElement, ScaledPreviewContainerProps>(
-    (
-      {
-        children,
-        maxWidth = 300,
-        maxHeight = 160,
-        className = 'origin-[center_center]',
-        onContentRectChange,
+  forwardRef<HTMLDivElement, ScaledPreviewContainerProps>((props, ref) => {
+    const {
+      children,
+      maxWidth = 300,
+      maxHeight = 160,
+      className = 'origin-[center_center]',
+      onContentRectChange,
+    } = props;
+    const handleContentRectChange = useCallback(
+      (contentRect: DOMRect, scale: number) => {
+        onContentRectChange?.(contentRect, scale);
       },
-      ref,
-    ) => {
-      const handleContentRectChange = useCallback(
-        (contentRect: DOMRect, scale: number) => {
-          onContentRectChange?.(contentRect, scale);
-        },
-        [onContentRectChange],
-      );
+      [onContentRectChange],
+    );
 
-      const { contentRef, containerStyle } = useScaledPreview({
-        maxWidth,
-        maxHeight,
-        onContentRectChange: handleContentRectChange,
-      });
+    const { contentRef, containerStyle } = useScaledPreview({
+      maxWidth,
+      maxHeight,
+      onContentRectChange: handleContentRectChange,
+    });
 
-      return (
-        <div
-          ref={ref}
-          style={containerStyle}
-          className={cn('[&_iframe]:pointer-events-none', className)}
-        >
-          <div ref={contentRef}>{children}</div>
-        </div>
-      );
-    },
-  ),
+    return (
+      <div
+        ref={ref}
+        style={containerStyle}
+        className={cn('[&_iframe]:pointer-events-none', className)}
+      >
+        <div ref={contentRef}>{children}</div>
+      </div>
+    );
+  }),
 );
 
 ScaledPreviewContainer.displayName = 'ScaledPreviewContainer';
@@ -168,63 +164,62 @@ interface AutoScaledPreviewContainerProps {
  * Measures parent container size and adjusts scale accordingly
  */
 const AutoScaledPreviewContainer = memo(
-  forwardRef<HTMLDivElement, AutoScaledPreviewContainerProps>(
-    ({ children, padding = 0, className = 'origin-center', onContentRectChange }, ref) => {
-      const [scale, setScale] = useState<number>(INITIAL_SCALE);
-      const prevScaleRef = useRef<number>(INITIAL_SCALE);
+  forwardRef<HTMLDivElement, AutoScaledPreviewContainerProps>((props, ref) => {
+    const { children, padding = 0, className = 'origin-center', onContentRectChange } = props;
+    const [scale, setScale] = useState<number>(INITIAL_SCALE);
+    const prevScaleRef = useRef<number>(INITIAL_SCALE);
 
-      // Measure the wrapper (which fills parent container)
-      const [wrapperRef, wrapperRect] = useMeasure<HTMLDivElement>();
-      // Measure the actual content
-      const [contentRef, contentRect] = useMeasure<HTMLDivElement>();
+    // Measure the wrapper (which fills parent container)
+    const [wrapperRef, wrapperRect] = useMeasure<HTMLDivElement>();
+    // Measure the actual content
+    const [contentRef, contentRect] = useMeasure<HTMLDivElement>();
 
-      // Calculate and update scale when dimensions change
-      useLayoutEffect(() => {
-        // Apply padding to available container dimensions
-        const availableWidth = (wrapperRect.width ?? 0) - padding * 2;
-        const availableHeight = (wrapperRect.height ?? 0) - padding * 2;
+    // Calculate and update scale when dimensions change
+    useLayoutEffect(() => {
+      // Apply padding to available container dimensions
+      const availableWidth = (wrapperRect.width ?? 0) - padding * 2;
+      const availableHeight = (wrapperRect.height ?? 0) - padding * 2;
 
-        const newScale = calculateScale(
-          contentRect.width ?? 0,
-          contentRect.height ?? 0,
-          availableWidth,
-          availableHeight,
-        );
-
-        if (newScale !== null && newScale !== prevScaleRef.current) {
-          prevScaleRef.current = newScale;
-          setScale(newScale);
-        }
-      }, [contentRect, wrapperRect, padding]);
-
-      // Notify parent of rect/scale changes
-      useLayoutEffect(() => {
-        if (onContentRectChange && contentRect) {
-          onContentRectChange(contentRect as DOMRect, scale);
-        }
-      }, [contentRect, scale, onContentRectChange]);
-
-      // Memoize container style
-      const containerStyle = useMemo<CSSProperties>(
-        () => ({
-          scale: `${scale}`,
-        }),
-        [scale],
+      const newScale = calculateScale(
+        contentRect.width ?? 0,
+        contentRect.height ?? 0,
+        availableWidth,
+        availableHeight,
       );
 
-      return (
-        <div ref={wrapperRef} className="w-full h-full flex items-center justify-center">
-          <div
-            ref={ref}
-            style={containerStyle}
-            className={cn('[&_iframe]:pointer-events-none', className)}
-          >
-            <div ref={contentRef}>{children}</div>
-          </div>
+      if (newScale !== null && newScale !== prevScaleRef.current) {
+        prevScaleRef.current = newScale;
+        setScale(newScale);
+      }
+    }, [contentRect, wrapperRect, padding]);
+
+    // Notify parent of rect/scale changes
+    useLayoutEffect(() => {
+      if (onContentRectChange && contentRect) {
+        onContentRectChange(contentRect as DOMRect, scale);
+      }
+    }, [contentRect, scale, onContentRectChange]);
+
+    // Memoize container style
+    const containerStyle = useMemo<CSSProperties>(
+      () => ({
+        scale: `${scale}`,
+      }),
+      [scale],
+    );
+
+    return (
+      <div ref={wrapperRef} className="w-full h-full flex items-center justify-center">
+        <div
+          ref={ref}
+          style={containerStyle}
+          className={cn('[&_iframe]:pointer-events-none', className)}
+        >
+          <div ref={contentRef}>{children}</div>
         </div>
-      );
-    },
-  ),
+      </div>
+    );
+  }),
 );
 
 AutoScaledPreviewContainer.displayName = 'AutoScaledPreviewContainer';
