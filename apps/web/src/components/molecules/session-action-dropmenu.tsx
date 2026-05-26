@@ -14,10 +14,8 @@ import {
   QuestionMarkCircledIcon,
   ZoomInIcon,
 } from '@usertour/icons';
-import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour/hooks';
 import { BizSession } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -193,39 +191,15 @@ const DropdownMenuItems = ({
 // rules and content type, not on this dialog.
 const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFormProps) => {
   const { t } = useTranslation();
-  const { toast } = useToast();
-  const { invoke: deleteSession, loading: deleteLoading } = useDeleteSessionMutation();
-  const { invoke: endSession, loading: endLoading } = useEndSessionMutation();
+  const { invoke: deleteSession } = useDeleteSessionMutation();
+  const { invoke: endSession } = useEndSessionMutation();
 
-  const loading = type === 'delete' ? deleteLoading : endLoading;
-
-  const handleConfirm = async () => {
-    try {
-      const invoke = type === 'delete' ? deleteSession : endSession;
-      const result = await invoke(session.id);
-      if (result) {
-        toast({
-          variant: 'success',
-          title:
-            type === 'delete'
-              ? t('sessionActions.toast.deleteSuccess')
-              : t('sessionActions.toast.endSuccess'),
-        });
-        onSubmit(true);
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({
-        variant: 'destructive',
-        title:
-          getErrorMessage(error) ||
-          (type === 'delete'
-            ? t('sessionActions.toast.deleteFailed')
-            : t('sessionActions.toast.endFailed')),
-      });
-    }
-  };
-
+  // Managed mode: the primitive owns spinner + success/failure toast +
+  // dialog-close-on-success. `endSession` has server-side codepaths
+  // that legitimately resolve `false` (session not found, already
+  // ended, content type doesn't support dismiss — analytics.service
+  // line 1521/1533) — unmanaged mode used to swallow those silently
+  // and leave the dialog stuck with a stopped spinner.
   return (
     <DestructiveConfirmDialog
       title={t(`sessionActions.${type}.title`)}
@@ -234,8 +208,18 @@ const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFor
       cancelLabel={t('sessionActions.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleConfirm}
-      loading={loading}
+      invoke={() => (type === 'delete' ? deleteSession(session.id) : endSession(session.id))}
+      successToast={
+        type === 'delete'
+          ? t('sessionActions.toast.deleteSuccess')
+          : t('sessionActions.toast.endSuccess')
+      }
+      failureToast={
+        type === 'delete'
+          ? t('sessionActions.toast.deleteFailed')
+          : t('sessionActions.toast.endFailed')
+      }
+      onSettled={onSubmit}
     />
   );
 };
@@ -302,9 +286,13 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
         session={session}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
+        // Managed mode owns dialog close on success and intentionally
+        // leaves the dialog open on soft-failure / throw so the user
+        // gets retryable feedback. Only escalate the success branch.
         onSubmit={(success) => {
-          setDeleteOpen(false);
-          success && onDeleteSuccess?.();
+          if (success) {
+            onDeleteSuccess?.();
+          }
         }}
       />
 
@@ -315,8 +303,9 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
         open={endOpen}
         onOpenChange={setEndOpen}
         onSubmit={(success) => {
-          setEndOpen(false);
-          success && onEndSuccess?.();
+          if (success) {
+            onEndSuccess?.();
+          }
         }}
       />
 

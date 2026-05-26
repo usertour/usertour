@@ -218,14 +218,37 @@ export const DestructiveConfirmDialog = (props: DestructiveConfirmDialogProps) =
   const handleConfirm = isManaged ? runManaged : (props as UnmanagedProps).onConfirm;
   const effectiveLoading = isManaged ? managedLoading : (props as UnmanagedProps).loading;
 
+  // Block dismissal (Esc / external `onOpenChange(false)`) while a
+  // managed mutation is in-flight. The Cancel button is already
+  // `disabled={effectiveLoading}`, but AlertDialog's default Escape
+  // handler routes around it — unmounting mid-await would race the
+  // pending `invoke()` against the toast/onSettled callbacks and
+  // surprise the user with feedback for an action they thought they
+  // cancelled. The mutation itself can't be aborted, so the right
+  // behaviour is to lock the chrome until it settles.
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && effectiveLoading) {
+          return;
+        }
+        onOpenChange(next);
+      }}
+    >
       {/* Widen past AlertDialog's default max-w-lg (512px). The icon
           column eats ~56px on the left, so the default leaves a single
           short sentence wrapping mid-word ("cannot be / undone."). 576px
           fits the common case on one line; the global
           `[overflow-wrap:anywhere]` still catches extreme names. */}
-      <AlertDialogContent className="max-w-xl">
+      <AlertDialogContent
+        className="max-w-xl"
+        onEscapeKeyDown={(event) => {
+          if (effectiveLoading) {
+            event.preventDefault();
+          }
+        }}
+      >
         {/* Header overrides AlertDialogHeader's default column layout to
             row-align the warning badge with the title+description column.
             shadcn's `cn()` uses tailwind-merge so the override wins. */}

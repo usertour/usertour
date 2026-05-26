@@ -81,13 +81,14 @@ export const RegenerateDialog = (props: RegenerateDialogProps) => {
     }
   };
 
-  // Finish exits the codes stage. Both controlled-`open=false` (which
-  // Radix doesn't fire `onOpenChange` for) and an explicit `reset()` are
-  // required — otherwise `newCodes` survives in component state, and the
-  // next mount of the (persistent) dialog skips the TOTP step entirely
-  // and shows the already-revoked codes. setup-dialog has the same
-  // shape; mirror its `onFinish`.
-  const onFinish = () => {
+  // Single close path for both the codes-stage Finish button and the
+  // scan-stage Cancel button. Radix's Dialog only re-fires its own
+  // `onOpenChange` for user-initiated events (Esc, click-outside),
+  // never for an externally-controlled `open` prop flip — so calling
+  // `props.onOpenChange(false)` from a button bypasses the wrapper
+  // that runs `reset()`. Without resetting, `newCodes` survives across
+  // re-opens and shows the already-revoked codes batch.
+  const close = () => {
     onOpenChange(false);
     reset();
   };
@@ -141,7 +142,7 @@ export const RegenerateDialog = (props: RegenerateDialogProps) => {
               }}
             />
             <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={close}>
                 {t('twoFactor.setup.cancelButton')}
               </Button>
               <Button onClick={handleSubmit} disabled={regenerate.loading || !code.trim()}>
@@ -181,7 +182,7 @@ export const RegenerateDialog = (props: RegenerateDialogProps) => {
               <span>{t('twoFactor.setup.confirmSaved')}</span>
             </label>
             <DialogFooter>
-              <Button disabled={!savedConfirmed} onClick={onFinish}>
+              <Button disabled={!savedConfirmed} onClick={close}>
                 {t('twoFactor.setup.finishButton')}
               </Button>
             </DialogFooter>

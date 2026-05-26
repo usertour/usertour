@@ -94,6 +94,14 @@ export const SetupDialog = (props: SetupDialogProps) => {
         setRecoveryCodes(codes);
         setStage('codes');
         await onEnabled();
+      } else {
+        // Defensive: the server schema marks `recoveryCodes` non-null, so
+        // this branch shouldn't be reachable today. If a backend
+        // regression ever returned without the field, the TOTP would
+        // already be consumed server-side and the user would be stuck
+        // without codes — toast so the failure surfaces instead of the
+        // spinner just stopping.
+        toast({ variant: 'destructive', title: t('twoFactor.regenerate.noCodesReturned') });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -112,7 +120,15 @@ export const SetupDialog = (props: SetupDialogProps) => {
     }
   };
 
-  const onFinish = () => {
+  // Single close path for both the codes-stage Finish button and the
+  // scan-stage Cancel button. Radix's Dialog only re-fires its own
+  // `onOpenChange` for user-initiated events (Esc, click-outside),
+  // never for an externally-controlled `open` prop flip — so calling
+  // `props.onOpenChange(false)` from a button bypasses the wrapper
+  // that runs `reset()`. Without resetting, a fresh open would see
+  // `payload !== null` and skip `start.invoke()`, showing a stale
+  // (possibly server-invalidated) QR/secret.
+  const close = () => {
     onOpenChange(false);
     reset();
   };
@@ -201,7 +217,7 @@ export const SetupDialog = (props: SetupDialogProps) => {
               </>
             )}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={close}>
                 {t('twoFactor.setup.cancelButton')}
               </Button>
               <Button
@@ -247,7 +263,7 @@ export const SetupDialog = (props: SetupDialogProps) => {
               <span>{t('twoFactor.setup.confirmSaved')}</span>
             </label>
             <DialogFooter>
-              <Button type="button" disabled={!savedConfirmed} onClick={onFinish}>
+              <Button type="button" disabled={!savedConfirmed} onClick={close}>
                 {t('twoFactor.setup.finishButton')}
               </Button>
             </DialogFooter>
