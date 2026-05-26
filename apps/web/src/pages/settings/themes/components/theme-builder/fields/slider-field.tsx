@@ -13,7 +13,7 @@ export interface SliderFieldProps {
   tooltip?: string;
 }
 
-export function SliderField(props: SliderFieldProps) {
+export const SliderField = (props: SliderFieldProps) => {
   const { path, label, min, max, step = 1, suffix, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -44,4 +44,4 @@ export function SliderField(props: SliderFieldProps) {
       />
     </div>
   );
-}
+};

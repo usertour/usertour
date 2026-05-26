@@ -10,7 +10,7 @@ export interface TextFieldProps {
   tooltip?: string;
 }
 
-export function TextField(props: TextFieldProps) {
+export const TextField = (props: TextFieldProps) => {
   const { path, label, placeholder, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -27,4 +27,4 @@ export function TextField(props: TextFieldProps) {
       />
     </FieldRow>
   );
-}
+};

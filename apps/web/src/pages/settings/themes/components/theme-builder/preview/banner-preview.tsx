@@ -21,7 +21,7 @@ export interface BannerPreviewProps {
 // V1's ThemePreviewBanner wraps the widget in a `p-6` container which leaves
 // a gap between the banner and the browser chrome; v2 needs the banner to
 // hug the chrome to mirror real-page behavior.
-export function BannerPreview(props: BannerPreviewProps) {
+export const BannerPreview = (props: BannerPreviewProps) => {
   const { contents, settings, customStyle } = props;
   const data = {
     ...DEFAULT_BANNER_DATA,
@@ -44,4 +44,4 @@ export function BannerPreview(props: BannerPreviewProps) {
       </BannerContainer>
     </BannerRoot>
   );
-}
+};

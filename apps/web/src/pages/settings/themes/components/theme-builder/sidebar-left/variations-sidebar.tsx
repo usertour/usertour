@@ -70,7 +70,7 @@ interface SortableVariationRowProps {
 
 // Wires a single variation row into the SortableContext. Kept inline because
 // it captures parent props and isn't reused elsewhere.
-function SortableVariationRow(props: SortableVariationRowProps) {
+const SortableVariationRow = (props: SortableVariationRowProps) => {
   const {
     variation,
     untitledLabel,
@@ -113,9 +113,9 @@ function SortableVariationRow(props: SortableVariationRowProps) {
       isDragging={isDragging}
     />
   );
-}
+};
 
-export function VariationsSidebar(props: VariationsSidebarProps) {
+export const VariationsSidebar = (props: VariationsSidebarProps) => {
   const {
     variations,
     activeVariationId,
@@ -316,4 +316,4 @@ export function VariationsSidebar(props: VariationsSidebarProps) {
       )}
     </div>
   );
-}
+};

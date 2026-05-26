@@ -18,7 +18,7 @@ export interface NumberFieldProps {
   tooltip?: string;
 }
 
-export function NumberField(props: NumberFieldProps) {
+export const NumberField = (props: NumberFieldProps) => {
   const {
     path,
     label,
@@ -73,4 +73,4 @@ export function NumberField(props: NumberFieldProps) {
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </FieldRow>
   );
-}
+};

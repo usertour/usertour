@@ -24,7 +24,7 @@ export interface FieldRendererProps {
 // is the single resolver — it calls `t()` once per field and passes plain
 // strings down so leaf field components don't need to know about i18n.
 
-export function FieldRenderer(props: FieldRendererProps) {
+export const FieldRenderer = (props: FieldRendererProps) => {
   const { field } = props;
   const { activeSettings } = useBuilderContext();
   const { t } = useTranslation();
@@ -179,4 +179,4 @@ export function FieldRenderer(props: FieldRendererProps) {
         />
       );
   }
-}
+};

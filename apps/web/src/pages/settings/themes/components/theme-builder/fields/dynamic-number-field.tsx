@@ -15,7 +15,7 @@ export interface DynamicNumberFieldProps {
   tooltip?: string;
 }
 
-export function DynamicNumberField(props: DynamicNumberFieldProps) {
+export const DynamicNumberField = (props: DynamicNumberFieldProps) => {
   const { label, path, min, max, step = 1, suffix, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -45,4 +45,4 @@ export function DynamicNumberField(props: DynamicNumberFieldProps) {
       )}
     </FieldRow>
   );
-}
+};

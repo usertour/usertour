@@ -33,7 +33,7 @@ function fieldKey(field: FieldDef, index: number): string {
   return `${field.type}:${field.path}`;
 }
 
-export function SectionsAccordion(props: SectionsAccordionProps) {
+export const SectionsAccordion = (props: SectionsAccordionProps) => {
   const { onSectionExpanded } = props;
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -82,4 +82,4 @@ export function SectionsAccordion(props: SectionsAccordionProps) {
       ))}
     </AccordionPrimitive.Root>
   );
-}
+};

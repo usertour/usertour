@@ -20,7 +20,7 @@ export interface FieldRowProps {
   tooltip?: string;
 }
 
-export function FieldRow(props: FieldRowProps) {
+export const FieldRow = (props: FieldRowProps) => {
   const { label, htmlFor, children, controlClassName, forceVertical, tooltip } = props;
   const isLong = forceVertical || label.length > LONG_LABEL_THRESHOLD;
   if (isLong) {
@@ -43,4 +43,4 @@ export function FieldRow(props: FieldRowProps) {
       <div className={cn('relative w-36 flex-none', controlClassName)}>{children}</div>
     </div>
   );
-}
+};

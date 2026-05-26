@@ -27,7 +27,7 @@ export interface PreviewPaneProps {
   onWidgetTypeChange: (next: ThemeDetailPreviewType) => void;
 }
 
-export function PreviewPane(props: PreviewPaneProps) {
+export const PreviewPane = (props: PreviewPaneProps) => {
   const { settings, widgetType, onWidgetTypeChange } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const containerRect = useRect(containerRef.current);
@@ -112,4 +112,4 @@ export function PreviewPane(props: PreviewPaneProps) {
       </BrowserFrame>
     </div>
   );
-}
+};

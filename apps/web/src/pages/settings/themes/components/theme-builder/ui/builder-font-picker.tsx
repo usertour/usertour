@@ -22,7 +22,7 @@ const SYSTEM_ITEMS: { id: string; name: string; labelKey: string }[] = [
   { id: 'custom-font', name: 'Custom font', labelKey: 'themeBuilder.fontPicker.customFont' },
 ];
 
-export function BuilderFontPicker(props: BuilderFontPickerProps) {
+export const BuilderFontPicker = (props: BuilderFontPickerProps) => {
   const { value, onChange, disabled, id } = props;
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
@@ -93,4 +93,4 @@ export function BuilderFontPicker(props: BuilderFontPickerProps) {
       </PopoverContent>
     </Popover>
   );
-}
+};

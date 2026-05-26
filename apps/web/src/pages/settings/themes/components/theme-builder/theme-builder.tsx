@@ -39,7 +39,7 @@ export interface ThemeBuilderProps {
 const mergeWithDefaults = (settings: ThemeTypesSetting): ThemeTypesSetting =>
   deepmerge(defaultSettings, settings) as ThemeTypesSetting;
 
-export function ThemeBuilder(props: ThemeBuilderProps) {
+export const ThemeBuilder = (props: ThemeBuilderProps) => {
   const { theme, onSave, onRename, onActionComplete } = props;
   const [activeWidgetType, setActiveWidgetType] = useState<ThemeDetailPreviewType>(
     ThemeDetailPreviewType.TOOLTIP,
@@ -214,4 +214,4 @@ export function ThemeBuilder(props: ThemeBuilderProps) {
       </div>
     </BuilderProvider>
   );
-}
+};

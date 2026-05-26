@@ -17,7 +17,7 @@ export interface ColorFieldProps {
   tooltip?: string;
 }
 
-export function ColorField(props: ColorFieldProps) {
+export const ColorField = (props: ColorFieldProps) => {
   const { path, label, allowAuto = false, autoFallback, vertical, tooltip } = props;
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -62,4 +62,4 @@ export function ColorField(props: ColorFieldProps) {
       </Popover>
     </FieldRow>
   );
-}
+};

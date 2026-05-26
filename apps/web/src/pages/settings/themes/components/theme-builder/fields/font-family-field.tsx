@@ -11,7 +11,7 @@ export interface FontFamilyFieldProps {
 
 // Vertical layout: font picker needs full sidebar width to show family names
 // in the dropdown comfortably.
-export function FontFamilyField(props: FontFamilyFieldProps) {
+export const FontFamilyField = (props: FontFamilyFieldProps) => {
   const { path, label, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -30,4 +30,4 @@ export function FontFamilyField(props: FontFamilyFieldProps) {
       />
     </div>
   );
-}
+};

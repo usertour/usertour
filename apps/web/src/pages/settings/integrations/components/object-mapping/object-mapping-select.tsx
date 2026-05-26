@@ -27,7 +27,7 @@ interface ObjectMappingObjectSelectProps {
   className?: string;
 }
 
-export function ObjectMappingFieldSelect({
+export const ObjectMappingFieldSelect = ({
   items,
   value,
   onValueChange,
@@ -36,7 +36,7 @@ export function ObjectMappingFieldSelect({
   showCreateAttribute = false,
   onCreateAttribute,
   disabled = false,
-}: ObjectMappingFieldSelectProps) {
+}: ObjectMappingFieldSelectProps) => {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
   const selectedItem = items.find((item) => item.value === value);
@@ -115,15 +115,15 @@ export function ObjectMappingFieldSelect({
       </PopoverContent>
     </Popover>
   );
-}
+};
 
-export function ObjectMappingObjectSelect({
+export const ObjectMappingObjectSelect = ({
   items,
   value,
   onValueChange,
   placeholder,
   className,
-}: ObjectMappingObjectSelectProps) {
+}: ObjectMappingObjectSelectProps) => {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
   const selectedItem = items.find((item) => item.name === value);
@@ -188,4 +188,4 @@ export function ObjectMappingObjectSelect({
       </PopoverContent>
     </Popover>
   );
-}
+};

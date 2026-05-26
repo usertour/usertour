@@ -34,7 +34,7 @@ interface WidgetOption {
   Icon: ComponentType<{ className?: string }>;
 }
 
-export function WidgetSwitcher(props: WidgetSwitcherProps) {
+export const WidgetSwitcher = (props: WidgetSwitcherProps) => {
   const { value, onChange } = props;
   const { t } = useTranslation();
 
@@ -133,4 +133,4 @@ export function WidgetSwitcher(props: WidgetSwitcherProps) {
       </SelectContent>
     </Select>
   );
-}
+};

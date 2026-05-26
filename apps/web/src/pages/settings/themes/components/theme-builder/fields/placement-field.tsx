@@ -26,7 +26,7 @@ const DEFAULT_OPTIONS: { value: string; label: string }[] = [
   { value: ModalPosition.Center, label: 'Center' },
 ];
 
-export function PlacementField(props: PlacementFieldProps) {
+export const PlacementField = (props: PlacementFieldProps) => {
   const { path, label, options, labels } = props;
   const opts = options ?? DEFAULT_OPTIONS;
   const lbls = {
@@ -42,4 +42,4 @@ export function PlacementField(props: PlacementFieldProps) {
       <NumberField path={`${path}.positionOffsetY`} label={lbls.offsetY} suffix="px" />
     </div>
   );
-}
+};

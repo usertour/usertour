@@ -14,7 +14,7 @@ export interface SelectFieldProps {
   tooltip?: string;
 }
 
-export function SelectField(props: SelectFieldProps) {
+export const SelectField = (props: SelectFieldProps) => {
   const { path, label, options, vertical, valueAsNumber, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -35,4 +35,4 @@ export function SelectField(props: SelectFieldProps) {
       />
     </FieldRow>
   );
-}
+};

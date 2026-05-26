@@ -9,7 +9,7 @@ export interface BooleanFieldProps {
   tooltip?: string;
 }
 
-export function BooleanField(props: BooleanFieldProps) {
+export const BooleanField = (props: BooleanFieldProps) => {
   const { path, label, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -25,4 +25,4 @@ export function BooleanField(props: BooleanFieldProps) {
       />
     </FieldRow>
   );
-}
+};

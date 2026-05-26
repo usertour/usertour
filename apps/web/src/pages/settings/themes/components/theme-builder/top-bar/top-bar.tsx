@@ -29,7 +29,7 @@ export interface TopBarProps {
   isViewOnly: boolean;
 }
 
-export function TopBar(props: TopBarProps) {
+export const TopBar = (props: TopBarProps) => {
   const {
     theme,
     onRename,
@@ -111,4 +111,4 @@ export function TopBar(props: TopBarProps) {
       </div>
     </div>
   );
-}
+};

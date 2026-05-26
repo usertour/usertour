@@ -12,7 +12,7 @@ interface AvatarShape {
   url?: string;
 }
 
-export function AvatarTypeField(props: AvatarTypeFieldProps) {
+export const AvatarTypeField = (props: AvatarTypeFieldProps) => {
   const { basePath } = props;
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<AvatarShape>(basePath);
@@ -29,4 +29,4 @@ export function AvatarTypeField(props: AvatarTypeFieldProps) {
       }}
     />
   );
-}
+};

@@ -15,7 +15,7 @@ interface ThemePreviewSelectorProps {
   onTypeChange?: (type: ThemeDetailSelectorType) => void;
 }
 
-export function ThemePreviewSelector({ selectedType, onTypeChange }: ThemePreviewSelectorProps) {
+export const ThemePreviewSelector = ({ selectedType, onTypeChange }: ThemePreviewSelectorProps) => {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -59,6 +59,6 @@ export function ThemePreviewSelector({ selectedType, onTypeChange }: ThemePrevie
       </PopoverContent>
     </Popover>
   );
-}
+};
 
 ThemePreviewSelector.displayName = 'ThemePreviewSelector';

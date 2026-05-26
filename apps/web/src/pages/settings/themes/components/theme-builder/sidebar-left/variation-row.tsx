@@ -47,7 +47,7 @@ export interface VariationRowProps {
   isDragging?: boolean;
 }
 
-export function VariationRow(props: VariationRowProps) {
+export const VariationRow = (props: VariationRowProps) => {
   const {
     label,
     selected,
@@ -178,4 +178,4 @@ export function VariationRow(props: VariationRowProps) {
       )}
     </div>
   );
-}
+};

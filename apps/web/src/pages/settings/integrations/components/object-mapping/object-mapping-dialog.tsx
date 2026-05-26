@@ -145,7 +145,7 @@ interface ObjectMappingDialogProps {
   mode?: 'create' | 'edit';
 }
 
-export function ObjectMappingDialog({
+export const ObjectMappingDialog = ({
   integrationId,
   initialMapping,
   onSuccess,
@@ -153,7 +153,7 @@ export function ObjectMappingDialog({
   open,
   onOpenChange,
   mode = 'create',
-}: ObjectMappingDialogProps) {
+}: ObjectMappingDialogProps) => {
   const { project } = useAppContext();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -381,4 +381,4 @@ export function ObjectMappingDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

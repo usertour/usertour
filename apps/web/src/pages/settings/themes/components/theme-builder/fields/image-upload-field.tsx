@@ -9,7 +9,7 @@ export interface ImageUploadFieldProps {
   previewAspect?: 'square' | 'wide';
 }
 
-export function ImageUploadField(props: ImageUploadFieldProps) {
+export const ImageUploadField = (props: ImageUploadFieldProps) => {
   const { path, label, description, maxSizeBytes, previewAspect } = props;
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path);
@@ -26,4 +26,4 @@ export function ImageUploadField(props: ImageUploadFieldProps) {
       />
     </div>
   );
-}
+};

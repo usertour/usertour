@@ -7,7 +7,7 @@ export interface SubSectionProps {
   withSeparator?: boolean;
 }
 
-export function SubSection(props: SubSectionProps) {
+export const SubSection = (props: SubSectionProps) => {
   const { label, fields, withSeparator } = props;
   return (
     <>
@@ -20,7 +20,7 @@ export function SubSection(props: SubSectionProps) {
       </div>
     </>
   );
-}
+};
 
 // Stable key for nested fields. Mirrors SectionsAccordion's heuristic.
 function fieldKey(field: FieldDef, index: number): string {

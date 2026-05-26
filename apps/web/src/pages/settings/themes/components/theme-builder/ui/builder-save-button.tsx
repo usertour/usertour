@@ -8,7 +8,7 @@ export interface BuilderSaveButtonProps {
   disabled?: boolean;
 }
 
-export function BuilderSaveButton(props: BuilderSaveButtonProps) {
+export const BuilderSaveButton = (props: BuilderSaveButtonProps) => {
   const { hasUnsavedChanges, isSaving, onSave, disabled } = props;
   const { t } = useTranslation();
   if (disabled) return null;
@@ -32,4 +32,4 @@ export function BuilderSaveButton(props: BuilderSaveButtonProps) {
       {isSaving ? t('themeBuilder.chrome.saving') : t('themeBuilder.chrome.save')}
     </button>
   );
-}
+};

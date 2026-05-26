@@ -12,7 +12,7 @@ export interface ConditionsSectionProps {
   disabled?: boolean;
 }
 
-export function ConditionsSection(props: ConditionsSectionProps) {
+export const ConditionsSection = (props: ConditionsSectionProps) => {
   const { conditions, onConditionsChange, variationName, disabled } = props;
   const { attributeList } = useAttributeListContext();
   const { t } = useTranslation();
@@ -43,4 +43,4 @@ export function ConditionsSection(props: ConditionsSectionProps) {
       />
     </div>
   );
-}
+};

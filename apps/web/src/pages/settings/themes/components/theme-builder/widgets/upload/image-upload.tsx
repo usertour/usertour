@@ -23,7 +23,7 @@ export interface ImageUploadWidgetProps {
   disabled?: boolean;
 }
 
-export function ImageUploadWidget(props: ImageUploadWidgetProps) {
+export const ImageUploadWidget = (props: ImageUploadWidgetProps) => {
   const {
     value,
     onChange,
@@ -135,4 +135,4 @@ export function ImageUploadWidget(props: ImageUploadWidgetProps) {
       )}
     </div>
   );
-}
+};
