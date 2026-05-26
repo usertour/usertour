@@ -27,7 +27,7 @@ import {
 } from '@usertour/alert-dialog';
 import { QuestionTooltip } from '@usertour/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
 import { ResizeHandle, bodyClass, headerClass, panelClass, sectionLabelClass } from '@usertour/ui';
@@ -159,9 +159,12 @@ export const VariationsSidebar = (props: VariationsSidebarProps) => {
     ? (variations.find((v) => v.id === deletingId) ?? null)
     : null;
 
-  useEffect(() => {
-    if (renamingVariation) setRenameDraft(renamingVariation.name);
-  }, [renamingVariation]);
+  // The rename menu item already seeds `renameDraft` when the user
+  // opens rename (see `onRename` in the sortable row props). A separate
+  // effect that re-seeds on every `renamingVariation` reference change
+  // would clobber the in-progress draft whenever the variations array
+  // gets a fresh reference (parent refetch, sibling rename) — so it's
+  // deliberately omitted here.
 
   const commitRename = () => {
     if (!renamingId) return;
