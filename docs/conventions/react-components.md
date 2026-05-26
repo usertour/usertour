@@ -86,3 +86,74 @@ export const Foo = (props: FooProps) => {
 
 Foo.displayName = 'Foo';
 ```
+
+## Declaration shape: `const` over `function`
+
+**Default to `export const Foo = (props: FooProps) => { … }`. Only use
+`export function Foo` for generic components (`function Foo<T>(…)`),
+where the const form forces the TSX `<T,>` comma trick.**
+
+```tsx
+// ✅ Preferred — const arrow
+export const Foo = (props: FooProps) => {
+  const { label } = props;
+  return <span>{label}</span>;
+};
+
+Foo.displayName = 'Foo';
+
+// ✅ Allowed — generic component
+export function ResourceTable<T>(props: ResourceTableProps<T>) {
+  const { columns, rows, getRowKey } = props;
+  // …
+}
+```
+
+```tsx
+// ❌ Avoid — plain function declaration for a non-generic component
+export function Foo(props: FooProps) {
+  const { label } = props;
+  return <span>{label}</span>;
+}
+```
+
+### Why
+
+- **One shape across the file.** `forwardRef` and `memo` return values
+  you have to assign to a binding (`const Foo = forwardRef(…)`). Mixing
+  `function Foo` for plain components with `const Bar = forwardRef(…)`
+  for ref'd ones in the same file is worse for scanning than picking
+  `const` everywhere.
+- **Aligns with Radix UI and shadcn.** Same reason as the props-style
+  rule above — the libraries we cross-read use `const` uniformly.
+- **No hoisting surprises.** `const` declarations evaluate in source
+  order, which matches how files read top-to-bottom.
+
+The stack-trace and devtools-name arguments for `function` are myths on
+modern toolchains — named `const` bindings resolve fine in React
+devtools and error stacks.
+
+### Generic-component exception
+
+TypeScript needs `<T,>` (with a trailing comma) inside TSX to
+disambiguate type parameters from JSX tags when using arrow functions.
+`function Foo<T>(…)` sidesteps that noise:
+
+```tsx
+// ✅ function declaration keeps the generic readable
+export function ResourceTable<T>(props: ResourceTableProps<T>) {
+  // …
+}
+
+// ❌ const arrow form needs the comma trick — avoid for generics
+export const ResourceTable = <T,>(props: ResourceTableProps<T>) => {
+  // …
+};
+```
+
+### When migrating older files
+
+The same incremental rule applies: don't bulk-migrate working files just
+to swap `function` for `const`. Convert when you're already editing the
+file for another reason. New components should land in `const` shape
+from the start.
