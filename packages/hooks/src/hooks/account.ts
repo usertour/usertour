@@ -3,8 +3,16 @@ import { changePassword, updateEmail, updateUser } from '@usertour/gql';
 
 export const useUpdateUserMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateUser);
-  const invoke = async (name: string, avatarUrl = ''): Promise<boolean> => {
-    const response = await mutation({ variables: { name, avatarUrl } });
+  // `avatarUrl` is intentionally optional: omitting it from the variables
+  // makes the server-side Prisma `update` skip the column rather than
+  // overwriting it. Defaulting to `''` here (the previous shape) silently
+  // wiped any OAuth-derived avatar on every name-only profile save.
+  const invoke = async (name: string, avatarUrl?: string): Promise<boolean> => {
+    const variables: { name: string; avatarUrl?: string } = { name };
+    if (avatarUrl !== undefined) {
+      variables.avatarUrl = avatarUrl;
+    }
+    const response = await mutation({ variables });
     return !!response.data?.updateUser?.id;
   };
   return { invoke, loading, error };
