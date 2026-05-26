@@ -495,12 +495,10 @@ const translations = {
       createFailure: 'Failed to create API key.',
       environmentMissing: 'Environment not found.',
       headerBody:
-        "The API key is used to authenticate your backend application via Usertour's REST API, which can be used to update user properties and track events.",
-      headerEnvironmentNote:
-        'Please note that API keys are environment-specific — you are currently viewing the <strong>{{environment}}</strong> environment.',
-      headerEnvironmentSwitch:
-        'Use the environment menu in the top-left corner to switch environments.',
-      headerDocs: 'Read the API documentation.',
+        "API keys authenticate backend calls to Usertour's REST API for updating user properties and tracking events.",
+      headerEnvironment:
+        "Each environment has its own keys; you're viewing <strong>{{environment}}</strong>. Switch via the environment menu in the top-left.",
+      headerDocs: 'Read the API reference',
     },
     integrations: {
       title: 'Integrations for {{environment}}',

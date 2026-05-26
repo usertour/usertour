@@ -59,12 +59,10 @@ const ApiListPage = () => {
           {t('settings.api.headerBody')}
           <br />
           <Trans
-            i18nKey="settings.api.headerEnvironmentNote"
+            i18nKey="settings.api.headerEnvironment"
             values={{ environment: environment?.name ?? '' }}
             components={{ strong: <span className="font-bold text-foreground" /> }}
-          />{' '}
-          <br />
-          {t('settings.api.headerEnvironmentSwitch')}
+          />
           <br />
           <a
             href="https://docs.usertour.io/api-reference/introduction"

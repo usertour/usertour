@@ -471,12 +471,10 @@ const translations = {
       createSuccess: 'API 密钥已创建',
       createFailure: '创建 API 密钥失败。',
       environmentMissing: '未找到环境。',
-      headerBody:
-        '使用 API 密钥认证你的后端服务调用 Usertour 的 REST API,可用于更新用户属性、上报事件。',
-      headerEnvironmentNote:
-        'API 密钥与单个环境绑定 —— 您当前正在查看 <strong>{{environment}}</strong> 环境。',
-      headerEnvironmentSwitch: '使用左上角的环境菜单切换环境。',
-      headerDocs: '阅读 API 文档。',
+      headerBody: 'API 密钥用于后端调用 Usertour 的 REST API,更新用户属性、上报事件。',
+      headerEnvironment:
+        '每个环境有独立的密钥,当前查看的是 <strong>{{environment}}</strong>。切换环境请用左上角的环境菜单。',
+      headerDocs: '阅读 API 文档',
     },
     integrations: {
       title: '{{environment}} 环境的集成',
