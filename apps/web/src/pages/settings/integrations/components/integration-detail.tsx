@@ -18,8 +18,10 @@ export const IntegrationDetail = () => {
       {settingSubType === 'heap' && <HeapIntegration />}
       {settingSubType === 'hubspot' && <HubSpotIntegration />}
       {settingSubType === 'segment' && <SegmentIntegration />}
-      {settingSubType === 'salesforce' && <SalesforceIntegration />}
-      {settingSubType === 'salesforce-sandbox' && <SalesforceIntegration />}
+      {settingSubType === 'salesforce' && <SalesforceIntegration provider="salesforce" />}
+      {settingSubType === 'salesforce-sandbox' && (
+        <SalesforceIntegration provider="salesforce-sandbox" />
+      )}
     </div>
   );
 };

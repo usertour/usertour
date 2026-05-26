@@ -27,10 +27,19 @@ import { IntegrationObjectMappingModel } from '@usertour/types';
 import { ObjectMappingReadonly } from './object-mapping/object-mapping-readonly';
 import { ObjectMappingDialog } from './object-mapping/object-mapping-dialog';
 
-const INTEGRATION_PROVIDER = 'salesforce' as const;
+// Salesforce production and Salesforce Sandbox are distinct integration
+// rows server-side (different OAuth login URLs, separate integration
+// records — see integration.service.ts). Each provider value below maps
+// to its own row; do NOT collapse them into one.
+export type SalesforceIntegrationProvider = 'salesforce' | 'salesforce-sandbox';
 
-export const SalesforceIntegration = () => {
-  const { environment } = useAppContext();
+export interface SalesforceIntegrationProps {
+  provider: SalesforceIntegrationProvider;
+}
+
+export const SalesforceIntegration = (props: SalesforceIntegrationProps) => {
+  const { provider } = props;
+  const { environment, project } = useAppContext();
   const { toast } = useToast();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -38,10 +47,11 @@ export const SalesforceIntegration = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const environmentId = environment?.id || '';
+  const projectId = project?.id;
 
   const { data: currentIntegration, loading: isDataLoading } = useGetIntegrationQuery(
     environment?.id || '',
-    INTEGRATION_PROVIDER,
+    provider,
     {
       skip: !environment?.id,
     },
@@ -58,11 +68,11 @@ export const SalesforceIntegration = () => {
 
   const { invoke: disconnectIntegration } = useDisconnectIntegrationMutation();
 
-  const integrationInfo = integrations.find((i) => i.provider === INTEGRATION_PROVIDER);
+  const integrationInfo = integrations.find((i) => i.provider === provider);
 
   const { data: authUrl, loading: loadingAuthUrl } = useGetSalesforceAuthUrlQuery(
     environment?.id || '',
-    INTEGRATION_PROVIDER,
+    provider,
     {
       skip: !environment?.id,
     },
@@ -83,12 +93,14 @@ export const SalesforceIntegration = () => {
   const handleDisconnect = useCallback(async () => {
     try {
       setIsDisconnecting(true);
-      await disconnectIntegration(environmentId, INTEGRATION_PROVIDER);
+      await disconnectIntegration(environmentId, provider);
       toast({
         variant: 'success',
         title: t('settings.integrations.salesforce.disconnectSuccessToast'),
       });
-      navigate('/project/1/settings/integrations');
+      if (projectId) {
+        navigate(`/project/${projectId}/settings/integrations`);
+      }
     } catch {
       toast({
         title: t('settings.integrations.salesforce.disconnectFailureToast'),
@@ -97,7 +109,7 @@ export const SalesforceIntegration = () => {
     } finally {
       setIsDisconnecting(false);
     }
-  }, [environmentId, disconnectIntegration, toast, navigate, t]);
+  }, [environmentId, provider, projectId, disconnectIntegration, toast, navigate, t]);
 
   if (isDataLoading || isMappingsLoading) {
     return (
