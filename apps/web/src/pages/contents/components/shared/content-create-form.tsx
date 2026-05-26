@@ -14,9 +14,22 @@ import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/type
 import { useToast } from '@usertour/use-toast';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { getContentTypeMeta } from './content-type-meta';
+
+// `contents.types.<key>` provides the localised lowercased noun used by
+// the dialog copy ('New {{type}}', 'Create {{type}}', etc.). Map each
+// ContentDataType to its key so the form can stay generic.
+const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
+  [ContentDataType.FLOW]: 'contents.types.flow',
+  [ContentDataType.CHECKLIST]: 'contents.types.checklist',
+  [ContentDataType.LAUNCHER]: 'contents.types.launcher',
+  [ContentDataType.BANNER]: 'contents.types.banner',
+  [ContentDataType.TRACKER]: 'contents.types.tracker',
+  [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
+};
 
 interface ContentCreateFormProps {
   open: boolean;
@@ -57,16 +70,21 @@ export const ContentCreateForm = ({
   const { environment } = useAppContext();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const contentTypeMeta = useMemo(() => getContentTypeMeta(contentType), [contentType]);
+  const typeLabel = t(CONTENT_TYPE_I18N_KEY[contentType]);
 
   const copy = useMemo(
     () => ({
-      dialogTitle: `Create ${contentTypeMeta.singular}`,
-      namePlaceholder: `Enter ${contentTypeMeta.singular} name`,
-      createErrorMessage: `Create ${contentTypeMeta.singular} failed.`,
+      dialogTitle: t('contents.create.title', { type: typeLabel }),
+      nameLabel: t('contents.create.nameLabel'),
+      namePlaceholder: t('contents.create.namePlaceholder', { type: typeLabel }),
+      submitLabel: t('contents.create.submit', { type: typeLabel }),
+      cancelLabel: t('settings.common.cancel'),
+      createErrorMessage: t('contents.create.failure', { type: typeLabel }),
     }),
-    [contentTypeMeta],
+    [t, typeLabel],
   );
 
   const showError = (title: string) => {
@@ -138,7 +156,7 @@ export const ContentCreateForm = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem className="flex flex-col items-start space-y-1">
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>{copy.nameLabel}</FormLabel>
                     <FormControl>
                       <div className="w-full">
                         <Input placeholder={copy.namePlaceholder} {...field} id={nameInputId} />
@@ -151,11 +169,11 @@ export const ContentCreateForm = ({
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                Cancel
+                {copy.cancelLabel}
               </Button>
               <Button type="submit" disabled={isLoading || isNameEmpty} id={submitButtonId}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Submit
+                {copy.submitLabel}
               </Button>
             </DialogFooter>
           </form>

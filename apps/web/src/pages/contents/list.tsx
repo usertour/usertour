@@ -5,19 +5,32 @@ import { ThemeListProvider } from '@/contexts/theme-list-context';
 import { ScrollArea } from '@usertour/scroll-area';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ContentDataType } from '@usertour/types';
 import { ContentListLayout } from './components/list/content-list-layout';
 import { ContentListSidebar } from './components/shared/content-list-sidebar';
 import { ContentCreateForm } from './components/shared/content-create-form';
 
+// Per-content-type i18n key for the localised lowercased noun used in
+// `contents.list.newButton` (and by the dialog copy in ContentCreateForm).
+const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
+  [ContentDataType.FLOW]: 'contents.types.flow',
+  [ContentDataType.CHECKLIST]: 'contents.types.checklist',
+  [ContentDataType.LAUNCHER]: 'contents.types.launcher',
+  [ContentDataType.BANNER]: 'contents.types.banner',
+  [ContentDataType.TRACKER]: 'contents.types.tracker',
+  [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
+};
+
 // Content type configuration interface
 interface ContentConfig {
+  /** Drives the localised `contents.list.newButton` label at render. */
+  dataType: ContentDataType;
   title: string;
   description: ReactNode;
   emptyTitle: string;
   emptyDescription: string;
-  createButtonText: string;
   createForm: (props: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -51,6 +64,7 @@ const ContentDescription = ({ text, docUrl, linkText }: ContentDescriptionProps)
 // Centralized configuration for all content types
 const CONTENT_CONFIG: Record<string, ContentConfig> = {
   flows: {
+    dataType: ContentDataType.FLOW,
     title: 'Flows',
     description: (
       <ContentDescription
@@ -61,7 +75,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
     emptyTitle: 'No flows added',
     emptyDescription: 'You have not added any flows. Add one below.',
-    createButtonText: 'Create Flow',
     createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.FLOW}
@@ -73,6 +86,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     buttonId: 'create-flow-button',
   },
   checklists: {
+    dataType: ContentDataType.CHECKLIST,
     title: 'Checklists',
     description: (
       <ContentDescription
@@ -83,7 +97,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
     emptyTitle: 'No checklists added',
     emptyDescription: 'You have not added any checklists. Add one below.',
-    createButtonText: 'Create Checklist',
     createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.CHECKLIST}
@@ -94,6 +107,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
   },
   launchers: {
+    dataType: ContentDataType.LAUNCHER,
     title: 'Launchers',
     description: (
       <ContentDescription
@@ -104,7 +118,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
     emptyTitle: 'No launchers added',
     emptyDescription: 'You have not added any launchers. Add one below.',
-    createButtonText: 'Create Launcher',
     createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.LAUNCHER}
@@ -115,6 +128,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
   },
   banners: {
+    dataType: ContentDataType.BANNER,
     title: 'Banners',
     description: (
       <ContentDescription
@@ -125,7 +139,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
     emptyTitle: 'No banners added',
     emptyDescription: 'You have not added any banners. Add one below.',
-    createButtonText: 'Create Banner',
     createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.BANNER}
@@ -136,6 +149,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
   },
   trackers: {
+    dataType: ContentDataType.TRACKER,
     title: 'Event trackers',
     description: (
       <ContentDescription
@@ -146,7 +160,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
     emptyTitle: 'No event trackers added',
     emptyDescription: 'You have not added any event trackers. Add one below.',
-    createButtonText: 'Create event tracker',
     createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.TRACKER}
@@ -157,6 +170,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
   },
   'resource-centers': {
+    dataType: ContentDataType.RESOURCE_CENTER,
     title: 'Resource Centers',
     description: (
       <ContentDescription
@@ -167,7 +181,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     ),
     emptyTitle: 'No resource centers added',
     emptyDescription: 'You have not added any resource centers. Add one below.',
-    createButtonText: 'Create Resource Center',
     createForm: ({ open, onOpenChange, onSubmit }) => (
       <ContentCreateForm
         contentType={ContentDataType.RESOURCE_CENTER}
@@ -185,6 +198,7 @@ CONTENT_CONFIG.content = CONTENT_CONFIG.flows;
 export const ContentList = () => {
   const { contentType } = useParams();
   const { environment, project } = useAppContext();
+  const { t } = useTranslation();
 
   if (!contentType || !environment || !project) {
     return null;
@@ -194,6 +208,12 @@ export const ContentList = () => {
   if (!config) {
     return null;
   }
+
+  // Trigger button: `New {{type}}` per the convention shared with
+  // ContentCreateForm's dialog title.
+  const createButtonText = t('contents.list.newButton', {
+    type: t(CONTENT_TYPE_I18N_KEY[config.dataType]),
+  });
 
   return (
     <ContentListProvider
@@ -206,7 +226,7 @@ export const ContentList = () => {
           <ContentListSidebar title={config.title} />
           <ScrollArea className="h-full w-full">
             <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
-              <ContentListLayout {...config} />
+              <ContentListLayout {...config} createButtonText={createButtonText} />
             </div>
           </ScrollArea>
         </EventListProvider>

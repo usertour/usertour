@@ -84,7 +84,7 @@ const translations = {
     },
     attributes: {
       title: 'Attributes',
-      newButton: 'New Attribute',
+      newButton: 'New attribute',
       description: 'You can send user and company attributes via Usertour.js.',
       predefinedResource: 'attributes',
       tabs: {
@@ -105,7 +105,7 @@ const translations = {
       deleteSuccess: 'The attribute has been successfully deleted',
       deleteFailure: 'Failed to delete attribute.',
       editTitle: 'Edit attribute',
-      saveButton: 'Save Attribute',
+      saveButton: 'Save attribute',
       updateSuccess: 'The attribute has been successfully updated',
       updateFailure: 'Failed to update attribute.',
       form: {
@@ -140,15 +140,15 @@ const translations = {
           randomAB: 'Random A/B',
           randomNumber: 'Random number',
         },
-        createTitle: 'Create New Attribute',
-        createSubmit: 'Create Attribute',
+        createTitle: 'New attribute',
+        createSubmit: 'Create attribute',
         createSuccess: 'The attribute has been successfully created',
       },
       empty: 'No attributes yet.',
     },
     events: {
       title: 'Events',
-      newButton: 'New Event',
+      newButton: 'New event',
       predefinedResource: 'events',
       columns: {
         displayName: 'Display name',
@@ -159,9 +159,9 @@ const translations = {
       deleteResource: 'event',
       deleteSuccess: 'The event has been successfully deleted',
       editTitle: 'Edit event',
-      createTitle: 'Create New Event',
-      saveButton: 'Save Event',
-      createButton: 'Create Event',
+      createTitle: 'New event',
+      saveButton: 'Save event',
+      createButton: 'Create event',
       updateSuccess: 'The event has been successfully updated',
       updateFailure: 'Failed to update event.',
       createSuccess: 'The event has been successfully created',
@@ -188,7 +188,7 @@ const translations = {
     },
     environments: {
       title: 'Environments',
-      newButton: 'New Environment',
+      newButton: 'New environment',
       description:
         'With environments, you can isolate user/company/content data between e.g. Production and Staging.',
       columns: {
@@ -206,8 +206,10 @@ const translations = {
       deleteFailure: 'Failed to delete environment',
       invalidData: 'Invalid environment data',
       setPrimarySuccess: 'Environment set as primary successfully.',
-      createTitle: 'Create New Environment',
+      createTitle: 'New environment',
       editTitle: 'Edit environment',
+      createButton: 'Create environment',
+      saveButton: 'Save environment',
       nameLabel: 'Environment name',
       namePlaceholder: 'Enter environment name',
       limitTitle: 'Maximum environments reached',
@@ -221,7 +223,7 @@ const translations = {
     },
     localizations: {
       title: 'Localization',
-      newButton: 'New Localization',
+      newButton: 'New localization',
       columns: {
         code: 'Code',
         name: 'Name',
@@ -237,10 +239,10 @@ const translations = {
       deleteFailure: 'Failed to delete localization.',
       createFailure: 'Failed to create localization.',
       updateFailure: 'Failed to update localization.',
-      createTitle: 'Create New Localization',
+      createTitle: 'New localization',
       editTitle: 'Edit localization',
-      saveButton: 'Save Localization',
-      createButton: 'Create Localization',
+      saveButton: 'Save localization',
+      createButton: 'Create localization',
       description:
         "Localization enables you to tailor your Usertour content to align with your users' language and regional preferences. A locale defines the user's specific language and region settings.",
       descriptionContinuation:
@@ -269,15 +271,16 @@ const translations = {
         'This action cannot be undone. This will permanently delete the theme and all its variations.',
       deleteSuccess: 'The theme has been successfully deleted',
       deleteFailure: 'Failed to delete theme.',
-      duplicateSuccess: 'The theme has been successfully created',
+      duplicateSuccess: 'The theme has been successfully duplicated',
       duplicateFailure: 'Failed to duplicate theme.',
-      duplicateTitle: 'Create New Theme',
+      duplicateTitle: 'Duplicate theme',
+      duplicateSubmit: 'Duplicate theme',
       duplicateNameLabel: 'Theme name',
       duplicateNamePlaceholder: 'Enter theme name',
     },
     team: {
       title: 'Team',
-      newButton: 'Add Team Member',
+      newButton: 'Invite team member',
       empty: 'No team members yet.',
       columns: {
         name: 'Name',
@@ -295,7 +298,7 @@ const translations = {
         owner: 'Owner',
       },
       invite: {
-        title: 'Add Team Member',
+        title: 'Invite team member',
         nameLabel: 'Name',
         namePlaceholder: 'Enter member name',
         emailLabel: 'Email',
@@ -485,7 +488,7 @@ const translations = {
       createTitle: 'New API key',
       createNameLabel: 'Key Name',
       createNamePlaceholder: 'Enter key name',
-      createButton: 'Create',
+      createButton: 'Create API key',
       creating: 'Creating...',
       createSuccess: 'API key created successfully',
       createFailure: 'Failed to create API key.',
@@ -946,17 +949,17 @@ const translations = {
       },
     },
     segments: {
-      create: 'Create User Segment',
-      update: 'Update User Segment',
+      create: 'New user segment',
+      update: 'Edit user segment',
       form: {
         name: 'Name',
         namePlaceholder: 'Enter user segment name',
-        segmentType: 'Segment Type',
+        segmentType: 'Segment type',
         segmentTypeTooltip: 'Determines which kind of segment can be set.',
         filter: 'Filter',
         manual: 'Manual',
-        createSegment: 'Create Segment',
-        updateSegment: 'Update Segment',
+        createSegment: 'Create user segment',
+        updateSegment: 'Save user segment',
       },
       tooltips: {
         editName: 'Edit user segment name',
@@ -1063,6 +1066,30 @@ const translations = {
     },
   },
   contents: {
+    // Per-content-type lowercased noun, interpolated into dialog copy
+    // ('New {{type}}', 'Create {{type}}', 'Delete {{type}}', etc.).
+    // Keep lowercase + sentence-case-friendly — these slot mid-sentence.
+    types: {
+      flow: 'flow',
+      checklist: 'checklist',
+      launcher: 'launcher',
+      banner: 'banner',
+      tracker: 'event tracker',
+      resourceCenter: 'resource center',
+    },
+    create: {
+      title: 'New {{type}}',
+      nameLabel: 'Name',
+      namePlaceholder: 'Enter {{type}} name',
+      submit: 'Create {{type}}',
+      failure: 'Failed to create {{type}}.',
+    },
+    list: {
+      // Trigger button on each content-type list page that opens the
+      // ContentCreateForm dialog. Same `New {{type}}` shape as the
+      // dialog title but a separate key so the surfaces can diverge.
+      newButton: 'New {{type}}',
+    },
     detail: {
       actionsMenu: 'Content actions',
       autosaved: 'Autosaved {{when}} ago',
@@ -1164,17 +1191,17 @@ const translations = {
       },
     },
     segments: {
-      create: 'Create Company Segment',
-      update: 'Update Company Segment',
+      create: 'New company segment',
+      update: 'Edit company segment',
       form: {
         name: 'Name',
         namePlaceholder: 'Enter company segment name',
-        segmentType: 'Segment Type',
+        segmentType: 'Segment type',
         segmentTypeTooltip: 'Determines which kind of segment can be set.',
         filter: 'Filter',
         manual: 'Manual',
-        createSegment: 'Create Segment',
-        updateSegment: 'Update Segment',
+        createSegment: 'Create company segment',
+        updateSegment: 'Save company segment',
       },
       tooltips: {
         editName: 'Edit company segment name',
@@ -1217,7 +1244,7 @@ const translations = {
   },
   themes: {
     createForm: {
-      title: 'Create theme',
+      title: 'New theme',
       name: {
         label: 'Name',
         placeholder: 'Enter theme name',
@@ -1226,7 +1253,7 @@ const translations = {
       isDefault: {
         label: 'Set as default theme',
       },
-      submit: 'Submit',
+      submit: 'Create theme',
       cancel: 'Cancel',
       toast: {
         success: 'Theme created successfully',
@@ -1235,7 +1262,7 @@ const translations = {
       },
     },
     listHeader: {
-      newTheme: 'New Theme',
+      newTheme: 'New theme',
       description:
         'With themes, you can make flows and other Usertour content look like a native part of your app.',
     },

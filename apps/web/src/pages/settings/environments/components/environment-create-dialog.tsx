@@ -109,7 +109,7 @@ export const EnvironmentCreateDialog = ({
       open={open}
       onOpenChange={onOpenChange}
       state={state}
-      submitLabel={t('settings.common.submit')}
+      submitLabel={t('settings.environments.createButton')}
       cancelLabel={t('settings.common.cancel')}
       contentClassName="max-w-xl"
     >

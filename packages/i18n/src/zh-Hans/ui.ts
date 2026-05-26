@@ -190,6 +190,8 @@ const translations = {
       setPrimarySuccess: '已设为主环境。',
       createTitle: '新建环境',
       editTitle: '编辑环境',
+      createButton: '创建环境',
+      saveButton: '保存环境',
       nameLabel: '环境名称',
       namePlaceholder: '请输入环境名称',
       limitTitle: '已达到环境上限',
@@ -250,13 +252,14 @@ const translations = {
       deleteFailure: '删除主题失败。',
       duplicateSuccess: '主题已创建',
       duplicateFailure: '复制主题失败。',
-      duplicateTitle: '新建主题',
+      duplicateTitle: '复制主题',
+      duplicateSubmit: '复制主题',
       duplicateNameLabel: '主题名称',
       duplicateNamePlaceholder: '请输入主题名称',
     },
     team: {
       title: '团队',
-      newButton: '添加团队成员',
+      newButton: '邀请团队成员',
       empty: '暂无团队成员。',
       columns: {
         name: '姓名',
@@ -274,7 +277,7 @@ const translations = {
         owner: '所有者',
       },
       invite: {
-        title: '添加团队成员',
+        title: '邀请团队成员',
         nameLabel: '姓名',
         namePlaceholder: '请输入成员姓名',
         emailLabel: '邮箱',
@@ -462,7 +465,7 @@ const translations = {
       createTitle: '新建 API 密钥',
       createNameLabel: '密钥名称',
       createNamePlaceholder: '请输入密钥名称',
-      createButton: '创建',
+      createButton: '创建 API 密钥',
       creating: '创建中…',
       createSuccess: 'API 密钥已创建',
       createFailure: '创建 API 密钥失败。',
@@ -883,8 +886,8 @@ const translations = {
       },
     },
     segments: {
-      create: '创建用户细分',
-      update: '更新用户细分',
+      create: '新建用户细分',
+      update: '编辑用户细分',
       form: {
         name: '名称',
         namePlaceholder: '输入用户细分名称',
@@ -892,8 +895,8 @@ const translations = {
         segmentTypeTooltip: '确定可以设置哪种类型的细分。',
         filter: '筛选',
         manual: '手动',
-        createSegment: '创建细分',
-        updateSegment: '更新细分',
+        createSegment: '创建用户细分',
+        updateSegment: '保存用户细分',
       },
       tooltips: {
         editName: '编辑用户细分名称',
@@ -997,6 +1000,24 @@ const translations = {
     },
   },
   contents: {
+    types: {
+      flow: '流程',
+      checklist: '清单',
+      launcher: '启动器',
+      banner: '横幅',
+      tracker: '事件追踪',
+      resourceCenter: '资源中心',
+    },
+    create: {
+      title: '新建{{type}}',
+      nameLabel: '名称',
+      namePlaceholder: '请输入{{type}}名称',
+      submit: '创建{{type}}',
+      failure: '创建{{type}}失败。',
+    },
+    list: {
+      newButton: '新建{{type}}',
+    },
     detail: {
       actionsMenu: '内容操作',
       autosaved: '{{when}}前自动保存',
@@ -1088,8 +1109,8 @@ const translations = {
       },
     },
     segments: {
-      create: '创建公司细分',
-      update: '更新公司细分',
+      create: '新建公司细分',
+      update: '编辑公司细分',
       form: {
         name: '名称',
         namePlaceholder: '输入公司细分名称',
@@ -1097,8 +1118,8 @@ const translations = {
         segmentTypeTooltip: '确定可以设置哪种类型的细分。',
         filter: '筛选',
         manual: '手动',
-        createSegment: '创建细分',
-        updateSegment: '更新细分',
+        createSegment: '创建公司细分',
+        updateSegment: '保存公司细分',
       },
       tooltips: {
         editName: '编辑公司细分名称',
@@ -1140,7 +1161,7 @@ const translations = {
   },
   themes: {
     createForm: {
-      title: '创建主题',
+      title: '新建主题',
       name: {
         label: '名称',
         placeholder: '输入主题名称',
@@ -1149,7 +1170,7 @@ const translations = {
       isDefault: {
         label: '设置为默认主题',
       },
-      submit: '提交',
+      submit: '创建主题',
       cancel: '取消',
       toast: {
         success: '主题创建成功',

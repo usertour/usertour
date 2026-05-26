@@ -121,7 +121,7 @@ export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                {t('settings.common.submit')}
+                {t('settings.themes.duplicateSubmit')}
               </Button>
             </DialogFooter>
           </form>
