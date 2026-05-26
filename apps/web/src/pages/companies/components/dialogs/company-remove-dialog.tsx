@@ -21,7 +21,7 @@ export const BizCompanyRemoveDialog = memo((props: BizCompanyRemoveDialogProps) 
 
   const handleConfirm = useCallback(async () => {
     if (!segment?.id) {
-      toast({ variant: 'destructive', title: 'Invalid segment data' });
+      toast({ variant: 'destructive', title: t('companies.toast.segments.invalidSegment') });
       await onSubmit(false);
       return;
     }
@@ -34,7 +34,7 @@ export const BizCompanyRemoveDialog = memo((props: BizCompanyRemoveDialogProps) 
       });
       await onSubmit(true);
     } else {
-      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
+      toast({ variant: 'destructive', title: result.error ?? t('common.unknownError') });
       await onSubmit(false);
     }
   }, [bizCompanyIds, segment?.id, removeCompanies, onSubmit, toast, t]);

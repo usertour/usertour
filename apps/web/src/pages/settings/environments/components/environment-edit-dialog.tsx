@@ -61,6 +61,7 @@ export const EnvironmentEditDialog = ({
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.common.submit')}
+      cancelLabel={t('settings.common.cancel')}
     >
       <FormField
         control={state.form.control}

@@ -21,11 +21,11 @@ export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
 
   const handleConfirm = useCallback(async () => {
     if (!segment?.id) {
-      toast({ variant: 'destructive', title: 'Invalid segment data' });
+      toast({ variant: 'destructive', title: t('users.toast.segments.invalidSegment') });
       return;
     }
     if (!bizUserIds || bizUserIds.length === 0) {
-      toast({ variant: 'destructive', title: 'No users selected' });
+      toast({ variant: 'destructive', title: t('users.toast.segments.noUsersSelected') });
       return;
     }
 
@@ -38,7 +38,7 @@ export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
       onSubmit();
       onOpenChange(false);
     } else {
-      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
+      toast({ variant: 'destructive', title: result.error ?? t('common.unknownError') });
     }
   }, [bizUserIds, segment?.id, removeUsers, onSubmit, onOpenChange, toast, t]);
 

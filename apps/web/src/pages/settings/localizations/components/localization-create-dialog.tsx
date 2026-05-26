@@ -67,6 +67,7 @@ export const LocalizationCreateDialog = ({
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.localizations.createButton')}
+      cancelLabel={t('settings.common.cancel')}
       contentClassName="!w-auto"
     >
       <div className="w-[450px] flex flex-col space-y-2">

@@ -56,7 +56,11 @@ export const AccountProfileForm = () => {
   }
 
   return (
-    <SettingsFormSection title={t('settings.account.profile.title')} state={state}>
+    <SettingsFormSection
+      title={t('settings.account.profile.title')}
+      submitLabel={t('settings.common.save')}
+      state={state}
+    >
       <FormField
         control={state.form.control}
         name="name"

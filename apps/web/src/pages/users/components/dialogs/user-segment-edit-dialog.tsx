@@ -60,7 +60,7 @@ export const UserSegmentEditDialog = memo((props: EditDialogProps) => {
   const handleOnSubmit = useCallback(
     async (formValues: EditSegmentFormValues) => {
       if (!segment?.id) {
-        handleError('Invalid segment data');
+        handleError(t('users.toast.segments.invalidSegment'));
         return;
       }
 
@@ -69,10 +69,10 @@ export const UserSegmentEditDialog = memo((props: EditDialogProps) => {
       if (result.success) {
         handleSuccess(formValues.name);
       } else {
-        handleError(result.error ?? 'Unknown error');
+        handleError(result.error ?? t('common.unknownError'));
       }
     },
-    [segment?.id, updateSegmentAsync, handleSuccess, handleError],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError, t],
   );
 
   return (

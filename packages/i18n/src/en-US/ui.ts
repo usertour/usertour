@@ -107,6 +107,7 @@ const translations = {
       editTitle: 'Edit attribute',
       saveButton: 'Save Attribute',
       updateSuccess: 'The attribute has been successfully updated',
+      updateFailure: 'Failed to update attribute.',
       form: {
         bizTypeLabel: 'Object type',
         bizTypeTooltip:
@@ -162,6 +163,7 @@ const translations = {
       saveButton: 'Save Event',
       createButton: 'Create Event',
       updateSuccess: 'The event has been successfully updated',
+      updateFailure: 'Failed to update event.',
       createSuccess: 'The event has been successfully created',
       createFailure: 'Failed to create event.',
       attributeAlreadyAssociated: 'That attribute is already associated with the event.',
@@ -860,6 +862,7 @@ const translations = {
     addFilter: 'Add filter',
     rowsSelected: '{{count}} selected',
     clearSelection: 'Clear selection',
+    unknownError: 'Something went wrong.',
     membership: {
       attributes: 'Membership attributes',
       none: 'No membership attributes',
@@ -1021,6 +1024,7 @@ const translations = {
         noUsersSelected: 'No users selected. Please select at least one user.',
         invalidSegment: 'Invalid segment selected.',
         addFailed: 'Failed to add users to segment.',
+        removeFailed: 'Failed to remove users from segment.',
       },
       users: {
         usersDeleted_one: 'User deleted',
@@ -1203,6 +1207,7 @@ const translations = {
         noCompaniesSelected: 'No companies selected. Please select at least one company.',
         invalidSegment: 'Invalid segment selected.',
         addFailed: 'Failed to add companies to segment.',
+        removeFailed: 'Failed to remove companies from segment.',
       },
       companies: {
         companiesDeleted_one: 'Company deleted',

@@ -30,17 +30,16 @@ interface ChromeProps {
    */
   description: ReactNode;
   /**
-   * Localised confirm-button label. Convention: action verb + object,
-   * matching the title's action ('Delete API key', 'Remove member',
-   * 'Transfer ownership', 'End session'). Defaults to 'Confirm' as a
-   * non-translated last-resort fallback.
+   * Localised confirm-button label. Required — the primitive stays
+   * i18n-agnostic. Convention: action verb + object, matching the
+   * title's action ('Delete API key', 'Remove member', 'Transfer
+   * ownership', 'End session').
    */
-  confirmLabel?: ReactNode;
+  confirmLabel: ReactNode;
   /**
-   * Localised cancel-button label. Defaults to 'Cancel' as a non-translated
-   * last-resort fallback.
+   * Localised cancel-button label. Required — same reasoning.
    */
-  cancelLabel?: ReactNode;
+  cancelLabel: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -229,11 +228,9 @@ export const DestructiveConfirmDialog = (props: DestructiveConfirmDialogProps) =
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={effectiveLoading}>
-            {cancelLabel ?? 'Cancel'}
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={effectiveLoading}>{cancelLabel}</AlertDialogCancel>
           <LoadingButton variant="destructive" onClick={handleConfirm} loading={effectiveLoading}>
-            {confirmLabel ?? 'Confirm'}
+            {confirmLabel}
           </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>

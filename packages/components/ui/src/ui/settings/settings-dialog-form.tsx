@@ -26,10 +26,15 @@ export interface SettingsDialogFormProps<TValues extends FieldValues> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   state: UseSettingsFormResult<TValues>;
-  /** Submit button label. Defaults to "Save". */
-  submitLabel?: ReactNode;
-  /** Cancel button label. Defaults to "Cancel". */
-  cancelLabel?: ReactNode;
+  /**
+   * Submit button label. Required — the primitive stays i18n-agnostic;
+   * consumers always pass a localized string.
+   */
+  submitLabel: ReactNode;
+  /**
+   * Cancel button label. Required — same reasoning as `submitLabel`.
+   */
+  cancelLabel: ReactNode;
   /**
    * Extra disabled gate for the submit button — on top of the built-in
    * `isSubmitting` lock. Use when dependent data (e.g. a sibling query)
@@ -75,10 +80,10 @@ export function SettingsDialogForm<TValues extends FieldValues>({
             <div className="py-4">{children}</div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                {cancelLabel ?? 'Cancel'}
+                {cancelLabel}
               </Button>
               <LoadingButton type="submit" loading={state.isSubmitting} disabled={submitDisabled}>
-                {submitLabel ?? 'Save'}
+                {submitLabel}
               </LoadingButton>
             </DialogFooter>
           </form>

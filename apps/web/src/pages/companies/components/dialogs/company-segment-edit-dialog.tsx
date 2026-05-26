@@ -68,10 +68,10 @@ export const CompanySegmentEditDialog = memo((props: EditDialogProps) => {
       if (result.success) {
         handleSuccess(formValues.name);
       } else {
-        handleError(result.error ?? 'Unknown error');
+        handleError(result.error ?? t('common.unknownError'));
       }
     },
-    [segment?.id, updateSegmentAsync, handleSuccess, handleError],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError, t],
   );
 
   return (

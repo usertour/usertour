@@ -75,7 +75,7 @@ export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
       if (result.success) {
         handleSuccess(formValues.name);
       } else {
-        handleError(result.error ?? 'Unknown error');
+        handleError(result.error ?? t('common.unknownError'));
       }
     },
     [createSegmentAsync, environmentId, handleSuccess, handleError],

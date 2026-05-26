@@ -2,6 +2,7 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useDeleteBizUserOnSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface RemoveUsersResult {
   success: boolean;
@@ -12,11 +13,12 @@ interface RemoveUsersResult {
 export const useRemoveUsersFromSegment = () => {
   const { invoke: deleteBizUserOnSegment, loading } = useDeleteBizUserOnSegmentMutation();
   const { refetch } = useUserListContext();
+  const { t } = useTranslation();
 
   const removeUsers = useCallback(
     async (userIds: string[], segmentId: string): Promise<RemoveUsersResult> => {
       if (userIds.length === 0) {
-        return { success: false, error: 'No users selected' };
+        return { success: false, error: t('users.toast.segments.noUsersSelected') };
       }
 
       const data = {
@@ -30,12 +32,12 @@ export const useRemoveUsersFromSegment = () => {
           refetch();
           return { success: true, count: ret.count };
         }
-        return { success: false, error: 'Remove operation failed' };
+        return { success: false, error: t('users.toast.segments.removeFailed') };
       } catch (error) {
         return { success: false, error: getErrorMessage(error) };
       }
     },
-    [deleteBizUserOnSegment, refetch],
+    [deleteBizUserOnSegment, refetch, t],
   );
 
   return {

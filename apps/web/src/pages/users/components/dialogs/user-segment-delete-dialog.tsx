@@ -20,7 +20,7 @@ export const UserSegmentDeleteDialog = memo((props: UserSegmentDeleteDialogProps
 
   const handleConfirm = useCallback(async () => {
     if (!segment?.id) {
-      toast({ variant: 'destructive', title: 'Invalid segment data' });
+      toast({ variant: 'destructive', title: t('users.toast.segments.invalidSegment') });
       return;
     }
 
@@ -33,7 +33,7 @@ export const UserSegmentDeleteDialog = memo((props: UserSegmentDeleteDialogProps
       onSubmit();
       onOpenChange(false);
     } else {
-      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
+      toast({ variant: 'destructive', title: result.error ?? t('common.unknownError') });
     }
   }, [segment?.id, segment?.name, deleteSegmentById, onSubmit, onOpenChange, toast, t]);
 

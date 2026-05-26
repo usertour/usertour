@@ -98,6 +98,7 @@ const translations = {
       editTitle: '编辑属性',
       saveButton: '保存属性',
       updateSuccess: '属性已更新',
+      updateFailure: '更新属性失败。',
       form: {
         bizTypeLabel: '对象类型',
         bizTypeTooltip: '该属性所属的实体:用户、公司、公司成员或事件。',
@@ -149,6 +150,7 @@ const translations = {
       saveButton: '保存事件',
       createButton: '创建事件',
       updateSuccess: '事件已更新',
+      updateFailure: '更新事件失败。',
       createSuccess: '事件已创建',
       createFailure: '创建事件失败。',
       attributeAlreadyAssociated: '该属性已与此事件关联。',
@@ -809,6 +811,7 @@ const translations = {
     addFilter: '添加筛选',
     rowsSelected: '已选 {{count}} 项',
     clearSelection: '清除选择',
+    unknownError: '发生未知错误。',
     membership: {
       attributes: '成员属性',
       none: '无成员属性',
@@ -957,6 +960,7 @@ const translations = {
         noUsersSelected: '未选择用户。请至少选择一个用户。',
         invalidSegment: '选择的细分无效。',
         addFailed: '添加用户到细分失败。',
+        removeFailed: '从细分移除用户失败。',
       },
       users: {
         usersDeleted_other: '已删除 {{count}} 个用户',
@@ -1127,6 +1131,7 @@ const translations = {
         noCompaniesSelected: '未选择公司。请至少选择一个公司。',
         invalidSegment: '选择的细分无效。',
         addFailed: '添加公司到细分失败。',
+        removeFailed: '从细分移除公司失败。',
       },
       companies: {
         companiesDeleted_other: '已删除 {{count}} 个公司',

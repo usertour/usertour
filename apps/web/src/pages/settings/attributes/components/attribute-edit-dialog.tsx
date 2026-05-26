@@ -123,7 +123,7 @@ export const AttributeEditDialog = ({
         description: values.description,
       });
       if (!success) {
-        throw new Error('Update attribute failed.');
+        throw new Error(t('settings.attributes.updateFailure'));
       }
       onSubmit?.(true);
       onOpenChange(false);
@@ -145,6 +145,7 @@ export const AttributeEditDialog = ({
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.attributes.saveButton')}
+      cancelLabel={t('settings.common.cancel')}
       contentClassName="max-w-2xl"
     >
       <div className="flex flex-col space-y-2">

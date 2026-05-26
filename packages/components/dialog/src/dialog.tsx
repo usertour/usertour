@@ -93,9 +93,12 @@ const DialogContentSimple2 = React.forwardRef<
   <DialogPortal>
     {/* DialogContentSimple2 is the nested-modal variant — it sits below
         another open dialog (z-[41]) and intentionally uses a near-
-        invisible overlay (bg-background/10) so the parent dialog stays
-        visually dominant. The base overlay class is still merged in. */}
-    <DialogOverlay className={'z-[41] bg-background/10'} />
+        invisible overlay so the parent dialog stays visually dominant.
+        Both light + dark variants need the override — tailwind-merge
+        buckets by variant, so `bg-background/10` only beats the base
+        `bg-gray-900/20` and leaves `dark:bg-gray-900/40` intact (which
+        would re-apply a full 40% dim in dark mode). */}
+    <DialogOverlay className={'z-[41] bg-background/10 dark:bg-background/10'} />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(

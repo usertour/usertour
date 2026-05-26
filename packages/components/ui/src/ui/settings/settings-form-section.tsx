@@ -8,8 +8,12 @@ import type { UseSettingsFormResult } from './use-settings-form';
 export interface SettingsFormSectionProps<TValues extends FieldValues> {
   title: ReactNode;
   description?: ReactNode;
-  /** Override for the submit button label. Defaults to "Save". */
-  submitLabel?: ReactNode;
+  /**
+   * Submit button label. Required — the primitive stays i18n-agnostic
+   * and refuses to default to an English literal; consumers always pass
+   * `t('settings.common.save')` (or a section-specific verb).
+   */
+  submitLabel: ReactNode;
   /**
    * Disable the submit button while the form is pristine. Most settings
    * forms gate on dirty so the user can't trigger a no-op write. Set
@@ -50,7 +54,7 @@ export function SettingsFormSection<TValues extends FieldValues>({
             loading={state.isSubmitting}
             disabled={disableWhenPristine && state.isPristine}
           >
-            {submitLabel ?? 'Save'}
+            {submitLabel}
           </LoadingButton>
         </form>
       </Form>

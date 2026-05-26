@@ -83,7 +83,11 @@ export const AccountEmailForm = () => {
   }
 
   return (
-    <SettingsFormSection title={t('settings.account.email.title')} state={state}>
+    <SettingsFormSection
+      title={t('settings.account.email.title')}
+      submitLabel={t('settings.common.save')}
+      state={state}
+    >
       <FormField
         control={state.form.control}
         name="email"

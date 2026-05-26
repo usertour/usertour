@@ -20,7 +20,7 @@ export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
 
   const handleConfirm = useCallback(async () => {
     if (!bizUserIds || count === 0) {
-      toast({ variant: 'destructive', title: 'No users selected' });
+      toast({ variant: 'destructive', title: t('users.toast.segments.noUsersSelected') });
       return;
     }
 
@@ -33,7 +33,7 @@ export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
       onSuccess();
       onOpenChange(false);
     } else {
-      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
+      toast({ variant: 'destructive', title: result.error ?? t('common.unknownError') });
     }
   }, [bizUserIds, count, deleteUsers, onSuccess, onOpenChange, toast, t]);
 

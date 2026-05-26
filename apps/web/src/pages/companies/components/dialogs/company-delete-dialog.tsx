@@ -20,7 +20,7 @@ export const BizCompanyDeleteDialog = memo((props: BizCompanyDeleteDialogProps) 
 
   const handleConfirm = useCallback(async () => {
     if (!bizCompanyIds || count === 0) {
-      toast({ variant: 'destructive', title: 'No companies selected' });
+      toast({ variant: 'destructive', title: t('companies.toast.segments.noCompaniesSelected') });
       await onSubmit(false);
       return;
     }
@@ -33,7 +33,7 @@ export const BizCompanyDeleteDialog = memo((props: BizCompanyDeleteDialogProps) 
       });
       await onSubmit(true);
     } else {
-      toast({ variant: 'destructive', title: result.error ?? 'Unknown error' });
+      toast({ variant: 'destructive', title: result.error ?? t('common.unknownError') });
       await onSubmit(false);
     }
   }, [bizCompanyIds, count, deleteCompanies, onSubmit, toast, t]);

@@ -66,7 +66,11 @@ export const AccountPasswordForm = () => {
   resetRef.current = () => state.form.reset();
 
   return (
-    <SettingsFormSection title={t('settings.account.password.title')} state={state}>
+    <SettingsFormSection
+      title={t('settings.account.password.title')}
+      submitLabel={t('settings.common.save')}
+      state={state}
+    >
       <FormField
         control={state.form.control}
         name="currentPassword"

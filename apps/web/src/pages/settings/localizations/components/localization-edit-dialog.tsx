@@ -68,6 +68,7 @@ export const LocalizationEditDialog = ({
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.localizations.saveButton')}
+      cancelLabel={t('settings.common.cancel')}
       contentClassName="max-w-2xl"
     >
       <div className="flex flex-col space-y-2">

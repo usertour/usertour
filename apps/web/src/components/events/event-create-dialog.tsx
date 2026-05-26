@@ -132,6 +132,7 @@ export const EventCreateDialog = ({
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.events.createButton')}
+      cancelLabel={t('settings.common.cancel')}
       contentClassName="max-w-5xl"
     >
       <div className="flex">

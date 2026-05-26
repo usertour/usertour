@@ -83,12 +83,12 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
         attributeIds: eventsOnAttributes.map((attr) => attr.id),
       });
       if (!success) {
-        throw new Error('Update Event failed.');
+        throw new Error(t('settings.events.updateFailure'));
       }
       onSubmit?.(true);
       onOpenChange(false);
     },
-    successMessage: 'The event has been successfully updated',
+    successMessage: t('settings.events.updateSuccess'),
   });
 
   useEffect(() => {
@@ -133,6 +133,7 @@ export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEd
       onOpenChange={onOpenChange}
       state={state}
       submitLabel={t('settings.events.saveButton')}
+      cancelLabel={t('settings.common.cancel')}
       // Without this guard, a fast user can submit while
       // `attributeOnEvents` is still in flight — `eventsOnAttributes`
       // would be the empty initial state, silently wiping the row's
