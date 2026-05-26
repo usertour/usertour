@@ -9,7 +9,7 @@ import { BuilderSaveButton } from '../ui';
 import { EditableTitle } from '@/components/molecules/editable-title';
 import { MoreButton } from '@/components/molecules/section-breadcrumb-header';
 
-interface Props {
+export interface TopBarProps {
   theme: Theme;
   onRename: (name: string) => Promise<void>;
   onActionComplete: (action: string) => void;
@@ -29,16 +29,17 @@ interface Props {
   isViewOnly: boolean;
 }
 
-export function TopBar({
-  theme,
-  onRename,
-  onActionComplete,
-  hasUnsavedChanges,
-  isSaving,
-  onSave,
-  isReadOnly,
-  isViewOnly,
-}: Props) {
+export function TopBar(props: TopBarProps) {
+  const {
+    theme,
+    onRename,
+    onActionComplete,
+    hasUnsavedChanges,
+    isSaving,
+    onSave,
+    isReadOnly,
+    isViewOnly,
+  } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { projectId } = useParams();

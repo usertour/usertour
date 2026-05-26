@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 // below) so the title isn't truncated and the control still gets full width.
 const LONG_LABEL_THRESHOLD = 20;
 
-interface Props {
+export interface FieldRowProps {
   label: string;
   htmlFor?: string;
   children: ReactNode;
@@ -20,14 +20,8 @@ interface Props {
   tooltip?: string;
 }
 
-export function FieldRow({
-  label,
-  htmlFor,
-  children,
-  controlClassName,
-  forceVertical,
-  tooltip,
-}: Props) {
+export function FieldRow(props: FieldRowProps) {
+  const { label, htmlFor, children, controlClassName, forceVertical, tooltip } = props;
   const isLong = forceVertical || label.length > LONG_LABEL_THRESHOLD;
   if (isLong) {
     return (

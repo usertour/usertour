@@ -14,7 +14,7 @@ type UploadOption = {
   onSuccess?: (body: { url: string }) => void;
 };
 
-interface Props {
+export interface ImageUploadWidgetProps {
   value: string | undefined;
   onChange: (url: string) => void;
   description?: string;
@@ -23,14 +23,15 @@ interface Props {
   disabled?: boolean;
 }
 
-export function ImageUploadWidget({
-  value,
-  onChange,
-  description,
-  maxSizeBytes,
-  previewAspect = 'square',
-  disabled = false,
-}: Props) {
+export function ImageUploadWidget(props: ImageUploadWidgetProps) {
+  const {
+    value,
+    onChange,
+    description,
+    maxSizeBytes,
+    previewAspect = 'square',
+    disabled = false,
+  } = props;
   const { toast } = useToast();
   const { t } = useTranslation();
   const { handleUpload, isUploading } = useAvatarUpload({

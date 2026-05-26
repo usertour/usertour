@@ -5,19 +5,15 @@ import { QuestionTooltip } from '@usertour/tooltip';
 import type { RulesCondition } from '@usertour/types';
 import { Trans, useTranslation } from 'react-i18next';
 
-interface Props {
+export interface ConditionsSectionProps {
   conditions: RulesCondition[];
   onConditionsChange: (conditions: RulesCondition[]) => void;
   variationName: string;
   disabled?: boolean;
 }
 
-export function ConditionsSection({
-  conditions,
-  onConditionsChange,
-  variationName,
-  disabled,
-}: Props) {
+export function ConditionsSection(props: ConditionsSectionProps) {
+  const { conditions, onConditionsChange, variationName, disabled } = props;
   const { attributeList } = useAttributeListContext();
   const { t } = useTranslation();
   const displayName = variationName || t('themeBuilder.chrome.thisVariation');

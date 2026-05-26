@@ -9,7 +9,7 @@ export interface PlacementValue {
   positionOffsetY: number;
 }
 
-interface Props {
+export interface PlacementFieldProps {
   path: string;
   label: string;
   options?: { value: string; label: string }[];
@@ -26,7 +26,8 @@ const DEFAULT_OPTIONS: { value: string; label: string }[] = [
   { value: ModalPosition.Center, label: 'Center' },
 ];
 
-export function PlacementField({ path, label, options, labels }: Props) {
+export function PlacementField(props: PlacementFieldProps) {
+  const { path, label, options, labels } = props;
   const opts = options ?? DEFAULT_OPTIONS;
   const lbls = {
     position: labels?.position ?? 'Anchor',

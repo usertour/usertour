@@ -11,7 +11,7 @@ import type { ComponentType } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface Props {
+export interface WidgetSwitcherProps {
   value: ThemeDetailPreviewType;
   onChange: (value: ThemeDetailPreviewType) => void;
 }
@@ -34,7 +34,8 @@ interface WidgetOption {
   Icon: ComponentType<{ className?: string }>;
 }
 
-export function WidgetSwitcher({ value, onChange }: Props) {
+export function WidgetSwitcher(props: WidgetSwitcherProps) {
+  const { value, onChange } = props;
   const { t } = useTranslation();
 
   const options = useMemo<WidgetOption[]>(

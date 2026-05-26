@@ -2,7 +2,7 @@ import type { AvatarType } from '@usertour/types';
 import { useBuilderContext } from '../builder-context';
 import { AvatarTypeSelector } from '../widgets/avatar-type';
 
-interface Props {
+export interface AvatarTypeFieldProps {
   basePath: string;
 }
 
@@ -12,7 +12,8 @@ interface AvatarShape {
   url?: string;
 }
 
-export function AvatarTypeField({ basePath }: Props) {
+export function AvatarTypeField(props: AvatarTypeFieldProps) {
+  const { basePath } = props;
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<AvatarShape>(basePath);
   return (

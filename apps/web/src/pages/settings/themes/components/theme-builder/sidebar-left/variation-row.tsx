@@ -26,7 +26,7 @@ type DragHandleProps = Record<string, unknown> & {
   onMouseDown?: (event: MouseEvent) => void;
 };
 
-interface Props {
+export interface VariationRowProps {
   label: string;
   selected: boolean;
   onClick: () => void;
@@ -47,23 +47,24 @@ interface Props {
   isDragging?: boolean;
 }
 
-export function VariationRow({
-  label,
-  selected,
-  onClick,
-  onRename,
-  onDelete,
-  disabled,
-  isRenaming,
-  renameDraft,
-  onRenameDraftChange,
-  onRenameCommit,
-  onRenameCancel,
-  sortableRef,
-  sortableStyle,
-  dragHandleProps,
-  isDragging,
-}: Props) {
+export function VariationRow(props: VariationRowProps) {
+  const {
+    label,
+    selected,
+    onClick,
+    onRename,
+    onDelete,
+    disabled,
+    isRenaming,
+    renameDraft,
+    onRenameDraftChange,
+    onRenameCommit,
+    onRenameCancel,
+    sortableRef,
+    sortableStyle,
+    dragHandleProps,
+    isDragging,
+  } = props;
   const { t } = useTranslation();
   const hasMenu = !!(onRename || onDelete);
   const draggable = !!dragHandleProps && !disabled;

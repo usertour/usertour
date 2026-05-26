@@ -16,7 +16,7 @@ import { SubSection } from './sub-section';
 import { TextField } from './text-field';
 import { TripleColorField } from './triple-color-field';
 
-interface Props {
+export interface FieldRendererProps {
   field: FieldDef;
 }
 
@@ -24,7 +24,8 @@ interface Props {
 // is the single resolver — it calls `t()` once per field and passes plain
 // strings down so leaf field components don't need to know about i18n.
 
-export function FieldRenderer({ field }: Props) {
+export function FieldRenderer(props: FieldRendererProps) {
+  const { field } = props;
   const { activeSettings } = useBuilderContext();
   const { t } = useTranslation();
 

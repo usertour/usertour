@@ -34,7 +34,7 @@ import { ResizeHandle, bodyClass, headerClass, panelClass, sectionLabelClass } f
 import { ConditionsSection } from '../sidebar/conditions-section';
 import { VariationRow } from './variation-row';
 
-interface Props {
+export interface VariationsSidebarProps {
   variations: ThemeVariation[];
   activeVariationId: string | null;
   activeVariation: ThemeVariation | null;
@@ -53,22 +53,7 @@ interface Props {
   };
 }
 
-// Wires a single variation row into the SortableContext. Kept inline because
-// it captures parent props and isn't reused elsewhere.
-function SortableVariationRow({
-  variation,
-  untitledLabel,
-  selected,
-  onClick,
-  onRename,
-  onDelete,
-  disabled,
-  isRenaming,
-  renameDraft,
-  onRenameDraftChange,
-  onRenameCommit,
-  onRenameCancel,
-}: {
+interface SortableVariationRowProps {
   variation: ThemeVariation;
   untitledLabel: string;
   selected: boolean;
@@ -81,7 +66,25 @@ function SortableVariationRow({
   onRenameDraftChange?: (value: string) => void;
   onRenameCommit?: () => void;
   onRenameCancel?: () => void;
-}) {
+}
+
+// Wires a single variation row into the SortableContext. Kept inline because
+// it captures parent props and isn't reused elsewhere.
+function SortableVariationRow(props: SortableVariationRowProps) {
+  const {
+    variation,
+    untitledLabel,
+    selected,
+    onClick,
+    onRename,
+    onDelete,
+    disabled,
+    isRenaming,
+    renameDraft,
+    onRenameDraftChange,
+    onRenameCommit,
+    onRenameCancel,
+  } = props;
   // Disable drag-and-drop while this row is being renamed so pointer events
   // go to the input rather than the sortable wrapper.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -112,20 +115,21 @@ function SortableVariationRow({
   );
 }
 
-export function VariationsSidebar({
-  variations,
-  activeVariationId,
-  activeVariation,
-  onSelect,
-  onAdd,
-  onRename,
-  onDelete,
-  onConditionsChange,
-  onReorder,
-  disabled,
-  width,
-  resize,
-}: Props) {
+export function VariationsSidebar(props: VariationsSidebarProps) {
+  const {
+    variations,
+    activeVariationId,
+    activeVariation,
+    onSelect,
+    onAdd,
+    onRename,
+    onDelete,
+    onConditionsChange,
+    onReorder,
+    disabled,
+    width,
+    resize,
+  } = props;
   const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
