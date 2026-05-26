@@ -95,8 +95,13 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
         data={data}
         // Transfer flips the current user out of OWNER. Refetch the app
         // context so `isViewOnly` / capabilities re-derive and the
-        // sidebar/route gates update without a full reload.
-        onSubmit={async () => {
+        // sidebar/route gates update without a full reload. Gate on
+        // `success` so a failed transfer doesn't trigger the expensive
+        // capability re-eval (visible sidebar/route-guard flicker).
+        onSubmit={async (success) => {
+          if (!success) {
+            return;
+          }
           await refetchAppContext();
           await refetch();
         }}

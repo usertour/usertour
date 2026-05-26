@@ -66,7 +66,23 @@ export function SettingsDialogForm<TValues extends FieldValues>(
     children,
   } = props;
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onOpenChange(false)}>
+    <Dialog
+      open={open}
+      // Block Esc / click-outside while the form is submitting. Without
+      // this gate the dialog can unmount mid-mutation: the failure toast
+      // arrives with no surrounding context, the user's edits are gone,
+      // and any in-flight setState on the unmounted form is a wasted
+      // warning. `DestructiveConfirmDialog` already does this; mirroring
+      // here keeps the two primitives consistent.
+      onOpenChange={(next) => {
+        if (!next && state.isSubmitting) {
+          return;
+        }
+        if (!next) {
+          onOpenChange(false);
+        }
+      }}
+    >
       <DialogContent
         className={contentClassName}
         // Without a description we explicitly opt out of Radix's
@@ -82,7 +98,12 @@ export function SettingsDialogForm<TValues extends FieldValues>(
             </DialogHeader>
             <div className="py-4">{children}</div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => onOpenChange(false)}
+                disabled={state.isSubmitting}
+              >
                 {cancelLabel}
               </Button>
               <LoadingButton type="submit" loading={state.isSubmitting} disabled={submitDisabled}>

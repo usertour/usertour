@@ -56,6 +56,11 @@ export const RegenerateDialog = (props: RegenerateDialogProps) => {
       const codes = await regenerate.invoke(code.trim(), useRecoveryCode);
       if (codes) {
         setNewCodes(codes);
+      } else {
+        // Malformed-but-not-erroring response (server returned without
+        // the `recoveryCodes` field). Without an explicit toast the
+        // spinner would just stop with no feedback.
+        toast({ variant: 'destructive', title: t('twoFactor.regenerate.noCodesReturned') });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -63,8 +68,28 @@ export const RegenerateDialog = (props: RegenerateDialogProps) => {
   };
 
   const onCopy = async () => {
-    await navigator.clipboard.writeText(codesText);
-    toast({ title: t('twoFactor.setup.copiedToast') });
+    // Clipboard write can reject on Safari / non-secure contexts / when
+    // browser policy blocks. Catch it so the user isn't told the codes
+    // were copied when they weren't — the server has already invalidated
+    // the previous batch, so trusting a false success here is permanent
+    // backup-code loss.
+    try {
+      await navigator.clipboard.writeText(codesText);
+      toast({ title: t('twoFactor.setup.copiedToast') });
+    } catch {
+      toast({ variant: 'destructive', title: t('twoFactor.setup.copyFailedToast') });
+    }
+  };
+
+  // Finish exits the codes stage. Both controlled-`open=false` (which
+  // Radix doesn't fire `onOpenChange` for) and an explicit `reset()` are
+  // required — otherwise `newCodes` survives in component state, and the
+  // next mount of the (persistent) dialog skips the TOTP step entirely
+  // and shows the already-revoked codes. setup-dialog has the same
+  // shape; mirror its `onFinish`.
+  const onFinish = () => {
+    onOpenChange(false);
+    reset();
   };
 
   // Once `newCodes` has been minted, the server has already invalidated
@@ -156,7 +181,7 @@ export const RegenerateDialog = (props: RegenerateDialogProps) => {
               <span>{t('twoFactor.setup.confirmSaved')}</span>
             </label>
             <DialogFooter>
-              <Button disabled={!savedConfirmed} onClick={() => onOpenChange(false)}>
+              <Button disabled={!savedConfirmed} onClick={onFinish}>
                 {t('twoFactor.setup.finishButton')}
               </Button>
             </DialogFooter>

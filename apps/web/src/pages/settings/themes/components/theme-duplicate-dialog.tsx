@@ -4,14 +4,7 @@ import { SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { useCopyThemeMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
@@ -84,7 +77,21 @@ export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
   }
 
   return (
-    <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      defaultOpen={true}
+      open={open}
+      // Block Esc / click-outside while the mutation is flying — otherwise
+      // a user who clicks Duplicate and immediately Cancel orphans an
+      // in-flight `copyTheme` call. The server still creates the theme
+      // and the component unmount triggers a wasted setState on
+      // `setIsLoading(false)`.
+      onOpenChange={(next) => {
+        if (!next && isLoading) {
+          return;
+        }
+        onOpenChange(next);
+      }}
+    >
       <DialogContent aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -114,11 +121,14 @@ export const ThemeDuplicateDialog = (props: ThemeDuplicateDialogProps) => {
               </div>
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" type="button">
-                  {t('settings.common.cancel')}
-                </Button>
-              </DialogClose>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                {t('settings.common.cancel')}
+              </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 {t('settings.themes.duplicateSubmit')}

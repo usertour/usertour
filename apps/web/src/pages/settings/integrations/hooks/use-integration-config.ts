@@ -83,7 +83,20 @@ export function useIntegrationConfig<TConfig>(
           },
         });
         toast({ title: t('settings.integrations.providerCard.savedToast') });
-        await refetch();
+        // Reseed local state from the server's response — the effect
+        // above only re-syncs when `currentIntegration?.id` changes, so
+        // a save that triggers server-side normalisation (trim,
+        // lowercase, etc.) would leave the local copy diverged from
+        // truth and the form dirty forever. Reading the freshly-fetched
+        // row directly off the `result.data` keeps us decoupled from
+        // the render cycle.
+        const result = await refetch();
+        const fresh = (result.data?.listIntegrations as IntegrationModel[] | undefined)?.find(
+          (row) => row.provider === provider,
+        );
+        if (fresh) {
+          setIntegration(fresh);
+        }
       } catch {
         toast({
           title: t('settings.integrations.providerCard.saveFailedToast'),

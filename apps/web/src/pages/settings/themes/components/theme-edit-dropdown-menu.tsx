@@ -95,8 +95,15 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
         data={theme}
         open={openDelete}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
-          onSubmit('delete');
+        // Only escalate `delete` when the server actually confirmed it —
+        // theme-detail uses this signal to navigate back to the list,
+        // and we don't want a soft-failure to both show a destructive
+        // toast AND yank the user off the builder for a theme that
+        // wasn't actually deleted.
+        onSubmit={(success) => {
+          if (success) {
+            onSubmit('delete');
+          }
         }}
       />
     </>

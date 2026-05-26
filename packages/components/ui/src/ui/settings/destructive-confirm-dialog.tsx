@@ -173,12 +173,24 @@ export const DestructiveConfirmDialog = (props: DestructiveConfirmDialogProps) =
   const { toast } = useToast();
   const [managedLoading, setManagedLoading] = useState(false);
 
+  // Decompose the managed-mode fields up-front so `runManaged`'s
+  // dependency array can list concrete identities. Passing the whole
+  // `props` object made the memo effectively dead (new ref each render)
+  // and was a footgun — anyone running exhaustive-deps and "fixing" the
+  // list to `[props.invoke, props.failureToast, ...]` would have
+  // introduced a real stale-closure bug across the `await` window.
+  const isManaged = 'invoke' in props && props.invoke !== undefined;
+  const managed = isManaged ? (props as ManagedProps & ChromeProps) : null;
+  const invoke = managed?.invoke;
+  const successToast = managed?.successToast;
+  const failureToast = managed?.failureToast;
+  const onSettled = managed?.onSettled;
+
   // Managed-mode action loop — primitive owns success / failure / throw triage.
   const runManaged = useCallback(async () => {
-    if (!('invoke' in props) || props.invoke === undefined) {
+    if (!invoke || failureToast === undefined) {
       return;
     }
-    const { invoke, successToast, failureToast, onSettled } = props;
     setManagedLoading(true);
     try {
       const success = await invoke();
@@ -201,9 +213,8 @@ export const DestructiveConfirmDialog = (props: DestructiveConfirmDialogProps) =
     } finally {
       setManagedLoading(false);
     }
-  }, [props, onOpenChange, toast]);
+  }, [invoke, successToast, failureToast, onSettled, onOpenChange, toast]);
 
-  const isManaged = 'invoke' in props && props.invoke !== undefined;
   const handleConfirm = isManaged ? runManaged : (props as UnmanagedProps).onConfirm;
   const effectiveLoading = isManaged ? managedLoading : (props as UnmanagedProps).loading;
 

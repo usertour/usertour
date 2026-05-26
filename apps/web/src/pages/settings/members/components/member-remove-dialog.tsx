@@ -10,7 +10,11 @@ interface MemberRemoveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  /** Called only after a successful remove — consumers refetch here. */
+  /**
+   * Fires once the action settles, with whether it succeeded. Consumers
+   * typically refetch on either branch; gate side-effects like
+   * navigation on the boolean.
+   */
   onSubmit?: (success: boolean) => void;
 }
 
@@ -34,9 +38,12 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
       open={open}
       onOpenChange={onOpenChange}
       // Success is obvious from the member-list refresh below — no toast.
-      invoke={() =>
-        data.userId ? removeTeamMember(projectId, data.userId) : Promise.resolve(false)
-      }
+      invoke={() => {
+        if (!data.userId) {
+          return Promise.reject(new Error(t('settings.team.remove.failure')));
+        }
+        return removeTeamMember(projectId, data.userId);
+      }}
       failureToast={t('settings.team.remove.failure')}
       onSettled={onSubmit}
     />

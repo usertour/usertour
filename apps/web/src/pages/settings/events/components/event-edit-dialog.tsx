@@ -96,12 +96,16 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
     if (open) {
       state.form.reset(toFormValues(event));
       setSelectMode(false);
-      // Defensive: clear any in-flight local edits to the attribute pills
-      // so reopening a row doesn't surface "ghost" state from the
-      // previous interaction. The post-query effect above will repopulate
-      // from canonical attributeOnEvents once data arrives.
-      setEventsOnAttributes([]);
-      setSelectedAttributeValue('');
+      // Do NOT reset `eventsOnAttributes` here. React commits effects in
+      // source order, so a reset effect below the canonical-hydration
+      // effect above would race with it: on a cached re-open, the
+      // hydration effect fires first (re-derives [A,B] from
+      // `attributeOnEvents`), then this effect overwrites it with [].
+      // The subsequent Save would then send `attributeIds: []` and the
+      // server would silently clear every association on the row. The
+      // hydration effect above is enough — when `open` flips false,
+      // Apollo's `skip` sends `attributeOnEvents` to `undefined`, and
+      // when it flips back true the dep change re-fires hydration.
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, event]);

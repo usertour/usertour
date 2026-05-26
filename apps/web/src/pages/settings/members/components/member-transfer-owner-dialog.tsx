@@ -10,7 +10,11 @@ interface MemberTransferOwnerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  /** Called only after a successful transfer — consumers refetch here. */
+  /**
+   * Fires once the action settles, with whether it succeeded. Consumers
+   * typically refetch on either branch; gate side-effects like
+   * navigation on the boolean.
+   */
   onSubmit?: (success: boolean) => void;
 }
 
@@ -35,11 +39,12 @@ export const MemberTransferOwnerDialog = (props: MemberTransferOwnerDialogProps)
       onOpenChange={onOpenChange}
       // Success is obvious from the owner badge moving in the list + the
       // current user losing owner-only menu items — no toast.
-      invoke={() =>
-        data.userId
-          ? changeRole(projectId, data.userId, TeamMemberRole.OWNER)
-          : Promise.resolve(false)
-      }
+      invoke={() => {
+        if (!data.userId) {
+          return Promise.reject(new Error(t('settings.team.transferOwner.failure')));
+        }
+        return changeRole(projectId, data.userId, TeamMemberRole.OWNER);
+      }}
       failureToast={t('settings.team.transferOwner.failure')}
       onSettled={onSubmit}
     />

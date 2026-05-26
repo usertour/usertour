@@ -2,7 +2,6 @@ import { Button } from '@usertour/button';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { useToast } from '@usertour/use-toast';
 import { useTranslation } from 'react-i18next';
-import { useCopyToClipboard } from 'react-use';
 
 interface ApiCopyButtonProps {
   token: string;
@@ -10,15 +9,26 @@ interface ApiCopyButtonProps {
 
 export const ApiCopyButton = (props: ApiCopyButtonProps) => {
   const { token } = props;
-  const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleCopy = () => {
-    copyToClipboard(token);
-    toast({
-      title: t('settings.api.tokenCopiedToast'),
-    });
+  const handleCopy = async () => {
+    // Use the native clipboard API directly so we can detect failure.
+    // The previous `useCopyToClipboard()` wrapper exposed the error on a
+    // separate state field that we (and most call sites) silently
+    // dropped — meaning the success toast fired even when iOS Safari /
+    // a non-secure context / a corporate browser policy rejected the
+    // write. The token is only revealed at creation time, so a falsely
+    // successful copy here can permanently lose access.
+    try {
+      await navigator.clipboard.writeText(token);
+      toast({ title: t('settings.api.tokenCopiedToast') });
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: t('settings.api.tokenCopyFailedToast'),
+      });
+    }
   };
 
   return (

@@ -10,7 +10,11 @@ interface MemberCancelInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  /** Called only after a successful cancel — consumers refetch here. */
+  /**
+   * Fires once the action settles, with whether it succeeded. Consumers
+   * typically refetch on either branch; gate side-effects like
+   * navigation on the boolean.
+   */
   onSubmit?: (success: boolean) => void;
 }
 
@@ -34,9 +38,16 @@ export const MemberCancelInviteDialog = (props: MemberCancelInviteDialogProps) =
       open={open}
       onOpenChange={onOpenChange}
       // Success is obvious from the invite-list refresh below — no toast.
-      invoke={() =>
-        data.inviteId ? cancelInvite(projectId, data.inviteId) : Promise.resolve(false)
-      }
+      invoke={() => {
+        if (!data.inviteId) {
+          // Routed here by mistake — return a rejected promise so the
+          // primitive's catch branch shows the failure toast with a
+          // sensible message instead of the soft-failure toast (which
+          // would falsely imply the server tried and refused).
+          return Promise.reject(new Error(t('settings.team.cancelInvite.failure')));
+        }
+        return cancelInvite(projectId, data.inviteId);
+      }}
       failureToast={t('settings.team.cancelInvite.failure')}
       onSettled={onSubmit}
     />

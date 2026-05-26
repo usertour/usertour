@@ -482,6 +482,7 @@ const translations = {
       deleteSuccess: 'API key deleted successfully',
       deleteFailure: 'Failed to delete API key',
       tokenCopiedToast: 'Token copied to clipboard',
+      tokenCopyFailedToast: 'Failed to copy token. Please copy it manually.',
       keyDialogDescription: 'Please copy your API key now.',
       keyDialogLoading: 'Loading...',
       keyDialogCreatedTitle: 'New API key created',
@@ -665,6 +666,7 @@ const translations = {
       downloadButton: 'Download',
       copyButton: 'Copy all',
       copiedToast: 'Recovery codes copied',
+      copyFailedToast: 'Failed to copy recovery codes. Try the Download button.',
       confirmSaved: 'I have saved my recovery codes',
       finishButton: 'Finish',
       cancelButton: 'Cancel',
@@ -687,6 +689,7 @@ const translations = {
       title: 'Regenerate recovery codes',
       description: 'A new set of recovery codes will replace your existing ones.',
       confirmButton: 'Regenerate',
+      noCodesReturned: 'No new recovery codes were returned. Please try again.',
     },
     codeLabel: {
       authenticator: 'Authenticator code',

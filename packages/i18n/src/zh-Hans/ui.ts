@@ -459,6 +459,7 @@ const translations = {
       deleteSuccess: 'API 密钥已删除',
       deleteFailure: '删除 API 密钥失败',
       tokenCopiedToast: '密钥已复制到剪贴板',
+      tokenCopyFailedToast: '复制密钥失败,请手动复制。',
       keyDialogDescription: '请立即复制您的 API 密钥。',
       keyDialogLoading: '加载中…',
       keyDialogCreatedTitle: '新 API 密钥已创建',
@@ -621,6 +622,7 @@ const translations = {
       downloadButton: '下载',
       copyButton: '复制全部',
       copiedToast: '恢复码已复制',
+      copyFailedToast: '复制恢复码失败,请改用「下载」按钮。',
       confirmSaved: '我已经妥善保存了恢复码',
       finishButton: '完成',
       cancelButton: '取消',
@@ -643,6 +645,7 @@ const translations = {
       title: '重新生成恢复码',
       description: '新生成的恢复码将替换原有的。',
       confirmButton: '重新生成',
+      noCodesReturned: '未收到新的恢复码,请重试。',
     },
     codeLabel: {
       authenticator: '身份验证器代码',

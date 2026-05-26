@@ -101,8 +101,15 @@ export const SetupDialog = (props: SetupDialogProps) => {
   };
 
   const onCopy = async () => {
-    await navigator.clipboard.writeText(codesText);
-    toast({ title: t('twoFactor.setup.copiedToast') });
+    // See regenerate-dialog for the rationale — clipboard.writeText can
+    // reject and a falsely-successful copy here is permanent
+    // backup-code loss.
+    try {
+      await navigator.clipboard.writeText(codesText);
+      toast({ title: t('twoFactor.setup.copiedToast') });
+    } catch {
+      toast({ variant: 'destructive', title: t('twoFactor.setup.copyFailedToast') });
+    }
   };
 
   const onFinish = () => {
