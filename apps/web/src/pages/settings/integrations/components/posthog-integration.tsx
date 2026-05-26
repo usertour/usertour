@@ -49,6 +49,8 @@ export const PostHogIntegration = () => {
         setLocal={config.setLocal}
         save={config.save}
         isLoading={config.isLoading}
+        keyLabel={t('settings.integrations.providerCard.posthogKeyLabel')}
+        keyPlaceholder={t('settings.integrations.providerCard.posthogKeyPlaceholder')}
         region={{
           defaultValue: 'US',
           options: [

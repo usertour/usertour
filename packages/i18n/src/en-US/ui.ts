@@ -530,13 +530,21 @@ const translations = {
         savedToast: 'Settings saved successfully',
         saveFailedToast: 'Failed to save settings',
         // Per-provider overrides for the key input label / placeholder.
-        // Used by Heap (App ID), Mixpanel (Project Token), Segment (Write Key).
+        // PostHog and HubSpot disambiguate which credential type to paste
+        // (PostHog has Personal vs Project API keys; HubSpot's private-app
+        // flow uses access tokens, not API keys); generic "API Key" here
+        // would let users paste the wrong credential and silently fail
+        // the data sync server-side.
         heapKeyLabel: 'Heap App ID:',
         heapKeyPlaceholder: 'Type Heap App ID here',
         mixpanelKeyLabel: 'Project Token:',
         mixpanelKeyPlaceholder: 'Type Project Token here',
         segmentKeyLabel: 'Write Key:',
         segmentKeyPlaceholder: 'Type Write Key here',
+        posthogKeyLabel: 'Personal API key:',
+        posthogKeyPlaceholder: 'Type Personal API key here',
+        hubspotKeyLabel: 'Private App access token:',
+        hubspotKeyPlaceholder: 'Type Private App access token here',
       },
       providerHeaderReadGuide: 'Read the {{provider}} guide',
       salesforce: {

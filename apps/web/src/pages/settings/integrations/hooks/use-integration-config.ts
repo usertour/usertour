@@ -13,11 +13,16 @@ interface UseIntegrationConfigResult<TConfig> {
   /** Apply a partial change to the local copy without persisting. */
   setLocal: (updates: Partial<IntegrationModel>) => void;
   /**
-   * Persist the current local copy (plus an optional config patch) to the
+   * Persist the local copy (plus an optional config patch) to the
    * server. Enables the integration as a side-effect, mirroring the
    * provider-specific save handlers we replace.
+   *
+   * Pass `source` to override the integration values being committed —
+   * used by the switch-off auto-save to persist only the toggle change
+   * without dragging unsaved key edits along (the local copy includes
+   * every keystroke from the controlled Input).
    */
-  save: (configPatch?: Partial<TConfig>) => Promise<void>;
+  save: (configPatch?: Partial<TConfig>, source?: IntegrationModel) => Promise<void>;
   isLoading: boolean;
   isDataLoading: boolean;
 }
@@ -71,14 +76,15 @@ export function useIntegrationConfig<TConfig>(
   }, []);
 
   const save = useCallback(
-    async (configPatch?: Partial<TConfig>) => {
+    async (configPatch?: Partial<TConfig>, source?: IntegrationModel) => {
       try {
         setIsLoading(true);
+        const sourceIntegration = source ?? integration;
         await updateIntegration(environmentId, provider, {
           enabled: true,
-          key: integration?.key,
+          key: sourceIntegration?.key,
           config: {
-            ...(integration?.config ?? {}),
+            ...(sourceIntegration?.config ?? {}),
             ...(configPatch ?? {}),
           },
         });

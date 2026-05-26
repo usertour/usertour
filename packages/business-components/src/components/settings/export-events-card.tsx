@@ -22,8 +22,13 @@ export interface ExportEventsCardProps {
   currentIntegration: IntegrationModel | undefined;
   /** Local field updates without persisting. */
   setLocal: (updates: Partial<IntegrationModel>) => void;
-  /** Persist current local state (optionally with a config patch). */
-  save: (configPatch?: Record<string, unknown>) => Promise<void>;
+  /**
+   * Persist current local state (optionally with a config patch). The
+   * second argument overrides which integration snapshot to commit —
+   * used internally by the switch-off auto-save to skip the local copy
+   * (which includes unsaved key edits) and persist only the toggle.
+   */
+  save: (configPatch?: Record<string, unknown>, source?: IntegrationModel) => Promise<void>;
   isLoading?: boolean;
   /**
    * Tail of the "Stream events from Usertour to {providerName}" headline.
@@ -89,9 +94,11 @@ export const ExportEventsCard = ({
     }
     setLocal({ config: { ...integration.config, exportEvents: checked } });
     // Auto-save when the user disables — keeps "off" sticky without
-    // requiring them to click Save afterwards.
+    // requiring them to click Save afterwards. Pass `currentIntegration`
+    // as the source so the toggle commit ignores any unsaved key edits
+    // sitting in the local copy from the controlled Input.
     if (!checked) {
-      save({ exportEvents: false });
+      save({ exportEvents: false }, currentIntegration);
     }
   };
 

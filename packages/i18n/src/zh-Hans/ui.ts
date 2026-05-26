@@ -505,6 +505,10 @@ const translations = {
         mixpanelKeyPlaceholder: '请输入项目 Token',
         segmentKeyLabel: 'Write Key:',
         segmentKeyPlaceholder: '请输入 Write Key',
+        posthogKeyLabel: 'Personal API Key:',
+        posthogKeyPlaceholder: '请输入 Personal API Key',
+        hubspotKeyLabel: 'Private App 访问令牌:',
+        hubspotKeyPlaceholder: '请输入 Private App 访问令牌',
       },
       providerHeaderReadGuide: '阅读 {{provider}} 集成指南',
       salesforce: {

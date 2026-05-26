@@ -48,6 +48,8 @@ export const HubSpotIntegration = () => {
         setLocal={config.setLocal}
         save={config.save}
         isLoading={config.isLoading}
+        keyLabel={t('settings.integrations.providerCard.hubspotKeyLabel')}
+        keyPlaceholder={t('settings.integrations.providerCard.hubspotKeyPlaceholder')}
       />
     </>
   );
