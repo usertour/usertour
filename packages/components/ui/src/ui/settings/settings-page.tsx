@@ -43,15 +43,8 @@ export interface SettingsPageProps {
  * > h3 + Button` boilerplate that was hand-rolled in every `*-list-header`
  * file under apps/web Settings.
  */
-export const SettingsPage = ({
-  title,
-  actions,
-  description,
-  docs,
-  separator = true,
-  className,
-  children,
-}: SettingsPageProps) => {
+export const SettingsPage = (props: SettingsPageProps) => {
+  const { title, actions, description, docs, separator = true, className, children } = props;
   return (
     <div className={cn('flex-1 grow space-y-6 px-4 py-6 lg:px-8', className)}>
       <div className="flex flex-col space-y-2">

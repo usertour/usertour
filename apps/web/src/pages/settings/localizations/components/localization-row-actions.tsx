@@ -16,7 +16,8 @@ interface LocalizationRowActionsProps {
   localization: Localization;
 }
 
-export const LocalizationRowActions = ({ localization }: LocalizationRowActionsProps) => {
+export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
+  const { localization } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useLocalizationListContext();

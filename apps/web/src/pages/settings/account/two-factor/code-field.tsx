@@ -14,12 +14,8 @@ export interface CodeFieldProps {
  * regenerate dialogs. Wraps a labelled `Input` plus the toggle link that
  * flips the mode and clears the value.
  */
-export const CodeField = ({
-  useRecoveryCode,
-  code,
-  onCodeChange,
-  onToggleMode,
-}: CodeFieldProps) => {
+export const CodeField = (props: CodeFieldProps) => {
+  const { useRecoveryCode, code, onCodeChange, onToggleMode } = props;
   const { t } = useTranslation('ui');
   const inputId = useId();
   return (

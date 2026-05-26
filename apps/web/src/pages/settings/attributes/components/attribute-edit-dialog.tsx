@@ -101,12 +101,8 @@ const toFormValues = (attribute: Attribute): FormValues => ({
   description: attribute.description ?? '',
 });
 
-export const AttributeEditDialog = ({
-  attribute,
-  open,
-  onOpenChange,
-  onSubmit,
-}: AttributeEditDialogProps) => {
+export const AttributeEditDialog = (props: AttributeEditDialogProps) => {
+  const { attribute, open, onOpenChange, onSubmit } = props;
   const { invoke: updateAttribute } = useUpdateAttributeMutation();
   const { t } = useTranslation();
 

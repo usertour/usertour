@@ -14,13 +14,8 @@ interface MemberCancelInviteDialogProps {
   onSubmit?: (success: boolean) => void;
 }
 
-export const MemberCancelInviteDialog = ({
-  projectId,
-  open,
-  onOpenChange,
-  data,
-  onSubmit,
-}: MemberCancelInviteDialogProps) => {
+export const MemberCancelInviteDialog = (props: MemberCancelInviteDialogProps) => {
+  const { projectId, open, onOpenChange, data, onSubmit } = props;
   const { t } = useTranslation();
   const { invoke: cancelInvite } = useCancelInviteMutation();
 

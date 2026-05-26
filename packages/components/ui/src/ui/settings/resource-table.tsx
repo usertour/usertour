@@ -32,14 +32,8 @@ export interface ResourceTableProps<T> {
  * `overflow-x-auto + table-fixed min-w-2xl` shell used by every Settings
  * list page and folds the "empty state row" boilerplate.
  */
-export function ResourceTable<T>({
-  columns,
-  rows,
-  getRowKey,
-  onRowClick,
-  empty,
-  className,
-}: ResourceTableProps<T>) {
+export function ResourceTable<T>(props: ResourceTableProps<T>) {
+  const { columns, rows, getRowKey, onRowClick, empty, className } = props;
   const isEmpty = rows.length === 0;
 
   return (

@@ -10,12 +10,8 @@ interface EventDeleteDialogProps {
   onSubmit: (success: boolean) => void;
 }
 
-export const EventDeleteDialog = ({
-  data,
-  open,
-  onOpenChange,
-  onSubmit,
-}: EventDeleteDialogProps) => {
+export const EventDeleteDialog = (props: EventDeleteDialogProps) => {
+  const { data, open, onOpenChange, onSubmit } = props;
   const { invoke: deleteEvent } = useDeleteEventMutation();
   const { t } = useTranslation();
 

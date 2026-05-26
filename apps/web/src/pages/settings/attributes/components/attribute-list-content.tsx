@@ -30,7 +30,8 @@ const sortAttributes = (attributes: readonly Attribute[]) =>
     left.predefined === right.predefined ? 0 : left.predefined ? -1 : 1,
   );
 
-export const AttributeListContent = ({ bizType }: AttributeListContentProps) => {
+export const AttributeListContent = (props: AttributeListContentProps) => {
+  const { bizType } = props;
   const { attributeList, loading } = useAttributeListContext();
   const { t } = useTranslation();
 

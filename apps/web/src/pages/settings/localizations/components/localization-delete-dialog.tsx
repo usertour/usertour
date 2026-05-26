@@ -10,12 +10,8 @@ interface LocalizationDeleteDialogProps {
   onSubmit: (success: boolean) => void;
 }
 
-export const LocalizationDeleteDialog = ({
-  data,
-  open,
-  onOpenChange,
-  onSubmit,
-}: LocalizationDeleteDialogProps) => {
+export const LocalizationDeleteDialog = (props: LocalizationDeleteDialogProps) => {
+  const { data, open, onOpenChange, onSubmit } = props;
   const { invoke: deleteLocalization } = useDeleteLocalizationMutation();
   const { t } = useTranslation();
 

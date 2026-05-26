@@ -34,7 +34,8 @@ export interface SetupDialogProps {
  * and asks for the user's first TOTP. Stage 2 shows the recovery codes
  * with download/copy/finish buttons.
  */
-export const SetupDialog = ({ open, onOpenChange, onEnabled }: SetupDialogProps) => {
+export const SetupDialog = (props: SetupDialogProps) => {
+  const { open, onOpenChange, onEnabled } = props;
   const { t } = useTranslation('ui');
   const { toast } = useToast();
   const start = useStartTwoFactorSetupMutation();

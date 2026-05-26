@@ -28,11 +28,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const EnvironmentCreateDialog = ({
-  open,
-  onOpenChange,
-  onSubmit,
-}: EnvironmentCreateDialogProps) => {
+export const EnvironmentCreateDialog = (props: EnvironmentCreateDialogProps) => {
+  const { open, onOpenChange, onSubmit } = props;
   const { invoke: createEnvironment } = useCreateEnvironmentMutation();
   const { project } = useAppContext();
   const navigate = useNavigate();

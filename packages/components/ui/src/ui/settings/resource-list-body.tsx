@@ -23,15 +23,8 @@ export interface ResourceListBodyProps<T> {
  * `SettingsPage`; pages that already drew their own header (e.g.
  * attributes inside tabs) render this directly.
  */
-export function ResourceListBody<T>({
-  columns,
-  rows,
-  getRowKey,
-  loading,
-  skeleton,
-  empty,
-  onRowClick,
-}: ResourceListBodyProps<T>) {
+export function ResourceListBody<T>(props: ResourceListBodyProps<T>) {
+  const { columns, rows, getRowKey, loading, skeleton, empty, onRowClick } = props;
   if (loading) {
     return <>{skeleton ?? <DefaultSkeleton columns={columns} />}</>;
   }
@@ -48,7 +41,12 @@ export function ResourceListBody<T>({
 
 ResourceListBody.displayName = 'ResourceListBody';
 
-const DefaultSkeleton = <T,>({ columns }: { columns: readonly ResourceTableColumn<T>[] }) => {
+interface DefaultSkeletonProps<T> {
+  columns: readonly ResourceTableColumn<T>[];
+}
+
+const DefaultSkeleton = <T,>(props: DefaultSkeletonProps<T>) => {
+  const { columns } = props;
   return (
     <div className="overflow-x-auto">
       <Table className="table-fixed min-w-2xl">

@@ -11,7 +11,8 @@ export interface SettingsCardProps {
  * independent forms (account, project general). Soft triple-shadow only
  * — no visible border per the design system.
  */
-export const SettingsCard = ({ className, children }: SettingsCardProps) => {
+export const SettingsCard = (props: SettingsCardProps) => {
+  const { className, children } = props;
   return (
     <div
       className={cn(

@@ -12,7 +12,8 @@ interface EventRowActionsProps {
   event: Event;
 }
 
-export const EventRowActions = ({ event }: EventRowActionsProps) => {
+export const EventRowActions = (props: EventRowActionsProps) => {
+  const { event } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useEventListContext();

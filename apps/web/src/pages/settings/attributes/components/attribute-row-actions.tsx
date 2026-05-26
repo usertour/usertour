@@ -12,7 +12,8 @@ interface AttributeRowActionsProps {
   attribute: Attribute;
 }
 
-export const AttributeRowActions = ({ attribute }: AttributeRowActionsProps) => {
+export const AttributeRowActions = (props: AttributeRowActionsProps) => {
+  const { attribute } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useAttributeListContext();

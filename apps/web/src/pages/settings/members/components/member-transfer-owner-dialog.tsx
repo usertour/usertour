@@ -14,13 +14,8 @@ interface MemberTransferOwnerDialogProps {
   onSubmit?: (success: boolean) => void;
 }
 
-export const MemberTransferOwnerDialog = ({
-  projectId,
-  open,
-  onOpenChange,
-  data,
-  onSubmit,
-}: MemberTransferOwnerDialogProps) => {
+export const MemberTransferOwnerDialog = (props: MemberTransferOwnerDialogProps) => {
+  const { projectId, open, onOpenChange, data, onSubmit } = props;
   const { t } = useTranslation();
   const { invoke: changeRole } = useChangeTeamMemberRoleMutation();
 

@@ -27,7 +27,8 @@ export interface RegenerateDialogProps {
  * codes are revealed in-dialog and the user must acknowledge they've
  * saved them before the dialog will close.
  */
-export const RegenerateDialog = ({ open, onOpenChange }: RegenerateDialogProps) => {
+export const RegenerateDialog = (props: RegenerateDialogProps) => {
+  const { open, onOpenChange } = props;
   const { t } = useTranslation('ui');
   const { toast } = useToast();
   const regenerate = useRegenerateRecoveryCodesMutation();

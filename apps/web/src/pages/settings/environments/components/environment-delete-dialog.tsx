@@ -12,12 +12,8 @@ interface EnvironmentDeleteDialogProps {
   onSubmit: (success: boolean) => void;
 }
 
-export const EnvironmentDeleteDialog = ({
-  data,
-  open,
-  onOpenChange,
-  onSubmit,
-}: EnvironmentDeleteDialogProps) => {
+export const EnvironmentDeleteDialog = (props: EnvironmentDeleteDialogProps) => {
+  const { data, open, onOpenChange, onSubmit } = props;
   const { invoke: deleteEnvironment, loading } = useDeleteEnvironmentsMutation();
   const { toast } = useToast();
   const { t } = useTranslation();

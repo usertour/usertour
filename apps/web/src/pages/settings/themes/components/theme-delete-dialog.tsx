@@ -10,12 +10,8 @@ interface ThemeDeleteDialogProps {
   onSubmit: (success: boolean) => void;
 }
 
-export const ThemeDeleteDialog = ({
-  data,
-  open,
-  onOpenChange,
-  onSubmit,
-}: ThemeDeleteDialogProps) => {
+export const ThemeDeleteDialog = (props: ThemeDeleteDialogProps) => {
+  const { data, open, onOpenChange, onSubmit } = props;
   const { invoke: deleteTheme } = useDeleteThemeMutation();
   const { t } = useTranslation();
 

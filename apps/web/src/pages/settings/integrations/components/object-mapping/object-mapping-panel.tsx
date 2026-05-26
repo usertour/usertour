@@ -253,15 +253,16 @@ const ObjectMappingSection = ({
   );
 };
 
-export const ObjectMappingPanel = ({
-  selectedBizType,
-  projectId,
-  sourceFields,
-  sourceObjectType,
-  targetObjectType,
-  initialMapping,
-  onMappingChange,
-}: ObjectMappingPanelProps) => {
+export const ObjectMappingPanel = (props: ObjectMappingPanelProps) => {
+  const {
+    selectedBizType,
+    projectId,
+    sourceFields,
+    sourceObjectType,
+    targetObjectType,
+    initialMapping,
+    onMappingChange,
+  } = props;
   const { attributes, refetch } = useListAttributesQuery(projectId, selectedBizType);
   const { t } = useTranslation();
 

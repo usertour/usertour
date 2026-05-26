@@ -25,11 +25,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const LocalizationCreateDialog = ({
-  open,
-  onOpenChange,
-  onSubmit,
-}: LocalizationCreateDialogProps) => {
+export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) => {
+  const { open, onOpenChange, onSubmit } = props;
   const { invoke: createLocalization } = useCreateLocalizationMutation();
   const { project } = useAppContext();
   const { t } = useTranslation();

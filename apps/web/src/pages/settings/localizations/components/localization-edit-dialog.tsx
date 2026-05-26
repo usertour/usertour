@@ -32,12 +32,8 @@ const toFormValues = (localization: Localization): FormValues => ({
   code: localization.code,
 });
 
-export const LocalizationEditDialog = ({
-  localization,
-  open,
-  onOpenChange,
-  onSubmit,
-}: LocalizationEditDialogProps) => {
+export const LocalizationEditDialog = (props: LocalizationEditDialogProps) => {
+  const { localization, open, onOpenChange, onSubmit } = props;
   const { invoke: updateLocalization } = useUpdateLocalizationMutation();
   const { t } = useTranslation();
 

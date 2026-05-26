@@ -14,13 +14,8 @@ interface MemberRemoveDialogProps {
   onSubmit?: (success: boolean) => void;
 }
 
-export const MemberRemoveDialog = ({
-  projectId,
-  open,
-  onOpenChange,
-  data,
-  onSubmit,
-}: MemberRemoveDialogProps) => {
+export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
+  const { projectId, open, onOpenChange, data, onSubmit } = props;
   const { t } = useTranslation();
   const { invoke: removeTeamMember } = useRemoveTeamMemberMutation();
 

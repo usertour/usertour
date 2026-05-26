@@ -11,7 +11,8 @@ export interface SettingsCardStackProps {
  * pages whose content is a stack of independent forms (account, project
  * general).
  */
-export const SettingsCardStack = ({ className, children }: SettingsCardStackProps) => {
+export const SettingsCardStack = (props: SettingsCardStackProps) => {
+  const { className, children } = props;
   return <div className={cn('flex flex-col grow space-y-8 py-8', className)}>{children}</div>;
 };
 

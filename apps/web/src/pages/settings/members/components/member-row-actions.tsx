@@ -15,7 +15,8 @@ interface MemberRowActionsProps {
   data: TeamMember;
 }
 
-export const MemberRowActions = ({ data }: MemberRowActionsProps) => {
+export const MemberRowActions = (props: MemberRowActionsProps) => {
+  const { data } = props;
   const { project, isViewOnly, refetch: refetchAppContext } = useAppContext();
   const { refetch } = useMemberContext();
   const { t } = useTranslation();

@@ -18,7 +18,8 @@ interface ApiRowActionsProps {
   environmentId: string;
 }
 
-export const ApiRowActions = ({ token, environmentId }: ApiRowActionsProps) => {
+export const ApiRowActions = (props: ApiRowActionsProps) => {
+  const { token, environmentId } = props;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [revealOpen, setRevealOpen] = useState(false);
   const [shouldFetchToken, setShouldFetchToken] = useState(false);

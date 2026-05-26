@@ -27,14 +27,8 @@ export interface StepUpDialogProps {
  * Generic "prove you have 2FA" dialog used by Disable. Accepts a TOTP or
  * a recovery code (toggle inside `CodeField`).
  */
-export const StepUpDialog = ({
-  open,
-  onOpenChange,
-  title,
-  description,
-  confirmLabel,
-  onConfirm,
-}: StepUpDialogProps) => {
+export const StepUpDialog = (props: StepUpDialogProps) => {
+  const { open, onOpenChange, title, description, confirmLabel, onConfirm } = props;
   const { t } = useTranslation('ui');
   const { toast } = useToast();
 

@@ -30,7 +30,8 @@ const defaultValues: FormValues = {
   isDefault: false,
 };
 
-export const ThemeCreateDialog = ({ open, onOpenChange, onSubmit }: ThemeCreateDialogProps) => {
+export const ThemeCreateDialog = (props: ThemeCreateDialogProps) => {
+  const { open, onOpenChange, onSubmit } = props;
   const { t } = useTranslation();
   const { project } = useAppContext();
   const { invoke: createTheme } = useCreateThemeMutation();

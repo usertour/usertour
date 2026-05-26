@@ -39,7 +39,8 @@ const defaultValues: Partial<FormValues> = {
   name: '',
 };
 
-export const ApiCreateDialog = ({ open, onOpenChange, onSubmit }: ApiCreateDialogProps) => {
+export const ApiCreateDialog = (props: ApiCreateDialogProps) => {
+  const { open, onOpenChange, onSubmit } = props;
   const [newToken, setNewToken] = useState('');
   const { environment } = useAppContext();
   const { toast } = useToast();

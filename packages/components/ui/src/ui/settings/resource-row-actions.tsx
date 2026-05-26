@@ -55,13 +55,8 @@ export interface ResourceRowActionsProps {
  * (often 60–100 LOC) and folds the "predefined → tooltip on the trigger"
  * branch that was previously duplicated across attributes/events.
  */
-export const ResourceRowActions = ({
-  items,
-  disabled,
-  disabledHint,
-  align = 'end',
-  contentClassName = 'w-[200px]',
-}: ResourceRowActionsProps) => {
+export const ResourceRowActions = (props: ResourceRowActionsProps) => {
+  const { items, disabled, disabledHint, align = 'end', contentClassName = 'w-[200px]' } = props;
   if (disabled) {
     const trigger = (
       <Button
@@ -103,20 +98,28 @@ export const ResourceRowActions = ({
 
 ResourceRowActions.displayName = 'ResourceRowActions';
 
-const ItemBlock = ({ item, isFirst }: { item: ResourceRowActionItem; isFirst: boolean }) => (
-  <>
-    {item.separatorBefore && !isFirst ? <DropdownMenuSeparator /> : null}
-    <DropdownMenuItem
-      onClick={item.onSelect}
-      disabled={item.disabled}
-      className={
-        item.destructive
-          ? 'text-destructive focus:bg-destructive/10 focus:text-destructive'
-          : undefined
-      }
-    >
-      {item.icon}
-      {item.label}
-    </DropdownMenuItem>
-  </>
-);
+interface ItemBlockProps {
+  item: ResourceRowActionItem;
+  isFirst: boolean;
+}
+
+const ItemBlock = (props: ItemBlockProps) => {
+  const { item, isFirst } = props;
+  return (
+    <>
+      {item.separatorBefore && !isFirst ? <DropdownMenuSeparator /> : null}
+      <DropdownMenuItem
+        onClick={item.onSelect}
+        disabled={item.disabled}
+        className={
+          item.destructive
+            ? 'text-destructive focus:bg-destructive/10 focus:text-destructive'
+            : undefined
+        }
+      >
+        {item.icon}
+        {item.label}
+      </DropdownMenuItem>
+    </>
+  );
+};

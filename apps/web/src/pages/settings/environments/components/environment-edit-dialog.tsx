@@ -23,12 +23,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const EnvironmentEditDialog = ({
-  environment,
-  open,
-  onOpenChange,
-  onSubmit,
-}: EnvironmentEditDialogProps) => {
+export const EnvironmentEditDialog = (props: EnvironmentEditDialogProps) => {
+  const { environment, open, onOpenChange, onSubmit } = props;
   const { invoke: updateEnvironment } = useUpdateEnvironmentMutation();
   const { t } = useTranslation();
 

@@ -17,10 +17,8 @@ interface EnvironmentRowActionsProps {
   environmentCount?: number;
 }
 
-export const EnvironmentRowActions = ({
-  environment,
-  environmentCount = 0,
-}: EnvironmentRowActionsProps) => {
+export const EnvironmentRowActions = (props: EnvironmentRowActionsProps) => {
+  const { environment, environmentCount = 0 } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useEnvironmentListContext();

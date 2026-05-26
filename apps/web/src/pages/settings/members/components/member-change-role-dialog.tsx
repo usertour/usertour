@@ -37,13 +37,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const MemberChangeRoleDialog = ({
-  projectId,
-  open,
-  onOpenChange,
-  data,
-  onSubmit,
-}: MemberChangeRoleDialogProps) => {
+export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
+  const { projectId, open, onOpenChange, data, onSubmit } = props;
   const { invoke } = useChangeTeamMemberRoleMutation();
   const { t } = useTranslation();
 

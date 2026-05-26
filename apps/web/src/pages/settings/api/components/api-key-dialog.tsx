@@ -16,13 +16,8 @@ interface ApiKeyDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const ApiKeyDialog = ({
-  token,
-  title,
-  description,
-  open,
-  onOpenChange,
-}: ApiKeyDialogProps) => {
+export const ApiKeyDialog = (props: ApiKeyDialogProps) => {
+  const { token, title, description, open, onOpenChange } = props;
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

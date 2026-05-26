@@ -45,10 +45,13 @@ interface ObjectMappingReadonlyProps {
   onUpdate?: () => void;
 }
 
-export const ObjectMappingReadonlyButton = ({
-  icon,
-  label,
-}: { icon: React.ReactNode; label: string }) => {
+interface ObjectMappingReadonlyButtonProps {
+  icon: React.ReactNode;
+  label: string;
+}
+
+export const ObjectMappingReadonlyButton = (props: ObjectMappingReadonlyButtonProps) => {
+  const { icon, label } = props;
   return (
     <Button
       variant="outline"
@@ -63,11 +66,8 @@ export const ObjectMappingReadonlyButton = ({
   );
 };
 
-export const ObjectMappingReadonly = ({
-  mapping,
-  onDelete,
-  onUpdate,
-}: ObjectMappingReadonlyProps) => {
+export const ObjectMappingReadonly = (props: ObjectMappingReadonlyProps) => {
+  const { mapping, onDelete, onUpdate } = props;
   const { toast } = useToast();
   const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

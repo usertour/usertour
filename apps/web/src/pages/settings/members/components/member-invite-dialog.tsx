@@ -50,7 +50,8 @@ const defaultValues: FormValues = {
   role: TeamMemberRole.ADMIN,
 };
 
-export const MemberInviteDialog = ({ open, onOpenChange, onSubmit }: MemberInviteDialogProps) => {
+export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
+  const { open, onOpenChange, onSubmit } = props;
   const { invoke } = useInviteTeamMemberMutation();
   const { project } = useAppContext();
   const { t } = useTranslation();

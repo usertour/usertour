@@ -31,14 +31,10 @@ export interface SettingsFormSectionProps<TValues extends FieldValues> {
  * / `project-name-form` and others re-implement. Reads from
  * `useSettingsForm`'s result for the loading + dirty state.
  */
-export function SettingsFormSection<TValues extends FieldValues>({
-  title,
-  description,
-  submitLabel,
-  disableWhenPristine = true,
-  state,
-  children,
-}: SettingsFormSectionProps<TValues>) {
+export function SettingsFormSection<TValues extends FieldValues>(
+  props: SettingsFormSectionProps<TValues>,
+) {
+  const { title, description, submitLabel, disableWhenPristine = true, state, children } = props;
   return (
     <div className="space-y-6">
       <div className="flex h-10 flex-row items-center justify-between">

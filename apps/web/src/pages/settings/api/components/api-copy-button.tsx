@@ -8,7 +8,8 @@ interface ApiCopyButtonProps {
   token: string;
 }
 
-export const ApiCopyButton = ({ token }: ApiCopyButtonProps) => {
+export const ApiCopyButton = (props: ApiCopyButtonProps) => {
+  const { token } = props;
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
   const { t } = useTranslation();

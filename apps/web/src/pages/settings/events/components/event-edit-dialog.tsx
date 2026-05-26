@@ -44,7 +44,8 @@ const toFormValues = (event: Event): FormValues => ({
   description: event.description ?? '',
 });
 
-export const EventEditDialog = ({ event, open, onOpenChange, onSubmit }: EventEditDialogProps) => {
+export const EventEditDialog = (props: EventEditDialogProps) => {
+  const { event, open, onOpenChange, onSubmit } = props;
   const { invoke: updateEvent } = useUpdateEventMutation();
   const { t } = useTranslation();
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);

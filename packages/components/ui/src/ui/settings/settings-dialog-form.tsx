@@ -50,18 +50,21 @@ export interface SettingsDialogFormProps<TValues extends FieldValues> {
  * Dialog-housed form with the standard cancel + save footer. Used by
  * every `*-edit-form.tsx` / `*-create-form.tsx` under settings.
  */
-export function SettingsDialogForm<TValues extends FieldValues>({
-  title,
-  description,
-  open,
-  onOpenChange,
-  state,
-  submitLabel,
-  cancelLabel,
-  submitDisabled,
-  contentClassName,
-  children,
-}: SettingsDialogFormProps<TValues>) {
+export function SettingsDialogForm<TValues extends FieldValues>(
+  props: SettingsDialogFormProps<TValues>,
+) {
+  const {
+    title,
+    description,
+    open,
+    onOpenChange,
+    state,
+    submitLabel,
+    cancelLabel,
+    submitDisabled,
+    contentClassName,
+    children,
+  } = props;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onOpenChange(false)}>
       <DialogContent

@@ -10,12 +10,8 @@ interface AttributeDeleteDialogProps {
   onSubmit: (success: boolean) => void;
 }
 
-export const AttributeDeleteDialog = ({
-  data,
-  open,
-  onOpenChange,
-  onSubmit,
-}: AttributeDeleteDialogProps) => {
+export const AttributeDeleteDialog = (props: AttributeDeleteDialogProps) => {
+  const { data, open, onOpenChange, onSubmit } = props;
   const { invoke: deleteAttribute } = useDeleteAttributeMutation();
   const { t } = useTranslation();
 
