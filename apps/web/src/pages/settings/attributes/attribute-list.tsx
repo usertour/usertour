@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour/button';
 import { AttributeCreateForm } from '@usertour/editor';
-import { CompanyIcon, EventIcon2, RiAddLine, UserIcon, UserIcon2 } from '@usertour/icons';
+import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
-import { SettingsPage } from '@usertour/ui';
+import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { AttributeListContent } from './components/attribute-list-content';
 
 const ATTRIBUTES_DOCS_HREF =
@@ -19,10 +18,11 @@ const NewAttributeButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={isViewOnly}>
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('settings.attributes.newButton')}
-      </Button>
+      <NewItemButton
+        onClick={() => setOpen(true)}
+        disabled={isViewOnly}
+        label={t('settings.attributes.newButton')}
+      />
       {project?.id ? (
         <AttributeCreateForm
           isOpen={open}

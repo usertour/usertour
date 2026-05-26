@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
 import { format } from 'date-fns';
-import { RiAddLine } from '@usertour/icons';
-import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiProvider, useApiContext } from '@/contexts/api-context';
 import type { AccessToken } from '@usertour/hooks';
@@ -16,10 +14,7 @@ const NewApiKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('settings.api.newButton')}
-      </Button>
+      <NewItemButton onClick={() => setOpen(true)} label={t('settings.api.newButton')} />
       <ApiCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );

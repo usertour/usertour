@@ -4,10 +4,9 @@ import { useAppContext } from '@/contexts/app-context';
 import { EventListProvider, useEventListContext } from '@/contexts/event-list-context';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { Badge } from '@usertour/badge';
-import { Button } from '@usertour/button';
-import { RiAddLine, RiShieldCheckFill } from '@usertour/icons';
+import { RiShieldCheckFill } from '@usertour/icons';
 import { Event } from '@usertour/types';
-import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { EventRowActions } from './components/event-row-actions';
 
 const sortEvents = (events: readonly Event[]) =>
@@ -22,10 +21,11 @@ const NewEventButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={isViewOnly}>
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('settings.events.newButton')}
-      </Button>
+      <NewItemButton
+        onClick={() => setOpen(true)}
+        disabled={isViewOnly}
+        label={t('settings.events.newButton')}
+      />
       <EventCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );

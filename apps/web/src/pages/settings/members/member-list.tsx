@@ -4,10 +4,8 @@ import { useAppContext } from '@/contexts/app-context';
 import { MemberProvider, useMemberContext } from '@/contexts/member-context';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Badge } from '@usertour/badge';
-import { Button } from '@usertour/button';
-import { RiAddLine } from '@usertour/icons';
 import type { TeamMember } from '@usertour/types';
-import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { MemberInviteDialog } from './components/member-invite-dialog';
 import { MemberRowActions } from './components/member-row-actions';
 
@@ -16,10 +14,11 @@ const AddTeamMemberButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="flex-none">
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('settings.team.newButton')}
-      </Button>
+      <NewItemButton
+        onClick={() => setOpen(true)}
+        className="flex-none"
+        label={t('settings.team.newButton')}
+      />
       <MemberInviteDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );

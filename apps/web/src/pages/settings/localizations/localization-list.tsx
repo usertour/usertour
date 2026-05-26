@@ -6,10 +6,8 @@ import {
   useLocalizationListContext,
 } from '@/contexts/localization-list-context';
 import { Badge } from '@usertour/badge';
-import { Button } from '@usertour/button';
-import { RiAddLine } from '@usertour/icons';
 import { Localization } from '@usertour/types';
-import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { format } from 'date-fns';
 import { LocalizationCreateDialog } from './components/localization-create-dialog';
 import { LocalizationRowActions } from './components/localization-row-actions';
@@ -22,10 +20,11 @@ const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="flex-none">
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('settings.localizations.newButton')}
-      </Button>
+      <NewItemButton
+        onClick={() => setOpen(true)}
+        className="flex-none"
+        label={t('settings.localizations.newButton')}
+      />
       <LocalizationCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );

@@ -6,10 +6,9 @@ import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { Badge } from '@usertour/badge';
 import { Button } from '@usertour/button';
-import { RiAddLine } from '@usertour/icons';
 import { QuestionTooltip } from '@usertour/tooltip';
 import { Environment } from '@usertour/types';
-import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { EnvironmentCreateDialog } from './components/environment-create-dialog';
 import { EnvironmentRowActions } from './components/environment-row-actions';
 
@@ -22,10 +21,12 @@ const NewEnvironmentButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="flex-none" disabled={isViewOnly}>
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('settings.environments.newButton')}
-      </Button>
+      <NewItemButton
+        onClick={() => setOpen(true)}
+        className="flex-none"
+        disabled={isViewOnly}
+        label={t('settings.environments.newButton')}
+      />
       <EnvironmentCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );

@@ -4,8 +4,9 @@ import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour/button';
 import { Separator } from '@usertour/separator';
 import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
-import { ArrowRightIcon, RiAddLine } from '@usertour/icons';
+import { ArrowRightIcon } from '@usertour/icons';
 import { useContentCount } from '@usertour/hooks';
+import { NewItemButton } from '@usertour/ui';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
@@ -40,10 +41,7 @@ interface CreateButtonProps {
 }
 
 const CreateButton = memo(({ onClick, disabled, text, id, className }: CreateButtonProps) => (
-  <Button onClick={onClick} className={className} id={id} disabled={disabled}>
-    <RiAddLine className="mr-2 h-4 w-4" />
-    {text}
-  </Button>
+  <NewItemButton onClick={onClick} className={className} id={id} disabled={disabled} label={text} />
 ));
 
 CreateButton.displayName = 'CreateButton';

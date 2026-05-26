@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { ThemeListProvider, useThemeListContext } from '@/contexts/theme-list-context';
 import { ThemeListSkeleton } from '@/components/molecules/skeleton';
-import { Button } from '@usertour/button';
-import { RiAddLine } from '@usertour/icons';
-import { SettingsPage } from '@usertour/ui';
+import { NewItemButton, SettingsPage } from '@usertour/ui';
 import type { Theme } from '@usertour/types';
 import { ThemeCreateDialog } from './components/theme-create-dialog';
 import { ThemeCardPreview } from './components/theme-card-preview';
@@ -17,10 +15,11 @@ const NewThemeButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={isViewOnly}>
-        <RiAddLine className="mr-2 h-4 w-4" />
-        {t('themes.listHeader.newTheme')}
-      </Button>
+      <NewItemButton
+        onClick={() => setOpen(true)}
+        disabled={isViewOnly}
+        label={t('themes.listHeader.newTheme')}
+      />
       <ThemeCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
     </>
   );
