@@ -3,12 +3,14 @@ import {
   ContentDetailProviderWrapper,
   useContentDetailProviderWrapper,
 } from '@/contexts/content-detail-provider';
+import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { ContentTypeName } from '@usertour/types';
 import { ContentDetailAnalytics } from '../version/content-detail-analytics';
 import { ContentDetailVersion } from '../version/content-detail-version';
 import { ContentLocalizationList } from '../version/content-localization-list';
 import { ContentDetailContent } from './content-detail-content';
 import { ContentDetailHeader } from './content-detail-header';
+import { ContentDetailNotFound } from './content-detail-not-found';
 import { ContentDetailSettings } from './content-detail-settings';
 import { ContentDetailTrackerEditor } from './content-detail-tracker-editor';
 
@@ -32,12 +34,21 @@ export interface ContentDetailViewProps {
 }
 
 // Inner component that uses the provider context
-function ContentDetailViewInner(props: ContentDetailViewProps) {
+const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { type, contentId, contentType } = props;
   const { isLoading } = useContentDetailProviderWrapper();
+  const { content } = useContentDetailContext();
 
   if (isLoading) {
     return <ContentLoading message={getContentTypeDetailLoadingMessage(contentType)} />;
+  }
+
+  // Server returns null for soft-deleted (or otherwise inaccessible) content.
+  // Header + body sub-components all assume a Content object and silently
+  // collapse to blank without it, so short-circuit with an explicit empty
+  // state instead.
+  if (!content) {
+    return <ContentDetailNotFound contentType={contentType} />;
   }
 
   return (
@@ -64,7 +75,7 @@ function ContentDetailViewInner(props: ContentDetailViewProps) {
       {type === 'localization' && <ContentLocalizationList />}
     </div>
   );
-}
+};
 
 ContentDetailViewInner.displayName = 'ContentDetailViewInner';
 

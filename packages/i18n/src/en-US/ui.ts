@@ -1129,6 +1129,10 @@ const translations = {
       deleteSuccess: '{{contentType}} "{{name}}" deleted',
       deleteFailure: 'Failed to delete content',
     },
+    notFound: {
+      description: 'This content has been deleted or is no longer accessible.',
+      backButton: 'Back to list',
+    },
   },
   companies: {
     actions: {

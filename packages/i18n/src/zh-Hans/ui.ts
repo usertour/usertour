@@ -1050,6 +1050,10 @@ const translations = {
       deleteSuccess: '{{contentType}}「{{name}}」已删除',
       deleteFailure: '删除内容失败',
     },
+    notFound: {
+      description: '该内容已被删除或无法访问。',
+      backButton: '返回列表',
+    },
   },
   companies: {
     actions: {
