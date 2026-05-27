@@ -1,7 +1,7 @@
 # 0004: Collapse per-atom packages into `@usertour/ui`
 
 - **Date:** 2026-05-27
-- **Status:** Accepted (Phase 1 landed)
+- **Status:** Accepted (Phases 1–4 landed)
 
 ## Context
 
@@ -135,6 +135,25 @@ Remove the 39 `packages/components/<atom>/` directories. Update
 `pnpm-workspace.yaml` if any explicit `packages/components/<atom>`
 references remain (none expected — the glob covers them).
 
+### Phase 4 — flatten the now-vestigial `packages/components/` drawer
+
+After Phase 3 the `packages/components/` directory holds exactly two
+packages (`ui/` + `frame/`). The drawer existed to group the 38 atom
+packages; with the atoms gone, it's a single level of nesting with no
+remaining semantic load — `@usertour/ui` and `@usertour/frame` sit at
+the same logical level as `@usertour/business-components`,
+`@usertour/builder`, `@usertour/editor`, etc. in L1-L5 layering, but
+were one folder deeper than their peers.
+
+Move both up to `packages/` root via `git mv`, delete the empty
+`packages/components/` directory, replace the `packages/components/*`
+glob in `pnpm-workspace.yaml` with explicit `packages/ui` +
+`packages/frame` entries. `packages/radix/*` stays as a glob — that
+drawer holds three fork-of-radix-internals packages with distinct
+provenance from our own UI code, and the grouping does carry meaning.
+
+No source code changes — imports are by package name, not path.
+
 ## Why staged rather than big-bang
 
 Phase 1 alone is ~150 file touches and a -5000 LOC diff (mostly
@@ -149,7 +168,7 @@ the branch is shippable after Phase 1.
 
 ## Out-of-scope primitives
 
-`@usertour/frame` (`packages/components/frame/`) is **not** merged into
+`@usertour/frame` (`packages/frame/`) is **not** merged into
 `@usertour/ui`, despite originally sitting under `packages/components/`.
 Reasons:
 

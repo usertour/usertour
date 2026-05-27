@@ -162,22 +162,21 @@ justifies the package shape change.
 
 ## L1 — UI components
 
-React components with no business knowledge. One package:
+React components with no business knowledge:
 
-- `@usertour/ui` (`packages/components/ui/`) — single home for all
-  shadcn-style primitives (`Button`, `Dialog`, `Popover`, `Input`,
-  `Select`, `Calendar`, `Command`, etc., under `src/primitives/`)
-  **plus** the composition UI built on top of them (`SelectPopover`,
-  `ColorPicker`, `ErrorTooltip`, `DateTimePicker`,
-  `ScaledPreviewContainer`, `LoadingContainer`, `LocateSelect`,
-  `Combobox`, `InputGroup`, `compact-*` size variants).
-- `packages/radix/*` — Radix internals (popper, slot, primitive,
-  compose-refs) consumed by `@usertour/ui`.
-
-The 38 `packages/components/<atom>/` packages that previously held one
-shadcn primitive each are deprecated shims that re-export from
-`@usertour/ui`; consumers should import directly from `@usertour/ui`.
-See ADR 0004 for the migration rationale and Phase 2/3 plan.
+- `@usertour/ui` (`packages/ui/`) — single home for all shadcn-style
+  primitives (`Button`, `Dialog`, `Popover`, `Input`, `Select`,
+  `Calendar`, `Command`, etc., under `src/primitives/`) **plus** the
+  composition UI built on top of them (`SelectPopover`, `ColorPicker`,
+  `ErrorTooltip`, `DateTimePicker`, `ScaledPreviewContainer`,
+  `LoadingContainer`, `LocateSelect`, `Combobox`, `InputGroup`,
+  `compact-*` size variants).
+- `@usertour/frame` (`packages/frame/`) — iframe-portal domain
+  primitive consumed by `apps/sdk` and `packages/widget` for embedded
+  rendering; kept outside `@usertour/ui` to keep those bundles isolated
+  from the wider UI dep graph (see ADR 0004).
+- `packages/radix/*` — Radix internals (popper, slot, compose-refs)
+  consumed by `@usertour/ui` and `@usertour/frame`.
 
 **Rule of thumb**: an L1 component must work in any business context
 without knowing what context that is. It accepts data via props, never
@@ -247,7 +246,6 @@ The layering above is the target. Current state has a few honest gaps:
 | `@usertour/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
 | `@usertour/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
 | L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour/hooks` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
-| `packages/components/<atom>/` shims | 38 one-line shim packages re-exporting from `@usertour/ui` for backward compatibility during the atom-collapse migration. ~650 existing call sites still import from these. | Phase 2 codemod-sweeps imports to `@usertour/ui`; Phase 3 deletes the shim packages. See ADR 0004. |
 
 ## Decision tree
 

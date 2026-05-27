@@ -8,7 +8,7 @@ packages follows them.
 A component or hook with **zero business types** (doesn't import from
 `@usertour/types` other than enums, doesn't touch `@usertour/contexts`
 or app contexts, doesn't call `@usertour/gql` or `@usertour/hooks`'s
-mutation wrappers) belongs in `packages/components/ui/`.
+mutation wrappers) belongs in `packages/ui/`.
 
 Examples already there: `Button`, `SelectPopover`, `DateTimePicker`,
 `LoadingButton`, `NewItemButton`, `EditableTitle`, `TruncatedText`,
