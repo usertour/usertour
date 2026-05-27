@@ -1,19 +1,9 @@
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
-import { useTranslation } from 'react-i18next';
+import { DestructiveConfirmDialog } from '@usertour/ui';
+import { Trans, useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
-import { useCallback } from 'react';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { memo, useCallback } from 'react';
 import { useRemoveCompaniesFromSegment } from '@/hooks/use-remove-companies-from-segment';
-import { memo } from 'react';
 
 interface BizCompanyRemoveDialogProps {
   bizCompanyIds: string[];
@@ -29,65 +19,45 @@ export const BizCompanyRemoveDialog = memo((props: BizCompanyRemoveDialogProps) 
   const { removeCompanies, loading } = useRemoveCompaniesFromSegment();
   const { toast } = useToast();
 
-  const handleSuccess = useCallback(
-    async (count: number) => {
-      toast({
-        variant: 'success',
-        title: t('companies.toast.segments.companiesRemoved', { count }),
-      });
-      await onSubmit(true);
-    },
-    [onSubmit, toast, t],
-  );
-
-  const handleError = useCallback(
-    async (errorMessage: string) => {
-      toast({
-        variant: 'destructive',
-        title: errorMessage,
-      });
-      onSubmit(false);
-    },
-    [onSubmit, toast],
-  );
-
-  const handleSubmit = useCallback(async () => {
+  const handleConfirm = useCallback(async () => {
     if (!segment?.id) {
-      await handleError('Invalid segment data');
+      toast({ variant: 'destructive', title: t('companies.toast.segments.invalidSegment') });
+      await onSubmit(false);
       return;
     }
 
     const result = await removeCompanies(bizCompanyIds, segment.id);
     if (result.success) {
-      await handleSuccess(result.count || 0);
+      toast({
+        variant: 'success',
+        title: t('companies.toast.segments.companiesRemoved', { count: result.count || 0 }),
+      });
+      await onSubmit(true);
     } else {
-      await handleError(result.error ?? 'Unknown error');
+      toast({ variant: 'destructive', title: result.error ?? t('common.unknownError') });
+      await onSubmit(false);
     }
-  }, [bizCompanyIds, segment?.id, removeCompanies, handleSuccess, handleError]);
+  }, [bizCompanyIds, segment?.id, removeCompanies, onSubmit, toast, t]);
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t('companies.dialogs.removeCompaniesFromSegment.title')}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('companies.dialogs.removeCompaniesFromSegment.description', {
-              segmentName: segment.name,
-            })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
-          <LoadingButton onClick={handleSubmit} loading={loading}>
-            {t('companies.dialogs.removeCompaniesFromSegment.confirmButton', {
-              count: bizCompanyIds.length,
-            })}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t('companies.dialogs.removeCompaniesFromSegment.title')}
+      description={
+        <Trans
+          i18nKey="companies.dialogs.removeCompaniesFromSegment.description"
+          values={{ segmentName: segment.name }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('companies.dialogs.removeCompaniesFromSegment.confirmButton', {
+        count: bizCompanyIds.length,
+      })}
+      cancelLabel={t('companies.actions.cancel')}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleConfirm}
+      loading={loading}
+    />
   );
 });
 

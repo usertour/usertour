@@ -34,12 +34,7 @@ interface ContentDuplicateFormProps {
 }
 
 const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please enter name.',
-    })
-    .max(30)
-    .min(1),
+  name: z.string().max(30).min(1),
   targetEnvironmentId: z.string().optional(),
 });
 

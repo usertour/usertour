@@ -8,7 +8,7 @@ import { fontItems } from '@/utils/webfonts';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface Props {
+export interface BuilderFontPickerProps {
   value: string;
   onChange: (name: string) => void;
   disabled?: boolean;
@@ -22,7 +22,8 @@ const SYSTEM_ITEMS: { id: string; name: string; labelKey: string }[] = [
   { id: 'custom-font', name: 'Custom font', labelKey: 'themeBuilder.fontPicker.customFont' },
 ];
 
-export function BuilderFontPicker({ value, onChange, disabled, id }: Props) {
+export const BuilderFontPicker = (props: BuilderFontPickerProps) => {
+  const { value, onChange, disabled, id } = props;
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
 
@@ -92,4 +93,4 @@ export function BuilderFontPicker({ value, onChange, disabled, id }: Props) {
       </PopoverContent>
     </Popover>
   );
-}
+};

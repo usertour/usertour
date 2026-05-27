@@ -29,7 +29,7 @@ import { useThemeDraft } from './use-theme-draft';
 const LEFT_SIDEBAR = { default: 280, min: 180, max: 360 };
 const RIGHT_SIDEBAR = { default: 320, min: 280, max: 480 };
 
-interface Props {
+export interface ThemeBuilderProps {
   theme: Theme;
   onSave: (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => Promise<void>;
   onRename: (name: string) => Promise<void>;
@@ -39,7 +39,8 @@ interface Props {
 const mergeWithDefaults = (settings: ThemeTypesSetting): ThemeTypesSetting =>
   deepmerge(defaultSettings, settings) as ThemeTypesSetting;
 
-export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Props) {
+export const ThemeBuilder = (props: ThemeBuilderProps) => {
+  const { theme, onSave, onRename, onActionComplete } = props;
   const [activeWidgetType, setActiveWidgetType] = useState<ThemeDetailPreviewType>(
     ThemeDetailPreviewType.TOOLTIP,
   );
@@ -213,4 +214,4 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
       </div>
     </BuilderProvider>
   );
-}
+};

@@ -1,171 +1,131 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { changePassword } from '@usertour/gql';
+import { useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useChangePasswordMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
-import { Separator } from '@usertour/separator';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
-const accountFormSchema = z
-  .object({
-    currentPassword: z
-      .string()
-      .min(2, {
-        message: 'Password must be at least 6 characters.',
-      })
-      .max(30, {
-        message: 'Password must not be longer than 30 characters.',
-      }),
-    newPassword: z
-      .string()
-      .min(2, {
-        message: 'Password must be at least 6 characters.',
-      })
-      .max(30, {
-        message: 'Password must not be longer than 30 characters.',
-      }),
-    confirmPassword: z
-      .string()
-      .min(2, {
-        message: 'Password must be at least 6 characters.',
-      })
-      .max(30, {
-        message: 'Password must not be longer than 30 characters.',
-      }),
-  })
-  .superRefine(({ confirmPassword, newPassword }, ctx) => {
-    if (confirmPassword !== newPassword) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'The passwords did not match',
-      });
-    }
-  });
-type AccountFormValues = z.infer<typeof accountFormSchema>;
+// Bounds match the auth module's password schema (registration / reset)
+// so a password accepted at sign-up can be re-entered as the current
+// password here. The mismatch message goes through i18n via the auth
+// errors key already used by the sign-up / reset flows.
+interface PasswordFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 
 export const AccountPasswordForm = () => {
-  const [updateMutation] = useMutation(changePassword);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const form = useForm<AccountFormValues>({
-    resolver: zodResolver(accountFormSchema),
-    defaultValues: {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    },
-  });
-  const { toast } = useToast();
+  const { invoke: changePassword } = useChangePasswordMutation();
+  const { t } = useTranslation();
 
-  const onSubmit = async (data: AccountFormValues) => {
-    if (!data.newPassword) {
-      return;
-    }
-    try {
-      setIsLoading(true);
-      const ret = await updateMutation({
-        variables: {
-          newPassword: data.newPassword,
-          oldPassword: data.currentPassword,
-        },
-      });
-      if (ret.data?.changePassword?.id) {
-        toast({
-          variant: 'success',
-          title: 'Modified password successfully',
-        });
+  const passwordSchema = useMemo(
+    () =>
+      z
+        .object({
+          currentPassword: z.string().min(8).max(160),
+          newPassword: z.string().min(8).max(160),
+          confirmPassword: z.string().min(8).max(160),
+        })
+        .refine((values) => values.confirmPassword === values.newPassword, {
+          message: t('auth.errors.passwordsDoNotMatch'),
+          path: ['confirmPassword'],
+        }),
+    [t],
+  );
+
+  // The form must clear on success so a stale value can't be replayed.
+  // `useRef` lets us reach back into the hook result inside `onSuccess`
+  // without TS thinking the local is self-initialising.
+  const resetRef = useRef<(() => void) | null>(null);
+
+  const state = useSettingsForm<PasswordFormValues>({
+    schema: passwordSchema,
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+    submit: async ({ newPassword, currentPassword }) => {
+      const success = await changePassword(currentPassword, newPassword);
+      if (!success) {
+        // useSettingsForm treats non-throw as success — without this
+        // guard, a soft-failure response (e.g. `{ changePassword: null }`)
+        // would fire the success toast and clear the fields while the
+        // server still has the old password.
+        throw new Error(t('settings.account.password.failureToast'));
       }
-      setIsLoading(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-      setIsLoading(false);
-    }
-  };
+    },
+    successMessage: t('settings.account.password.successToast'),
+    // Opt out of the default re-baseline-to-submitted-values behavior:
+    // password fields should clear after a successful change, not retain
+    // the just-submitted credentials in form state.
+    resetOnSuccess: false,
+    onSuccess: () => resetRef.current?.(),
+  });
+
+  resetRef.current = () => state.form.reset();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-xl font-semibold tracking-tight">Change password</h3>
-        {/* <p className="text-sm text-muted-foreground">Update your password.</p> */}
-      </div>
-      <Separator />
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="currentPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Old password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="Enter your current password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="newPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>New password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Pick a strong password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    autoComplete="confirm-password"
-                    placeholder="Repeat the same new password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="submit"
-            disabled={form.watch('newPassword') === form.watch('currentPassword')}
-          >
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </form>
-      </Form>
-    </div>
+    <SettingsFormSection
+      title={t('settings.account.password.title')}
+      submitLabel={t('settings.common.save')}
+      state={state}
+    >
+      <FormField
+        control={state.form.control}
+        name="currentPassword"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('settings.account.password.currentLabel')}</FormLabel>
+            <FormControl>
+              <Input
+                type="password"
+                autoComplete="current-password"
+                placeholder={t('settings.account.password.currentPlaceholder')}
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={state.form.control}
+        name="newPassword"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('settings.account.password.newLabel')}</FormLabel>
+            <FormControl>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                placeholder={t('settings.account.password.newPlaceholder')}
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={state.form.control}
+        name="confirmPassword"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('settings.account.password.confirmLabel')}</FormLabel>
+            <FormControl>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                placeholder={t('settings.account.password.confirmPlaceholder')}
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </SettingsFormSection>
   );
 };
 

@@ -36,3 +36,8 @@ export { SelectorDialog } from './components/selector/selector-dialog';
 // Generic composition UI primitives live in @usertour/ui —
 // import them from there directly. Examples: SelectPopover, DateTimePicker,
 // ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.
+
+// Settings-domain components — aware of IntegrationModel and other
+// Usertour types. Generic settings shells (SettingsPage, ResourceTable,
+// etc.) live in @usertour/ui instead.
+export * from './components/settings';

@@ -1,7 +1,7 @@
 import { useBuilderContext } from '../builder-context';
 import { ImageUploadWidget } from '../widgets/upload/image-upload';
 
-interface Props {
+export interface ImageUploadFieldProps {
   path: string;
   label: string;
   description?: string;
@@ -9,7 +9,8 @@ interface Props {
   previewAspect?: 'square' | 'wide';
 }
 
-export function ImageUploadField({ path, label, description, maxSizeBytes, previewAspect }: Props) {
+export const ImageUploadField = (props: ImageUploadFieldProps) => {
+  const { path, label, description, maxSizeBytes, previewAspect } = props;
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path);
   return (
@@ -25,4 +26,4 @@ export function ImageUploadField({ path, label, description, maxSizeBytes, previ
       />
     </div>
   );
-}
+};

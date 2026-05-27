@@ -1,5 +1,6 @@
 import { Button } from '@usertour/button';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   useGetSalesforceObjectFieldsQuery,
   useUpsertIntegrationObjectMappingMutation,
@@ -35,17 +36,12 @@ const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />
 );
 
-const salesforceObjects = [
-  { name: 'Contact', label: 'Contacts', type: 'standard' as const },
-  { name: 'Account', label: 'Accounts', type: 'standard' as const },
-  { name: 'Lead', label: 'Leads', type: 'standard' as const },
-  { name: 'Opportunity', label: 'Opportunities', type: 'standard' as const },
-];
-
-const usertourObjects = [
-  { name: 'User', label: 'User' },
-  { name: 'Company', label: 'Company' },
-];
+// Salesforce object identifiers are technical (`Contact`, `Account`)
+// and round-trip into the API. The labels rendered in the picker are
+// translated via i18n at render time so the technical names stay
+// stable.
+const SALESFORCE_OBJECT_NAMES = ['Contact', 'Account', 'Lead', 'Opportunity'] as const;
+const USERTOUR_OBJECT_NAMES = ['User', 'Company'] as const;
 
 interface ObjectSelectionPanelProps {
   salesforceObject: string;
@@ -67,16 +63,40 @@ const ObjectSelectionPanel = (props: ObjectSelectionPanelProps) => {
     onCancel,
     isLoading,
   } = props;
+  const { t } = useTranslation();
+
+  const salesforceObjects = useMemo(
+    () =>
+      SALESFORCE_OBJECT_NAMES.map((name) => ({
+        name,
+        label: t(`settings.integrations.objectMapping.objectLabels.salesforce.${name}`, {
+          defaultValue: name,
+        }),
+        type: 'standard' as const,
+      })),
+    [t],
+  );
+  const usertourObjects = useMemo(
+    () =>
+      USERTOUR_OBJECT_NAMES.map((name) => ({
+        name,
+        label: t(`settings.integrations.objectMapping.objectLabels.usertour.${name}`, {
+          defaultValue: name,
+        }),
+      })),
+    [t],
+  );
+
   return (
     <>
       <div className="space-y-1 py-4">
         <div className="flex items-center gap-4 justify-between">
           <Label htmlFor="salesforce-object" className="w-72">
-            Salesforce Object
+            {t('settings.integrations.objectMapping.dialog.salesforceObjectLabel')}
           </Label>
           <div className="w-6" />
           <Label htmlFor="usertour-object" className="w-72">
-            Usertour Object
+            {t('settings.integrations.objectMapping.dialog.usertourObjectLabel')}
           </Label>
         </div>
 
@@ -85,7 +105,9 @@ const ObjectSelectionPanel = (props: ObjectSelectionPanelProps) => {
             items={salesforceObjects}
             value={salesforceObject}
             onValueChange={onSalesforceObjectChange}
-            placeholder="Select Salesforce object"
+            placeholder={t(
+              'settings.integrations.objectMapping.dialog.salesforceObjectPlaceholder',
+            )}
           />
 
           <div className="flex items-center justify-center">
@@ -96,17 +118,17 @@ const ObjectSelectionPanel = (props: ObjectSelectionPanelProps) => {
             items={usertourObjects}
             value={usertourObject}
             onValueChange={onUsertourObjectChange}
-            placeholder="Select Usertour object"
+            placeholder={t('settings.integrations.objectMapping.dialog.usertourObjectPlaceholder')}
           />
         </div>
       </div>
 
       <DialogFooter>
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-          Cancel
+          {t('settings.integrations.objectMapping.dialog.cancelButton')}
         </Button>
         <Button onClick={onContinue} disabled={!salesforceObject || !usertourObject}>
-          Continue
+          {t('settings.integrations.objectMapping.dialog.continueButton')}
         </Button>
       </DialogFooter>
     </>
@@ -123,7 +145,7 @@ interface ObjectMappingDialogProps {
   mode?: 'create' | 'edit';
 }
 
-export function ObjectMappingDialog({
+export const ObjectMappingDialog = ({
   integrationId,
   initialMapping,
   onSuccess,
@@ -131,9 +153,10 @@ export function ObjectMappingDialog({
   open,
   onOpenChange,
   mode = 'create',
-}: ObjectMappingDialogProps) {
+}: ObjectMappingDialogProps) => {
   const { project } = useAppContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [step, setStep] = useState<'objects' | 'fields'>(mode === 'edit' ? 'fields' : 'objects');
   const [salesforceObject, setSalesforceObject] = useState<string>(
     initialMapping?.sourceObjectType || '',
@@ -177,7 +200,7 @@ export function ObjectMappingDialog({
   const handleContinue = () => {
     if (!salesforceObject || !usertourObject) {
       toast({
-        title: 'Please select both Salesforce and Usertour objects',
+        title: t('settings.integrations.objectMapping.dialog.bothObjectsRequiredToast'),
         variant: 'destructive',
       });
       return;
@@ -196,7 +219,7 @@ export function ObjectMappingDialog({
   const handleSaveMapping = useCallback(async () => {
     if (!integrationId || !mappingData) {
       toast({
-        title: 'Missing integration or mapping data',
+        title: t('settings.integrations.objectMapping.dialog.missingDataToast'),
         variant: 'destructive',
       });
       return;
@@ -216,8 +239,12 @@ export function ObjectMappingDialog({
 
       if (result) {
         toast({
-          title: 'Success',
-          description: `Object mapping ${mode === 'edit' ? 'updated' : 'created'} successfully`,
+          variant: 'success',
+          title: t(
+            mode === 'edit'
+              ? 'settings.integrations.objectMapping.dialog.saveSuccessToastUpdate'
+              : 'settings.integrations.objectMapping.dialog.saveSuccessToastCreate',
+          ),
         });
         onSuccess?.();
         handleClose();
@@ -225,7 +252,11 @@ export function ObjectMappingDialog({
     } catch (error) {
       console.error('Failed to save mapping:', error);
       toast({
-        title: `Failed to ${mode === 'edit' ? 'update' : 'create'} object mapping`,
+        title: t(
+          mode === 'edit'
+            ? 'settings.integrations.objectMapping.dialog.saveFailureToastUpdate'
+            : 'settings.integrations.objectMapping.dialog.saveFailureToastCreate',
+        ),
         variant: 'destructive',
       });
     }
@@ -239,6 +270,7 @@ export function ObjectMappingDialog({
     toast,
     onSuccess,
     mode,
+    t,
   ]);
 
   const handleClose = () => {
@@ -256,7 +288,12 @@ export function ObjectMappingDialog({
       <DialogContent className={cn('max-w-2xl', step === 'objects' ? 'max-w-2xl' : 'max-w-4xl')}>
         <DialogHeader>
           <DialogTitle>
-            {step === 'objects' && (mode === 'edit' ? 'Edit Object Mapping' : 'Select Objects')}
+            {step === 'objects' &&
+              t(
+                mode === 'edit'
+                  ? 'settings.integrations.objectMapping.dialog.titleEditMapping'
+                  : 'settings.integrations.objectMapping.dialog.titleSelectObjects',
+              )}
 
             {step !== 'objects' && (
               <div className="flex items-center gap-4">
@@ -272,10 +309,14 @@ export function ObjectMappingDialog({
           </DialogTitle>
           <DialogDescription>
             {step === 'objects' &&
-              (mode === 'edit'
-                ? 'Modify the mapping between Salesforce and Usertour objects.'
-                : 'Choose which Salesforce object to map to which Usertour object.')}
-            {step !== 'objects' && mode === 'edit' && 'Modify the field mappings and settings.'}
+              t(
+                mode === 'edit'
+                  ? 'settings.integrations.objectMapping.dialog.descriptionEditMapping'
+                  : 'settings.integrations.objectMapping.dialog.descriptionSelectObjects',
+              )}
+            {step !== 'objects' &&
+              mode === 'edit' &&
+              t('settings.integrations.objectMapping.dialog.descriptionEditFields')}
           </DialogDescription>
         </DialogHeader>
 
@@ -309,9 +350,13 @@ export function ObjectMappingDialog({
                 onCheckedChange={setIsSyncStream}
               />
               <span>
-                Stream <span className="font-semibold text-primary">User events</span>
-                <span className="mx-1">→</span>
-                <span className="font-semibold text-blue-500">Contact activity</span>
+                <Trans
+                  i18nKey="settings.integrations.objectMapping.streamSwitch"
+                  components={{
+                    user: <span className="font-semibold text-primary" />,
+                    contact: <span className="font-semibold text-blue-500" />,
+                  }}
+                />
               </span>
               <InfoIcon className="w-4 h-4 text-muted-foreground" />
             </div>
@@ -319,12 +364,16 @@ export function ObjectMappingDialog({
             <DialogFooter>
               {mode === 'create' && (
                 <Button variant="outline" onClick={handleBack} disabled={isSaving}>
-                  Back
+                  {t('settings.integrations.objectMapping.dialog.backButton')}
                 </Button>
               )}
               <Button onClick={handleSaveMapping} disabled={isSaving || !mappingData}>
                 {isSaving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === 'edit' ? 'Update mapping' : 'Save mapping'}
+                {t(
+                  mode === 'edit'
+                    ? 'settings.integrations.objectMapping.dialog.updateMappingButton'
+                    : 'settings.integrations.objectMapping.dialog.saveMappingButton',
+                )}
               </Button>
             </DialogFooter>
           </>
@@ -332,4 +381,4 @@ export function ObjectMappingDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

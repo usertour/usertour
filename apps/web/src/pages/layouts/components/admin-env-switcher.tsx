@@ -3,7 +3,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
-import { EnvironmentCreateForm } from '@/pages/settings/environments/components/environment-create-form';
+import { EnvironmentCreateDialog } from '@/pages/settings/environments/components/environment-create-dialog';
 import { Environment } from '@usertour/types';
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { Avatar, AvatarFallback } from '@usertour/avatar';
@@ -55,8 +55,7 @@ export const AdminEnvSwitcher = () => {
   const handleCreate = () => {
     setShowNewEnvDialog(true);
   };
-  const handleOnClose = () => {
-    setShowNewEnvDialog(false);
+  const handleOnSubmit = () => {
     refetch();
   };
 
@@ -117,7 +116,11 @@ export const AdminEnvSwitcher = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <EnvironmentCreateForm isOpen={showNewEnvDialog} onClose={handleOnClose} />
+      <EnvironmentCreateDialog
+        open={showNewEnvDialog}
+        onOpenChange={setShowNewEnvDialog}
+        onSubmit={handleOnSubmit}
+      />
     </>
   );
 };

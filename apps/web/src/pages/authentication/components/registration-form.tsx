@@ -41,21 +41,18 @@ export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: Si
     () =>
       z.object({
         userName: z
-          .string({ required_error: t('auth.errors.fullNameRequired') })
+          .string()
           .trim()
           .min(1, { message: t('auth.errors.fullNameRequired') })
           .max(80),
         companyName: isInvite
           ? z.string().trim().max(80).optional()
           : z
-              .string({ required_error: t('auth.errors.projectNameRequired') })
+              .string()
               .trim()
               .min(1, { message: t('auth.errors.projectNameRequired') })
               .max(80),
-        password: z
-          .string({ required_error: t('auth.errors.passwordRequired') })
-          .min(8)
-          .max(160),
+        password: z.string().min(8).max(160),
         isAccept: z.boolean(),
       }),
     [isInvite, t],

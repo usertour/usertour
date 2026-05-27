@@ -37,11 +37,7 @@ interface ContentEditFormProps {
 }
 
 const formSchema = z.object({
-  buildUrl: z
-    .string({
-      required_error: 'Please enter a URL.',
-    })
-    .min(1),
+  buildUrl: z.string().min(1),
   type: z.string(),
 });
 
@@ -150,7 +146,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleOnSubmit)}>
               <DialogHeader>

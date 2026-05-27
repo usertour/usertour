@@ -3,7 +3,7 @@ import { QuestionTooltip } from '@usertour/tooltip';
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
 
-interface Props {
+export interface SliderFieldProps {
   path: string;
   label: string;
   min: number;
@@ -13,7 +13,8 @@ interface Props {
   tooltip?: string;
 }
 
-export function SliderField({ path, label, min, max, step = 1, suffix, tooltip }: Props) {
+export const SliderField = (props: SliderFieldProps) => {
+  const { path, label, min, max, step = 1, suffix, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<number>(path);
@@ -43,4 +44,4 @@ export function SliderField({ path, label, min, max, step = 1, suffix, tooltip }
       />
     </div>
   );
-}
+};

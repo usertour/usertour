@@ -17,6 +17,8 @@ import {
 import { Button } from '@usertour/button';
 import { Switch } from '@usertour/switch';
 import { Fragment, useState, useEffect } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@usertour/tailwind';
 import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
 import { Separator } from '@usertour/separator';
@@ -30,7 +32,11 @@ import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 // Define plan type
 interface Plan {
+  /** Stable English identifier ('Hobby' | 'Starter' | 'Growth' | 'Business')
+      used for tier comparison + checkout planType arg. Display name is
+      `displayName`. */
   name: string;
+  displayName: string;
   price: string;
   description: string;
   isCurrentPlan?: boolean;
@@ -73,18 +79,23 @@ const secondaryButtonClassName =
 // PLAN_FEATURES matrix at render time so the card reflects the user's
 // effective benefits (base + any per-subscription override).
 interface PlanMeta {
+  /** Identifier for this plan — matches keys in settings.billing.plans.* */
   name: string;
   planType: PlanType;
   price: string;
   yearlyPrice: string;
-  description: string;
-  buttonText: string;
+  /** i18n key for description copy; resolved at render time. */
+  descriptionKey: string;
+  /** i18n key for the primary button label. */
+  buttonTextKey: string;
   buttonVariant: 'default' | 'secondary';
   buttonClassName: string;
   showSpacing: boolean;
   disabled: boolean;
+  /** Identifier of the previous tier (used in "Everything in X, plus"). */
   prevPlanName?: string;
-  supportText: string;
+  /** i18n key for the support tier label. */
+  supportTextKey: string;
   supportIcon: React.ElementType;
 }
 
@@ -94,13 +105,13 @@ const PLAN_META: PlanMeta[] = [
     planType: PlanType.HOBBY,
     price: '$0',
     yearlyPrice: '$0',
-    description: 'For individual hobbyists',
-    buttonText: 'Get started',
+    descriptionKey: 'settings.billing.planDescriptions.hobby',
+    buttonTextKey: 'settings.billing.buttons.getStarted',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     disabled: false,
-    supportText: 'Community support',
+    supportTextKey: 'settings.billing.support.community',
     supportIcon: RiMessageLine,
   },
   {
@@ -108,14 +119,14 @@ const PLAN_META: PlanMeta[] = [
     planType: PlanType.STARTER,
     price: '$59',
     yearlyPrice: '$49',
-    description: 'For small teams and startups',
-    buttonText: 'Upgrade',
+    descriptionKey: 'settings.billing.planDescriptions.starter',
+    buttonTextKey: 'settings.billing.buttons.upgrade',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     disabled: false,
     prevPlanName: 'Hobby',
-    supportText: 'Email support',
+    supportTextKey: 'settings.billing.support.email',
     supportIcon: RiMailLine,
   },
   {
@@ -123,14 +134,14 @@ const PLAN_META: PlanMeta[] = [
     planType: PlanType.GROWTH,
     price: '$119',
     yearlyPrice: '$99',
-    description: 'For growing companies',
-    buttonText: 'Upgrade',
+    descriptionKey: 'settings.billing.planDescriptions.growth',
+    buttonTextKey: 'settings.billing.buttons.upgrade',
     buttonVariant: 'default',
     buttonClassName: '',
     showSpacing: false,
     disabled: false,
     prevPlanName: 'Starter',
-    supportText: 'Email support',
+    supportTextKey: 'settings.billing.support.email',
     supportIcon: RiMailLine,
   },
   {
@@ -138,14 +149,14 @@ const PLAN_META: PlanMeta[] = [
     planType: PlanType.BUSINESS,
     price: '$249',
     yearlyPrice: '$207',
-    description: 'For large companies',
-    buttonText: 'Upgrade',
+    descriptionKey: 'settings.billing.planDescriptions.business',
+    buttonTextKey: 'settings.billing.buttons.upgrade',
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     disabled: false,
     prevPlanName: 'Growth',
-    supportText: 'Priority support',
+    supportTextKey: 'settings.billing.support.priority',
     supportIcon: RiHeadphoneLine,
   },
 ];
@@ -166,43 +177,55 @@ function cardFeaturesFor(
   return PLAN_FEATURES[planType];
 }
 
-function buildCardFeatures(meta: PlanMeta, features: PlanFeatures): Plan['features'] {
+function buildCardFeatures(meta: PlanMeta, features: PlanFeatures, t: TFunction): Plan['features'] {
   const items: Plan['features'] = [];
   if (meta.prevPlanName) {
-    items.push({ icon: RiCheckLine, text: `Everything in ${meta.prevPlanName}, plus` });
+    items.push({
+      icon: RiCheckLine,
+      text: t('settings.billing.cardFeatures.everythingIn', {
+        plan: t(`settings.billing.plans.${meta.prevPlanName.toLowerCase()}`),
+      }),
+    });
   } else {
-    items.push({ icon: RiNewspaperLine, text: 'Unlimited content' });
+    items.push({
+      icon: RiNewspaperLine,
+      text: t('settings.billing.cardFeatures.unlimitedContent'),
+    });
   }
   items.push({
     icon: RiBarChartLine,
-    text: `${formatLimit(features.sessionsLimit)} sessions/month`,
+    text: t('settings.billing.cardFeatures.sessions', {
+      value: localizedLimit(features.sessionsLimit, t),
+    }),
   });
   items.push({
     icon: RiTeamLine,
     text:
       features.teamMemberLimit === 'unlimited'
-        ? 'Unlimited team members'
-        : `${features.teamMemberLimit} team members`,
+        ? t('settings.billing.cardFeatures.teamMembersUnlimited')
+        : t('settings.billing.cardFeatures.teamMembers', { value: features.teamMemberLimit }),
   });
   items.push({
     icon: RiCalendarLine,
     text:
       features.dataRetentionYears === 'unlimited'
-        ? 'Unlimited data retention'
-        : `${features.dataRetentionYears} years data retention`,
+        ? t('settings.billing.cardFeatures.dataRetentionUnlimited')
+        : t('settings.billing.cardFeatures.dataRetentionYears', {
+            value: features.dataRetentionYears,
+          }),
   });
   items.push({
     icon: RiStackLine,
     text:
       features.environmentLimit === 'unlimited'
-        ? 'Unlimited environments'
-        : `${features.environmentLimit} environments`,
+        ? t('settings.billing.cardFeatures.environmentsUnlimited')
+        : t('settings.billing.cardFeatures.environments', { value: features.environmentLimit }),
   });
   items.push({
     icon: RiRouteLine,
-    text: `${features.apiRateLimit} API requests/min`,
+    text: t('settings.billing.cardFeatures.apiRate', { rate: features.apiRateLimit }),
   });
-  items.push({ icon: meta.supportIcon, text: meta.supportText });
+  items.push({ icon: meta.supportIcon, text: t(meta.supportTextKey) });
   // No Usertour-branding (and future per-tier gates like SSO / audit
   // logs) lives only in the comparison table below — keeping each card
   // to a fixed row count avoids the bottom-left blank gutter that
@@ -222,6 +245,7 @@ const PlanCard = (props: PlanCardProps) => {
   const { plan, isYearly, projectId, currentPlanType } = props;
   const { invoke: createCheckout, loading: checkoutLoading } = useCreateCheckoutSessionMutation();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
+  const { t } = useTranslation();
 
   const isCurrentPlan = currentPlanType?.toLowerCase() === plan.name.toLowerCase();
 
@@ -237,9 +261,9 @@ const PlanCard = (props: PlanCardProps) => {
   const isLowerPlan = thisPlanLevel < currentPlanLevel;
 
   const getButtonText = () => {
-    if (isCurrentPlan) return 'Current Plan';
-    if (isHigherPlan) return 'Upgrade';
-    if (isLowerPlan) return 'Downgrade';
+    if (isCurrentPlan) return t('settings.billing.buttons.currentPlan');
+    if (isHigherPlan) return t('settings.billing.buttons.upgrade');
+    if (isLowerPlan) return t('settings.billing.buttons.downgrade');
     return plan.buttonText;
   };
 
@@ -289,23 +313,21 @@ const PlanCard = (props: PlanCardProps) => {
     >
       {isCurrentPlan && (
         <div className="absolute right-4 top-4 h-[21px] rounded-md bg-green-600 px-1.5 text-xs font-semibold text-white dark:bg-green-500">
-          <p className="translate-y-[3px] uppercase">Current Plan</p>
+          <p className="translate-y-[3px] uppercase">{t('settings.billing.currentPlanBadge')}</p>
         </div>
       )}
       <div className="flex flex-col gap-5">
         <div className="flex flex-col">
           <h3 className="flex items-center font-semibold text-zinc-950 dark:text-white">
-            {plan.name}
+            {plan.displayName}
           </h3>
           <p className="mt-1.5">
             <span className="align-baseline text-2xl font-semibold text-zinc-950 dark:text-white">
               {isYearly ? plan.yearlyPrice : plan.price}
             </span>
-            {plan.price !== 'Custom Pricing' && (
-              <span className="align-baseline text-sm text-zinc-950/50 dark:text-white/50">
-                /month
-              </span>
-            )}
+            <span className="align-baseline text-sm text-zinc-950/50 dark:text-white/50">
+              {t('settings.billing.perMonth')}
+            </span>
           </p>
           <p className="mt-4 line-clamp-3 min-h-[40px] max-w-full text-sm text-zinc-950/70 dark:text-white/50">
             {plan.description}
@@ -334,7 +356,11 @@ const PlanCard = (props: PlanCardProps) => {
           onClick={handleButtonClick}
           disabled={checkoutLoading || isCurrentPlan || plan.disabled}
         >
-          {checkoutLoading ? 'Loading...' : plan.disabled ? 'Coming Soon' : getButtonText()}
+          {checkoutLoading
+            ? t('settings.billing.buttons.loading')
+            : plan.disabled
+              ? t('settings.billing.buttons.comingSoon')
+              : getButtonText()}
         </Button>
       )}
       <div className="grid auto-rows-fr gap-3.5 text-sm text-zinc-600 dark:text-zinc-400">
@@ -358,13 +384,14 @@ const COMPARISON_PLANS: PlanType[] = [
   PlanType.BUSINESS,
 ];
 
-const formatLimit = (
+const localizedLimit = (
   value: PlanFeatures['sessionsLimit'] | PlanFeatures['teamMemberLimit'],
-): string => (value === 'unlimited' ? 'Unlimited' : String(value));
+  t: TFunction,
+): string => (value === 'unlimited' ? t('settings.billing.unlimited') : String(value));
 
-const formatYears = (value: PlanFeatures['dataRetentionYears']): string => {
-  if (value === 'unlimited') return 'Unlimited';
-  return value === 1 ? '1 Year' : `${value} Years`;
+const formatYears = (value: PlanFeatures['dataRetentionYears'], t: TFunction): string => {
+  if (value === 'unlimited') return t('settings.billing.unlimited');
+  return value === 1 ? t('settings.billing.yearOne') : t('settings.billing.yearsN', { value });
 };
 
 // Pull a feature value across the 4 visible plans, in column order.
@@ -390,147 +417,125 @@ const ComparisonTable = ({
   currentPlanType: PlanType;
   overridePlan: unknown;
 }) => {
+  const { t } = useTranslation();
+  const unlimitedRow = Array.from({ length: 4 }, () => t('settings.billing.unlimited'));
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
       icon: RiPaintBrushLine,
-      title: 'Usage',
+      title: t('settings.billing.comparison.sections.usage'),
       features: [
         {
-          name: 'Price (monthly billing)',
-          values: plans.map((plan) => `${isYearly ? plan.yearlyPrice : plan.price}/month`),
+          name: t('settings.billing.comparison.rows.price'),
+          values: plans.map(
+            (plan) =>
+              `${isYearly ? plan.yearlyPrice : plan.price}${t('settings.billing.perMonth')}`,
+          ),
         },
         {
-          name: 'End users',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
+          name: t('settings.billing.comparison.rows.endUsers'),
+          values: unlimitedRow,
         },
         {
-          name: 'Sessions (Monthly)',
+          name: t('settings.billing.comparison.rows.sessions'),
           values: matrixRow('sessionsLimit', currentPlanType, overridePlan).map((value) => ({
-            count: formatLimit(value),
+            count: localizedLimit(value, t),
             price: null,
           })),
         },
         {
-          name: 'Data Retention',
-          values: matrixRow('dataRetentionYears', currentPlanType, overridePlan).map(formatYears),
+          name: t('settings.billing.comparison.rows.dataRetention'),
+          values: matrixRow('dataRetentionYears', currentPlanType, overridePlan).map((v) =>
+            formatYears(v, t),
+          ),
         },
         {
-          name: 'Environments',
-          values: matrixRow('environmentLimit', currentPlanType, overridePlan).map(formatLimit),
+          name: t('settings.billing.comparison.rows.environments'),
+          values: matrixRow('environmentLimit', currentPlanType, overridePlan).map((v) =>
+            localizedLimit(v, t),
+          ),
         },
         {
-          name: 'API rate limit (requests/min)',
+          name: t('settings.billing.comparison.rows.apiRate'),
           values: matrixRow('apiRateLimit', currentPlanType, overridePlan).map(String),
         },
         {
-          name: 'All usage limits can be upgraded',
+          name: t('settings.billing.comparison.rows.upgradeable'),
           values: [true, true, true, true],
         },
       ],
     },
     {
       icon: RiInboxLine,
-      title: 'Content',
+      title: t('settings.billing.comparison.sections.content'),
       features: [
+        { name: t('settings.billing.comparison.rows.flows'), values: unlimitedRow },
+        { name: t('settings.billing.comparison.rows.checklists'), values: unlimitedRow },
+        { name: t('settings.billing.comparison.rows.launchers'), values: unlimitedRow },
+        { name: t('settings.billing.comparison.rows.surveys'), values: unlimitedRow },
+        { name: t('settings.billing.comparison.rows.banners'), values: unlimitedRow },
+        { name: t('settings.billing.comparison.rows.eventTrackers'), values: unlimitedRow },
+        { name: t('settings.billing.comparison.rows.resourceCenter'), values: unlimitedRow },
         {
-          name: 'Flows',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Checklists',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Launchers',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Surveys/NPS',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Banners',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Event Trackers',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'Resource Center',
-          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
-        },
-        {
-          name: 'No Usertour-branding',
+          name: t('settings.billing.comparison.rows.noBranding'),
           values: matrixRow('removeBranding', currentPlanType, overridePlan),
         },
       ],
     },
     {
       icon: RiTeamLine,
-      title: 'Team',
+      title: t('settings.billing.comparison.sections.team'),
       features: [
         {
-          name: 'Team members',
-          values: matrixRow('teamMemberLimit', currentPlanType, overridePlan).map(formatLimit),
+          name: t('settings.billing.comparison.rows.teamMembers'),
+          values: matrixRow('teamMemberLimit', currentPlanType, overridePlan).map((v) =>
+            localizedLimit(v, t),
+          ),
         },
       ],
     },
     {
       icon: RiSendPlaneLine,
-      title: 'Features',
+      title: t('settings.billing.comparison.sections.features'),
       features: [
         {
-          name: 'Custom theming',
+          name: t('settings.billing.comparison.rows.customTheming'),
           values: [true, true, true, true],
         },
         {
-          name: 'Custom user attributes',
+          name: t('settings.billing.comparison.rows.customAttributes'),
           values: [true, true, true, true],
         },
         {
-          name: 'Automatic, segmented flow triggering',
+          name: t('settings.billing.comparison.rows.flowTriggering'),
           values: [true, true, true, true],
         },
         {
-          name: 'Version history',
+          name: t('settings.billing.comparison.rows.versionHistory'),
           values: [true, true, true, true],
         },
         {
-          name: 'Company profiles and events',
+          name: t('settings.billing.comparison.rows.companyProfiles'),
           values: [true, true, true, true],
         },
         {
-          name: 'Localization(coming soon)',
+          name: t('settings.billing.comparison.rows.localization'),
           values: [true, true, true, true],
         },
         {
-          name: 'Integrations(coming soon)',
+          name: t('settings.billing.comparison.rows.integrations'),
           values: [true, true, true, true],
         },
-        {
-          name: 'Alerting(coming soon)',
-          values: [true, true, true, true],
-        },
+        { name: t('settings.billing.comparison.rows.alerting'), values: [true, true, true, true] },
       ],
     },
     {
       icon: RiLockLine,
-      title: 'Support & service',
+      title: t('settings.billing.comparison.sections.support'),
       features: [
-        {
-          name: 'Community support',
-          values: [true, true, true, true],
-        },
-        {
-          name: 'Email support',
-          values: [false, true, true, true],
-        },
-        {
-          name: 'Priority support',
-          values: [false, false, false, true],
-        },
+        { name: t('settings.billing.support.community'), values: [true, true, true, true] },
+        { name: t('settings.billing.support.email'), values: [false, true, true, true] },
+        { name: t('settings.billing.support.priority'), values: [false, false, false, true] },
       ],
     },
   ];
@@ -540,9 +545,9 @@ const ComparisonTable = ({
       {/* Table header */}
       <div className="grid grid-cols-5 text-zinc-950/90 dark:text-white/90">
         <div />
-        {['Hobby', 'Starter', 'Growth', 'Business'].map((plan) => (
+        {(['hobby', 'starter', 'growth', 'business'] as const).map((plan) => (
           <div key={plan} className="flex flex-col gap-2 p-4">
-            <p className="text-sm font-semibold">{plan}</p>
+            <p className="text-sm font-semibold">{t(`settings.billing.plans.${plan}`)}</p>
           </div>
         ))}
       </div>
@@ -610,6 +615,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   } = useSubscriptionContext();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
+  const { t } = useTranslation();
 
   const isUnlimitedSessions = totalLimit === 'unlimited';
   const percent = isUnlimitedSessions ? 0 : (currentUsage / totalLimit) * 100;
@@ -621,10 +627,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   // cards claim the same number.
   const plans: Plan[] = PLAN_META.map((meta) => ({
     name: meta.name,
+    displayName: t(`settings.billing.plans.${meta.name.toLowerCase()}`),
     price: meta.price,
     yearlyPrice: meta.yearlyPrice,
-    description: meta.description,
-    buttonText: meta.buttonText,
+    description: t(meta.descriptionKey),
+    buttonText: t(meta.buttonTextKey),
     buttonVariant: meta.buttonVariant,
     buttonClassName: meta.buttonClassName,
     showSpacing: meta.showSpacing,
@@ -632,6 +639,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     features: buildCardFeatures(
       meta,
       cardFeaturesFor(meta.planType, planType, subscription?.overridePlan),
+      t,
     ),
   }));
 
@@ -669,10 +677,12 @@ const Pricing = ({ projectId }: { projectId: string }) => {
         <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
           <div className="col-span-3 flex flex-col gap-1">
             <div className="flex flex-wrap gap-2">
-              <h1 className="text-zinc-950/90 dark:text-white/90">Billing plan</h1>
+              <h1 className="text-zinc-950/90 dark:text-white/90">
+                {t('settings.billing.sections.billingPlan')}
+              </h1>
             </div>
             <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
-              View and manage your billing plan
+              {t('settings.billing.sections.billingPlanDescription')}
             </h2>
           </div>
           <div className="flex flex-col col-span-5 space-y-2 p-4 pt-1 xl:p-4 rounded-xl bg-zinc-950/5 dark:bg-white/5">
@@ -687,14 +697,17 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                       </div>
                     ) : (
                       <>
-                        <span>Current plan: </span>
+                        <span>{t('settings.billing.usage.currentPlanLabel')}</span>
                         <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                           {planType}
                         </span>
                         {subscription?.cancelAt && (
                           <span className="text-red-500">
-                            Expires on{' '}
-                            {new Date(Number.parseInt(subscription.cancelAt)).toLocaleDateString()}
+                            {t('settings.billing.usage.expiresOn', {
+                              date: new Date(
+                                Number.parseInt(subscription.cancelAt),
+                              ).toLocaleDateString(),
+                            })}
                           </span>
                         )}
                       </>
@@ -722,20 +735,25 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                           className="h-1 grow max-w-60"
                         />
                         <span className="text-zinc-950/60 dark:text-white/50 flex-none">
-                          {currentUsage} / {isUnlimitedSessions ? 'Unlimited' : totalLimit}
+                          {currentUsage} /{' '}
+                          {isUnlimitedSessions ? t('settings.billing.unlimited') : totalLimit}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
-                        <span>Monthly sessions</span>
+                        <span>{t('settings.billing.usage.monthlySessions')}</span>
                         {!isUnlimitedSessions && (
                           <>
                             <span>•</span>
-                            <span>{percent.toFixed(2)}% used</span>
+                            <span>
+                              {t('settings.billing.usage.percentUsed', {
+                                percent: percent.toFixed(2),
+                              })}
+                            </span>
                             <span>•</span>
                             <span>
                               {currentUsage < totalLimit * 0.8
-                                ? 'Efficient usage'
-                                : 'Consider upgrading'}
+                                ? t('settings.billing.usage.efficientUsage')
+                                : t('settings.billing.usage.considerUpgrading')}
                             </span>
                           </>
                         )}
@@ -751,10 +769,10 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               >
                 <div className="px-1">
                   {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
-                    ? 'Renew Subscription'
+                    ? t('settings.billing.buttons.renewSubscription')
                     : !subscription?.planType || subscription?.planType === PlanType.HOBBY
-                      ? 'Upgrade'
-                      : 'Manage Subscription'}
+                      ? t('settings.billing.buttons.upgrade')
+                      : t('settings.billing.buttons.manageSubscription')}
                 </div>
                 <div className="w-4 h-4">
                   <svg
@@ -769,7 +787,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                     strokeLinejoin="round"
                     className="lucide lucide-arrow-up-right"
                   >
-                    <title>Upgrade</title>
+                    <title>{t('settings.billing.upgradeIconLabel')}</title>
                     <path d="M7 7h10v10" />
                     <path d="M7 17 17 7" />
                   </svg>
@@ -778,12 +796,8 @@ const Pricing = ({ projectId }: { projectId: string }) => {
             </div>
             {percent >= 100 && (
               <div className="flex items-center gap-1 text-red-500 text-sm font-medium">
-                <span>
-                  Usage exceeded limit. Please upgrade your plan to continue using all features.{' '}
-                </span>
-                <QuestionTooltip>
-                  All content will be hidden after exceeding the limit.
-                </QuestionTooltip>
+                <span>{t('settings.billing.usage.exceededWarning')}</span>
+                <QuestionTooltip>{t('settings.billing.usage.hiddenAfterExceed')}</QuestionTooltip>
               </div>
             )}
           </div>
@@ -792,17 +806,19 @@ const Pricing = ({ projectId }: { projectId: string }) => {
         <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
           <div className="col-span-3 flex flex-col gap-1">
             <div className="flex flex-wrap gap-2">
-              <h1 className="text-zinc-950/90 dark:text-white/90">Plans</h1>
+              <h1 className="text-zinc-950/90 dark:text-white/90">
+                {t('settings.billing.sections.plans')}
+              </h1>
             </div>
             <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
-              You can upgrade or change your plan here
+              {t('settings.billing.sections.plansDescription')}
             </h2>
           </div>
           <div className="col-span-5">
             <div className="flex justify-end items-center h-full">
               <div className="flex gap-x-2.5">
                 <div className="text-xs items-center text-zinc-950/60 dark:text-white/50">
-                  Save with yearly billing
+                  {t('settings.billing.sections.saveWithYearly')}
                 </div>
                 <div>
                   <Switch

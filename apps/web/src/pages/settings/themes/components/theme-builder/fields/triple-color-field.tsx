@@ -14,7 +14,8 @@ interface CellProps {
   position: 'left' | 'middle' | 'right';
 }
 
-function Cell({ path, label, allowAuto, position }: CellProps) {
+const Cell = (props: CellProps) => {
+  const { path, label, allowAuto, position } = props;
   const id = useId();
   const [open, setOpen] = useState(false);
   const { finalSettings, getField, setField, isReadOnly } = useBuilderContext();
@@ -66,15 +67,16 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
       </Popover>
     </div>
   );
-}
+};
 
-interface Props {
+export interface TripleColorFieldProps {
   paths: [string, string, string];
   labels: [string, string, string];
   allowAuto?: [boolean, boolean, boolean];
 }
 
-export function TripleColorField({ paths, labels, allowAuto }: Props) {
+export const TripleColorField = (props: TripleColorFieldProps) => {
+  const { paths, labels, allowAuto } = props;
   const auto = allowAuto ?? [false, false, false];
   return (
     <div className="flex w-full">
@@ -83,4 +85,4 @@ export function TripleColorField({ paths, labels, allowAuto }: Props) {
       <Cell path={paths[2]} label={labels[2]} allowAuto={auto[2]} position="right" />
     </div>
   );
-}
+};

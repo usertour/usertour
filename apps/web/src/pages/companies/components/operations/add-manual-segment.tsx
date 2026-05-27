@@ -78,10 +78,10 @@ export const AddCompanyManualSegment = memo((props: AddCompanyManualSegmentProps
       if (result.success) {
         handleSuccess(result.count || 0, segment.name);
       } else {
-        handleError(result.error ?? 'Unknown error');
+        handleError(result.error ?? t('common.unknownError'));
       }
     },
-    [collectSelectedIds, hasSelection, addCompaniesToSegment, handleSuccess, handleError],
+    [collectSelectedIds, hasSelection, addCompaniesToSegment, handleSuccess, handleError, t],
   );
 
   return (

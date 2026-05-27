@@ -8,7 +8,7 @@ import type { ColorResolver } from '../schema/types';
 import { CompactColorButton } from '@usertour/ui';
 import { FieldRow } from './field-row';
 
-interface Props {
+export interface ColorFieldProps {
   path: string;
   label: string;
   allowAuto?: boolean;
@@ -17,14 +17,8 @@ interface Props {
   tooltip?: string;
 }
 
-export function ColorField({
-  path,
-  label,
-  allowAuto = false,
-  autoFallback,
-  vertical,
-  tooltip,
-}: Props) {
+export const ColorField = (props: ColorFieldProps) => {
+  const { path, label, allowAuto = false, autoFallback, vertical, tooltip } = props;
   const id = useId();
   const [open, setOpen] = useState(false);
   const { activeSettings, finalSettings, getField, setField, isReadOnly } = useBuilderContext();
@@ -68,4 +62,4 @@ export function ColorField({
       </Popover>
     </FieldRow>
   );
-}
+};

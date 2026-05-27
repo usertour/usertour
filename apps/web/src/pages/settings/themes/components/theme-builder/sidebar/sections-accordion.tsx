@@ -6,7 +6,7 @@ import { FieldRenderer } from '../fields/field-renderer';
 import type { FieldDef } from '../schema/types';
 import { builderSections } from '../schema/sections';
 
-interface Props {
+export interface SectionsAccordionProps {
   // Called with the section id when a previously-collapsed section is opened.
   // Used to sync the widget preview to that section's previewWidget.
   onSectionExpanded?: (sectionId: string) => void;
@@ -33,7 +33,8 @@ function fieldKey(field: FieldDef, index: number): string {
   return `${field.type}:${field.path}`;
 }
 
-export function SectionsAccordion({ onSectionExpanded }: Props) {
+export const SectionsAccordion = (props: SectionsAccordionProps) => {
+  const { onSectionExpanded } = props;
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -81,4 +82,4 @@ export function SectionsAccordion({ onSectionExpanded }: Props) {
       ))}
     </AccordionPrimitive.Root>
   );
-}
+};

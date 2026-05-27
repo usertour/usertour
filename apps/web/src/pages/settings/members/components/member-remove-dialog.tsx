@@ -1,76 +1,52 @@
 'use client';
 
 import type { TeamMember } from '@usertour/types';
-import { Button } from '@usertour/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour/dialog';
-import { SpinnerIcon } from '@usertour/icons';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useRemoveTeamMemberMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberRemoveDialogProps {
   projectId: string;
-  isOpen: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  onSuccess: () => void;
-  onCancel: () => void;
+  /**
+   * Fires once the action settles, with whether it succeeded. Consumers
+   * typically refetch on either branch; gate side-effects like
+   * navigation on the boolean.
+   */
+  onSubmit?: (success: boolean) => void;
 }
 
 export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
-  const { onSuccess, onCancel, isOpen, data, projectId } = props;
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { toast } = useToast();
-  const { invoke } = useRemoveTeamMemberMutation();
-
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  async function handleOnSubmit() {
-    setIsLoading(true);
-    try {
-      if (!data.userId) {
-        return;
-      }
-      const response = await invoke(projectId, data.userId);
-      if (response) {
-        onSuccess();
-      }
-    } catch (error) {
-      showError(getErrorMessage(error));
-    }
-    setIsLoading(false);
-  }
+  const { projectId, open, onOpenChange, data, onSubmit } = props;
+  const { t } = useTranslation();
+  const { invoke: removeTeamMember } = useRemoveTeamMemberMutation();
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Confirm </DialogTitle>
-        </DialogHeader>
-        <DialogDescription>Confirm removing member, {data.email}?</DialogDescription>
-        <DialogFooter>
-          <Button variant="outline" type="button" onClick={onCancel}>
-            Canel
-          </Button>
-          <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Remove member
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DestructiveConfirmDialog
+      title={t('settings.team.remove.title')}
+      description={
+        <Trans
+          i18nKey="settings.team.remove.description"
+          values={{ email: data.email }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('settings.team.remove.confirmButton')}
+      cancelLabel={t('settings.team.remove.cancelButton')}
+      open={open}
+      onOpenChange={onOpenChange}
+      // Success is obvious from the member-list refresh below — no toast.
+      invoke={() => {
+        if (!data.userId) {
+          return Promise.reject(new Error(t('settings.team.remove.failure')));
+        }
+        return removeTeamMember(projectId, data.userId);
+      }}
+      failureToast={t('settings.team.remove.failure')}
+      onSettled={onSubmit}
+    />
   );
 };
 

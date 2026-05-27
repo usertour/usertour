@@ -160,7 +160,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
 
   return (
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Publish {contentTypeMeta.singular}</DialogTitle>
         </DialogHeader>

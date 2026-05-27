@@ -21,13 +21,14 @@ import { WidgetSwitcher } from '../top-bar/widget-switcher';
 import { BannerPreview } from './banner-preview';
 import { BrowserFrame } from './browser-frame';
 
-interface Props {
+export interface PreviewPaneProps {
   settings: ThemeTypesSetting;
   widgetType: ThemeDetailPreviewType;
   onWidgetTypeChange: (next: ThemeDetailPreviewType) => void;
 }
 
-export function PreviewPane({ settings, widgetType, onWidgetTypeChange }: Props) {
+export const PreviewPane = (props: PreviewPaneProps) => {
+  const { settings, widgetType, onWidgetTypeChange } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const containerRect = useRect(containerRef.current);
   const [debouncedRect, setDebouncedRect] = useState<Rect | undefined>();
@@ -111,4 +112,4 @@ export function PreviewPane({ settings, widgetType, onWidgetTypeChange }: Props)
       </BrowserFrame>
     </div>
   );
-}
+};

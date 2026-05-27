@@ -4,8 +4,9 @@ import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour/button';
 import { Separator } from '@usertour/separator';
 import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
-import { ArrowRightIcon, RiAddLine } from '@usertour/icons';
+import { ArrowRightIcon } from '@usertour/icons';
 import { useContentCount } from '@usertour/hooks';
+import { NewItemButton } from '@usertour/ui';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
@@ -17,7 +18,11 @@ interface ContentListLayoutProps {
   emptyTitle: string;
   emptyDescription: string;
   createButtonText: string;
-  createForm: (props: { isOpen: boolean; onClose: () => void }) => ReactNode;
+  createForm: (props: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit?: (success: boolean) => void;
+  }) => ReactNode;
   buttonId?: string;
   // Optional: custom filtered empty state messages
   filteredEmptyTitle?: string;
@@ -36,10 +41,7 @@ interface CreateButtonProps {
 }
 
 const CreateButton = memo(({ onClick, disabled, text, id, className }: CreateButtonProps) => (
-  <Button onClick={onClick} className={className} id={id} disabled={disabled}>
-    <RiAddLine className="mr-2 h-4 w-4" />
-    {text}
-  </Button>
+  <NewItemButton onClick={onClick} className={className} id={id} disabled={disabled} label={text} />
 ));
 
 CreateButton.displayName = 'CreateButton';
@@ -89,8 +91,10 @@ export const ContentListLayout = memo(
       setOpen(true);
     }, []);
 
-    const handleOnClose = useCallback(() => {
-      setOpen(false);
+    // Cancel/ESC/click-outside only flips the local state — no refetch.
+    // `onSubmit` fires the refetch on success so adjusting the form
+    // shouldn't kick off network traffic on the list page.
+    const handleSubmitSuccess = useCallback(() => {
       refetch();
     }, [refetch]);
 
@@ -218,7 +222,7 @@ export const ContentListLayout = memo(
 
         {renderContent}
 
-        {createForm({ isOpen: open, onClose: handleOnClose })}
+        {createForm({ open, onOpenChange: setOpen, onSubmit: handleSubmitSuccess })}
       </div>
     );
   },

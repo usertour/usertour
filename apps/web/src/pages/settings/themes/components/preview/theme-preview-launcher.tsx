@@ -57,7 +57,8 @@ export const previewLauncherData: LauncherData = {
   },
 };
 
-export const ThemePreviewLauncher = ({ type, settings }: ThemePreviewLauncherProps) => {
+export const ThemePreviewLauncher = (props: ThemePreviewLauncherProps) => {
+  const { type, settings } = props;
   if (!settings) return null;
 
   return (

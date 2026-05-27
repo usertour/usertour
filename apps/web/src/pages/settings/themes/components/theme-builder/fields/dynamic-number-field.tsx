@@ -3,7 +3,7 @@ import { useBuilderContext } from '../builder-context';
 import { Input } from '@usertour/input';
 import { FieldRow } from './field-row';
 
-interface Props {
+export interface DynamicNumberFieldProps {
   // Both `label` and `path` are pre-resolved by FieldRenderer (which knows the
   // active settings + i18n function). The leaf component just renders.
   label: string;
@@ -15,7 +15,8 @@ interface Props {
   tooltip?: string;
 }
 
-export function DynamicNumberField({ label, path, min, max, step = 1, suffix, tooltip }: Props) {
+export const DynamicNumberField = (props: DynamicNumberFieldProps) => {
+  const { label, path, min, max, step = 1, suffix, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<number>(path);
@@ -44,4 +45,4 @@ export function DynamicNumberField({ label, path, min, max, step = 1, suffix, to
       )}
     </FieldRow>
   );
-}
+};

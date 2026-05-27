@@ -1,14 +1,15 @@
 import { RiCheckLine } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 
-interface Props {
+export interface BuilderSaveButtonProps {
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   onSave: () => void;
   disabled?: boolean;
 }
 
-export function BuilderSaveButton({ hasUnsavedChanges, isSaving, onSave, disabled }: Props) {
+export const BuilderSaveButton = (props: BuilderSaveButtonProps) => {
+  const { hasUnsavedChanges, isSaving, onSave, disabled } = props;
   const { t } = useTranslation();
   if (disabled) return null;
 
@@ -31,4 +32,4 @@ export function BuilderSaveButton({ hasUnsavedChanges, isSaving, onSave, disable
       {isSaving ? t('themeBuilder.chrome.saving') : t('themeBuilder.chrome.save')}
     </button>
   );
-}
+};

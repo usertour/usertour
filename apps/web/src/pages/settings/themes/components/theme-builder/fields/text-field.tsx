@@ -3,14 +3,15 @@ import { useBuilderContext } from '../builder-context';
 import { Input } from '@usertour/input';
 import { FieldRow } from './field-row';
 
-interface Props {
+export interface TextFieldProps {
   path: string;
   label: string;
   placeholder?: string;
   tooltip?: string;
 }
 
-export function TextField({ path, label, placeholder, tooltip }: Props) {
+export const TextField = (props: TextFieldProps) => {
+  const { path, label, placeholder, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path) ?? '';
@@ -26,4 +27,4 @@ export function TextField({ path, label, placeholder, tooltip }: Props) {
       />
     </FieldRow>
   );
-}
+};

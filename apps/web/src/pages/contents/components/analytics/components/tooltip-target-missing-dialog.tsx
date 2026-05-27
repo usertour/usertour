@@ -364,7 +364,10 @@ export const TooltipTargetMissingDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col p-0">
+      <DialogContent
+        className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col p-0"
+        aria-describedby={undefined}
+      >
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>
             Tooltip targets not found - Step {stepData.stepIndex + 1}. {stepData.name}

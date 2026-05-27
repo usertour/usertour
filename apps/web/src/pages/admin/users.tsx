@@ -241,7 +241,7 @@ const AddUserDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Add User</DialogTitle>
         </DialogHeader>

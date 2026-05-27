@@ -1,13 +1,14 @@
 import type { FieldDef } from '../schema/types';
 import { FieldRenderer } from './field-renderer';
 
-interface Props {
+export interface SubSectionProps {
   label?: string;
   fields: FieldDef[];
   withSeparator?: boolean;
 }
 
-export function SubSection({ label, fields, withSeparator }: Props) {
+export const SubSection = (props: SubSectionProps) => {
+  const { label, fields, withSeparator } = props;
   return (
     <>
       {withSeparator && <div className="my-3 h-px w-full bg-border/60" />}
@@ -19,7 +20,7 @@ export function SubSection({ label, fields, withSeparator }: Props) {
       </div>
     </>
   );
-}
+};
 
 // Stable key for nested fields. Mirrors SectionsAccordion's heuristic.
 function fieldKey(field: FieldDef, index: number): string {

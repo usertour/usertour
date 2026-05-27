@@ -10,7 +10,7 @@ import {
 } from '@usertour/alert-dialog';
 import { Button } from '@usertour/button';
 import { Segment } from '@usertour/types';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { useSaveSegmentFilter } from '@/hooks/use-save-segment-filter';
 
 export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {

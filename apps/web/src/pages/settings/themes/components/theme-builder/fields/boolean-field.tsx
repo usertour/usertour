@@ -3,13 +3,14 @@ import { useBuilderContext } from '../builder-context';
 import { Switch } from '@usertour/switch';
 import { FieldRow } from './field-row';
 
-interface Props {
+export interface BooleanFieldProps {
   path: string;
   label: string;
   tooltip?: string;
 }
 
-export function BooleanField({ path, label, tooltip }: Props) {
+export const BooleanField = (props: BooleanFieldProps) => {
+  const { path, label, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<boolean>(path);
@@ -24,4 +25,4 @@ export function BooleanField({ path, label, tooltip }: Props) {
       />
     </FieldRow>
   );
-}
+};

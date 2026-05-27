@@ -3,7 +3,7 @@ import { useBuilderContext } from '../builder-context';
 import { Input } from '@usertour/input';
 import { FieldRow } from './field-row';
 
-interface Props {
+export interface NumberFieldProps {
   path: string;
   label: string;
   min?: number;
@@ -18,18 +18,19 @@ interface Props {
   tooltip?: string;
 }
 
-export function NumberField({
-  path,
-  label,
-  min,
-  max,
-  step = 1,
-  suffix,
-  optional,
-  placeholder,
-  validate,
-  tooltip,
-}: Props) {
+export const NumberField = (props: NumberFieldProps) => {
+  const {
+    path,
+    label,
+    min,
+    max,
+    step = 1,
+    suffix,
+    optional,
+    placeholder,
+    validate,
+    tooltip,
+  } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const stored = getField<number>(path);
@@ -72,4 +73,4 @@ export function NumberField({
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </FieldRow>
   );
-}
+};

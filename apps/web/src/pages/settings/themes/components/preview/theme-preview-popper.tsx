@@ -23,12 +23,8 @@ interface ThemePreviewPopperProps {
   viewRect?: Rect;
 }
 
-export const ThemePreviewPopper = ({
-  contents,
-  settings,
-  customStyle,
-  viewRect,
-}: ThemePreviewPopperProps) => {
+export const ThemePreviewPopper = (props: ThemePreviewPopperProps) => {
+  const { contents, settings, customStyle, viewRect } = props;
   const ref = useRef(null);
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;

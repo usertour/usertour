@@ -1,21 +1,19 @@
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { SettingsContent } from '../components/content';
+import { SettingsPage } from '@usertour/ui';
 import SubscriptionPlan from './components/subscription-plan';
-import { SettingsSubscriptionHeader } from './components/subscription-header';
-import { Separator } from '@usertour/separator';
 
 export const SettingsSubscription = () => {
   const { project } = useAppContext();
+  const { t } = useTranslation();
   if (!project || !project.id) {
     return <></>;
   }
 
   return (
-    <SettingsContent>
-      <SettingsSubscriptionHeader />
-      <Separator />
+    <SettingsPage title={t('settings.subscription.title')}>
       <SubscriptionPlan projectId={project.id} />
-    </SettingsContent>
+    </SettingsPage>
   );
 };
 
