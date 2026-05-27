@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ListSkeletonCount } from '@/components/molecules/skeleton';
+import { ListSkeletonCount } from '@usertour/ui';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Button } from '@usertour/button';
 import {

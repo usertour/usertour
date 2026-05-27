@@ -5,7 +5,7 @@ import {
   AdminSidebarBodyTitleTemplate,
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
-} from '@/components/templates/admin-sidebar-template';
+} from '@/components/admin-sidebar/admin-sidebar-template';
 import {
   BankCardIcon,
   GroupLineIcon,

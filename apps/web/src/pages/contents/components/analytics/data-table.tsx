@@ -23,10 +23,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
-import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
+import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
 import { Button } from '@usertour/button';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ListSkeleton } from '@usertour/ui';
 import { ContentDataType } from '@usertour/types';
 import { InboxIcon } from 'lucide-react';
 

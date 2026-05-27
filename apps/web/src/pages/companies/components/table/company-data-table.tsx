@@ -25,7 +25,7 @@ import {
   useDynamicTableColumns,
   buildColumnVisibility,
   buildColumnOrder,
-} from '@/components/molecules/segment/table';
+} from '@/components/segments/table';
 import { CompanyDataTableToolbar } from './company-data-table-toolbar';
 import { useCompanyTableColumns } from '@/hooks/use-company-table-columns';
 

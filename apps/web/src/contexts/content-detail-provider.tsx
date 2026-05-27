@@ -14,7 +14,7 @@ import { EventListProvider } from './event-list-context';
 import { SegmentListProvider } from './segment-list-context';
 import { ThemeListProvider } from './theme-list-context';
 import { ContentTypeName } from '@usertour/types';
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 
 export interface ContentDetailProviderProps {
   children: ReactNode;

@@ -1,8 +1,8 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { DefaultAvatar } from '@/components/molecules/default-avatar';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { DefaultAvatar } from '@usertour/ui';
+import { ListSkeleton } from '@usertour/ui';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { queryTrackerUsers } from '@usertour/gql';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';

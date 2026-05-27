@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ResizeHandle } from './resize-handle';
 import { bodyClass, footerClass, headerClass, panelClass, panelRightClass } from './tokens';
 
-interface Props {
+export interface CompactPanelProps {
   width: number;
   header?: ReactNode;
   footer?: ReactNode;
@@ -21,7 +21,8 @@ interface Props {
 
 // Sidebar / inspector chrome — header / body / footer regions stacked
 // vertically, optional drag-to-resize handle on the inner edge.
-export function CompactPanel({ width, header, footer, children, variant = 'left', resize }: Props) {
+export const CompactPanel = (props: CompactPanelProps) => {
+  const { width, header, footer, children, variant = 'left', resize } = props;
   const className = variant === 'right' ? panelRightClass : panelClass;
   const handleEdge = variant === 'right' ? 'left' : 'right';
   return (
@@ -39,4 +40,4 @@ export function CompactPanel({ width, header, footer, children, variant = 'left'
       )}
     </div>
   );
-}
+};

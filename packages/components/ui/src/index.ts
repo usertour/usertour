@@ -34,3 +34,26 @@ export type {
 } from './ui/preview/scaled-preview-container';
 export * from './ui/settings';
 export * from './compact';
+
+// Promoted from apps/web/src/components/molecules (pure UI primitives, no business types).
+export { TruncatedText } from './ui/truncated-text';
+export { EditableTitle } from './ui/editable-title';
+export {
+  ListSkeleton,
+  AdminSkeleton,
+  ListSkeletonCount,
+  ContentListSkeleton,
+  ThemeListSkeleton,
+} from './ui/skeleton';
+export { DateRangePicker } from './ui/date-range-picker';
+export type { DateRangePickerProps } from './ui/date-range-picker';
+export { DefaultAvatar } from './ui/default-avatar';
+export { UserAvatar } from './ui/user-avatar';
+export { ContentLoading } from './ui/content-loading';
+export { CollapsibleSearch } from './ui/collapsible-search';
+export {
+  DATE_PRESET_OPTIONS,
+  DEFAULT_PRESET_KEY,
+  type DatePresetKey,
+  type DatePresetOption,
+} from './ui/date-presets';

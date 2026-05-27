@@ -8,7 +8,7 @@ import { Segment } from '@usertour/types';
 
 export const useSaveSegmentFilter = (currentSegment?: Segment) => {
   const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
-  const { refetch, currentConditions } = useSegmentListContext();
+  const { refetch, currentConditions, isRefetching } = useSegmentListContext();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -76,6 +76,7 @@ export const useSaveSegmentFilter = (currentSegment?: Segment) => {
     open,
     isShowButton,
     loading,
+    isRefetching,
     handleOpenDialog,
     handleCloseDialog,
     saveFilter,

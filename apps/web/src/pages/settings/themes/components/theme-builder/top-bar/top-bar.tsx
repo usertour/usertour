@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropdown-menu';
 import { BuilderSaveButton } from '../ui';
-import { EditableTitle } from '@/components/molecules/editable-title';
-import { MoreButton } from '@/components/molecules/section-breadcrumb-header';
+import { EditableTitle } from '@usertour/ui';
+import { MoreButton } from '@/components/section-breadcrumb-header';
 
 export interface TopBarProps {
   theme: Theme;

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '@usertour/input';
 import { cn } from '@usertour/tailwind';
 
-import { ThemeSettingErrorPopover } from '@/components/molecules/theme/theme-setting-error-popover';
+import { ThemeSettingErrorPopover } from '@/components/themes/theme-setting-error-popover';
 
 import { useAvatarUrl } from './hooks/use-avatar-url';
 import type { UrlAvatarTabProps } from './types';

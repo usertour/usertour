@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { SegmentSidebar } from '@/components/molecules/segment/layout';
-import { UserSegmentCreateDialog } from '../dialogs';
+import { SegmentSidebar } from '@/components/segments/layout';
+import { SegmentCreateDialog } from '@/components/segments';
 import { useAppContext } from '@/contexts/app-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useState } from 'react';
@@ -23,7 +23,8 @@ export const UserListSidebar = ({ environmentId }: UserListSidebarProps) => {
         createTooltip={t('users.segments.tooltips.createSegment')}
         disabled={isViewOnly}
       />
-      <UserSegmentCreateDialog
+      <SegmentCreateDialog
+        entity="user"
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={() => refetch()}

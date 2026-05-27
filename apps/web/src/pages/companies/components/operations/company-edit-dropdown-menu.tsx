@@ -8,12 +8,12 @@ import { Delete2Icon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { CompanySegmentDeleteDialog } from '../dialogs';
+import { SegmentDeleteDialog } from '@/components/segments';
 
 type CompanyEditDropdownMenuProps = {
   segment: Segment;
   children: ReactNode;
-  onSubmit: (action: string) => void;
+  onSubmit: () => void;
   disabled?: boolean;
 };
 export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => {
@@ -38,12 +38,15 @@ export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => 
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <CompanySegmentDeleteDialog
+      <SegmentDeleteDialog
+        entity="company"
         segment={segment}
         open={openDelete}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
-          onSubmit('delete');
+        onSubmit={(success) => {
+          if (success) {
+            onSubmit();
+          }
         }}
       />
     </>

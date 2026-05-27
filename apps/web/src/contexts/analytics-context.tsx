@@ -5,7 +5,7 @@ import { endOfDay, startOfDay } from 'date-fns';
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
-import { DATE_PRESET_OPTIONS, DEFAULT_PRESET_KEY, type DatePresetKey } from '@/utils/date-presets';
+import { DATE_PRESET_OPTIONS, DEFAULT_PRESET_KEY, type DatePresetKey } from '@usertour/ui';
 import { useAppContext } from './app-context';
 
 export interface AnalyticsProviderProps {

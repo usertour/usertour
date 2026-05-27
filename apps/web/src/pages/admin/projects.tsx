@@ -52,9 +52,9 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ListSkeleton } from '@usertour/ui';
 import { useNavigate } from 'react-router-dom';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { UserAvatar } from '@usertour/ui';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 

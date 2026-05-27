@@ -1,4 +1,4 @@
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ListSkeleton } from '@usertour/ui';
 import { useContentLocalizationListContext } from '@/contexts/content-localization-list-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { useMutation } from '@apollo/client';

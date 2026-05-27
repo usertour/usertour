@@ -41,8 +41,8 @@ import {
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
-import { ListSkeleton } from '@/components/molecules/skeleton';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { ListSkeleton } from '@usertour/ui';
+import { UserAvatar } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 
 const PAGE_SIZE = 20;

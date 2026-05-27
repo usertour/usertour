@@ -1,6 +1,6 @@
 import { Group2LineIcon } from '@usertour/icons';
-import { SegmentSidebar } from '@/components/molecules/segment/layout';
-import { CompanySegmentCreateDialog } from '../dialogs';
+import { SegmentSidebar } from '@/components/segments/layout';
+import { SegmentCreateDialog } from '@/components/segments';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
@@ -25,7 +25,8 @@ export const CompanyListSidebar = ({ environmentId }: CompanyListSidebarProps) =
         createTooltip={t('companies.segments.tooltips.createSegment')}
         disabled={isViewOnly}
       />
-      <CompanySegmentCreateDialog
+      <SegmentCreateDialog
+        entity="company"
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={() => refetch()}

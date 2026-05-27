@@ -1,4 +1,4 @@
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';

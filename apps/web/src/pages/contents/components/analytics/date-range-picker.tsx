@@ -1,7 +1,7 @@
 'use client';
 
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { DateRangePicker } from '@/components/molecules/date-range-picker';
+import { DateRangePicker } from '@usertour/ui';
 
 /**
  * CalendarDateRangePicker - Context-connected wrapper

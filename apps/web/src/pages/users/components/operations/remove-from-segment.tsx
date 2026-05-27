@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour/icons';
 import { Button } from '@usertour/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserRemoveDialog } from '../dialogs';
+import { BulkRemoveFromSegmentDialog } from '@/components/segments';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
@@ -35,14 +35,15 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         {t('users.actions.removeFromSegment')}
       </Button>
 
-      <BizUserRemoveDialog
+      <BulkRemoveFromSegmentDialog
+        entity="user"
         open={openDelete}
-        bizUserIds={bizUserIds}
+        ids={bizUserIds}
         segment={currentSegment}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
-          setOpenDelete(false);
-        }}
+        // `useRemoveUsersFromSegment` handles list refetch internally —
+        // no extra work needed in the success branch.
+        onSubmit={() => undefined}
       />
     </>
   );

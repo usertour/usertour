@@ -1,6 +1,6 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ListSkeleton } from '@usertour/ui';
 import { Card } from '@usertour/card';
 import { SpinnerIcon } from '@usertour/icons';
 import { Separator } from '@usertour/separator';

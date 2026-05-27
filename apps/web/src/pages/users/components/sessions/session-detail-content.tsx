@@ -5,10 +5,7 @@ import {
   ChevronUpIcon,
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  MoreButton,
-  SectionBreadcrumbHeader,
-} from '@/components/molecules/section-breadcrumb-header';
+import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
 import {
   useListAttributesQuery,
   useListEventsQuery,
@@ -30,13 +27,13 @@ import {
   ChecklistItemsColumn,
   LauncherProgressColumn,
   ResourceCenterProgressColumn,
-} from '@/components/molecules/session';
-import { FlowProgressColumn } from '@/components/molecules/session';
-import { ChecklistProgressColumn } from '@/components/molecules/session';
+} from '@/components/sessions/session';
+import { FlowProgressColumn } from '@/components/sessions/session';
+import { ChecklistProgressColumn } from '@/components/sessions/session';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
+import { QuestionAnswer, SessionResponse } from '@/components/sessions/session-detail';
+import { ContentLoading } from '@usertour/ui';
 import {
   getEndReasonTitle,
   getEventDisplaySuffix,

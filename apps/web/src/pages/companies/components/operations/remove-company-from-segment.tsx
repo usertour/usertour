@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour/icons';
 import { Button } from '@usertour/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizCompanyRemoveDialog } from '../dialogs';
+import { BulkRemoveFromSegmentDialog } from '@/components/segments';
 import { Segment } from '@usertour/types';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
@@ -20,6 +20,9 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
+  // `useRemoveCompaniesFromSegment` (unlike the user counterpart) does
+  // not refetch internally, so the consumer still owns the refresh on
+  // success.
   const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
@@ -33,7 +36,6 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const handleSubmit = useCallback(
     async (success: boolean) => {
       if (success) {
-        setOpenDelete(false);
         await refetch();
       }
     },
@@ -47,9 +49,10 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         {t('companies.actions.removeFromSegment')}
       </Button>
 
-      <BizCompanyRemoveDialog
+      <BulkRemoveFromSegmentDialog
+        entity="company"
         open={openDelete}
-        bizCompanyIds={bizCompanyIds}
+        ids={bizCompanyIds}
         segment={currentSegment}
         onOpenChange={setOpenDelete}
         onSubmit={handleSubmit}

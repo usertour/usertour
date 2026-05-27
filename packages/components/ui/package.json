@@ -18,6 +18,7 @@
     "@tabler/icons-react": "^3.31.0",
     "@usertour/alert": "workspace:*",
     "@usertour/alert-dialog": "workspace:*",
+    "@usertour/avatar": "workspace:^",
     "@usertour/button": "workspace:*",
     "@usertour/calendar": "workspace:*",
     "@usertour/command": "workspace:*",
@@ -25,6 +26,7 @@
     "@usertour/dialog": "workspace:*",
     "@usertour/dropdown-menu": "workspace:*",
     "@usertour/form": "workspace:*",
+    "@usertour/helpers": "workspace:^",
     "@usertour/icons": "workspace:*",
     "@usertour/input": "workspace:*",
     "@usertour/popover": "workspace:*",
@@ -39,10 +41,11 @@
     "@usertour/textarea": "workspace:*",
     "@usertour/tooltip": "workspace:*",
     "@usertour/use-toast": "workspace:*",
-    "@usertour/helpers": "workspace:^",
     "class-variance-authority": "^0.4.0",
+    "crypto-js": "^4.2.0",
     "date-fns": "^2.30.0",
     "react-colorful": "^5.6.1",
+    "react-day-picker": "^8.7.1",
     "react-hook-form": "^7.55.0",
     "react-use": "^17.4.0",
     "zod": "^4.4.3"
@@ -51,6 +54,7 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
     "@typescript-eslint/eslint-plugin": "^5.59.0",

@@ -7,7 +7,7 @@ import {
 import { Delete2Icon } from '@usertour/icons';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { UserSegmentDeleteDialog } from '../dialogs';
+import { SegmentDeleteDialog } from '@/components/segments';
 import { useTranslation } from 'react-i18next';
 
 type UserEditDropdownMenuProps = {
@@ -38,13 +38,15 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <UserSegmentDeleteDialog
+      <SegmentDeleteDialog
+        entity="user"
         segment={segment}
         open={openDelete}
         onOpenChange={setOpenDelete}
-        onSubmit={() => {
-          setOpenDelete(false);
-          onSubmit();
+        onSubmit={(success) => {
+          if (success) {
+            onSubmit();
+          }
         }}
       />
     </>

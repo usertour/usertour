@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { MemberProvider, useMemberContext } from '@/contexts/member-context';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { UserAvatar } from '@usertour/ui';
 import { Badge } from '@usertour/badge';
 import type { TeamMember } from '@usertour/types';
 import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';

@@ -1,9 +1,9 @@
-import { ContentListSkeleton } from '@/components/molecules/skeleton';
+import { ContentListSkeleton } from '@usertour/ui';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour/button';
 import { Separator } from '@usertour/separator';
-import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
+import { EmptyPlaceholder } from '@/components/segments/ui';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useContentCount } from '@usertour/hooks';
 import { NewItemButton } from '@usertour/ui';

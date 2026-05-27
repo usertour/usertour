@@ -9,7 +9,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CompanyDataTable } from '../table';
 import { CompanyEditDropdownMenu, CompanySegmentFilterSave } from '../operations';
-import { CompanySegmentEditDialog } from '../dialogs';
+import { SegmentEditDialog } from '@/components/segments';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
 
@@ -74,7 +74,12 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
         <Separator className="my-4" />
         {currentSegment && <CompanyDataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
-      <CompanySegmentEditDialog isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+      <SegmentEditDialog
+        entity="company"
+        isOpen={open}
+        onClose={handleOnClose}
+        segment={currentSegment}
+      />
     </>
   );
 };

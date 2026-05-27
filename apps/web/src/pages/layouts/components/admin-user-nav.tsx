@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { UserAvatar } from '@usertour/ui';
 import { Badge } from '@usertour/badge';
 import { Button } from '@usertour/button';
 import {

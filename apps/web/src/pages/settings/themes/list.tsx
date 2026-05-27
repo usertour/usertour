@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { ThemeListProvider, useThemeListContext } from '@/contexts/theme-list-context';
-import { ThemeListSkeleton } from '@/components/molecules/skeleton';
+import { ThemeListSkeleton } from '@usertour/ui';
 import { NewItemButton, SettingsPage } from '@usertour/ui';
 import type { Theme } from '@usertour/types';
 import { ThemeCreateDialog } from './components/theme-create-dialog';

@@ -1,7 +1,7 @@
 import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour/button';
 import { Delete2Icon } from '@usertour/icons';
-import { BizCompanyDeleteDialog } from '../dialogs';
+import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { useCallback } from 'react';
 import { useState } from 'react';
 import { useCompanyListContext } from '@/contexts/company-list-context';
@@ -32,7 +32,6 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
   const handleSubmit = useCallback(
     async (success: boolean) => {
       if (success) {
-        setOpenDelete(false);
         await refetch();
       }
     },
@@ -49,9 +48,10 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
         <Delete2Icon className="mr-1 h-4 w-4" />
         {t('companies.actions.deleteCompany')}
       </Button>
-      <BizCompanyDeleteDialog
+      <BulkDeleteFromSegmentDialog
+        entity="company"
         open={openDelete}
-        bizCompanyIds={bizCompanyIds}
+        ids={bizCompanyIds}
         onOpenChange={setOpenDelete}
         onSubmit={handleSubmit}
       />

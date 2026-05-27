@@ -1,6 +1,6 @@
 import { cn } from '@usertour/tailwind';
 
-interface Props {
+export interface ResizeHandleProps {
   // Which edge of the parent panel this handle sits on.
   edge: 'left' | 'right';
   // True when the panel is clamped at its minimum width — used only to swap
@@ -16,7 +16,8 @@ interface Props {
 
 // 6px invisible hit area straddling the panel's inner edge. The drag
 // affordance is purely the cursor change — no visible line or icon.
-export function ResizeHandle({ edge, isAtMin, onMouseDown, ariaLabel = 'Resize panel' }: Props) {
+export const ResizeHandle = (props: ResizeHandleProps) => {
+  const { edge, isAtMin, onMouseDown, ariaLabel = 'Resize panel' } = props;
   return (
     <button
       type="button"
@@ -29,4 +30,4 @@ export function ResizeHandle({ edge, isAtMin, onMouseDown, ariaLabel = 'Resize p
       )}
     />
   );
-}
+};

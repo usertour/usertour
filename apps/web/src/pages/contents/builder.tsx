@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ContentDetailBuilder } from './components/detail/content-detail-builder';
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 
 export const ContentBuilder = () => {
   const { contentId = '', contentType, versionId } = useParams();

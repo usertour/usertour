@@ -6,7 +6,7 @@ import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeBuilder } from './components/theme-builder';
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 
 // Inner component that uses the context
 const ThemeDetailInner = () => {

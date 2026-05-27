@@ -5,7 +5,7 @@ export interface CompactSelectOption {
   label: string;
 }
 
-interface Props {
+export interface CompactSelectProps {
   value: string | undefined;
   onChange: (value: string) => void;
   options: CompactSelectOption[];
@@ -20,15 +20,8 @@ interface Props {
 // with the compact-muted variants applied; callers needing more
 // composition (custom items, groups, separators) should reach for the
 // underlying Select / SelectTrigger / SelectContent directly.
-export function CompactSelect({
-  value,
-  onChange,
-  options,
-  placeholder = 'Select…',
-  disabled,
-  className,
-  id,
-}: Props) {
+export const CompactSelect = (props: CompactSelectProps) => {
+  const { value, onChange, options, placeholder = 'Select…', disabled, className, id } = props;
   return (
     <Select value={value ?? ''} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger id={id} variant="compact-muted" className={className}>
@@ -43,4 +36,4 @@ export function CompactSelect({
       </SelectContent>
     </Select>
   );
-}
+};

@@ -6,7 +6,7 @@ import { AnalyticsViewsByStep, StepContentType } from '@usertour/types';
 import { useState } from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
 
-import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
+import { GoalStepBadge } from '@/components/goal-step-badge';
 import { calculateRate, calculateUniqueFailureRate } from '@/utils/analytics';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';

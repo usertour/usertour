@@ -1,5 +1,5 @@
-import { EditableTitle } from '@/components/molecules/editable-title';
-import { MoreButton } from '@/components/molecules/section-breadcrumb-header';
+import { EditableTitle } from '@usertour/ui';
+import { MoreButton } from '@/components/section-breadcrumb-header';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';

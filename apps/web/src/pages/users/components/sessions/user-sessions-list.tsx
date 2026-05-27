@@ -1,7 +1,7 @@
 import { useUserSessionsContext } from '@/contexts/user-sessions-context';
 import { BizSession, ContentDataType, Event } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ListSkeleton } from '@usertour/ui';
 import { formatDistanceToNow } from 'date-fns';
 import {
   BannerProgressCell,
@@ -10,7 +10,7 @@ import {
   LauncherProgressCell,
   ResourceCenterProgressCell,
   SessionStatusBadge,
-} from '@/components/molecules/session-analytics';
+} from '@/components/sessions/session-analytics';
 import { useListEventsQuery } from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';

@@ -5,8 +5,8 @@ import { Checkbox } from '@usertour/checkbox';
 import { BizUser } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { DataTableColumnHeader } from '@/components/molecules/segment/table';
-import { DefaultAvatar } from '@/components/molecules/default-avatar';
+import { DataTableColumnHeader } from '@/components/segments/table';
+import { DefaultAvatar } from '@usertour/ui';
 
 // Hook to create user table columns
 export const useUserTableColumns = (): ColumnDef<BizUser>[] => {

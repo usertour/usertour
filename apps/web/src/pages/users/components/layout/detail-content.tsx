@@ -2,11 +2,8 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour/icons';
-import {
-  MoreButton,
-  SectionBreadcrumbHeader,
-} from '@/components/molecules/section-breadcrumb-header';
-import { DefaultAvatar } from '@/components/molecules/default-avatar';
+import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
+import { DefaultAvatar } from '@usertour/ui';
 import {
   AttributeBizTypes,
   AttributeDataType,
@@ -18,7 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserSessions } from '../sessions';
 import { UserCompaniesTab } from '../companies';
-import { ActivityFeed } from '@/components/molecules/activity-feed';
+import { ActivityFeed } from '@/components/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
@@ -31,9 +28,9 @@ import {
 } from '@usertour/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@usertour/toggle';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
-import { BizUserDeleteDialog } from '../dialogs';
-import { ContentLoading } from '@/components/molecules/content-loading';
-import { TruncatedText } from '@/components/molecules/truncated-text';
+import { BulkDeleteFromSegmentDialog } from '@/components/segments';
+import { ContentLoading } from '@usertour/ui';
+import { TruncatedText } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { useListAttributesQuery } from '@usertour/hooks';
@@ -146,8 +143,10 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
 
   const memberships = useMemo(() => bizUser?.bizUsersOnCompany ?? [], [bizUser?.bizUsersOnCompany]);
 
-  const handleDeleteSuccess = async () => {
-    navigator(`/env/${environmentId}/users`);
+  const handleDeleteSuccess = (success: boolean) => {
+    if (success) {
+      navigator(`/env/${environmentId}/users`);
+    }
   };
 
   if (!bizUser) {
@@ -345,11 +344,12 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
         </div>
       </div>
 
-      <BizUserDeleteDialog
-        bizUserIds={bizUser ? [bizUser.id] : []}
+      <BulkDeleteFromSegmentDialog
+        entity="user"
+        ids={bizUser ? [bizUser.id] : []}
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        onSuccess={handleDeleteSuccess}
+        onSubmit={handleDeleteSuccess}
       />
     </>
   );

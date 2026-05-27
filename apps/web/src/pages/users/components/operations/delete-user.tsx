@@ -2,7 +2,7 @@ import { Delete2Icon } from '@usertour/icons';
 import { Button } from '@usertour/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserDeleteDialog } from '../dialogs';
+import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
@@ -28,6 +28,15 @@ export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
     }
   }, [collectSelectedIds, hasSelection]);
 
+  const handleSubmit = useCallback(
+    async (success: boolean) => {
+      if (success) {
+        await refetch();
+      }
+    },
+    [refetch],
+  );
+
   return (
     <>
       <Button
@@ -38,14 +47,12 @@ export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
         <Delete2Icon className="mr-1 h-4 w-4" />
         {t('users.actions.deleteUser')}
       </Button>
-      <BizUserDeleteDialog
+      <BulkDeleteFromSegmentDialog
+        entity="user"
         open={openDelete}
-        bizUserIds={bizUserIds}
+        ids={bizUserIds}
         onOpenChange={setOpenDelete}
-        onSuccess={async () => {
-          setOpenDelete(false);
-          await refetch(); // Additional data refresh logic
-        }}
+        onSubmit={handleSubmit}
       />
     </>
   );

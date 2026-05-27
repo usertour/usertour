@@ -1,4 +1,4 @@
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 import {
   ContentDetailProviderWrapper,
   useContentDetailProviderWrapper,

@@ -16,7 +16,7 @@ import { useUpdateContentMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { ContentEditorElementType } from '@usertour/editor';
-import { QuestionStarRating } from '@/components/molecules/question';
+import { QuestionStarRating } from '@/components/question';
 
 interface AnalyticsScaleProps {
   questionAnalytics: ContentQuestionAnalytics;

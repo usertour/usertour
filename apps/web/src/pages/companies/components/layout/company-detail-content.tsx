@@ -1,9 +1,6 @@
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { CopyIcon } from '@radix-ui/react-icons';
-import {
-  MoreButton,
-  SectionBreadcrumbHeader,
-} from '@/components/molecules/section-breadcrumb-header';
+import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
 import { Delete2Icon, SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,7 +17,7 @@ import { useEffect, useMemo, useState, createContext, useContext, ReactNode } fr
 import { useNavigate, Link } from 'react-router-dom';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/table';
-import { MembershipRow } from '@/components/molecules/membership-row';
+import { MembershipRow } from '@/components/membership-row';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
 import { Button } from '@usertour/button';
@@ -31,21 +28,21 @@ import {
   DropdownMenuTrigger,
 } from '@usertour/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@usertour/toggle';
-import { ContentLoading } from '@/components/molecules/content-loading';
-import { BizCompanyDeleteDialog } from '../dialogs';
-import { TruncatedText } from '@/components/molecules/truncated-text';
+import { ContentLoading } from '@usertour/ui';
+import { BulkDeleteFromSegmentDialog } from '@/components/segments';
+import { TruncatedText } from '@usertour/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour/tailwind';
-import { DefaultAvatar } from '@/components/molecules/default-avatar';
+import { DefaultAvatar } from '@usertour/ui';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour/gql';
 import { PaginationState } from '@tanstack/react-table';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ListSkeleton } from '@usertour/ui';
 import { useCallback } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { useListAttributesQuery } from '@usertour/hooks';
-import { ActivityFeed } from '@/components/molecules/activity-feed';
+import { ActivityFeed } from '@/components/activity-feed';
 import { CompanyActivityFeedProvider } from '@/contexts/activity-feed-context';
 
 // Company User List Context
@@ -601,8 +598,9 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
         </div>
       </div>
 
-      <BizCompanyDeleteDialog
-        bizCompanyIds={bizCompany ? [bizCompany.id] : []}
+      <BulkDeleteFromSegmentDialog
+        entity="company"
+        ids={bizCompany ? [bizCompany.id] : []}
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         onSubmit={handleDeleteSuccess}

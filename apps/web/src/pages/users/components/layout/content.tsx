@@ -10,12 +10,12 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserDataTable } from '../table';
 import { UserEditDropdownMenu } from '../operations';
-import { UserSegmentEditDialog } from '../dialogs';
+import { SegmentEditDialog } from '@/components/segments';
 import { UserSegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
 // Inner component that uses the context
-function UserListContentInner({ environmentId }: { environmentId: string | undefined }) {
+const UserListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
   const [open, setOpen] = useState(false);
   const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
@@ -74,10 +74,15 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
         <Separator className="my-4" />
         {currentSegment && <UserDataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
-      <UserSegmentEditDialog isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+      <SegmentEditDialog
+        entity="user"
+        isOpen={open}
+        onClose={handleOnClose}
+        segment={currentSegment}
+      />
     </>
   );
-}
+};
 
 export const UserListContent = (props: {
   environmentId: string | undefined;

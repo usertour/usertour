@@ -25,7 +25,7 @@ import {
   useDynamicTableColumns,
   buildColumnVisibility,
   buildColumnOrder,
-} from '@/components/molecules/segment/table';
+} from '@/components/segments/table';
 import { UserDataTableToolbar } from './user-data-table-toolbar';
 import { useUserTableColumns } from '@/hooks/use-user-table-columns';
 
