@@ -64,8 +64,10 @@ package. The atom source becomes `packages/components/ui/src/primitives/<atom>.{
 
 - `src/primitives/` — shadcn registry atoms (changing files here is
   what aligns this repo against upstream shadcn)
-- `src/ui/` — compound components built on primitives (combobox,
-  date-range-picker, color-picker, settings scaffolding, ...)
+- `src/composites/` — components built by composing primitives
+  (combobox, date-range-picker, color-picker, settings scaffolding,
+  ...). Renamed from `src/ui/` after Phase 4 because the inner `ui/`
+  echoed the package name (`packages/ui/src/ui/` read as "ui in ui").
 - `src/compact/` — dense-form variants of primitives for inspector /
   side-panel contexts (`compact-tabs`, `inline-alert`, `resize-handle`)
 
@@ -93,7 +95,8 @@ tree typecheck-clean.
    paths (`./button`, `./dialog`, `./label`) so primitives don't take a
    workspace-package detour through `@usertour/ui` itself.
 4. Rewrite `@usertour/ui` internal imports (`src/ui/*`, `src/compact/*`,
-   `src/ui/settings/*`, etc.) from `@usertour/<atom>` to relative
+   `src/ui/settings/*`, etc. — `src/ui/` renamed to `src/composites/`
+   in Phase 4) from `@usertour/<atom>` to relative
    `../primitives/<atom>` (or `../../primitives/<atom>` for nested
    subdirs). Avoids `@usertour/ui` depending on its own
    shim-redirected packages.
@@ -194,9 +197,9 @@ the misclassification before Phase 2 begins.
   primitives go here, flat, one file each. No subdirectories.
   Non-shadcn UI primitives (like `Frame`) stay in their own packages
   outside `@usertour/ui`.
-- **`src/ui/` may import from `src/primitives/` via relative paths**;
-  the reverse is forbidden. Primitives are independently
-  shadcn-compliant; compounds depend on primitives, not vice versa.
+- **`src/composites/` may import from `src/primitives/` via relative
+  paths**; the reverse is forbidden. Primitives are independently
+  shadcn-compliant; composites depend on primitives, not vice versa.
 - **Inter-primitive imports use relative paths** (`./button`,
   `./dialog`), not `@usertour/ui`. Self-import via package name causes
   bundler / TypeScript project-graph confusion.

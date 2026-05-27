@@ -256,7 +256,7 @@ Does it use React?
 ├── No → L0 (types / helpers / constants / pure utilities)
 └── Yes
     ├── Single shadcn-style primitive? → @usertour/ui/src/primitives/
-    ├── Composes primitives, no business concept? → @usertour/ui (rest of src/)
+    ├── Composes primitives, no business concept? → @usertour/ui/src/composites/
     ├── Cross-cutting (data / context / i18n / runtime)? → L2
     ├── Business knowledge, reusable across pages? → L3
     ├── Bound to a specific page or flow? → L4
