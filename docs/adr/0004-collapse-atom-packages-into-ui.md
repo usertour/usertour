@@ -147,11 +147,34 @@ in Phase 2 only requires a partial revert.
 The shim pattern keeps the intermediate state production-runnable —
 the branch is shippable after Phase 1.
 
+## Out-of-scope primitives
+
+`@usertour/frame` (`packages/components/frame/`) is **not** merged into
+`@usertour/ui`, despite originally sitting under `packages/components/`.
+Reasons:
+
+- It is not a shadcn primitive. It's an iframe-portal helper for
+  embedded-widget rendering — outside the shadcn registry.
+- Its only consumers are `apps/sdk` and `packages/widget` — both
+  bundle-size-sensitive embedded products. Routing them through
+  `@usertour/ui` would transitively pull ~30 `@radix-ui/*` packages
+  plus `cmdk` / `recharts` / `framer-motion` / `sonner` into the sdk
+  bundle. Without `"sideEffects": false` on `@usertour/ui`, bundlers
+  treat each transitive module conservatively and tree-shaking
+  guarantees weaken in dev/pre-bundle.
+
+So `@usertour/frame` stays a real standalone package (not a shim).
+sdk/widget keep `from '@usertour/frame'` imports and their lean dep
+graphs. Phase 1 briefly placed it in `primitives/`; Phase 1.5 corrects
+the misclassification before Phase 2 begins.
+
 ## Invariants
 
 - **`src/primitives/` mirrors shadcn registry**. To diff against
   upstream shadcn, look in `src/primitives/`. New shadcn-style
   primitives go here, flat, one file each. No subdirectories.
+  Non-shadcn UI primitives (like `Frame`) stay in their own packages
+  outside `@usertour/ui`.
 - **`src/ui/` may import from `src/primitives/` via relative paths**;
   the reverse is forbidden. Primitives are independently
   shadcn-compliant; compounds depend on primitives, not vice versa.

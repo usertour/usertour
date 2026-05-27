@@ -21,7 +21,10 @@ export * from './primitives/context-menu';
 export * from './primitives/dialog';
 export * from './primitives/dropdown-menu';
 export * from './primitives/form';
-export * from './primitives/frame';
+// Frame intentionally NOT re-exported — it's an iframe-portal domain
+// primitive (used by sdk/widget for embedded rendering), not a shadcn
+// registry atom. Lives in @usertour/frame to keep sdk/widget bundles
+// from transitively pulling the entire @usertour/ui surface.
 export * from './primitives/hover-card';
 export * from './primitives/input';
 export * from './primitives/label';
