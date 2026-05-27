@@ -16,24 +16,18 @@ export class EncryptionService {
   private readonly authTagLength = 16; // 128 bits
 
   constructor(private readonly configService: ConfigService) {
-    const configKey = this.configService.get<string>('encryption.key');
-
-    if (!configKey) {
-      this.logger.warn(
-        'ENCRYPTION_KEY environment variable is not set. Using a default key for development. DO NOT USE IN PRODUCTION!',
+    // Fallback default lives in `config.ts` (`encryption.key`) so this
+    // service has a single, unconditional code path — matching how the
+    // other secret-bearing env vars (JWT_SECRET, STRIPE_API_KEY, ...)
+    // are wired. The config-level default is a 32-byte all-zero hex
+    // string for local dev; production sets `ENCRYPTION_KEY` to a real
+    // 64-hex-char value.
+    const configKey = this.configService.get<string>('encryption.key') ?? '';
+    this.encryptionKey = Buffer.from(configKey, 'hex');
+    if (this.encryptionKey.length !== this.keyLength) {
+      throw new Error(
+        `Encryption key must be ${this.keyLength * 2} hex characters (${this.keyLength} bytes)`,
       );
-      // Default key for development only - 32 bytes (256 bits)
-      this.encryptionKey = crypto.scryptSync('development-key-not-secure', 'salt', this.keyLength);
-    } else {
-      // Convert the hex string to a Buffer
-      this.encryptionKey = Buffer.from(configKey, 'hex');
-
-      // Validate key length
-      if (this.encryptionKey.length !== this.keyLength) {
-        throw new Error(
-          `Encryption key must be ${this.keyLength * 2} hex characters (${this.keyLength} bytes)`,
-        );
-      }
     }
   }
 

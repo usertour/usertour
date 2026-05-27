@@ -110,4 +110,7 @@ export interface Config {
       sandboxLoginUrl: string;
     };
   };
+  encryption: {
+    key: string;
+  };
 }
