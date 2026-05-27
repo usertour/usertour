@@ -29,6 +29,15 @@ export interface SelectPopoverProps {
   contentClassName?: string;
   contentStyle?: CSSProperties;
   disabled?: boolean;
+  /**
+   * Render the popover content inline (no portal). Required when this
+   * lives inside a Radix Dialog — react-remove-scroll locks wheel
+   * events on body while a Dialog is open, and a body-portaled
+   * Popover gets caught in the lock (keyboard navigation still
+   * works, mouse wheel is dead silent). Defaults to portaled because
+   * most consumers render in non-Dialog contexts where the higher
+   * stacking context of a portal is desired.
+   */
   withoutPortal?: boolean;
 }
 
@@ -81,7 +90,19 @@ export const SelectPopover = (props: SelectPopoverProps) => {
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.value}
+                  // cmdk's built-in filter does substring match against the
+                  // `value` string only — it never looks at the rendered
+                  // children. Passing the raw `option.value` (typically an
+                  // opaque id / UUID at call sites like events) means
+                  // typing the display name finds nothing. Pack the
+                  // matchable strings into `value` so search hits any of
+                  // id / name / display. The display string still drives
+                  // what the user sees below.
+                  value={
+                    option.display
+                      ? `${option.value} ${option.name} ${option.display}`
+                      : `${option.value} ${option.name}`
+                  }
                   className="cursor-pointer"
                   onSelect={() => {
                     handleSelect(option);

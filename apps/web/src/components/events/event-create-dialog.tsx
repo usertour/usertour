@@ -242,11 +242,21 @@ export const EventCreateDialog = ({
                   contentClassName="w-[--radix-popover-trigger-width]"
                   placeholder={t('settings.events.form.attributesPlaceholder')}
                   value={selectedAttributeValue}
-                  options={eventAttrs.map((attr) => ({
-                    value: attr.id,
-                    name: attr.displayName,
-                  }))}
+                  // Hide attributes already added to this new event so
+                  // the dropdown only shows still-pickable options.
+                  options={eventAttrs
+                    .filter(
+                      (attr) => !eventsOnAttributes.some((selected) => selected.id === attr.id),
+                    )
+                    .map((attr) => ({
+                      value: attr.id,
+                      name: attr.displayName,
+                    }))}
                   onValueChange={handleAttributeSelect}
+                  // Render inline (no portal) because this dialog uses
+                  // react-remove-scroll, which kills wheel events on
+                  // body-portaled descendants — see SelectPopoverProps.
+                  withoutPortal
                 />
                 <Button
                   type="button"

@@ -254,11 +254,23 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
                   contentClassName="w-[--radix-popover-trigger-width]"
                   placeholder={t('settings.events.form.attributesPlaceholder')}
                   value={selectedAttributeValue}
-                  options={eventAttrs.map((attr) => ({
-                    value: attr.id,
-                    name: attr.displayName,
-                  }))}
+                  // Hide attributes already associated with this event;
+                  // re-picking them is a no-op (with a warning toast),
+                  // and listing them adds noise as the user works
+                  // through the available set.
+                  options={eventAttrs
+                    .filter(
+                      (attr) => !eventsOnAttributes.some((selected) => selected.id === attr.id),
+                    )
+                    .map((attr) => ({
+                      value: attr.id,
+                      name: attr.displayName,
+                    }))}
                   onValueChange={handleAttributeSelect}
+                  // Render inline (no portal) because this dialog uses
+                  // react-remove-scroll, which kills wheel events on
+                  // body-portaled descendants — see SelectPopoverProps.
+                  withoutPortal
                 />
                 <Button
                   variant="ghost"
