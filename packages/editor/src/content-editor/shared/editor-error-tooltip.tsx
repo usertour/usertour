@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@usertour/tooltip';
+} from '@usertour/ui';
 import React from 'react';
 
 interface EditorErrorTooltipProps {

@@ -2,8 +2,8 @@
 
 import { SelectPopover, type SelectPopoverOption } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
 import { memo, useCallback, useEffect, useId, useState } from 'react';
 
 import { WIDTH_TYPES } from '../constants';

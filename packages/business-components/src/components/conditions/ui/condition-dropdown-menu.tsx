@@ -3,7 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import { forwardRef } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
 

@@ -1,9 +1,9 @@
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Button } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useCreateAccessTokenMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
@@ -19,7 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour/form';
+} from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 
 interface ApiCreateDialogProps {

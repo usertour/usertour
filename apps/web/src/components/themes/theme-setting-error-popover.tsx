@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { ReactNode } from 'react';
 
-import { Popover, PopoverAnchor, PopoverArrow, PopoverContent } from '@usertour/popover';
+import { Popover, PopoverAnchor, PopoverArrow, PopoverContent } from '@usertour/ui';
 
 type ThemeSettingErrorPopoverProps = {
   children: ReactNode;

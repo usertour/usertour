@@ -1,11 +1,11 @@
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { useCallback, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import {
   useGetSalesforceObjectFieldsQuery,
   useUpsertIntegrationObjectMappingMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { SpinnerIcon, SalesforceIcon, UsertourIcon2, ArrowRightLeftIcon } from '@usertour/icons';
 import {
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@usertour/dialog';
+} from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import {
   AttributeBizTypes,
@@ -24,8 +24,8 @@ import {
 } from '@usertour/types';
 import { ObjectMappingPanel } from './object-mapping-panel';
 import { ObjectMappingObjectSelect } from './object-mapping-select';
-import { Label } from '@usertour/label';
-import { Switch } from '@usertour/switch';
+import { Label } from '@usertour/ui';
+import { Switch } from '@usertour/ui';
 import { InfoIcon } from 'lucide-react';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (

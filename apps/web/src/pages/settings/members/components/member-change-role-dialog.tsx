@@ -3,14 +3,14 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+} from '@usertour/ui';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
 import { type TeamMember, TeamMemberRole } from '@usertour/types';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';

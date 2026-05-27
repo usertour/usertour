@@ -2,7 +2,7 @@
 import { SpinnerIcon } from '@usertour/icons';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation, useQuery } from '@apollo/client';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   Dialog,
   DialogClose,
@@ -10,15 +10,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
+} from '@usertour/ui';
 import { getContentVersion, publishedContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentVersion } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import * as React from 'react';
 import { useCallback } from 'react';
-import { Checkbox } from '@usertour/checkbox';
-import { Label } from '@usertour/label';
+import { Checkbox } from '@usertour/ui';
+import { Label } from '@usertour/ui';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { getContentTypeMeta } from './content-type-meta';
 

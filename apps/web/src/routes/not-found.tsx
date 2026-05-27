@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 
 export const NotFound = () => {
   const { t } = useTranslation('ui');

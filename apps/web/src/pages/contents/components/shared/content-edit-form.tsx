@@ -7,7 +7,7 @@ import { useContentVersionListContext } from '@/contexts/content-version-list-co
 import { isVersionPublished } from '@/utils/content';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   Dialog,
   DialogClose,
@@ -15,15 +15,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+} from '@usertour/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { createContentVersion, updateContent } from '@usertour/gql';
-import { Input } from '@usertour/input';
-import { RadioGroup, RadioGroupItem } from '@usertour/radio-group';
+import { Input } from '@usertour/ui';
+import { RadioGroup, RadioGroupItem } from '@usertour/ui';
 import { useOpenSelector } from '@usertour/hooks';
 import { getAuthToken, getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';

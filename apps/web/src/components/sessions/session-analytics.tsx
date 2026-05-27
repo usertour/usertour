@@ -1,4 +1,4 @@
-import { Badge } from '@usertour/badge';
+import { Badge } from '@usertour/ui';
 import {
   BizEvents,
   BizSession,

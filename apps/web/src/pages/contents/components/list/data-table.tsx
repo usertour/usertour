@@ -36,8 +36,8 @@ import {
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour/button';
-import { Skeleton } from '@usertour/skeleton';
+import { Button } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();

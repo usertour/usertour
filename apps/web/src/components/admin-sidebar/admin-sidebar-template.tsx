@@ -1,4 +1,4 @@
-import { Button, type ButtonProps } from '@usertour/button';
+import { Button, type ButtonProps } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { Link } from 'react-router-dom';
 

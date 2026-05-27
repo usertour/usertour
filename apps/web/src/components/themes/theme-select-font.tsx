@@ -1,11 +1,11 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { useEffect, useState } from 'react';
 
-import { Button } from '@usertour/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
-import { Popover, PopoverContent, PopoverProps, PopoverTrigger } from '@usertour/popover';
-import { ScrollArea } from '@usertour/scroll-area';
-import { Separator } from '@usertour/separator';
+import { Button } from '@usertour/ui';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/ui';
+import { Popover, PopoverContent, PopoverProps, PopoverTrigger } from '@usertour/ui';
+import { ScrollArea } from '@usertour/ui';
+import { Separator } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 
 export interface ThemeSelectFontType {

@@ -5,14 +5,14 @@ import {
   useUpdateInstanceAuthenticationSettingsMutation,
   useUpdateInstanceRequire2FAMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour/separator';
-import { Button } from '@usertour/button';
-import { Skeleton } from '@usertour/skeleton';
-import { Switch } from '@usertour/switch';
+import { Separator } from '@usertour/ui';
+import { Button } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
+import { Switch } from '@usertour/ui';
 import { RiAlertLine, RiSparklingFill } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';

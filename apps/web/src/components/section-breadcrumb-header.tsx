@@ -1,4 +1,4 @@
-import { Button, type ButtonProps } from '@usertour/button';
+import { Button, type ButtonProps } from '@usertour/ui';
 import { RiArrowRightSLine, RiMoreFill } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { Fragment, forwardRef, type ReactNode } from 'react';

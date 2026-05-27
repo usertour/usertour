@@ -1,5 +1,5 @@
 import { FlagIcon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 export const GoalStepBadge = () => {
   return (

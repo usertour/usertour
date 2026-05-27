@@ -1,7 +1,7 @@
 import { ExitIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { CheckedIcon, SpinnerIcon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 export interface SidebarFooterProps {
   onSave: () => Promise<void>;

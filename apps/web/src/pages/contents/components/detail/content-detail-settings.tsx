@@ -1,6 +1,6 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
-import { Card } from '@usertour/card';
+import { Card } from '@usertour/ui';
 import { buildConfig } from '@usertour/helpers';
 import { ContentDataType, RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';

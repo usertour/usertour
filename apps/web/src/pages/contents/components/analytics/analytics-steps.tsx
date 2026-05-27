@@ -1,7 +1,7 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { AnalyticsViewsByStep, StepContentType } from '@usertour/types';
 import { useState } from 'react';
 import { AlertTriangleIcon } from 'lucide-react';

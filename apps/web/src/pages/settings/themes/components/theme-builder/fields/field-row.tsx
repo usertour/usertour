@@ -1,4 +1,4 @@
-import { QuestionTooltip } from '@usertour/tooltip';
+import { QuestionTooltip } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import type { ReactNode } from 'react';
 

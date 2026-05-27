@@ -1,7 +1,7 @@
 // Shared TooltipActionButton component for content editor
 
-import { Button } from '@usertour/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Button } from '@usertour/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { memo, forwardRef } from 'react';
 import type { ReactNode, MouseEventHandler, ComponentPropsWithoutRef } from 'react';

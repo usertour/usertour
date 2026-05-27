@@ -1,18 +1,18 @@
 'use client';
 
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { ScrollArea } from '@usertour/scroll-area';
-import { Button } from '@usertour/button';
+} from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { ScrollArea } from '@usertour/ui';
+import { Button } from '@usertour/ui';
 import {
   ContentEditorRoot,
   LauncherIconSource,

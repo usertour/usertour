@@ -1,4 +1,4 @@
-import { Label } from '@usertour/label';
+import { Label } from '@usertour/ui';
 import {
   Select,
   SelectContent,
@@ -6,8 +6,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@usertour/select';
-import { QuestionTooltip } from '@usertour/tooltip';
+} from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 
 interface SequenceSelectProps {
   value?: string;

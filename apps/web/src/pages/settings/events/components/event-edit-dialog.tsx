@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListSkeletonCount } from '@usertour/ui';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   FormControl,
   FormDescription,
@@ -12,14 +12,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour/form';
+} from '@usertour/ui';
 import { useListAttributeOnEventsQuery, useUpdateEventMutation } from '@usertour/hooks';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Input } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import { type Attribute, type Event } from '@usertour/types';
 import { SelectPopover, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { z } from 'zod';
 
 interface EventEditDialogProps {

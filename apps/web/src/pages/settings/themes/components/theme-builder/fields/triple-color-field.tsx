@@ -1,4 +1,4 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { ColorPickerPanel } from '@usertour/ui';
 import { useCurrentUserId } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';

@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { ContentTypeName } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';

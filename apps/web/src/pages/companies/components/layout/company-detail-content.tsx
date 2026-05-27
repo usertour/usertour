@@ -16,18 +16,18 @@ import { formatAttributeValue } from '@/utils/common';
 import { useEffect, useMemo, useState, createContext, useContext, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import { MembershipRow } from '@/components/membership-row';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { Button } from '@usertour/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
+import { Button } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@usertour/toggle';
+} from '@usertour/ui';
+import { ToggleGroup, ToggleGroupItem } from '@usertour/ui';
 import { ContentLoading } from '@usertour/ui';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { TruncatedText } from '@usertour/ui';

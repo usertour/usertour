@@ -1,10 +1,10 @@
 // Embed URL input component with load button
 
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { ArrowRightIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import { memo, useCallback, useId } from 'react';
 
 export interface EmbedUrlInputProps {

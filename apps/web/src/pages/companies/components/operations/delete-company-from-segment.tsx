@@ -1,5 +1,5 @@
 import { Table } from '@tanstack/react-table';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { useCallback } from 'react';

@@ -1,6 +1,6 @@
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
+import { Label } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/ui';
 import { Align, AlignType, ContentAlignmentData, Side } from '@usertour/types';
 import { useState } from 'react';
 import { Alignment } from './shared/alignment';

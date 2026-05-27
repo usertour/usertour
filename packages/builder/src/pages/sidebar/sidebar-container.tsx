@@ -1,6 +1,6 @@
 import { SidebarMini } from './sidebar-mini';
 
-import { Card } from '@usertour/card';
+import { Card } from '@usertour/ui';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';

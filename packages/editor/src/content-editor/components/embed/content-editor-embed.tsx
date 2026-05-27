@@ -1,6 +1,6 @@
 // Main editable embed component
 
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import type { EmbedData } from '@usertour/widget';
 import { Embed } from '@usertour/widget';
 import type { ContentOmbedInfo } from '@usertour/types';

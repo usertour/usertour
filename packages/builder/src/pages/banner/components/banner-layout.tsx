@@ -3,9 +3,9 @@
 import type { BannerOuterMargin } from '@usertour/types';
 import { useCallback } from 'react';
 
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 
 import { useBannerContext } from '../../../contexts';
 

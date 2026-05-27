@@ -1,7 +1,7 @@
 import { ContentEditorRoot } from '@usertour/types';
 import { getDefaultDataForType } from '../utils/default-data';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { deepmerge } from 'deepmerge-ts';
 import { isEqual, isUndefined } from 'lodash';
 import {

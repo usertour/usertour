@@ -1,5 +1,5 @@
-import { Card } from '@usertour/card';
-import { Separator } from '@usertour/separator';
+import { Card } from '@usertour/ui';
+import { Separator } from '@usertour/ui';
 
 import { useAppContext } from '@/contexts/app-context';
 import { ContentLocalizationListProvider } from '@/contexts/content-localization-list-context';

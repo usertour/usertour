@@ -1,7 +1,7 @@
 'use client';
 
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour/constants';
-import { PopoverArrow } from '@usertour/popover';
+import { PopoverArrow } from '@usertour/ui';
 import { ColorPickerPanel } from '@usertour/ui';
 import { useCurrentUserId } from '@usertour/hooks';
 import { memo, useCallback, useMemo, useState } from 'react';

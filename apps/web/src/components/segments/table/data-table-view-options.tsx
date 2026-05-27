@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { Table } from '@tanstack/react-table';
-import { Button } from '@usertour/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import { Input } from '@usertour/input';
+import { Button } from '@usertour/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import { Input } from '@usertour/ui';
 import { RiDraggable, RiEyeLine, RiEyeOffLine, RiLayoutColumnLine } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {

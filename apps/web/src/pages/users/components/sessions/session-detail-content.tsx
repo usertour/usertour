@@ -30,11 +30,11 @@ import {
 } from '@/components/sessions/session';
 import { FlowProgressColumn } from '@/components/sessions/session';
 import { ChecklistProgressColumn } from '@/components/sessions/session';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
 import { QuestionAnswer, SessionResponse } from '@/components/sessions/session-detail';
 import { ContentLoading } from '@usertour/ui';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import {
   getEndReasonTitle,
   getEventDisplaySuffix,

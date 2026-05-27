@@ -24,12 +24,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour/alert-dialog';
-import { QuestionTooltip } from '@usertour/tooltip';
+} from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { ResizeHandle, bodyClass, headerClass, panelClass, sectionLabelClass } from '@usertour/ui';
 import { ConditionsSection } from '../sidebar/conditions-section';
 import { VariationRow } from './variation-row';

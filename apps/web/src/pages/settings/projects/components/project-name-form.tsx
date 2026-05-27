@@ -2,11 +2,11 @@
 
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { useUpdateProjectNameMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
-import { Separator } from '@usertour/separator';
-import { Skeleton } from '@usertour/skeleton';
+import { Input } from '@usertour/ui';
+import { Separator } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
 import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 

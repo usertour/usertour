@@ -2,18 +2,18 @@
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { Button } from '@usertour/ui';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeListContext } from '@usertour/contexts';
 import { SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
-import { Label } from '@usertour/label';
-import { ScrollArea } from '@usertour/scroll-area';
+import { Label } from '@usertour/ui';
+import { ScrollArea } from '@usertour/ui';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
-import { Switch } from '@usertour/switch';
+import { Switch } from '@usertour/ui';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';

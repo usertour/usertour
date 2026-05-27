@@ -4,13 +4,13 @@ import {
   useUpdateUserDisabledMutation,
   useAdminCreateUserMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour/separator';
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Badge } from '@usertour/badge';
+import { Separator } from '@usertour/ui';
+import { Button } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { Badge } from '@usertour/ui';
 import {
   Command,
   CommandEmpty,
@@ -18,17 +18,17 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+} from '@usertour/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+} from '@usertour/ui';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
 import { CheckIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   PlusIcon,

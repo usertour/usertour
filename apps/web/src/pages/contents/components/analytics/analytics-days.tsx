@@ -1,6 +1,6 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/ui';
 import {
   ChartConfig,
   ChartContainer,
@@ -8,8 +8,8 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from '@usertour/chart';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+} from '@usertour/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { ContentDataType } from '@usertour/types';
 import { addDays, differenceInCalendarDays, format, startOfMonth, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';

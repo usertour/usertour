@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { useApolloClient } from '@apollo/client';
 import { createPresignedUrl } from '@usertour/gql';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import axios from 'axios';
 
 interface RcUploadOption {

@@ -8,7 +8,7 @@ import {
   useGetAccessTokenQuery,
 } from '@usertour/hooks';
 import { DestructiveConfirmDialog, ResourceRowActions } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useApiContext } from '@/contexts/api-context';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiKeyDialog } from './api-key-dialog';

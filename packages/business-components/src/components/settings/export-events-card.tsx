@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
-import { Skeleton } from '@usertour/skeleton';
-import { Switch } from '@usertour/switch';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
+import { Switch } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import type { IntegrationModel } from '@usertour/types';
 import { LoadingButton } from '@usertour/ui';
 

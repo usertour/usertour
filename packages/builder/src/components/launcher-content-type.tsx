@@ -1,5 +1,5 @@
 import { LauncherIcon, RiEyeOffFill, RiInformationFill, RiSquareFill } from '@usertour/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
 
 interface LauncherTypeProps {

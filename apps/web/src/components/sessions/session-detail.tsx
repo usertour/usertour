@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
-import { Badge } from '@usertour/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
+import { Badge } from '@usertour/ui';
 import { BizEvent } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 import { cn } from '@usertour/tailwind';

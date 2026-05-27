@@ -8,11 +8,11 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import { TooltipIcon } from '@usertour/icons';
 import { Actions } from '@usertour/editor';
 import { useTranslation } from 'react-i18next';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/ui';
 import {
   ContentActionsItemType,
   LauncherActionType,

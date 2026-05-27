@@ -1,4 +1,4 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';

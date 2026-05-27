@@ -1,7 +1,7 @@
-import { Dialog, DialogContent, DialogTrigger, DialogFooter } from '@usertour/dialog';
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Dialog, DialogContent, DialogTrigger, DialogFooter } from '@usertour/ui';
+import { Button } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import { SettingsIcon } from '@usertour/icons';
 import { useState } from 'react';
 

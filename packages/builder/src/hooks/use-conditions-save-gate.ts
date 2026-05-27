@@ -1,7 +1,7 @@
 import { validateConditions } from '@usertour/business-components';
 import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

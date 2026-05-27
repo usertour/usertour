@@ -1,8 +1,8 @@
 // Shared MarginControls component for content editor elements
 
-import { Checkbox } from '@usertour/checkbox';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
+import { Checkbox } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
 import { memo, useCallback, useId } from 'react';
 
 import type { MarginConfig, MarginPosition } from '../types/margin';

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { useResendMagicLinkMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { AuthCard } from './auth-card';

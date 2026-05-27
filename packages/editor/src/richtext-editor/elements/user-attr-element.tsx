@@ -5,14 +5,14 @@ import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import type { Attribute } from '@usertour/types';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { SelectPopover } from '@usertour/ui';
 import { DeleteIcon, UserIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 import type { UserAttributeElementType } from '../../types/slate';
 import { usePopperEditorContext } from '../editor';

@@ -1,5 +1,5 @@
-import { Card } from '@usertour/card';
-import { Skeleton } from '@usertour/skeleton';
+import { Card } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
 
 // Skeleton for individual step/item in content detail
 export const ContentDetailItemSkeleton = () => {

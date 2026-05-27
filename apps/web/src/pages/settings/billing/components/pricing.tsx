@@ -14,17 +14,17 @@ import {
   RiStackLine,
   RiTeamLine,
 } from '@usertour/icons';
-import { Button } from '@usertour/button';
-import { Switch } from '@usertour/switch';
+import { Button } from '@usertour/ui';
+import { Switch } from '@usertour/ui';
 import { Fragment, useState, useEffect } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@usertour/tailwind';
 import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
-import { Separator } from '@usertour/separator';
-import { Progress } from '@usertour/progress';
-import { Skeleton } from '@usertour/skeleton';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Separator } from '@usertour/ui';
+import { Progress } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import { PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType, type PlanFeatures } from '@usertour/types';

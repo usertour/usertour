@@ -5,7 +5,7 @@ import {
   LocalizationListProvider,
   useLocalizationListContext,
 } from '@/contexts/localization-list-context';
-import { Badge } from '@usertour/badge';
+import { Badge } from '@usertour/ui';
 import { Localization } from '@usertour/types';
 import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { format } from 'date-fns';

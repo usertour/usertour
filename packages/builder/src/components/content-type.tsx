@@ -1,8 +1,8 @@
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
+import { Alert, AlertDescription, AlertTitle } from '@usertour/ui';
 import { EyeNoneIcon, ModelIcon, RiMessageFill, TooltipIcon } from '@usertour/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { StepContentType } from '@usertour/types';
 
 interface ContentTypeProps {

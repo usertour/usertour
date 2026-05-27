@@ -18,16 +18,16 @@ import { UserCompaniesTab } from '../companies';
 import { ActivityFeed } from '@/components/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { Button } from '@usertour/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
+import { Button } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@usertour/toggle';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+} from '@usertour/ui';
+import { ToggleGroup, ToggleGroupItem } from '@usertour/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { ContentLoading } from '@usertour/ui';
 import { TruncatedText } from '@usertour/ui';

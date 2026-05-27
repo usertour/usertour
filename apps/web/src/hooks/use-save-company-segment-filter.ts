@@ -1,7 +1,7 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useUpdateSegmentMutation } from '@usertour/hooks';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';

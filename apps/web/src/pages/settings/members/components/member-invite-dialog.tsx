@@ -7,17 +7,17 @@ import { CaretSortIcon } from '@radix-ui/react-icons';
 import { AlertCircle } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { useTeamMemberLimit } from '@/hooks/use-plan-limits';
-import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
-import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@usertour/ui';
+import { Button } from '@usertour/ui';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { Input } from '@usertour/input';
+} from '@usertour/ui';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
+import { Input } from '@usertour/ui';
 import { useInviteTeamMemberMutation } from '@usertour/hooks';
 import { TeamMemberRole } from '@usertour/types';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';

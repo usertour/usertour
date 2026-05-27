@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef, Table } from '@tanstack/react-table';
-import { Checkbox } from '@usertour/checkbox';
+import { Checkbox } from '@usertour/ui';
 import { BizUser } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,5 @@
-import { Button } from '@usertour/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
+import { Button } from '@usertour/ui';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/ui';
 import {
   EyeNoneIcon,
   ModelIcon,
@@ -7,8 +7,8 @@ import {
   RiCheckLine,
   TooltipIcon,
 } from '@usertour/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import { ScrollArea } from '@usertour/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import { ScrollArea } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import {
   ContentActionsItemType,

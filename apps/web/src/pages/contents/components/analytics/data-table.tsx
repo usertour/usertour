@@ -14,7 +14,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { ListSkeleton } from '@usertour/ui';
 import { ContentDataType } from '@usertour/types';

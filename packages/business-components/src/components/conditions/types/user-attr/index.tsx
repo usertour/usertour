@@ -19,7 +19,7 @@ import { validateUserAttr } from '../../validators';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@usertour/ui';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import {
   DATE_PICKER_OPERATORS,
   VALUELESS_OPERATORS,

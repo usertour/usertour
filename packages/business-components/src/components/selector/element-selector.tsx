@@ -1,7 +1,7 @@
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Button } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
 import { SelectPopover } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';

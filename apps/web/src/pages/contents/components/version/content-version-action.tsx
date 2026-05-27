@@ -1,14 +1,14 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import { PlaneIcon } from '@usertour/icons';
 import { ContentVersion } from '@usertour/types';
 import { useState } from 'react';

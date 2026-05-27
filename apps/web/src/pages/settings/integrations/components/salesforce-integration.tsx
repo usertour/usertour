@@ -1,4 +1,4 @@
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { useCallback, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import {
@@ -7,21 +7,17 @@ import {
   useDisconnectIntegrationMutation,
   useGetIntegrationObjectMappingsQuery,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { integrations } from '@/utils/integration';
-import { Card } from '@usertour/card';
-import { CardHeader, CardTitle } from '@usertour/card';
-import { CardContent } from '@usertour/card';
+import { Card } from '@usertour/ui';
+import { CardHeader, CardTitle } from '@usertour/ui';
+import { CardContent } from '@usertour/ui';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
-import { Skeleton } from '@usertour/skeleton';
+import { Skeleton } from '@usertour/ui';
 import { ConnectIcon, DisconnectIcon, SpinnerIcon, PlusIcon } from '@usertour/icons';
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { DropdownMenu } from '@usertour/dropdown-menu';
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@usertour/ui';
+import { DropdownMenu } from '@usertour/ui';
 import { useNavigate } from 'react-router-dom';
 import { IntegrationObjectMappingModel } from '@usertour/types';
 import { ObjectMappingReadonly } from './object-mapping/object-mapping-readonly';

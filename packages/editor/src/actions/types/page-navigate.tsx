@@ -1,5 +1,5 @@
 import { PagesIcon } from '@usertour/icons';
-import { Tabs, TabsList, TabsTrigger } from '@usertour/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@usertour/ui';
 import { serializeMini as serializeMiniWidget } from '@usertour/widget/src/serialize/utils';
 import type { DescendantNode } from '@usertour/widget/src/serialize/types';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';

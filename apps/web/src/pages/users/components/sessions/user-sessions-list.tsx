@@ -13,7 +13,7 @@ import {
 } from '@/components/sessions/session-analytics';
 import { useListEventsQuery } from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import {
   BannerIcon,
@@ -24,9 +24,9 @@ import {
   ResourceCenterIcon,
   SpinnerIcon,
 } from '@usertour/icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 
 const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;

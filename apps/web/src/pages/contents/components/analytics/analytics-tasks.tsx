@@ -1,7 +1,7 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import { AnalyticsViewsByTask } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 import { calculateRate } from '@/utils/analytics';

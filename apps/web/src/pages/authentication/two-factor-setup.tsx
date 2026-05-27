@@ -1,11 +1,11 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Checkbox } from '@usertour/checkbox';
+import { Button } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Checkbox } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import {
   TwoFactorSetupPayload,

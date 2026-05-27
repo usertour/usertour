@@ -1,7 +1,7 @@
 import { BizEvent, BizEvents, EventAttributes } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   BannerIcon,
   ChecklistIcon,
@@ -20,7 +20,7 @@ import {
   ReloadIcon,
 } from '@radix-ui/react-icons';
 import { cn } from '@usertour/tailwind';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { ListSkeleton } from '@usertour/ui';
 import { ReactNode, Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';

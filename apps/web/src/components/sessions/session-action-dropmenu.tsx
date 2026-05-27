@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import {
   CloseCircleIcon,
   Delete2Icon,
@@ -19,7 +19,7 @@ import { BizSession } from '@usertour/types';
 import { Fragment, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/ui';
 import { SessionResponse } from '@/components/sessions/session-detail';
 import { getOrderedQuestionAnswers, QuestionWithAnswer } from '@/utils/session';
 

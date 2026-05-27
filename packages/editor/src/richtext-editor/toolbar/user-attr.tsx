@@ -1,4 +1,4 @@
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { UserIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { memo, useCallback } from 'react';

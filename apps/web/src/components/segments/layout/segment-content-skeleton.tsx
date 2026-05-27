@@ -1,5 +1,5 @@
-import { Skeleton } from '@usertour/skeleton';
-import { Separator } from '@usertour/separator';
+import { Skeleton } from '@usertour/ui';
+import { Separator } from '@usertour/ui';
 import { ListSkeleton } from '@usertour/ui';
 
 // Skeleton for the header section

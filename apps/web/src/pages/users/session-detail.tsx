@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { SessionDetailContent } from './components/sessions';
 import { useParams } from 'react-router-dom';
-import { ScrollArea } from '@usertour/scroll-area';
+import { ScrollArea } from '@usertour/ui';
 
 export const SessionDetail = () => {
   const { sessionId } = useParams();

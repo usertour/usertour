@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { useCreateLocalizationMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { QuestionTooltip } from '@usertour/ui';
 import { z } from 'zod';
 
 interface LocalizationCreateDialogProps {

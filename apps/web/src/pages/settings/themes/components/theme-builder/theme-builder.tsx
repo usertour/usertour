@@ -10,7 +10,7 @@ import {
   defaultSettings,
 } from '@usertour/types';
 import { useCurrentUserId } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';

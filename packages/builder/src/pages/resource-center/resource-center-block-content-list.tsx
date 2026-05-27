@@ -1,8 +1,8 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { Button } from '@usertour/ui';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
 import {
   Command,
   CommandEmpty,
@@ -10,7 +10,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@usertour/command';
+} from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeListContext } from '@usertour/contexts';
 import {
@@ -21,22 +21,22 @@ import {
   RiSettings3Line,
   SpinnerIcon,
 } from '@usertour/icons';
-import { Label } from '@usertour/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import { ScrollArea } from '@usertour/scroll-area';
-import { Skeleton } from '@usertour/skeleton';
+import { Label } from '@usertour/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import { ScrollArea } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
 import { Conditions } from '@usertour/business-components';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { useContentListQuery, useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
-import { Switch } from '@usertour/switch';
+import { Switch } from '@usertour/ui';
 import {
   QuestionTooltip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@usertour/tooltip';
+} from '@usertour/ui';
 import {
   ContentDataType,
   ContentListItem,

@@ -1,6 +1,6 @@
 import { ThemeDetailProvider, useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { useUpdateThemeMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';

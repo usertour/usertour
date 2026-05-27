@@ -1,10 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@usertour/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { ApiCopyButton } from './api-copy-button';
 

@@ -3,7 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';

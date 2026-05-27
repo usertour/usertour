@@ -1,9 +1,9 @@
 import { memo, useCallback } from 'react';
 
 import { AvatarsList, type AvatarComponent } from '@usertour/icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 import type { CartoonAvatarTabProps } from './types';
 

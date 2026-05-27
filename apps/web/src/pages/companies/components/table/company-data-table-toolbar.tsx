@@ -19,9 +19,9 @@ import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useTableSelection } from '@/hooks/use-table-selection';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
 interface CompanyDataTableToolbarProps {

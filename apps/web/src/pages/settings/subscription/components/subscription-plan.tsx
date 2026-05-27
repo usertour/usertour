@@ -1,6 +1,6 @@
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Textarea } from '@usertour/textarea';
+import { Button } from '@usertour/ui';
+import { Input } from '@usertour/ui';
+import { Textarea } from '@usertour/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -8,11 +8,11 @@ import {
   useInvalidateLicenseScopedCache,
   useUpdateProjectLicenseMutation,
 } from '@usertour/hooks';
-import { Separator } from '@usertour/separator';
-import { Skeleton } from '@usertour/skeleton';
+import { Separator } from '@usertour/ui';
+import { Skeleton } from '@usertour/ui';
 import { CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { LicenseStatusBadge, licenseDateClass } from '@/components/license/license-status-badge';
 

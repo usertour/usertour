@@ -1,6 +1,6 @@
-import { Badge } from '@usertour/badge';
+import { Badge } from '@usertour/ui';
 import { RiArrowRightSLine, RiShieldCheckFill } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';

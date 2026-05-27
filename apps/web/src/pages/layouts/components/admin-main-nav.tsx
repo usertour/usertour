@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   ChecklistIcon,
   CompanyIcon,
@@ -11,10 +11,10 @@ import {
   EventTrackerIcon,
   ResourceCenterIcon,
 } from '@usertour/icons';
-import { TooltipContent } from '@usertour/tooltip';
-import { TooltipTrigger } from '@usertour/tooltip';
-import { TooltipProvider } from '@usertour/tooltip';
-import { Tooltip } from '@usertour/tooltip';
+import { TooltipContent } from '@usertour/ui';
+import { TooltipTrigger } from '@usertour/ui';
+import { TooltipProvider } from '@usertour/ui';
+import { Tooltip } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { Link, useLocation } from 'react-router-dom';
 import { AdminEnvSwitcher } from './admin-env-switcher';

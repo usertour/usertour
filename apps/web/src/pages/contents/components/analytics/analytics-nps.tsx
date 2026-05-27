@@ -1,15 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
 import type { Content, ContentQuestionAnalytics, NPSByDay, Question } from '@usertour/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour/ui';
 import { format } from 'date-fns';
-import { Badge } from '@usertour/badge';
+import { Badge } from '@usertour/ui';
 import { PieChart, Pie, Cell } from 'recharts';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useUpdateContentMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 
 interface AnalyticsNPSProps {

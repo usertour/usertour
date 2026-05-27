@@ -3,11 +3,11 @@ import { useContentLocalizationListContext } from '@/contexts/content-localizati
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { useMutation } from '@apollo/client';
 import { updateVersionLocationData } from '@usertour/gql';
-import { Switch } from '@usertour/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Switch } from '@usertour/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import { VersionOnLocalization } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
 

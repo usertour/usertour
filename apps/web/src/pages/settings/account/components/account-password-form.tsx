@@ -2,9 +2,9 @@
 
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { useChangePasswordMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 

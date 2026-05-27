@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 

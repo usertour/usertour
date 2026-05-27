@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import {
   useQueryTooltipTargetMissingSessionsLazyQuery,
   type StepAnalytics,
@@ -23,7 +23,7 @@ import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/a
 import { DateRangePicker } from '@usertour/ui';
 import { formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
 import { cn } from '@usertour/tailwind';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 interface TooltipTargetMissingDialogProps {
   stepData: AnalyticsViewsByStep;

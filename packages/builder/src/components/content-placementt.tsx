@@ -1,8 +1,8 @@
 import { Crosshair2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
+import { Input } from '@usertour/ui';
+import { Label } from '@usertour/ui';
 import {
   Select,
   SelectContent,
@@ -11,12 +11,12 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour/select';
+} from '@usertour/ui';
 import { SelectorDialog } from '@usertour/business-components';
 import { Actions } from '@usertour/editor';
-import { Switch } from '@usertour/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Switch } from '@usertour/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/ui';
+import { QuestionTooltip } from '@usertour/ui';
 import {
   Attribute,
   Content,

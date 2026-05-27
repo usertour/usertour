@@ -5,9 +5,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@usertour/command';
+} from '@usertour/ui';
 import { RiCheckLine, RiExpandUpDownLine } from '@usertour/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { CompactPopoverTrigger } from '@usertour/ui';
 import { type ReactNode, useState } from 'react';

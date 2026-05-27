@@ -3,10 +3,10 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { Checkbox } from '@usertour/checkbox';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { Checkbox } from '@usertour/ui';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { useCreateThemeMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { defaultSettings } from '@usertour/types';
 import { z } from 'zod';

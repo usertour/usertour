@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 
 import { ThemeSettingErrorPopover } from '@/components/themes/theme-setting-error-popover';

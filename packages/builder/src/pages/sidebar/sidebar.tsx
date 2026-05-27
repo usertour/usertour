@@ -1,8 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
-import { ScrollArea } from '@usertour/scroll-area';
+import { ScrollArea } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';
 import { useBuilderContext } from '../../contexts';

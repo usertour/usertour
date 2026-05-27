@@ -6,8 +6,8 @@ import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { EnvironmentCreateDialog } from '@/pages/settings/environments/components/environment-create-dialog';
 import { Environment } from '@usertour/types';
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Avatar, AvatarFallback } from '@usertour/avatar';
-import { Button } from '@usertour/button';
+import { Avatar, AvatarFallback } from '@usertour/ui';
+import { Button } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';

@@ -1,8 +1,8 @@
 import { CancelIcon, CheckmarkIcon, ClickIcon, EyeNoneIcon } from '@usertour/icons';
-import { TooltipContent } from '@usertour/tooltip';
+import { TooltipContent } from '@usertour/ui';
 import { PlayIcon } from '@usertour/icons';
-import { Tooltip, TooltipTrigger } from '@usertour/tooltip';
-import { TooltipProvider } from '@usertour/tooltip';
+import { Tooltip, TooltipTrigger } from '@usertour/ui';
+import { TooltipProvider } from '@usertour/ui';
 import {
   BizEvents,
   BizSession,

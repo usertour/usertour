@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
-import { Checkbox } from '@usertour/checkbox';
+import { Button } from '@usertour/ui';
+import { Checkbox } from '@usertour/ui';
 import {
   Dialog,
   DialogContent,
@@ -9,16 +9,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
+} from '@usertour/ui';
 import {
   type TwoFactorSetupPayload,
   useConfirmTwoFactorSetupMutation,
   useStartTwoFactorSetupMutation,
 } from '@usertour/hooks';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { downloadRecoveryCodes } from './download-codes';
 
 type SetupStage = 'scan' | 'codes';

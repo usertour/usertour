@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CaretSortIcon } from '@radix-ui/react-icons';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   Dialog,
   DialogClose,
@@ -11,13 +11,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
+} from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import {
   Form,
   FormControl,
@@ -26,14 +26,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour/form';
+} from '@usertour/ui';
 import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { QuestionTooltip } from '@usertour/ui';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

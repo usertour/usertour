@@ -19,7 +19,7 @@ import { validateConditions } from '../../validate';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInlineSelect } from '../../ui/condition-inline-select';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 import { EventScopeContext } from './event-scope-context';
 
 export interface EventData {
