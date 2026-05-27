@@ -11,7 +11,6 @@ import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
-import { UserSegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
 import { CollapsibleSearch } from '@/components/molecules/collapsible-search';
 import { DeleteUserFromSegment } from '../operations';
@@ -36,7 +35,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
   const { setCurrentConditions } = useSegmentListContext();
   const { setQuery, refetch: refetchUserList } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
-  const { isViewOnly, environment } = useAppContext();
+  const { isViewOnly } = useAppContext();
   const { hasSelection, getSelectedCount } = useTableSelection(table);
 
   // Use ref to store currentSegment to avoid recreating handleDataChange when segment object changes
@@ -61,11 +60,6 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
     () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [],
     [attributeList],
   );
-
-  const [open, setOpen] = useState(false);
-  const handleOnClose = () => {
-    setOpen(false);
-  };
 
   const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
 
@@ -196,12 +190,6 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
             table={table}
             onColumnsChange={updateSegmentColumns}
             disabled={isViewOnly}
-          />
-
-          <UserSegmentCreateDialog
-            isOpen={open}
-            onClose={handleOnClose}
-            environmentId={environment?.id}
           />
         </div>
       </div>

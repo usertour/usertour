@@ -3,7 +3,7 @@ import { useBuilderContext } from '../builder-context';
 import { CompactSelect, type CompactSelectOption } from '@usertour/ui';
 import { FieldRow } from './field-row';
 
-interface Props {
+export interface SelectFieldProps {
   path: string;
   label: string;
   options: CompactSelectOption[];
@@ -14,7 +14,8 @@ interface Props {
   tooltip?: string;
 }
 
-export function SelectField({ path, label, options, vertical, valueAsNumber, tooltip }: Props) {
+export const SelectField = (props: SelectFieldProps) => {
+  const { path, label, options, vertical, valueAsNumber, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const raw = valueAsNumber ? getField<number>(path) : getField<string>(path);
@@ -34,4 +35,4 @@ export function SelectField({ path, label, options, vertical, valueAsNumber, too
       />
     </FieldRow>
   );
-}
+};

@@ -29,12 +29,7 @@ interface SelectorDialogProps {
 }
 
 const formSchema = z.object({
-  buildUrl: z
-    .string({
-      required_error: "buildUrl can't empty.",
-    })
-    .max(100)
-    .min(1),
+  buildUrl: z.string().max(100).min(1),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -90,7 +85,7 @@ export const SelectorDialog = (props: SelectorDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="md:max-w-2xl	" style={{ zIndex }}>
+      <DialogContent className="md:max-w-2xl	" style={{ zIndex }} aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>

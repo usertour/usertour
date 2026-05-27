@@ -1,6 +1,7 @@
 import { useMutation } from '@apollo/client';
 import { createBizCompanyOnSegment } from '@usertour/gql';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 
@@ -16,16 +17,17 @@ interface AddCompaniesResult {
  */
 export const useAddCompaniesToManualSegment = () => {
   const [createMutation, { loading }] = useMutation(createBizCompanyOnSegment);
+  const { t } = useTranslation();
 
   const addCompaniesToSegment = useCallback(
     async (companyIds: string[], segment: Segment): Promise<AddCompaniesResult> => {
       // Validate inputs
       if (!Array.isArray(companyIds) || companyIds.length === 0) {
-        return { success: false, error: 'No companies selected' };
+        return { success: false, error: t('companies.toast.segments.noCompaniesSelected') };
       }
 
       if (!segment || !segment.id) {
-        return { success: false, error: 'Invalid segment' };
+        return { success: false, error: t('companies.toast.segments.invalidSegment') };
       }
 
       // Transform data for GraphQL mutation
@@ -47,12 +49,12 @@ export const useAddCompaniesToManualSegment = () => {
         }
 
         // Handle unexpected response
-        return { success: false, error: 'Add operation failed' };
+        return { success: false, error: t('companies.toast.segments.addFailed') };
       } catch (error) {
         return { success: false, error: getErrorMessage(error) };
       }
     },
-    [createMutation],
+    [createMutation, t],
   );
 
   return {

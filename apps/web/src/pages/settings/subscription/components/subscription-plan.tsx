@@ -2,6 +2,7 @@ import { Button } from '@usertour/button';
 import { Input } from '@usertour/input';
 import { Textarea } from '@usertour/textarea';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useGetProjectLicenseInfoQuery,
   useInvalidateLicenseScopedCache,
@@ -28,6 +29,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   const [licenseInput, setLicenseInput] = useState('');
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const planType = licenseInfo?.payload?.plan || 'free';
 
@@ -36,7 +38,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
     copyToClipboard(projectId);
     toast({
       variant: 'success',
-      title: `Project ID ${projectId} has been copied to clipboard`,
+      title: t('settings.subscription.projectIdCopiedToast', { id: projectId }),
     });
   };
 
@@ -44,7 +46,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
     const trimmedContent = licenseInput.trim();
     if (!trimmedContent) {
       toast({
-        title: 'License cannot be empty',
+        title: t('settings.subscription.uploadLicenseEmpty'),
         variant: 'destructive',
       });
       return;
@@ -56,7 +58,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
       await Promise.all([refetchLicense(), invalidateLicenseScopedCache()]);
       toast({
         variant: 'success',
-        title: 'License updated',
+        title: t('settings.subscription.uploadLicenseSuccess'),
       });
     } catch (error) {
       toast({
@@ -72,10 +74,12 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
         <div className="py-8 grid grid-cols-1 sm:grid-cols-8 gap-x-12 gap-y-4">
           <div className="col-span-3 flex flex-col gap-1">
             <div className="flex flex-wrap gap-2">
-              <h1 className="text-zinc-950/90 dark:text-white/90">Subscription</h1>
+              <h1 className="text-zinc-950/90 dark:text-white/90">
+                {t('settings.subscription.heading')}
+              </h1>
             </div>
             <h2 className="text-zinc-950/50 dark:text-white/50 text-sm">
-              View and manage your subscription
+              {t('settings.subscription.description')}
             </h2>
           </div>
           <div className="flex flex-col col-span-5 space-y-2 p-4 pt-1 xl:p-4 rounded-xl bg-zinc-950/5 dark:bg-white/5">
@@ -90,7 +94,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                       </div>
                     ) : (
                       <>
-                        <span>Current plan: </span>
+                        <span>{t('settings.subscription.currentPlanLabel')}</span>
                         <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                           {planType}
                         </span>
@@ -102,8 +106,14 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                         )}
                         {licenseInfo?.payload?.exp && (
                           <span className={licenseDateClass(licenseInfo.isExpired)}>
-                            {licenseInfo.isExpired ? 'Expired on ' : 'Expires on '}
-                            {new Date(licenseInfo.payload.exp * 1000).toLocaleDateString()}
+                            {t(
+                              licenseInfo.isExpired
+                                ? 'settings.subscription.expiredOn'
+                                : 'settings.subscription.expiresOn',
+                              {
+                                date: new Date(licenseInfo.payload.exp * 1000).toLocaleDateString(),
+                              },
+                            )}
                           </span>
                         )}
                       </>
@@ -113,7 +123,9 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                     licenseInfo?.daysRemaining !== null &&
                     licenseInfo?.daysRemaining !== undefined && (
                       <div className="mt-2 text-xs text-zinc-950/60 dark:text-white/50">
-                        Days Remaining: {licenseInfo.daysRemaining}
+                        {t('settings.subscription.daysRemaining', {
+                          count: licenseInfo.daysRemaining,
+                        })}
                       </div>
                     )}
                 </div>
@@ -126,16 +138,16 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
           {/* Project ID display with copy button */}
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-1">
-              <div className="text-sm font-medium">Project ID</div>
+              <div className="text-sm font-medium">{t('settings.subscription.projectIdLabel')}</div>
               <div className="text-zinc-950/50 dark:text-white/50 text-sm">
-                The unique , read-only project id.
+                {t('settings.subscription.projectIdDescription')}
               </div>
             </div>
             <div className="flex gap-4">
               <Input value={projectId} disabled className="flex-1" />
               <Button variant="secondary" onClick={handleCopyProjectId} className="h-9">
                 <CopyIcon className="w-4 h-4 mr-1" />
-                Copy
+                {t('settings.subscription.copy')}
               </Button>
             </div>
           </div>
@@ -143,15 +155,16 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
           {/* License input and upload button */}
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-1">
-              <div className="text-sm font-medium">Upload License</div>
+              <div className="text-sm font-medium">
+                {t('settings.subscription.uploadLicenseLabel')}
+              </div>
               <div className="text-zinc-950/50 dark:text-white/50 text-sm">
-                Paste the project license to unlock business/enterprise features. Existing license
-                content is not shown after saving.
+                {t('settings.subscription.uploadLicenseDescription')}
               </div>
             </div>
             <div className="flex flex-col gap-4">
               <Textarea
-                placeholder="Sensitive - write only"
+                placeholder={t('settings.subscription.uploadLicensePlaceholder')}
                 value={licenseInput}
                 onChange={(e) => setLicenseInput(e.target.value)}
                 className="flex-1 font-mono"
@@ -163,7 +176,9 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                   onClick={handleSubmitLicense}
                   className="text-sm px-2 min-w-[36px] h-9 flex-none"
                 >
-                  {updateLicenseLoading ? 'Updating...' : 'Upload License'}
+                  {updateLicenseLoading
+                    ? t('settings.subscription.uploadLicenseUpdating')
+                    : t('settings.subscription.uploadLicenseButton')}
                 </Button>
               </div>
             </div>

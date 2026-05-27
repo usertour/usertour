@@ -140,7 +140,7 @@ export const ThemeListSkeleton = ({ count }: ListSkeletonCountProps) => {
           key={index}
           className="h-52 w-80 bg-white rounded-lg border border-gray-100 dark:border-gray-800 dark:bg-gray-900"
         >
-          {/* Header skeleton - matches ThemeListPreview header */}
+          {/* Header skeleton - matches ThemeCardPreview header */}
           <div className="bg-slate-50 dark:bg-gray-800 rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
             <div className="flex flex-row grow space-x-2">
               <Skeleton className="h-5 w-32" />
@@ -149,7 +149,7 @@ export const ThemeListSkeleton = ({ count }: ListSkeletonCountProps) => {
             <Skeleton className="h-4 w-4 rounded" />
           </div>
 
-          {/* Content skeleton - matches ThemeListPreview content area */}
+          {/* Content skeleton - matches ThemeCardPreview content area */}
           <div className="flex justify-center items-center h-40 flex-col p-4">
             <Skeleton className="h-32 w-64 rounded-lg" />
           </div>

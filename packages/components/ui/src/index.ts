@@ -7,6 +7,8 @@ export * from './ui/input-group';
 export { SelectPopover } from './ui/select-popover';
 export type { SelectPopoverOption, SelectPopoverProps } from './ui/select-popover';
 export { LoadingContainer } from './ui/loading';
+export { LoadingButton } from './ui/loading-button';
+export { NewItemButton } from './ui/new-item-button';
 export { LocateSelect } from './ui/locate-select';
 export type { LocateItem } from './ui/locate-select';
 export { DateTimePicker } from './ui/date-time-picker';
@@ -30,4 +32,5 @@ export type {
   UseScaledPreviewOptions,
   UseScaledPreviewResult,
 } from './ui/preview/scaled-preview-container';
+export * from './ui/settings';
 export * from './compact';

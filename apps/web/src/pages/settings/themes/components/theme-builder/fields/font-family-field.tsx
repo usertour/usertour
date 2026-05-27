@@ -3,7 +3,7 @@ import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { BuilderFontPicker } from '../ui';
 
-interface Props {
+export interface FontFamilyFieldProps {
   path: string;
   label: string;
   tooltip?: string;
@@ -11,7 +11,8 @@ interface Props {
 
 // Vertical layout: font picker needs full sidebar width to show family names
 // in the dropdown comfortably.
-export function FontFamilyField({ path, label, tooltip }: Props) {
+export const FontFamilyField = (props: FontFamilyFieldProps) => {
+  const { path, label, tooltip } = props;
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path) ?? '';
@@ -29,4 +30,4 @@ export function FontFamilyField({ path, label, tooltip }: Props) {
       />
     </div>
   );
-}
+};

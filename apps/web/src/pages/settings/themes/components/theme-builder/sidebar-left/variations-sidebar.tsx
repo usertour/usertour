@@ -27,14 +27,14 @@ import {
 } from '@usertour/alert-dialog';
 import { QuestionTooltip } from '@usertour/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
 import { ResizeHandle, bodyClass, headerClass, panelClass, sectionLabelClass } from '@usertour/ui';
 import { ConditionsSection } from '../sidebar/conditions-section';
 import { VariationRow } from './variation-row';
 
-interface Props {
+export interface VariationsSidebarProps {
   variations: ThemeVariation[];
   activeVariationId: string | null;
   activeVariation: ThemeVariation | null;
@@ -53,22 +53,7 @@ interface Props {
   };
 }
 
-// Wires a single variation row into the SortableContext. Kept inline because
-// it captures parent props and isn't reused elsewhere.
-function SortableVariationRow({
-  variation,
-  untitledLabel,
-  selected,
-  onClick,
-  onRename,
-  onDelete,
-  disabled,
-  isRenaming,
-  renameDraft,
-  onRenameDraftChange,
-  onRenameCommit,
-  onRenameCancel,
-}: {
+interface SortableVariationRowProps {
   variation: ThemeVariation;
   untitledLabel: string;
   selected: boolean;
@@ -81,7 +66,25 @@ function SortableVariationRow({
   onRenameDraftChange?: (value: string) => void;
   onRenameCommit?: () => void;
   onRenameCancel?: () => void;
-}) {
+}
+
+// Wires a single variation row into the SortableContext. Kept inline because
+// it captures parent props and isn't reused elsewhere.
+const SortableVariationRow = (props: SortableVariationRowProps) => {
+  const {
+    variation,
+    untitledLabel,
+    selected,
+    onClick,
+    onRename,
+    onDelete,
+    disabled,
+    isRenaming,
+    renameDraft,
+    onRenameDraftChange,
+    onRenameCommit,
+    onRenameCancel,
+  } = props;
   // Disable drag-and-drop while this row is being renamed so pointer events
   // go to the input rather than the sortable wrapper.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -110,22 +113,23 @@ function SortableVariationRow({
       isDragging={isDragging}
     />
   );
-}
+};
 
-export function VariationsSidebar({
-  variations,
-  activeVariationId,
-  activeVariation,
-  onSelect,
-  onAdd,
-  onRename,
-  onDelete,
-  onConditionsChange,
-  onReorder,
-  disabled,
-  width,
-  resize,
-}: Props) {
+export const VariationsSidebar = (props: VariationsSidebarProps) => {
+  const {
+    variations,
+    activeVariationId,
+    activeVariation,
+    onSelect,
+    onAdd,
+    onRename,
+    onDelete,
+    onConditionsChange,
+    onReorder,
+    disabled,
+    width,
+    resize,
+  } = props;
   const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
@@ -155,9 +159,12 @@ export function VariationsSidebar({
     ? (variations.find((v) => v.id === deletingId) ?? null)
     : null;
 
-  useEffect(() => {
-    if (renamingVariation) setRenameDraft(renamingVariation.name);
-  }, [renamingVariation]);
+  // The rename menu item already seeds `renameDraft` when the user
+  // opens rename (see `onRename` in the sortable row props). A separate
+  // effect that re-seeds on every `renamingVariation` reference change
+  // would clobber the in-progress draft whenever the variations array
+  // gets a fresh reference (parent refetch, sibling rename) — so it's
+  // deliberately omitted here.
 
   const commitRename = () => {
     if (!renamingId) return;
@@ -312,4 +319,4 @@ export function VariationsSidebar({
       )}
     </div>
   );
-}
+};

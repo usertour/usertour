@@ -1,6 +1,645 @@
 const translations = {
   language: 'English',
   productName: 'Usertour',
+  settings: {
+    nav: {
+      heading: 'Settings',
+      general: 'General',
+      developer: 'Advanced',
+      sections: {
+        general: 'Project',
+        themes: 'Themes',
+        environments: 'Environments',
+        attributes: 'Attributes',
+        events: 'Events',
+        localizations: 'Localization',
+        team: 'Team',
+        billing: 'Billing',
+        subscription: 'Subscription',
+        account: 'Account',
+        api: 'API',
+        integrations: 'Integrations',
+      },
+    },
+    common: {
+      save: 'Save',
+      submit: 'Submit',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      edit: 'Edit',
+      readGuide: 'Read the {{topic}} guide',
+      predefinedTooltip: "Predefined {{resource}} can't be edited.",
+      deleteConfirm: {
+        // Title uses {{resource}} so it reads "Delete attribute" / "Delete API key"
+        // — action-named, matches the modern SaaS pattern (Linear, Notion, Vercel).
+        title: 'Delete {{resource}}',
+        // Name appears bold inside the question; the "cannot be undone"
+        // warning is appended so users see consequence + identity together.
+        description:
+          'Are you sure you want to delete <strong>{{name}}</strong>? This action cannot be undone.',
+        // Confirm button mirrors the title's action+object pattern so the
+        // button label, the title, and screen-reader output stay aligned.
+        // The {{resource}} interpolation is required at every call site;
+        // omitting it leaves the placeholder unrendered.
+        confirm: 'Delete {{resource}}',
+      },
+      description: 'Description',
+      descriptionPlaceholder: 'Optional description',
+      changeableLater: 'Can be changed later',
+      notChangeableLater: 'Cannot be changed later',
+    },
+    account: {
+      profile: {
+        title: 'Profile',
+        nameLabel: 'Name',
+        namePlaceholder: 'Your name',
+        successToast: 'The profile name has been successfully updated',
+      },
+      email: {
+        title: 'Change email',
+        emailLabel: 'Email',
+        emailPlaceholder: 'Your email',
+        passwordLabel: 'Confirm password',
+        passwordPlaceholder: 'Current password',
+        successToast: 'The email has been successfully updated',
+        failureToast: 'Failed to update email.',
+      },
+      password: {
+        title: 'Change password',
+        currentLabel: 'Current password',
+        currentPlaceholder: 'Enter your current password',
+        newLabel: 'New password',
+        newPlaceholder: 'Pick a strong password',
+        confirmLabel: 'Confirm password',
+        confirmPlaceholder: 'Repeat the same new password',
+        successToast: 'The password has been successfully updated',
+        failureToast: 'Failed to update password.',
+      },
+    },
+    project: {
+      title: 'Project Name',
+      nameLabel: 'Project Name',
+      namePlaceholder: 'Your project name',
+      successToast: 'The project name has been successfully updated',
+    },
+    attributes: {
+      title: 'Attributes',
+      newButton: 'New attribute',
+      description: 'You can send user and company attributes via Usertour.js.',
+      predefinedResource: 'attributes',
+      tabs: {
+        user: 'User',
+        company: 'Company',
+        membership: 'Company membership',
+        event: 'Event',
+      },
+      columns: {
+        displayName: 'Display name',
+        codeName: 'Code name',
+        dataType: 'Data type',
+      },
+      systemBadge: 'System',
+      editMenuItem: 'Edit attribute',
+      deleteMenuItem: 'Delete attribute',
+      deleteResource: 'attribute',
+      deleteSuccess: 'The attribute has been successfully deleted',
+      deleteFailure: 'Failed to delete attribute.',
+      editTitle: 'Edit attribute',
+      saveButton: 'Save attribute',
+      updateSuccess: 'The attribute has been successfully updated',
+      updateFailure: 'Failed to update attribute.',
+      form: {
+        bizTypeLabel: 'Object type',
+        bizTypeTooltip:
+          'The entity this attribute belongs to: User, Company, Membership, or Event.',
+        bizTypePlaceholder: 'Select an object type',
+        dataTypeLabel: 'Data type',
+        dataTypeTooltip:
+          'The value type stored in this attribute. Determines serialization and filter operators.',
+        dataTypePlaceholder: 'Select a data type',
+        displayNameLabel: 'Display name',
+        displayNameTooltip:
+          'Human-friendly name shown across the Usertour dashboard. e.g. "Billing Plan".',
+        displayNamePlaceholder: 'Enter display name',
+        codeNameLabel: 'Code name',
+        codeNameTooltip:
+          'Code-friendly identifier used throughout Usertour to reference this attribute. e.g. "billing_plan".',
+        codeNamePlaceholder: 'Enter code name',
+        bizTypes: {
+          user: 'User',
+          company: 'Company',
+          membership: 'Company Membership',
+          event: 'Event',
+        },
+        dataTypes: {
+          number: 'Number',
+          string: 'String',
+          boolean: 'Boolean',
+          dateTime: 'DateTime',
+          list: 'List',
+          randomAB: 'Random A/B',
+          randomNumber: 'Random number',
+        },
+        createTitle: 'New attribute',
+        createSubmit: 'Create attribute',
+        createSuccess: 'The attribute has been successfully created',
+      },
+      empty: 'No attributes yet.',
+    },
+    events: {
+      title: 'Events',
+      newButton: 'New event',
+      predefinedResource: 'events',
+      columns: {
+        displayName: 'Display name',
+        codeName: 'Code name',
+      },
+      editMenuItem: 'Edit event',
+      deleteMenuItem: 'Delete event',
+      deleteResource: 'event',
+      deleteSuccess: 'The event has been successfully deleted',
+      editTitle: 'Edit event',
+      createTitle: 'New event',
+      saveButton: 'Save event',
+      createButton: 'Create event',
+      updateSuccess: 'The event has been successfully updated',
+      updateFailure: 'Failed to update event.',
+      createSuccess: 'The event has been successfully created',
+      createFailure: 'Failed to create event.',
+      attributeAlreadyAssociated: 'That attribute is already associated with the event.',
+      invalidData: 'Invalid event data',
+      deleteFailure: 'Failed to delete event',
+      form: {
+        displayNameLabel: 'Display name',
+        displayNameTooltip:
+          'Human-friendly name shown across the Usertour dashboard. e.g. "User signed up".',
+        displayNamePlaceholder: 'Enter display name',
+        codeNameLabel: 'Code name',
+        codeNameTooltip:
+          'Code-friendly identifier used throughout Usertour to reference this event. e.g. "user_signed_up".',
+        codeNamePlaceholder: 'Enter code name',
+        attributesLabel: 'Event attributes',
+        attributesTooltip:
+          'Attributes included in this event\'s payload schema. e.g. "plan_name", "price".',
+        attributesPlaceholder: 'Select an attribute',
+        addAttribute: 'Add attribute',
+      },
+      empty: 'No events yet.',
+    },
+    environments: {
+      title: 'Environments',
+      newButton: 'New environment',
+      description:
+        'With environments, you can isolate user/company/content data between e.g. Production and Staging.',
+      columns: {
+        name: 'Environment name',
+        token: 'Usertour.js Token',
+      },
+      primaryBadge: 'Primary',
+      tokenTooltip:
+        'You need this when installing Usertour.js in your web app. See https://docs.usertour.io for more details.',
+      renameMenuItem: 'Rename environment',
+      setPrimaryMenuItem: 'Make this the primary environment',
+      deleteMenuItem: 'Delete',
+      deleteResource: 'environment',
+      deleteSuccess: 'The environment has been successfully deleted',
+      deleteFailure: 'Failed to delete environment',
+      invalidData: 'Invalid environment data',
+      setPrimarySuccess: 'Environment set as primary successfully.',
+      createTitle: 'New environment',
+      editTitle: 'Edit environment',
+      createButton: 'Create environment',
+      saveButton: 'Save environment',
+      nameLabel: 'Environment name',
+      namePlaceholder: 'Enter environment name',
+      limitTitle: 'Maximum environments reached',
+      limitDescription:
+        'You have reached the maximum number of environments allowed on your current plan.',
+      limitDescriptionPrefix:
+        "You have reached the maximum number of environments allowed on your current plan. To add more environments, you'll have to ",
+      upgrade: 'Upgrade',
+      upgradeLink: 'Upgrade your plan',
+      empty: 'No environments yet.',
+    },
+    localizations: {
+      title: 'Localization',
+      newButton: 'New localization',
+      columns: {
+        code: 'Code',
+        name: 'Name',
+        createdAt: 'Created at',
+      },
+      defaultBadge: 'Default',
+      editMenuItem: 'Edit localization',
+      deleteMenuItem: 'Delete localization',
+      setDefaultMenuItem: 'Set as company default',
+      setDefaultSuccess: 'The localization has been successfully set as default',
+      deleteResource: 'localization',
+      deleteSuccess: 'The localization has been successfully deleted',
+      deleteFailure: 'Failed to delete localization.',
+      createFailure: 'Failed to create localization.',
+      updateFailure: 'Failed to update localization.',
+      createTitle: 'New localization',
+      editTitle: 'Edit localization',
+      saveButton: 'Save localization',
+      createButton: 'Create localization',
+      description:
+        "Localization enables you to tailor your Usertour content to align with your users' language and regional preferences. A locale defines the user's specific language and region settings.",
+      descriptionContinuation:
+        "By including the user's locale through the <code>locale_code</code> attribute in your app's Usertour.js setup, you ensure that Usertour delivers content in the appropriate language seamlessly.",
+      empty: 'No localizations yet.',
+      form: {
+        localeLabel: 'Locale',
+        localeTooltip: "A locale represents a user's language and region.",
+        nameLabel: 'Name',
+        nameTooltip: 'Human-readable name of the locale.',
+        namePlaceholder: 'Enter display name',
+        codeLabel: 'Code',
+        codeTooltip:
+          "The value that users of this locale must have in their locale_code attribute in your Usertour.js installation. It's important that this code matches exactly.",
+        codePlaceholder: 'Enter code',
+      },
+    },
+    themes: {
+      defaultBadge: 'Default',
+      setDefaultMenuItem: 'Set as company default',
+      setDefaultSuccess: 'The theme has been successfully set as default',
+      duplicateMenuItem: 'Duplicate theme',
+      deleteMenuItem: 'Delete theme',
+      deleteResource: 'theme',
+      deleteDescription:
+        'This action cannot be undone. This will permanently delete the theme and all its variations.',
+      deleteSuccess: 'The theme has been successfully deleted',
+      deleteFailure: 'Failed to delete theme.',
+      duplicateSuccess: 'The theme has been successfully duplicated',
+      duplicateFailure: 'Failed to duplicate theme.',
+      duplicateTitle: 'Duplicate theme',
+      duplicateSubmit: 'Duplicate theme',
+      duplicateNameLabel: 'Theme name',
+      duplicateNamePlaceholder: 'Enter theme name',
+    },
+    team: {
+      title: 'Team',
+      newButton: 'Invite team member',
+      empty: 'No team members yet.',
+      columns: {
+        name: 'Name',
+        email: 'Email',
+        role: 'Role',
+      },
+      invitePending: 'Invite pending',
+      cancelInviteMenuItem: 'Cancel invite',
+      changeRoleMenuItem: 'Change role',
+      transferOwnerMenuItem: 'Transfer ownership',
+      removeMenuItem: 'Remove member',
+      roles: {
+        admin: 'Admin',
+        viewer: 'Viewer',
+        owner: 'Owner',
+      },
+      invite: {
+        title: 'Invite team member',
+        nameLabel: 'Name',
+        namePlaceholder: 'Enter member name',
+        emailLabel: 'Email',
+        emailPlaceholder: 'Enter member email',
+        roleLabel: 'Role',
+        rolePlaceholder: 'Select a role',
+        submit: 'Send invite',
+        failure: 'Failed to send invite.',
+        limitTitle: 'Maximum team members reached',
+        limitDescriptionPrefix:
+          "You have reached the maximum number of members allowed on your current plan. To add more members, you'll have to ",
+        upgradeInline: 'Upgrade your plan',
+        upgradeButton: 'Upgrade',
+      },
+      changeRole: {
+        title: 'Change team member role',
+        roleLabel: 'Role',
+        rolePlaceholder: 'Select a role',
+        submit: 'Change role',
+        failure: 'Failed to change role.',
+      },
+      cancelInvite: {
+        title: 'Cancel invite',
+        description:
+          "Cancel the pending invite to <strong>{{email}}</strong>? They won't be able to join unless you re-invite them.",
+        cancelButton: 'Cancel',
+        confirmButton: 'Cancel invite',
+        failure: 'Failed to cancel invite.',
+      },
+      remove: {
+        title: 'Remove member',
+        description:
+          "Remove <strong>{{email}}</strong> from this team? They'll lose access to this project immediately. You can re-invite them later.",
+        cancelButton: 'Cancel',
+        confirmButton: 'Remove member',
+        failure: 'Failed to remove member.',
+      },
+      transferOwner: {
+        title: 'Transfer account ownership',
+        description:
+          "Make <strong>{{name}}</strong> the new owner? You'll lose your owner privileges and won't be able to undo this.",
+        cancelButton: 'Cancel',
+        confirmButton: 'Transfer ownership',
+        failure: 'Failed to transfer ownership.',
+      },
+    },
+    billing: {
+      title: 'Billing',
+      upgradeIconLabel: 'Upgrade',
+      plans: {
+        hobby: 'Hobby',
+        starter: 'Starter',
+        growth: 'Growth',
+        business: 'Business',
+      },
+      planDescriptions: {
+        hobby: 'For individual hobbyists',
+        starter: 'For small teams and startups',
+        growth: 'For growing companies',
+        business: 'For large companies',
+      },
+      support: {
+        community: 'Community support',
+        email: 'Email support',
+        priority: 'Priority support',
+      },
+      cardFeatures: {
+        everythingIn: 'Everything in {{plan}}, plus',
+        unlimitedContent: 'Unlimited content',
+        sessions: '{{value}} sessions/month',
+        teamMembers: '{{value}} team members',
+        teamMembersUnlimited: 'Unlimited team members',
+        dataRetentionYears: '{{value}} years data retention',
+        dataRetentionUnlimited: 'Unlimited data retention',
+        environments: '{{value}} environments',
+        environmentsUnlimited: 'Unlimited environments',
+        apiRate: '{{rate}} API requests/min',
+      },
+      buttons: {
+        getStarted: 'Get started',
+        upgrade: 'Upgrade',
+        downgrade: 'Downgrade',
+        currentPlan: 'Current Plan',
+        loading: 'Loading...',
+        comingSoon: 'Coming Soon',
+        renewSubscription: 'Renew Subscription',
+        manageSubscription: 'Manage Subscription',
+      },
+      currentPlanBadge: 'Current Plan',
+      perMonth: '/month',
+      unlimited: 'Unlimited',
+      yearOne: '1 Year',
+      yearsN: '{{value}} Years',
+      sections: {
+        billingPlan: 'Billing plan',
+        billingPlanDescription: 'View and manage your billing plan',
+        plans: 'Plans',
+        plansDescription: 'You can upgrade or change your plan here',
+        saveWithYearly: 'Save with yearly billing',
+      },
+      usage: {
+        currentPlanLabel: 'Current plan: ',
+        expiresOn: 'Expires on {{date}}',
+        monthlySessions: 'Monthly sessions',
+        percentUsed: '{{percent}}% used',
+        efficientUsage: 'Efficient usage',
+        considerUpgrading: 'Consider upgrading',
+        exceededWarning:
+          'Usage exceeded limit. Please upgrade your plan to continue using all features.',
+        hiddenAfterExceed: 'All content will be hidden after exceeding the limit.',
+      },
+      comparison: {
+        sections: {
+          usage: 'Usage',
+          content: 'Content',
+          team: 'Team',
+          features: 'Features',
+          support: 'Support & service',
+        },
+        rows: {
+          price: 'Price (monthly billing)',
+          endUsers: 'End users',
+          sessions: 'Sessions (Monthly)',
+          dataRetention: 'Data Retention',
+          environments: 'Environments',
+          apiRate: 'API rate limit (requests/min)',
+          upgradeable: 'All usage limits can be upgraded',
+          flows: 'Flows',
+          checklists: 'Checklists',
+          launchers: 'Launchers',
+          surveys: 'Surveys/NPS',
+          banners: 'Banners',
+          eventTrackers: 'Event Trackers',
+          resourceCenter: 'Resource Center',
+          noBranding: 'No Usertour-branding',
+          teamMembers: 'Team members',
+          customTheming: 'Custom theming',
+          customAttributes: 'Custom user attributes',
+          flowTriggering: 'Automatic, segmented flow triggering',
+          versionHistory: 'Version history',
+          companyProfiles: 'Company profiles and events',
+          localization: 'Localization (coming soon)',
+          integrations: 'Integrations (coming soon)',
+          alerting: 'Alerting (coming soon)',
+        },
+      },
+    },
+    subscription: {
+      title: 'Subscription',
+      heading: 'Subscription',
+      description: 'View and manage your subscription',
+      currentPlanLabel: 'Current plan: ',
+      expiredOn: 'Expired on {{date}}',
+      expiresOn: 'Expires on {{date}}',
+      daysRemaining: 'Days Remaining: {{count}}',
+      projectIdLabel: 'Project ID',
+      projectIdDescription: 'The unique, read-only project ID.',
+      copy: 'Copy',
+      projectIdCopiedToast: 'Project ID {{id}} has been copied to clipboard',
+      uploadLicenseLabel: 'Upload License',
+      uploadLicenseDescription:
+        'Paste the project license to unlock business/enterprise features. Existing license content is not shown after saving.',
+      uploadLicensePlaceholder: 'Sensitive - write only',
+      uploadLicenseButton: 'Upload License',
+      uploadLicenseUpdating: 'Updating...',
+      uploadLicenseEmpty: 'License cannot be empty',
+      uploadLicenseSuccess: 'License updated',
+    },
+    api: {
+      title: 'API keys for {{environment}}',
+      newButton: 'New API key',
+      columns: {
+        name: 'Name',
+        key: 'Key',
+        createdAt: 'Created at',
+      },
+      revealMenuItem: 'Reveal API key',
+      deleteMenuItem: 'Delete',
+      deleteResource: 'API key',
+      empty: 'No API keys found.',
+      deleteSuccess: 'API key deleted successfully',
+      deleteFailure: 'Failed to delete API key',
+      tokenCopiedToast: 'Token copied to clipboard',
+      tokenCopyFailedToast: 'Failed to copy token. Please copy it manually.',
+      keyDialogDescription: 'Please copy your API key now.',
+      keyDialogLoading: 'Loading...',
+      keyDialogCreatedTitle: 'New API key created',
+      createTitle: 'New API key',
+      createNameLabel: 'Key Name',
+      createNamePlaceholder: 'Enter key name',
+      createButton: 'Create API key',
+      creating: 'Creating...',
+      createSuccess: 'API key created successfully',
+      createFailure: 'Failed to create API key.',
+      environmentMissing: 'Environment not found.',
+      headerBody:
+        "API keys authenticate backend calls to Usertour's REST API for updating user properties and tracking events.",
+      headerEnvironment:
+        "Each environment has its own keys; you're viewing <strong>{{environment}}</strong>. Switch via the environment menu in the top-left.",
+      headerDocs: 'Read the API reference',
+    },
+    integrations: {
+      title: 'Integrations for {{environment}}',
+      headerBody:
+        'With integrations, you can stream Usertour-generated events to other external providers.',
+      headerEnvironmentNote:
+        'Note that integrations are tied to a single environment - you are currently looking at {{environment}} environment.',
+      headerDocs: 'Read the Integrations documentation.',
+      list: {
+        connect: 'Connect',
+        manage: 'Manage',
+        connected: 'Connected',
+      },
+      enableFailedToast: 'Failed to enable integration',
+      disableFailedToast: 'Failed to disable integration',
+      providerCard: {
+        usertourLogoAlt: 'Usertour logo',
+        // {{provider}} resolves to the provider's display name
+        // (e.g. "Mixpanel", "Heap"). The headline is the toggle label
+        // shown next to the on/off switch.
+        headline: 'Stream events from Usertour to {{provider}}',
+        tooltip:
+          'When enabled, Usertour-generated events will be continuously streamed into your {{provider}} project.',
+        configureSettings: 'Configure event streaming settings',
+        apiKeyLabel: 'API Key:',
+        apiKeyPlaceholder: 'Type API Key here',
+        regionLabel: 'Region:',
+        save: 'Save',
+        savedToast: 'Settings saved successfully',
+        saveFailedToast: 'Failed to save settings',
+        // Per-provider overrides for the key input label / placeholder.
+        // PostHog and HubSpot disambiguate which credential type to paste
+        // (PostHog has Personal vs Project API keys; HubSpot's private-app
+        // flow uses access tokens, not API keys); generic "API Key" here
+        // would let users paste the wrong credential and silently fail
+        // the data sync server-side.
+        heapKeyLabel: 'Heap App ID:',
+        heapKeyPlaceholder: 'Type Heap App ID here',
+        mixpanelKeyLabel: 'Project Token:',
+        mixpanelKeyPlaceholder: 'Type Project Token here',
+        segmentKeyLabel: 'Write Key:',
+        segmentKeyPlaceholder: 'Type Write Key here',
+        posthogKeyLabel: 'Personal API key:',
+        posthogKeyPlaceholder: 'Type Personal API key here',
+        hubspotKeyLabel: 'Private App access token:',
+        hubspotKeyPlaceholder: 'Type Private App access token here',
+      },
+      providerHeaderReadGuide: 'Read the {{provider}} guide',
+      salesforce: {
+        connectTitle: 'Connect {{name}}',
+        connectBody:
+          'Connect your Salesforce account to Usertour to enable real-time synchronization. Once connected, you can sync Salesforce fields with Usertour, stream Usertour events into Salesforce as Timeline Events, and use these events to trigger automated workflows.',
+        connectButton: 'Connect to Salesforce',
+        loading: 'Loading...',
+        authUrlFailedToast: 'Failed to get Salesforce auth URL',
+        // Salesforce connection card on the integration detail page.
+        connectionTitle: '{{name}} connection',
+        connectedAs: 'Connected as <strong>{{email}}</strong> at <strong>{{organization}}</strong>',
+        reconnect: 'Reconnect',
+        disconnect: 'Disconnect',
+        disconnectSuccessToast: 'Successfully disconnected from Salesforce',
+        disconnectFailureToast: 'Failed to disconnect from Salesforce',
+        existingMappingsTitle: 'Existing Object Mappings',
+        newMappingCta: 'Set up a new mapping between Salesforce and Usertour objects',
+      },
+      objectMapping: {
+        // Shared section labels used by both the editable panel and the
+        // read-only summary.
+        matchBy: 'Match objects by',
+        sourceToTargetTitle: 'Fields to sync from source to target',
+        targetToSourceTitle: 'Fields to sync from target to source',
+        // Inline switch label with two highlighted spans. `<user>` slot
+        // wraps "User events" (Usertour side), `<contact>` wraps "Contact
+        // activity" (Salesforce side).
+        streamSwitch: 'Stream <user>User events</user> → <contact>Contact activity</contact>',
+        fieldPlaceholder: 'Select field',
+        addButton: 'Add',
+        newBadge: 'New',
+        searchPlaceholder: 'Search {{kind}}...',
+        selectEmpty: 'No items found.',
+        selectCreateAttribute: 'Create new attribute',
+        // Salesforce + Usertour object names rendered in the picker.
+        // Keys match the technical `name` field; missing keys fall back
+        // to the raw name (e.g. for custom objects).
+        objectLabels: {
+          salesforce: {
+            Contact: 'Contact',
+            Account: 'Account',
+            Lead: 'Lead',
+            Opportunity: 'Opportunity',
+          },
+          usertour: {
+            User: 'User',
+            Company: 'Company',
+          },
+        },
+        dialog: {
+          salesforceObjectLabel: 'Salesforce Object',
+          usertourObjectLabel: 'Usertour Object',
+          salesforceObjectPlaceholder: 'Select Salesforce object',
+          usertourObjectPlaceholder: 'Select Usertour object',
+          titleSelectObjects: 'Select objects',
+          titleEditMapping: 'Edit object mapping',
+          descriptionSelectObjects:
+            'Choose which Salesforce object to map to which Usertour object.',
+          descriptionEditMapping: 'Modify the mapping between Salesforce and Usertour objects.',
+          descriptionEditFields: 'Modify the field mappings and settings.',
+          cancelButton: 'Cancel',
+          continueButton: 'Continue',
+          backButton: 'Back',
+          saveMappingButton: 'Save mapping',
+          updateMappingButton: 'Update mapping',
+          bothObjectsRequiredToast: 'Please select both Salesforce and Usertour objects',
+          missingDataToast: 'Missing integration or mapping data',
+          saveSuccessToastCreate: 'Object mapping created successfully',
+          saveSuccessToastUpdate: 'Object mapping updated successfully',
+          saveFailureToastCreate: 'Failed to create object mapping',
+          saveFailureToastUpdate: 'Failed to update object mapping',
+        },
+        readonly: {
+          editAction: 'Edit',
+          deleteAction: 'Delete',
+          deleteDialogTitle: 'Delete Object Mapping',
+          deleteDialogDescription:
+            'Are you sure you want to delete the mapping between <strong>{{source}}</strong> and <strong>{{target}}</strong>? This action cannot be undone.',
+          deleteSuccessToast: 'Object mapping deleted successfully',
+          deleteFailureToast: 'Failed to delete object mapping',
+          lastSynced: 'Last synced: {{date}}',
+        },
+      },
+      mixpanelCohorts: {
+        toggleLabel: 'Cohort sync from Mixpanel',
+        configureSettings: 'Configure cohort synchronization settings',
+        webhookUrlLabel: 'Webhook URL',
+        webhookCopiedToast: 'Webhook URL copied to clipboard',
+        userIdPropertyLabel: 'Mixpanel User ID Property (for cohort sync):',
+        userIdPropertyPlaceholder: 'Type Mixpanel User ID Property here',
+        save: 'Save',
+      },
+    },
+  },
   twoFactor: {
     title: 'Two-factor authentication',
     description:
@@ -18,6 +657,7 @@ const translations = {
       'Two-factor authentication is an enterprise feature in self-hosted mode. Upgrade your license to unlock it.',
     setup: {
       title: 'Set up two-factor authentication',
+      qrCodeAlt: 'QR code',
       step1Title: '1. Scan QR code',
       step1Description:
         'Scan this QR code with an authenticator app such as Google Authenticator, 1Password, or Authy.',
@@ -32,6 +672,7 @@ const translations = {
       downloadButton: 'Download',
       copyButton: 'Copy all',
       copiedToast: 'Recovery codes copied',
+      copyFailedToast: 'Failed to copy recovery codes. Try the Download button.',
       confirmSaved: 'I have saved my recovery codes',
       finishButton: 'Finish',
       cancelButton: 'Cancel',
@@ -54,6 +695,7 @@ const translations = {
       title: 'Regenerate recovery codes',
       description: 'A new set of recovery codes will replace your existing ones.',
       confirmButton: 'Regenerate',
+      noCodesReturned: 'No new recovery codes were returned. Please try again.',
     },
     codeLabel: {
       authenticator: 'Authenticator code',
@@ -232,6 +874,7 @@ const translations = {
     addFilter: 'Add filter',
     rowsSelected: '{{count}} selected',
     clearSelection: 'Clear selection',
+    unknownError: 'Something went wrong.',
     membership: {
       attributes: 'Membership attributes',
       none: 'No membership attributes',
@@ -250,23 +893,26 @@ const translations = {
     },
     dialogs: {
       removeUsersFromSegment: {
-        title: 'Confirm removing users from segment',
-        description: 'Confirm removing the selected users from {{segmentName}}?',
-        confirmButton: 'Yes, remove {{count}} users',
+        title: 'Remove from segment',
+        description:
+          'Remove the selected users from <strong>{{segmentName}}</strong>? They will no longer match this segment until added again.',
+        confirmButton_one: 'Remove user',
+        confirmButton_other: 'Remove {{count}} users',
       },
       deleteUsers: {
-        titleSingle: 'Confirm deleting the user',
-        titleMultiple: 'Confirm deleting the users',
-        description:
-          'This will delete all traces of the {{userType}} from your account. Including in analytics.',
-        descriptionConfirm: 'Confirm deleting the {{userType}}?',
-        confirmButtonSingle: 'Yes, delete this user',
-        confirmButtonMultiple: 'Yes, delete {{count}} users',
+        title_one: 'Delete user',
+        title_other: 'Delete users',
+        description_one:
+          'Delete this user and all their analytics data? This action cannot be undone.',
+        description_other:
+          'Delete these {{count}} users and all their analytics data? This action cannot be undone.',
+        confirmButton_one: 'Delete user',
+        confirmButton_other: 'Delete {{count}} users',
       },
       deleteSegment: {
         title: 'Delete segment',
-        description: 'Confirm deleting {{segmentName}}?',
-        confirmButton: 'Yes, delete segment',
+        description: 'Delete <strong>{{segmentName}}</strong>? This action cannot be undone.',
+        confirmButton: 'Delete segment',
       },
     },
     empty: {
@@ -312,17 +958,17 @@ const translations = {
       },
     },
     segments: {
-      create: 'Create User Segment',
-      update: 'Update User Segment',
+      create: 'New user segment',
+      update: 'Edit user segment',
       form: {
         name: 'Name',
         namePlaceholder: 'Enter user segment name',
-        segmentType: 'Segment Type',
+        segmentType: 'Segment type',
         segmentTypeTooltip: 'Determines which kind of segment can be set.',
         filter: 'Filter',
         manual: 'Manual',
-        createSegment: 'Create Segment',
-        updateSegment: 'Update Segment',
+        createSegment: 'Create user segment',
+        updateSegment: 'Save user segment',
       },
       tooltips: {
         editName: 'Edit user segment name',
@@ -390,9 +1036,11 @@ const translations = {
         noUsersSelected: 'No users selected. Please select at least one user.',
         invalidSegment: 'Invalid segment selected.',
         addFailed: 'Failed to add users to segment.',
+        removeFailed: 'Failed to remove users from segment.',
       },
       users: {
-        usersDeleted: '{{count}} {{userType}} has been successfully deleted',
+        usersDeleted_one: 'User deleted',
+        usersDeleted_other: '{{count}} users deleted',
       },
     },
   },
@@ -408,17 +1056,15 @@ const translations = {
       empty: 'No questions found',
     },
     delete: {
-      title: 'Confirm',
+      title: 'Delete session',
       description:
-        'This will delete all traces of this session from your account, including in analytics. You should probably only do this for testing reasons.',
-      descriptionConfirm: 'Confirm deleting the session?',
-      confirmButton: 'Yes, delete session',
+        "Delete this session and all its analytics traces? Intended for testing — this can't be undone.",
+      confirmButton: 'Delete session',
     },
     end: {
-      title: 'Confirm',
-      description: 'This will close the content for the user.',
-      descriptionConfirm: 'Confirm ending the session?',
-      confirmButton: 'Yes, end session',
+      title: 'End session',
+      description: 'End this session for the user? The content closes immediately.',
+      confirmButton: 'End session',
     },
     cancel: 'Cancel',
     toast: {
@@ -429,6 +1075,30 @@ const translations = {
     },
   },
   contents: {
+    // Per-content-type lowercased noun, interpolated into dialog copy
+    // ('New {{type}}', 'Create {{type}}', 'Delete {{type}}', etc.).
+    // Keep lowercase + sentence-case-friendly — these slot mid-sentence.
+    types: {
+      flow: 'flow',
+      checklist: 'checklist',
+      launcher: 'launcher',
+      banner: 'banner',
+      tracker: 'event tracker',
+      resourceCenter: 'resource center',
+    },
+    create: {
+      title: 'New {{type}}',
+      nameLabel: 'Name',
+      namePlaceholder: 'Enter {{type}} name',
+      submit: 'Create {{type}}',
+      failure: 'Failed to create {{type}}.',
+    },
+    list: {
+      // Trigger button on each content-type list page that opens the
+      // ContentCreateForm dialog. Same `New {{type}}` shape as the
+      // dialog title but a separate key so the surfaces can diverge.
+      newButton: 'New {{type}}',
+    },
     detail: {
       actionsMenu: 'Content actions',
       autosaved: 'Autosaved {{when}} ago',
@@ -445,6 +1115,18 @@ const translations = {
         emptyConditionsHint: "Rule won't activate until you add at least one condition.",
       },
     },
+    deleteDialog: {
+      // {{contentType}} is the lowercased noun for the content kind
+      // — 'flow', 'checklist', 'banner', 'launcher', etc.
+      title: 'Delete {{contentType}}',
+      description:
+        'Delete <strong>{{name}}</strong> and all its data? This action cannot be undone.',
+      confirmButton: 'Delete {{contentType}}',
+      cancelButton: 'Cancel',
+      invalidData: 'Invalid content data',
+      deleteSuccess: '{{contentType}} "{{name}}" deleted',
+      deleteFailure: 'Failed to delete content',
+    },
   },
   companies: {
     actions: {
@@ -457,23 +1139,29 @@ const translations = {
     },
     dialogs: {
       removeCompaniesFromSegment: {
-        title: 'Confirm removing companies from segment',
-        description: 'Confirm removing the selected companies from {{segmentName}}?',
-        confirmButton: 'Yes, remove {{count}} companies',
+        title: 'Remove from segment',
+        description:
+          'Remove the selected companies from <strong>{{segmentName}}</strong>? They will no longer match this segment until added again.',
+        confirmButton_one: 'Remove company',
+        confirmButton_other: 'Remove {{count}} companies',
       },
       deleteCompanies: {
-        titleSingle: 'Confirm deleting the company',
-        titleMultiple: 'Confirm deleting the companies',
-        description:
-          'This will delete all traces of the {{companyType}} from your account. Including in analytics.',
-        descriptionConfirm: 'Confirm deleting the {{companyType}}?',
-        confirmButtonSingle: 'Yes, delete this company',
-        confirmButtonMultiple: 'Yes, delete {{count}} companies',
+        title_one: 'Delete company',
+        title_other: 'Delete companies',
+        description_one:
+          'Delete this company and all its analytics data? This action cannot be undone.',
+        description_other:
+          'Delete these {{count}} companies and all their analytics data? This action cannot be undone.',
+        confirmButton_one: 'Delete company',
+        confirmButton_other: 'Delete {{count}} companies',
       },
       deleteSegment: {
         title: 'Delete segment',
-        description: 'Confirm deleting {{segmentName}}?',
-        confirmButton: 'Yes, delete segment',
+        description: 'Delete <strong>{{segmentName}}</strong>? This action cannot be undone.',
+        confirmButton: 'Delete segment',
+        deleteSuccess: 'Segment "{{segmentName}}" deleted',
+        invalidData: 'Invalid segment data',
+        deleteFailure: 'Failed to delete segment',
       },
     },
     empty: {
@@ -512,17 +1200,17 @@ const translations = {
       },
     },
     segments: {
-      create: 'Create Company Segment',
-      update: 'Update Company Segment',
+      create: 'New company segment',
+      update: 'Edit company segment',
       form: {
         name: 'Name',
         namePlaceholder: 'Enter company segment name',
-        segmentType: 'Segment Type',
+        segmentType: 'Segment type',
         segmentTypeTooltip: 'Determines which kind of segment can be set.',
         filter: 'Filter',
         manual: 'Manual',
-        createSegment: 'Create Segment',
-        updateSegment: 'Update Segment',
+        createSegment: 'Create company segment',
+        updateSegment: 'Save company segment',
       },
       tooltips: {
         editName: 'Edit company segment name',
@@ -555,15 +1243,17 @@ const translations = {
         noCompaniesSelected: 'No companies selected. Please select at least one company.',
         invalidSegment: 'Invalid segment selected.',
         addFailed: 'Failed to add companies to segment.',
+        removeFailed: 'Failed to remove companies from segment.',
       },
       companies: {
-        companiesDeleted: '{{count}} {{companyType}} has been successfully deleted',
+        companiesDeleted_one: 'Company deleted',
+        companiesDeleted_other: '{{count}} companies deleted',
       },
     },
   },
   themes: {
     createForm: {
-      title: 'Create theme',
+      title: 'New theme',
       name: {
         label: 'Name',
         placeholder: 'Enter theme name',
@@ -572,7 +1262,7 @@ const translations = {
       isDefault: {
         label: 'Set as default theme',
       },
-      submit: 'Submit',
+      submit: 'Create theme',
       cancel: 'Cancel',
       toast: {
         success: 'Theme created successfully',
@@ -581,7 +1271,7 @@ const translations = {
       },
     },
     listHeader: {
-      newTheme: 'New Theme',
+      newTheme: 'New theme',
       description:
         'With themes, you can make flows and other Usertour content look like a native part of your app.',
     },

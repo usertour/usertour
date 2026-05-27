@@ -11,18 +11,14 @@ import { cn } from '@usertour/tailwind';
 
 export type LocateItem = (typeof locates)[0];
 
-interface LocateSelectProps extends PopoverProps {
+export interface LocateSelectProps extends PopoverProps {
   defaultValue?: string;
   onSelect?: (item: LocateItem) => void;
   popperContentClass?: string;
 }
 
-export const LocateSelect = ({
-  defaultValue,
-  onSelect,
-  popperContentClass,
-  ...props
-}: LocateSelectProps) => {
+export const LocateSelect = (props: LocateSelectProps) => {
+  const { defaultValue, onSelect, popperContentClass, ...rest } = props;
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LocateItem | undefined>(
     locates.find((item) => item.locale === defaultValue),
@@ -37,7 +33,7 @@ export const LocateSelect = ({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} {...props}>
+    <Popover open={open} onOpenChange={setOpen} {...rest}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

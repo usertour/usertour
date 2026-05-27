@@ -56,13 +56,8 @@ export const SignInForm = ({
   const schema = useMemo(
     () =>
       z.object({
-        email: z
-          .string({ required_error: t('auth.errors.invalidEmail') })
-          .email(t('auth.errors.invalidEmail')),
-        password: z
-          .string({ required_error: t('auth.errors.passwordRequired') })
-          .min(8)
-          .max(160),
+        email: z.string().email(t('auth.errors.invalidEmail')),
+        password: z.string().min(8).max(160),
       }),
     [t],
   );

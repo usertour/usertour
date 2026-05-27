@@ -55,7 +55,7 @@ export const ContentRestoreForm = (props: ContentRestoreFormProps) => {
 
   return (
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Restore version </DialogTitle>
         </DialogHeader>

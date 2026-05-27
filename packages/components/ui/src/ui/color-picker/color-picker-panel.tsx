@@ -35,66 +35,84 @@ import {
 // Sub Components
 // ============================================================================
 
+interface IconTooltipProps {
+  tooltip: string;
+  children: React.ReactNode;
+}
+
 // Simple tooltip wrapper for icons
-const IconTooltip = React.memo(
-  ({ tooltip, children }: { tooltip: string; children: React.ReactNode }) => (
+const IconTooltip = React.memo((props: IconTooltipProps) => {
+  const { tooltip, children } = props;
+  return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent className="max-w-xs bg-foreground">{tooltip}</TooltipContent>
     </Tooltip>
-  ),
-);
+  );
+});
 IconTooltip.displayName = 'IconTooltip';
 
 // Color button used in both Tailwind palette and recent colors
-const ColorButton = React.memo(({ color, tooltip, onClick, children }: ColorButtonProps) => (
-  <IconTooltip tooltip={tooltip}>
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
-      }}
-      className="w-full aspect-square h-auto rounded-none transition-transform hover:scale-125 hover:bg-transparent"
-      style={{ backgroundColor: color, borderColor: color }}
-    >
-      {children}
-    </Button>
-  </IconTooltip>
-));
+const ColorButton = React.memo((props: ColorButtonProps) => {
+  const { color, tooltip, onClick, children } = props;
+  return (
+    <IconTooltip tooltip={tooltip}>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.();
+        }}
+        className="w-full aspect-square h-auto rounded-none transition-transform hover:scale-125 hover:bg-transparent"
+        style={{ backgroundColor: color, borderColor: color }}
+      >
+        {children}
+      </Button>
+    </IconTooltip>
+  );
+});
 ColorButton.displayName = 'ColorButton';
 
-// Error popover for invalid hex input
-const ErrorPopover = React.memo(
-  ({
-    error,
-    children,
-  }: {
-    error?: string;
-    children: React.ReactNode;
-  }) => {
-    if (!error) return <>{children}</>;
+interface ErrorPopoverProps {
+  error?: string;
+  children: React.ReactNode;
+}
 
-    return (
-      <Tooltip open={!!error}>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent
-          side="bottom"
-          align="start"
-          className="bg-destructive text-destructive-foreground border-0"
-        >
-          {error}
-        </TooltipContent>
-      </Tooltip>
-    );
-  },
-);
+// Error popover for invalid hex input
+const ErrorPopover = React.memo((props: ErrorPopoverProps) => {
+  const { error, children } = props;
+  if (!error) return <>{children}</>;
+
+  return (
+    <Tooltip open={!!error}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent
+        side="bottom"
+        align="start"
+        className="bg-destructive text-destructive-foreground border-0"
+      >
+        {error}
+      </TooltipContent>
+    </Tooltip>
+  );
+});
 ErrorPopover.displayName = 'ErrorPopover';
 
+interface ColorInputProps {
+  inputColor: string;
+  displayColor: string;
+  isAuto: boolean;
+  showAutoButton: boolean;
+  error?: string;
+  onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: () => void;
+  onRemove: () => void;
+}
+
 // Color input section at the top
-const ColorInput = React.memo(
-  ({
+const ColorInput = React.memo((props: ColorInputProps) => {
+  const {
     inputColor,
     displayColor,
     isAuto,
@@ -103,16 +121,8 @@ const ColorInput = React.memo(
     onInputChange,
     onSubmit,
     onRemove,
-  }: {
-    inputColor: string;
-    displayColor: string;
-    isAuto: boolean;
-    showAutoButton: boolean;
-    error?: string;
-    onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-    onSubmit: () => void;
-    onRemove: () => void;
-  }) => (
+  } = props;
+  return (
     <div className="flex flex-row items-center gap-2">
       <div className="w-6 h-6 shrink-0 rounded border" style={{ backgroundColor: displayColor }} />
       <ErrorPopover error={error}>
@@ -136,13 +146,18 @@ const ColorInput = React.memo(
         </IconTooltip>
       )}
     </div>
-  ),
-);
+  );
+});
 ColorInput.displayName = 'ColorInput';
 
+interface TailwindPaletteProps {
+  onColorClick: (color: string) => void;
+}
+
 // Tailwind color palette grid
-const TailwindPalette = React.memo(
-  ({ onColorClick }: { onColorClick: (color: string) => void }) => (
+const TailwindPalette = React.memo((props: TailwindPaletteProps) => {
+  const { onColorClick } = props;
+  return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm">Tailwind CSS colors</span>
@@ -174,75 +189,70 @@ const TailwindPalette = React.memo(
         )}
       </div>
     </div>
-  ),
-);
+  );
+});
 TailwindPalette.displayName = 'TailwindPalette';
 
-// Recently used colors section
-const RecentColors = React.memo(
-  ({
-    colors,
-    isEditing,
-    onEditToggle,
-    onColorClick,
-    onColorRemove,
-  }: {
-    colors: string[];
-    isEditing: boolean;
-    onEditToggle: (editing: boolean) => void;
-    onColorClick: (color: string) => void;
-    onColorRemove: (color: string) => void;
-  }) => {
-    if (colors.length === 0) return null;
+interface RecentColorsProps {
+  colors: string[];
+  isEditing: boolean;
+  onEditToggle: (editing: boolean) => void;
+  onColorClick: (color: string) => void;
+  onColorRemove: (color: string) => void;
+}
 
-    return (
-      <div className="mt-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm">Recently used</span>
-          <div className="w-10 flex justify-end">
-            {isEditing ? (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditToggle(false);
-                }}
-                className="h-6 p-0"
-              >
-                Done
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditToggle(true);
-                }}
-                className="h-6 w-6 text-muted-foreground hover:text-foreground"
-              >
-                <EditIcon className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="grid grid-cols-10 gap-px">
-          {colors.map((color) => (
-            <ColorButton
-              key={color}
-              color={color}
-              tooltip={formatColorTooltip(color)}
-              onClick={() => (isEditing ? onColorRemove(color) : onColorClick(color))}
+// Recently used colors section
+const RecentColors = React.memo((props: RecentColorsProps) => {
+  const { colors, isEditing, onEditToggle, onColorClick, onColorRemove } = props;
+  if (colors.length === 0) return null;
+
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm">Recently used</span>
+        <div className="w-10 flex justify-end">
+          {isEditing ? (
+            <Button
+              variant="link"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditToggle(false);
+              }}
+              className="h-6 p-0"
             >
-              {isEditing && <Delete2Icon className="w-3 h-3 text-white drop-shadow-sm" />}
-            </ColorButton>
-          ))}
+              Done
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditToggle(true);
+              }}
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            >
+              <EditIcon className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
-    );
-  },
-);
+      <div className="grid grid-cols-10 gap-px">
+        {colors.map((color) => (
+          <ColorButton
+            key={color}
+            color={color}
+            tooltip={formatColorTooltip(color)}
+            onClick={() => (isEditing ? onColorRemove(color) : onColorClick(color))}
+          >
+            {isEditing && <Delete2Icon className="w-3 h-3 text-white drop-shadow-sm" />}
+          </ColorButton>
+        ))}
+      </div>
+    </div>
+  );
+});
 RecentColors.displayName = 'RecentColors';
 
 // ============================================================================

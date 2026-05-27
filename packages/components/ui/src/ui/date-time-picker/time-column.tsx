@@ -1,7 +1,7 @@
 import { cn } from '@usertour/tailwind';
 import { useEffect, useRef } from 'react';
 
-interface Props {
+export interface TimeColumnProps {
   value: number;
   onChange: (next: number) => void;
   // The full range of values to display, e.g. [0..23] for hours.
@@ -14,7 +14,8 @@ const ROW_HEIGHT = 28;
 // Single scrollable column of zero-padded numbers (00..NN). Used for hour and
 // minute columns of DateTimePicker. Scrolls so the selected row is centered
 // when value changes; keeps the scroll local to the column (never the page).
-export function TimeColumn({ value, onChange, range, className }: Props) {
+export const TimeColumn = (props: TimeColumnProps) => {
+  const { value, onChange, range, className } = props;
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Center the selected row when value changes. Use scrollTop math instead of
@@ -54,4 +55,4 @@ export function TimeColumn({ value, onChange, range, className }: Props) {
       })}
     </div>
   );
-}
+};

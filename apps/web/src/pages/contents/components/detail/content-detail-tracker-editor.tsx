@@ -153,8 +153,8 @@ const TrackerEventSelector = ({
         )}
       </div>
       <EventCreateDialog
-        isOpen={openCreateDialog}
-        onClose={() => setOpenCreateDialog(false)}
+        open={openCreateDialog}
+        onOpenChange={setOpenCreateDialog}
         onCreated={handleCreated}
       />
     </div>

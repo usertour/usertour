@@ -9,7 +9,7 @@ import { TimeColumn } from './time-column';
 
 type DateTimePickerMode = 'date' | 'datetime';
 
-interface Props {
+export interface DateTimePickerProps {
   value: Date | undefined;
   onChange: (next: Date | undefined) => void;
   // 'datetime' (default) renders calendar + hour + minute columns and the
@@ -56,15 +56,8 @@ const DEFAULT_PLACEHOLDER: Record<DateTimePickerMode, string> = {
 // does not fire until the user actually picks something. Picking any of
 // date / hour / minute commits a Date built from the current draft (date
 // defaults to today, time defaults to "now" if either side is missing).
-export function DateTimePicker({
-  value,
-  onChange,
-  mode = 'datetime',
-  disabled,
-  placeholder,
-  className,
-  zIndex,
-}: Props) {
+export const DateTimePicker = (props: DateTimePickerProps) => {
+  const { value, onChange, mode = 'datetime', disabled, placeholder, className, zIndex } = props;
   const [open, setOpen] = useState(false);
 
   // Visual draft — what the calendar / time columns reflect when the
@@ -162,4 +155,4 @@ export function DateTimePicker({
       </PopoverContent>
     </Popover>
   );
-}
+};

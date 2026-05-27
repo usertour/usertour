@@ -23,8 +23,12 @@ const SheetOverlay = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
+    // Unified with Dialog and AlertDialog: light mode = 20% gray-900,
+    // dark mode = 40% gray-900. Sheet content keeps its existing chrome
+    // (flush-to-edge per-side border + medium shadow) since the side-
+    // panel visual archetype differs from centered modals.
     className={cn(
-      'fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-50 bg-gray-900/20 dark:bg-gray-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
     )}
     {...props}

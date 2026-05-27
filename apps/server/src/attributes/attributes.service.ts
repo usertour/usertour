@@ -40,8 +40,16 @@ export class AttributesService {
   }
 
   async delete(id: string) {
-    const deleted = await this.prisma.attribute.delete({
-      where: { id },
+    // Clear AttributeOnEvent join rows before deleting the Attribute.
+    // The relation has Prisma's default `onDelete: Restrict`, so a bare
+    // `attribute.delete` throws P2003 the moment any event has tracked
+    // this attribute. Mirrors what `events.service.ts.delete` already
+    // does for the opposite side of the same join. Historical event
+    // payloads keep their data — only the definition-layer link is
+    // severed.
+    const deleted = await this.prisma.$transaction(async (tx) => {
+      await tx.attributeOnEvent.deleteMany({ where: { attributeId: id } });
+      return await tx.attribute.delete({ where: { id } });
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(deleted.projectId));
     return deleted;

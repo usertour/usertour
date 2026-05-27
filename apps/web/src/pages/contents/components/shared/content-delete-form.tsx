@@ -1,18 +1,10 @@
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteContentMutation } from '@usertour/hooks';
 import { Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
-import { LoadingButton } from '@/components/molecules/loading-button';
 import { useCallback } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentDeleteFormProps {
@@ -30,63 +22,56 @@ export const ContentDeleteForm = ({
 }: ContentDeleteFormProps) => {
   const { invoke: deleteContent, loading } = useDeleteContentMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
+  // singular noun for the content kind, e.g. 'flow', 'checklist', 'banner'.
   const contentType = getContentTypeMeta(content.type || ContentDataType.FLOW).singular;
   const contentName = content.name;
 
-  const handleDeleteSubmit = useCallback(async () => {
+  const handleConfirm = useCallback(async () => {
     if (!content?.id) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid content data',
-      });
+      toast({ variant: 'destructive', title: t('contents.deleteDialog.invalidData') });
       return;
     }
 
     try {
       const success = await deleteContent(content.id);
-
       if (success) {
         toast({
           variant: 'success',
-          title: `The ${contentType} ${contentName} has been successfully deleted`,
+          title: t('contents.deleteDialog.deleteSuccess', {
+            contentType,
+            name: contentName,
+          }),
         });
         onSubmit(true);
         onOpenChange(false);
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to delete content',
-        });
+        toast({ variant: 'destructive', title: t('contents.deleteDialog.deleteFailure') });
         onSubmit(false);
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
       onSubmit(false);
     }
-  }, [content?.id, contentType, deleteContent, toast, onSubmit, onOpenChange]);
+  }, [content?.id, contentType, contentName, deleteContent, toast, onSubmit, onOpenChange, t]);
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone! The {contentType}{' '}
-            <span className="font-bold text-foreground">{contentName}</span> and all data associated
-            with it will be deleted.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <LoadingButton variant="destructive" onClick={handleDeleteSubmit} loading={loading}>
-            Delete {contentType}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t('contents.deleteDialog.title', { contentType })}
+      description={
+        <Trans
+          i18nKey="contents.deleteDialog.description"
+          values={{ name: contentName }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('contents.deleteDialog.confirmButton', { contentType })}
+      cancelLabel={t('contents.deleteDialog.cancelButton')}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleConfirm}
+      loading={loading}
+    />
   );
 };
 

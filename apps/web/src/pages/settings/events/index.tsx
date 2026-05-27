@@ -1,1 +1,1 @@
-export { SettingsEventsList } from './event-list';
+export { SettingsEventList } from './event-list';

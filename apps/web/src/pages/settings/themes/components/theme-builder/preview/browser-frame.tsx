@@ -1,7 +1,7 @@
 import { RiArrowLeftSLine, RiArrowRightSLine } from '@usertour/icons';
 import { forwardRef, type ReactNode } from 'react';
 
-interface Props {
+export interface BrowserFrameProps {
   children: ReactNode;
   // Optional control slot rendered to the right of the URL bar (used to host
   // the widget switcher inside the frame's chrome).
@@ -15,7 +15,8 @@ interface Props {
 // min-w-[640px] keeps modal / banner widgets renderable when sidebars are
 // pushed wide; overflow gets clipped by the surrounding pane rather than
 // letting the frame collapse below the widget's native size.
-export const BrowserFrame = forwardRef<HTMLDivElement, Props>(({ children, chromeAction }, ref) => {
+export const BrowserFrame = forwardRef<HTMLDivElement, BrowserFrameProps>((props, ref) => {
+  const { children, chromeAction } = props;
   return (
     <div className="flex h-full w-full min-w-[640px] max-w-[1200px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
       {/* Window controls + nav arrows + URL bar */}

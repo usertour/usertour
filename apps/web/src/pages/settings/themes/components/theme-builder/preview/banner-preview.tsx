@@ -11,7 +11,7 @@ import {
   type ThemeTypesSetting,
 } from '@usertour/types';
 
-interface Props {
+export interface BannerPreviewProps {
   contents: ContentEditorRoot[];
   settings: ThemeTypesSetting;
   customStyle?: string;
@@ -21,7 +21,8 @@ interface Props {
 // V1's ThemePreviewBanner wraps the widget in a `p-6` container which leaves
 // a gap between the banner and the browser chrome; v2 needs the banner to
 // hug the chrome to mirror real-page behavior.
-export function BannerPreview({ contents, settings, customStyle }: Props) {
+export const BannerPreview = (props: BannerPreviewProps) => {
+  const { contents, settings, customStyle } = props;
   const data = {
     ...DEFAULT_BANNER_DATA,
     allowUsersToDismissEmbed: true,
@@ -43,4 +44,4 @@ export function BannerPreview({ contents, settings, customStyle }: Props) {
       </BannerContainer>
     </BannerRoot>
   );
-}
+};

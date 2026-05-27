@@ -1,85 +1,54 @@
 'use client';
 
 import { TeamMemberRole, type TeamMember } from '@usertour/types';
-import { Button } from '@usertour/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour/dialog';
-import { SpinnerIcon } from '@usertour/icons';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
-interface EditFormProps {
+interface MemberTransferOwnerDialogProps {
   projectId: string;
-  isOpen: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   data: TeamMember;
-  onSuccess: () => void;
-  onCancel: () => void;
+  /**
+   * Fires once the action settles, with whether it succeeded. Consumers
+   * typically refetch on either branch; gate side-effects like
+   * navigation on the boolean.
+   */
+  onSubmit?: (success: boolean) => void;
 }
 
-export const TransferOwnerDialog = (props: EditFormProps) => {
-  const { onSuccess, onCancel, isOpen, data, projectId } = props;
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { toast } = useToast();
-  const { invoke } = useChangeTeamMemberRoleMutation();
-
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  async function handleOnSubmit() {
-    setIsLoading(true);
-    try {
-      if (!data.userId) {
-        return;
-      }
-      const response = await invoke(projectId, data.userId, TeamMemberRole.OWNER);
-      if (response) {
-        onSuccess();
-      }
-    } catch (error) {
-      showError(getErrorMessage(error));
-    }
-    setIsLoading(false);
-  }
+export const MemberTransferOwnerDialog = (props: MemberTransferOwnerDialogProps) => {
+  const { projectId, open, onOpenChange, data, onSubmit } = props;
+  const { t } = useTranslation();
+  const { invoke: changeRole } = useChangeTeamMemberRoleMutation();
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Transfer account ownership</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>
-          Only one user can be the owner of your Usertour account. Once you transfer ownership, you
-          can't undo it. Confirm transferring account ownership to {data.name}?
-        </DialogDescription>
-        <DialogFooter>
-          <Button variant="outline" type="button" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant={'destructive'}
-            disabled={isLoading}
-            onClick={handleOnSubmit}
-          >
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Transfer account ownership
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DestructiveConfirmDialog
+      title={t('settings.team.transferOwner.title')}
+      description={
+        <Trans
+          i18nKey="settings.team.transferOwner.description"
+          values={{ name: data.name }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('settings.team.transferOwner.confirmButton')}
+      cancelLabel={t('settings.team.transferOwner.cancelButton')}
+      open={open}
+      onOpenChange={onOpenChange}
+      // Success is obvious from the owner badge moving in the list + the
+      // current user losing owner-only menu items — no toast.
+      invoke={() => {
+        if (!data.userId) {
+          return Promise.reject(new Error(t('settings.team.transferOwner.failure')));
+        }
+        return changeRole(projectId, data.userId, TeamMemberRole.OWNER);
+      }}
+      failureToast={t('settings.team.transferOwner.failure')}
+      onSettled={onSubmit}
+    />
   );
 };
 
-TransferOwnerDialog.displayName = 'TransferOwnerDialog';
+MemberTransferOwnerDialog.displayName = 'MemberTransferOwnerDialog';

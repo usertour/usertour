@@ -1,14 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogTitle,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogFooter,
-} from '@usertour/alert-dialog';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { DestructiveConfirmDialog } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,61 +14,14 @@ import {
   QuestionMarkCircledIcon,
   ZoomInIcon,
 } from '@usertour/icons';
-import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour/hooks';
 import { BizSession } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
 import { getOrderedQuestionAnswers, QuestionWithAnswer } from '@/utils/session';
-
-// Create a custom hook for form handling
-const useSessionForm = (
-  session: BizSession,
-  action: 'delete' | 'end',
-  onSubmit: (success: boolean) => void,
-) => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const { invoke: deleteSession, loading: deleteLoading } = useDeleteSessionMutation();
-  const { invoke: endSession, loading: endLoading } = useEndSessionMutation();
-
-  const handleSubmit = async () => {
-    try {
-      const invoke = action === 'delete' ? deleteSession : endSession;
-      const result = await invoke(session.id);
-
-      if (result) {
-        toast({
-          variant: 'success',
-          title:
-            action === 'delete'
-              ? t('sessionActions.toast.deleteSuccess')
-              : t('sessionActions.toast.endSuccess'),
-        });
-        onSubmit(true);
-        return;
-      }
-    } catch (error) {
-      onSubmit(false);
-      toast({
-        variant: 'destructive',
-        title:
-          getErrorMessage(error) ||
-          (action === 'delete'
-            ? t('sessionActions.toast.deleteFailed')
-            : t('sessionActions.toast.endFailed')),
-      });
-    }
-  };
-
-  const loading = action === 'delete' ? deleteLoading : endLoading;
-
-  return { handleSubmit, loading };
-};
 
 // Type definitions for all components
 type SessionFormProps = {
@@ -238,33 +182,45 @@ const DropdownMenuItems = ({
   );
 };
 
-// Form component for session actions (delete/end)
+// Thin wrapper over DestructiveConfirmDialog. Both delete-session and
+// end-session go through the same destructive confirm chrome (icon
+// badge, red button, max-w-xl) — they only differ in mutation hook and
+// i18n key namespace. End-session uses the same destructive styling as
+// delete because both are admin-driven, one-way state changes; whether
+// the user can re-trigger the content later depends on its trigger
+// rules and content type, not on this dialog.
 const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFormProps) => {
   const { t } = useTranslation();
-  const { handleSubmit, loading } = useSessionForm(session, type, onSubmit);
+  const { invoke: deleteSession } = useDeleteSessionMutation();
+  const { invoke: endSession } = useEndSessionMutation();
 
+  // Managed mode: the primitive owns spinner + success/failure toast +
+  // dialog-close-on-success. `endSession` has server-side codepaths
+  // that legitimately resolve `false` (session not found, already
+  // ended, content type doesn't support dismiss — analytics.service
+  // line 1521/1533) — unmanaged mode used to swallow those silently
+  // and leave the dialog stuck with a stopped spinner.
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t(`sessionActions.${type}.title`)}</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <span className="block">{t(`sessionActions.${type}.description`)}</span>
-            <span className="block">{t(`sessionActions.${type}.descriptionConfirm`)}</span>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('sessionActions.cancel')}</AlertDialogCancel>
-          <LoadingButton
-            variant={type === 'delete' ? 'destructive' : undefined}
-            onClick={handleSubmit}
-            loading={loading}
-          >
-            {t(`sessionActions.${type}.confirmButton`)}
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DestructiveConfirmDialog
+      title={t(`sessionActions.${type}.title`)}
+      description={t(`sessionActions.${type}.description`)}
+      confirmLabel={t(`sessionActions.${type}.confirmButton`)}
+      cancelLabel={t('sessionActions.cancel')}
+      open={open}
+      onOpenChange={onOpenChange}
+      invoke={() => (type === 'delete' ? deleteSession(session.id) : endSession(session.id))}
+      successToast={
+        type === 'delete'
+          ? t('sessionActions.toast.deleteSuccess')
+          : t('sessionActions.toast.endSuccess')
+      }
+      failureToast={
+        type === 'delete'
+          ? t('sessionActions.toast.deleteFailed')
+          : t('sessionActions.toast.endFailed')
+      }
+      onSettled={onSubmit}
+    />
   );
 };
 
@@ -330,9 +286,13 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
         session={session}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
+        // Managed mode owns dialog close on success and intentionally
+        // leaves the dialog open on soft-failure / throw so the user
+        // gets retryable feedback. Only escalate the success branch.
         onSubmit={(success) => {
-          setDeleteOpen(false);
-          success && onDeleteSuccess?.();
+          if (success) {
+            onDeleteSuccess?.();
+          }
         }}
       />
 
@@ -343,8 +303,9 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
         open={endOpen}
         onOpenChange={setEndOpen}
         onSubmit={(success) => {
-          setEndOpen(false);
-          success && onEndSuccess?.();
+          if (success) {
+            onEndSuccess?.();
+          }
         }}
       />
 

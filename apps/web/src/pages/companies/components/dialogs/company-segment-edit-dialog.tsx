@@ -33,9 +33,13 @@ export const CompanySegmentEditDialog = memo((props: EditDialogProps) => {
     mode: 'onChange',
   });
 
+  // Depend only on `isOpen` — re-seeding the form when `segment.name`
+  // changes (via Apollo refetch / cache write while the dialog is open)
+  // would clobber whatever the user is currently typing.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     form.reset({ name: segment?.name });
-  }, [isOpen, segment?.name]);
+  }, [isOpen]);
 
   const handleSuccess = useCallback(
     (segmentName: string) => {
@@ -68,15 +72,15 @@ export const CompanySegmentEditDialog = memo((props: EditDialogProps) => {
       if (result.success) {
         handleSuccess(formValues.name);
       } else {
-        handleError(result.error ?? 'Unknown error');
+        handleError(result.error ?? t('common.unknownError'));
       }
     },
-    [segment?.id, updateSegmentAsync, handleSuccess, handleError],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError, t],
   );
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>

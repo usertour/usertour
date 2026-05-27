@@ -21,13 +21,15 @@ import { useCreateCompanySegment } from '@/hooks/use-create-company-segment';
 import { memo } from 'react';
 
 interface CreateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called only after a successful create — consumers refetch here. */
+  onSubmit?: (success: boolean) => void;
   environmentId: string | undefined;
 }
 
 export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
-  const { onClose, isOpen, environmentId } = props;
+  const { open, onOpenChange, onSubmit, environmentId } = props;
   const { t } = useTranslation();
   const { createSegmentAsync, loading } = useCreateCompanySegment();
   const { toast } = useToast();
@@ -39,8 +41,11 @@ export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
   });
 
   useEffect(() => {
-    form.reset();
-  }, [isOpen]);
+    if (open) {
+      form.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSuccess = useCallback(
     (segmentName: string) => {
@@ -48,9 +53,10 @@ export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
         variant: 'success',
         title: t('companies.toast.segments.segmentCreated', { segmentName }),
       });
-      onClose();
+      onSubmit?.(true);
+      onOpenChange(false);
     },
-    [onClose, toast, t],
+    [onSubmit, onOpenChange, toast, t],
   );
 
   const handleError = useCallback(
@@ -69,15 +75,15 @@ export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
       if (result.success) {
         handleSuccess(formValues.name);
       } else {
-        handleError(result.error ?? 'Unknown error');
+        handleError(result.error ?? t('common.unknownError'));
       }
     },
     [createSegmentAsync, environmentId, handleSuccess, handleError],
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
@@ -143,7 +149,7 @@ export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 {t('companies.actions.cancel')}
               </Button>
               <Button type="submit" disabled={loading}>

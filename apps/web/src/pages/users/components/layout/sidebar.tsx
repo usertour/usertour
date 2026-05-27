@@ -15,11 +15,6 @@ export const UserListSidebar = ({ environmentId }: UserListSidebarProps) => {
   const { refetch } = useSegmentListContext();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    refetch();
-  };
-
   return (
     <>
       <SegmentSidebar
@@ -29,8 +24,9 @@ export const UserListSidebar = ({ environmentId }: UserListSidebarProps) => {
         disabled={isViewOnly}
       />
       <UserSegmentCreateDialog
-        isOpen={dialogOpen}
-        onClose={handleDialogClose}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSubmit={() => refetch()}
         environmentId={environmentId}
       />
     </>
