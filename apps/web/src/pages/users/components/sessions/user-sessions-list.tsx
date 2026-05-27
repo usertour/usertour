@@ -99,6 +99,7 @@ const ContentColumn = ({
   environmentId,
 }: { session: BizSession; environmentId: string }) => {
   const { content } = session;
+  const { t } = useTranslation();
 
   if (!content) {
     return <div className="text-muted-foreground">Unknown content</div>;
@@ -124,6 +125,31 @@ const ContentColumn = ({
         return null;
     }
   };
+
+  // Soft-deleted content: session history is preserved server-side, so
+  // the row stays visible — but the link to the (now non-existent)
+  // content detail page would 404. Render the name as a plain span
+  // with strikethrough + a hover-explainable "Deleted" badge, no link.
+  if (content.deleted) {
+    return (
+      <div className="font-medium flex items-center space-x-2 min-w-0">
+        {getContentIcon(content.type)}
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+          <span className="truncate text-muted-foreground line-through">{content.name}</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+                  {t('users.sessions.deletedContentBadge')}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{t('users.sessions.deletedContentTooltip')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-medium flex items-center space-x-2 min-w-0">

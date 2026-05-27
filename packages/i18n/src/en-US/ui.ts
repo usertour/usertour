@@ -985,6 +985,8 @@ const translations = {
       title: 'User sessions',
       countLabel_one: '{{count}} session',
       countLabel_other: '{{count}} sessions',
+      deletedContentBadge: 'Deleted',
+      deletedContentTooltip: 'This content was deleted. Historical session data is preserved.',
       table: {
         content: 'Content',
         status: 'Status',

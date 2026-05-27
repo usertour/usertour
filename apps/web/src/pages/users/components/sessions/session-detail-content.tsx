@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
 import { QuestionAnswer, SessionResponse } from '@/components/sessions/session-detail';
 import { ContentLoading } from '@usertour/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import {
   getEndReasonTitle,
   getEventDisplaySuffix,
@@ -200,17 +201,44 @@ const SessionDetailContentInner = ({
             <ActivityLogIcon className="h-5 w-5 text-foreground/70" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-semibold text-foreground truncate">{content?.name}</h1>
+            {/* Strike out the title + drop the version link when the
+                underlying Content is soft-deleted — the historical
+                session data is still valid, but the live content page
+                would 404. */}
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <h1
+                className={`text-xl font-semibold truncate ${
+                  content?.deleted ? 'text-muted-foreground line-through' : 'text-foreground'
+                }`}
+              >
+                {content?.name}
+              </h1>
+              {content?.deleted && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+                        {t('users.sessions.deletedContentBadge')}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('users.sessions.deletedContentTooltip')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5 capitalize">{contentType}</span>
-              {version?.sequence !== undefined && (
-                <Link
-                  to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/versions`}
-                  className="inline-flex items-center gap-1.5 hover:text-foreground"
-                >
-                  V{version.sequence + 1}
-                </Link>
-              )}
+              {version?.sequence !== undefined &&
+                (content?.deleted ? (
+                  <span className="inline-flex items-center gap-1.5">V{version.sequence + 1}</span>
+                ) : (
+                  <Link
+                    to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/versions`}
+                    className="inline-flex items-center gap-1.5 hover:text-foreground"
+                  >
+                    V{version.sequence + 1}
+                  </Link>
+                ))}
               {startedAgo && (
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarIcon className="h-3.5 w-3.5 shrink-0" />

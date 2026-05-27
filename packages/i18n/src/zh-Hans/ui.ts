@@ -917,6 +917,8 @@ const translations = {
       loadMore: '加载更多会话',
       title: '用户会话',
       countLabel_other: '{{count}} 个会话',
+      deletedContentBadge: '已删除',
+      deletedContentTooltip: '该内容已被删除,历史会话数据保留。',
       table: {
         content: '内容',
         status: '状态',
