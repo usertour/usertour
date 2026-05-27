@@ -115,6 +115,13 @@ const config: Config = {
       sandboxLoginUrl: process.env.SALESFORCE_SANDBOX_LOGIN_URL || 'https://test.salesforce.com',
     },
   },
+  encryption: {
+    // 64-hex-char (32-byte) AES-256 key. Override `ENCRYPTION_KEY` in
+    // production — the all-zero default is a sentinel for local dev
+    // and is intentionally weak so accidentally shipping it is
+    // obvious in a leaked DB dump.
+    key: process.env.ENCRYPTION_KEY || '0'.repeat(64),
+  },
 };
 
 export default (): Config => config;
