@@ -1,4 +1,5 @@
-import { ContentListSkeleton, Button, Separator, NewItemButton } from '@usertour/ui';
+import { Button, Separator, NewItemButton } from '@usertour/ui';
+import { ContentListSkeleton } from './content-list-skeleton';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { EmptyPlaceholder } from '@/components/segments/ui';

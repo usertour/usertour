@@ -32,7 +32,6 @@
     "@usertour/constants": "workspace:^",
     "@usertour/contexts": "workspace:^",
     "@usertour/finder": "workspace:^",
-    "@usertour/frame": "workspace:^",
     "@usertour/gql": "workspace:^",
     "@usertour/icons": "workspace:^",
     "@usertour/react-compose-refs": "workspace:^",

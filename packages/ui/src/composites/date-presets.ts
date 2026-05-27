@@ -1,7 +1,9 @@
 import { endOfDay, startOfDay, startOfMonth, startOfYear, subDays, subYears } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 
-// Date range preset types
+// Keys for the canonical date-range presets. The label for each is supplied
+// by the consumer at construction time (i18n-extracted) — this package
+// stays out of the i18n business per feedback_no_i18n_in_shared_ui_primitives.
 export type DatePresetKey =
   | 'today'
   | 'yesterday'
@@ -19,81 +21,46 @@ export interface DatePresetOption {
   getRange: () => DateRange;
 }
 
-// Date range preset options
-export const DATE_PRESET_OPTIONS: DatePresetOption[] = [
-  {
-    key: 'today',
-    label: 'Today',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfDay(today), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'yesterday',
-    label: 'Yesterday',
-    getRange: () => {
-      const yesterday = subDays(new Date(), 1);
-      return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
-    },
-  },
-  {
-    key: 'last-7-days',
-    label: 'Last 7 days',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfDay(subDays(today, 6)), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'last-14-days',
-    label: 'Last 14 days',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfDay(subDays(today, 13)), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'last-30-days',
-    label: 'Last 30 days',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfDay(subDays(today, 29)), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'last-90-days',
-    label: 'Last 90 days',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfDay(subDays(today, 89)), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'this-month',
-    label: 'This month',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfMonth(today), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'year-to-date',
-    label: 'Year to date',
-    getRange: () => {
-      const today = new Date();
-      return { from: startOfYear(today), to: endOfDay(today) };
-    },
-  },
-  {
-    key: 'all-time',
-    label: 'All time',
-    getRange: () => {
-      const today = new Date();
-      // Query last 5 years
-      return { from: startOfDay(subYears(today, 5)), to: endOfDay(today) };
-    },
-  },
-];
-
 export const DEFAULT_PRESET_KEY: DatePresetKey = 'last-30-days';
+
+// Canonical range-getter for each preset key. Consumers compose these with
+// their own i18n-resolved labels into the `DateRangePicker.presets` prop.
+export const DATE_PRESET_RANGE_GETTERS: Record<DatePresetKey, () => DateRange> = {
+  today: () => {
+    const today = new Date();
+    return { from: startOfDay(today), to: endOfDay(today) };
+  },
+  yesterday: () => {
+    const yesterday = subDays(new Date(), 1);
+    return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
+  },
+  'last-7-days': () => {
+    const today = new Date();
+    return { from: startOfDay(subDays(today, 6)), to: endOfDay(today) };
+  },
+  'last-14-days': () => {
+    const today = new Date();
+    return { from: startOfDay(subDays(today, 13)), to: endOfDay(today) };
+  },
+  'last-30-days': () => {
+    const today = new Date();
+    return { from: startOfDay(subDays(today, 29)), to: endOfDay(today) };
+  },
+  'last-90-days': () => {
+    const today = new Date();
+    return { from: startOfDay(subDays(today, 89)), to: endOfDay(today) };
+  },
+  'this-month': () => {
+    const today = new Date();
+    return { from: startOfMonth(today), to: endOfDay(today) };
+  },
+  'year-to-date': () => {
+    const today = new Date();
+    return { from: startOfYear(today), to: endOfDay(today) };
+  },
+  'all-time': () => {
+    const today = new Date();
+    // Query last 5 years
+    return { from: startOfDay(subYears(today, 5)), to: endOfDay(today) };
+  },
+};

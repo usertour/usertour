@@ -5,34 +5,44 @@ import { format } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 
-import { DATE_PRESET_OPTIONS, type DatePresetKey, type DatePresetOption } from './date-presets';
+import type { DatePresetKey, DatePresetOption } from './date-presets';
 import { Button } from '../primitives/button';
 import { Calendar } from '../primitives/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover';
 import { cn } from '@usertour/tailwind';
 
-/**
- * Controlled DateRangePicker component (stateless)
- * Can be used with any state management approach
- */
 export interface DateRangePickerProps {
   className?: string;
   dateRange: DateRange | undefined;
   setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
   selectedPreset: DatePresetKey | null;
   setSelectedPreset: React.Dispatch<React.SetStateAction<DatePresetKey | null>>;
+  // i18n-extracted preset list. Consumer composes labels via t(...) and
+  // pairs them with DATE_PRESET_RANGE_GETTERS from ./date-presets.
+  presets: DatePresetOption[];
+  // Localized fallback shown in the trigger when no range is selected.
+  placeholder: string;
 }
 
 export const DateRangePicker = (props: DateRangePickerProps) => {
-  const { className, dateRange, setDateRange, selectedPreset, setSelectedPreset } = props;
+  const {
+    className,
+    dateRange,
+    setDateRange,
+    selectedPreset,
+    setSelectedPreset,
+    presets,
+    placeholder,
+  } = props;
   const [open, setOpen] = useState(false);
 
-  // Handle popover close: auto-complete date range if only 'from' is selected
+  // When the popover closes with only a `from` selected, commit it as a
+  // single-day range. This is a deliberate UX choice — a one-click date pick
+  // resolves to that day, not to an indeterminate half-range.
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       setOpen(isOpen);
       if (!isOpen) {
-        // When closing, if only 'from' is selected, set 'to' to the same day
         setDateRange((prev: DateRange | undefined) => {
           if (prev?.from && !prev?.to) {
             return { from: prev.from, to: prev.from };
@@ -70,8 +80,8 @@ export const DateRangePicker = (props: DateRangePickerProps) => {
   // Get display text for button
   const displayText = useMemo(() => {
     if (selectedPreset) {
-      const preset = DATE_PRESET_OPTIONS.find((p: DatePresetOption) => p.key === selectedPreset);
-      return preset?.label ?? 'Pick a date';
+      const preset = presets.find((p) => p.key === selectedPreset);
+      return preset?.label ?? placeholder;
     }
     if (dateRange?.from) {
       if (dateRange.to) {
@@ -79,15 +89,14 @@ export const DateRangePicker = (props: DateRangePickerProps) => {
       }
       return format(dateRange.from, 'LLL dd, y');
     }
-    return 'Pick a date';
-  }, [selectedPreset, dateRange]);
+    return placeholder;
+  }, [selectedPreset, dateRange, presets, placeholder]);
 
   return (
     <div className={cn('grid gap-2', className)}>
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
-            id="date"
             variant="outline"
             className={cn(
               'w-[260px] justify-start text-left font-normal',
@@ -102,7 +111,7 @@ export const DateRangePicker = (props: DateRangePickerProps) => {
           <div className="flex">
             {/* Preset options */}
             <div className="flex flex-col gap-1 border-r p-2">
-              {DATE_PRESET_OPTIONS.map((preset: DatePresetOption) => (
+              {presets.map((preset) => (
                 <Button
                   key={preset.key}
                   variant={selectedPreset === preset.key ? 'secondary' : 'ghost'}

@@ -33,14 +33,11 @@ export * from './primitives/navigation-menu';
 export * from './primitives/popover';
 export * from './primitives/progress';
 export * from './primitives/radio-group';
-// scroll-area re-exported from ./compact (which wraps it with our defaults)
 export * from './primitives/scroll-area';
 export * from './primitives/select';
 export * from './primitives/separator';
 export * from './primitives/sheet';
-// skeleton primitive re-export collides with compound ListSkeleton/etc. in
-// ./ui/skeleton — the compound module is exported further down and shadows.
-export { Skeleton } from './primitives/skeleton';
+export * from './primitives/skeleton';
 export * from './primitives/slider';
 export * from './primitives/switch';
 export * from './primitives/table';
@@ -64,15 +61,22 @@ export { SelectPopover } from './composites/select-popover';
 export type { SelectPopoverOption, SelectPopoverProps } from './composites/select-popover';
 export { LoadingContainer } from './composites/loading';
 export { LoadingButton } from './composites/loading-button';
+export type { LoadingButtonProps } from './composites/loading-button';
 export { NewItemButton } from './composites/new-item-button';
+export type { NewItemButtonProps } from './composites/new-item-button';
 export { LocateSelect } from './composites/locate-select';
-export type { LocateItem } from './composites/locate-select';
+export type { LocateItem, LocateSelectProps } from './composites/locate-select';
 export { DateTimePicker } from './composites/date-time-picker';
+export type { DateTimePickerProps } from './composites/date-time-picker';
 export {
   ErrorTooltip,
   ErrorTooltipContent,
   ErrorTooltipTrigger,
   ErrorTooltipAnchor,
+} from './composites/error-tooltip';
+export type {
+  ErrorTooltipContentProps,
+  ErrorTooltipTriggerProps,
 } from './composites/error-tooltip';
 export { ColorPicker, ColorPickerPanel } from './composites/color-picker';
 export type { ColorPickerProps, ColorPickerPanelProps } from './composites/color-picker';
@@ -94,21 +98,21 @@ export * from './compact';
 // Promoted from apps/web/src/components/molecules (pure UI primitives, no business types).
 export { TruncatedText } from './composites/truncated-text';
 export { EditableTitle } from './composites/editable-title';
+export type { EditableTitleProps } from './composites/editable-title';
 export {
   ListSkeleton,
   AdminSkeleton,
   ListSkeletonCount,
-  ContentListSkeleton,
-  ThemeListSkeleton,
 } from './composites/skeleton';
 export { DateRangePicker } from './composites/date-range-picker';
 export type { DateRangePickerProps } from './composites/date-range-picker';
 export { DefaultAvatar } from './composites/default-avatar';
 export { UserAvatar } from './composites/user-avatar';
 export { ContentLoading } from './composites/content-loading';
+export type { ContentLoadingProps } from './composites/content-loading';
 export { CollapsibleSearch } from './composites/collapsible-search';
 export {
-  DATE_PRESET_OPTIONS,
+  DATE_PRESET_RANGE_GETTERS,
   DEFAULT_PRESET_KEY,
   type DatePresetKey,
   type DatePresetOption,

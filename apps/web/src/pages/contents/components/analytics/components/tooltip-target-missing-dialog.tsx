@@ -28,6 +28,8 @@ import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import type { DatePresetKey } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
+import { useDateRangePresets } from '../use-date-range-presets';
 import type { DateRange } from 'react-day-picker';
 import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
@@ -254,6 +256,8 @@ export const TooltipTargetMissingDialog = ({
   onOpenChange,
 }: TooltipTargetMissingDialogProps) => {
   const { environment } = useAppContext();
+  const { t } = useTranslation();
+  const presets = useDateRangePresets();
   const {
     contentId,
     dateRange: globalDateRange,
@@ -397,6 +401,8 @@ export const TooltipTargetMissingDialog = ({
                 setDateRange={setLocalDateRange}
                 selectedPreset={localSelectedPreset}
                 setSelectedPreset={setLocalSelectedPreset}
+                presets={presets}
+                placeholder={t('common.pickADate')}
               />
             </div>
             <div className="px-6">

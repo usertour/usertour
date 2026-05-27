@@ -1,12 +1,15 @@
 import { SpinnerIcon } from '@usertour/icons';
 
 export interface ContentLoadingProps {
+  // Localized message shown under the spinner. Optional — when omitted,
+  // only the spinner renders. Per feedback_no_i18n_in_shared_ui_primitives
+  // this primitive does not default to an English literal.
   message?: string;
   className?: string;
 }
 
 export const ContentLoading = (props: ContentLoadingProps) => {
-  const { message = 'Loading...', className = '' } = props;
+  const { message, className = '' } = props;
   // `h-full` only resolves when the parent has a definite height. Detail
   // pages wrap content in a `min-h-full` div inside ScrollArea, which
   // does not provide a definite height — so the spinner used to collapse

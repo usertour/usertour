@@ -54,7 +54,7 @@ export function useFrame(): FrameContentValue {
 /**
  * Props for Frame component
  */
-interface FrameProps {
+export interface FrameProps {
   children: ReactNode;
   mountTarget?: string; // CSS selector for mounting point in iframe
   head?: ReactNode; // Content to inject into iframe head

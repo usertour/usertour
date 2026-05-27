@@ -88,7 +88,14 @@ export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) =
                   {t('settings.localizations.form.localeTooltip')}
                 </QuestionTooltip>
               </FormLabel>
-              <LocateSelect popperContentClass="w-[450px]" onSelect={handleOnSelect} />
+              <LocateSelect
+                popperContentClass="w-[450px]"
+                triggerPlaceholder={t('common.locale.triggerPlaceholder')}
+                searchPlaceholder={t('common.locale.searchPlaceholder')}
+                emptyMessage={t('common.locale.empty')}
+                groupHeading={t('common.locale.groupHeading')}
+                onSelect={handleOnSelect}
+              />
               <FormMessage />
             </FormItem>
           )}

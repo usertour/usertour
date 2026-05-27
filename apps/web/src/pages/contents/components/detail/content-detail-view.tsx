@@ -5,6 +5,7 @@ import {
 } from '@/contexts/content-detail-provider';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { ContentTypeName } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { ContentDetailAnalytics } from '../version/content-detail-analytics';
 import { ContentDetailVersion } from '../version/content-detail-version';
 import { ContentLocalizationList } from '../version/content-localization-list';
@@ -13,19 +14,6 @@ import { ContentDetailHeader } from './content-detail-header';
 import { ContentDetailNotFound } from './content-detail-not-found';
 import { ContentDetailSettings } from './content-detail-settings';
 import { ContentDetailTrackerEditor } from './content-detail-tracker-editor';
-
-const CONTENT_TYPE_LOADING_MESSAGES: Record<ContentTypeName, string> = {
-  [ContentTypeName.FLOWS]: 'Loading flow details...',
-  [ContentTypeName.LAUNCHERS]: 'Loading launcher details...',
-  [ContentTypeName.CHECKLISTS]: 'Loading checklist details...',
-  [ContentTypeName.BANNERS]: 'Loading banner details...',
-  [ContentTypeName.TRACKERS]: 'Loading content details...',
-  [ContentTypeName.RESOURCE_CENTERS]: 'Loading resource center details...',
-};
-
-function getContentTypeDetailLoadingMessage(contentType: ContentTypeName): string {
-  return CONTENT_TYPE_LOADING_MESSAGES[contentType] ?? 'Loading content details...';
-}
 
 export interface ContentDetailViewProps {
   contentId: string;
@@ -38,9 +26,10 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { type, contentId, contentType } = props;
   const { isLoading } = useContentDetailProviderWrapper();
   const { content } = useContentDetailContext();
+  const { t } = useTranslation();
 
   if (isLoading) {
-    return <ContentLoading message={getContentTypeDetailLoadingMessage(contentType)} />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   // Server returns null for soft-deleted (or otherwise inaccessible) content.

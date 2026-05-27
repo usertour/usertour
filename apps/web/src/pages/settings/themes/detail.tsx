@@ -4,6 +4,7 @@ import { useToast, ContentLoading } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeBuilder } from './components/theme-builder';
 
@@ -14,6 +15,7 @@ const ThemeDetailInner = () => {
   const navigate = useNavigate();
   const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSave = useCallback(
     async (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => {
@@ -54,7 +56,7 @@ const ThemeDetailInner = () => {
   );
 
   if (loading) {
-    return <ContentLoading message="Loading theme details..." />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   if (!theme) {

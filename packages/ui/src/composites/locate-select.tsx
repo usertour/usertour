@@ -21,10 +21,26 @@ export interface LocateSelectProps extends PopoverProps {
   defaultValue?: string;
   onSelect?: (item: LocateItem) => void;
   popperContentClass?: string;
+  // i18n-extracted labels. All required — per
+  // feedback_no_i18n_in_shared_ui_primitives this primitive does not carry
+  // English literal defaults.
+  triggerPlaceholder: string;
+  searchPlaceholder: string;
+  emptyMessage: string;
+  groupHeading?: string;
 }
 
 export const LocateSelect = (props: LocateSelectProps) => {
-  const { defaultValue, onSelect, popperContentClass, ...rest } = props;
+  const {
+    defaultValue,
+    onSelect,
+    popperContentClass,
+    triggerPlaceholder,
+    searchPlaceholder,
+    emptyMessage,
+    groupHeading,
+    ...rest
+  } = props;
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LocateItem | undefined>(
     locates.find((item) => item.locale === defaultValue),
@@ -43,19 +59,19 @@ export const LocateSelect = (props: LocateSelectProps) => {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          aria-label="Load a locate..."
+          aria-label={triggerPlaceholder}
           aria-expanded={open}
           className="w-full justify-between "
         >
-          {selectedItem ? selectedItem.language.name : 'Load a locate...'}
+          {selectedItem ? selectedItem.language.name : triggerPlaceholder}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align={'start'} className={cn('p-0', popperContentClass)}>
         <Command>
-          <CommandInput placeholder="Search locate..." />
-          <CommandEmpty>No items found.</CommandEmpty>
-          <CommandGroup heading="Locate">
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandEmpty>{emptyMessage}</CommandEmpty>
+          <CommandGroup heading={groupHeading}>
             <ScrollArea className="h-72">
               {locates.map((item) => (
                 <CommandItem
