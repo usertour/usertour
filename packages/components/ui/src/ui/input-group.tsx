@@ -3,9 +3,9 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@usertour/tailwind';
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Textarea } from '@usertour/textarea';
+import { Button } from '../primitives/button';
+import { Input } from '../primitives/input';
+import { Textarea } from '../primitives/textarea';
 
 export type InputGroupProps = React.ComponentProps<'div'>;
 

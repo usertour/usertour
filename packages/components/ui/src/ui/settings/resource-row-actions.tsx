@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '../../primitives/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+} from '../../primitives/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../primitives/tooltip';
 
 export interface ResourceRowActionItem {
   /**

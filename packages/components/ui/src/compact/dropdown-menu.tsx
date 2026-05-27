@@ -3,7 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '../primitives/dropdown-menu';
 import { cn } from '@usertour/tailwind';
 import { forwardRef } from 'react';
 

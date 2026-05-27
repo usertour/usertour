@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@usertour/button';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Button } from '../../primitives/button';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '../../primitives/popover';
 import { cn } from '@usertour/tailwind';
 import { isNearWhite, needsDarkText } from '@usertour/helpers';
 import { useCallback, useEffect, useMemo, useState } from 'react';

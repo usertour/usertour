@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@usertour/button';
+import { Button } from '../primitives/button';
 import { SpinnerIcon } from '@usertour/icons';
 
 export interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

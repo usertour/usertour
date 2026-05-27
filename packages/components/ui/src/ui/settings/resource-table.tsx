@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../primitives/table';
 import { cn } from '@usertour/tailwind';
 
 export interface ResourceTableColumn<T> {

@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react';
-import { Skeleton } from '@usertour/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Skeleton } from '../../primitives/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../primitives/table';
 import { ResourceTable, type ResourceTableColumn } from './resource-table';
 
 const DEFAULT_SKELETON_ROWS = 5;

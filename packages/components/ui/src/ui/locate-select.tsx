@@ -1,12 +1,18 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 
-import { Button } from '@usertour/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
+import { Button } from '../primitives/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '../primitives/command';
 import { locates } from '@usertour/constants';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import type { PopoverProps } from '@usertour/popover';
-import { ScrollArea } from '@usertour/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover';
+import type { PopoverProps } from '../primitives/popover';
+import { ScrollArea } from '../primitives/scroll-area';
 import { cn } from '@usertour/tailwind';
 
 export type LocateItem = (typeof locates)[0];

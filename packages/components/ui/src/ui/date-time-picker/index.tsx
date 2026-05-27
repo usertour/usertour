@@ -1,6 +1,6 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
-import { Calendar } from '@usertour/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Calendar } from '../../primitives/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../primitives/popover';
 import { cn } from '@usertour/tailwind';
 import { CompactPopoverTrigger } from '../../compact';
 import { format } from 'date-fns';

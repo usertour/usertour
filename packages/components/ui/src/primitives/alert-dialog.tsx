@@ -3,7 +3,7 @@
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import * as React from 'react';
 
-import { buttonVariants } from '@usertour/button';
+import { buttonVariants } from './button';
 import { cn } from '@usertour/tailwind';
 import { type VariantProps } from 'class-variance-authority';
 

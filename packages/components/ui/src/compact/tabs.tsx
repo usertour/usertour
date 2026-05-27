@@ -3,7 +3,7 @@ import {
   UnderlineTabsContent,
   UnderlineTabsList,
   UnderlineTabsTrigger,
-} from '@usertour/tabs';
+} from '../primitives/tabs';
 import { forwardRef } from 'react';
 
 // Compact tabs — Trigger uses the underline tabs' compact variant

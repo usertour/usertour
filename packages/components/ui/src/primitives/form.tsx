@@ -10,7 +10,7 @@ import {
   useFormContext,
 } from 'react-hook-form';
 
-import { Label } from '@usertour/label';
+import { Label } from './label';
 import { cn } from '@usertour/tailwind';
 
 const Form = FormProvider;

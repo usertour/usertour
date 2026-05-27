@@ -1,5 +1,5 @@
 import React, { type ReactNode } from 'react';
-import { Button } from '@usertour/button';
+import { Button } from '../primitives/button';
 import { RiAddLine } from '@usertour/icons';
 
 export interface NewItemButtonProps

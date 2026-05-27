@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '@usertour/alert';
+import { Alert, AlertDescription } from '../primitives/alert';
 import { WarningIcon } from '@usertour/icons';
 
 export interface InlineAlertProps {

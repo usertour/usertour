@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button } from '@usertour/button';
+import { Button } from '../../primitives/button';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
-import { Form } from '@usertour/form';
+} from '../../primitives/dialog';
+import { Form } from '../../primitives/form';
 import type { FieldValues } from 'react-hook-form';
 import { LoadingButton } from '../loading-button';
 import type { UseSettingsFormResult } from './use-settings-form';

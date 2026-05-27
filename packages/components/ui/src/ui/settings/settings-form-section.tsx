@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Separator } from '@usertour/separator';
-import { Form } from '@usertour/form';
+import { Separator } from '../../primitives/separator';
+import { Form } from '../../primitives/form';
 import type { FieldValues } from 'react-hook-form';
 import { LoadingButton } from '../loading-button';
 import type { UseSettingsFormResult } from './use-settings-form';

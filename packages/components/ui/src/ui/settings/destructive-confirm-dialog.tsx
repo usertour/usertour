@@ -7,10 +7,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour/alert-dialog';
+} from '../../primitives/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
 import { RiAlertFill } from '@usertour/icons';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '../../primitives/use-toast';
 import { LoadingButton } from '../loading-button';
 
 interface ChromeProps {

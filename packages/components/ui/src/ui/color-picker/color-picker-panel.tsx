@@ -1,16 +1,16 @@
 'use client';
 
-import { Button } from '@usertour/button';
+import { Button } from '../../primitives/button';
 import { StorageKeys } from '@usertour/constants';
 import { CheckboxIcon, Delete2Icon, EditIcon, RemoveColorIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
+import { Input } from '../../primitives/input';
 import {
   Tabs,
   UnderlineTabsContent,
   UnderlineTabsList,
   UnderlineTabsTrigger,
-} from '@usertour/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+} from '../../primitives/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../primitives/tooltip';
 import { cn } from '@usertour/tailwind';
 import { firstLetterToUpperCase } from '@usertour/helpers';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';

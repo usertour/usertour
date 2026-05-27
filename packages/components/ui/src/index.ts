@@ -1,5 +1,58 @@
-// Export all UI components
-// Add new component exports here as you create them
+// =============================================================================
+// Primitives — shadcn-style atoms moved into this package. One file per
+// primitive under ./primitives/, mirrors the shadcn registry 1:1. To diff
+// against upstream shadcn, look in ./primitives/.
+// =============================================================================
+
+export * from './primitives/accordion';
+export * from './primitives/alert';
+export * from './primitives/alert-dialog';
+export * from './primitives/aspect-ratio';
+export * from './primitives/avatar';
+export * from './primitives/badge';
+export * from './primitives/button';
+export * from './primitives/calendar';
+export * from './primitives/card';
+export * from './primitives/chart';
+export * from './primitives/checkbox';
+export * from './primitives/collapsible';
+export * from './primitives/command';
+export * from './primitives/context-menu';
+export * from './primitives/dialog';
+export * from './primitives/dropdown-menu';
+export * from './primitives/form';
+export * from './primitives/frame';
+export * from './primitives/hover-card';
+export * from './primitives/input';
+export * from './primitives/label';
+export * from './primitives/menubar';
+export * from './primitives/navigation-menu';
+export * from './primitives/popover';
+export * from './primitives/progress';
+export * from './primitives/radio-group';
+// scroll-area re-exported from ./compact (which wraps it with our defaults)
+export * from './primitives/scroll-area';
+export * from './primitives/select';
+export * from './primitives/separator';
+export * from './primitives/sheet';
+// skeleton primitive re-export collides with compound ListSkeleton/etc. in
+// ./ui/skeleton — the compound module is exported further down and shadows.
+export { Skeleton } from './primitives/skeleton';
+export * from './primitives/slider';
+export * from './primitives/switch';
+export * from './primitives/table';
+export * from './primitives/tabs';
+export * from './primitives/textarea';
+export * from './primitives/toggle';
+export * from './primitives/toggle-group';
+export * from './primitives/tooltip';
+export * from './primitives/use-toast';
+
+// =============================================================================
+// Compound components — built on top of primitives. Changing these does not
+// drift us from upstream shadcn.
+// =============================================================================
+
 export * from './ui/combobox';
 export * from './ui/input-group';
 // Composition UI primitives — twice-composed shadcn-style components,

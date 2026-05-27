@@ -6,9 +6,9 @@ import { useCallback, useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 
 import { DATE_PRESET_OPTIONS, type DatePresetKey, type DatePresetOption } from './date-presets';
-import { Button } from '@usertour/button';
-import { Calendar } from '@usertour/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Button } from '../primitives/button';
+import { Calendar } from '../primitives/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover';
 import { cn } from '@usertour/tailwind';
 
 /**

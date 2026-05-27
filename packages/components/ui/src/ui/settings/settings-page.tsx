@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Separator } from '@usertour/separator';
+import { Separator } from '../../primitives/separator';
 import { cn } from '@usertour/tailwind';
 
 export interface SettingsPageProps {

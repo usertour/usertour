@@ -10,7 +10,7 @@ import {
 } from 'react-hook-form';
 import type { ZodType } from 'zod';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '../../primitives/use-toast';
 
 export interface UseSettingsFormOptions<TValues extends FieldValues> {
   // Input == Output: form values feed in raw, schema returns the same shape.

@@ -1,5 +1,5 @@
 import sha256 from 'crypto-js/sha256';
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { cn } from '@usertour/tailwind';
 
 // Inlined gravatar URL helper — was `apps/web/src/utils/avatar.ts`, moved

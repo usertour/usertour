@@ -4,7 +4,7 @@ import {
   PopoverArrow,
   PopoverContent,
   PopoverTrigger,
-} from '@usertour/popover';
+} from '../../primitives/popover';
 import { cn } from '@usertour/tailwind';
 import React from 'react';
 
