@@ -10,17 +10,23 @@ import {
   useAdminTransferProjectOwnershipMutation,
   useAdminRemoveProjectMemberMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
-import { useState, useCallback } from 'react';
-import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour/ui';
-import { Button } from '@usertour/ui';
-import { Badge } from '@usertour/ui';
-import { Input } from '@usertour/ui';
-import { Label } from '@usertour/ui';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import {
+  useToast,
+  Separator,
+  Button,
+  Badge,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -28,17 +34,26 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { cn } from '@usertour/tailwind';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
-import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  ListSkeleton,
+  UserAvatar,
 } from '@usertour/ui';
+import { useState, useCallback } from 'react';
+import { SettingsContent } from '@/pages/settings/components/content';
+import { cn } from '@usertour/tailwind';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   PlusIcon,
@@ -52,9 +67,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
-import { ListSkeleton } from '@usertour/ui';
 import { useNavigate } from 'react-router-dom';
-import { UserAvatar } from '@usertour/ui';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 

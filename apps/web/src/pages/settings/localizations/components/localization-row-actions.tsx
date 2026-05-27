@@ -7,8 +7,7 @@ import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { useSetDefaultLocalizationMutation } from '@usertour/hooks';
 import { Localization } from '@usertour/types';
-import { ResourceRowActions } from '@usertour/ui';
-import { useToast } from '@usertour/ui';
+import { ResourceRowActions, useToast } from '@usertour/ui';
 import { LocalizationDeleteDialog } from './localization-delete-dialog';
 import { LocalizationEditDialog } from './localization-edit-dialog';
 

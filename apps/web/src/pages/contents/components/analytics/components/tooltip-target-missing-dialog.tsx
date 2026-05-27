@@ -1,8 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DateRangePicker,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  DefaultAvatar,
+} from '@usertour/ui';
 import {
   useQueryTooltipTargetMissingSessionsLazyQuery,
   type StepAnalytics,
@@ -13,17 +29,14 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import type { DatePresetKey } from '@usertour/ui';
 import type { DateRange } from 'react-day-picker';
-import { DefaultAvatar } from '@usertour/ui';
 import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
-import { DateRangePicker } from '@usertour/ui';
 import { formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
 import { cn } from '@usertour/tailwind';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 interface TooltipTargetMissingDialogProps {
   stepData: AnalyticsViewsByStep;

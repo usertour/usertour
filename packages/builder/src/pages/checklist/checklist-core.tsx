@@ -1,14 +1,16 @@
 'use client';
 
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
-import { EXTENSION_SELECT } from '@usertour/constants';
-import { Input } from '@usertour/ui';
-import { Label } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
-import { ScrollArea } from '@usertour/ui';
 import {
+  Button,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  QuestionTooltip,
+  ScrollArea,
   Select,
   SelectContent,
   SelectGroup,
@@ -16,8 +18,9 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
+  Switch,
 } from '@usertour/ui';
-import { Switch } from '@usertour/ui';
+import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useBuilderContext, useChecklistContext } from '../../contexts';

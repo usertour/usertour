@@ -4,9 +4,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Button,
 } from '@usertour/ui';
 import { PlusIcon } from '@usertour/icons';
-import { Button } from '@usertour/ui';
 import { Table } from '@tanstack/react-table';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';

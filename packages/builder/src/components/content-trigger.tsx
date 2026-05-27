@@ -1,7 +1,6 @@
-import { Button } from '@usertour/ui';
+import { Button, Label } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { Delete2Icon } from '@usertour/icons';
-import { Label } from '@usertour/ui';
 import {
   ConditionWait,
   Conditions,

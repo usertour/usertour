@@ -1,8 +1,8 @@
 import { ArrowDownIcon, ArrowUpIcon, CaretSortIcon, EyeNoneIcon } from '@radix-ui/react-icons';
 import { Column } from '@tanstack/react-table';
 
-import { Button } from '@usertour/ui';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,

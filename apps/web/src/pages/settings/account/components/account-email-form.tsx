@@ -3,12 +3,19 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Separator,
+  Skeleton,
+  SettingsFormSection,
+  useSettingsForm,
+} from '@usertour/ui';
 import { useUpdateEmailMutation } from '@usertour/hooks';
-import { Input } from '@usertour/ui';
-import { Separator } from '@usertour/ui';
-import { Skeleton } from '@usertour/ui';
-import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
 const emailSchema = z.object({

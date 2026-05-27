@@ -1,4 +1,4 @@
-import { QuestionTooltip } from '@usertour/ui';
+import { QuestionTooltip, Input } from '@usertour/ui';
 import { type ChangeEvent, useEffect, useState } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';
 import {
@@ -6,7 +6,6 @@ import {
   ConditionErrorTooltipAnchor,
   ConditionErrorTooltipContent,
 } from '../ui/condition-error-tooltip';
-import { Input } from '@usertour/ui';
 import { resolveTranslator } from './translator';
 
 interface Props {

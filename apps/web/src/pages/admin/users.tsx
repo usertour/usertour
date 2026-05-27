@@ -4,31 +4,42 @@ import {
   useUpdateUserDisabledMutation,
   useAdminCreateUserMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
-import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour/ui';
-import { Button } from '@usertour/ui';
-import { Input } from '@usertour/ui';
-import { Label } from '@usertour/ui';
-import { Badge } from '@usertour/ui';
 import {
+  useToast,
+  Separator,
+  Button,
+  Input,
+  Label,
+  Badge,
   Command,
   CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
-import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  ListSkeleton,
+  UserAvatar,
 } from '@usertour/ui';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
+import { SettingsContent } from '@/pages/settings/components/content';
 import { CheckIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   PlusIcon,
@@ -41,8 +52,6 @@ import {
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
-import { ListSkeleton } from '@usertour/ui';
-import { UserAvatar } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 
 const PAGE_SIZE = 20;

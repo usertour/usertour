@@ -4,14 +4,26 @@ import { memo, useCallback, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/ui';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
-import { Input } from '@usertour/ui';
-import { RadioGroup, RadioGroupItem } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  RadioGroup,
+  RadioGroupItem,
+  QuestionTooltip,
+  useToast,
+} from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { useToast } from '@usertour/ui';
 import { useCreateSegment } from '@/hooks/use-create-segment';
 import { useCreateCompanySegment } from '@/hooks/use-create-company-segment';
 import {

@@ -2,11 +2,20 @@
 
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  type LocateItem,
+  LocateSelect,
+  SettingsDialogForm,
+  useSettingsForm,
+  QuestionTooltip,
+} from '@usertour/ui';
 import { useUpdateLocalizationMutation } from '@usertour/hooks';
-import { Input } from '@usertour/ui';
-import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
 import { Localization } from '@usertour/types';
 import { z } from 'zod';
 

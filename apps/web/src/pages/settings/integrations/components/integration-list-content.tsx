@@ -1,5 +1,5 @@
-import { Button } from '@usertour/ui';
 import {
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
+  useToast,
 } from '@usertour/ui';
 import { useCallback, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +16,6 @@ import {
   useUpdateIntegrationMutation,
   useGetSalesforceAuthUrlQuery,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
 import { IntegrationModel } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
 import { CircleIcon, SpinnerIcon } from '@usertour/icons';

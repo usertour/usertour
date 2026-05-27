@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/ui';
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -8,12 +8,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  useToast,
 } from '@usertour/ui';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { Input } from '@usertour/ui';
 import { useOpenSelector } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

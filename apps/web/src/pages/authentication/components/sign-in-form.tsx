@@ -1,14 +1,21 @@
 import { useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/ui';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  useToast,
+} from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { Input } from '@usertour/ui';
-import { useToast } from '@usertour/ui';
 import { LoginMutationVariables, useLoginMutation } from '@usertour/hooks';
 import { GlobalConfig } from '@usertour/types';
 import { SocialProviders } from './social-providers';

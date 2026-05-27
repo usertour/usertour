@@ -1,4 +1,4 @@
-import { EditableTitle } from '@usertour/ui';
+import { EditableTitle, Button, useToast } from '@usertour/ui';
 import { MoreButton } from '@/components/section-breadcrumb-header';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
@@ -8,11 +8,9 @@ import { useContentPublishState } from '@/hooks/use-content-publish-state';
 import { isVersionPublished } from '@/utils/content';
 import { useMutation } from '@apollo/client';
 import { EnterIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
 import { updateContent } from '@usertour/gql';
 import { PlaneIcon, RiArrowRightSLine, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { useToast } from '@usertour/ui';
 import { ContentDataType } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 import { formatDistanceToNow } from 'date-fns';

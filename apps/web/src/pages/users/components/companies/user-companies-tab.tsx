@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BizUser } from '@usertour/types';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/ui';
-import { DefaultAvatar } from '@usertour/ui';
+import { Table, TableBody, TableHead, TableHeader, TableRow, DefaultAvatar } from '@usertour/ui';
 import { MembershipRow } from '@/components/membership-row';
 
 interface UserCompaniesTabProps {

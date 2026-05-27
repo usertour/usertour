@@ -1,12 +1,17 @@
-import { Badge } from '@usertour/ui';
+import {
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  EditableTitle,
+} from '@usertour/ui';
 import { RiArrowRightSLine, RiShieldCheckFill } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropdown-menu';
 import { BuilderSaveButton } from '../ui';
-import { EditableTitle } from '@usertour/ui';
 import { MoreButton } from '@/components/section-breadcrumb-header';
 
 export interface TopBarProps {

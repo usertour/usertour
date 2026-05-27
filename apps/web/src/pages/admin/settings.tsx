@@ -3,15 +3,10 @@ import {
   useInvalidateLicenseScopedCache,
   useUpdateInstanceLicenseMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
+import { useToast, Separator, Button, Input, Textarea, Skeleton } from '@usertour/ui';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour/ui';
-import { Button } from '@usertour/ui';
-import { Input } from '@usertour/ui';
-import { Textarea } from '@usertour/ui';
-import { Skeleton } from '@usertour/ui';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
 import { LicenseStatusBadge, licenseDateClass } from '@/components/license/license-status-badge';

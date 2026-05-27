@@ -27,10 +27,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@usertour/ui';
-import { Button } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { ChecklistItemType } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../../contexts';

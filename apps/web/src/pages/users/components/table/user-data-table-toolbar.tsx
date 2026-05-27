@@ -12,16 +12,14 @@ import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@user
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
 import { DataTableViewOptions } from '@/components/segments/table';
-import { CollapsibleSearch } from '@usertour/ui';
+import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { DeleteUserFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/ui';
 import { useTableSelection } from '@/hooks/use-table-selection';
-import { Button } from '@usertour/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
 interface UserDataTableToolbarProps {

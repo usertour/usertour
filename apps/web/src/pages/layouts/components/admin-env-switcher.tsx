@@ -6,9 +6,10 @@ import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { EnvironmentCreateDialog } from '@/pages/settings/environments/components/environment-create-dialog';
 import { Environment } from '@usertour/types';
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Avatar, AvatarFallback } from '@usertour/ui';
-import { Button } from '@usertour/ui';
 import {
+  Avatar,
+  AvatarFallback,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,

@@ -1,6 +1,4 @@
-import { Skeleton } from '@usertour/ui';
-import { Separator } from '@usertour/ui';
-import { ListSkeleton } from '@usertour/ui';
+import { Skeleton, Separator, ListSkeleton } from '@usertour/ui';
 
 // Skeleton for the header section
 export const SegmentHeaderSkeleton = () => {

@@ -1,10 +1,7 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
-import { ListSkeleton } from '@usertour/ui';
-import { Card } from '@usertour/ui';
+import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { Separator } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
 import { ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';

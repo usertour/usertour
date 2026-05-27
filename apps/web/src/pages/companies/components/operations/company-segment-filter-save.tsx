@@ -7,11 +7,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
+  LoadingButton,
 } from '@usertour/ui';
-import { Button } from '@usertour/ui';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { LoadingButton } from '@usertour/ui';
 import { useSaveCompanySegmentFilter } from '@/hooks/use-save-company-segment-filter';
 
 export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) => {

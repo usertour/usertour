@@ -4,9 +4,15 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { AttributeCreateForm } from '@usertour/editor';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/ui';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  NewItemButton,
+  SettingsPage,
+} from '@usertour/ui';
 import { AttributeBizTypes } from '@usertour/types';
-import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { AttributeListContent } from './components/attribute-list-content';
 
 const ATTRIBUTES_DOCS_HREF =

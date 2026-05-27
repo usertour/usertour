@@ -1,7 +1,20 @@
 import { useUserSessionsContext } from '@/contexts/user-sessions-context';
 import { BizSession, ContentDataType, Event } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { ListSkeleton } from '@usertour/ui';
+import {
+  ListSkeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { formatDistanceToNow } from 'date-fns';
 import {
   BannerProgressCell,
@@ -13,7 +26,6 @@ import {
 } from '@/components/sessions/session-analytics';
 import { useListEventsQuery } from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import {
   BannerIcon,
@@ -24,9 +36,7 @@ import {
   ResourceCenterIcon,
   SpinnerIcon,
 } from '@usertour/icons';
-import { Button } from '@usertour/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 
 const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;

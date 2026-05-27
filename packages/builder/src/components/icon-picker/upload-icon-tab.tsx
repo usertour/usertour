@@ -1,13 +1,12 @@
 import React from 'react';
 import Upload from 'rc-upload';
-import { Button } from '@usertour/ui';
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
 import { ACCEPT_FILE_TYPES } from './constants';
 import { IconPreview } from './icon-preview';
 import { useIconUpload } from './hooks/use-icon-upload';
 import type { UploadIconTabProps } from './types';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 export const UploadIconTab = React.memo<UploadIconTabProps>(
   ({ iconUrl, iconSource, onUploadSuccess, onRemove }) => {

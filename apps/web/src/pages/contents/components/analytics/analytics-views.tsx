@@ -1,8 +1,7 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
+import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour/icons';
-import { QuestionTooltip } from '@usertour/ui';
 import { AnalyticsData, ContentDataType } from '@usertour/types';
 import { AnalyticsViewsSkeleton } from './analytics-skeleton';
 

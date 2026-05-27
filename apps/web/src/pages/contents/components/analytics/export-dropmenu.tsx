@@ -3,6 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  useToast,
 } from '@usertour/ui';
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
@@ -11,7 +12,6 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
 import { getContentVersion, listSessionsDetail } from '@usertour/gql';
 import type { BizSession, ContentVersion } from '@usertour/types';
-import { useToast } from '@usertour/ui';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';

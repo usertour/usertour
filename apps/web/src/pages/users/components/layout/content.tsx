@@ -2,10 +2,15 @@ import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { UserListProvider } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
+import {
+  Button,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { EditIcon } from '@usertour/icons';
-import { Separator } from '@usertour/ui';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserDataTable } from '../table';

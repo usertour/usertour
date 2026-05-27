@@ -1,17 +1,12 @@
-import { Button } from '@usertour/ui';
-import { Input } from '@usertour/ui';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useToast } from '@usertour/ui';
-import { useCreateAccessTokenMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
-import { useAppContext } from '@/contexts/app-context';
-import { ApiKeyDialog } from './api-key-dialog';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import {
+  Button,
+  Input,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  useToast,
   Form,
   FormControl,
   FormDescription,
@@ -20,6 +15,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour/ui';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useCreateAccessTokenMutation } from '@usertour/hooks';
+import { getErrorMessage } from '@usertour/helpers';
+import { useAppContext } from '@/contexts/app-context';
+import { ApiKeyDialog } from './api-key-dialog';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { SpinnerIcon } from '@usertour/icons';
 
 interface ApiCreateDialogProps {

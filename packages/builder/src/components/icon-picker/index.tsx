@@ -1,8 +1,15 @@
 import { useCallback, useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { Tabs, UnderlineTabsList, UnderlineTabsTrigger, UnderlineTabsContent } from '@usertour/ui';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Tabs,
+  UnderlineTabsList,
+  UnderlineTabsTrigger,
+  UnderlineTabsContent,
+  TooltipProvider,
+} from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { TooltipProvider } from '@usertour/ui';
 import { LauncherIconSource } from '@usertour/types';
 import { TAB_VALUES } from './constants';
 import { getActiveText } from './utils';

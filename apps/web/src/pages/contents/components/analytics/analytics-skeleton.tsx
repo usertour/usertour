@@ -1,6 +1,16 @@
-import { Skeleton } from '@usertour/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/ui';
+import {
+  Skeleton,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@usertour/ui';
 
 // AnalyticsHeader skeleton
 export const AnalyticsHeaderSkeleton = () => {

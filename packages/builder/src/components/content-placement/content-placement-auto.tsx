@@ -1,10 +1,7 @@
 import { Crosshair2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
+import { Button, Label, QuestionTooltip, Switch } from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { Label } from '@usertour/ui';
 import { SelectorDialog } from '@usertour/business-components';
-import { QuestionTooltip } from '@usertour/ui';
-import { Switch } from '@usertour/ui';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
 import { useContentPlacement } from './content-placement-context';
 import { PrecisionSelect } from './precision-select';

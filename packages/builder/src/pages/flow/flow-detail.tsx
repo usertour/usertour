@@ -1,16 +1,23 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  OutlineInput,
+  ScrollArea,
+  Separator,
+  useToast,
+} from '@usertour/ui';
 import {
   EXTENSION_CONTENT_POPPER,
   EXTENSION_CONTENT_SIDEBAR,
   MESSAGE_CRX_OPEN_NEW_TARGET,
 } from '@usertour/constants';
-import { OutlineInput } from '@usertour/ui';
-import { ScrollArea } from '@usertour/ui';
-import { Separator } from '@usertour/ui';
 import {
   Align,
   ContentAlignmentData,
@@ -43,7 +50,6 @@ import { postProxyMessageToWindow } from '../../utils/post-message';
 import { ContentEditorRoot } from '@usertour/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
 import { PlusIcon, SpinnerIcon } from '@usertour/icons';
-import { useToast } from '@usertour/ui';
 import { ContentType } from '../../components/content-type';
 import { FlowPlacement } from './components/flow-placement';
 import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour/hooks';

@@ -1,18 +1,23 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
+import {
+  Button,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Switch,
+  Label,
+} from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
 import { Actions, PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { SpinnerIcon } from '@usertour/icons';
-import { Label } from '@usertour/ui';
-import { ScrollArea } from '@usertour/ui';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
-import { Switch } from '@usertour/ui';
 import {
   ContentActionsItemType,
   LauncherIconSource,

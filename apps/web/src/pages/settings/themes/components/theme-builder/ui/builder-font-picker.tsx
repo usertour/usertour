@@ -1,8 +1,16 @@
 import { RiCheckLine, RiExpandUpDownLine } from '@usertour/icons';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { ScrollArea } from '@usertour/ui';
-import { Separator } from '@usertour/ui';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  ScrollArea,
+  Separator,
+} from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { fontItems } from '@/utils/webfonts';
 import { useState } from 'react';

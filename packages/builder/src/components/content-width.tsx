@@ -1,6 +1,5 @@
 import { memo, useCallback, useState, useEffect, ChangeEvent } from 'react';
-import { Input } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
+import { Input, QuestionTooltip } from '@usertour/ui';
 
 export interface ContentWidthProps {
   width: number | undefined;

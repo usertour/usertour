@@ -1,12 +1,11 @@
 'use client';
 
 import { ColumnDef, Table } from '@tanstack/react-table';
-import { Checkbox } from '@usertour/ui';
+import { Checkbox, DefaultAvatar } from '@usertour/ui';
 import { BizUser } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTableColumnHeader } from '@/components/segments/table';
-import { DefaultAvatar } from '@usertour/ui';
 
 // Hook to create user table columns
 export const useUserTableColumns = (): ColumnDef<BizUser>[] => {

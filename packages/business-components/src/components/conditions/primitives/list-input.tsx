@@ -1,6 +1,5 @@
-import { Button } from '@usertour/ui';
+import { Button, Input } from '@usertour/ui';
 import { RiAddLine, RiCloseLine } from '@usertour/icons';
-import { Input } from '@usertour/ui';
 import { useConditionsT } from '../conditions-context';
 
 interface Props {

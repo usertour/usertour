@@ -3,14 +3,25 @@
 import { SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/ui';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  useToast,
+} from '@usertour/ui';
 import { useCopyThemeMutation } from '@usertour/hooks';
-import { Input } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
-import { useToast } from '@usertour/ui';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

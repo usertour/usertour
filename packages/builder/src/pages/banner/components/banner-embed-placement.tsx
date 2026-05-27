@@ -5,8 +5,8 @@ import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
 
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { QuestionTooltip } from '@usertour/ui';
 import {
+  QuestionTooltip,
   Select,
   SelectContent,
   SelectGroup,

@@ -1,8 +1,7 @@
 // Main editable image component
 
 /* eslint-disable @next/next/no-img-element */
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { useToast } from '@usertour/ui';
+import { Popover, PopoverContent, PopoverTrigger, useToast } from '@usertour/ui';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';

@@ -2,10 +2,14 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { MemberProvider, useMemberContext } from '@/contexts/member-context';
-import { UserAvatar } from '@usertour/ui';
-import { Badge } from '@usertour/ui';
+import {
+  UserAvatar,
+  Badge,
+  NewItemButton,
+  ResourceListPage,
+  type ResourceTableColumn,
+} from '@usertour/ui';
 import type { TeamMember } from '@usertour/types';
-import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { MemberInviteDialog } from './components/member-invite-dialog';
 import { MemberRowActions } from './components/member-row-actions';
 

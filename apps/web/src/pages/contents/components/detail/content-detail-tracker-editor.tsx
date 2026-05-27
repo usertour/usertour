@@ -7,15 +7,20 @@ import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 import { buildConfig } from '@usertour/helpers';
 import { Event, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
-import { Button } from '@usertour/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  QuestionTooltip,
+  Input,
+} from '@usertour/ui';
 import { EventTrackerIcon } from '@usertour/icons';
-import { QuestionTooltip } from '@usertour/ui';
 import {
   ContentDetailAutoStartRules,
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
-import { Input } from '@usertour/ui';
 import { XIcon, SearchIcon, CheckIcon } from 'lucide-react';
 
 // ============================================================================

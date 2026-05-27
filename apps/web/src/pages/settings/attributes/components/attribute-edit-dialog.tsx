@@ -3,20 +3,25 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  QuestionTooltip,
+  SettingsDialogForm,
+  useSettingsForm,
 } from '@usertour/ui';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
 import { useUpdateAttributeMutation } from '@usertour/hooks';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
-import { Input } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
 import { type Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
 interface AttributeEditDialogProps {

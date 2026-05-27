@@ -1,11 +1,15 @@
 import { useAppContext } from '@/contexts/app-context';
-import { DestructiveConfirmDialog } from '@usertour/ui';
 import {
+  DestructiveConfirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@usertour/ui';
 import {
   CloseCircleIcon,
@@ -19,7 +23,6 @@ import { BizSession } from '@usertour/types';
 import { Fragment, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/ui';
 import { SessionResponse } from '@/components/sessions/session-detail';
 import { getOrderedQuestionAnswers, QuestionWithAnswer } from '@/utils/session';
 

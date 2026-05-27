@@ -1,11 +1,15 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { ColorPickerPanel } from '@usertour/ui';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  ColorPickerPanel,
+  CompactColorButton,
+} from '@usertour/ui';
 import { useCurrentUserId } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { getPath } from '../draft-util';
-import { CompactColorButton } from '@usertour/ui';
 
 interface CellProps {
   path: string;

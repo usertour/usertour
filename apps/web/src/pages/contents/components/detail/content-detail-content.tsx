@@ -3,12 +3,19 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Badge } from '@usertour/ui';
+import {
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+  ScaledPreviewContainer,
+  Button,
+  Card,
+} from '@usertour/ui';
 import { stepIsReachable } from '@usertour/builder/src/utils/content-validate';
 import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour/icons';
 import { GoogleFontCss } from '@usertour/business-components';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/ui';
-import { TooltipProvider } from '@usertour/ui';
 import {
   BannerData,
   BannerEmbedPlacement,
@@ -27,7 +34,6 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { ScaledPreviewContainer } from '@usertour/ui';
 import { ContentEditForm } from '../shared/content-edit-form';
 import {
   BannerPreviewContent,
@@ -37,8 +43,6 @@ import {
   ResourceCenterPreview,
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour/ui';
-import { Card } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 
 interface ContentDetailContentStepProps {

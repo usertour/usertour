@@ -1,4 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  useToast,
+  DestructiveConfirmDialog,
+  Switch,
+} from '@usertour/ui';
 import {
   ArrowRightIcon,
   EqualIcon,
@@ -15,21 +28,11 @@ import {
 } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { format } from 'date-fns';
-import { Button } from '@usertour/ui';
-import {
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@usertour/ui';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { useDeleteIntegrationObjectMappingMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { DestructiveConfirmDialog } from '@usertour/ui';
 import { ObjectMappingDialog } from './object-mapping-dialog';
-import { Switch } from '@usertour/ui';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (
   <UsertourIcon2 className={cn('w-4 h-4 text-primary', className)} />

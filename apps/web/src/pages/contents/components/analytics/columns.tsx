@@ -16,9 +16,14 @@ import {
   ResourceCenterProgressCell,
   SessionStatusBadge,
 } from '@/components/sessions/session-analytics';
-import { DefaultAvatar } from '@usertour/ui';
+import {
+  DefaultAvatar,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { Link } from 'react-router-dom';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 
 const ProgressCell = (props: Row<BizSession>) => {
   const { content } = useContentDetailContext();

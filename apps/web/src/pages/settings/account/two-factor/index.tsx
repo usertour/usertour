@@ -2,12 +2,17 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/ui';
+import {
+  Button,
+  Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  useToast,
+} from '@usertour/ui';
 import { useDisableTwoFactorMutation } from '@usertour/hooks';
 import { RiSparklingFill } from '@usertour/icons';
-import { Switch } from '@usertour/ui';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
-import { useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { RegenerateDialog } from './regenerate-dialog';
 import { SetupDialog } from './setup-dialog';

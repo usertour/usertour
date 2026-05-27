@@ -1,10 +1,15 @@
 import { CompanyListProvider } from '@/contexts/company-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
+import {
+  Button,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { EditIcon } from '@usertour/icons';
-import { Separator } from '@usertour/ui';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CompanyDataTable } from '../table';

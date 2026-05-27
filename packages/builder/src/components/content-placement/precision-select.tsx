@@ -1,13 +1,13 @@
-import { Label } from '@usertour/ui';
 import {
+  Label,
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  QuestionTooltip,
 } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
 
 interface PrecisionSelectProps {
   value?: string;

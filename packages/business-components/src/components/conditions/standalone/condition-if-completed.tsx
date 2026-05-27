@@ -1,6 +1,4 @@
-import { Checkbox } from '@usertour/ui';
-import { Label } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
+import { Checkbox, Label, QuestionTooltip } from '@usertour/ui';
 import type { ContentDataType } from '@usertour/types';
 import { useId } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';

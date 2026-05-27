@@ -1,4 +1,4 @@
-import { QuestionTooltip } from '@usertour/ui';
+import { QuestionTooltip, Input } from '@usertour/ui';
 import {
   ContentDataType,
   Frequency,
@@ -17,7 +17,6 @@ import {
   ConditionErrorTooltipContent,
 } from '../ui/condition-error-tooltip';
 import { ConditionInlineSelect } from '../ui/condition-inline-select';
-import { Input } from '@usertour/ui';
 import { resolveTranslator } from './translator';
 
 const FREQUENCY_KEYS = [

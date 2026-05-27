@@ -1,7 +1,6 @@
 import { memo, useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useToast } from '@usertour/ui';
+import { DestructiveConfirmDialog, useToast } from '@usertour/ui';
 import { Segment } from '@usertour/types';
 import { useDeleteSegment } from '@/hooks/use-delete-segment';
 import { useDeleteCompanySegment } from '@/hooks/use-delete-company-segment';

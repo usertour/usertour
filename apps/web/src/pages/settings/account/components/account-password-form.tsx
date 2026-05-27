@@ -2,10 +2,17 @@
 
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  SettingsFormSection,
+  useSettingsForm,
+} from '@usertour/ui';
 import { useChangePasswordMutation } from '@usertour/hooks';
-import { Input } from '@usertour/ui';
-import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
 // Bounds match the auth module's password schema (registration / reset)

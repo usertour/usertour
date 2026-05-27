@@ -4,14 +4,25 @@ import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/ui';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/ui';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  useToast,
+} from '@usertour/ui';
 import { createContent } from '@usertour/gql';
-import { Input } from '@usertour/ui';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
-import { useToast } from '@usertour/ui';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

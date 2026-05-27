@@ -1,8 +1,8 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,

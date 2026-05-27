@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
-import { Button } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, QuestionTooltip } from '@usertour/ui';
 
 import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';

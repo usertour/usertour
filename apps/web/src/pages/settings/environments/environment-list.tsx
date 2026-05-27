@@ -4,11 +4,15 @@ import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { CopyIcon } from '@radix-ui/react-icons';
-import { Badge } from '@usertour/ui';
-import { Button } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
+import {
+  Badge,
+  Button,
+  QuestionTooltip,
+  NewItemButton,
+  ResourceListPage,
+  type ResourceTableColumn,
+} from '@usertour/ui';
 import { Environment } from '@usertour/types';
-import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { EnvironmentCreateDialog } from './components/environment-create-dialog';
 import { EnvironmentRowActions } from './components/environment-row-actions';
 

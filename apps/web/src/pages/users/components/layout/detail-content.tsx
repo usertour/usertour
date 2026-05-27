@@ -3,7 +3,26 @@ import { useTranslation } from 'react-i18next';
 import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour/icons';
 import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
-import { DefaultAvatar } from '@usertour/ui';
+import {
+  DefaultAvatar,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  ContentLoading,
+  TruncatedText,
+} from '@usertour/ui';
 import {
   AttributeBizTypes,
   AttributeDataType,
@@ -18,19 +37,7 @@ import { UserCompaniesTab } from '../companies';
 import { ActivityFeed } from '@/components/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/ui';
-import { Button } from '@usertour/ui';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@usertour/ui';
-import { ToggleGroup, ToggleGroupItem } from '@usertour/ui';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
-import { ContentLoading } from '@usertour/ui';
-import { TruncatedText } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { useListAttributesQuery } from '@usertour/hooks';

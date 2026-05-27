@@ -6,14 +6,18 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
 import { RiArrowLeftLine } from '@usertour/icons';
-import { Badge } from '@usertour/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Separator,
+} from '@usertour/ui';
 import { useAws } from '@usertour/builder/src/hooks/use-aws';
-import { Button } from '@usertour/ui';
-import { Card } from '@usertour/ui';
 import { ImageEditIcon, SpinnerIcon } from '@usertour/icons';
-import { Input } from '@usertour/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { Separator } from '@usertour/ui';
 import type {
   ContentEditorButtonElement,
   ContentEditorEmebedElement,

@@ -4,14 +4,12 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
 import { GoogleFontCss } from '@usertour/business-components';
-import { ScaledPreviewContainer } from '@usertour/ui';
+import { ScaledPreviewContainer, Button } from '@usertour/ui';
 import { Theme } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour/constants';
 import { memo, MouseEvent, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-
-import { Button } from '@usertour/ui';
 
 import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
 import { ThemeEditDropdownMenu } from './theme-edit-dropdown-menu';

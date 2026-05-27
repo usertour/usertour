@@ -1,20 +1,29 @@
 'use client';
 
 import { ChevronLeftIcon, InfoCircledIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/ui';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/ui';
+import {
+  Button,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Label,
+} from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeListContext } from '@usertour/contexts';
 import { SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini, CodeEditor } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
-import { Label } from '@usertour/ui';
-import { ScrollArea } from '@usertour/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
-import { Switch } from '@usertour/ui';
 import {
   LauncherIconSource,
   LiveChatProvider,

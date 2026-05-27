@@ -5,8 +5,14 @@ import {
   DoubleArrowRightIcon,
 } from '@radix-ui/react-icons';
 
-import { Button } from '@usertour/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour/ui';
 import { DataTablePaginationProps } from './types';
 
 export function DataTablePagination<TData extends { id: string }>({

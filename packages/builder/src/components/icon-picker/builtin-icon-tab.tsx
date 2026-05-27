@@ -1,7 +1,6 @@
 import React from 'react';
 import { IconsList } from '@usertour/widget';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/ui';
-import { Button } from '@usertour/ui';
+import { Tooltip, TooltipContent, TooltipTrigger, Button } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import type { BuiltinIconTabProps, IconButtonProps } from './types';
 

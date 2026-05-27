@@ -1,8 +1,8 @@
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 
-import { Badge } from '@usertour/ui';
-import { Button } from '@usertour/ui';
 import {
+  Badge,
+  Button,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -10,9 +10,11 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Separator,
 } from '@usertour/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
-import { Separator } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { DataTableFacetedFilterProps } from './types';
 

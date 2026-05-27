@@ -26,10 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@usertour/ui';
-import { Button } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';

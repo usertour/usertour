@@ -1,8 +1,7 @@
-import { DestructiveConfirmDialog } from '@usertour/ui';
+import { DestructiveConfirmDialog, useToast } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteContentMutation } from '@usertour/hooks';
 import { Content, ContentDataType } from '@usertour/types';
-import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { getContentTypeMeta } from './content-type-meta';

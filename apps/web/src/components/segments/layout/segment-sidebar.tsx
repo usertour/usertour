@@ -7,9 +7,8 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { Button } from '@usertour/ui';
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';

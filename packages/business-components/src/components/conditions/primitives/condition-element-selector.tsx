@@ -1,7 +1,5 @@
-import { Button } from '@usertour/ui';
+import { Button, Input, QuestionTooltip } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
-import { Input } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/ui';
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { type ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { useConditionsT } from '../conditions-context';

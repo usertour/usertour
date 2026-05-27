@@ -2,9 +2,8 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Attribute } from '@usertour/types';
-import { Badge } from '@usertour/ui';
+import { Badge, ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
 import { RiShieldCheckFill } from '@usertour/icons';
-import { ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
 import { AttributeRowActions } from './attribute-row-actions';
 
 interface AttributeListContentProps {
