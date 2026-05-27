@@ -151,8 +151,17 @@ export const AttributeCreateForm = ({
     mode: 'onChange',
   });
 
+  // Re-seed with the latest `defaultValues` whenever the dialog opens.
+  // `form.reset()` (no arg) would snap back to the values captured at
+  // the form's initial mount — wrong for callers that change
+  // `propDefaultValues` between opens (e.g. the Attributes settings page
+  // defaulting `bizType` to the active tab). `defaultValues` is
+  // intentionally not in the dep list: it's recomputed on every parent
+  // render (object spread), so listing it would re-reset mid-typing.
   useEffect(() => {
-    form.reset();
+    if (isOpen) {
+      form.reset(defaultValues);
+    }
   }, [isOpen]);
 
   async function handleOnSubmit(formValues: FormValues) {

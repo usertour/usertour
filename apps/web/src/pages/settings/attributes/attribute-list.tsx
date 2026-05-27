@@ -5,13 +5,32 @@ import { useAppContext } from '@/contexts/app-context';
 import { AttributeCreateForm } from '@usertour/editor';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
+import { AttributeBizTypes } from '@usertour/types';
 import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { AttributeListContent } from './components/attribute-list-content';
 
 const ATTRIBUTES_DOCS_HREF =
   'https://docs.usertour.io/developers/usertourjs-reference/overview/#attributes';
 
-const NewAttributeButton = ({ onSuccess }: { onSuccess: () => void }) => {
+// Tab value → AttributeBizTypes mapping. Drives both AttributeListContent
+// (which expects a bizType number) and the New attribute dialog's
+// initial `bizType` default — clicking "New attribute" from the Company
+// tab pre-selects Company in the dialog, etc.
+const TAB_TO_BIZ_TYPE = {
+  user: AttributeBizTypes.User,
+  company: AttributeBizTypes.Company,
+  membership: AttributeBizTypes.Membership,
+  event: AttributeBizTypes.Event,
+} as const;
+type AttributeTab = keyof typeof TAB_TO_BIZ_TYPE;
+
+interface NewAttributeButtonProps {
+  bizType: AttributeBizTypes;
+  onSuccess: () => void;
+}
+
+const NewAttributeButton = (props: NewAttributeButtonProps) => {
+  const { bizType, onSuccess } = props;
   const { isViewOnly, project } = useAppContext();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -32,6 +51,10 @@ const NewAttributeButton = ({ onSuccess }: { onSuccess: () => void }) => {
             onSuccess();
           }}
           projectId={project.id}
+          // Pre-select the bizType matching the active tab so the
+          // dialog picks up "where the user clicked from" instead of
+          // always defaulting to User.
+          defaultValues={{ bizType: String(bizType) }}
         />
       ) : null}
     </>
@@ -41,18 +64,23 @@ const NewAttributeButton = ({ onSuccess }: { onSuccess: () => void }) => {
 export const SettingsAttributeList = () => {
   const { refetch } = useAttributeListContext();
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<AttributeTab>('user');
 
   return (
     <SettingsPage
       title={t('settings.attributes.title')}
-      actions={<NewAttributeButton onSuccess={refetch} />}
+      actions={<NewAttributeButton bizType={TAB_TO_BIZ_TYPE[activeTab]} onSuccess={refetch} />}
       description={<p>{t('settings.attributes.description')}</p>}
       docs={{
         href: ATTRIBUTES_DOCS_HREF,
         label: t('settings.common.readGuide', { topic: t('settings.attributes.title') }),
       }}
     >
-      <Tabs defaultValue="user" className="h-full space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(next) => setActiveTab(next as AttributeTab)}
+        className="h-full space-y-6"
+      >
         <div className="space-between flex items-center">
           <TabsList>
             <TabsTrigger value="user" className="relative">
