@@ -77,9 +77,10 @@ const SessionDetailContentWithLoading = ({
   sessionId,
 }: SessionDetailContentProps) => {
   const { session, loading: sessionLoading, refetch } = useQuerySessionDetailQuery(sessionId);
+  const { t } = useTranslation();
 
   if (sessionLoading) {
-    return <ContentLoading />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   return (
@@ -145,7 +146,7 @@ const SessionDetailContentInner = ({
   );
 
   if (eventLoading && !eventList) {
-    return <ContentLoading />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   if (!eventList || !content || !version) {

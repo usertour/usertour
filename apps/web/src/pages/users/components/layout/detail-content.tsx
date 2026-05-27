@@ -53,9 +53,10 @@ interface UserDetailContentProps {
 
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
   const { loading: userListLoading } = useUserListContext();
+  const { t } = useTranslation();
 
   if (userListLoading) {
-    return <ContentLoading />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   return <UserDetailContentInner environmentId={environmentId} userId={userId} />;

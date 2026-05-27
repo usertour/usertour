@@ -341,9 +341,10 @@ const CompanyDetailContentWithLoading = ({
   companyId,
 }: CompanyDetailContentProps) => {
   const { loading: companyListLoading } = useCompanyListContext();
+  const { t } = useTranslation();
 
   if (companyListLoading) {
-    return <ContentLoading />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   return <CompanyDetailContentInner environmentId={environmentId} companyId={companyId} />;
