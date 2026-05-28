@@ -1,4 +1,4 @@
-import { NetworkStatus, useMutation, useQuery } from '@apollo/client';
+import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   copyTheme,
   createTheme,
@@ -68,11 +68,12 @@ export const useDeleteThemeMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListThemesQuery = (projectId: string | undefined) => {
+export const useListThemesQuery = (projectId: string | undefined, options?: QueryHookOptions) => {
   const { data, refetch, loading, error, networkStatus } = useQuery(listThemes, {
     variables: { projectId },
     notifyOnNetworkStatusChange: true,
     skip: !projectId,
+    ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
   const themeList = data?.listThemes as Theme[] | null;

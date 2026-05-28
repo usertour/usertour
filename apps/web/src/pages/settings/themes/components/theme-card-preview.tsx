@@ -1,5 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useThemeListContext } from '@/contexts/theme-list-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { useListThemesQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
@@ -21,8 +22,8 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
   const { theme } = props;
   const containerRef = useRef(null);
 
-  const { refetch } = useThemeListContext();
   const { project, isViewOnly } = useAppContext();
+  const { refetch } = useListThemesQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
   const { globalStyle, themeSetting } = useSettingsStyles(theme.settings);
   const navigate = useNavigate();
   const { t } = useTranslation();

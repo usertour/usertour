@@ -1,9 +1,10 @@
 import { isWithinLimit } from '@usertour/helpers';
 import type { PlanFeatures } from '@usertour/types';
-import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { useMemberContext } from '@/contexts/member-context';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import { useGlobalConfig } from '@/hooks/use-global-config';
+import { useActiveProject } from '@/hooks/use-active-project';
+import { useMemberList } from '@/hooks/use-member-list';
+import { useSubscription } from '@/hooks/use-subscription';
 
 // Per-quota hooks that compose subscription features, the relevant
 // resource list, and the self-hosted-mode bypass into a single
@@ -18,8 +19,8 @@ interface QuotaResult<K extends keyof PlanFeatures> {
 }
 
 function useQuota<K extends keyof PlanFeatures>(key: K, current: number): QuotaResult<K> {
-  const { features } = useSubscriptionContext();
-  const { globalConfig } = useAppContext();
+  const { features } = useSubscription();
+  const { globalConfig } = useGlobalConfig();
   const limit = features[key];
   // Self-hosted mode has no client-side cap — license handles that path.
   const canUseMore =
@@ -28,12 +29,13 @@ function useQuota<K extends keyof PlanFeatures>(key: K, current: number): QuotaR
 }
 
 export function useEnvironmentLimit() {
-  const { environmentList } = useEnvironmentListContext();
+  const project = useActiveProject();
+  const { environmentList } = useGetUserEnvironmentsQuery(project?.id);
   return useQuota('environmentLimit', environmentList?.length ?? 0);
 }
 
 export function useTeamMemberLimit() {
-  const { members = [] } = useMemberContext();
+  const { members = [] } = useMemberList();
   return useQuota('teamMemberLimit', members.length);
 }
 

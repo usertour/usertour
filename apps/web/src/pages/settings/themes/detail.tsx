@@ -1,5 +1,4 @@
-import { ThemeDetailProvider, useThemeDetailContext } from '@/contexts/theme-detail-context';
-import { useUpdateThemeMutation } from '@usertour/hooks';
+import { useGetThemeQuery, useUpdateThemeMutation } from '@usertour/hooks';
 import { useToast, ContentLoading } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
@@ -8,10 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeBuilder } from './components/theme-builder';
 
-// Inner component that uses the context
-const ThemeDetailInner = () => {
-  const { loading, theme, refetch } = useThemeDetailContext();
-  const { projectId } = useParams();
+export const SettingsThemeDetail = () => {
+  const { themeId = '', projectId } = useParams();
+  const { theme, loading, refetch } = useGetThemeQuery(themeId);
   const navigate = useNavigate();
   const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
@@ -78,16 +76,6 @@ const ThemeDetailInner = () => {
         }
       }}
     />
-  );
-};
-
-export const SettingsThemeDetail = () => {
-  const { themeId = '' } = useParams();
-
-  return (
-    <ThemeDetailProvider themeId={themeId}>
-      <ThemeDetailInner />
-    </ThemeDetailProvider>
   );
 };
 

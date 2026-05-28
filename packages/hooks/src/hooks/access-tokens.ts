@@ -27,11 +27,15 @@ export const useCreateAccessTokenMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListAccessTokensQuery = (environmentId: string | undefined) => {
+export const useListAccessTokensQuery = (
+  environmentId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error, refetch, networkStatus } = useQuery(ListAccessTokens, {
     variables: { environmentId },
     skip: !environmentId,
     notifyOnNetworkStatusChange: true,
+    ...options,
   });
 
   const isRefetching = networkStatus === NetworkStatus.refetch;

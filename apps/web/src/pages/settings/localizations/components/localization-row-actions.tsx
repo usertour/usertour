@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useLocalizationListContext } from '@/contexts/localization-list-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { useListLocalizationsQuery } from '@usertour/hooks';
 import { StarFilledIcon } from '@radix-ui/react-icons';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
@@ -19,8 +20,8 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
   const { localization } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { refetch } = useLocalizationListContext();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, project } = useAppContext();
+  const { refetch } = useListLocalizationsQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
   const { invoke: setDefaultLocalization } = useSetDefaultLocalizationMutation();
   const { toast } = useToast();
   const { t } = useTranslation();

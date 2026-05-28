@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { StarIcon } from '@radix-ui/react-icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useUpdateEnvironmentMutation } from '@usertour/hooks';
+import { useGetUserEnvironmentsQuery, useUpdateEnvironmentMutation } from '@usertour/hooks';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { Environment } from '@usertour/types';
 import { ResourceRowActions, useToast } from '@usertour/ui';
@@ -20,8 +20,10 @@ export const EnvironmentRowActions = (props: EnvironmentRowActionsProps) => {
   const { environment, environmentCount = 0 } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { refetch } = useEnvironmentListContext();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, project } = useAppContext();
+  // Shares Apollo cache slice with SettingsEnvironmentList — see
+  // SHARED_CACHE_QUERY_OPTIONS for why this opt-in is needed.
+  const { refetch } = useGetUserEnvironmentsQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
   const { toast } = useToast();
   const { t } = useTranslation();
   const { invoke: updateEnvironment, loading: isSettingPrimary } = useUpdateEnvironmentMutation();

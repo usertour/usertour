@@ -1,8 +1,9 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useAppContext } from '@/contexts/app-context';
+import { useListAttributesQuery } from '@usertour/hooks';
 import { WebZIndex } from '@usertour/constants';
 import { Conditions } from '@usertour/business-components';
 import { QuestionTooltip } from '@usertour/ui';
-import type { RulesCondition } from '@usertour/types';
+import { AttributeBizTypes, type RulesCondition } from '@usertour/types';
 import { Trans, useTranslation } from 'react-i18next';
 
 export interface ConditionsSectionProps {
@@ -14,7 +15,12 @@ export interface ConditionsSectionProps {
 
 export const ConditionsSection = (props: ConditionsSectionProps) => {
   const { conditions, onConditionsChange, variationName, disabled } = props;
-  const { attributeList } = useAttributeListContext();
+  const { project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const { t } = useTranslation();
   const displayName = variationName || t('themeBuilder.chrome.thisVariation');
 

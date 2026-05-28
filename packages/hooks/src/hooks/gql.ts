@@ -85,6 +85,8 @@ import {
   adminTransferProjectOwnership,
   adminRemoveProjectMember,
   updateInstanceRequire2FA,
+  getTheme,
+  listLocalizations,
 } from '@usertour/gql';
 
 import type {
@@ -107,6 +109,8 @@ import type {
   SessionQuery,
   ColumnSetting,
   RulesCondition,
+  Theme,
+  Localization,
 } from '@usertour/types';
 
 type UseContentListQueryProps = {
@@ -237,9 +241,14 @@ export const useSegmentListQuery = (
   return { segmentList: segments as Segment[], refetch, loading, error, networkStatus };
 };
 
-export const useQueryTeamMemberListQuery = (projectId: string) => {
+export const useQueryTeamMemberListQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, refetch, loading, error } = useQuery(getTeamMembers, {
     variables: { projectId },
+    skip: !projectId,
+    ...options,
   });
 
   const teamMembers: TeamMember[] =
@@ -256,9 +265,14 @@ export const useQueryTeamMemberListQuery = (projectId: string) => {
   return { teamMembers, refetch, loading, error };
 };
 
-export const useQueryInviteListQuery = (projectId: string) => {
+export const useQueryInviteListQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, refetch, loading, error } = useQuery(getInvites, {
     variables: { projectId },
+    skip: !projectId,
+    ...options,
   });
 
   const invites: TeamMember[] =
@@ -815,11 +829,15 @@ export const useUpdateAttributeMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useGetUserEnvironmentsQuery = (projectId: string | undefined) => {
+export const useGetUserEnvironmentsQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, refetch, loading, error, networkStatus } = useQuery(getUserEnvironments, {
     variables: { projectId },
     notifyOnNetworkStatusChange: true,
     skip: !projectId,
+    ...options,
   });
 
   const isRefetching = networkStatus === NetworkStatus.refetch;
@@ -1101,4 +1119,30 @@ export const useInvalidateLicenseScopedCache = () => {
     apollo.cache.gc();
     await apollo.refetchQueries({ include: [getUserInfo, globalConfig] }).catch(() => undefined);
   }, [apollo]);
+};
+
+export const useGetThemeQuery = (themeId: string | undefined, options?: QueryHookOptions) => {
+  const { data, refetch, loading, error } = useQuery(getTheme, {
+    variables: { themeId },
+    skip: !themeId,
+    ...options,
+  });
+  return { theme: data?.getTheme as Theme | undefined, refetch, loading, error };
+};
+
+export const useListLocalizationsQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, refetch, loading, error } = useQuery(listLocalizations, {
+    variables: { projectId },
+    skip: !projectId,
+    ...options,
+  });
+  return {
+    localizationList: data?.listLocalizations as Localization[] | undefined,
+    refetch,
+    loading,
+    error,
+  };
 };

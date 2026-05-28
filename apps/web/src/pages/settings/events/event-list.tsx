@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { EventListProvider, useEventListContext } from '@/contexts/event-list-context';
+import { useListEventsQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { RiShieldCheckFill } from '@usertour/icons';
@@ -30,11 +31,15 @@ const NewEventButton = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
-const EventsListPage = () => {
+export const SettingsEventList = () => {
+  const { project } = useAppContext();
   // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
   // false for refetches, so the table updates in place instead of flashing
   // back to the skeleton when a row is added/edited/deleted.
-  const { eventList, loading, refetch } = useEventListContext();
+  const { eventList, loading, refetch } = useListEventsQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   const { t } = useTranslation();
 
   const rows = useMemo(() => sortEvents(eventList ?? []), [eventList]);
@@ -85,15 +90,6 @@ const EventsListPage = () => {
       empty={t('settings.events.empty')}
       getRowKey={(event) => event.id}
     />
-  );
-};
-
-export const SettingsEventList = () => {
-  const { project } = useAppContext();
-  return (
-    <EventListProvider projectId={project?.id}>
-      <EventsListPage />
-    </EventListProvider>
   );
 };
 
