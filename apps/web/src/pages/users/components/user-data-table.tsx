@@ -28,6 +28,7 @@ import {
 } from '@/components/segments/table';
 import { UserDataTableToolbar } from './user-data-table-toolbar';
 import { useUserTableColumns } from '@/hooks/use-user-table-columns';
+import { useAppContext } from '@/contexts/app-context';
 
 interface UserDataTableProps {
   segment: Segment;
@@ -35,7 +36,8 @@ interface UserDataTableProps {
 
 export const UserDataTable = ({ segment }: UserDataTableProps) => {
   const { t } = useTranslation();
-  const columns = useUserTableColumns();
+  const { isViewOnly } = useAppContext();
+  const columns = useUserTableColumns({ isViewOnly });
 
   const { setQuery, setPagination, pagination, pageCount, contents, loading } =
     useUserListContext();
@@ -130,7 +132,9 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     pageCount,
     manualPagination: true,
     state: tableState,
-    enableRowSelection: true,
+    // Viewer-role members can't bulk-act; gate selection so toolbar
+    // affordances stay hidden (the select column is also dropped above).
+    enableRowSelection: !isViewOnly,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,

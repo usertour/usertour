@@ -28,6 +28,7 @@ import {
 } from '@/components/segments/table';
 import { CompanyDataTableToolbar } from './company-data-table-toolbar';
 import { useCompanyTableColumns } from '@/hooks/use-company-table-columns';
+import { useAppContext } from '@/contexts/app-context';
 
 interface CompanyDataTableProps {
   segment: Segment;
@@ -35,7 +36,8 @@ interface CompanyDataTableProps {
 
 export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
   const { t } = useTranslation();
-  const columns = useCompanyTableColumns();
+  const { isViewOnly } = useAppContext();
+  const columns = useCompanyTableColumns({ isViewOnly });
 
   const { setQuery, setPagination, pagination, pageCount, contents, loading } =
     useCompanyListContext();
@@ -130,7 +132,9 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     pageCount,
     manualPagination: true,
     state: tableState,
-    enableRowSelection: true,
+    // Viewer-role members can't bulk-act; gate selection so toolbar
+    // affordances stay hidden (the select column is also dropped above).
+    enableRowSelection: !isViewOnly,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
