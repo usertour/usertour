@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { CompanyListProvider } from '@/contexts/company-list-context';
 import { useParams } from 'react-router-dom';
-import { CompanyDetailContent } from './components/layout';
+import { CompanyDetailContent } from './components/company-detail-content';
 import { ScrollArea } from '@usertour/ui';
 
 export const CompanyDetail = () => {

@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { SessionDetailContent } from './components/sessions';
+import { SessionDetailContent } from './components/sessions/user-session-detail-content';
 import { useParams } from 'react-router-dom';
 import { ScrollArea } from '@usertour/ui';
 

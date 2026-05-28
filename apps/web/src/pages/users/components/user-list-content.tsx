@@ -1,5 +1,6 @@
-import { CompanyListProvider } from '@/contexts/company-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { UserListProvider } from '@/contexts/user-list-context';
+import { useTranslation } from 'react-i18next';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -12,20 +13,19 @@ import {
 import { EditIcon } from '@usertour/icons';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CompanyDataTable } from '../table';
-import { CompanyEditDropdownMenu, CompanySegmentFilterSave } from '../operations';
+import { UserDataTable } from './user-data-table';
+import { UserEditDropdownMenu } from './user-edit-dropdown-menu';
 import { SegmentEditDialog } from '@/components/segments';
+import { UserSegmentFilterSave } from './user-segment-filter-save';
 import { useAppContext } from '@/contexts/app-context';
-import { useTranslation } from 'react-i18next';
 
 // Inner component that uses the context
-const CompanyListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
-  const { t } = useTranslation();
+const UserListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
   const [open, setOpen] = useState(false);
   const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
-
+  const { t } = useTranslation();
   const handleOnClose = useCallback(() => {
     setOpen(false);
     refetch();
@@ -34,7 +34,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
   return (
     <>
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between ">
           <div className="space-y-1 flex flex-row items-center relative">
             <h2 className="text-xl font-semibold tracking-tight">{currentSegment?.name}</h2>
             {currentSegment?.dataType !== 'ALL' && (
@@ -54,33 +54,33 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-slate-700">
-                    <p>{t('companies.detail.tooltips.editName')}</p>
+                    <p>{t('users.segments.tooltips.editName')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
-            {<CompanySegmentFilterSave currentSegment={currentSegment} />}
+            <UserSegmentFilterSave currentSegment={currentSegment} />
           </div>
           {currentSegment && currentSegment.dataType !== 'ALL' && (
-            <CompanyEditDropdownMenu
+            <UserEditDropdownMenu
               segment={currentSegment}
               disabled={isViewOnly}
               onSubmit={async () => {
                 await refetch();
-                navigate(`/env/${environmentId}/companies`);
+                navigate(`/env/${environmentId}/users`);
               }}
             >
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <DotsHorizontalIcon className="h-4 w-4 " />
               </Button>
-            </CompanyEditDropdownMenu>
+            </UserEditDropdownMenu>
           )}
         </div>
         <Separator className="my-4" />
-        {currentSegment && <CompanyDataTable segment={currentSegment} key={currentSegment.id} />}
+        {currentSegment && <UserDataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
       <SegmentEditDialog
-        entity="company"
+        entity="user"
         isOpen={open}
         onClose={handleOnClose}
         segment={currentSegment}
@@ -89,9 +89,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
   );
 };
 
-CompanyListContentInner.displayName = 'CompanyListContentInner';
-
-export const CompanyListContent = (props: {
+export const UserListContent = (props: {
   environmentId: string | undefined;
 }) => {
   const { environmentId } = props;
@@ -101,10 +99,10 @@ export const CompanyListContent = (props: {
   }
 
   return (
-    <CompanyListProvider environmentId={environmentId}>
-      <CompanyListContentInner environmentId={environmentId} />
-    </CompanyListProvider>
+    <UserListProvider environmentId={environmentId}>
+      <UserListContentInner environmentId={environmentId} />
+    </UserListProvider>
   );
 };
 
-CompanyListContent.displayName = 'CompanyListContent';
+UserListContent.displayName = 'UserListContent';

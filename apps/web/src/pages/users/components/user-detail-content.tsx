@@ -32,8 +32,8 @@ import {
 } from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserSessions } from '../sessions';
-import { UserCompaniesTab } from '../companies';
+import { UserSessions } from './sessions/user-sessions';
+import { UserCompaniesTab } from './user-companies-tab';
 import { ActivityFeed } from '@/components/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';

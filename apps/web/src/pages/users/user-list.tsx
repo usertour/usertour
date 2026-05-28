@@ -1,6 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { SegmentListProvider } from '@/contexts/segment-list-context';
-import { UserListSidebar, UserListContent } from './components/layout';
+import { UserListContent } from './components/user-list-content';
+import { UserListSidebar } from './components/user-list-sidebar';
 import { ScrollArea } from '@usertour/ui';
 
 export const UserList = () => {

@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { UserListProvider } from '@/contexts/user-list-context';
 import { useParams } from 'react-router-dom';
-import { UserDetailContent } from './components/layout';
+import { UserDetailContent } from './components/user-detail-content';
 import { ScrollArea } from '@usertour/ui';
 
 export const UserDetail = () => {
