@@ -7,20 +7,31 @@ import { CaretSortIcon } from '@radix-ui/react-icons';
 import { AlertCircle } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { useTeamMemberLimit } from '@/hooks/use-plan-limits';
-import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
-import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { Input } from '@usertour/input';
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  SettingsDialogForm,
+  useSettingsForm,
+} from '@usertour/ui';
 import { useInviteTeamMemberMutation } from '@usertour/hooks';
 import { TeamMemberRole } from '@usertour/types';
-import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
 // Owner can't be granted via invite — only Admin / Viewer.

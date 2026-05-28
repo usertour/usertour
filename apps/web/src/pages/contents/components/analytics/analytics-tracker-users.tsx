@@ -1,16 +1,30 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { DefaultAvatar } from '@/components/molecules/default-avatar';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import {
+  DefaultAvatar,
+  ListSkeleton,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  QuestionTooltip,
+  useToast,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour/ui';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { queryTrackerUsers } from '@usertour/gql';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { Button } from '@usertour/button';
-import { QuestionTooltip } from '@usertour/tooltip';
-import { useToast } from '@usertour/use-toast';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
 import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';

@@ -2,19 +2,25 @@
 
 import { useMutation } from '@apollo/client';
 import { ChevronLeftIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  useToast,
+} from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
 import { useContentListContext } from '@usertour/contexts';
 import { updateContentStep } from '@usertour/gql';
 import { SpinnerIcon } from '@usertour/icons';
-import { ScrollArea } from '@usertour/scroll-area';
 import { getErrorMessage, hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
-import { useToast } from '@usertour/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
 import { BuilderMode, useBuilderContext } from '../../contexts';

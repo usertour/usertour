@@ -29,10 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@usertour/alert-dialog';
-import { Button } from '@usertour/button';
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';

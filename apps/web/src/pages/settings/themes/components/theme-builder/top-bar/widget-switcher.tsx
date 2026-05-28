@@ -5,7 +5,7 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
 } from '@usertour/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { ThemeDetailPreviewType } from '@usertour/types';
 import type { ComponentType } from 'react';
 import { useMemo } from 'react';

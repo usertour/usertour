@@ -1,4 +1,4 @@
-import { Badge } from '@usertour/badge';
+import { Badge } from '@usertour/ui';
 
 // Soft status-pill styles — tinted bg + matching ring + dark text. Avoids
 // the saturated "success/destructive" variants used for action buttons,

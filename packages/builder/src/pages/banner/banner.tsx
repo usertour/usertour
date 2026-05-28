@@ -1,7 +1,6 @@
 'use client';
 
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
-import { ScrollArea } from '@usertour/scroll-area';
+import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 
 import { useBuilderContext, useBannerContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar/sidebar-container';

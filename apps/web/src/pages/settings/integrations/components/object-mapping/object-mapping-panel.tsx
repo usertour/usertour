@@ -1,4 +1,4 @@
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { InfoIcon, XIcon } from 'lucide-react';
 import { ArrowRightIcon, EqualIcon, UsertourIcon2 } from '@usertour/icons';
 import { ObjectMappingFieldSelect } from './object-mapping-select';

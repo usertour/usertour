@@ -7,7 +7,7 @@ import {
 } from '@radix-ui/react-toolbar';
 import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour/constants';
 import { MoreIcon } from '@usertour/icons';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useState } from 'react';
 

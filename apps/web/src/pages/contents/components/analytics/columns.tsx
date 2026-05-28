@@ -15,10 +15,15 @@ import {
   LauncherProgressCell,
   ResourceCenterProgressCell,
   SessionStatusBadge,
-} from '@/components/molecules/session-analytics';
-import { DefaultAvatar } from '@/components/molecules/default-avatar';
+} from '@/components/sessions/session-analytics';
+import {
+  DefaultAvatar,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { Link } from 'react-router-dom';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 
 const ProgressCell = (props: Row<BizSession>) => {
   const { content } = useContentDetailContext();

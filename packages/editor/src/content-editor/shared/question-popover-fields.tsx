@@ -1,8 +1,6 @@
 // Shared popover field components for question editors (NPS, Scale, Star Rating)
 
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Input, Label, QuestionTooltip } from '@usertour/ui';
 import { memo } from 'react';
 
 import { useTranslation } from 'react-i18next';

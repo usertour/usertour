@@ -1,6 +1,6 @@
 // Base wrapper component for question editors (NPS, Scale, Star Rating)
 
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { isEmptyString } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';

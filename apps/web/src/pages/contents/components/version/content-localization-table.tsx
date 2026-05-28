@@ -1,13 +1,20 @@
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import {
+  ListSkeleton,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  useToast,
+} from '@usertour/ui';
 import { useContentLocalizationListContext } from '@/contexts/content-localization-list-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { useMutation } from '@apollo/client';
 import { updateVersionLocationData } from '@usertour/gql';
-import { Switch } from '@usertour/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { VersionOnLocalization } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { useToast } from '@usertour/use-toast';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
 

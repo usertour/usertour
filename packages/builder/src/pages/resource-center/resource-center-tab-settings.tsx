@@ -1,13 +1,18 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import {
+  Button,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  ScrollArea,
+} from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { SpinnerIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { ScrollArea } from '@usertour/scroll-area';
 import { LauncherIconSource } from '@usertour/types';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';

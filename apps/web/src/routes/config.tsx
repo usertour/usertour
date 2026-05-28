@@ -160,7 +160,10 @@ const config: RouteObject[] = [
               },
               {
                 path: '/env/:envId/session/:sessionId',
-                lazy: lazyComponent(() => import('@/pages/users/session-detail'), 'SessionDetail'),
+                lazy: lazyComponent(
+                  () => import('@/pages/users/user-session-detail'),
+                  'SessionDetail',
+                ),
               },
               {
                 path: '/env/:envId/company/:companyId',

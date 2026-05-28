@@ -29,8 +29,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@usertour/alert-dialog';
-import { Button } from '@usertour/button';
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import {
   Delete2Icon,
   EventIcon2,
@@ -39,7 +43,6 @@ import {
   RiMessageFill,
   TooltipIcon,
 } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 

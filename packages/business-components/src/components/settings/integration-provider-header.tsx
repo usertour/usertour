@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Card, CardHeader, CardTitle } from '@usertour/card';
-import { Skeleton } from '@usertour/skeleton';
+import { Card, CardHeader, CardTitle, Skeleton } from '@usertour/ui';
 
 export interface IntegrationProviderHeaderProps {
   /** Provider logo URL — rendered as a 48x48 image to the left of the name. */

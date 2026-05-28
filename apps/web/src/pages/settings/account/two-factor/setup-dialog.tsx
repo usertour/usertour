@@ -1,24 +1,24 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
-import { Checkbox } from '@usertour/checkbox';
 import {
+  Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
+  Input,
+  useToast,
+} from '@usertour/ui';
 import {
   type TwoFactorSetupPayload,
   useConfirmTwoFactorSetupMutation,
   useStartTwoFactorSetupMutation,
 } from '@usertour/hooks';
-import { Input } from '@usertour/input';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
 import { downloadRecoveryCodes } from './download-codes';
 
 type SetupStage = 'scan' | 'codes';

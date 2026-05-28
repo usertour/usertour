@@ -14,7 +14,16 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Button,
+  ListSkeleton,
+} from '@usertour/ui';
 
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -23,10 +32,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
-import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { Button } from '@usertour/button';
+import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { ListSkeleton } from '@/components/molecules/skeleton';
 import { ContentDataType } from '@usertour/types';
 import { InboxIcon } from 'lucide-react';
 

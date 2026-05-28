@@ -8,14 +8,20 @@ import {
   IntegrationProviderHeader,
   IntegrationProviderHeaderSkeleton,
 } from '@usertour/business-components';
-import { Button } from '@usertour/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Skeleton,
+  Switch,
+  useToast,
+} from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Skeleton } from '@usertour/skeleton';
-import { Switch } from '@usertour/switch';
-import { useToast } from '@usertour/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { integrations } from '@/utils/integration';
 import { useIntegrationConfig } from '../hooks/use-integration-config';

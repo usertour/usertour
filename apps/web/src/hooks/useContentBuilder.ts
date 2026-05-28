@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { isVersionPublished } from '@/utils/content';
 import { Content } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useNavigate } from 'react-router-dom';
 import { useCreateContentVersionMutation } from '@usertour/hooks';
 

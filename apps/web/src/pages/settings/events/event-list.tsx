@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { EventListProvider, useEventListContext } from '@/contexts/event-list-context';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
-import { Badge } from '@usertour/badge';
+import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { RiShieldCheckFill } from '@usertour/icons';
 import { Event } from '@usertour/types';
-import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { EventRowActions } from './components/event-row-actions';
 
 const sortEvents = (events: readonly Event[]) =>

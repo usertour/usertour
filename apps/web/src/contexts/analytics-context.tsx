@@ -5,7 +5,7 @@ import { endOfDay, startOfDay } from 'date-fns';
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
-import { DATE_PRESET_OPTIONS, DEFAULT_PRESET_KEY, type DatePresetKey } from '@/utils/date-presets';
+import { DATE_PRESET_RANGE_GETTERS, DEFAULT_PRESET_KEY, type DatePresetKey } from '@usertour/ui';
 import { useAppContext } from './app-context';
 
 export interface AnalyticsProviderProps {
@@ -37,8 +37,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
 
   // Generate default date range from default preset
   const defaultDateRange = useMemo(() => {
-    const preset = DATE_PRESET_OPTIONS.find((p) => p.key === DEFAULT_PRESET_KEY);
-    return preset?.getRange();
+    return DATE_PRESET_RANGE_GETTERS[DEFAULT_PRESET_KEY]();
   }, []);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);

@@ -1,5 +1,5 @@
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { Label } from '@usertour/label';
+import { Label } from '@usertour/ui';
 import { Actions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, Step } from '@usertour/types';
 import { useTranslation } from 'react-i18next';

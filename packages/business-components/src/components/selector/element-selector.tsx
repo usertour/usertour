@@ -1,9 +1,5 @@
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Button, Input, Label, QuestionTooltip, SelectPopover } from '@usertour/ui';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
-import { SelectPopover } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 

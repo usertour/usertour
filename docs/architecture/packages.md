@@ -162,19 +162,21 @@ justifies the package shape change.
 
 ## L1 — UI components
 
-React components with no business knowledge. Two tiers in this layer:
+React components with no business knowledge:
 
-**Atomic UI** (one shadcn-style component per package):
-
-- `packages/components/*` — 38 single-component packages (button,
-  popover, input, select, calendar, command, etc.)
-- `packages/radix/*` — Radix internals (popper, slot, primitive)
-
-**Composition UI** (compose atomic UI into reusable secondary primitives):
-
-- `@usertour/ui` — `SelectPopover`, `ColorPicker`, `ErrorTooltip`,
-  `DateTimePicker`, `ScaledPreviewContainer`, `LoadingContainer`,
-  `LocateSelect`, `Combobox`, `InputGroup`, plus `compact-*` size variants.
+- `@usertour/ui` (`packages/ui/`) — single home for all shadcn-style
+  primitives (`Button`, `Dialog`, `Popover`, `Input`, `Select`,
+  `Calendar`, `Command`, etc., under `src/primitives/`) **plus** the
+  composition UI built on top of them (`SelectPopover`, `ColorPicker`,
+  `ErrorTooltip`, `DateTimePicker`, `ScaledPreviewContainer`,
+  `LoadingContainer`, `LocateSelect`, `Combobox`, `InputGroup`,
+  `compact-*` size variants).
+- `@usertour/frame` (`packages/frame/`) — iframe-portal domain
+  primitive consumed by `apps/sdk` and `packages/widget` for embedded
+  rendering; kept outside `@usertour/ui` to keep those bundles isolated
+  from the wider UI dep graph (see ADR 0004).
+- `packages/radix/*` — Radix internals (popper, slot, compose-refs)
+  consumed by `@usertour/ui` and `@usertour/frame`.
 
 **Rule of thumb**: an L1 component must work in any business context
 without knowing what context that is. It accepts data via props, never
@@ -253,8 +255,8 @@ When adding a new component, walk from the top:
 Does it use React?
 ├── No → L0 (types / helpers / constants / pure utilities)
 └── Yes
-    ├── Single atomic shadcn-style component? → L1 atomic (packages/components/*)
-    ├── Composes atomic UI, no business concept? → L1 composition (@usertour/ui)
+    ├── Single shadcn-style primitive? → @usertour/ui/src/primitives/
+    ├── Composes primitives, no business concept? → @usertour/ui/src/composites/
     ├── Cross-cutting (data / context / i18n / runtime)? → L2
     ├── Business knowledge, reusable across pages? → L3
     ├── Bound to a specific page or flow? → L4
@@ -264,8 +266,6 @@ Does it use React?
 ## What this document does NOT cover
 
 - Internal directory layout of individual packages.
-- Atomic UI splitting granularity — `packages/components/*` shape is
-  treated as given.
 - ContentEditor's internal architecture.
 
 ## Open follow-ups (not part of this RFC)

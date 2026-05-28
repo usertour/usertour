@@ -820,6 +820,25 @@ const translations = {
     rowsSelected: '已选 {{count}} 项',
     clearSelection: '清除选择',
     unknownError: '发生未知错误。',
+    loading: '加载中...',
+    pickADate: '选择日期',
+    datePresets: {
+      today: '今天',
+      yesterday: '昨天',
+      last7Days: '近 7 天',
+      last14Days: '近 14 天',
+      last30Days: '近 30 天',
+      last90Days: '近 90 天',
+      thisMonth: '本月',
+      yearToDate: '今年至今',
+      allTime: '全部时间',
+    },
+    locale: {
+      triggerPlaceholder: '选择语言地区…',
+      searchPlaceholder: '搜索语言地区…',
+      empty: '未找到匹配的语言地区。',
+      groupHeading: '语言地区',
+    },
     membership: {
       attributes: '成员属性',
       none: '无成员属性',
@@ -917,6 +936,8 @@ const translations = {
       loadMore: '加载更多会话',
       title: '用户会话',
       countLabel_other: '{{count}} 个会话',
+      deletedContentBadge: '已删除',
+      deletedContentTooltip: '该内容已被删除,历史会话数据保留。',
       table: {
         content: '内容',
         status: '状态',
@@ -1047,6 +1068,10 @@ const translations = {
       invalidData: '内容数据无效',
       deleteSuccess: '{{contentType}}「{{name}}」已删除',
       deleteFailure: '删除内容失败',
+    },
+    notFound: {
+      description: '该内容已被删除或无法访问。',
+      backButton: '返回列表',
     },
   },
   companies: {

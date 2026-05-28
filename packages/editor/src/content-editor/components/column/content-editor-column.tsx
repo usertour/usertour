@@ -2,11 +2,8 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SelectPopover } from '@usertour/ui';
+import { SelectPopover, Input, Label, Popover, PopoverArrow, PopoverContent } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Popover, PopoverArrow, PopoverContent } from '@usertour/popover';
 import { useComposedRefs } from '@usertour/react-compose-refs';
 import { cn } from '@usertour/tailwind';
 import { PADDING_KEY_MAPPING } from '@usertour/widget';

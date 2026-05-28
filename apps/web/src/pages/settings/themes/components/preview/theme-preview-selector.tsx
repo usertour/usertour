@@ -3,9 +3,17 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as React from 'react';
 
-import { Button } from '@usertour/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import {
+  Button,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { ThemeDetailSelectorType } from '@usertour/types';
 import { themeDetailSelectorTypes } from '@/utils/theme';

@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+} from '@usertour/ui';
 import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour/icons';
 import { Content } from '@usertour/types';
 import { ReactNode, useState } from 'react';

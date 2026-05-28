@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 
 export interface CodeFieldProps {
   useRecoveryCode: boolean;

@@ -8,9 +8,9 @@ import {
 import { cn } from '@usertour/tailwind';
 import type { CSSProperties, MouseEvent, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
 import {
+  Button,
+  Input,
   CompactDropdownMenu,
   CompactDropdownMenuContent,
   CompactDropdownMenuItem,

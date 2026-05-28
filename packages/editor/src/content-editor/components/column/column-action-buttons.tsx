@@ -1,8 +1,7 @@
 // Column-specific action buttons with sidebar popper for insert operations
 
-import { Button } from '@usertour/button';
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { memo } from 'react';
 
 import type { ContentEditorElement } from '../../../types/editor';

@@ -4,8 +4,8 @@ import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -13,13 +13,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  useToast,
+} from '@usertour/ui';
 import { duplicateContent } from '@usertour/gql';
-import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

@@ -13,7 +13,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useEvent } from 'react-use';
 
 import { deepClone } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour/hooks';

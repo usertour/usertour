@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { GithubIcon, GoogleIcon, SpinnerIcon } from '@usertour/icons';
 import { apiUrl } from '@/utils/env';
 

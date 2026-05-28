@@ -1,14 +1,24 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
-import { Skeleton } from '@usertour/skeleton';
-import { Switch } from '@usertour/switch';
-import { QuestionTooltip } from '@usertour/tooltip';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Switch,
+  QuestionTooltip,
+  LoadingButton,
+} from '@usertour/ui';
 import type { IntegrationModel } from '@usertour/types';
-import { LoadingButton } from '@usertour/ui';
 
 interface RegionOption {
   value: string;

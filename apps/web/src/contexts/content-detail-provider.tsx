@@ -1,4 +1,5 @@
 import { ReactNode, createContext, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from './app-context';
 import { useContentDetailContext } from './content-detail-context';
 import { useContentListContext } from './content-list-context';
@@ -14,7 +15,7 @@ import { EventListProvider } from './event-list-context';
 import { SegmentListProvider } from './segment-list-context';
 import { ThemeListProvider } from './theme-list-context';
 import { ContentTypeName } from '@usertour/types';
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 
 export interface ContentDetailProviderProps {
   children: ReactNode;
@@ -71,9 +72,10 @@ function ContentDetailContent({ children }: { children: ReactNode }) {
 export function ContentDetailProviderWrapper(props: ContentDetailProviderProps): JSX.Element {
   const { children, contentId, contentType } = props;
   const { project, environment } = useAppContext();
+  const { t } = useTranslation();
 
   if (!environment?.id) {
-    return <ContentLoading />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   return (

@@ -1,6 +1,6 @@
 // Main sidebar component for adding content elements
 
-import { Popover, PopoverAnchor } from '@usertour/popover';
+import { Popover, PopoverAnchor } from '@usertour/ui';
 import { PlusIcon3 } from '@usertour/icons';
 import { memo, useCallback, useMemo, useState } from 'react';
 

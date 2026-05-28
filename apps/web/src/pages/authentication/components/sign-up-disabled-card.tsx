@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { Link } from 'react-router-dom';
 import { AuthCard } from './auth-card';
 

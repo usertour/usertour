@@ -1,4 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  useToast,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@usertour/ui';
 import type {
   AnswerCount,
   AverageByDay,
@@ -7,16 +16,14 @@ import type {
   Question,
 } from '@usertour/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@usertour/chart';
 import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useUpdateContentMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { ContentEditorElementType } from '@usertour/editor';
-import { QuestionStarRating } from '@/components/molecules/question';
+import { QuestionStarRating } from '@/components/question';
 
 interface AnalyticsScaleProps {
   questionAnalytics: ContentQuestionAnalytics;

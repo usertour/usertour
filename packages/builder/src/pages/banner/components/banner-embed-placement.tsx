@@ -5,8 +5,8 @@ import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
 
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { QuestionTooltip } from '@usertour/tooltip';
 import {
+  QuestionTooltip,
   Select,
   SelectContent,
   SelectGroup,
@@ -14,7 +14,7 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour/select';
+} from '@usertour/ui';
 
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
