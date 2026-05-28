@@ -105,6 +105,8 @@ import type {
   IntegrationModel,
   SalesforceObjectFields,
   SessionQuery,
+  ColumnSetting,
+  RulesCondition,
 } from '@usertour/types';
 
 type UseContentListQueryProps = {
@@ -161,7 +163,7 @@ export const useCompanyListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseCompanyListQueryProps & { options?: QueryHookOptions }) => {
-  const { data, refetch, loading, error } = useQuery(queryBizCompany, {
+  const { data, refetch, loading, error, networkStatus } = useQuery(queryBizCompany, {
     variables: {
       ...pagination,
       query,
@@ -175,7 +177,10 @@ export const useCompanyListQuery = ({
   const pageInfo = bizCompanyList?.pageInfo;
   const totalCount = bizCompanyList?.totalCount || 0;
 
-  return { contents, pageInfo, totalCount, refetch, loading, error };
+  // networkStatus pass-through so callers can derive `isRefetching`
+  // (NetworkStatus.refetch === 4). Opt-in: callers pass
+  // `options.notifyOnNetworkStatusChange: true` to make it meaningful.
+  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
 };
 
 type UseUserListQueryProps = {
@@ -196,7 +201,7 @@ export const useUserListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseUserListQueryProps & { options?: QueryHookOptions }) => {
-  const { data, refetch, loading, error } = useQuery(queryBizUser, {
+  const { data, refetch, loading, error, networkStatus } = useQuery(queryBizUser, {
     variables: {
       ...pagination,
       query,
@@ -210,22 +215,26 @@ export const useUserListQuery = ({
   const pageInfo = bizUserList?.pageInfo;
   const totalCount = bizUserList?.totalCount || 0;
 
-  return { contents, pageInfo, totalCount, refetch, loading, error };
+  // See useCompanyListQuery — same networkStatus opt-in pattern.
+  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
 };
 
 export const useSegmentListQuery = (
   environmentId: string,
   bizType: string[] = ['COMPANY', 'USER'],
+  options?: QueryHookOptions,
 ) => {
-  const { data, refetch, loading, error } = useQuery(listSegment, {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listSegment, {
     variables: { environmentId },
+    ...options,
   });
   const segments =
     data?.listSegment?.length > 0
       ? data.listSegment.filter((item: Segment) => bizType.includes(item.bizType))
       : [];
 
-  return { segmentList: segments as Segment[], refetch, loading, error };
+  // See useCompanyListQuery — same networkStatus opt-in pattern.
+  return { segmentList: segments as Segment[], refetch, loading, error, networkStatus };
 };
 
 export const useQueryTeamMemberListQuery = (projectId: string) => {
@@ -724,12 +733,16 @@ export const useDeleteSegmentMutation = () => {
   return { invoke, loading, error };
 };
 
+// Server's UpdateSegment input picks { name, data, id, columns } from
+// Segment — all optional except id. Wrapper mirrors that so the same
+// invoke handles both filter-condition saves and column-setting saves.
 export const useUpdateSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateSegment);
   const invoke = async (data: {
     id: string;
-    data: any;
-    name: string;
+    name?: string;
+    data?: RulesCondition[];
+    columns?: ColumnSetting[];
   }): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
     return !!response.data?.updateSegment?.id;

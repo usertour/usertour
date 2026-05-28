@@ -4,25 +4,22 @@ import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BulkRemoveFromSegmentDialog } from '@/components/segments';
 import { Segment } from '@usertour/types';
-import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { useTranslation } from 'react-i18next';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;
   currentSegment: Segment;
+  refetch: () => Promise<unknown>;
 }
 
 export const CompanyRemoveFromSegment = (props: RemoveFromSegmentProps) => {
-  const { table, currentSegment } = props;
+  const { table, currentSegment, refetch } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
-  // Mirrors `useRemoveUsersFromSegment` — both hooks leave refresh to
-  // the caller. The list refetch happens here in handleSubmit.
-  const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
     if (hasSelection()) {

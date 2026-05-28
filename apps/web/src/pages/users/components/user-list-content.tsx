@@ -1,5 +1,4 @@
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { UserListProvider } from '@/contexts/user-list-context';
+import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
@@ -17,15 +16,26 @@ import { UserDataTable } from './user-data-table';
 import { UserEditDropdownMenu } from './user-edit-dropdown-menu';
 import { SegmentEditDialog } from '@/components/segments';
 import { UserSegmentFilterSave } from './user-segment-filter-save';
-import { useAppContext } from '@/contexts/app-context';
+import type { CurrentConditions, Segment } from '@usertour/types';
 
-// Inner component that uses the context
-const UserListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
+interface UserListContentProps {
+  environmentId: string;
+  currentSegment: Segment | undefined;
+  refetchSegments: () => Promise<unknown>;
+  segmentsIsRefetching: boolean;
+}
+
+export const UserListContent = (props: UserListContentProps) => {
+  const { environmentId, currentSegment, refetchSegments, segmentsIsRefetching } = props;
   const [open, setOpen] = useState(false);
-  const { currentSegment, refetch } = useSegmentListContext();
-  const navigate = useNavigate();
+  // currentConditions = the user's typed-but-not-saved filter. Lives here
+  // because both the FilterSave button in the header AND the DataTable
+  // toolbar (which mutates it) need to see the same value.
+  const [currentConditions, setCurrentConditions] = useState<CurrentConditions | undefined>();
   const { isViewOnly } = useAppContext();
+  const navigate = useNavigate();
   const { t } = useTranslation();
+
   const handleOnClose = useCallback(() => {
     setOpen(false);
   }, []);
@@ -33,10 +43,10 @@ const UserListContentInner = ({ environmentId }: { environmentId: string | undef
   const handleOnSubmit = useCallback(
     (success: boolean) => {
       if (success) {
-        refetch();
+        refetchSegments();
       }
     },
-    [refetch],
+    [refetchSegments],
   );
 
   return (
@@ -67,14 +77,19 @@ const UserListContentInner = ({ environmentId }: { environmentId: string | undef
                 </Tooltip>
               </TooltipProvider>
             )}
-            <UserSegmentFilterSave currentSegment={currentSegment} />
+            <UserSegmentFilterSave
+              currentSegment={currentSegment}
+              currentConditions={currentConditions}
+              refetchSegments={refetchSegments}
+              isRefetching={segmentsIsRefetching}
+            />
           </div>
           {currentSegment && currentSegment.dataType !== 'ALL' && (
             <UserEditDropdownMenu
               segment={currentSegment}
               disabled={isViewOnly}
               onSubmit={async () => {
-                await refetch();
+                await refetchSegments();
                 navigate(`/env/${environmentId}/users`);
               }}
             >
@@ -85,7 +100,14 @@ const UserListContentInner = ({ environmentId }: { environmentId: string | undef
           )}
         </div>
         <Separator className="my-4" />
-        {currentSegment && <UserDataTable segment={currentSegment} key={currentSegment.id} />}
+        {currentSegment && (
+          <UserDataTable
+            segment={currentSegment}
+            environmentId={environmentId}
+            setCurrentConditions={setCurrentConditions}
+            key={currentSegment.id}
+          />
+        )}
       </div>
       <SegmentEditDialog
         entity="user"
@@ -95,22 +117,6 @@ const UserListContentInner = ({ environmentId }: { environmentId: string | undef
         segment={currentSegment}
       />
     </>
-  );
-};
-
-export const UserListContent = (props: {
-  environmentId: string | undefined;
-}) => {
-  const { environmentId } = props;
-
-  if (!environmentId) {
-    return null;
-  }
-
-  return (
-    <UserListProvider environmentId={environmentId}>
-      <UserListContentInner environmentId={environmentId} />
-    </UserListProvider>
   );
 };
 

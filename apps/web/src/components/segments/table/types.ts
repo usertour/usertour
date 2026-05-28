@@ -75,7 +75,7 @@ export interface DataTableColumnHeaderProps {
 export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   // Called with the full ColumnSetting[] (ordered) on every toggle/reorder; caller persists it.
-  onColumnsChange?: (columns: ColumnSetting[]) => Promise<void> | void;
+  onColumnsChange?: (columns: ColumnSetting[]) => Promise<void>;
   disabled?: boolean;
 }
 

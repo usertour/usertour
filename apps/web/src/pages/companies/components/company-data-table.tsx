@@ -1,7 +1,7 @@
 'use client';
 
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
+import { useCompanyListQuery, useListAttributesQuery } from '@usertour/hooks';
 import {
   ColumnFiltersState,
   SortingState,
@@ -15,7 +15,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { BizCompany, Segment, AttributeBizTypes } from '@usertour/types';
+import { AttributeBizTypes, BizCompany, CurrentConditions, Segment } from '@usertour/types';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -32,37 +32,53 @@ import { useAppContext } from '@/contexts/app-context';
 
 interface CompanyDataTableProps {
   segment: Segment;
+  environmentId: string;
+  // See user-data-table.tsx for why we forward only the setter.
+  setCurrentConditions: React.Dispatch<React.SetStateAction<CurrentConditions | undefined>>;
 }
 
-export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
+export const CompanyDataTable = ({
+  segment,
+  environmentId,
+  setCurrentConditions,
+}: CompanyDataTableProps) => {
   const { t } = useTranslation();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, project } = useAppContext();
   const columns = useCompanyTableColumns({ isViewOnly });
-
-  const { setQuery, setPagination, pagination, pageCount, contents, loading } =
-    useCompanyListContext();
-  const { attributeList } = useAttributeListContext();
+  // Apollo cache dedups with the toolbar's identical call.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const navigate = useNavigate();
 
-  // Set query when segment changes
-  React.useEffect(() => {
-    setQuery({ segmentId: segment.id });
-  }, [segment, setQuery]);
+  const [query, setQuery] = React.useState<{ [key: string]: unknown }>({});
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 20 });
 
-  // Use dynamic column management for companies
+  const effectiveQuery = React.useMemo(
+    () => ({ ...query, segmentId: segment.id }),
+    [query, segment.id],
+  );
+
+  const { contents, loading, refetch, pageCount } = useBizListCursor<BizCompany>({
+    environmentId,
+    query: effectiveQuery,
+    pagination,
+    useListQuery: useCompanyListQuery,
+  });
+
   const { tableColumns } = useDynamicTableColumns<BizCompany>(
     attributeList,
     AttributeBizTypes.Company,
     columns,
   );
 
-  // Static column ids (checkbox, etc.) that must lead the order regardless of segment config
   const staticColumnIds = React.useMemo(
     () => columns.map((c) => c.id).filter((id): id is string => !!id),
     [columns],
   );
 
-  // Column visibility + order state derived from segment
   const companyAttrList = React.useMemo(
     () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.Company) || [],
     [attributeList],
@@ -78,14 +94,10 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     [companyAttrList, segment.columns, staticColumnIds],
   );
 
+  // See user-data-table.tsx — segment switches remount via `key=`, so
+  // these initial values apply on each switch without a reset effect.
   const [userColumnVisibility, setUserColumnVisibility] = React.useState<VisibilityState>({});
   const [userColumnOrder, setUserColumnOrder] = React.useState<string[] | undefined>(undefined);
-
-  // Reset local overrides when segment changes
-  React.useEffect(() => {
-    setUserColumnVisibility({});
-    setUserColumnOrder(undefined);
-  }, [segment.id]);
 
   const columnVisibility = React.useMemo(
     () => ({
@@ -107,12 +119,10 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     [baseColumnOrder],
   );
 
-  // State management for table
   const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  // Memoize table state to prevent unnecessary re-renders
   const tableState = React.useMemo(
     () => ({
       sorting,
@@ -125,15 +135,12 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
-  // Create the table instance
   const table = useReactTable({
     data: contents,
     columns: tableColumns,
     pageCount,
     manualPagination: true,
     state: tableState,
-    // Viewer-role members can't bulk-act; gate selection so toolbar
-    // affordances stay hidden (the select column is also dropped above).
     enableRowSelection: !isViewOnly,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -149,23 +156,28 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Stable click handler
   const handleRowClick = React.useCallback(
     (row: BizCompany) => {
-      const environmentId = row.environmentId;
+      const envId = row.environmentId;
       const companyId = row.id;
-      if (!environmentId || !companyId) {
+      if (!envId || !companyId) {
         console.warn('Company row missing required fields for navigation');
         return;
       }
-      navigate(`/env/${environmentId}/company/${companyId}`);
+      navigate(`/env/${envId}/company/${companyId}`);
     },
     [navigate],
   );
 
   return (
     <div className="space-y-2">
-      <CompanyDataTableToolbar table={table} currentSegment={segment} />
+      <CompanyDataTableToolbar
+        table={table}
+        currentSegment={segment}
+        setQuery={setQuery}
+        setCurrentConditions={setCurrentConditions}
+        refetch={refetch}
+      />
       <DataTable
         data={contents}
         columns={tableColumns}

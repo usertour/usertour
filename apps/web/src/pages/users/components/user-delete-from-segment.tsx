@@ -3,21 +3,23 @@ import { Button } from '@usertour/ui';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
-import { useUserListContext } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface DeleteUserFromSegmentProps {
   table: Table<any>;
+  // Owned by UserDataTable post-R4 — pass the `refetch` returned from
+  // `useBizListCursor`. Keeps this component decoupled from how the list
+  // is fetched.
+  refetch: () => Promise<unknown>;
 }
 
 export const UserDeleteFromSegment = (props: DeleteUserFromSegmentProps) => {
-  const { table } = props;
+  const { table, refetch } = props;
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizUserIds, setBizUserIds] = useState<string[]>([]);
-  const { refetch } = useUserListContext();
   const { t } = useTranslation();
 
   const handleOnClick = useCallback(() => {

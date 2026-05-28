@@ -1,8 +1,9 @@
 'use client';
 
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useUserListContext } from '@/contexts/user-list-context';
+import { useAppContext } from '@/contexts/app-context';
+import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
 import { useTranslation } from 'react-i18next';
+import { useListAttributesQuery, useUserListQuery } from '@usertour/hooks';
 import {
   ColumnFiltersState,
   SortingState,
@@ -16,7 +17,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { BizUser, Segment, AttributeBizTypes } from '@usertour/types';
+import { AttributeBizTypes, BizUser, CurrentConditions, Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -28,26 +29,51 @@ import {
 } from '@/components/segments/table';
 import { UserDataTableToolbar } from './user-data-table-toolbar';
 import { useUserTableColumns } from '@/hooks/use-user-table-columns';
-import { useAppContext } from '@/contexts/app-context';
 
 interface UserDataTableProps {
   segment: Segment;
+  environmentId: string;
+  // DataTable only forwards `setCurrentConditions` to its Toolbar — the
+  // value itself lives in UserListContent (read by the FilterSave button
+  // in the page header) so it never flows back here.
+  setCurrentConditions: React.Dispatch<React.SetStateAction<CurrentConditions | undefined>>;
 }
 
-export const UserDataTable = ({ segment }: UserDataTableProps) => {
+export const UserDataTable = ({
+  segment,
+  environmentId,
+  setCurrentConditions,
+}: UserDataTableProps) => {
   const { t } = useTranslation();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, project } = useAppContext();
   const columns = useUserTableColumns({ isViewOnly });
-
-  const { setQuery, setPagination, pagination, pageCount, contents, loading } =
-    useUserListContext();
-  const { attributeList } = useAttributeListContext();
+  // Apollo cache dedups with the toolbar's identical call — same project id +
+  // AttributeBizTypes.Nil → single network request, both consumers see fresh data.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const navigate = useNavigate();
 
-  // Set query when segment changes
-  React.useEffect(() => {
-    setQuery({ segmentId: segment.id });
-  }, [segment, setQuery]);
+  // Per-table UI state owns: query (filter), pagination. Toolbar mutates
+  // query via setQuery; DataTable handles pagination via useReactTable.
+  // currentConditions lives one level up because the page header's
+  // FilterSave button also needs to see it.
+  const [query, setQuery] = React.useState<{ [key: string]: unknown }>({});
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 20 });
+
+  const effectiveQuery = React.useMemo(
+    () => ({ ...query, segmentId: segment.id }),
+    [query, segment.id],
+  );
+
+  const { contents, loading, refetch, pageCount } = useBizListCursor<BizUser>({
+    environmentId,
+    query: effectiveQuery,
+    pagination,
+    useListQuery: useUserListQuery,
+  });
 
   // Use dynamic column management
   const { tableColumns } = useDynamicTableColumns<BizUser>(
@@ -61,13 +87,11 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  // Static column ids (checkbox, etc.) that must lead the order regardless of segment config
   const staticColumnIds = React.useMemo(
     () => columns.map((c) => c.id).filter((id): id is string => !!id),
     [columns],
   );
 
-  // Column visibility + order state derived from segment
   const userAttrList = React.useMemo(
     () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [],
     [attributeList],
@@ -83,14 +107,12 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     [userAttrList, segment.columns, staticColumnIds],
   );
 
+  // Local overrides on top of the segment's baseline columns. No reset
+  // effect needed: the caller mounts this component with
+  // `key={currentSegment.id}`, so segment switches remount the subtree
+  // and these `useState` initial values apply naturally.
   const [userColumnVisibility, setUserColumnVisibility] = React.useState<VisibilityState>({});
   const [userColumnOrder, setUserColumnOrder] = React.useState<string[] | undefined>(undefined);
-
-  // Reset local overrides when segment changes
-  React.useEffect(() => {
-    setUserColumnVisibility({});
-    setUserColumnOrder(undefined);
-  }, [segment.id]);
 
   const columnVisibility = React.useMemo(
     () => ({
@@ -112,7 +134,6 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     [baseColumnOrder],
   );
 
-  // Memoize table state to prevent unnecessary re-renders
   const tableState = React.useMemo(
     () => ({
       sorting,
@@ -125,15 +146,12 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
-  // Create the table instance
   const table = useReactTable({
     data: contents,
     columns: tableColumns,
     pageCount,
     manualPagination: true,
     state: tableState,
-    // Viewer-role members can't bulk-act; gate selection so toolbar
-    // affordances stay hidden (the select column is also dropped above).
     enableRowSelection: !isViewOnly,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -149,19 +167,22 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Stable click handler
   const handleRowClick = React.useCallback(
     (row: BizUser) => {
-      const environmentId = row.environmentId;
-      const userId = row.id;
-      navigate(`/env/${environmentId}/user/${userId}`);
+      navigate(`/env/${row.environmentId}/user/${row.id}`);
     },
     [navigate],
   );
 
   return (
     <div className="space-y-2">
-      <UserDataTableToolbar table={table} currentSegment={segment} />
+      <UserDataTableToolbar
+        table={table}
+        currentSegment={segment}
+        setQuery={setQuery}
+        setCurrentConditions={setCurrentConditions}
+        refetch={refetch}
+      />
       <DataTable
         data={contents}
         columns={tableColumns}

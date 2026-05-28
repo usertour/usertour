@@ -1,5 +1,3 @@
-import { CompanyListProvider } from '@/contexts/company-list-context';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -18,14 +16,22 @@ import { CompanySegmentFilterSave } from './company-segment-filter-save';
 import { SegmentEditDialog } from '@/components/segments';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
+import type { CurrentConditions, Segment } from '@usertour/types';
 
-// Inner component that uses the context
-const CompanyListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
+interface CompanyListContentProps {
+  environmentId: string;
+  currentSegment: Segment | undefined;
+  refetchSegments: () => Promise<unknown>;
+  segmentsIsRefetching: boolean;
+}
+
+export const CompanyListContent = (props: CompanyListContentProps) => {
+  const { environmentId, currentSegment, refetchSegments, segmentsIsRefetching } = props;
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const { currentSegment, refetch } = useSegmentListContext();
-  const navigate = useNavigate();
+  const [currentConditions, setCurrentConditions] = useState<CurrentConditions | undefined>();
   const { isViewOnly } = useAppContext();
+  const navigate = useNavigate();
 
   const handleOnClose = useCallback(() => {
     setOpen(false);
@@ -34,10 +40,10 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
   const handleOnSubmit = useCallback(
     (success: boolean) => {
       if (success) {
-        refetch();
+        refetchSegments();
       }
     },
-    [refetch],
+    [refetchSegments],
   );
 
   return (
@@ -68,14 +74,19 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
                 </Tooltip>
               </TooltipProvider>
             )}
-            {<CompanySegmentFilterSave currentSegment={currentSegment} />}
+            <CompanySegmentFilterSave
+              currentSegment={currentSegment}
+              currentConditions={currentConditions}
+              refetchSegments={refetchSegments}
+              isRefetching={segmentsIsRefetching}
+            />
           </div>
           {currentSegment && currentSegment.dataType !== 'ALL' && (
             <CompanyEditDropdownMenu
               segment={currentSegment}
               disabled={isViewOnly}
               onSubmit={async () => {
-                await refetch();
+                await refetchSegments();
                 navigate(`/env/${environmentId}/companies`);
               }}
             >
@@ -86,7 +97,14 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
           )}
         </div>
         <Separator className="my-4" />
-        {currentSegment && <CompanyDataTable segment={currentSegment} key={currentSegment.id} />}
+        {currentSegment && (
+          <CompanyDataTable
+            segment={currentSegment}
+            environmentId={environmentId}
+            setCurrentConditions={setCurrentConditions}
+            key={currentSegment.id}
+          />
+        )}
       </div>
       <SegmentEditDialog
         entity="company"
@@ -96,24 +114,6 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
         segment={currentSegment}
       />
     </>
-  );
-};
-
-CompanyListContentInner.displayName = 'CompanyListContentInner';
-
-export const CompanyListContent = (props: {
-  environmentId: string | undefined;
-}) => {
-  const { environmentId } = props;
-
-  if (!environmentId) {
-    return null;
-  }
-
-  return (
-    <CompanyListProvider environmentId={environmentId}>
-      <CompanyListContentInner environmentId={environmentId} />
-    </CompanyListProvider>
   );
 };
 

@@ -5,18 +5,17 @@ import { useCallback, useState } from 'react';
 import { BulkRemoveFromSegmentDialog } from '@/components/segments';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { useUserListContext } from '@/contexts/user-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;
   currentSegment: Segment;
+  refetch: () => Promise<unknown>;
 }
 
 export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
-  const { table, currentSegment } = props;
+  const { table, currentSegment, refetch } = props;
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
-  const { refetch } = useUserListContext();
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizUserIds, setBizUserIds] = useState<string[]>([]);

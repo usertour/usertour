@@ -10,23 +10,23 @@ import {
   Button,
   LoadingButton,
 } from '@usertour/ui';
-import { Segment } from '@usertour/types';
+import { CurrentConditions, Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useSaveCompanySegmentFilter } from '@/hooks/use-save-company-segment-filter';
 
-export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) => {
-  const { currentSegment } = props;
+interface CompanySegmentFilterSaveProps {
+  currentSegment?: Segment;
+  currentConditions: CurrentConditions | undefined;
+  refetchSegments: () => Promise<unknown>;
+  isRefetching: boolean;
+}
+
+export const CompanySegmentFilterSave = (props: CompanySegmentFilterSaveProps) => {
+  const { currentSegment, currentConditions, refetchSegments, isRefetching } = props;
   const { t } = useTranslation();
   const { isViewOnly } = useAppContext();
-  const {
-    open,
-    isShowButton,
-    loading,
-    isRefetching,
-    handleOpenDialog,
-    handleCloseDialog,
-    saveFilter,
-  } = useSaveCompanySegmentFilter(currentSegment);
+  const { open, isShowButton, loading, handleOpenDialog, handleCloseDialog, saveFilter } =
+    useSaveCompanySegmentFilter({ currentSegment, currentConditions, refetchSegments });
 
   return (
     <>

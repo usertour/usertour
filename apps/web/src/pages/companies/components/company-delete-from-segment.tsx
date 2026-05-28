@@ -2,24 +2,22 @@ import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
-import { useCallback } from 'react';
-import { useState } from 'react';
-import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useCallback, useState } from 'react';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { useTranslation } from 'react-i18next';
 
 interface DeleteCompanyFromSegmentProps {
   table: Table<any>;
+  refetch: () => Promise<unknown>;
 }
 
 export const CompanyDeleteFromSegment = (props: DeleteCompanyFromSegmentProps) => {
-  const { table } = props;
+  const { table, refetch } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
-  const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
     if (hasSelection()) {

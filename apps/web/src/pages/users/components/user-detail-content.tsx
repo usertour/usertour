@@ -1,4 +1,4 @@
-import { useUserListContext } from '@/contexts/user-list-context';
+import { useUserListQuery } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour/icons';
@@ -51,17 +51,6 @@ interface UserDetailContentProps {
   userId: string;
 }
 
-const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
-  const { loading: userListLoading } = useUserListContext();
-  const { t } = useTranslation();
-
-  if (userListLoading) {
-    return <ContentLoading message={t('common.loading')} />;
-  }
-
-  return <UserDetailContentInner environmentId={environmentId} userId={userId} />;
-};
-
 const CompanyChips = ({
   memberships,
   environmentId,
@@ -100,19 +89,19 @@ const CompanyChips = ({
 
 const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
-  const { contents } = useUserListContext();
-  // Derive synchronously during render (contents is already loaded by the
-  // WithLoading gate) so we never paint a "not found" frame before an effect
-  // populates it.
+  // Detail-page fetch: single user by id. Apollo dedup means navigating
+  // here from the list doesn't re-issue the network if the user is
+  // already in cache from the list query.
+  const { contents, loading: userListLoading } = useUserListQuery({
+    query: { environmentId, userId },
+    options: { skip: !environmentId || !userId },
+  });
   const bizUser = useMemo(
     () => contents?.find((c: BizUser) => c.id === userId),
     [contents, userId],
   );
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { isViewOnly, project } = useAppContext();
-  // Query definitions directly (not from the shared context) with
-  // cache-and-network: a fresh visit re-fetches so attributes the SDK created
-  // via identify after the app loaded show up without a manual reload.
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
@@ -156,6 +145,10 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
       navigator(`/env/${environmentId}/users`);
     }
   };
+
+  if (userListLoading) {
+    return <ContentLoading message={t('common.loading')} />;
+  }
 
   if (!bizUser) {
     return (
@@ -364,7 +357,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
 };
 
 export function UserDetailContent(props: UserDetailContentProps) {
-  return <UserDetailContentWithLoading {...props} />;
+  return <UserDetailContentInner {...props} />;
 }
 
 UserDetailContent.displayName = 'UserDetailContent';

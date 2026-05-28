@@ -1,4 +1,4 @@
-import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useCompanyListQuery, useUserListQuery } from '@usertour/hooks';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
 import { Delete2Icon, SpinnerIcon } from '@usertour/icons';
@@ -13,7 +13,7 @@ import {
   CompanyAttributes,
 } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
-import { useEffect, useMemo, useState, createContext, useContext, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
 import {
@@ -46,149 +46,13 @@ import { MembershipRow } from '@/components/membership-row';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour/tailwind';
-import { useQuery } from '@apollo/client';
-import { queryBizUser } from '@usertour/gql';
-import { PaginationState } from '@tanstack/react-table';
-import { useCallback } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { useListAttributesQuery } from '@usertour/hooks';
 import { ActivityFeed } from '@/components/activity-feed';
 import { CompanyActivityFeedProvider } from '@/contexts/activity-feed-context';
 
-// Company User List Context
-interface CompanyUserListContextValue {
-  contents: BizUser[];
-  loading: boolean;
-  totalCount: number;
-  loadMore: () => void;
-  refetch: () => void;
-  hasNextPage: boolean;
-  setPagination: (pagination: PaginationState) => void;
-  companyId: string;
-  reset: () => void;
-}
-
-const CompanyUserListContext = createContext<CompanyUserListContextValue | undefined>(undefined);
-
-const useCompanyUserListContext = () => {
-  const context = useContext(CompanyUserListContext);
-  if (!context) {
-    throw new Error('useCompanyUserListContext must be used within a CompanyUserListProvider');
-  }
-  return context;
-};
-
-interface CompanyUserListProviderProps {
-  children: ReactNode;
-  environmentId: string;
-  companyId: string;
-}
-
-interface CompanyUserEdge {
-  node: BizUser;
-}
-
-const CompanyUserListProvider = ({
-  children,
-  environmentId,
-  companyId,
-}: CompanyUserListProviderProps) => {
-  const [contents, setContents] = useState<BizUser[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
-  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
-  const pageSize = 10;
-
-  const { data, refetch, loading } = useQuery(queryBizUser, {
-    variables: {
-      first: pageSize,
-      after: afterCursor,
-      query: { environmentId, companyId },
-      orderBy: { field: 'createdAt', direction: 'desc' },
-    },
-  });
-
-  const bizUserList = data?.queryBizUser;
-
-  useEffect(() => {
-    if (!bizUserList) {
-      return;
-    }
-    const { edges, pageInfo: newPageInfo, totalCount } = bizUserList;
-    if (!edges || !newPageInfo) {
-      return;
-    }
-
-    setPageInfo(newPageInfo);
-    const newContents: BizUser[] = edges.map((edge: CompanyUserEdge) => {
-      const e = edge;
-      return { ...e.node, ...e.node.data };
-    });
-
-    setContents((prev) => {
-      if (!afterCursor) {
-        return newContents;
-      }
-
-      const existingIds = new Set(prev.map((content) => content.id));
-      const uniqueNewContents = newContents.filter((content) => !existingIds.has(content.id));
-      return [...prev, ...uniqueNewContents];
-    });
-
-    setTotalCount(totalCount);
-    setIsLoadingMore(false);
-  }, [afterCursor, bizUserList]);
-
-  const loadMore = () => {
-    if (!isLoadingMore && pageInfo?.hasNextPage) {
-      setIsLoadingMore(true);
-      setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }));
-      setAfterCursor(pageInfo.endCursor);
-    }
-  };
-
-  const reset = () => {
-    setContents([]);
-    setPagination({ pageIndex: 0, pageSize: 10 });
-    setTotalCount(0);
-    setIsLoadingMore(false);
-    setPageInfo(null);
-    setAfterCursor(undefined);
-  };
-
-  useEffect(() => {
-    reset();
-  }, [companyId, environmentId]);
-
-  const handleRefetch = useCallback(() => {
-    reset();
-    refetch({
-      first: pageSize,
-      after: undefined,
-      query: { environmentId, companyId },
-      orderBy: { field: 'createdAt', direction: 'desc' },
-    });
-  }, [companyId, environmentId, refetch]);
-
-  const value: CompanyUserListContextValue = {
-    contents,
-    loading: loading || isLoadingMore,
-    totalCount,
-    loadMore,
-    refetch: handleRefetch,
-    companyId,
-    hasNextPage: pageInfo?.hasNextPage || false,
-    setPagination,
-    reset,
-  };
-
-  return (
-    <CompanyUserListContext.Provider value={value}>{children}</CompanyUserListContext.Provider>
-  );
-};
+const PAGE_SIZE = 10;
 
 const getMembershipData = (user: BizUser, companyId: string): Record<string, unknown> | null => {
   const membership = user.bizUsersOnCompany?.find(
@@ -197,10 +61,14 @@ const getMembershipData = (user: BizUser, companyId: string): Record<string, unk
   return (membership?.data as Record<string, unknown> | undefined) ?? null;
 };
 
-// --- CompanyUserList components ---
-const LoadMoreButton = () => {
+interface LoadMoreButtonProps {
+  loading: boolean;
+  hasNextPage: boolean;
+  onLoadMore: () => void;
+}
+
+const LoadMoreButton = ({ loading, hasNextPage, onLoadMore }: LoadMoreButtonProps) => {
   const { t } = useTranslation();
-  const { loading, hasNextPage, loadMore } = useCompanyUserListContext();
 
   if (!hasNextPage) {
     return null;
@@ -209,7 +77,7 @@ const LoadMoreButton = () => {
   return (
     <div className="flex justify-center mt-4">
       <Button
-        onClick={loadMore}
+        onClick={onLoadMore}
         disabled={loading}
         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -226,22 +94,92 @@ const LoadMoreButton = () => {
   );
 };
 
-const CompanyUserList = () => {
+interface CompanyUserListProps {
+  environmentId: string;
+  companyId: string;
+}
+
+// Membership list for one company. Load-more semantics (append, not
+// replace) so this can't share the cursor engine the segment lists use —
+// it tracks `afterCursor` directly and accumulates rows on the way down.
+// Owns its own state inline (no Context) — the table body and the
+// load-more button are both rendered from this same component, so the
+// state has one natural home.
+const CompanyUserList = ({ environmentId, companyId }: CompanyUserListProps) => {
   const { t } = useTranslation();
-  const { contents, loading, refetch, totalCount, companyId } = useCompanyUserListContext();
   const { project } = useAppContext();
-  // Direct cache-and-network query (not the shared context) so SDK-created
-  // membership/company attributes show on a fresh visit without a reload.
+
+  const [contents, setContents] = useState<BizUser[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
+  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+
+  const {
+    contents: pageContents,
+    pageInfo: latestPageInfo,
+    totalCount: latestTotalCount,
+    loading,
+    refetch,
+  } = useUserListQuery({
+    query: { environmentId, companyId },
+    pagination: { first: PAGE_SIZE, after: afterCursor },
+  });
+
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
     { fetchPolicy: 'cache-and-network', skip: !project?.id },
   );
-  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
-  const handleRefresh = () => {
-    refetch();
+  const resetAccumulation = useCallback(() => {
+    setContents([]);
+    setTotalCount(0);
+    setIsLoadingMore(false);
+    setPageInfo(null);
+    setAfterCursor(undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!latestPageInfo) {
+      return;
+    }
+    setPageInfo(latestPageInfo);
+    setContents((prev) => {
+      if (!afterCursor) {
+        return pageContents;
+      }
+      const existingIds = new Set(prev.map((content) => content.id));
+      const uniqueNewContents = pageContents.filter(
+        (content: BizUser) => !existingIds.has(content.id),
+      );
+      return [...prev, ...uniqueNewContents];
+    });
+    setTotalCount(latestTotalCount);
+    setIsLoadingMore(false);
+  }, [pageContents, latestPageInfo, latestTotalCount, afterCursor]);
+
+  useEffect(() => {
+    resetAccumulation();
+  }, [companyId, environmentId, resetAccumulation]);
+
+  const loadMore = () => {
+    if (!isLoadingMore && pageInfo?.hasNextPage) {
+      setIsLoadingMore(true);
+      setAfterCursor(pageInfo.endCursor);
+    }
   };
+
+  const handleRefresh = useCallback(() => {
+    resetAccumulation();
+    // refetch() covers the case where afterCursor was already undefined —
+    // a state reset to the same value wouldn't otherwise trigger Apollo
+    // to re-issue the network request.
+    refetch();
+  }, [resetAccumulation, refetch]);
+
+  const effectiveLoading = loading || isLoadingMore;
 
   return (
     <div>
@@ -254,19 +192,19 @@ const CompanyUserList = () => {
             <TooltipTrigger asChild>
               <Button
                 onClick={handleRefresh}
-                disabled={loading}
+                disabled={effectiveLoading}
                 variant="outline"
                 size="sm"
                 className="flex items-center space-x-2"
               >
-                <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
+                <ReloadIcon className={cn('w-4 h-4', effectiveLoading && 'animate-spin')} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('companies.detail.tooltips.reload')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
-      {loading && contents.length === 0 ? (
+      {effectiveLoading && contents.length === 0 ? (
         <ListSkeleton length={5} />
       ) : contents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8">
@@ -323,7 +261,11 @@ const CompanyUserList = () => {
         </div>
       )}
 
-      <LoadMoreButton />
+      <LoadMoreButton
+        loading={effectiveLoading}
+        hasNextPage={pageInfo?.hasNextPage ?? false}
+        onLoadMore={loadMore}
+      />
     </div>
   );
 };
@@ -335,29 +277,15 @@ interface CompanyDetailContentProps {
   companyId: string;
 }
 
-// Loading wrapper component to handle all loading states
-const CompanyDetailContentWithLoading = ({
-  environmentId,
-  companyId,
-}: CompanyDetailContentProps) => {
-  const { loading: companyListLoading } = useCompanyListContext();
-  const { t } = useTranslation();
-
-  if (companyListLoading) {
-    return <ContentLoading message={t('common.loading')} />;
-  }
-
-  return <CompanyDetailContentInner environmentId={environmentId} companyId={companyId} />;
-};
-
-// Inner component that handles the actual content rendering
 const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailContentProps) => {
   const { t } = useTranslation();
   const navigator = useNavigate();
-  const { contents } = useCompanyListContext();
-  // Derive synchronously during render (contents is already loaded by the
-  // WithLoading gate) so we never paint a "not found" frame before an effect
-  // populates it.
+  // Single-company detail fetch. Apollo cache dedups with the list query
+  // if the user reached here from /companies.
+  const { contents, loading: companyListLoading } = useCompanyListQuery({
+    query: { environmentId, companyId },
+    options: { skip: !environmentId || !companyId },
+  });
   const bizCompany = useMemo(
     () => contents?.find((c: BizCompany) => c.id === companyId),
     [contents, companyId],
@@ -408,6 +336,10 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
     },
     [navigator, environmentId],
   );
+
+  if (companyListLoading) {
+    return <ContentLoading message={t('common.loading')} />;
+  }
 
   if (!bizCompany) {
     return (
@@ -552,9 +484,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                   </CompanyActivityFeedProvider>
                 )}
                 {activityView === 'members' && (
-                  <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
-                    <CompanyUserList />
-                  </CompanyUserListProvider>
+                  <CompanyUserList environmentId={environmentId} companyId={companyId} />
                 )}
               </CardContent>
             </Card>
@@ -623,7 +553,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
 
 // Main export component
 export const CompanyDetailContent = (props: CompanyDetailContentProps) => {
-  return <CompanyDetailContentWithLoading {...props} />;
+  return <CompanyDetailContentInner {...props} />;
 };
 
 CompanyDetailContent.displayName = 'CompanyDetailContent';

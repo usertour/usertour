@@ -1,23 +1,25 @@
 'use client';
 
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { useUserListContext } from '@/contexts/user-list-context';
 import { Table } from '@tanstack/react-table';
 import { WebZIndex } from '@usertour/constants';
 import { Conditions, validateConditions } from '@usertour/business-components';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
-import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AttributeBizTypes,
+  ColumnSetting,
+  CurrentConditions,
+  RulesCondition,
+  Segment,
+} from '@usertour/types';
+import { Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
 import { UserAddToManualSegment } from './user-add-to-manual-segment';
 import { DataTableViewOptions } from '@/components/segments/table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { UserDeleteFromSegment } from './user-delete-from-segment';
 import { UserRemoveFromSegment } from './user-remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
-import { updateSegment } from '@usertour/gql';
+import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
@@ -25,34 +27,37 @@ import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 interface UserDataTableToolbarProps {
   table: Table<any>;
   currentSegment: Segment;
+  // Owned by parent UserDataTable (query / pagination / data). Toolbar
+  // only mutates query and the unsaved-conditions pointer.
+  setQuery: Dispatch<SetStateAction<{ [key: string]: unknown }>>;
+  setCurrentConditions: Dispatch<SetStateAction<CurrentConditions | undefined>>;
+  refetch: () => Promise<unknown>;
 }
 
-export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToolbarProps) => {
+export const UserDataTableToolbar = (props: UserDataTableToolbarProps) => {
+  const { table, currentSegment, setQuery, setCurrentConditions, refetch } = props;
   const { t } = useTranslation();
-  const { attributeList } = useAttributeListContext();
-  const { setCurrentConditions } = useSegmentListContext();
-  const { setQuery, refetch: refetchUserList } = useUserListContext();
+  const { isViewOnly, project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const [searchValue, setSearchValue] = useState('');
-  const { isViewOnly } = useAppContext();
   const { hasSelection, getSelectedCount } = useTableSelection(table);
 
-  // Use ref to store currentSegment to avoid recreating handleDataChange when segment object changes
   const currentSegmentRef = useRef(currentSegment);
   currentSegmentRef.current = currentSegment;
 
-  // Track the last processed conditions to prevent infinite loops
   const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
-  // Conditions live as local state so the controlled Conditions component
-  // can mutate them on every keystroke without round-tripping through the
-  // segment context. Resets when the active segment changes.
+  // Deep-copy the segment's saved data so the controlled `Conditions`
+  // component can mutate freely without aliasing into the segment cache.
+  // No reset-on-id effect: the parent remounts this subtree via
+  // `key={currentSegment.id}`, so this initializer runs on each switch.
   const [conditions, setConditions] = useState<RulesCondition[]>(() =>
-    JSON.parse(JSON.stringify(currentSegment.data || [])),
+    structuredClone(currentSegment.data ?? []),
   );
-  useEffect(() => {
-    setConditions(JSON.parse(JSON.stringify(currentSegment.data || [])));
-    lastProcessedConditionsRef.current = null;
-  }, [currentSegment.id]);
 
   const filteredAttributes = useMemo(
     () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [],
@@ -61,7 +66,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
 
   const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
 
-  const [mutation] = useMutation(updateSegment);
+  const { invoke: updateSegment } = useUpdateSegmentMutation();
   const { toast } = useToast();
 
   const updateSegmentColumns = useCallback(
@@ -69,15 +74,12 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
       if (!currentSegment) {
         return;
       }
-      const data = {
-        id: currentSegment.id,
-        columns,
-      };
+      // No list refetch — column visibility/order is pure presentation
+      // and the mutation's response feeds Apollo's normalized cache so
+      // segmentList subscribers (sidebar, header) re-render with the
+      // new `segment.columns` automatically.
       try {
-        const ret = await mutation({ variables: { data } });
-        if (ret.data?.updateSegment?.id) {
-          await refetchUserList();
-        }
+        await updateSegment({ id: currentSegment.id, columns });
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -85,25 +87,19 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
         });
       }
     },
-    [currentSegment, mutation, refetchUserList, toast],
+    [currentSegment, updateSegment, toast],
   );
 
   const handleConditionsChange = useCallback(
     async (next: RulesCondition[]) => {
-      // Always reflect the latest input in the controlled component, even
-      // while invalid — visual fidelity matters more than gating here.
       setConditions(next);
 
       const segment = currentSegmentRef.current;
       if (!segment) return;
 
-      // Skip downstream side effects for invalid conditions — pushing them
-      // into the live query would break the segment fetch.
       const failures = validateConditions(next, { attributes: filteredAttributes });
       if (failures.length > 0) return;
 
-      // Dedup against the last persisted snapshot — onChange fires per
-      // keystroke and can land on the same final shape repeatedly.
       const isSameAsLastProcessed =
         lastProcessedConditionsRef.current !== null &&
         conditionsIsSame(next, lastProcessedConditionsRef.current);
@@ -160,11 +156,15 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <UserAddToManualSegment table={table} />
+              <UserAddToManualSegment table={table} refetch={refetch} />
               {currentSegment.dataType === 'MANUAL' && (
-                <UserRemoveFromSegment table={table} currentSegment={currentSegment} />
+                <UserRemoveFromSegment
+                  table={table}
+                  currentSegment={currentSegment}
+                  refetch={refetch}
+                />
               )}
-              <UserDeleteFromSegment table={table} />
+              <UserDeleteFromSegment table={table} refetch={refetch} />
             </>
           ) : !showFilterBar ? (
             <Button

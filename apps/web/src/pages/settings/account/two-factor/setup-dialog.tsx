@@ -26,7 +26,7 @@ type SetupStage = 'scan' | 'codes';
 export interface SetupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEnabled: () => Promise<void> | void;
+  onEnabled: () => Promise<void>;
 }
 
 /**

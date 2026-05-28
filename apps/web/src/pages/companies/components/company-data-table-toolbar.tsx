@@ -1,23 +1,25 @@
 'use client';
 
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { useCompanyListContext } from '@/contexts/company-list-context';
 import { Table } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour/constants';
 import { Conditions, validateConditions } from '@usertour/business-components';
 import { conditionsIsSame } from '@usertour/helpers';
-import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  AttributeBizTypes,
+  ColumnSetting,
+  CurrentConditions,
+  RulesCondition,
+  Segment,
+} from '@usertour/types';
+import { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react';
 import { CompanyAddToManualSegment } from './company-add-to-manual-segment';
 import { DataTableViewOptions } from '@/components/segments/table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { CompanyDeleteFromSegment } from './company-delete-from-segment';
 import { CompanyRemoveFromSegment } from './company-remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
-import { updateSegment } from '@usertour/gql';
+import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
@@ -25,17 +27,21 @@ import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 interface CompanyDataTableToolbarProps {
   table: Table<any>;
   currentSegment: Segment;
+  setQuery: Dispatch<SetStateAction<{ [key: string]: unknown }>>;
+  setCurrentConditions: Dispatch<SetStateAction<CurrentConditions | undefined>>;
+  refetch: () => Promise<unknown>;
 }
 
-export const CompanyDataTableToolbar = ({
-  table,
-  currentSegment,
-}: CompanyDataTableToolbarProps) => {
+export const CompanyDataTableToolbar = (props: CompanyDataTableToolbarProps) => {
+  const { table, currentSegment, setQuery, setCurrentConditions, refetch } = props;
   const { t } = useTranslation();
-  const { attributeList, loading: attributeLoading } = useAttributeListContext();
-  const { setCurrentConditions } = useSegmentListContext();
+  const { isViewOnly, project } = useAppContext();
+  const { attributes: attributeList, loading: attributeLoading } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
 
-  // Filtered attributes for company rules
   const filteredAttributes = attributeLoading
     ? []
     : attributeList?.filter(
@@ -44,33 +50,23 @@ export const CompanyDataTableToolbar = ({
           attr.bizType === AttributeBizTypes.Membership,
       ) || [];
 
-  const { setQuery, refetch: refetchCompanyList } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection, getSelectedCount } = useTableSelection(table);
-  const { isViewOnly } = useAppContext();
 
-  // Use ref to store currentSegment to avoid recreating the change handler
-  // when segment object changes
   const currentSegmentRef = useRef(currentSegment);
   currentSegmentRef.current = currentSegment;
 
-  // Track the last processed conditions to prevent infinite loops
   const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
-  // Conditions are controlled by this toolbar — local state mirrors what's
-  // shown in the Conditions component, resets when the active segment
-  // changes.
+  // See user-data-table-toolbar.tsx — parent remounts via `key=` so the
+  // initializer runs on each segment switch; no reset effect needed.
   const [conditions, setConditions] = useState<RulesCondition[]>(() =>
-    JSON.parse(JSON.stringify(currentSegment.data || [])),
+    structuredClone(currentSegment.data ?? []),
   );
-  useEffect(() => {
-    setConditions(JSON.parse(JSON.stringify(currentSegment.data || [])));
-    lastProcessedConditionsRef.current = null;
-  }, [currentSegment.id]);
 
   const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
 
-  const [mutation] = useMutation(updateSegment);
+  const { invoke: updateSegment } = useUpdateSegmentMutation();
   const { toast } = useToast();
 
   const updateSegmentColumns = useCallback(
@@ -78,15 +74,10 @@ export const CompanyDataTableToolbar = ({
       if (!currentSegment) {
         return;
       }
-      const data = {
-        id: currentSegment.id,
-        columns,
-      };
+      // See user-data-table-toolbar.tsx — no list refetch needed; the
+      // mutation response updates Apollo's normalized Segment record.
       try {
-        const ret = await mutation({ variables: { data } });
-        if (ret.data?.updateSegment?.id) {
-          await refetchCompanyList();
-        }
+        await updateSegment({ id: currentSegment.id, columns });
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -94,19 +85,16 @@ export const CompanyDataTableToolbar = ({
         });
       }
     },
-    [currentSegment, mutation, refetchCompanyList, toast],
+    [currentSegment, updateSegment, toast],
   );
 
   const handleConditionsChange = useCallback(
     async (next: RulesCondition[]) => {
-      // Reflect every keystroke in the controlled component's value.
       setConditions(next);
 
       const segment = currentSegmentRef.current;
       if (!segment) return;
 
-      // Skip downstream side effects for invalid conditions to keep the live
-      // segment query from blowing up on partial input.
       const failures = validateConditions(next, { attributes: filteredAttributes });
       if (failures.length > 0) return;
 
@@ -166,11 +154,15 @@ export const CompanyDataTableToolbar = ({
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <CompanyAddToManualSegment table={table} />
+              <CompanyAddToManualSegment table={table} refetch={refetch} />
               {currentSegment.dataType === 'MANUAL' && (
-                <CompanyRemoveFromSegment table={table} currentSegment={currentSegment} />
+                <CompanyRemoveFromSegment
+                  table={table}
+                  currentSegment={currentSegment}
+                  refetch={refetch}
+                />
               )}
-              <CompanyDeleteFromSegment table={table} />
+              <CompanyDeleteFromSegment table={table} refetch={refetch} />
             </>
           ) : !showFilterBar ? (
             <Button

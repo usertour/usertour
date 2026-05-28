@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,35 +10,50 @@ import { PlusIcon } from '@usertour/icons';
 import { Table } from '@tanstack/react-table';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/contexts/app-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
-import { useManualSegments } from '@/hooks/use-manual-segments';
+import { useSegmentListQuery } from '@usertour/hooks';
 import { useAddUsersToSegment } from '@/hooks/use-add-users-to-segment';
+
+const USER_BIZ_TYPE = ['USER'];
 
 interface AddUserManualSegmentProps {
   table: Table<any>;
+  refetch: () => Promise<unknown>;
 }
 
 /**
- * Component for adding selected users to manual segments
+ * Lets the user push selected rows into one of the env's MANUAL segments.
+ * Pulls the segment list via Apollo directly (cache-deduped with other
+ * callers); filters to MANUAL inline.
  */
 export const UserAddToManualSegment = (props: AddUserManualSegmentProps) => {
-  const { table } = props;
+  const { table, refetch } = props;
   const { t } = useTranslation();
+  const { environment } = useAppContext();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
-  const { manualSegments } = useManualSegments();
+  const { segmentList } = useSegmentListQuery(environment?.id ?? '', USER_BIZ_TYPE, {
+    skip: !environment?.id,
+  });
+  const manualSegments = useMemo(
+    () => segmentList?.filter((seg) => seg.dataType === 'MANUAL') ?? [],
+    [segmentList],
+  );
   const { addUsers, isAdding } = useAddUsersToSegment();
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
-      // Check if any users are selected
       if (!hasSelection()) {
         return;
       }
 
       const selectedIds = collectSelectedIds();
-      await addUsers(selectedIds, segment);
+      const success = await addUsers(selectedIds, segment);
+      if (success) {
+        await refetch();
+      }
     },
-    [collectSelectedIds, hasSelection, addUsers],
+    [collectSelectedIds, hasSelection, addUsers, refetch],
   );
 
   return (
@@ -50,7 +65,7 @@ export const UserAddToManualSegment = (props: AddUserManualSegmentProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {manualSegments?.map((segment) => (
+        {manualSegments.map((segment) => (
           <DropdownMenuItem
             key={segment.id}
             className="cursor-pointer min-w-[180px]"

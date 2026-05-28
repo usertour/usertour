@@ -10,23 +10,23 @@ import {
   Button,
   LoadingButton,
 } from '@usertour/ui';
-import { Segment } from '@usertour/types';
+import { CurrentConditions, Segment } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
 import { useSaveSegmentFilter } from '@/hooks/use-save-segment-filter';
 
-export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
-  const { currentSegment } = props;
+interface UserSegmentFilterSaveProps {
+  currentSegment?: Segment;
+  currentConditions: CurrentConditions | undefined;
+  refetchSegments: () => Promise<unknown>;
+  isRefetching: boolean;
+}
+
+export const UserSegmentFilterSave = (props: UserSegmentFilterSaveProps) => {
+  const { currentSegment, currentConditions, refetchSegments, isRefetching } = props;
   const { t } = useTranslation();
   const { isViewOnly } = useAppContext();
-  const {
-    open,
-    isShowButton,
-    loading,
-    isRefetching,
-    handleOpenDialog,
-    handleCloseDialog,
-    saveFilter,
-  } = useSaveSegmentFilter(currentSegment);
+  const { open, isShowButton, loading, handleOpenDialog, handleCloseDialog, saveFilter } =
+    useSaveSegmentFilter({ currentSegment, currentConditions, refetchSegments });
 
   return (
     <>
