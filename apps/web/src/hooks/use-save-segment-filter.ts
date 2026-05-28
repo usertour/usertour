@@ -46,7 +46,10 @@ export const useSaveSegmentFilter = (currentSegment?: Segment) => {
           variant: 'success',
           title: t('users.toast.filters.saveSuccess', { segmentName: currentSegment.name }),
         });
-        refetch();
+        // Fire-and-forget; `.catch` swallows the rejection so a refetch
+        // failure doesn't bubble to window.unhandledrejection (the save
+        // itself already succeeded server-side).
+        refetch().catch(() => undefined);
         return true;
       }
       return false;

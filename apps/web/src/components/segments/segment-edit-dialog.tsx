@@ -35,9 +35,12 @@ export interface SegmentEditDialogProps {
   /**
    * Fires after the action settles. Consumers refetch on success.
    * Distinct from onClose so cancel/escape/x-click doesn't trigger
-   * a list refetch (caused the table to jitter on dismiss).
+   * a list refetch (caused the table to jitter on dismiss). Required
+   * to match the sibling destructive dialogs and to fail-loud at
+   * compile time if a future consumer forgets to wire it (silently
+   * skipping the refetch would regress the rename-not-reflected bug).
    */
-  onSubmit?: (success: boolean) => void;
+  onSubmit: (success: boolean) => void;
   segment: Segment | undefined;
 }
 
@@ -69,7 +72,7 @@ export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
         variant: 'success',
         title: t(`${ns}.toast.segments.segmentUpdated`, { segmentName }),
       });
-      onSubmit?.(true);
+      onSubmit(true);
       onClose();
     },
     [onSubmit, onClose, toast, t, ns],
@@ -86,8 +89,10 @@ export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
     async (formValues: EditSegmentFormValues) => {
       if (!segment?.id) {
         // Match the SegmentDeleteDialog guard — Save without a segment id
-        // should surface the same error toast, not silently dead-button.
+        // should surface the same error toast and the same onSubmit(false)
+        // signal so callers tracking the action see a settled state.
         handleError(t(`${ns}.toast.segments.invalidSegment`));
+        onSubmit(false);
         return;
       }
       const result = await updateSegmentAsync(segment.id, formValues);
@@ -97,7 +102,7 @@ export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
         handleError(result.error ?? t('common.unknownError'));
       }
     },
-    [segment?.id, updateSegmentAsync, handleSuccess, handleError, t, ns],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError, onSubmit, t, ns],
   );
 
   return (

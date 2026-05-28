@@ -46,7 +46,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
         <div className="flex items-center justify-between">
           <div className="space-y-1 flex flex-row items-center relative">
             <h2 className="text-xl font-semibold tracking-tight">{currentSegment?.name}</h2>
-            {currentSegment?.dataType !== 'ALL' && (
+            {currentSegment && currentSegment.dataType !== 'ALL' && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

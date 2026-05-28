@@ -50,7 +50,11 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
-            <LoadingButton onClick={saveFilter} loading={loading || isRefetching}>
+            <LoadingButton
+              onClick={saveFilter}
+              loading={loading || isRefetching}
+              disabled={isViewOnly}
+            >
               {t('users.filters.yesSave')}
             </LoadingButton>
           </AlertDialogFooter>

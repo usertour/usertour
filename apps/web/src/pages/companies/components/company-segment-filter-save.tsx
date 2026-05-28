@@ -52,7 +52,11 @@ export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) =>
             <AlertDialogCancel disabled={loading}>
               {t('companies.actions.cancel')}
             </AlertDialogCancel>
-            <LoadingButton onClick={saveFilter} loading={loading || isRefetching}>
+            <LoadingButton
+              onClick={saveFilter}
+              loading={loading || isRefetching}
+              disabled={isViewOnly}
+            >
               {t('companies.filters.yesSave')}
             </LoadingButton>
           </AlertDialogFooter>

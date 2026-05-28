@@ -20,9 +20,8 @@ export const CompanyRemoveFromSegment = (props: RemoveFromSegmentProps) => {
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
-  // `useRemoveCompaniesFromSegment` (unlike the user counterpart) does
-  // not refetch internally, so the consumer still owns the refresh on
-  // success.
+  // Mirrors `useRemoveUsersFromSegment` — both hooks leave refresh to
+  // the caller. The list refetch happens here in handleSubmit.
   const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {

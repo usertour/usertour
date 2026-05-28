@@ -55,9 +55,10 @@ export const useSaveCompanySegmentFilter = (currentSegment?: Segment) => {
         });
         // Fire-and-forget so a refetch network blip doesn't get rethrown
         // into the catch below and surface as a "save failed" toast after
-        // the save itself succeeded server-side. The button stays
-        // disabled via `isRefetching` while the list refreshes.
-        refetch();
+        // the save itself succeeded server-side. `.catch` swallows the
+        // rejection so it doesn't bubble to window.unhandledrejection.
+        // Button stays disabled via `isRefetching` while the list refreshes.
+        refetch().catch(() => undefined);
         return true;
       }
       return false;

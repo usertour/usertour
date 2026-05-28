@@ -39,7 +39,7 @@ export interface SegmentCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Fires after the action settles. Consumers refetch on success. */
-  onSubmit?: (success: boolean) => void;
+  onSubmit: (success: boolean) => void;
   environmentId: string | undefined;
 }
 
@@ -75,7 +75,7 @@ export const SegmentCreateDialog = memo((props: SegmentCreateDialogProps) => {
         variant: 'success',
         title: t(`${ns}.toast.segments.segmentCreated`, { segmentName }),
       });
-      onSubmit?.(true);
+      onSubmit(true);
       onOpenChange(false);
     },
     [onSubmit, onOpenChange, toast, t, ns],
