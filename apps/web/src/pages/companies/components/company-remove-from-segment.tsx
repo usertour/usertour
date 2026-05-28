@@ -13,7 +13,7 @@ interface RemoveFromSegmentProps {
   currentSegment: Segment;
 }
 
-export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
+export const CompanyRemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
@@ -61,4 +61,4 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   );
 };
 
-RemoveFromSegment.displayName = 'RemoveFromSegment';
+CompanyRemoveFromSegment.displayName = 'CompanyRemoveFromSegment';

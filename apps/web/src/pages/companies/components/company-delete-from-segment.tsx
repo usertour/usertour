@@ -12,7 +12,7 @@ interface DeleteCompanyFromSegmentProps {
   table: Table<any>;
 }
 
-export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) => {
+export const CompanyDeleteFromSegment = (props: DeleteCompanyFromSegmentProps) => {
   const { table } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
@@ -59,4 +59,4 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
   );
 };
 
-DeleteCompanyFromSegment.displayName = 'DeleteCompanyFromSegment';
+CompanyDeleteFromSegment.displayName = 'CompanyDeleteFromSegment';

@@ -12,7 +12,7 @@ interface RemoveFromSegmentProps {
   currentSegment: Segment;
 }
 
-export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
+export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
@@ -49,4 +49,4 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   );
 };
 
-RemoveFromSegment.displayName = 'RemoveFromSegment';
+UserRemoveFromSegment.displayName = 'UserRemoveFromSegment';

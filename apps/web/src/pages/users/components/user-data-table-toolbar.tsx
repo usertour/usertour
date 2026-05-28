@@ -10,11 +10,11 @@ import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AddUserManualSegment } from './user-add-to-manual-segment';
+import { UserAddToManualSegment } from './user-add-to-manual-segment';
 import { DataTableViewOptions } from '@/components/segments/table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
-import { DeleteUserFromSegment } from './user-delete-from-segment';
-import { RemoveFromSegment } from './user-remove-from-segment';
+import { UserDeleteFromSegment } from './user-delete-from-segment';
+import { UserRemoveFromSegment } from './user-remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour/gql';
@@ -160,11 +160,11 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <AddUserManualSegment table={table} />
+              <UserAddToManualSegment table={table} />
               {currentSegment.dataType === 'MANUAL' && (
-                <RemoveFromSegment table={table} currentSegment={currentSegment} />
+                <UserRemoveFromSegment table={table} currentSegment={currentSegment} />
               )}
-              <DeleteUserFromSegment table={table} />
+              <UserDeleteFromSegment table={table} />
             </>
           ) : !showFilterBar ? (
             <Button

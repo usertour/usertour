@@ -21,7 +21,7 @@ interface AddCompanyManualSegmentProps {
 /**
  * Component for adding selected companies to manual segments
  */
-export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => {
+export const CompanyAddToManualSegment = (props: AddCompanyManualSegmentProps) => {
   const { table } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
@@ -65,4 +65,4 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
   );
 };
 
-AddCompanyManualSegment.displayName = 'AddCompanyManualSegment';
+CompanyAddToManualSegment.displayName = 'CompanyAddToManualSegment';

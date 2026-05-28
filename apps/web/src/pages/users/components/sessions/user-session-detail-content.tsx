@@ -493,8 +493,8 @@ const SessionDetailContentInner = ({
 };
 
 // Main export component
-export function SessionDetailContent(props: SessionDetailContentProps) {
+export function UserSessionDetailContent(props: SessionDetailContentProps) {
   return <SessionDetailContentWithLoading {...props} />;
 }
 
-SessionDetailContent.displayName = 'SessionDetailContent';
+UserSessionDetailContent.displayName = 'UserSessionDetailContent';

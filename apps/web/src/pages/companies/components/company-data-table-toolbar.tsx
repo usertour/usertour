@@ -10,11 +10,11 @@ import { Conditions, validateConditions } from '@usertour/business-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AddCompanyManualSegment } from './company-add-to-manual-segment';
+import { CompanyAddToManualSegment } from './company-add-to-manual-segment';
 import { DataTableViewOptions } from '@/components/segments/table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
-import { DeleteCompanyFromSegment } from './company-delete-from-segment';
-import { RemoveFromSegment } from './company-remove-from-segment';
+import { CompanyDeleteFromSegment } from './company-delete-from-segment';
+import { CompanyRemoveFromSegment } from './company-remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour/gql';
@@ -166,11 +166,11 @@ export const CompanyDataTableToolbar = ({
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <AddCompanyManualSegment table={table} />
+              <CompanyAddToManualSegment table={table} />
               {currentSegment.dataType === 'MANUAL' && (
-                <RemoveFromSegment table={table} currentSegment={currentSegment} />
+                <CompanyRemoveFromSegment table={table} currentSegment={currentSegment} />
               )}
-              <DeleteCompanyFromSegment table={table} />
+              <CompanyDeleteFromSegment table={table} />
             </>
           ) : !showFilterBar ? (
             <Button

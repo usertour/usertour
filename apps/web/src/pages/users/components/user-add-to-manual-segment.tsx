@@ -21,7 +21,7 @@ interface AddUserManualSegmentProps {
 /**
  * Component for adding selected users to manual segments
  */
-export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
+export const UserAddToManualSegment = (props: AddUserManualSegmentProps) => {
   const { table } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
@@ -65,4 +65,4 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
   );
 };
 
-AddUserManualSegment.displayName = 'AddUserManualSegment';
+UserAddToManualSegment.displayName = 'UserAddToManualSegment';

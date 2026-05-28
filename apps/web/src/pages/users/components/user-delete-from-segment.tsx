@@ -11,7 +11,7 @@ interface DeleteUserFromSegmentProps {
   table: Table<any>;
 }
 
-export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
+export const UserDeleteFromSegment = (props: DeleteUserFromSegmentProps) => {
   const { table } = props;
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
@@ -58,4 +58,4 @@ export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
   );
 };
 
-DeleteUserFromSegment.displayName = 'DeleteUserFromSegment';
+UserDeleteFromSegment.displayName = 'UserDeleteFromSegment';
