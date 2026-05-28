@@ -10,23 +10,24 @@ import {
   Button,
   LoadingButton,
 } from '@usertour/ui';
-import { CurrentConditions, Segment } from '@usertour/types';
+import type { CurrentConditions, Segment } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
-import { useSaveSegmentFilter } from '@/hooks/use-save-segment-filter';
+import type { EntityConfig } from './entity-config';
 
-interface UserSegmentFilterSaveProps {
-  currentSegment?: Segment;
+interface EntitySegmentFilterSaveProps {
+  config: EntityConfig<any>;
+  currentSegment: Segment | undefined;
   currentConditions: CurrentConditions | undefined;
   refetchSegments: () => Promise<unknown>;
   isRefetching: boolean;
 }
 
-export const UserSegmentFilterSave = (props: UserSegmentFilterSaveProps) => {
-  const { currentSegment, currentConditions, refetchSegments, isRefetching } = props;
+export const EntitySegmentFilterSave = (props: EntitySegmentFilterSaveProps) => {
+  const { config, currentSegment, currentConditions, refetchSegments, isRefetching } = props;
   const { t } = useTranslation();
   const { isViewOnly } = useAppContext();
   const { open, isShowButton, loading, handleOpenDialog, handleCloseDialog, saveFilter } =
-    useSaveSegmentFilter({ currentSegment, currentConditions, refetchSegments });
+    config.useSaveFilter({ currentSegment, currentConditions, refetchSegments });
 
   return (
     <>
@@ -37,25 +38,25 @@ export const UserSegmentFilterSave = (props: UserSegmentFilterSaveProps) => {
           onClick={handleOpenDialog}
           disabled={isViewOnly}
         >
-          {t('users.filters.saveFilter')}
+          {t(config.i18n.saveFilter)}
         </Button>
       )}
       <AlertDialog defaultOpen={open} open={open} onOpenChange={handleCloseDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('users.filters.saveFilter')}</AlertDialogTitle>
+            <AlertDialogTitle>{t(config.i18n.saveFilter)}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('users.filters.confirmSave', { segmentName: currentSegment?.name })}
+              {t(config.i18n.confirmSave, { segmentName: currentSegment?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{t(config.i18n.cancel)}</AlertDialogCancel>
             <LoadingButton
               onClick={saveFilter}
               loading={loading || isRefetching}
               disabled={isViewOnly}
             >
-              {t('users.filters.yesSave')}
+              {t(config.i18n.yesSave)}
             </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -64,4 +65,4 @@ export const UserSegmentFilterSave = (props: UserSegmentFilterSaveProps) => {
   );
 };
 
-UserSegmentFilterSave.displayName = 'UserSegmentFilterSave';
+EntitySegmentFilterSave.displayName = 'EntitySegmentFilterSave';

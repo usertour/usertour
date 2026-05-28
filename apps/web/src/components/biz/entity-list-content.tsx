@@ -1,5 +1,3 @@
-import { useAppContext } from '@/contexts/app-context';
-import { useTranslation } from 'react-i18next';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -12,21 +10,30 @@ import {
 import { EditIcon } from '@usertour/icons';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserDataTable } from './user-data-table';
-import { UserEditDropdownMenu } from './user-edit-dropdown-menu';
 import { SegmentEditDialog } from '@/components/segments';
-import { UserSegmentFilterSave } from './user-segment-filter-save';
+import { useAppContext } from '@/contexts/app-context';
+import { useTranslation } from 'react-i18next';
 import type { CurrentConditions, Segment } from '@usertour/types';
+import { EntityDataTable } from './entity-data-table';
+import { EntityEditDropdownMenu } from './entity-edit-dropdown-menu';
+import { EntitySegmentFilterSave } from './entity-segment-filter-save';
+import type { EntityConfig } from './entity-config';
 
-interface UserListContentProps {
+interface EntityRow {
+  id: string;
+  environmentId: string;
+}
+
+interface EntityListContentProps<TRow extends EntityRow> {
+  config: EntityConfig<TRow>;
   environmentId: string;
   currentSegment: Segment | undefined;
   refetchSegments: () => Promise<unknown>;
   segmentsIsRefetching: boolean;
 }
 
-export const UserListContent = (props: UserListContentProps) => {
-  const { environmentId, currentSegment, refetchSegments, segmentsIsRefetching } = props;
+export function EntityListContent<TRow extends EntityRow>(props: EntityListContentProps<TRow>) {
+  const { config, environmentId, currentSegment, refetchSegments, segmentsIsRefetching } = props;
   const [open, setOpen] = useState(false);
   // currentConditions = the user's typed-but-not-saved filter. Lives here
   // because both the FilterSave button in the header AND the DataTable
@@ -64,20 +71,19 @@ export const UserListContent = (props: UserListContentProps) => {
                       size={'icon'}
                       className="w-8 h-8 ml-2 cursor-pointer"
                       disabled={isViewOnly}
-                      onClick={() => {
-                        setOpen(true);
-                      }}
+                      onClick={() => setOpen(true)}
                     >
                       <EditIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-slate-700">
-                    <p>{t('users.segments.tooltips.editName')}</p>
+                    <p>{t(config.i18n.editSegmentNameTooltip)}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
-            <UserSegmentFilterSave
+            <EntitySegmentFilterSave
+              config={config}
               currentSegment={currentSegment}
               currentConditions={currentConditions}
               refetchSegments={refetchSegments}
@@ -85,23 +91,25 @@ export const UserListContent = (props: UserListContentProps) => {
             />
           </div>
           {currentSegment && currentSegment.dataType !== 'ALL' && (
-            <UserEditDropdownMenu
+            <EntityEditDropdownMenu
+              config={config}
               segment={currentSegment}
               disabled={isViewOnly}
               onSubmit={async () => {
                 await refetchSegments();
-                navigate(`/env/${environmentId}/users`);
+                navigate(config.navToList(environmentId));
               }}
             >
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <DotsHorizontalIcon className="h-4 w-4 " />
               </Button>
-            </UserEditDropdownMenu>
+            </EntityEditDropdownMenu>
           )}
         </div>
         <Separator className="my-4" />
         {currentSegment && (
-          <UserDataTable
+          <EntityDataTable
+            config={config}
             segment={currentSegment}
             environmentId={environmentId}
             setCurrentConditions={setCurrentConditions}
@@ -110,7 +118,7 @@ export const UserListContent = (props: UserListContentProps) => {
         )}
       </div>
       <SegmentEditDialog
-        entity="user"
+        entity={config.kind}
         isOpen={open}
         onClose={handleOnClose}
         onSubmit={handleOnSubmit}
@@ -118,6 +126,6 @@ export const UserListContent = (props: UserListContentProps) => {
       />
     </>
   );
-};
+}
 
-UserListContent.displayName = 'UserListContent';
+EntityListContent.displayName = 'EntityListContent';

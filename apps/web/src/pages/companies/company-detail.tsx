@@ -1,21 +1,6 @@
-import { useAppContext } from '@/contexts/app-context';
-import { useParams } from 'react-router-dom';
-import { ScrollArea } from '@usertour/ui';
-import { CompanyDetailContent } from './components/company-detail-content';
+import { EntityDetailPage } from '@/components/biz/entity-detail-page';
+import { COMPANY_CONFIG } from '@/components/biz/entity-config';
 
-export const CompanyDetail = () => {
-  const { companyId } = useParams();
-  const { environment } = useAppContext();
-
-  return (
-    <ScrollArea className="h-full w-full">
-      <div className="min-h-full">
-        {environment?.id && companyId && (
-          <CompanyDetailContent environmentId={environment?.id} companyId={companyId} />
-        )}
-      </div>
-    </ScrollArea>
-  );
-};
+export const CompanyDetail = () => <EntityDetailPage config={COMPANY_CONFIG} />;
 
 CompanyDetail.displayName = 'CompanyDetail';

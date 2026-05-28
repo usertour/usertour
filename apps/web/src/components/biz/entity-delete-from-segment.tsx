@@ -1,30 +1,29 @@
-import { CloseIcon } from '@usertour/icons';
+import { Delete2Icon } from '@usertour/icons';
 import { Button } from '@usertour/ui';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BulkRemoveFromSegmentDialog } from '@/components/segments';
-import { Segment } from '@usertour/types';
+import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import type { EntityConfig } from './entity-config';
 
-interface RemoveFromSegmentProps {
+interface EntityDeleteFromSegmentProps {
+  config: EntityConfig<any>;
   table: Table<any>;
-  currentSegment: Segment;
   refetch: () => Promise<unknown>;
 }
 
-export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
-  const { table, currentSegment, refetch } = props;
+export const EntityDeleteFromSegment = (props: EntityDeleteFromSegmentProps) => {
+  const { config, table, refetch } = props;
+  const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
-  const [bizUserIds, setBizUserIds] = useState<string[]>([]);
-  const { t } = useTranslation();
+  const [bizIds, setBizIds] = useState<string[]>([]);
 
   const handleOnClick = useCallback(() => {
     if (hasSelection()) {
-      const ids = collectSelectedIds();
-      setBizUserIds(ids);
+      setBizIds(collectSelectedIds());
       setOpenDelete(true);
     }
   }, [collectSelectedIds, hasSelection]);
@@ -40,16 +39,18 @@ export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
 
   return (
     <>
-      <Button variant="ghost" className="h-8 px-2" onClick={handleOnClick}>
-        <CloseIcon className="mr-1 h-4 w-4" />
-        {t('users.actions.removeFromSegment')}
+      <Button
+        variant="ghost"
+        className="h-8 px-2 hover:text-red-600 hover:bg-red-100"
+        onClick={handleOnClick}
+      >
+        <Delete2Icon className="mr-1 h-4 w-4" />
+        {t(config.i18n.deleteAction)}
       </Button>
-
-      <BulkRemoveFromSegmentDialog
-        entity="user"
+      <BulkDeleteFromSegmentDialog
+        entity={config.kind}
         open={openDelete}
-        ids={bizUserIds}
-        segment={currentSegment}
+        ids={bizIds}
         onOpenChange={setOpenDelete}
         onSubmit={handleSubmit}
       />
@@ -57,4 +58,4 @@ export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
   );
 };
 
-UserRemoveFromSegment.displayName = 'UserRemoveFromSegment';
+EntityDeleteFromSegment.displayName = 'EntityDeleteFromSegment';

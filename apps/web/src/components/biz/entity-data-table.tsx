@@ -1,7 +1,8 @@
 'use client';
 
+import { useAppContext } from '@/contexts/app-context';
 import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
-import { useCompanyListQuery, useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/hooks';
 import {
   ColumnFiltersState,
   SortingState,
@@ -15,10 +16,9 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { AttributeBizTypes, BizCompany, CurrentConditions, Segment } from '@usertour/types';
-import React from 'react';
+import { AttributeBizTypes, type CurrentConditions, type Segment } from '@usertour/types';
+import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   DataTable,
   DataTablePagination,
@@ -26,25 +26,31 @@ import {
   buildColumnVisibility,
   buildColumnOrder,
 } from '@/components/segments/table';
-import { CompanyDataTableToolbar } from './company-data-table-toolbar';
-import { useCompanyTableColumns } from '@/hooks/use-company-table-columns';
-import { useAppContext } from '@/contexts/app-context';
+import { useTranslation } from 'react-i18next';
+import { EntityDataTableToolbar } from './entity-data-table-toolbar';
+import type { EntityConfig } from './entity-config';
 
-interface CompanyDataTableProps {
+interface EntityRow {
+  id: string;
+  environmentId: string;
+}
+
+interface EntityDataTableProps<TRow extends EntityRow> {
+  config: EntityConfig<TRow>;
   segment: Segment;
   environmentId: string;
-  // See user-data-table.tsx for why we forward only the setter.
   setCurrentConditions: React.Dispatch<React.SetStateAction<CurrentConditions | undefined>>;
 }
 
-export const CompanyDataTable = ({
+export function EntityDataTable<TRow extends EntityRow>({
+  config,
   segment,
   environmentId,
   setCurrentConditions,
-}: CompanyDataTableProps) => {
+}: EntityDataTableProps<TRow>) {
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
-  const columns = useCompanyTableColumns({ isViewOnly });
+  const columns = config.useTableColumns({ isViewOnly });
   // Apollo cache dedups with the toolbar's identical call.
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
@@ -53,6 +59,10 @@ export const CompanyDataTable = ({
   );
   const navigate = useNavigate();
 
+  // Per-table UI state owns: query (filter), pagination. Toolbar mutates
+  // query via setQuery; DataTable handles pagination via useReactTable.
+  // currentConditions lives one level up because the page header's
+  // FilterSave button also needs to see it.
   const [query, setQuery] = React.useState<{ [key: string]: unknown }>({});
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 20 });
 
@@ -61,49 +71,54 @@ export const CompanyDataTable = ({
     [query, segment.id],
   );
 
-  const { contents, loading, refetch, pageCount } = useBizListCursor<BizCompany>({
+  const { contents, loading, refetch, pageCount } = useBizListCursor<TRow>({
     environmentId,
     query: effectiveQuery,
     pagination,
-    useListQuery: useCompanyListQuery,
+    useListQuery: config.useListQuery,
   });
 
-  const { tableColumns } = useDynamicTableColumns<BizCompany>(
+  // Dynamic columns merge segment-configured order/visibility with the
+  // available attributes.
+  const { tableColumns } = useDynamicTableColumns<TRow>(
     attributeList,
-    AttributeBizTypes.Company,
+    config.attributeBizType,
     columns,
   );
+
+  const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const staticColumnIds = React.useMemo(
     () => columns.map((c) => c.id).filter((id): id is string => !!id),
     [columns],
   );
 
-  const companyAttrList = React.useMemo(
-    () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.Company) || [],
-    [attributeList],
+  const entityAttrList = React.useMemo(
+    () => attributeList?.filter((attr) => attr.bizType === config.attributeBizType) ?? [],
+    [attributeList, config.attributeBizType],
   );
 
   const baseColumnVisibility = React.useMemo(
-    () => buildColumnVisibility(companyAttrList, segment.columns),
-    [companyAttrList, segment.columns],
+    () => buildColumnVisibility(entityAttrList, segment.columns),
+    [entityAttrList, segment.columns],
   );
 
   const baseColumnOrder = React.useMemo(
-    () => buildColumnOrder(companyAttrList, segment.columns, staticColumnIds),
-    [companyAttrList, segment.columns, staticColumnIds],
+    () => buildColumnOrder(entityAttrList, segment.columns, staticColumnIds),
+    [entityAttrList, segment.columns, staticColumnIds],
   );
 
-  // See user-data-table.tsx — segment switches remount via `key=`, so
-  // these initial values apply on each switch without a reset effect.
+  // Local overrides on top of the segment's baseline columns. No reset
+  // effect needed: the caller mounts this component with
+  // `key={currentSegment.id}`, so segment switches remount the subtree
+  // and these `useState` initial values apply naturally.
   const [userColumnVisibility, setUserColumnVisibility] = React.useState<VisibilityState>({});
   const [userColumnOrder, setUserColumnOrder] = React.useState<string[] | undefined>(undefined);
 
   const columnVisibility = React.useMemo(
-    () => ({
-      ...baseColumnVisibility,
-      ...userColumnVisibility,
-    }),
+    () => ({ ...baseColumnVisibility, ...userColumnVisibility }),
     [baseColumnVisibility, userColumnVisibility],
   );
 
@@ -118,10 +133,6 @@ export const CompanyDataTable = ({
     },
     [baseColumnOrder],
   );
-
-  const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const tableState = React.useMemo(
     () => ({
@@ -157,21 +168,16 @@ export const CompanyDataTable = ({
   });
 
   const handleRowClick = React.useCallback(
-    (row: BizCompany) => {
-      const envId = row.environmentId;
-      const companyId = row.id;
-      if (!envId || !companyId) {
-        console.warn('Company row missing required fields for navigation');
-        return;
-      }
-      navigate(`/env/${envId}/company/${companyId}`);
+    (row: TRow) => {
+      navigate(config.navToDetail(row.environmentId, row.id));
     },
-    [navigate],
+    [navigate, config],
   );
 
   return (
     <div className="space-y-2">
-      <CompanyDataTableToolbar
+      <EntityDataTableToolbar
+        config={config}
         table={table}
         currentSegment={segment}
         setQuery={setQuery}
@@ -197,10 +203,10 @@ export const CompanyDataTable = ({
         onColumnFiltersChange={setColumnFilters}
         onRowClick={handleRowClick}
         segment={segment}
-        emptyMessage={t('companies.empty.noCompaniesFound')}
-        emptyDescription={t('companies.empty.noCompaniesFoundDescription')}
+        emptyMessage={t(config.i18n.emptyMessage)}
+        emptyDescription={t(config.i18n.emptyDescription)}
       />
       <DataTablePagination table={table} />
     </div>
   );
-};
+}

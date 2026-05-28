@@ -1,9 +1,9 @@
 'use client';
 
 import { Table } from '@tanstack/react-table';
-import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour/constants';
 import { Conditions, validateConditions } from '@usertour/business-components';
+import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import {
   AttributeBizTypes,
@@ -12,19 +12,21 @@ import {
   RulesCondition,
   Segment,
 } from '@usertour/types';
-import { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react';
-import { CompanyAddToManualSegment } from './company-add-to-manual-segment';
+import { Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
 import { DataTableViewOptions } from '@/components/segments/table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
-import { CompanyDeleteFromSegment } from './company-delete-from-segment';
-import { CompanyRemoveFromSegment } from './company-remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
 import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
+import type { EntityConfig } from './entity-config';
+import { EntityAddToManualSegment } from './entity-add-to-manual-segment';
+import { EntityDeleteFromSegment } from './entity-delete-from-segment';
+import { EntityRemoveFromSegment } from './entity-remove-from-segment';
 
-interface CompanyDataTableToolbarProps {
+interface EntityDataTableToolbarProps {
+  config: EntityConfig<any>;
   table: Table<any>;
   currentSegment: Segment;
   setQuery: Dispatch<SetStateAction<{ [key: string]: unknown }>>;
@@ -32,24 +34,15 @@ interface CompanyDataTableToolbarProps {
   refetch: () => Promise<unknown>;
 }
 
-export const CompanyDataTableToolbar = (props: CompanyDataTableToolbarProps) => {
-  const { table, currentSegment, setQuery, setCurrentConditions, refetch } = props;
+export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
+  const { config, table, currentSegment, setQuery, setCurrentConditions, refetch } = props;
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
-  const { attributes: attributeList, loading: attributeLoading } = useListAttributesQuery(
+  const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
     { skip: !project?.id },
   );
-
-  const filteredAttributes = attributeLoading
-    ? []
-    : attributeList?.filter(
-        (attr) =>
-          attr.bizType === AttributeBizTypes.Company ||
-          attr.bizType === AttributeBizTypes.Membership,
-      ) || [];
-
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection, getSelectedCount } = useTableSelection(table);
 
@@ -58,10 +51,17 @@ export const CompanyDataTableToolbar = (props: CompanyDataTableToolbarProps) => 
 
   const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
-  // See user-data-table-toolbar.tsx — parent remounts via `key=` so the
-  // initializer runs on each segment switch; no reset effect needed.
+  // Deep-copy the segment's saved data so the controlled `Conditions`
+  // component can mutate freely without aliasing into the segment cache.
+  // No reset-on-id effect: the parent remounts this subtree via
+  // `key={currentSegment.id}`, so this initializer runs on each switch.
   const [conditions, setConditions] = useState<RulesCondition[]>(() =>
     structuredClone(currentSegment.data ?? []),
+  );
+
+  const filteredAttributes = useMemo(
+    () => attributeList?.filter(config.conditionAttributeFilter) ?? [],
+    [attributeList, config.conditionAttributeFilter],
   );
 
   const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
@@ -74,8 +74,10 @@ export const CompanyDataTableToolbar = (props: CompanyDataTableToolbarProps) => 
       if (!currentSegment) {
         return;
       }
-      // See user-data-table-toolbar.tsx — no list refetch needed; the
-      // mutation response updates Apollo's normalized Segment record.
+      // No list refetch — column visibility/order is pure presentation
+      // and the mutation's response feeds Apollo's normalized cache so
+      // segmentList subscribers re-render with the new `segment.columns`
+      // automatically.
       try {
         await updateSegment({ id: currentSegment.id, columns });
       } catch (error) {
@@ -154,15 +156,16 @@ export const CompanyDataTableToolbar = (props: CompanyDataTableToolbarProps) => 
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <CompanyAddToManualSegment table={table} refetch={refetch} />
+              <EntityAddToManualSegment config={config} table={table} refetch={refetch} />
               {currentSegment.dataType === 'MANUAL' && (
-                <CompanyRemoveFromSegment
+                <EntityRemoveFromSegment
+                  config={config}
                   table={table}
                   currentSegment={currentSegment}
                   refetch={refetch}
                 />
               )}
-              <CompanyDeleteFromSegment table={table} refetch={refetch} />
+              <EntityDeleteFromSegment config={config} table={table} refetch={refetch} />
             </>
           ) : !showFilterBar ? (
             <Button
@@ -192,3 +195,5 @@ export const CompanyDataTableToolbar = (props: CompanyDataTableToolbarProps) => 
     </>
   );
 };
+
+EntityDataTableToolbar.displayName = 'EntityDataTableToolbar';

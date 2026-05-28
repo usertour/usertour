@@ -1,12 +1,13 @@
-import { Group2LineIcon } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 import { SegmentSidebar } from '@/components/segments/layout';
 import { SegmentCreateDialog } from '@/components/segments';
-import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import type { Segment } from '@usertour/types';
 import { useState } from 'react';
+import type { EntityConfig } from './entity-config';
 
-interface CompanyListSidebarProps {
+interface EntityListSidebarProps {
+  config: EntityConfig<any>;
   environmentId: string;
   segmentList: Segment[];
   currentSegment: Segment | undefined;
@@ -14,8 +15,8 @@ interface CompanyListSidebarProps {
   refetchSegments: () => Promise<unknown>;
 }
 
-export const CompanyListSidebar = (props: CompanyListSidebarProps) => {
-  const { environmentId, segmentList, currentSegment, loading, refetchSegments } = props;
+export const EntityListSidebar = (props: EntityListSidebarProps) => {
+  const { config, environmentId, segmentList, currentSegment, loading, refetchSegments } = props;
   const { t } = useTranslation();
   const { isViewOnly } = useAppContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -23,17 +24,17 @@ export const CompanyListSidebar = (props: CompanyListSidebarProps) => {
   return (
     <>
       <SegmentSidebar
-        title="Companies"
+        title={config.i18n.sidebarTitle}
         segmentList={segmentList}
         currentSegment={currentSegment}
         loading={loading}
-        groupIcon={<Group2LineIcon width={16} height={16} className="mr-1" />}
+        groupIcon={config.groupIcon}
         onCreate={() => setDialogOpen(true)}
-        createTooltip={t('companies.segments.tooltips.createSegment')}
+        createTooltip={t(config.i18n.createSegmentTooltip)}
         disabled={isViewOnly}
       />
       <SegmentCreateDialog
-        entity="company"
+        entity={config.kind}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={() => refetchSegments()}
@@ -43,4 +44,4 @@ export const CompanyListSidebar = (props: CompanyListSidebarProps) => {
   );
 };
 
-CompanyListSidebar.displayName = 'CompanyListSidebar';
+EntityListSidebar.displayName = 'EntityListSidebar';
