@@ -48,12 +48,16 @@ export const useSaveCompanySegmentFilter = (currentSegment?: Segment) => {
     try {
       const success = await updateSegment(data);
       if (success) {
-        await refetch();
+        setOpen(false);
         toast({
           variant: 'success',
           title: t('companies.toast.filters.saveSuccess', { segmentName: currentSegment.name }),
         });
-        setOpen(false);
+        // Fire-and-forget so a refetch network blip doesn't get rethrown
+        // into the catch below and surface as a "save failed" toast after
+        // the save itself succeeded server-side. The button stays
+        // disabled via `isRefetching` while the list refreshes.
+        refetch();
         return true;
       }
       return false;

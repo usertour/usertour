@@ -1,4 +1,3 @@
-import { useUserListContext } from '@/contexts/user-list-context';
 import { useDeleteBizUserOnSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
@@ -10,9 +9,13 @@ interface RemoveUsersResult {
   error?: string;
 }
 
+// Mirror of `useRemoveCompaniesFromSegment` — caller owns refetch on
+// success. The previous implementation read `useUserListContext()` here
+// to auto-refetch, which made `BulkRemoveFromSegmentDialog` crash on the
+// companies page (the shared dialog calls both hooks and the companies
+// tree has no UserListProvider).
 export const useRemoveUsersFromSegment = () => {
   const { invoke: deleteBizUserOnSegment, loading } = useDeleteBizUserOnSegmentMutation();
-  const { refetch } = useUserListContext();
   const { t } = useTranslation();
 
   const removeUsers = useCallback(
@@ -29,7 +32,6 @@ export const useRemoveUsersFromSegment = () => {
       try {
         const ret = await deleteBizUserOnSegment(data);
         if (ret.success) {
-          refetch();
           return { success: true, count: ret.count };
         }
         return { success: false, error: t('users.toast.segments.removeFailed') };
@@ -37,7 +39,7 @@ export const useRemoveUsersFromSegment = () => {
         return { success: false, error: getErrorMessage(error) };
       }
     },
-    [deleteBizUserOnSegment, refetch, t],
+    [deleteBizUserOnSegment, t],
   );
 
   return {

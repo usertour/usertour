@@ -78,6 +78,9 @@ export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
   const handleOnSubmit = useCallback(
     async (formValues: EditSegmentFormValues) => {
       if (!segment?.id) {
+        // Match the SegmentDeleteDialog guard — Save without a segment id
+        // should surface the same error toast, not silently dead-button.
+        handleError(t(`${ns}.toast.segments.invalidSegment`));
         return;
       }
       const result = await updateSegmentAsync(segment.id, formValues);
@@ -87,7 +90,7 @@ export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
         handleError(result.error ?? t('common.unknownError'));
       }
     },
-    [segment?.id, updateSegmentAsync, handleSuccess, handleError, t],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError, t, ns],
   );
 
   return (

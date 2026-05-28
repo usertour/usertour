@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { BulkRemoveFromSegmentDialog } from '@/components/segments';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
+import { useUserListContext } from '@/contexts/user-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface RemoveFromSegmentProps {
@@ -15,6 +16,7 @@ interface RemoveFromSegmentProps {
 export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
+  const { refetch } = useUserListContext();
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizUserIds, setBizUserIds] = useState<string[]>([]);
@@ -27,6 +29,15 @@ export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
       setOpenDelete(true);
     }
   }, [collectSelectedIds, hasSelection]);
+
+  const handleSubmit = useCallback(
+    async (success: boolean) => {
+      if (success) {
+        await refetch();
+      }
+    },
+    [refetch],
+  );
 
   return (
     <>
@@ -41,9 +52,7 @@ export const UserRemoveFromSegment = (props: RemoveFromSegmentProps) => {
         ids={bizUserIds}
         segment={currentSegment}
         onOpenChange={setOpenDelete}
-        // `useRemoveUsersFromSegment` handles list refetch internally —
-        // no extra work needed in the success branch.
-        onSubmit={() => undefined}
+        onSubmit={handleSubmit}
       />
     </>
   );

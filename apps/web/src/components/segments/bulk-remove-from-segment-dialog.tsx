@@ -54,7 +54,10 @@ export const BulkRemoveFromSegmentDialog = memo((props: BulkRemoveFromSegmentDia
     if (result.success) {
       toast({
         variant: 'success',
-        title: t(`${ns}.toast.segments.${ns}Removed`, { count: result.count || 0 }),
+        // Fall back to ids.length on nullable server count (same reason
+        // as bulk-delete-from-segment-dialog). `??` not `||` so a real 0
+        // doesn't get masked by the fallback.
+        title: t(`${ns}.toast.segments.${ns}Removed`, { count: result.count ?? ids.length }),
       });
       onSubmit(true);
       onOpenChange(false);

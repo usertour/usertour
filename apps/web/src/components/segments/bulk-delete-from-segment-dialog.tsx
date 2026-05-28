@@ -46,7 +46,10 @@ export const BulkDeleteFromSegmentDialog = memo((props: BulkDeleteFromSegmentDia
     if (result.success) {
       toast({
         variant: 'success',
-        title: t(`${ns}.toast.${ns}.${ns}Deleted`, { count: result.count ?? 0 }),
+        // Fall back to ids.length — the user just confirmed deleting these
+        // ids, so "0 deleted" on success would lie. The server's count
+        // field is nullable per the GraphQL schema.
+        title: t(`${ns}.toast.${ns}.${ns}Deleted`, { count: result.count ?? ids.length }),
       });
       onSubmit(true);
       onOpenChange(false);

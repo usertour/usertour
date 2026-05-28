@@ -11,13 +11,22 @@ import {
   LoadingButton,
 } from '@usertour/ui';
 import { Segment } from '@usertour/types';
+import { useAppContext } from '@/contexts/app-context';
 import { useSaveSegmentFilter } from '@/hooks/use-save-segment-filter';
 
 export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;
   const { t } = useTranslation();
-  const { open, isShowButton, loading, handleOpenDialog, handleCloseDialog, saveFilter } =
-    useSaveSegmentFilter(currentSegment);
+  const { isViewOnly } = useAppContext();
+  const {
+    open,
+    isShowButton,
+    loading,
+    isRefetching,
+    handleOpenDialog,
+    handleCloseDialog,
+    saveFilter,
+  } = useSaveSegmentFilter(currentSegment);
 
   return (
     <>
@@ -26,6 +35,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           className="h-8 ml-3 text-primary hover:text-primary"
           variant={'ghost'}
           onClick={handleOpenDialog}
+          disabled={isViewOnly}
         >
           {t('users.filters.saveFilter')}
         </Button>
@@ -40,7 +50,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
-            <LoadingButton onClick={saveFilter} loading={loading}>
+            <LoadingButton onClick={saveFilter} loading={loading || isRefetching}>
               {t('users.filters.yesSave')}
             </LoadingButton>
           </AlertDialogFooter>
