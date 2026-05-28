@@ -6,7 +6,7 @@ import { ConditionElementSelector } from '../../primitives/condition-element-sel
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
-import { Input } from '@usertour/input';
+import { Input } from '@usertour/ui';
 
 export interface TextInputData {
   elementData?: ElementSelectorPropsData;

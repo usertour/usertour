@@ -1,4 +1,12 @@
-import { Badge } from '@usertour/badge';
+import {
+  Badge,
+  ScrollArea,
+  DropdownMenuRadioGroup,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSelectItem,
+} from '@usertour/ui';
 import {
   ArrowRightIcon,
   EyeNoneIcon,
@@ -7,7 +15,6 @@ import {
   SpinnerIcon,
   TooltipIcon,
 } from '@usertour/icons';
-import { ScrollArea } from '@usertour/scroll-area';
 import { cn } from '@usertour/tailwind';
 import {
   ContentActionsItemType,
@@ -26,13 +33,6 @@ import {
   ActionDropdownMenuItem,
   ActionDropdownMenuTrigger,
 } from '../ui';
-import {
-  DropdownMenuRadioGroup,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuSelectItem,
-} from '@usertour/dropdown-menu';
 
 interface StepGotoData {
   stepCvid?: string;

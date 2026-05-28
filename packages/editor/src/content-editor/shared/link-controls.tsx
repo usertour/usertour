@@ -1,7 +1,6 @@
 // Shared LinkControls component for content editor elements
 
-import { Checkbox } from '@usertour/checkbox';
-import { Label } from '@usertour/label';
+import { Checkbox, Label } from '@usertour/ui';
 import { memo, useCallback, useId } from 'react';
 import type { Descendant } from 'slate';
 

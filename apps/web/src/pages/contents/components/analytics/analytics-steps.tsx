@@ -1,12 +1,25 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { AnalyticsViewsByStep, StepContentType } from '@usertour/types';
 import { useState } from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
 
-import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
+import { GoalStepBadge } from '@/components/goal-step-badge';
 import { calculateRate, calculateUniqueFailureRate } from '@/utils/analytics';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';

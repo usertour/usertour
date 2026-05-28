@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  ScrollArea,
+} from '@usertour/ui';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { PlusIcon } from '@usertour/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
-import { ScrollArea } from '@usertour/scroll-area';
 import { cn } from '@usertour/tailwind';
 
 interface ObjectMappingFieldSelectProps {

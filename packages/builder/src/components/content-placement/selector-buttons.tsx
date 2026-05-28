@@ -1,4 +1,4 @@
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 
 interface SelectorButtonsProps {
   selectors?: string[];

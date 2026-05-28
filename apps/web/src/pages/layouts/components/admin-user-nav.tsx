@@ -1,8 +1,8 @@
 import { useAppContext } from '@/contexts/app-context';
-import { UserAvatar } from '@/components/molecules/user-avatar';
-import { Badge } from '@usertour/badge';
-import { Button } from '@usertour/button';
 import {
+  UserAvatar,
+  Badge,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -15,9 +15,9 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
+  useToast,
+} from '@usertour/ui';
 import { useActiveUserProjectMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';
 import { useNavigate } from 'react-router-dom';

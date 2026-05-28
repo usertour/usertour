@@ -1,4 +1,4 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/ui';
 import { useContentPlacement } from './content-placement-context';
 
 export const ContentPlacementTabs = ({

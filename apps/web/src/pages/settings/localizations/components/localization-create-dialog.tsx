@@ -3,11 +3,20 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  type LocateItem,
+  LocateSelect,
+  SettingsDialogForm,
+  useSettingsForm,
+  QuestionTooltip,
+} from '@usertour/ui';
 import { useCreateLocalizationMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
-import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
-import { QuestionTooltip } from '@usertour/tooltip';
 import { z } from 'zod';
 
 interface LocalizationCreateDialogProps {
@@ -79,7 +88,14 @@ export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) =
                   {t('settings.localizations.form.localeTooltip')}
                 </QuestionTooltip>
               </FormLabel>
-              <LocateSelect popperContentClass="w-[450px]" onSelect={handleOnSelect} />
+              <LocateSelect
+                popperContentClass="w-[450px]"
+                triggerPlaceholder={t('common.locale.triggerPlaceholder')}
+                searchPlaceholder={t('common.locale.searchPlaceholder')}
+                emptyMessage={t('common.locale.empty')}
+                groupHeading={t('common.locale.groupHeading')}
+                onSelect={handleOnSelect}
+              />
               <FormMessage />
             </FormItem>
           )}

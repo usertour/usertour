@@ -5,7 +5,7 @@ import {
   ResourceCenterTab,
   LiveChatProvider,
 } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { isEqual } from 'lodash';
 import { isRichTextEmpty } from '@usertour/helpers';
 import {

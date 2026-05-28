@@ -7,8 +7,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useUpdateEnvironmentMutation } from '@usertour/hooks';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { Environment } from '@usertour/types';
-import { ResourceRowActions } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
+import { ResourceRowActions, useToast } from '@usertour/ui';
 import { EnvironmentDeleteDialog } from './environment-delete-dialog';
 import { EnvironmentEditDialog } from './environment-edit-dialog';
 

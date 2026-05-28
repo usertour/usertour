@@ -1,13 +1,13 @@
 'use client';
 
-import AdminSidebarFooter from '@/components/molecules/admin-sidebar-footer';
+import AdminSidebarFooter from '@/components/admin-sidebar/admin-sidebar-footer';
 import {
   AdminSidebarBodyItemTemplate,
   AdminSidebarBodyTemplate,
   AdminSidebarBodyTitleTemplate,
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
-} from '@/components/templates/admin-sidebar-template';
+} from '@/components/admin-sidebar/admin-sidebar-template';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';

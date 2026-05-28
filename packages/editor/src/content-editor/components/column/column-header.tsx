@@ -1,7 +1,7 @@
 // Column header component with settings trigger and drag handle
 
 import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
-import { PopoverAnchor, PopoverTrigger } from '@usertour/popover';
+import { PopoverAnchor, PopoverTrigger } from '@usertour/ui';
 import { memo } from 'react';
 import type { HTMLAttributes } from 'react';
 

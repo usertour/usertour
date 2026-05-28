@@ -875,6 +875,25 @@ const translations = {
     rowsSelected: '{{count}} selected',
     clearSelection: 'Clear selection',
     unknownError: 'Something went wrong.',
+    loading: 'Loading...',
+    pickADate: 'Pick a date',
+    datePresets: {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      last7Days: 'Last 7 days',
+      last14Days: 'Last 14 days',
+      last30Days: 'Last 30 days',
+      last90Days: 'Last 90 days',
+      thisMonth: 'This month',
+      yearToDate: 'Year to date',
+      allTime: 'All time',
+    },
+    locale: {
+      triggerPlaceholder: 'Select a locale…',
+      searchPlaceholder: 'Search locales…',
+      empty: 'No locales found.',
+      groupHeading: 'Locale',
+    },
     membership: {
       attributes: 'Membership attributes',
       none: 'No membership attributes',
@@ -985,6 +1004,8 @@ const translations = {
       title: 'User sessions',
       countLabel_one: '{{count}} session',
       countLabel_other: '{{count}} sessions',
+      deletedContentBadge: 'Deleted',
+      deletedContentTooltip: 'This content was deleted. Historical session data is preserved.',
       table: {
         content: 'Content',
         status: 'Status',
@@ -1126,6 +1147,10 @@ const translations = {
       invalidData: 'Invalid content data',
       deleteSuccess: '{{contentType}} "{{name}}" deleted',
       deleteFailure: 'Failed to delete content',
+    },
+    notFound: {
+      description: 'This content has been deleted or is no longer accessible.',
+      backButton: 'Back to list',
     },
   },
   companies: {

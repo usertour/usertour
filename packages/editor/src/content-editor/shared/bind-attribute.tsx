@@ -1,15 +1,23 @@
 // Bind to user attribute component for question editors
 
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
-import { Label } from '@usertour/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
-import { ScrollArea } from '@usertour/scroll-area';
+import {
+  Button,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  ScrollArea,
+  Switch,
+  QuestionTooltip,
+} from '@usertour/ui';
 import { useListAttributesQuery } from '@usertour/hooks';
-import { Switch } from '@usertour/switch';
 import { cn } from '@usertour/tailwind';
-import { QuestionTooltip } from '@usertour/tooltip';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { useCallback, useState } from 'react';
 

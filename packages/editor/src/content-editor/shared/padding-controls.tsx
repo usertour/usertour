@@ -1,8 +1,6 @@
 // Shared PaddingControls component for content editor elements
 
-import { Checkbox } from '@usertour/checkbox';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
+import { Checkbox, Input, Label } from '@usertour/ui';
 import type { ContentEditorPadding } from '@usertour/types';
 import { PADDING_KEY_MAPPING } from '@usertour/widget';
 import { memo, useCallback, useId } from 'react';

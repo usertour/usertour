@@ -1,10 +1,17 @@
 import { useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  useToast,
+} from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { useSetupSystemAdminMutation } from '@usertour/hooks';
 import { useForm } from 'react-hook-form';

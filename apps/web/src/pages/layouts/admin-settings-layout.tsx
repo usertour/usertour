@@ -1,4 +1,4 @@
-import { ScrollArea } from '@usertour/scroll-area';
+import { ScrollArea } from '@usertour/ui';
 import { Outlet, useParams } from 'react-router-dom';
 import { findSettingsSection } from '@/pages/settings/registry';
 import { AdminLayoutNewContent, ShellHelmet } from './components/admin-layout';

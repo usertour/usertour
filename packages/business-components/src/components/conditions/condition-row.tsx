@@ -8,7 +8,7 @@ import { ConditionEditor } from './condition-editor';
 import { ConditionList } from './condition-list';
 import { getConditionSchema } from './registry';
 import type { ValidateContext } from './schema-types';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import {
   ConditionErrorTooltip,
   ConditionErrorTooltipAnchor,

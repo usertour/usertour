@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
-import { EditSegmentFormValues } from '@/pages/companies/types/segment-form-schema';
+import { EditSegmentFormValues } from '@/components/segments/segment-form-schema';
 
 interface UpdateCompanySegmentResult {
   success: boolean;

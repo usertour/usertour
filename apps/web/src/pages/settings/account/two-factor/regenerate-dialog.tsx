@@ -1,19 +1,19 @@
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
-import { Checkbox } from '@usertour/checkbox';
 import {
+  Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
+  useToast,
+} from '@usertour/ui';
 import { useRegenerateRecoveryCodesMutation } from '@usertour/hooks';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
 import { CodeField } from './code-field';
 import { downloadRecoveryCodes } from './download-codes';
 

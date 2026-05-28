@@ -1,11 +1,16 @@
 // Popover form content for multiple choice editor
 
-import { Button } from '@usertour/button';
+import {
+  Button,
+  Input,
+  Label,
+  Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { DeleteIcon, PlusIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { Label } from '@usertour/label';
-import { Switch } from '@usertour/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback, useMemo } from 'react';
 

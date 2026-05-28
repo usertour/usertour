@@ -1,7 +1,20 @@
 import { useUserSessionsContext } from '@/contexts/user-sessions-context';
 import { BizSession, ContentDataType, Event } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import {
+  ListSkeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { formatDistanceToNow } from 'date-fns';
 import {
   BannerProgressCell,
@@ -10,10 +23,9 @@ import {
   LauncherProgressCell,
   ResourceCenterProgressCell,
   SessionStatusBadge,
-} from '@/components/molecules/session-analytics';
+} from '@/components/sessions/session-analytics';
 import { useListEventsQuery } from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { cn } from '@usertour/tailwind';
 import {
   BannerIcon,
@@ -24,9 +36,7 @@ import {
   ResourceCenterIcon,
   SpinnerIcon,
 } from '@usertour/icons';
-import { Button } from '@usertour/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { useAppContext } from '@/contexts/app-context';
 
 const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;
@@ -99,6 +109,7 @@ const ContentColumn = ({
   environmentId,
 }: { session: BizSession; environmentId: string }) => {
   const { content } = session;
+  const { t } = useTranslation();
 
   if (!content) {
     return <div className="text-muted-foreground">Unknown content</div>;
@@ -124,6 +135,31 @@ const ContentColumn = ({
         return null;
     }
   };
+
+  // Soft-deleted content: session history is preserved server-side, so
+  // the row stays visible — but the link to the (now non-existent)
+  // content detail page would 404. Render the name as a plain span
+  // with strikethrough + a hover-explainable "Deleted" badge, no link.
+  if (content.deleted) {
+    return (
+      <div className="font-medium flex items-center space-x-2 min-w-0">
+        {getContentIcon(content.type)}
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+          <span className="truncate text-muted-foreground line-through">{content.name}</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+                  {t('users.sessions.deletedContentBadge')}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{t('users.sessions.deletedContentTooltip')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-medium flex items-center space-x-2 min-w-0">

@@ -1,5 +1,5 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
 import { getAuthToken } from '@usertour/helpers';
 import { window } from '@usertour/helpers';

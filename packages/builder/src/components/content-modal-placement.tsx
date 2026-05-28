@@ -1,6 +1,4 @@
-import { Button } from '@usertour/button';
-import { Label } from '@usertour/label';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Button, Label, QuestionTooltip } from '@usertour/ui';
 import { ModalPosition } from '@usertour/types';
 import { ContentModalPlacementData } from '@usertour/types';
 import { cn } from '@usertour/tailwind';

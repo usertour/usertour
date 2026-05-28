@@ -6,7 +6,7 @@ import {
   ToggleGroup as ToolbarToggleGroup,
 } from '@radix-ui/react-toolbar';
 import { EDITOR_RICH_TOOLBAR } from '@usertour/constants';
-import { TooltipProvider } from '@usertour/tooltip';
+import { TooltipProvider } from '@usertour/ui';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Transforms } from 'slate';

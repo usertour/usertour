@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour/button';
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour/dialog';
+  useToast,
+} from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
 import { CodeField } from './code-field';
 
 export interface StepUpDialogProps {

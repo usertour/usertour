@@ -1,10 +1,11 @@
-import { ContentLoading } from '@/components/molecules/content-loading';
+import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { WebBuilder } from '@usertour/builder';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface ContentDetailBuilderProps {
@@ -24,6 +25,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const { loading: attributeLoading } = useAttributeListContext();
   const { loading: subscriptionLoading, shouldShowMadeWith } = useSubscriptionContext();
   const { loading: appLoading } = useAppContext();
+  const { t } = useTranslation();
 
   // Mirror the active step into the URL so refresh / browser back keep the
   // user in the same panel. Use replace so internal mode flips don't pollute
@@ -59,7 +61,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const isLoading = environmentLoading || attributeLoading || subscriptionLoading || appLoading;
 
   if (isLoading) {
-    return <ContentLoading message="Loading builder..." />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   return (

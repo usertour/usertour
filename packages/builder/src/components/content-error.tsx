@@ -1,10 +1,4 @@
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverArrow,
-  PopoverContent,
-  PopoverTrigger,
-} from '@usertour/popover';
+import { Popover, PopoverAnchor, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import React from 'react';
 

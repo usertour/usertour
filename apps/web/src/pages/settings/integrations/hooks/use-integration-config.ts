@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour/hooks';
 import type { IntegrationModel } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 
 interface UseIntegrationConfigResult<TConfig> {

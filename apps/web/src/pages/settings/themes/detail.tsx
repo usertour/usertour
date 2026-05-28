@@ -1,12 +1,12 @@
 import { ThemeDetailProvider, useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { useUpdateThemeMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast, ContentLoading } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeBuilder } from './components/theme-builder';
-import { ContentLoading } from '@/components/molecules/content-loading';
 
 // Inner component that uses the context
 const ThemeDetailInner = () => {
@@ -15,6 +15,7 @@ const ThemeDetailInner = () => {
   const navigate = useNavigate();
   const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSave = useCallback(
     async (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => {
@@ -55,7 +56,7 @@ const ThemeDetailInner = () => {
   );
 
   if (loading) {
-    return <ContentLoading message="Loading theme details..." />;
+    return <ContentLoading message={t('common.loading')} />;
   }
 
   if (!theme) {

@@ -2,12 +2,19 @@
 
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Separator,
+  Skeleton,
+  SettingsFormSection,
+  useSettingsForm,
+} from '@usertour/ui';
 import { useUpdateProjectNameMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
-import { Separator } from '@usertour/separator';
-import { Skeleton } from '@usertour/skeleton';
-import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
 const projectNameSchema = z.object({

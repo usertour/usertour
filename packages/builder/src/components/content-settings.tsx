@@ -1,6 +1,4 @@
-import { Label } from '@usertour/label';
-import { Switch } from '@usertour/switch';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Label, Switch, QuestionTooltip } from '@usertour/ui';
 import { useState } from 'react';
 
 export type ContentSettingsData = {

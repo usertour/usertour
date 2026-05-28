@@ -1,7 +1,6 @@
 'use client';
 
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
-import { ScrollArea } from '@usertour/scroll-area';
+import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { LauncherActionType } from '@usertour/types';
 import { useBuilderContext, useLauncherContext } from '../../contexts';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';

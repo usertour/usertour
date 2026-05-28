@@ -2,7 +2,7 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { WebZIndex } from '@usertour/constants';
-import { Label } from '@usertour/label';
+import { Label, Switch, QuestionTooltip } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import {
   ConditionFrequency,
@@ -16,8 +16,6 @@ import { useContentListQuery } from '@usertour/hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import isEqual from 'fast-deep-equal';
-import { Switch } from '@usertour/switch';
-import { QuestionTooltip } from '@usertour/tooltip';
 import {
   Content,
   ContentPriority,

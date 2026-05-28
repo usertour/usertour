@@ -2,9 +2,8 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Upload from 'rc-upload';
-import { Button } from '@usertour/button';
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 
 import { ACCEPT_FILE_TYPES } from './constants';
 import { useAvatarUpload } from './hooks/use-avatar-upload';

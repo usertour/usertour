@@ -1,12 +1,10 @@
-import { ContentListSkeleton } from '@/components/molecules/skeleton';
+import { Button, Separator, NewItemButton } from '@usertour/ui';
+import { ContentListSkeleton } from './content-list-skeleton';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour/button';
-import { Separator } from '@usertour/separator';
-import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
+import { EmptyPlaceholder } from '@/components/segments/ui';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useContentCount } from '@usertour/hooks';
-import { NewItemButton } from '@usertour/ui';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';

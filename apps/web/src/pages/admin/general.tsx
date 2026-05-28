@@ -2,13 +2,8 @@ import {
   useAdminInstanceSettingsQuery,
   useUpdateInstanceGeneralSettingsMutation,
 } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast, Separator, Button, Input, Skeleton, Switch } from '@usertour/ui';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour/separator';
-import { Button } from '@usertour/button';
-import { Input } from '@usertour/input';
-import { Skeleton } from '@usertour/skeleton';
-import { Switch } from '@usertour/switch';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';

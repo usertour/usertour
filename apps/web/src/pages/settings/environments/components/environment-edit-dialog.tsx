@@ -2,11 +2,18 @@
 
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  SettingsDialogForm,
+  useSettingsForm,
+} from '@usertour/ui';
 import { useUpdateEnvironmentMutation } from '@usertour/hooks';
-import { Input } from '@usertour/input';
 import { Environment } from '@usertour/types';
-import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
 interface EnvironmentEditDialogProps {

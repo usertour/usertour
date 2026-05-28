@@ -10,13 +10,12 @@ import {
   defaultSettings,
 } from '@usertour/types';
 import { useCurrentUserId } from '@usertour/hooks';
-import { useToast } from '@usertour/use-toast';
+import { useToast, CompactPanel } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from 'react-use';
-import { CompactPanel } from '@usertour/ui';
 import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
 import { builderSections } from './schema/sections';

@@ -1,7 +1,7 @@
 // Shared DragHandle component for content editor elements
 
 import { DragHandleDots2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
+import { Button } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { memo } from 'react';
 import type { HTMLAttributes } from 'react';

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useEvent } from 'react-use';
 
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
 import { getEmptyDataForType } from '../utils/default-data';

@@ -6,7 +6,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@usertour/card';
+} from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 
 interface AuthCardProps {

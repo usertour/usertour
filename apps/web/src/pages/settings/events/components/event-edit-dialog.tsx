@@ -2,24 +2,26 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ListSkeletonCount } from '@/components/molecules/skeleton';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Button } from '@usertour/button';
 import {
+  ListSkeletonCount,
+  Button,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour/form';
+  Input,
+  QuestionTooltip,
+  SelectPopover,
+  SettingsDialogForm,
+  useSettingsForm,
+  useToast,
+} from '@usertour/ui';
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useListAttributeOnEventsQuery, useUpdateEventMutation } from '@usertour/hooks';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
-import { Input } from '@usertour/input';
-import { QuestionTooltip } from '@usertour/tooltip';
 import { type Attribute, type Event } from '@usertour/types';
-import { SelectPopover, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
-import { useToast } from '@usertour/use-toast';
 import { z } from 'zod';
 
 interface EventEditDialogProps {

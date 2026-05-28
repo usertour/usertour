@@ -1,6 +1,5 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
-import { QuestionTooltip } from '@usertour/tooltip';
+import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsViewsByBlock } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 

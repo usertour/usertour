@@ -1,5 +1,5 @@
 import { useCopyToClipboard } from 'react-use';
-import { useToast } from '@usertour/use-toast';
+import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 
 /**
