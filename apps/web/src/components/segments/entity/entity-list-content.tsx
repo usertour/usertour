@@ -10,7 +10,7 @@ import {
 import { EditIcon } from '@usertour/icons';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SegmentEditDialog } from '@/components/segments';
+import { SegmentEditDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
 import type { CurrentConditions, Segment } from '@usertour/types';

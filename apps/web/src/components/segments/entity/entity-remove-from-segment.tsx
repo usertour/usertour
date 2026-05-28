@@ -1,20 +1,22 @@
-import { Delete2Icon } from '@usertour/icons';
+import { CloseIcon } from '@usertour/icons';
 import { Button } from '@usertour/ui';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BulkDeleteFromSegmentDialog } from '@/components/segments';
-import { useTranslation } from 'react-i18next';
+import { BulkRemoveFromSegmentDialog } from '..';
+import type { Segment } from '@usertour/types';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { useTranslation } from 'react-i18next';
 import type { EntityConfig } from './entity-config';
 
-interface EntityDeleteFromSegmentProps {
+interface EntityRemoveFromSegmentProps {
   config: EntityConfig<any>;
   table: Table<any>;
+  currentSegment: Segment;
   refetch: () => Promise<unknown>;
 }
 
-export const EntityDeleteFromSegment = (props: EntityDeleteFromSegmentProps) => {
-  const { config, table, refetch } = props;
+export const EntityRemoveFromSegment = (props: EntityRemoveFromSegmentProps) => {
+  const { config, table, currentSegment, refetch } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
@@ -39,18 +41,15 @@ export const EntityDeleteFromSegment = (props: EntityDeleteFromSegmentProps) => 
 
   return (
     <>
-      <Button
-        variant="ghost"
-        className="h-8 px-2 hover:text-red-600 hover:bg-red-100"
-        onClick={handleOnClick}
-      >
-        <Delete2Icon className="mr-1 h-4 w-4" />
-        {t(config.i18n.deleteAction)}
+      <Button variant="ghost" className="h-8 px-2" onClick={handleOnClick}>
+        <CloseIcon className="mr-1 h-4 w-4" />
+        {t(config.i18n.removeFromSegment)}
       </Button>
-      <BulkDeleteFromSegmentDialog
+      <BulkRemoveFromSegmentDialog
         entity={config.kind}
         open={openDelete}
         ids={bizIds}
+        segment={currentSegment}
         onOpenChange={setOpenDelete}
         onSubmit={handleSubmit}
       />
@@ -58,4 +57,4 @@ export const EntityDeleteFromSegment = (props: EntityDeleteFromSegmentProps) => 
   );
 };
 
-EntityDeleteFromSegment.displayName = 'EntityDeleteFromSegment';
+EntityRemoveFromSegment.displayName = 'EntityRemoveFromSegment';

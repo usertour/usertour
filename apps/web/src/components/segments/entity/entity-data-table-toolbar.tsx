@@ -13,7 +13,7 @@ import {
   Segment,
 } from '@usertour/types';
 import { Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
-import { DataTableViewOptions } from '@/components/segments/table';
+import { DataTableViewOptions } from '../table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';

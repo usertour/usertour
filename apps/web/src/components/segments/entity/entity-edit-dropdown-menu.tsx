@@ -7,7 +7,7 @@ import {
 import { Delete2Icon } from '@usertour/icons';
 import type { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { SegmentDeleteDialog } from '@/components/segments';
+import { SegmentDeleteDialog } from '..';
 import { useTranslation } from 'react-i18next';
 import type { EntityConfig } from './entity-config';
 

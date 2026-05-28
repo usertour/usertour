@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { SegmentSidebar } from '@/components/segments/layout';
-import { SegmentCreateDialog } from '@/components/segments';
+import { SegmentSidebar } from '../layout';
+import { SegmentCreateDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
 import type { Segment } from '@usertour/types';
 import { useState } from 'react';

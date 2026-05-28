@@ -25,7 +25,7 @@ import {
   useDynamicTableColumns,
   buildColumnVisibility,
   buildColumnOrder,
-} from '@/components/segments/table';
+} from '../table';
 import { useTranslation } from 'react-i18next';
 import { EntityDataTableToolbar } from './entity-data-table-toolbar';
 import type { EntityConfig } from './entity-config';
