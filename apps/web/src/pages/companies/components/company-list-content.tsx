@@ -29,8 +29,16 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
 
   const handleOnClose = useCallback(() => {
     setOpen(false);
-    refetch();
-  }, [refetch]);
+  }, []);
+
+  const handleOnSubmit = useCallback(
+    (success: boolean) => {
+      if (success) {
+        refetch();
+      }
+    },
+    [refetch],
+  );
 
   return (
     <>
@@ -84,6 +92,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
         entity="company"
         isOpen={open}
         onClose={handleOnClose}
+        onSubmit={handleOnSubmit}
         segment={currentSegment}
       />
     </>

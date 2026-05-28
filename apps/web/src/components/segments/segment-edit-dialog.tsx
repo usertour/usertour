@@ -32,11 +32,17 @@ export interface SegmentEditDialogProps {
   entity: SegmentEntity;
   isOpen: boolean;
   onClose: () => void;
+  /**
+   * Fires after the action settles. Consumers refetch on success.
+   * Distinct from onClose so cancel/escape/x-click doesn't trigger
+   * a list refetch (caused the table to jitter on dismiss).
+   */
+  onSubmit?: (success: boolean) => void;
   segment: Segment | undefined;
 }
 
 export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
-  const { entity, isOpen, onClose, segment } = props;
+  const { entity, isOpen, onClose, onSubmit, segment } = props;
   const { t } = useTranslation();
   const { toast } = useToast();
   const user = useUpdateSegment();
@@ -63,9 +69,10 @@ export const SegmentEditDialog = memo((props: SegmentEditDialogProps) => {
         variant: 'success',
         title: t(`${ns}.toast.segments.segmentUpdated`, { segmentName }),
       });
+      onSubmit?.(true);
       onClose();
     },
-    [onClose, toast, t, ns],
+    [onSubmit, onClose, toast, t, ns],
   );
 
   const handleError = useCallback(

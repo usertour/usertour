@@ -28,8 +28,16 @@ const UserListContentInner = ({ environmentId }: { environmentId: string | undef
   const { t } = useTranslation();
   const handleOnClose = useCallback(() => {
     setOpen(false);
-    refetch();
-  }, [refetch]);
+  }, []);
+
+  const handleOnSubmit = useCallback(
+    (success: boolean) => {
+      if (success) {
+        refetch();
+      }
+    },
+    [refetch],
+  );
 
   return (
     <>
@@ -83,6 +91,7 @@ const UserListContentInner = ({ environmentId }: { environmentId: string | undef
         entity="user"
         isOpen={open}
         onClose={handleOnClose}
+        onSubmit={handleOnSubmit}
         segment={currentSegment}
       />
     </>
