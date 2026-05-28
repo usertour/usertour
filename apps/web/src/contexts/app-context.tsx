@@ -1,22 +1,33 @@
-import { Environment, Project } from '@usertour/types';
-import {
-  useCurrentUserId,
-  useGlobalConfigQuery,
-  useGetUserInfoQuery,
-  useLogoutMutation,
-} from '@usertour/hooks';
-import { removeAuthToken } from '@usertour/helpers';
-import { Capability, GlobalConfig, UserProfile } from '@usertour/types';
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { broadcastAuthSwitch } from '@/utils/auth-channel';
+import { Environment } from '@usertour/types';
+import { Capability, GlobalConfig, type Project, UserProfile } from '@usertour/types';
+import { ReactNode, createContext, useContext, useState } from 'react';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { useActiveProject, useUserProjects } from '@/hooks/use-active-project';
+import { useCapabilities } from '@/hooks/use-capabilities';
+import { useGlobalConfig } from '@/hooks/use-global-config';
+import { useLogout } from '@/hooks/use-logout';
+
+// AppContext is a thin facade over the underlying focused hooks
+// (`useCurrentUser`, `useActiveProject`, `useCapabilities`,
+// `useGlobalConfig`, `useLogout`). Everything except `environment` is
+// derived from Apollo cache + URL — no `useState` mirrors of server
+// data, no `useEffect` to sync them.
+//
+// New code should prefer the focused hooks directly; AppContext stays
+// as a convenience aggregator so the ~50 existing call sites don't all
+// need to churn at once.
+//
+// `environment` deliberately stays in `useState` here — its selection
+// logic (URL → localStorage → primary → first) lives in
+// `useEnvironmentSelection`, which dispatches via `setEnvironment`.
+// That's coordinated UI state, not server data.
 
 interface AppContextProps {
   environment: Environment | null;
   setEnvironment: React.Dispatch<React.SetStateAction<Environment | null>>;
   project: Project | null;
   userInfo: UserProfile | null | undefined;
-  setUserInfo: React.Dispatch<React.SetStateAction<UserProfile | null | undefined>>;
-  refetch: any;
+  refetch: () => Promise<unknown>;
   handleLogout: () => Promise<void>;
   signOutAndRedirect: (to?: string) => Promise<void>;
   projects: Project[];
@@ -39,79 +50,19 @@ export interface AppProviderProps {
 export const AppProvider = (props: AppProviderProps) => {
   const { children } = props;
   const [environment, setEnvironment] = useState<Environment | null>(null);
-  const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
-  const uid = useCurrentUserId();
-  const { data, refetch, loading, error } = useGetUserInfoQuery(uid || undefined);
-  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
-  const { invoke: logout } = useLogoutMutation();
 
-  useEffect(() => {
-    // Skip if still loading
-    if (loading) {
-      return;
-    }
+  const { userInfo, loading, refetch } = useCurrentUser();
+  const projects = useUserProjects();
+  const project = useActiveProject();
+  const { capabilities, can, isViewOnly } = useCapabilities();
+  const { globalConfig, globalConfigLoading } = useGlobalConfig();
+  const { handleLogout, signOutAndRedirect } = useLogout();
 
-    // Reset user info if no uid or error occurs
-    if (!uid || error || !data) {
-      setUserInfo(null);
-      return;
-    }
-
-    // Set user info when data is available
-    setUserInfo({ ...data });
-  }, [data, loading, error, uid]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      removeAuthToken();
-      setUserInfo(null);
-      broadcastAuthSwitch();
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
-  };
-
-  // "Log out and leave" — tears down the session, then hard-loads `to`.
-  // Deliberately does NOT setUserInfo(null): on a protected route that would
-  // re-render AuthGuard, which fires a client-side <Navigate to=signin?next=>
-  // that flashes before the reload lands. The full reload re-bootstraps
-  // AppContext from the now-cleared cookies, so the in-place state reset is
-  // both unnecessary and the cause of the flash. Use handleLogout instead when
-  // staying in the SPA without a reload (e.g. the password-reset success card).
-  const signOutAndRedirect = async (to = '/auth/signin') => {
-    try {
-      await logout();
-      removeAuthToken();
-      broadcastAuthSwitch();
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
-    window.location.assign(to);
-  };
-
-  const projects: Project[] =
-    data?.projects?.map((p: any) => ({
-      role: p.role,
-      actived: p.actived,
-      capabilities: p.capabilities ?? [],
-      ...p.project,
-    })) ?? [];
-
-  const project: Project | null = projects.find((p: Project) => p.actived) ?? null;
-  const capabilities: Capability[] =
-    (project as (Project & { capabilities?: Capability[] }) | null)?.capabilities ?? [];
-  const can = (capability: Capability) => capabilities.includes(capability);
-  // View-only mirrors the old role === VIEWER check: a VIEWER lacks every
-  // write capability, so "can't update content" is the equivalent gate.
-  const isViewOnly = !!project && !can(Capability.ContentUpdate);
-
-  const value = {
+  const value: AppContextProps = {
     environment,
     setEnvironment,
     project,
     userInfo,
-    setUserInfo,
     refetch,
     handleLogout,
     signOutAndRedirect,
