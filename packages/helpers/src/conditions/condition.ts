@@ -5,8 +5,23 @@ import { evaluateTimeCondition } from './time';
 import { evaluateAttributeCondition } from './attribute';
 import { cuid } from '../helper';
 
+// Two condition arrays are considered "same" when they serialize to
+// the same JSON — i.e. when they represent the same value from the
+// server's perspective, since the server only sees the JSON form.
+//
+// The Conditions editor uses `writeData(cond, { logic: undefined })`
+// as the "clear this field" idiom. That leaves a key with an undefined
+// value on the in-memory object: visible to `Object.keys`, dropped by
+// `JSON.stringify`. Comparing the raw editor state against the saved
+// segment (which round-tripped through the server, losing the
+// undefined keys) would then claim they differ even when they're
+// equivalent on the wire — `EntitySegmentFilterSave`'s button never
+// hides after a save, the toolbar re-fires queries on no-op edits,
+// and `content-detail-autostart-rules` commits phantom changes.
+// Roundtripping both sides through JSON before deep-equal makes the
+// comparison match what survives serialization.
 const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
-  return isEqual(rr1, rr2);
+  return isEqual(JSON.parse(JSON.stringify(rr1)), JSON.parse(JSON.stringify(rr2)));
 };
 
 const isConditionsActived = (conditions: RulesCondition[]): boolean => {
