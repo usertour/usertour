@@ -3,23 +3,11 @@
 import { useThemeList } from '@/hooks/use-theme-list';
 import { useGetContentVersionQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import {
-  ColumnFiltersState,
-  PaginationState,
-  SortingState,
-  VisibilityState,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { CircleIcon } from '@usertour/icons';
+import { CircleIcon, SpinnerIcon } from '@usertour/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { useNavigate } from 'react-router-dom';
 import { AutoScaledPreviewContainer, Button, Skeleton } from '@usertour/ui';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
@@ -32,8 +20,6 @@ import {
   ResourceCenterPreview,
   TrackerPreview,
 } from '../shared/content-preview';
-import { columns } from './columns';
-import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
 
 const ContentPreviewFooter = ({
@@ -269,50 +255,26 @@ const ContentTableItem = ({
 interface DataTableProps {
   contents: Content[];
   contentType: string;
-  pagination: PaginationState;
-  setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
-  pageCount: number;
-  totalCount: number;
+  hasNextPage: boolean;
+  loadingMore: boolean;
+  fetchNextPage: () => Promise<unknown>;
   refetch: () => Promise<unknown>;
 }
 
 export function DataTable(props: DataTableProps) {
-  const { contents, contentType, pagination, setPagination, pageCount, totalCount, refetch } =
-    props;
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const { contents, contentType, hasNextPage, loadingMore, fetchNextPage, refetch } = props;
+  // Sentinel at the bottom of the grid — when it scrolls into view we
+  // pull the next cursor page. Same pattern as the version-history list.
+  const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
 
-  const table = useReactTable({
-    data: contents,
-    columns,
-    pageCount,
-    manualPagination: true,
-    state: {
-      sorting,
-      pagination,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-  });
+  useEffect(() => {
+    if (inView && hasNextPage && !loadingMore) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, loadingMore, fetchNextPage]);
 
   return (
     <div className="space-y-4">
-      {/* <DataTableToolbar table={table} /> */}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {contents.map((content) => (
           <ContentTableItem
@@ -323,7 +285,21 @@ export function DataTable(props: DataTableProps) {
           />
         ))}
       </div>
-      <DataTablePagination table={table} totalCount={totalCount} />
+      {hasNextPage && (
+        <div
+          ref={sentinelRef}
+          className="flex items-center justify-center py-4 text-muted-foreground"
+        >
+          {loadingMore ? (
+            <span className="flex items-center gap-2 text-sm">
+              <SpinnerIcon className="h-4 w-4 animate-spin" />
+              Loading…
+            </span>
+          ) : (
+            <span className="h-px w-full" aria-hidden />
+          )}
+        </div>
+      )}
     </div>
   );
 }

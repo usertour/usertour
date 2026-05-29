@@ -9,7 +9,6 @@ import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { PaginationState } from '@tanstack/react-table';
 
 interface ContentListLayoutProps {
   contentType: string;
@@ -49,8 +48,6 @@ CreateButton.displayName = 'CreateButton';
 // Content state type for switch-based rendering
 type ContentState = 'loading' | 'empty' | 'filteredEmpty' | 'filteredEmptyDraft' | 'data';
 
-const DEFAULT_PAGINATION: PaginationState = { pageIndex: 0, pageSize: 10 };
-
 export const ContentListLayout = memo(
   ({
     contentType,
@@ -69,15 +66,9 @@ export const ContentListLayout = memo(
     const [open, setOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const { isViewOnly, environment } = useAppContext();
-    // Pagination is page-scoped: the layout owns it so the layout's
-    // empty-state machine and the DataTable see the same page index.
-    // Per-mount local — navigating away and back resets to page 1,
-    // matching the prior Context default (`{ pageIndex: 0, pageSize: 10 }`).
-    const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
-    const { contents, totalCount, pageCount, refetch, isLoading } = useContentList(
+    const { contents, hasNextPage, loadingMore, fetchNextPage, refetch, loading } = useContentList(
       environment?.id,
       contentType,
-      pagination,
     );
 
     // Derive from URL so draft count is fetched on first paint when visiting ?published=1
@@ -117,7 +108,7 @@ export const ContentListLayout = memo(
     // Compute content state once to avoid multiple conditional checks
     const contentLength = contents?.length ?? 0;
     const contentState = useMemo<ContentState>(() => {
-      if (isLoading) return 'loading';
+      if (loading) return 'loading';
       if (contentLength === 0) {
         // In Published view with draft content = filtered empty
         if (isPublishedView && draftCount > 0) return 'filteredEmpty';
@@ -125,7 +116,7 @@ export const ContentListLayout = memo(
         return 'empty';
       }
       return 'data';
-    }, [isLoading, contentLength, isPublishedView, draftCount, publishedCount]);
+    }, [loading, contentLength, isPublishedView, draftCount, publishedCount]);
 
     // Refetch counts when content list length changes to ensure UI state is in sync
     // This fixes the issue where unpublishing the last content shows Create button instead of Go to Draft
@@ -197,10 +188,9 @@ export const ContentListLayout = memo(
             <DataTable
               contents={contents}
               contentType={contentType}
-              pagination={pagination}
-              setPagination={setPagination}
-              pageCount={pageCount}
-              totalCount={totalCount}
+              hasNextPage={hasNextPage}
+              loadingMore={loadingMore}
+              fetchNextPage={fetchNextPage}
               refetch={refetch}
             />
           );
@@ -220,9 +210,9 @@ export const ContentListLayout = memo(
       handleGoToPublished,
       contents,
       contentType,
-      pagination,
-      pageCount,
-      totalCount,
+      hasNextPage,
+      loadingMore,
+      fetchNextPage,
       refetch,
     ]);
 

@@ -7,10 +7,16 @@ import {
   getContentVersion,
   listContentVersions,
   publishedContentVersion,
+  queryContent,
   restoreContentVersion,
   unpublishedContentVersion,
 } from '@usertour/gql';
-import type { Content, ContentVersion, VersionOnLocalization } from '@usertour/types';
+import type {
+  Content,
+  ContentDataType,
+  ContentVersion,
+  VersionOnLocalization,
+} from '@usertour/types';
 import { useCallback, useMemo, useRef } from 'react';
 
 // Domain wrappers for content-detail / version / localization queries.
@@ -62,6 +68,107 @@ export const useFindManyVersionLocationsQuery = (
   const contentLocalizationList: VersionOnLocalization[] = data?.findManyVersionLocations ?? [];
 
   return { contentLocalizationList, loading, refetch, error };
+};
+
+// ---- queryContent: cursor pagination with fetchMore + accumulator ----
+//
+// `useContentListQuery` (in `gql.ts`) still exists for builder /
+// resource-center consumers that fetch a one-shot bounded slice
+// (`first: 100/1000`). This wrapper is the infinite-scroll shape —
+// callers (the apps/web content list page) trigger `fetchNextPage`
+// from an in-view sentinel and Apollo's `updateQuery` appends the new
+// edges into the same cache slot so the rendered grid grows.
+
+const CONTENT_LIST_PAGE_SIZE = 30;
+
+interface QueryContentVariables {
+  environmentId: string;
+  type?: ContentDataType;
+  published?: boolean;
+  [key: string]: unknown;
+}
+
+type ContentEdge = { cursor: string; node: Content };
+type ContentPageInfo = { endCursor: string | null; hasNextPage: boolean };
+type QueryContentData = {
+  queryContent: {
+    totalCount: number;
+    edges: ContentEdge[];
+    pageInfo: ContentPageInfo;
+  };
+};
+
+interface UseListContentsArgs {
+  query: QueryContentVariables;
+  orderBy?: { field: string; direction: 'asc' | 'desc' };
+  pageSize?: number;
+  options?: QueryHookOptions;
+}
+
+export const useListContentsQuery = ({
+  query,
+  orderBy = { field: 'createdAt', direction: 'desc' },
+  pageSize = CONTENT_LIST_PAGE_SIZE,
+  options,
+}: UseListContentsArgs) => {
+  const { data, loading, networkStatus, fetchMore, refetch } = useQuery<QueryContentData>(
+    queryContent,
+    {
+      variables: { first: pageSize, query, orderBy },
+      notifyOnNetworkStatusChange: true,
+      ...options,
+    },
+  );
+
+  const connection = data?.queryContent;
+  const contents = useMemo(
+    () => connection?.edges?.map((edge) => edge.node) ?? [],
+    [connection?.edges],
+  );
+  const totalCount = connection?.totalCount ?? 0;
+  const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
+  const endCursor = connection?.pageInfo?.endCursor ?? null;
+
+  const loadingMore = networkStatus === 3;
+  const fetchingRef = useRef(false);
+
+  const fetchNextPage = useCallback(async () => {
+    if (!hasNextPage || loading || fetchingRef.current || !endCursor) {
+      return;
+    }
+    fetchingRef.current = true;
+    try {
+      await fetchMore({
+        variables: { first: pageSize, after: endCursor, query, orderBy },
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) {
+            return prev;
+          }
+          return {
+            queryContent: {
+              ...fetchMoreResult.queryContent,
+              edges: [
+                ...(prev.queryContent?.edges ?? []),
+                ...(fetchMoreResult.queryContent?.edges ?? []),
+              ],
+            },
+          };
+        },
+      });
+    } finally {
+      fetchingRef.current = false;
+    }
+  }, [endCursor, fetchMore, hasNextPage, loading, pageSize, query, orderBy]);
+
+  return {
+    contents,
+    totalCount,
+    hasNextPage,
+    loading: loading && !loadingMore,
+    loadingMore,
+    fetchNextPage,
+    refetch,
+  };
 };
 
 // ---- listContentVersions: cursor pagination with fetchMore ----
