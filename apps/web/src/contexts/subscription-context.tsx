@@ -6,6 +6,7 @@ import {
   useGetSubscriptionUsageQuery,
 } from '@usertour/hooks';
 import { ReactNode, createContext, useCallback, useContext, useMemo } from 'react';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 export interface SubscriptionProviderProps {
   children?: ReactNode;
@@ -37,11 +38,16 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
   // Use encapsulated hooks with custom skip logic
   // Skip query if projectId is missing OR subscriptionId is missing
   // This ensures we don't query when we know there's no subscription
+  // SHARED_CACHE_QUERY_OPTIONS on all three queries so content-preview,
+  // content-detail-builder, and any other consumer of this provider see
+  // subscription / config / usage cache updates — without it the global
+  // no-cache default isolates each observable.
   const {
     subscription,
     loading: subscriptionLoading,
     refetch: refetchSubscription,
   } = useGetSubscriptionByProjectIdQuery(projectId, {
+    ...SHARED_CACHE_QUERY_OPTIONS,
     skip: !projectId || !subscriptionId, // Skip if either is missing
   });
 
@@ -50,10 +56,14 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
     loading: projectConfigLoading,
     refetch: refetchProjectConfig,
   } = useGetProjectConfigQuery(projectId, {
+    ...SHARED_CACHE_QUERY_OPTIONS,
     skip: !projectId,
   });
 
-  const { usage: currentUsage, loading: usageLoading } = useGetSubscriptionUsageQuery(projectId);
+  const { usage: currentUsage, loading: usageLoading } = useGetSubscriptionUsageQuery(
+    projectId,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
 
   // Calculate derived values
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;

@@ -1,6 +1,7 @@
 import { useListThemesQuery } from '@usertour/hooks';
 import { Theme } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 export interface ThemeListProviderProps {
   children?: ReactNode;
@@ -17,7 +18,13 @@ export const ThemeListContext = createContext<ThemeListContextValue | undefined>
 
 export function ThemeListProvider(props: ThemeListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { themeList, refetch, loading, isRefetching } = useListThemesQuery(projectId);
+  // SHARED_CACHE_QUERY_OPTIONS so content-detail-builder's theme picker
+  // reflects useDeleteThemeMutation's cache.evict — without it the global
+  // no-cache default keeps this observable isolated.
+  const { themeList, refetch, loading, isRefetching } = useListThemesQuery(
+    projectId,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
 
   const value: ThemeListContextValue = {
     themeList,
