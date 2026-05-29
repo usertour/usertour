@@ -41,6 +41,9 @@ interface EntityDataTableProps<TRow extends EntityRow> {
   segment: Segment;
   environmentId: string;
   setCurrentConditions: React.Dispatch<React.SetStateAction<CurrentConditions | undefined>>;
+  // Passed through to the toolbar so a column-order update can refresh
+  // segmentList — the mutation doesn't auto-propagate under no-cache.
+  refetchSegments: () => Promise<unknown>;
 }
 
 export function EntityDataTable<TRow extends EntityRow>({
@@ -48,6 +51,7 @@ export function EntityDataTable<TRow extends EntityRow>({
   segment,
   environmentId,
   setCurrentConditions,
+  refetchSegments,
 }: EntityDataTableProps<TRow>) {
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
@@ -185,6 +189,7 @@ export function EntityDataTable<TRow extends EntityRow>({
         setQuery={setQuery}
         setCurrentConditions={setCurrentConditions}
         refetch={refetch}
+        refetchSegments={refetchSegments}
       />
       <DataTable
         data={contents}

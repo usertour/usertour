@@ -12,6 +12,13 @@ export const useCurrentSegment = (segmentList: Segment[] | undefined): Segment |
   return useMemo(() => {
     if (!segmentList || segmentList.length === 0) return undefined;
     const segmentId = searchParams.get('segment_id');
-    return segmentList.find((seg) => (segmentId ? seg.id === segmentId : seg.dataType === 'ALL'));
+    // Falls back to ALL when the URL points at a segment the env no
+    // longer has (stale bookmark, deleted in another tab) — otherwise
+    // the page would render empty with no obvious recovery for the user.
+    if (segmentId) {
+      const match = segmentList.find((seg) => seg.id === segmentId);
+      if (match) return match;
+    }
+    return segmentList.find((seg) => seg.dataType === 'ALL');
   }, [searchParams, segmentList]);
 };

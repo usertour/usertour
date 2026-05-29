@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from '@usertour/ui';
 import { EditIcon } from '@usertour/icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SegmentEditDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
@@ -39,6 +39,12 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
   // because both the FilterSave button in the header AND the DataTable
   // toolbar (which mutates it) need to see the same value.
   const [currentConditions, setCurrentConditions] = useState<CurrentConditions | undefined>();
+  // Reset typed-but-unsaved filter when switching segments. Otherwise
+  // FilterSave diffs A's typed conditions against B's saved data and
+  // shows a phantom Save button on B.
+  useEffect(() => {
+    setCurrentConditions(undefined);
+  }, [currentSegment?.id]);
   const { isViewOnly } = useAppContext();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -113,6 +119,7 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
             segment={currentSegment}
             environmentId={environmentId}
             setCurrentConditions={setCurrentConditions}
+            refetchSegments={refetchSegments}
             key={currentSegment.id}
           />
         )}

@@ -375,21 +375,31 @@ const SessionInfoCard = ({
             )}
           </SessionInfoRow>
           <SessionInfoRow label={<span className="capitalize">{content?.type}</span>}>
-            <Link
-              to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/detail`}
-              className="block truncate text-primary hover:underline underline-offset-2"
-              title={content?.name ?? undefined}
-            >
-              {content?.name}
-            </Link>
+            {content?.deleted ? (
+              <span className="block truncate" title={content?.name ?? undefined}>
+                {content?.name}
+              </span>
+            ) : (
+              <Link
+                to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/detail`}
+                className="block truncate text-primary hover:underline underline-offset-2"
+                title={content?.name ?? undefined}
+              >
+                {content?.name}
+              </Link>
+            )}
           </SessionInfoRow>
           <SessionInfoRow label={t('users.sessions.detail.fields.version')}>
-            <Link
-              to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/versions`}
-              className="text-primary hover:underline underline-offset-2"
-            >
-              V{(version?.sequence ?? 0) + 1}
-            </Link>
+            {content?.deleted ? (
+              <span>V{(version?.sequence ?? 0) + 1}</span>
+            ) : (
+              <Link
+                to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/versions`}
+                className="text-primary hover:underline underline-offset-2"
+              >
+                V{(version?.sequence ?? 0) + 1}
+              </Link>
+            )}
           </SessionInfoRow>
           <SessionInfoRow label={t('users.sessions.detail.fields.started')}>
             {startedAgo}
@@ -442,7 +452,11 @@ const SessionDetailContentInner = ({
     return <ContentLoading message={t('common.loading')} />;
   }
 
-  if (!eventList || !content || !version) {
+  // Not-found is determined by session payload alone — `eventList` is a
+  // secondary lookup for event display names. When the query is skipped
+  // (project not hydrated yet on a deep link) eventList is undefined
+  // but the session itself can still be valid.
+  if (!content || !version) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <img
@@ -454,6 +468,8 @@ const SessionDetailContentInner = ({
       </div>
     );
   }
+
+  const safeEventList = eventList ?? [];
 
   const bizEvents = (session?.bizEvent ?? [])
     .slice()
@@ -503,7 +519,7 @@ const SessionDetailContentInner = ({
 
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-6">
-            <SessionProgressCard session={session} eventList={eventList} />
+            <SessionProgressCard session={session} eventList={safeEventList} />
             {questionAnswers && questionAnswers.length > 0 && (
               <Card>
                 <CardHeader className="pb-4">

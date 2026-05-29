@@ -33,10 +33,23 @@ interface EntityDataTableToolbarProps {
   setQuery: Dispatch<SetStateAction<{ [key: string]: unknown }>>;
   setCurrentConditions: Dispatch<SetStateAction<CurrentConditions | undefined>>;
   refetch: () => Promise<unknown>;
+  // Refetches the page's segmentList. Used after column-order updates
+  // so the new layout doesn't disappear when the user navigates away
+  // and back (EntityDataTable remounts and reads segment.columns from
+  // the stale list).
+  refetchSegments: () => Promise<unknown>;
 }
 
 export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
-  const { config, table, currentSegment, setQuery, setCurrentConditions, refetch } = props;
+  const {
+    config,
+    table,
+    currentSegment,
+    setQuery,
+    setCurrentConditions,
+    refetch,
+    refetchSegments,
+  } = props;
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
   const { attributes: attributeList } = useListAttributesQuery(
@@ -75,12 +88,14 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
       if (!currentSegment) {
         return;
       }
-      // No list refetch — column visibility/order is pure presentation
-      // and the mutation's response feeds Apollo's normalized cache so
-      // segmentList subscribers re-render with the new `segment.columns`
-      // automatically.
+      // Refetch segmentList so subsequent EntityDataTable remounts
+      // (navigating between segments) rebuild from the saved columns.
+      // The mutation itself can't auto-propagate: addTypename is off
+      // and the global default is no-cache, so the response doesn't
+      // merge into the segmentList query result.
       try {
         await updateSegment({ id: currentSegment.id, columns });
+        await refetchSegments();
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -88,7 +103,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
         });
       }
     },
-    [currentSegment, updateSegment, toast],
+    [currentSegment, updateSegment, refetchSegments, toast],
   );
 
   const handleConditionsChange = useCallback(
