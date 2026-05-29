@@ -1,7 +1,7 @@
 import { Button, Separator, NewItemButton } from '@usertour/ui';
 import { ContentListSkeleton } from './content-list-skeleton';
-import { useContentListContext } from '@/contexts/content-list-context';
 import { useAppContext } from '@/contexts/app-context';
+import { useContentList } from '@/hooks/use-content-list';
 import { EmptyPlaceholder } from '@/components/segments/ui';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useContentCount } from '@usertour/hooks';
@@ -9,8 +9,10 @@ import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import type { PaginationState } from '@tanstack/react-table';
 
 interface ContentListLayoutProps {
+  contentType: string;
   title: string;
   description: ReactNode;
   emptyTitle: string;
@@ -47,8 +49,11 @@ CreateButton.displayName = 'CreateButton';
 // Content state type for switch-based rendering
 type ContentState = 'loading' | 'empty' | 'filteredEmpty' | 'filteredEmptyDraft' | 'data';
 
+const DEFAULT_PAGINATION: PaginationState = { pageIndex: 0, pageSize: 10 };
+
 export const ContentListLayout = memo(
   ({
+    contentType,
     title,
     description,
     emptyTitle,
@@ -64,10 +69,19 @@ export const ContentListLayout = memo(
     const [open, setOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const { isViewOnly, environment } = useAppContext();
-    const { contents, refetch, isLoading, contentType } = useContentListContext();
+    // Pagination is page-scoped: the layout owns it so the layout's
+    // empty-state machine and the DataTable see the same page index.
+    // Per-mount local — navigating away and back resets to page 1,
+    // matching the prior Context default (`{ pageIndex: 0, pageSize: 10 }`).
+    const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+    const { contents, totalCount, pageCount, refetch, isLoading } = useContentList(
+      environment?.id,
+      contentType,
+      pagination,
+    );
 
     // Derive from URL so draft count is fetched on first paint when visiting ?published=1
-    // (context query may sync from URL in useEffect, causing one render where query.published is stale)
+    // (`useContentList` reads URL on every render so its `published` value also matches)
     const isPublishedView = searchParams.get('published') === '1';
 
     // Only fetch draft count when in Published view to check if draft content exists
@@ -179,7 +193,17 @@ export const ContentListLayout = memo(
             </EmptyPlaceholder>
           );
         case 'data':
-          return <DataTable />;
+          return (
+            <DataTable
+              contents={contents}
+              contentType={contentType}
+              pagination={pagination}
+              setPagination={setPagination}
+              pageCount={pageCount}
+              totalCount={totalCount}
+              refetch={refetch}
+            />
+          );
       }
     }, [
       contentState,
@@ -194,6 +218,12 @@ export const ContentListLayout = memo(
       actualFilteredEmptyDraftDescription,
       handleGoToDraft,
       handleGoToPublished,
+      contents,
+      contentType,
+      pagination,
+      pageCount,
+      totalCount,
+      refetch,
     ]);
 
     return (

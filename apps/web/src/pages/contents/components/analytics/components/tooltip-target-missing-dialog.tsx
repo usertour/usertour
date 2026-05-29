@@ -25,7 +25,7 @@ import {
   type TooltipTargetMissingResponse,
 } from '@usertour/hooks';
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
 import type { DatePresetKey } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
@@ -263,7 +263,7 @@ export const TooltipTargetMissingDialog = ({
     dateRange: globalDateRange,
     selectedPreset: globalSelectedPreset,
     timezone,
-  } = useAnalyticsContext();
+  } = useAnalyticsUI();
   const { invoke: fetchSessions, loading } = useQueryTooltipTargetMissingSessionsLazyQuery();
 
   // Local date range state (independent from global context)

@@ -1,9 +1,11 @@
 import { ContentLoading } from '@usertour/ui';
-import {
-  ContentDetailProviderWrapper,
-  useContentDetailProviderWrapper,
-} from '@/contexts/content-detail-provider';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useAppContext } from '@/contexts/app-context';
+import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
+import { useSegmentList } from '@/hooks/use-segment-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentTypeName } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { ContentDetailAnalytics } from '../version/content-detail-analytics';
@@ -21,12 +23,37 @@ export interface ContentDetailViewProps {
   contentType: ContentTypeName;
 }
 
-// Inner component that uses the provider context
+// bizType filter for the segment hook. Module-level constant keeps
+// the reference stable across renders so `useSegmentList`'s `useMemo`
+// deps don't re-compute the filtered list every paint.
+const SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
+
+// Inner component that pulls server data via hooks. Replaces the
+// previous `ContentDetailProviderWrapper` + `useContentDetailProviderWrapper`
+// shape — the aggregator was just composing six Providers and
+// summing their loading flags, which is what `useContentDetail` /
+// `useContentVersion` / `useContentVersionList` plus the existing
+// list-context loadings now do directly. Cleaner, and removes the
+// latent "themeListLoading kicks first-load blank-gate" footgun.
 const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { type, contentId, contentType } = props;
-  const { isLoading } = useContentDetailProviderWrapper();
-  const { content } = useContentDetailContext();
+  const { environment } = useAppContext();
+  const { content, loading: contentLoading } = useContentDetail(contentId);
+  const { version, loading: versionLoading } = useContentVersion(content?.editedVersionId);
+  const { versionList, loading: versionListLoading } = useContentVersionList(contentId);
+  const { loading: themeLoading } = useThemeList();
+  const { loading: segmentLoading } = useSegmentList(environment?.id, SEGMENT_BIZ_TYPES);
   const { t } = useTranslation();
+
+  // First-load gating — `loading && !data` so background refetches
+  // (e.g. theme list refetch after a setting change) don't unmount
+  // the entire detail tree. Same lesson as the v0.8.4 builder fix.
+  const isLoading =
+    (contentLoading && !content) ||
+    (versionLoading && !version) ||
+    (versionListLoading && versionList.length === 0) ||
+    themeLoading ||
+    segmentLoading;
 
   if (isLoading) {
     return <ContentLoading message={t('common.loading')} />;
@@ -71,10 +98,13 @@ ContentDetailViewInner.displayName = 'ContentDetailViewInner';
 export const ContentDetailView = (props: ContentDetailViewProps) => {
   const { contentId, contentType } = props;
 
+  // Theme / segment / event lists are all hook-based now — Apollo
+  // shared-cache makes them dedupe across the subtree without a
+  // Provider hop.
   return (
-    <ContentDetailProviderWrapper contentId={contentId} contentType={contentType}>
+    <ContentDetailUIProvider contentId={contentId} contentType={contentType}>
       <ContentDetailViewInner {...props} />
-    </ContentDetailProviderWrapper>
+    </ContentDetailUIProvider>
   );
 };
 

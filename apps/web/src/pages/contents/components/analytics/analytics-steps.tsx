@@ -1,4 +1,4 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import {
   Card,
   CardContent,
@@ -26,7 +26,7 @@ import { AnalyticsStepsSkeleton } from './analytics-skeleton';
 import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
 
 export const AnalyticsSteps = () => {
-  const { analyticsData, loading } = useAnalyticsContext();
+  const { analyticsData, loading } = useContentAnalytics();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<AnalyticsViewsByStep | null>(null);
 

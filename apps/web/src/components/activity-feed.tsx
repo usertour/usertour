@@ -29,8 +29,9 @@ import {
 import { cn } from '@usertour/tailwind';
 import { ReactNode, Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useActivityFeedContext } from '@/contexts/activity-feed-context';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useAttributeList } from '@/hooks/use-attribute-list';
+import { useCompanyActivityFeedQuery, useUserActivityFeedQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { sortEventDataEntries, getFieldValue } from '@/utils/session';
 import { QuestionAnswer } from '@/components/sessions/session-detail';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
@@ -184,7 +185,7 @@ const ActivityFeedRow = ({
     environmentId && event.bizSessionId ? getFallbackSessionAttributeKey(event) : null;
   const hasSessionLink = !!fallbackSessionAttributeKey;
   const hasDetails = hasEventData || hasSessionLink;
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
   const copyWithToast = useCopyWithToast();
 
   return (
@@ -377,20 +378,35 @@ export const ActivityFeedList = ({
   );
 };
 
-// Convenience component that self-sources from context
+// Pre-fetched feed shape; callers source from
+// `useUserActivityFeedQuery` / `useCompanyActivityFeedQuery` and pass
+// the result in. Splitting data sourcing from rendering keeps this
+// component re-usable across user/company detail pages without a
+// Provider hop.
 interface ActivityFeedProps {
   environmentId?: string;
+  events: BizEvent[];
+  loading: boolean;
+  hasNextPage: boolean;
+  totalCount: number;
+  loadMore: () => void | Promise<void>;
+  refetch: () => void;
   emptyMessage?: string;
   renderTrailingContent?: (event: BizEvent) => ReactNode;
 }
 
 export const ActivityFeed = ({
   environmentId,
+  events,
+  loading,
+  hasNextPage,
+  totalCount,
+  loadMore,
+  refetch,
   emptyMessage,
   renderTrailingContent,
 }: ActivityFeedProps) => {
   const { t } = useTranslation();
-  const { events, loading, hasNextPage, loadMore, refetch, totalCount } = useActivityFeedContext();
 
   return (
     <div>
@@ -430,3 +446,66 @@ export const ActivityFeed = ({
 
 ActivityFeed.displayName = 'ActivityFeed';
 ActivityFeedList.displayName = 'ActivityFeedList';
+
+// Convenience wrappers that source data from the entity-specific
+// activity feed hooks and forward it to <ActivityFeed />. Replaces the
+// `UserActivityFeedProvider` / `CompanyActivityFeedProvider` pair.
+
+interface UserActivityFeedProps {
+  environmentId: string;
+  userId: string;
+  emptyMessage?: string;
+  renderTrailingContent?: (event: BizEvent) => ReactNode;
+}
+
+export const UserActivityFeed = (props: UserActivityFeedProps) => {
+  const { environmentId, userId, emptyMessage, renderTrailingContent } = props;
+  const { events, loading, hasNextPage, totalCount, loadMore, refetch } = useUserActivityFeedQuery(
+    environmentId,
+    userId,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
+  return (
+    <ActivityFeed
+      environmentId={environmentId}
+      events={events}
+      loading={loading}
+      hasNextPage={hasNextPage}
+      totalCount={totalCount}
+      loadMore={loadMore}
+      refetch={refetch}
+      emptyMessage={emptyMessage}
+      renderTrailingContent={renderTrailingContent}
+    />
+  );
+};
+
+UserActivityFeed.displayName = 'UserActivityFeed';
+
+interface CompanyActivityFeedProps {
+  environmentId: string;
+  companyId: string;
+  emptyMessage?: string;
+  renderTrailingContent?: (event: BizEvent) => ReactNode;
+}
+
+export const CompanyActivityFeed = (props: CompanyActivityFeedProps) => {
+  const { environmentId, companyId, emptyMessage, renderTrailingContent } = props;
+  const { events, loading, hasNextPage, totalCount, loadMore, refetch } =
+    useCompanyActivityFeedQuery(environmentId, companyId, SHARED_CACHE_QUERY_OPTIONS);
+  return (
+    <ActivityFeed
+      environmentId={environmentId}
+      events={events}
+      loading={loading}
+      hasNextPage={hasNextPage}
+      totalCount={totalCount}
+      loadMore={loadMore}
+      refetch={refetch}
+      emptyMessage={emptyMessage}
+      renderTrailingContent={renderTrailingContent}
+    />
+  );
+};
+
+CompanyActivityFeed.displayName = 'CompanyActivityFeed';

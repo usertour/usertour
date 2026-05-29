@@ -1,6 +1,6 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import {
   DefaultAvatar,
   ListSkeleton,
@@ -105,9 +105,9 @@ const sanitizeFileName = (value?: string) =>
     .replace(/-+$/g, '');
 
 export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
-  const { dateRange, timezone } = useAnalyticsContext();
+  const { dateRange, timezone } = useAnalyticsUI();
   const { environment } = useAppContext();
-  const { content } = useContentDetailContext();
+  const { content } = useContentDetail(contentId);
   const client = useApolloClient();
   const { toast } = useToast();
 

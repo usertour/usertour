@@ -1,7 +1,8 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useThemeListContext } from '@/contexts/theme-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import {
   Badge,
@@ -73,7 +74,7 @@ const ContentBadge = ({
 
 // Custom hook for theme handling
 const useThemeHandler = (version: ContentVersion, themeId?: string) => {
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
   const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
 
   useEffect(() => {
@@ -555,8 +556,9 @@ const ResourceCenterContentPreview = ({
 };
 
 export const ContentDetailContent = () => {
-  const { version } = useContentVersionContext();
-  const { content, contentType } = useContentDetailContext();
+  const { contentId, contentType } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
   const [state, setState] = useState({
     isOpenedInstall: false,
     open: false,

@@ -1,6 +1,6 @@
 'use client';
 import { SpinnerIcon } from '@usertour/icons';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useMutation, useQuery } from '@apollo/client';
 import {
   Button,
@@ -19,7 +19,8 @@ import { getErrorMessage } from '@usertour/helpers';
 import { ContentVersion } from '@usertour/types';
 import * as React from 'react';
 import { useCallback } from 'react';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentPublishFormProps {
@@ -34,9 +35,10 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const [mutation] = useMutation(publishedContentVersion);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
-  const { content, refetch } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content, refetch } = useContentDetail(contentId);
   const contentTypeMeta = getContentTypeMeta(content?.type);
 
   const contentVersion = useQuery(getContentVersion, {

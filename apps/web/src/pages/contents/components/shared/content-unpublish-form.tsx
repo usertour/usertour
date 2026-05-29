@@ -1,7 +1,7 @@
 'use client';
 
 import { SpinnerIcon } from '@usertour/icons';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useMutation } from '@apollo/client';
 import {
   Button,
@@ -34,7 +34,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   const [mutation] = useMutation(unpublishedContentVersion);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const contentTypeMeta = getContentTypeMeta(content.type);
 

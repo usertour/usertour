@@ -1,5 +1,7 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import {
   Card,
   CardContent,
@@ -193,8 +195,10 @@ const EmptyState = () => (
 );
 
 export const AnalyticsDays = () => {
-  const { analyticsData, loading, dateRange } = useAnalyticsContext();
-  const { content } = useContentDetailContext();
+  const { dateRange } = useAnalyticsUI();
+  const { analyticsData, loading } = useContentAnalytics();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
   const contentType = content?.type;
 
   const rangeDays = useMemo(() => {

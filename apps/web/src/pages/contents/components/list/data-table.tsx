@@ -1,11 +1,11 @@
 'use client';
 
-import { useContentListContext } from '@/contexts/content-list-context';
-import { useThemeListContext } from '@/contexts/theme-list-context';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { useQuery } from '@apollo/client';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   ColumnFiltersState,
+  PaginationState,
   SortingState,
   VisibilityState,
   getCoreRowModel,
@@ -37,8 +37,13 @@ import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
 
-const ContentPreviewFooter = ({ content }: { content: Content }) => {
-  const { refetch } = useContentListContext();
+const ContentPreviewFooter = ({
+  content,
+  refetch,
+}: {
+  content: Content;
+  refetch: () => Promise<unknown>;
+}) => {
   const { isViewOnly, environment } = useAppContext();
 
   const isPublished = content?.contentOnEnvironments?.find(
@@ -193,9 +198,11 @@ const ContentPreview = ({
 const ContentTableItem = ({
   content,
   contentType,
+  refetch,
 }: {
   content: Content;
   contentType: string;
+  refetch: () => Promise<unknown>;
 }) => {
   const { data, loading } = useQuery(getContentVersion, {
     variables: { versionId: content?.editedVersionId },
@@ -204,7 +211,7 @@ const ContentTableItem = ({
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const { environment } = useAppContext();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
 
   // Derive all preview data in one pass to avoid chained useEffects and multiple re-renders
   const { currentVersion, currentStep, currentTheme } = useMemo(() => {
@@ -259,17 +266,28 @@ const ContentTableItem = ({
           />
         </div>
       </div>
-      <ContentPreviewFooter content={content} />
+      <ContentPreviewFooter content={content} refetch={refetch} />
     </div>
   );
 };
 
-export function DataTable() {
+interface DataTableProps {
+  contents: Content[];
+  contentType: string;
+  pagination: PaginationState;
+  setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+  pageCount: number;
+  totalCount: number;
+  refetch: () => Promise<unknown>;
+}
+
+export function DataTable(props: DataTableProps) {
+  const { contents, contentType, pagination, setPagination, pageCount, totalCount, refetch } =
+    props;
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, contents, contentType } = useContentListContext();
 
   const table = useReactTable({
     data: contents,
@@ -302,10 +320,15 @@ export function DataTable() {
       {/* <DataTableToolbar table={table} /> */}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {contents.map((content) => (
-          <ContentTableItem content={content} key={content.id} contentType={contentType} />
+          <ContentTableItem
+            content={content}
+            key={content.id}
+            contentType={contentType}
+            refetch={refetch}
+          />
         ))}
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalCount={totalCount} />
     </div>
   );
 }

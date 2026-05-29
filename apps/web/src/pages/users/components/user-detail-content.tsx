@@ -33,8 +33,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserSessions } from './sessions/user-sessions';
 import { UserCompaniesTab } from './user-companies-tab';
-import { ActivityFeed } from '@/components/activity-feed';
-import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
+import { UserActivityFeed } from '@/components/activity-feed';
 import { formatAttributeValue } from '@/utils/common';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { useAppContext } from '@/contexts/app-context';
@@ -183,9 +182,7 @@ const UserActivityCard = ({
       </CardHeader>
       <CardContent>
         {activityView === 'events' && (
-          <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
-            <ActivityFeed environmentId={environmentId} />
-          </UserActivityFeedProvider>
+          <UserActivityFeed environmentId={environmentId} userId={bizUser.id} />
         )}
         {activityView === 'sessions' && bizUser.externalId && (
           <UserSessions environmentId={environmentId} externalUserId={bizUser.externalId} />

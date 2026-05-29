@@ -1,9 +1,10 @@
 'use client';
 
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useEventListContext } from '@/contexts/event-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useEventList } from '@/hooks/use-event-list';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { ColumnDef, Row } from '@tanstack/react-table';
 import { BizSession, ContentDataType } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -26,9 +27,10 @@ import {
 import { Link } from 'react-router-dom';
 
 const ProgressCell = (props: Row<BizSession>) => {
-  const { content } = useContentDetailContext();
-  const { eventList } = useEventListContext();
-  const { version } = useContentVersionContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { eventList } = useEventList();
+  const { version } = useContentVersion(content?.editedVersionId);
   const contentType = content?.type;
 
   if (!eventList || !content || !version) {
@@ -56,7 +58,8 @@ const ProgressCell = (props: Row<BizSession>) => {
 };
 
 const StatusCell = ({ original }: Row<BizSession>) => {
-  const { content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
   if (!content?.type) return null;
   return <SessionStatusBadge original={original} contentType={content.type} />;
 };

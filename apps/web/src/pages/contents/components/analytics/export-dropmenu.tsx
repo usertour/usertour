@@ -7,28 +7,27 @@ import {
 } from '@usertour/ui';
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
-import { useBizSessionContext } from '@/contexts/biz-session-context';
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useQuery } from '@apollo/client';
 import { getContentVersion, listSessionsDetail } from '@usertour/gql';
 import type { BizSession, ContentVersion } from '@usertour/types';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
 import { buildExportPayload } from './export-csv.utils';
 
 type ExportDropdownMenuProps = {
   children: ReactNode;
+  totalCount: number;
 };
 
 export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
-  const { children } = props;
-  const { dateRange, contentId, timezone } = useAnalyticsContext();
-  const { totalCount } = useBizSessionContext();
+  const { children, totalCount } = props;
+  const { dateRange, contentId, timezone } = useAnalyticsUI();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
-  const { content } = useContentDetailContext();
-  const { attributeList } = useAttributeListContext();
+  const { content } = useContentDetail(contentId);
+  const { attributeList } = useAttributeList();
   const { environment } = useAppContext();
   const versionId = content?.publishedVersionId || content?.editedVersionId;
   const { data } = useQuery(getContentVersion, {

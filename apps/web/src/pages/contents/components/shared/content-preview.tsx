@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useEventListContext } from '@/contexts/event-list-context';
+import { useEventList } from '@/hooks/use-event-list';
 import { EyeNoneIcon, EventTrackerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -51,7 +51,7 @@ import {
 } from '@usertour/types';
 
 import { PREVIEW_BASIC } from '@usertour/constants';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useSubscription } from '@/hooks/use-subscription';
 
 interface EmptyContentPreviewProps {
   className?: string;
@@ -81,7 +81,7 @@ const FlowPreview = ({
       type: currentStep.type,
     },
   );
-  const { shouldShowMadeWith } = useSubscriptionContext();
+  const { shouldShowMadeWith } = useSubscription();
 
   // Get width with theme fallback if undefined
   const width =
@@ -224,7 +224,7 @@ const ChecklistPreview = (props: {
   const { currentTheme, currentVersion } = props;
   const data = currentVersion.data as ChecklistData;
   const themeSettings = currentTheme.settings;
-  const { shouldShowMadeWith } = useSubscriptionContext();
+  const { shouldShowMadeWith } = useSubscription();
 
   return (
     <ChecklistRoot data={data} themeSettings={themeSettings} zIndex={10000}>
@@ -249,7 +249,7 @@ const ResourceCenterPreview = (props: {
   const { currentTheme, currentVersion } = props;
   const data = currentVersion.data as ResourceCenterData;
   const themeSettings = currentTheme.settings;
-  const { shouldShowMadeWith } = useSubscriptionContext();
+  const { shouldShowMadeWith } = useSubscription();
 
   const normalWidth = themeSettings.resourceCenter?.normalWidth ?? 410;
   const previewHeight = Math.round(normalWidth * 1.4);
@@ -304,7 +304,7 @@ const BannerPreviewContent = ({
 };
 
 const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
-  const { eventList } = useEventListContext();
+  const { eventList } = useEventList();
 
   const versionData =
     typeof currentVersion.data === 'string' ? JSON.parse(currentVersion.data) : currentVersion.data;

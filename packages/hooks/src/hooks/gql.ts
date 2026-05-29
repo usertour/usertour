@@ -119,9 +119,12 @@ import type {
 } from '@usertour/types';
 
 type UseContentListQueryProps = {
+  // Index signature mirrors the server's ContentQuery input — callers
+  // pass `published` / etc. in addition to the always-required keys.
   query: {
     environmentId: string;
     type?: ContentDataType;
+    [key: string]: unknown;
   };
   options?: QueryHookOptions;
   pagination?: Pagination;
@@ -739,7 +742,12 @@ export const useGetSalesforceObjectFieldsQuery = (
 };
 
 export const useCreateContentVersionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createContentVersion);
+  // Forking the version inserts a new row at the top of the paginated
+  // version-history list — Apollo's normalized cache can't materialise
+  // a new edge from the mutation response, so refetch the list query.
+  const [mutation, { loading, error }] = useMutation(createContentVersion, {
+    refetchQueries: ['listContentVersions'],
+  });
   const invoke = async (data: { versionId: string }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createContentVersion;
@@ -806,7 +814,17 @@ export const useUpdateSegmentMutation = () => {
 export const useDeleteContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteContent);
   const invoke = async (contentId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { contentId } });
+    const response = await mutation({
+      variables: { contentId },
+      // Server returns `{ success }` only — there's no `id` on the
+      // payload for auto-merge, so do the eviction ourselves. All
+      // observers of the Content slot (list view, detail view, etc.)
+      // see the row disappear without a manual refetch.
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteContent?.success;
   };
   return { invoke, loading, error };

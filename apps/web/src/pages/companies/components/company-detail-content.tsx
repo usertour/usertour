@@ -45,8 +45,7 @@ import { MembershipRow } from '@/components/membership-row';
 import { BulkDeleteFromSegmentDialog } from '@/components/segments';
 import { cn } from '@usertour/tailwind';
 import { useAppContext } from '@/contexts/app-context';
-import { ActivityFeed } from '@/components/activity-feed';
-import { CompanyActivityFeedProvider } from '@/contexts/activity-feed-context';
+import { CompanyActivityFeed } from '@/components/activity-feed';
 import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { useDerivedEntityAttributes } from '@/hooks/use-derived-entity-attributes';
 import { EntityAttributesCard } from '@/components/segments/entity/entity-attributes-card';
@@ -301,25 +300,24 @@ const CompanyActivityCard = ({
       </CardHeader>
       <CardContent>
         {activityView === 'events' && (
-          <CompanyActivityFeedProvider environmentId={environmentId} companyId={companyId}>
-            <ActivityFeed
-              environmentId={environmentId}
-              renderTrailingContent={(event) => {
-                const bizUser = event.bizUser;
-                if (!bizUser) return null;
-                const displayName = bizUser.data?.name || bizUser.data?.email || bizUser.externalId;
-                return (
-                  <Link
-                    to={`/env/${environmentId}/user/${bizUser.id}`}
-                    className="block max-w-[160px] truncate text-xs hover:text-primary"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {displayName}
-                  </Link>
-                );
-              }}
-            />
-          </CompanyActivityFeedProvider>
+          <CompanyActivityFeed
+            environmentId={environmentId}
+            companyId={companyId}
+            renderTrailingContent={(event) => {
+              const bizUser = event.bizUser;
+              if (!bizUser) return null;
+              const displayName = bizUser.data?.name || bizUser.data?.email || bizUser.externalId;
+              return (
+                <Link
+                  to={`/env/${environmentId}/user/${bizUser.id}`}
+                  className="block max-w-[160px] truncate text-xs hover:text-primary"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {displayName}
+                </Link>
+              );
+            }}
+          />
         )}
         {activityView === 'members' && (
           <CompanyUserList environmentId={environmentId} companyId={companyId} />

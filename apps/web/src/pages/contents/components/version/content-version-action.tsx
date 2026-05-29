@@ -1,5 +1,6 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -16,20 +17,21 @@ import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
 import { isPublishedInAllEnvironments } from '@/utils/content';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 
 type ContentVersionActionProps = {
   version: ContentVersion;
 };
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
-  const { refetch, content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content, refetch } = useContentDetail(contentId);
   const { isViewOnly } = useAppContext();
 
-  const { refetch: refetchVersionList } = useContentVersionListContext();
+  const { refetch: refetchVersionList } = useContentVersionList(contentId);
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
 
   const isDisabledPublish = isPublishedInAllEnvironments(content, environmentList, version);
 

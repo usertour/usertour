@@ -1,8 +1,9 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { ContentVersion } from '@usertour/types';
+import { Content, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -27,9 +28,7 @@ const groupVersionsByDay = (versions: ContentVersion[]): VersionGroup[] => {
   return Array.from(groups.values());
 };
 
-const buildAllChipsMap = (
-  content: ReturnType<typeof useContentDetailContext>['content'],
-): Map<string, VersionRowChip[]> => {
+const buildAllChipsMap = (content: Content | null): Map<string, VersionRowChip[]> => {
   const map = new Map<string, VersionRowChip[]>();
   if (content?.editedVersionId) {
     map.set(content.editedVersionId, [{ kind: 'draft' }]);
@@ -57,9 +56,10 @@ const buildAllChipsMap = (
 };
 
 export const VersionHistoryList = () => {
-  const { content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
   const { versionList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
-    useContentVersionListContext();
+    useContentVersionList(contentId);
 
   const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
 
@@ -73,7 +73,9 @@ export const VersionHistoryList = () => {
 
   const groupedHistory = useMemo(() => groupVersionsByDay(versionList), [versionList]);
 
-  if (loading) {
+  // First-load gating only — once any versions are in cache, a
+  // background refetch shouldn't collapse the list to a skeleton.
+  if (loading && versionList.length === 0) {
     return (
       <Card className="flex flex-col p-4 space-y-4 w-full">
         <h3 className="text-lg font-medium flex items-center gap-1">

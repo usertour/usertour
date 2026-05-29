@@ -25,11 +25,12 @@ import {
   ListSkeleton,
 } from '@usertour/ui';
 
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import { useAppContext } from '@/contexts/app-context';
-import { useBizSessionContext } from '@/contexts/biz-session-context';
+import type { PaginationState } from '@tanstack/react-table';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { BizSession } from '@usertour/types';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
@@ -44,14 +45,23 @@ const columnWidthClass: Record<string, string> = {
   createdAt: 'w-[160px]',
 };
 
-export const BizSessionsDataTable = () => {
+interface BizSessionsDataTableProps {
+  bizSessions: BizSession[];
+  pagination: PaginationState;
+  setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+  pageCount: number;
+  totalCount: number;
+  refetch: () => Promise<unknown>;
+  loading: boolean;
+}
+
+export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
+  const { bizSessions, pagination, setPagination, pageCount, totalCount, refetch, loading } = props;
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, bizSessions, refetch, loading } =
-    useBizSessionContext();
-  const { refetch: refetchAnalytics } = useAnalyticsContext();
+  const { refetch: refetchAnalytics } = useContentAnalytics();
   const { environment } = useAppContext();
   const navigate = useNavigate();
 
@@ -81,11 +91,14 @@ export const BizSessionsDataTable = () => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  if (loading) {
+  // First-load gating only — background refetches (after a delete or
+  // when dateRange changes inside analytics) keep the prior table
+  // rendered instead of collapsing to a skeleton.
+  if (loading && bizSessions.length === 0) {
     return (
       <div className="space-y-4">
         <ListSkeleton length={pagination.pageSize} />
-        <DataTablePagination table={table} />
+        <DataTablePagination table={table} totalCount={totalCount} />
       </div>
     );
   }
@@ -168,7 +181,7 @@ export const BizSessionsDataTable = () => {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalCount={totalCount} />
     </div>
   );
 };

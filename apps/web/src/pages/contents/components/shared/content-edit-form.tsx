@@ -2,8 +2,9 @@
 
 import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { isVersionPublished } from '@/utils/content';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,10 +55,11 @@ const defaultValues: Partial<FormValues> = {
 };
 
 export const ContentEditForm = (props: ContentEditFormProps) => {
-  const { open, onOpenChange, showBuilderType = true } = props;
+  const { content, open, onOpenChange, showBuilderType = true } = props;
   const { project, environment } = useAppContext();
-  const { content, refetch, contentType } = useContentDetailContext();
-  const { refetch: refetchVersionList } = useContentVersionListContext();
+  const { contentId, contentType } = useContentDetailUI();
+  const { refetch } = useContentDetail(contentId);
+  const { refetch: refetchVersionList } = useContentVersionList(contentId);
   const [mutation] = useMutation(updateContent);
   const navigate = useNavigate();
   // const [open, setOpen] = useState(false);

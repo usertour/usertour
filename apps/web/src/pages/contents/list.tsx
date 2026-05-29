@@ -1,7 +1,4 @@
 import { useAppContext } from '@/contexts/app-context';
-import { ContentListProvider } from '@/contexts/content-list-context';
-import { EventListProvider } from '@/contexts/event-list-context';
-import { ThemeListProvider } from '@/contexts/theme-list-context';
 import { ScrollArea } from '@usertour/ui';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { ReactNode } from 'react';
@@ -216,22 +213,18 @@ export const ContentList = () => {
   });
 
   return (
-    <ContentListProvider
-      environmentId={environment?.id}
-      key="environmentId"
-      contentType={contentType}
-    >
-      <ThemeListProvider projectId={project?.id}>
-        <EventListProvider projectId={project?.id}>
-          <ContentListSidebar title={config.title} />
-          <ScrollArea className="h-full w-full">
-            <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
-              <ContentListLayout {...config} createButtonText={createButtonText} />
-            </div>
-          </ScrollArea>
-        </EventListProvider>
-      </ThemeListProvider>
-    </ContentListProvider>
+    <>
+      <ContentListSidebar title={config.title} />
+      <ScrollArea className="h-full w-full">
+        <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
+          <ContentListLayout
+            {...config}
+            contentType={contentType}
+            createButtonText={createButtonText}
+          />
+        </div>
+      </ScrollArea>
+    </>
   );
 };
 

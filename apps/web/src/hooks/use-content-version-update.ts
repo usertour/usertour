@@ -1,6 +1,7 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { useMutation } from '@apollo/client';
 import { createContentVersion, updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
@@ -11,9 +12,10 @@ import { useDebouncedCallback } from 'use-debounce';
 import { isVersionPublished } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
-  const { version, refetch: refetchVersion, setIsSaving } = useContentVersionContext();
-  const { content, refetch: refetchContent } = useContentDetailContext();
-  const { refetch: refetchVersionList } = useContentVersionListContext();
+  const { contentId, setIsSaving } = useContentDetailUI();
+  const { content, refetch: refetchContent } = useContentDetail(contentId);
+  const { version, refetch: refetchVersion } = useContentVersion(content?.editedVersionId);
+  const { refetch: refetchVersionList } = useContentVersionList(contentId);
   const [mutation] = useMutation(updateContentVersion);
   const [createVersion] = useMutation(createContentVersion);
   const { toast } = useToast();

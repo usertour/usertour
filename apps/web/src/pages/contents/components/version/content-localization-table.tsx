@@ -9,8 +9,8 @@ import {
   TableRow,
   useToast,
 } from '@usertour/ui';
-import { useContentLocalizationListContext } from '@/contexts/content-localization-list-context';
-import { useLocalizationListContext } from '@/contexts/localization-list-context';
+import { useContentLocalizations } from '@/hooks/use-content-localizations';
+import { useLocalizationList } from '@/hooks/use-localization-list';
 import { useMutation } from '@apollo/client';
 import { updateVersionLocationData } from '@usertour/gql';
 import { VersionOnLocalization } from '@usertour/types';
@@ -18,9 +18,14 @@ import { cn } from '@usertour/tailwind';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
 
-export const ContentLocalizationTable = () => {
-  const { contentLocalizationList, loading, refetch } = useContentLocalizationListContext();
-  const { localizationList } = useLocalizationListContext();
+interface ContentLocalizationTableProps {
+  versionId: string;
+}
+
+export const ContentLocalizationTable = (props: ContentLocalizationTableProps) => {
+  const { versionId } = props;
+  const { contentLocalizationList, loading, refetch } = useContentLocalizations(versionId);
+  const { localizationList } = useLocalizationList();
   const [mutation] = useMutation(updateVersionLocationData);
   const { toast } = useToast();
   const location = useLocation();
@@ -53,7 +58,9 @@ export const ContentLocalizationTable = () => {
     }
   };
 
-  if (loading) {
+  // First-load gating only — once rows are in cache, a background
+  // refetch shouldn't flash the skeleton in place of the table.
+  if (loading && contentLocalizationList.length === 0) {
     return <ListSkeleton />;
   }
 
