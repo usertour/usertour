@@ -5,11 +5,16 @@ import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { ThemeBuilder } from './components/theme-builder';
 
 export const SettingsThemeDetail = () => {
   const { themeId = '', projectId } = useParams();
-  const { theme, loading } = useGetThemeQuery(themeId);
+  // SHARED_CACHE_QUERY_OPTIONS so this query participates in the
+  // normalized cache — without it, the global no-cache default would
+  // mean updateTheme's auto-merge into Theme:{id} never reaches this
+  // observer, and the builder would render stale fields after a save.
+  const { theme, loading } = useGetThemeQuery(themeId, SHARED_CACHE_QUERY_OPTIONS);
   const navigate = useNavigate();
   const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
