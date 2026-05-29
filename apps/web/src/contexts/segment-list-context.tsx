@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { listSegment } from '@usertour/gql';
-import { RulesCondition, Segment } from '@usertour/types';
+import { CurrentConditions, Segment } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { filterSegmentsByTypeOrder } from '../utils/segment';
@@ -10,11 +10,6 @@ export interface SegmentListProviderProps {
   environmentId: string | undefined;
   bizType: string[];
 }
-
-export type CurrentConditions = {
-  segmentId: string;
-  data: RulesCondition[];
-};
 
 export interface SegmentListContextValue {
   segmentList: Segment[] | undefined;

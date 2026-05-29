@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { Attribute } from '@usertour/types';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
@@ -16,7 +15,6 @@ export const AttributeRowActions = (props: AttributeRowActionsProps) => {
   const { attribute } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { refetch } = useAttributeListContext();
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
@@ -54,13 +52,13 @@ export const AttributeRowActions = (props: AttributeRowActionsProps) => {
         attribute={attribute}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
       <AttributeDeleteDialog
         data={attribute}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
     </>
   );

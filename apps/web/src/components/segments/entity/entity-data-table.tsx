@@ -1,8 +1,10 @@
 'use client';
 
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useUserListContext } from '@/contexts/user-list-context';
-import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/contexts/app-context';
+import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { useReactiveVar } from '@apollo/client';
+import { useListAttributesQuery } from '@usertour/hooks';
 import {
   ColumnFiltersState,
   SortingState,
@@ -16,7 +18,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { BizUser, Segment, AttributeBizTypes } from '@usertour/types';
+import { AttributeBizTypes, type Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -25,78 +27,97 @@ import {
   useDynamicTableColumns,
   buildColumnVisibility,
   buildColumnOrder,
-} from '@/components/segments/table';
-import { UserDataTableToolbar } from './user-data-table-toolbar';
-import { useUserTableColumns } from '@/hooks/use-user-table-columns';
-import { useAppContext } from '@/contexts/app-context';
+} from '../table';
+import { useTranslation } from 'react-i18next';
+import { EntityDataTableToolbar } from './entity-data-table-toolbar';
+import type { EntityConfig } from './entity-config';
 
-interface UserDataTableProps {
-  segment: Segment;
+interface EntityRow {
+  id: string;
+  environmentId: string;
 }
 
-export const UserDataTable = ({ segment }: UserDataTableProps) => {
-  const { t } = useTranslation();
-  const { isViewOnly } = useAppContext();
-  const columns = useUserTableColumns({ isViewOnly });
+interface EntityDataTableProps<TRow extends EntityRow> {
+  config: EntityConfig<TRow>;
+  segment: Segment;
+  environmentId: string;
+}
 
-  const { setQuery, setPagination, pagination, pageCount, contents, loading } =
-    useUserListContext();
-  const { attributeList } = useAttributeListContext();
+export function EntityDataTable<TRow extends EntityRow>({
+  config,
+  segment,
+  environmentId,
+}: EntityDataTableProps<TRow>) {
+  const { t } = useTranslation();
+  const { isViewOnly, project } = useAppContext();
+  const columns = config.useTableColumns({ isViewOnly });
+  // Shares the cache slice with the toolbar's identical call via
+  // SHARED_CACHE_QUERY_OPTIONS — Apollo dedups, single network request.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
+  );
   const navigate = useNavigate();
 
-  // Set query when segment changes
-  React.useEffect(() => {
-    setQuery({ segmentId: segment.id });
-  }, [segment, setQuery]);
+  // `query` is shared with the toolbar via the per-entity reactive var
+  // store; pagination is per-mount and stays local.
+  const query = useReactiveVar(config.listState.queryVar);
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 20 });
 
-  // Use dynamic column management
-  const { tableColumns } = useDynamicTableColumns<BizUser>(
+  const effectiveQuery = React.useMemo(
+    () => ({ ...query, segmentId: segment.id }),
+    [query, segment.id],
+  );
+
+  const { contents, loading, refetch, pageCount } = useBizListCursor<TRow>({
+    environmentId,
+    query: effectiveQuery,
+    pagination,
+    useListQuery: config.useListQuery,
+  });
+
+  // Dynamic columns merge segment-configured order/visibility with the
+  // available attributes.
+  const { tableColumns } = useDynamicTableColumns<TRow>(
     attributeList,
-    AttributeBizTypes.User,
+    config.attributeBizType,
     columns,
   );
 
-  // State management for table
   const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  // Static column ids (checkbox, etc.) that must lead the order regardless of segment config
   const staticColumnIds = React.useMemo(
     () => columns.map((c) => c.id).filter((id): id is string => !!id),
     [columns],
   );
 
-  // Column visibility + order state derived from segment
-  const userAttrList = React.useMemo(
-    () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [],
-    [attributeList],
+  const entityAttrList = React.useMemo(
+    () => attributeList?.filter((attr) => attr.bizType === config.attributeBizType) ?? [],
+    [attributeList, config.attributeBizType],
   );
 
   const baseColumnVisibility = React.useMemo(
-    () => buildColumnVisibility(userAttrList, segment.columns),
-    [userAttrList, segment.columns],
+    () => buildColumnVisibility(entityAttrList, segment.columns),
+    [entityAttrList, segment.columns],
   );
 
   const baseColumnOrder = React.useMemo(
-    () => buildColumnOrder(userAttrList, segment.columns, staticColumnIds),
-    [userAttrList, segment.columns, staticColumnIds],
+    () => buildColumnOrder(entityAttrList, segment.columns, staticColumnIds),
+    [entityAttrList, segment.columns, staticColumnIds],
   );
 
+  // Local overrides on top of the segment's baseline columns. No reset
+  // effect needed: the caller mounts this component with
+  // `key={currentSegment.id}`, so segment switches remount the subtree
+  // and these `useState` initial values apply naturally.
   const [userColumnVisibility, setUserColumnVisibility] = React.useState<VisibilityState>({});
   const [userColumnOrder, setUserColumnOrder] = React.useState<string[] | undefined>(undefined);
 
-  // Reset local overrides when segment changes
-  React.useEffect(() => {
-    setUserColumnVisibility({});
-    setUserColumnOrder(undefined);
-  }, [segment.id]);
-
   const columnVisibility = React.useMemo(
-    () => ({
-      ...baseColumnVisibility,
-      ...userColumnVisibility,
-    }),
+    () => ({ ...baseColumnVisibility, ...userColumnVisibility }),
     [baseColumnVisibility, userColumnVisibility],
   );
 
@@ -112,7 +133,6 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     [baseColumnOrder],
   );
 
-  // Memoize table state to prevent unnecessary re-renders
   const tableState = React.useMemo(
     () => ({
       sorting,
@@ -125,15 +145,12 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
-  // Create the table instance
   const table = useReactTable({
     data: contents,
     columns: tableColumns,
     pageCount,
     manualPagination: true,
     state: tableState,
-    // Viewer-role members can't bulk-act; gate selection so toolbar
-    // affordances stay hidden (the select column is also dropped above).
     enableRowSelection: !isViewOnly,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -149,19 +166,21 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Stable click handler
   const handleRowClick = React.useCallback(
-    (row: BizUser) => {
-      const environmentId = row.environmentId;
-      const userId = row.id;
-      navigate(`/env/${environmentId}/user/${userId}`);
+    (row: TRow) => {
+      navigate(config.navToDetail(row.environmentId, row.id));
     },
-    [navigate],
+    [navigate, config],
   );
 
   return (
     <div className="space-y-2">
-      <UserDataTableToolbar table={table} currentSegment={segment} />
+      <EntityDataTableToolbar
+        config={config}
+        table={table}
+        currentSegment={segment}
+        refetch={refetch}
+      />
       <DataTable
         data={contents}
         columns={tableColumns}
@@ -181,10 +200,10 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
         onColumnFiltersChange={setColumnFilters}
         onRowClick={handleRowClick}
         segment={segment}
-        emptyMessage={t('users.empty.noUsersFound')}
-        emptyDescription={t('users.empty.noUsersFoundDescription')}
+        emptyMessage={t(config.i18n.emptyMessage)}
+        emptyDescription={t(config.i18n.emptyDescription)}
       />
       <DataTablePagination table={table} />
     </div>
   );
-};
+}

@@ -8,10 +8,18 @@ export const createLocalization = gql`
   }
 `;
 
+// Returns the same selection set as `listLocalizations` so Apollo's
+// normalized cache auto-merges the updated row by __typename:id.
 export const updateLocalization = gql`
   mutation updateLocalization($data: UpdateLocalizationInput!) {
     updateLocalization(data: $data) {
       id
+      locale
+      name
+      projectId
+      code
+      createdAt
+      isDefault
     }
   }
 `;

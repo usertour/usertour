@@ -1,6 +1,7 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useAppContext } from '@/contexts/app-context';
+import { useListAttributesQuery } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
-import { BizUser } from '@usertour/types';
+import { AttributeBizTypes, BizUser } from '@usertour/types';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Table, TableBody, TableHead, TableHeader, TableRow, DefaultAvatar } from '@usertour/ui';
@@ -13,7 +14,12 @@ interface UserCompaniesTabProps {
 
 export const UserCompaniesTab = ({ bizUser, environmentId }: UserCompaniesTabProps) => {
   const { t } = useTranslation();
-  const { attributeList } = useAttributeListContext();
+  const { project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const [expandedCompanyId, setExpandedCompanyId] = useState<string | null>(null);
 
   const companies = bizUser.bizUsersOnCompany || [];

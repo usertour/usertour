@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEventListContext } from '@/contexts/event-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { Event } from '@usertour/types';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
@@ -16,7 +15,6 @@ export const EventRowActions = (props: EventRowActionsProps) => {
   const { event } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { refetch } = useEventListContext();
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
@@ -54,13 +52,13 @@ export const EventRowActions = (props: EventRowActionsProps) => {
         event={event}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
       <EventDeleteDialog
         data={event}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
     </>
   );

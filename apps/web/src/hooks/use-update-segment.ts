@@ -1,5 +1,4 @@
-import { useMutation } from '@apollo/client';
-import { updateSegment } from '@usertour/gql';
+import { useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { EditSegmentFormValues } from '@/components/segments/segment-form-schema';
@@ -10,21 +9,18 @@ interface UpdateSegmentResult {
 }
 
 export const useUpdateSegment = () => {
-  const [updateMutation, { loading }] = useMutation(updateSegment);
+  const { invoke: updateMutation, loading } = useUpdateSegmentMutation();
 
   const updateSegmentAsync = useCallback(
     async (segmentId: string, formValues: EditSegmentFormValues): Promise<UpdateSegmentResult> => {
       try {
-        const data = {
+        const success = await updateMutation({
           id: segmentId,
           name: formValues.name,
-        };
-        const response = await updateMutation({ variables: { data } });
-
-        if (!response.data?.updateSegment?.id) {
+        });
+        if (!success) {
           return { success: false, error: 'Update operation failed' };
         }
-
         return { success: true };
       } catch (error) {
         return { success: false, error: getErrorMessage(error) };

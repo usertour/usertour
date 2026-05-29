@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import {
-  LocalizationListProvider,
-  useLocalizationListContext,
-} from '@/contexts/localization-list-context';
+import { useListLocalizationsQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { Localization } from '@usertour/types';
 import { format } from 'date-fns';
@@ -29,8 +27,12 @@ const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
-const LocalizationsListPage = () => {
-  const { localizationList, loading, refetch } = useLocalizationListContext();
+export const SettingsLocalizationList = () => {
+  const { project } = useAppContext();
+  const { localizationList, loading, refetch } = useListLocalizationsQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   const { t } = useTranslation();
 
   const columns: ResourceTableColumn<Localization>[] = [
@@ -79,15 +81,6 @@ const LocalizationsListPage = () => {
       empty={t('settings.localizations.empty')}
       getRowKey={(item) => item.id}
     />
-  );
-};
-
-export const SettingsLocalizationList = () => {
-  const { project } = useAppContext();
-  return (
-    <LocalizationListProvider projectId={project?.id}>
-      <LocalizationsListPage />
-    </LocalizationListProvider>
   );
 };
 

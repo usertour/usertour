@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useListAttributesQuery } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { AttributeCreateForm } from '@usertour/editor';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import {
@@ -68,7 +69,16 @@ const NewAttributeButton = (props: NewAttributeButtonProps) => {
 };
 
 export const SettingsAttributeList = () => {
-  const { refetch } = useAttributeListContext();
+  const { project } = useAppContext();
+  // `refetch` here is consumed by the "New attribute" button. The
+  // table content + per-row actions call their own
+  // `useListAttributesQuery` instances; they share the cache slice
+  // with this one via SHARED_CACHE_QUERY_OPTIONS so refetches
+  // propagate.
+  const { refetch } = useListAttributesQuery(project?.id ?? '', AttributeBizTypes.Nil, {
+    ...SHARED_CACHE_QUERY_OPTIONS,
+    skip: !project?.id,
+  });
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<AttributeTab>('user');
 

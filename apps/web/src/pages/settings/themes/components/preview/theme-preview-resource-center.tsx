@@ -16,7 +16,7 @@ import {
   ResourceCenterData,
   ThemeTypesSetting,
 } from '@usertour/types';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useSubscription } from '@/hooks/use-subscription';
 import { useEffect, useRef, useState } from 'react';
 
 const richTextWelcome = [
@@ -250,7 +250,7 @@ interface ThemePreviewResourceCenterProps {
 
 export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProps) => {
   const { expanded = true, settings } = props;
-  const { shouldShowMadeWith } = useSubscriptionContext();
+  const { shouldShowMadeWith } = useSubscription();
 
   const [expandedState, setExpandedState] = useState(expanded);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -2,28 +2,28 @@ import { Delete2Icon } from '@usertour/icons';
 import { Button } from '@usertour/ui';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BulkDeleteFromSegmentDialog } from '@/components/segments';
-import { useUserListContext } from '@/contexts/user-list-context';
+import { BulkDeleteFromSegmentDialog } from '..';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import type { EntityConfig } from './entity-config';
 
-interface DeleteUserFromSegmentProps {
+interface EntityDeleteFromSegmentProps {
+  config: EntityConfig<any>;
   table: Table<any>;
+  refetch: () => Promise<unknown>;
 }
 
-export const UserDeleteFromSegment = (props: DeleteUserFromSegmentProps) => {
-  const { table } = props;
+export const EntityDeleteFromSegment = (props: EntityDeleteFromSegmentProps) => {
+  const { config, table, refetch } = props;
+  const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
-  const [bizUserIds, setBizUserIds] = useState<string[]>([]);
-  const { refetch } = useUserListContext();
-  const { t } = useTranslation();
+  const [bizIds, setBizIds] = useState<string[]>([]);
 
   const handleOnClick = useCallback(() => {
     if (hasSelection()) {
-      const ids = collectSelectedIds();
-      setBizUserIds(ids);
+      setBizIds(collectSelectedIds());
       setOpenDelete(true);
     }
   }, [collectSelectedIds, hasSelection]);
@@ -45,12 +45,12 @@ export const UserDeleteFromSegment = (props: DeleteUserFromSegmentProps) => {
         onClick={handleOnClick}
       >
         <Delete2Icon className="mr-1 h-4 w-4" />
-        {t('users.actions.deleteUser')}
+        {t(config.i18n.deleteAction)}
       </Button>
       <BulkDeleteFromSegmentDialog
-        entity="user"
+        entity={config.kind}
         open={openDelete}
-        ids={bizUserIds}
+        ids={bizIds}
         onOpenChange={setOpenDelete}
         onSubmit={handleSubmit}
       />
@@ -58,4 +58,4 @@ export const UserDeleteFromSegment = (props: DeleteUserFromSegmentProps) => {
   );
 };
 
-UserDeleteFromSegment.displayName = 'UserDeleteFromSegment';
+EntityDeleteFromSegment.displayName = 'EntityDeleteFromSegment';

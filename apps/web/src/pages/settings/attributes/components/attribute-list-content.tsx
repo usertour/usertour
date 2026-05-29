@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Attribute } from '@usertour/types';
+import { useListAttributesQuery } from '@usertour/hooks';
+import { useAppContext } from '@/contexts/app-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { Attribute, AttributeBizTypes } from '@usertour/types';
 import { Badge, ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
 import { RiShieldCheckFill } from '@usertour/icons';
 import { AttributeRowActions } from './attribute-row-actions';
@@ -31,7 +33,12 @@ const sortAttributes = (attributes: readonly Attribute[]) =>
 
 export const AttributeListContent = (props: AttributeListContentProps) => {
   const { bizType } = props;
-  const { attributeList, loading } = useAttributeListContext();
+  const { project } = useAppContext();
+  const { attributes: attributeList, loading } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
+  );
   const { t } = useTranslation();
 
   const rows = useMemo(

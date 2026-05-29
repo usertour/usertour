@@ -5,25 +5,24 @@ import {
   DropdownMenuTrigger,
 } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
-import { Segment } from '@usertour/types';
+import type { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { SegmentDeleteDialog } from '@/components/segments';
+import { SegmentDeleteDialog } from '..';
 import { useTranslation } from 'react-i18next';
+import type { EntityConfig } from './entity-config';
 
-type UserEditDropdownMenuProps = {
+interface EntityEditDropdownMenuProps {
+  config: EntityConfig<any>;
   segment: Segment;
   children: ReactNode;
   onSubmit: () => void;
   disabled?: boolean;
-};
-export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
-  const { segment, children, onSubmit, disabled = false } = props;
+}
+
+export const EntityEditDropdownMenu = (props: EntityEditDropdownMenuProps) => {
+  const { config, segment, children, onSubmit, disabled = false } = props;
   const [openDelete, setOpenDelete] = useState(false);
   const { t } = useTranslation();
-
-  const handleOnClick = () => {
-    setOpenDelete(true);
-  };
 
   return (
     <>
@@ -32,14 +31,17 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
           {children}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
-          <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={handleOnClick}>
+          <DropdownMenuItem
+            className="text-red-600 cursor-pointer"
+            onClick={() => setOpenDelete(true)}
+          >
             <Delete2Icon className="mr-1" />
-            {t('users.actions.deleteSegment')}
+            {t(config.i18n.deleteSegment)}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <SegmentDeleteDialog
-        entity="user"
+        entity={config.kind}
         segment={segment}
         open={openDelete}
         onOpenChange={setOpenDelete}
@@ -53,4 +55,4 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
   );
 };
 
-UserEditDropdownMenu.displayName = 'UserEditDropdownMenu';
+EntityEditDropdownMenu.displayName = 'EntityEditDropdownMenu';

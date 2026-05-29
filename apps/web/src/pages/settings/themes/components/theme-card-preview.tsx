@@ -1,5 +1,4 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useThemeListContext } from '@/contexts/theme-list-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
@@ -21,7 +20,6 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
   const { theme } = props;
   const containerRef = useRef(null);
 
-  const { refetch } = useThemeListContext();
   const { project, isViewOnly } = useAppContext();
   const { globalStyle, themeSetting } = useSettingsStyles(theme.settings);
   const navigate = useNavigate();
@@ -35,10 +33,6 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
     },
     [project, navigate, theme.id],
   );
-
-  const handleOnSuccess = useCallback(() => {
-    refetch();
-  }, [refetch]);
 
   return (
     <>
@@ -59,7 +53,7 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
               </span>
             )}
           </div>
-          <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSuccess} disabled={isViewOnly}>
+          <ThemeEditDropdownMenu theme={theme} onSubmit={() => {}} disabled={isViewOnly}>
             <Button variant={'ghost'} size={'icon'}>
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>

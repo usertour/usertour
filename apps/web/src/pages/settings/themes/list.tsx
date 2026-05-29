@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { ThemeListProvider, useThemeListContext } from '@/contexts/theme-list-context';
+import { useListThemesQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { ThemeListSkeleton } from './components/theme-list-skeleton';
 import type { Theme } from '@usertour/types';
@@ -25,11 +26,15 @@ const NewThemeButton = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
-const ThemeListPage = () => {
+export const SettingsThemeList = () => {
+  const { project } = useAppContext();
   // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
   // false for refetches, so the grid updates in place instead of flashing
   // back to the skeleton when a theme is created/duplicated/deleted.
-  const { themeList, loading, refetch } = useThemeListContext();
+  const { themeList, loading, refetch } = useListThemesQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   const { t } = useTranslation();
 
   return (
@@ -50,16 +55,6 @@ const ThemeListPage = () => {
         </div>
       )}
     </SettingsPage>
-  );
-};
-
-export const SettingsThemeList = () => {
-  const { project } = useAppContext();
-
-  return (
-    <ThemeListProvider projectId={project?.id}>
-      <ThemeListPage />
-    </ThemeListProvider>
   );
 };
 

@@ -1,14 +1,22 @@
-import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useUpdateSegmentMutation } from '@usertour/hooks';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Segment } from '@usertour/types';
+import { CurrentConditions, Segment } from '@usertour/types';
 
-export const useSaveSegmentFilter = (currentSegment?: Segment) => {
+interface UseSaveSegmentFilterArgs {
+  currentSegment: Segment | undefined;
+  currentConditions: CurrentConditions | undefined;
+  refetchSegments: () => Promise<unknown>;
+}
+
+// Save-the-filter dialog state machine. Caller owns the source data
+// (currentSegment, currentConditions, refetch fn) — this hook stays
+// focused on the open/close + save + button-visibility logic.
+export const useSaveSegmentFilter = (args: UseSaveSegmentFilterArgs) => {
+  const { currentSegment, currentConditions, refetchSegments } = args;
   const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
-  const { refetch, currentConditions, isRefetching } = useSegmentListContext();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -49,7 +57,7 @@ export const useSaveSegmentFilter = (currentSegment?: Segment) => {
         // Fire-and-forget; `.catch` swallows the rejection so a refetch
         // failure doesn't bubble to window.unhandledrejection (the save
         // itself already succeeded server-side).
-        refetch().catch(() => undefined);
+        Promise.resolve(refetchSegments()).catch(() => undefined);
         return true;
       }
       return false;
@@ -60,7 +68,7 @@ export const useSaveSegmentFilter = (currentSegment?: Segment) => {
       });
       return false;
     }
-  }, [currentSegment, currentConditions, updateSegment, toast, t, refetch]);
+  }, [currentSegment, currentConditions, updateSegment, toast, t, refetchSegments]);
 
   useEffect(() => {
     if (
@@ -79,7 +87,6 @@ export const useSaveSegmentFilter = (currentSegment?: Segment) => {
     open,
     isShowButton,
     loading,
-    isRefetching,
     handleOpenDialog,
     handleCloseDialog,
     saveFilter,

@@ -14,7 +14,9 @@ export interface AccessToken {
 }
 
 export const useCreateAccessTokenMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateAccessToken);
+  const [mutation, { loading, error }] = useMutation(CreateAccessToken, {
+    refetchQueries: ['ListAccessTokens'],
+  });
   // Returns the freshly-minted secret so the caller can show it in the
   // reveal dialog. `null` on failure — the API only surfaces the token
   // string at creation time, so losing it here means re-creating.
@@ -27,11 +29,15 @@ export const useCreateAccessTokenMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListAccessTokensQuery = (environmentId: string | undefined) => {
+export const useListAccessTokensQuery = (
+  environmentId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error, refetch, networkStatus } = useQuery(ListAccessTokens, {
     variables: { environmentId },
     skip: !environmentId,
     notifyOnNetworkStatusChange: true,
+    ...options,
   });
 
   const isRefetching = networkStatus === NetworkStatus.refetch;
@@ -44,6 +50,12 @@ export const useDeleteAccessTokenMutation = () => {
   const invoke = async (environmentId: string, accessTokenId: string): Promise<boolean> => {
     const response = await mutation({
       variables: { environmentId, accessTokenId },
+      // Server response is just a boolean; we already know the id from
+      // the caller, so evict that entity from the cache directly.
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'AccessToken', id: accessTokenId }) });
+        cache.gc();
+      },
     });
     return !!response.data?.deleteAccessToken;
   };

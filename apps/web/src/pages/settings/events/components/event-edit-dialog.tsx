@@ -18,8 +18,13 @@ import {
   useSettingsForm,
   useToast,
 } from '@usertour/ui';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useListAttributeOnEventsQuery, useUpdateEventMutation } from '@usertour/hooks';
+import { useAppContext } from '@/contexts/app-context';
+import {
+  useListAttributeOnEventsQuery,
+  useListAttributesQuery,
+  useUpdateEventMutation,
+} from '@usertour/hooks';
+import { AttributeBizTypes } from '@usertour/types';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { type Attribute, type Event } from '@usertour/types';
 import { z } from 'zod';
@@ -54,7 +59,12 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedAttributeValue, setSelectedAttributeValue] = useState('');
-  const { attributeList } = useAttributeListContext();
+  const { project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const { toast } = useToast();
 
   // Skip the query until the dialog actually opens — otherwise every row

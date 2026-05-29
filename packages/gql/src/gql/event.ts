@@ -8,10 +8,18 @@ export const createEvent = gql`
   }
 `;
 
+// Returns the same selection set as `listEvents` so Apollo's normalized
+// cache auto-merges the updated row by __typename:id.
 export const updateEvent = gql`
   mutation updateEvent($data: UpdateEventInput!) {
     updateEvent(data: $data) {
       id
+      codeName
+      displayName
+      projectId
+      description
+      predefined
+      createdAt
     }
   }
 `;

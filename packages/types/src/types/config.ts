@@ -167,6 +167,14 @@ export type RulesCondition = {
   conditions?: RulesCondition[];
 };
 
+// Snapshot of the user's typed-but-unsaved filter on a segment list page.
+// Drives the "Save Filter" affordance — separate from the query that's
+// actually fetching, so partial / in-flight edits don't trigger network.
+export type CurrentConditions = {
+  segmentId: string;
+  data: RulesCondition[];
+};
+
 // ============================================================================
 // Frequency Types
 // ============================================================================

@@ -9,11 +9,10 @@ interface RemoveUsersResult {
   error?: string;
 }
 
-// Mirror of `useRemoveCompaniesFromSegment` — caller owns refetch on
-// success. The previous implementation read `useUserListContext()` here
-// to auto-refetch, which made `BulkRemoveFromSegmentDialog` crash on the
-// companies page (the shared dialog calls both hooks and the companies
-// tree has no UserListProvider).
+// Mirror of `useRemoveCompaniesFromSegment` — owns the mutation only;
+// caller owns refetch on success. The shared `BulkRemoveFromSegmentDialog`
+// calls both entity hooks, so neither can take a side-channel dependency
+// on a specific entity's list state.
 export const useRemoveUsersFromSegment = () => {
   const { invoke: deleteBizUserOnSegment, loading } = useDeleteBizUserOnSegmentMutation();
   const { t } = useTranslation();

@@ -1,22 +1,29 @@
-import { ThemeDetailProvider, useThemeDetailContext } from '@/contexts/theme-detail-context';
-import { useUpdateThemeMutation } from '@usertour/hooks';
+import { useGetThemeQuery, useUpdateThemeMutation } from '@usertour/hooks';
 import { useToast, ContentLoading } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { ThemeBuilder } from './components/theme-builder';
 
-// Inner component that uses the context
-const ThemeDetailInner = () => {
-  const { loading, theme, refetch } = useThemeDetailContext();
-  const { projectId } = useParams();
+export const SettingsThemeDetail = () => {
+  const { themeId = '', projectId } = useParams();
+  // SHARED_CACHE_QUERY_OPTIONS so this query participates in the
+  // normalized cache — without it, the global no-cache default would
+  // mean updateTheme's auto-merge into Theme:{id} never reaches this
+  // observer, and the builder would render stale fields after a save.
+  const { theme, loading } = useGetThemeQuery(themeId, SHARED_CACHE_QUERY_OPTIONS);
   const navigate = useNavigate();
   const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  // updateTheme's response mirrors `listThemes`' selection set, so
+  // Apollo's normalized cache auto-merges into the Theme entity — both
+  // this detail view (via useGetThemeQuery) and the themes list update
+  // without a manual refetch chain.
   const handleSave = useCallback(
     async (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => {
       if (!theme) return;
@@ -27,13 +34,12 @@ const ThemeDetailInner = () => {
           settings: payload.settings,
           variations: payload.variations,
         });
-        await refetch();
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
         throw error;
       }
     },
-    [theme, updateTheme, refetch, toast],
+    [theme, updateTheme, toast],
   );
 
   const handleRename = useCallback(
@@ -46,13 +52,12 @@ const ThemeDetailInner = () => {
           settings: theme.settings,
           variations: theme.variations ?? [],
         });
-        await refetch();
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
         throw error;
       }
     },
-    [theme, updateTheme, refetch, toast],
+    [theme, updateTheme, toast],
   );
 
   if (loading) {
@@ -71,23 +76,14 @@ const ThemeDetailInner = () => {
       onSave={handleSave}
       onRename={handleRename}
       onActionComplete={(action) => {
-        if (action === 'delete') {
-          if (themesListPath) navigate(themesListPath);
-        } else {
-          refetch();
+        if (action === 'delete' && themesListPath) {
+          navigate(themesListPath);
         }
+        // Non-delete actions (copy / set-default) flow through wrappers
+        // whose refetchQueries / cache.evict already update the
+        // relevant slices; no manual refetch needed here.
       }}
     />
-  );
-};
-
-export const SettingsThemeDetail = () => {
-  const { themeId = '' } = useParams();
-
-  return (
-    <ThemeDetailProvider themeId={themeId}>
-      <ThemeDetailInner />
-    </ThemeDetailProvider>
   );
 };
 

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { CopyIcon } from '@radix-ui/react-icons';
 import {
@@ -54,10 +55,14 @@ const EnvironmentTokenCell = ({ token }: { token: string }) => {
 };
 
 export const SettingsEnvironmentList = () => {
+  const { project } = useAppContext();
   // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
   // false for refetches, so the table updates in place instead of flashing
   // back to the skeleton when a row is added/edited/deleted.
-  const { environmentList, loading, refetch } = useEnvironmentListContext();
+  const { environmentList, loading, refetch } = useGetUserEnvironmentsQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   const { t } = useTranslation();
   const environmentCount = environmentList?.length ?? 0;
 

@@ -48,7 +48,7 @@ const AccountEmailFormSkeleton = () => (
 );
 
 export const AccountEmailForm = () => {
-  const { userInfo, refetch, loading } = useAppContext();
+  const { userInfo, loading } = useAppContext();
   const { invoke: updateEmail } = useUpdateEmailMutation();
   const { t } = useTranslation();
 
@@ -62,6 +62,9 @@ export const AccountEmailForm = () => {
     schema: emailSchema,
     defaultValues: { email: userInfo?.email ?? '', password: '' },
     submit: async ({ email, password }) => {
+      // updateEmail's response carries { id, email }; Apollo's normalized
+      // cache auto-merges into the User entity, so AppContext re-emits
+      // without a manual refetch.
       const success = await updateEmail(email, password);
       if (!success) {
         // useSettingsForm treats non-throw as success — without this
@@ -70,7 +73,6 @@ export const AccountEmailForm = () => {
         // email.
         throw new Error(t('settings.account.email.failureToast'));
       }
-      await refetch();
     },
     successMessage: t('settings.account.email.successToast'),
     // Opt out of the default re-baseline; we clear `password` explicitly.

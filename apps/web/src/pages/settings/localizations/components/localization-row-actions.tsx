@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { StarFilledIcon } from '@radix-ui/react-icons';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
@@ -19,7 +18,6 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
   const { localization } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { refetch } = useLocalizationListContext();
   const { isViewOnly } = useAppContext();
   const { invoke: setDefaultLocalization } = useSetDefaultLocalizationMutation();
   const { toast } = useToast();
@@ -28,7 +26,6 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
   const handleSetDefault = async () => {
     try {
       await setDefaultLocalization(localization.id);
-      await refetch();
       toast({
         variant: 'success',
         title: t('settings.localizations.setDefaultSuccess'),
@@ -63,8 +60,6 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
             icon: <Delete2Icon className="w-6" width={16} height={16} />,
             label: t('settings.localizations.deleteMenuItem'),
             destructive: true,
-            // Default locale can't be deleted — server rejects and the UI
-            // would otherwise let the user reach a doomed confirm dialog.
             disabled: localization.isDefault,
             separatorBefore: true,
             onSelect: () => setDeleteOpen(true),
@@ -75,13 +70,13 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
         localization={localization}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
       <LocalizationDeleteDialog
         data={localization}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
     </>
   );

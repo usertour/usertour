@@ -1,76 +1,73 @@
 'use client';
 
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { useCompanyListContext } from '@/contexts/company-list-context';
 import { Table } from '@tanstack/react-table';
-import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour/constants';
 import { Conditions, validateConditions } from '@usertour/business-components';
+import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CompanyAddToManualSegment } from './company-add-to-manual-segment';
-import { DataTableViewOptions } from '@/components/segments/table';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useReactiveVar } from '@apollo/client';
+import { DataTableViewOptions } from '../table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
-import { CompanyDeleteFromSegment } from './company-delete-from-segment';
-import { CompanyRemoveFromSegment } from './company-remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
-import { updateSegment } from '@usertour/gql';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
+import type { EntityConfig } from './entity-config';
+import { EntityAddToManualSegment } from './entity-add-to-manual-segment';
+import { EntityDeleteFromSegment } from './entity-delete-from-segment';
+import { EntityRemoveFromSegment } from './entity-remove-from-segment';
 
-interface CompanyDataTableToolbarProps {
+interface EntityDataTableToolbarProps {
+  config: EntityConfig<any>;
   table: Table<any>;
   currentSegment: Segment;
+  refetch: () => Promise<unknown>;
 }
 
-export const CompanyDataTableToolbar = ({
-  table,
-  currentSegment,
-}: CompanyDataTableToolbarProps) => {
+export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
+  const { config, table, currentSegment, refetch } = props;
+  // Reactive vars take the place of the previously prop-drilled setQuery
+  // / setCurrentConditions. Reading via useReactiveVar isn't required
+  // here (we only write), but importing once keeps the dependency on the
+  // store visible at the top of the file.
+  useReactiveVar(config.listState.queryVar);
+  const setQuery = config.listState.queryVar;
+  const setCurrentConditions = config.listState.currentConditionsVar;
   const { t } = useTranslation();
-  const { attributeList, loading: attributeLoading } = useAttributeListContext();
-  const { setCurrentConditions } = useSegmentListContext();
-
-  // Filtered attributes for company rules
-  const filteredAttributes = attributeLoading
-    ? []
-    : attributeList?.filter(
-        (attr) =>
-          attr.bizType === AttributeBizTypes.Company ||
-          attr.bizType === AttributeBizTypes.Membership,
-      ) || [];
-
-  const { setQuery, refetch: refetchCompanyList } = useCompanyListContext();
+  const { isViewOnly, project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
+  );
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection, getSelectedCount } = useTableSelection(table);
-  const { isViewOnly } = useAppContext();
 
-  // Use ref to store currentSegment to avoid recreating the change handler
-  // when segment object changes
   const currentSegmentRef = useRef(currentSegment);
   currentSegmentRef.current = currentSegment;
 
-  // Track the last processed conditions to prevent infinite loops
   const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
-  // Conditions are controlled by this toolbar — local state mirrors what's
-  // shown in the Conditions component, resets when the active segment
-  // changes.
+  // Deep-copy the segment's saved data so the controlled `Conditions`
+  // component can mutate freely without aliasing into the segment cache.
+  // No reset-on-id effect: the parent remounts this subtree via
+  // `key={currentSegment.id}`, so this initializer runs on each switch.
   const [conditions, setConditions] = useState<RulesCondition[]>(() =>
-    JSON.parse(JSON.stringify(currentSegment.data || [])),
+    structuredClone(currentSegment.data ?? []),
   );
-  useEffect(() => {
-    setConditions(JSON.parse(JSON.stringify(currentSegment.data || [])));
-    lastProcessedConditionsRef.current = null;
-  }, [currentSegment.id]);
+
+  const filteredAttributes = useMemo(
+    () => attributeList?.filter(config.conditionAttributeFilter) ?? [],
+    [attributeList, config.conditionAttributeFilter],
+  );
 
   const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
 
-  const [mutation] = useMutation(updateSegment);
+  const { invoke: updateSegment } = useUpdateSegmentMutation();
   const { toast } = useToast();
 
   const updateSegmentColumns = useCallback(
@@ -78,15 +75,11 @@ export const CompanyDataTableToolbar = ({
       if (!currentSegment) {
         return;
       }
-      const data = {
-        id: currentSegment.id,
-        columns,
-      };
+      // useUpdateSegmentMutation carries refetchQueries: ['listSegment'],
+      // so the new columns appear on subsequent EntityDataTable remounts
+      // without an explicit refetch chain.
       try {
-        const ret = await mutation({ variables: { data } });
-        if (ret.data?.updateSegment?.id) {
-          await refetchCompanyList();
-        }
+        await updateSegment({ id: currentSegment.id, columns });
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -94,19 +87,16 @@ export const CompanyDataTableToolbar = ({
         });
       }
     },
-    [currentSegment, mutation, refetchCompanyList, toast],
+    [currentSegment, updateSegment, toast],
   );
 
   const handleConditionsChange = useCallback(
     async (next: RulesCondition[]) => {
-      // Reflect every keystroke in the controlled component's value.
       setConditions(next);
 
       const segment = currentSegmentRef.current;
       if (!segment) return;
 
-      // Skip downstream side effects for invalid conditions to keep the live
-      // segment query from blowing up on partial input.
       const failures = validateConditions(next, { attributes: filteredAttributes });
       if (failures.length > 0) return;
 
@@ -116,7 +106,7 @@ export const CompanyDataTableToolbar = ({
       lastProcessedConditionsRef.current = next;
       if (isSameAsLastProcessed) return;
 
-      setQuery((prev) => ({ ...prev, data: next }));
+      setQuery({ ...setQuery(), data: next });
       if (next.length === 0) return;
       setCurrentConditions({ segmentId: segment.id, data: next });
     },
@@ -126,7 +116,7 @@ export const CompanyDataTableToolbar = ({
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchValue(value);
-      setQuery((prev) => ({ ...prev, search: value }));
+      setQuery({ ...setQuery(), search: value });
     },
     [setQuery],
   );
@@ -166,11 +156,16 @@ export const CompanyDataTableToolbar = ({
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <CompanyAddToManualSegment table={table} />
+              <EntityAddToManualSegment config={config} table={table} refetch={refetch} />
               {currentSegment.dataType === 'MANUAL' && (
-                <CompanyRemoveFromSegment table={table} currentSegment={currentSegment} />
+                <EntityRemoveFromSegment
+                  config={config}
+                  table={table}
+                  currentSegment={currentSegment}
+                  refetch={refetch}
+                />
               )}
-              <CompanyDeleteFromSegment table={table} />
+              <EntityDeleteFromSegment config={config} table={table} refetch={refetch} />
             </>
           ) : !showFilterBar ? (
             <Button
@@ -200,3 +195,5 @@ export const CompanyDataTableToolbar = ({
     </>
   );
 };
+
+EntityDataTableToolbar.displayName = 'EntityDataTableToolbar';

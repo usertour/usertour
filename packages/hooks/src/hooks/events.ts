@@ -25,9 +25,12 @@ export interface UpdateEventInput {
 }
 
 export const useCreateEventMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createEvent);
-  // Server response only carries `{ id }`; the caller already has
-  // `displayName` / `codeName` from form values if it needs them.
+  const [mutation, { loading, error }] = useMutation(createEvent, {
+    // Server response only carries `{ id }`; refetch the list by
+    // operation name so the new row appears without each caller having
+    // to thread `refetch` props down.
+    refetchQueries: ['listEvents'],
+  });
   const invoke = async (data: CreateEventInput): Promise<string | null> => {
     const response = await mutation({ variables: { data } });
     return response.data?.createEvent?.id ?? null;
@@ -36,6 +39,8 @@ export const useCreateEventMutation = () => {
 };
 
 export const useUpdateEventMutation = () => {
+  // Apollo's normalized cache merges the response into the existing
+  // Event entity by `__typename:id`; no `update` callback needed.
   const [mutation, { loading, error }] = useMutation(updateEvent);
   const invoke = async (data: UpdateEventInput): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
@@ -45,7 +50,18 @@ export const useUpdateEventMutation = () => {
 };
 
 export const useDeleteEventMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteEvent);
+  const [mutation, { loading, error }] = useMutation(deleteEvent, {
+    update(cache, { data }) {
+      const id = data?.deleteEvent?.id;
+      if (!id) {
+        return;
+      }
+      // Server's @ObjectType is `class Events` (plural), so Apollo
+      // caches under `Events:{id}` — using 'Event' silently misses.
+      cache.evict({ id: cache.identify({ __typename: 'Events', id }) });
+      cache.gc();
+    },
+  });
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { id } });
     return !!response.data?.deleteEvent?.id;
