@@ -42,7 +42,7 @@ const AccountProfileFormSkeleton = () => (
 );
 
 export const AccountProfileForm = () => {
-  const { userInfo, refetch, loading } = useAppContext();
+  const { userInfo, loading } = useAppContext();
   const { invoke: updateUser } = useUpdateUserMutation();
   const { t } = useTranslation();
 
@@ -50,8 +50,10 @@ export const AccountProfileForm = () => {
     schema: profileSchema,
     defaultValues: { name: userInfo?.name ?? '' },
     submit: async ({ name }) => {
+      // updateUser's response carries { id, name, avatarUrl }; Apollo's
+      // normalized cache auto-merges into the User entity, so AppContext
+      // re-emits without a manual refetch.
       await updateUser(name);
-      await refetch();
     },
     successMessage: t('settings.account.profile.successToast'),
   });

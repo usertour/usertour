@@ -73,6 +73,10 @@ A real reconnaissance pass (rather than estimation) shows that the cache-write s
 - **One network request per mount of each consuming page.** Acceptable for settings + users/companies + the facade — none mount frequently. Settings sub-pages and the facade in particular only mount on explicit navigation, so the per-mount cost is small.
 - The persisted localStorage cache is invalidated on the next deploy (intentional, via the key bump). Existing users see a brief load-from-network on first visit instead of restored cache. Acceptable; the alternative (in-place migration) is fragile.
 
+**Known leftover inside settings**
+
+- `pages/settings/integrations/*` was not migrated in this round. The four affected mutations — `UpdateIntegration`, `DisconnectIntegration`, `UpsertIntegrationObjectMapping`, `DeleteIntegrationObjectMapping` — still use the manual-refetch pattern at the consumer site (`integration-list-content.tsx`, `object-mapping-*.tsx`, `use-integration-config.ts`). Behavior is correct; the work to convert them to `update(cache)` callbacks + drop the explicit refetches is the same shape as the events/attributes/etc. wave but with more nested state (per-integration config, per-object mapping). Leaving it for a follow-up rather than half-touching the area now.
+
 **Smoke surface**
 
 - All call sites currently using `SHARED_CACHE_QUERY_OPTIONS` or explicit `cache-and-network` / `network-only` (the table in the Context section above).

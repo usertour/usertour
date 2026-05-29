@@ -9,12 +9,16 @@ import { ThemeBuilder } from './components/theme-builder';
 
 export const SettingsThemeDetail = () => {
   const { themeId = '', projectId } = useParams();
-  const { theme, loading, refetch } = useGetThemeQuery(themeId);
+  const { theme, loading } = useGetThemeQuery(themeId);
   const navigate = useNavigate();
   const { invoke: updateTheme } = useUpdateThemeMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  // updateTheme's response mirrors `listThemes`' selection set, so
+  // Apollo's normalized cache auto-merges into the Theme entity — both
+  // this detail view (via useGetThemeQuery) and the themes list update
+  // without a manual refetch chain.
   const handleSave = useCallback(
     async (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => {
       if (!theme) return;
@@ -25,13 +29,12 @@ export const SettingsThemeDetail = () => {
           settings: payload.settings,
           variations: payload.variations,
         });
-        await refetch();
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
         throw error;
       }
     },
-    [theme, updateTheme, refetch, toast],
+    [theme, updateTheme, toast],
   );
 
   const handleRename = useCallback(
@@ -44,13 +47,12 @@ export const SettingsThemeDetail = () => {
           settings: theme.settings,
           variations: theme.variations ?? [],
         });
-        await refetch();
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
         throw error;
       }
     },
-    [theme, updateTheme, refetch, toast],
+    [theme, updateTheme, toast],
   );
 
   if (loading) {
@@ -69,11 +71,12 @@ export const SettingsThemeDetail = () => {
       onSave={handleSave}
       onRename={handleRename}
       onActionComplete={(action) => {
-        if (action === 'delete') {
-          if (themesListPath) navigate(themesListPath);
-        } else {
-          refetch();
+        if (action === 'delete' && themesListPath) {
+          navigate(themesListPath);
         }
+        // Non-delete actions (copy / set-default) flow through wrappers
+        // whose refetchQueries / cache.evict already update the
+        // relevant slices; no manual refetch needed here.
       }}
     />
   );
