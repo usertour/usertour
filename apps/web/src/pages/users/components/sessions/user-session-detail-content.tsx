@@ -11,6 +11,7 @@ import {
   useListEventsQuery,
   useQuerySessionDetailQuery,
 } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import {
   type Attribute,
   AttributeBizTypes,
@@ -439,11 +440,12 @@ const SessionDetailContentInner = ({
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
-    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
   );
-  const { eventList, loading: eventLoading } = useListEventsQuery(project?.id, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const { eventList, loading: eventLoading } = useListEventsQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
 
   const content = session?.content;
   const version = session?.version;

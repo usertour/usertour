@@ -337,8 +337,9 @@ export const useRemoveTeamMemberMutation = () => {
 };
 
 export const useChangeTeamMemberRoleMutation = () => {
-  // Server returns the updated row; Apollo merge handles role flip on
-  // the existing TeamMember entity. The list query needs no refetch.
+  // changeTeamMemberRole returns only `{ success }`, not a TeamMember
+  // entity, so Apollo can't auto-merge the role flip. Refetch the list
+  // so the displayed role updates.
   const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation, {
     refetchQueries: ['getTeamMembers'],
   });

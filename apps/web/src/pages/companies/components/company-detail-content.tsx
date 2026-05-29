@@ -1,4 +1,5 @@
 import { useCompanyListQuery, useListAttributesQuery, useUserListQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CalendarIcon, IdCardIcon, ReloadIcon } from '@radix-ui/react-icons';
 import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
 import { Delete2Icon, SpinnerIcon } from '@usertour/icons';
@@ -117,7 +118,7 @@ const CompanyUserList = ({ environmentId, companyId }: CompanyUserListProps) => 
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
-    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
   );
 
   const {
@@ -350,7 +351,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
-    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
   );
   const companyAttributes = useDerivedEntityAttributes(
     bizCompany?.data as Record<string, unknown> | undefined,

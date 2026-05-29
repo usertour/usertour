@@ -22,8 +22,7 @@ A real reconnaissance pass (rather than estimation) shows that the cache-write s
 | Old Context Providers (`Environment`/`Attribute`/`Subscription`/`Theme` list) | No options override → no-cache → does not write |
 | `pages/contents/*` (content builder, detail, preview) | Reads via the old contexts → does not write (one `network-only` in `analytics-tracker-users`) |
 | `pages/integrations/*`, admin, auth | no-cache → does not write |
-| `SHARED_CACHE_QUERY_OPTIONS` callers (settings + segments/entity + facade + user-sessions) | cache-first → **writes** |
-| Explicit `fetchPolicy: 'cache-and-network'` literals (`useGetSubscriptionUsageQuery`, three users/companies detail-content queries) | **writes** |
+| `SHARED_CACHE_QUERY_OPTIONS` callers (settings + segments/entity + facade + user-sessions + detail-content lookups) | cache-and-network → **writes** |
 | `packages/hooks` internals (`use-content-count`, `use-tooltip-target-missing-sessions`, `analytics-tracker-users`) | **writes** |
 
 `addTypename` is invisible to no-cache callers — flipping it globally has zero behavior change for the entire content-builder / contents / integrations / admin surface. The smoke-and-change surface coincides with the area v0.8.4 already refactored, plus three isolated wrappers.
@@ -50,11 +49,11 @@ A real reconnaissance pass (rather than estimation) shows that the cache-write s
 
 5. **Migrate users/companies shared list state to Apollo reactive variables.** `EntityDataTable`'s `useState({ query, pagination })` becomes a module-level `makeVar` per entity. Toolbar / row-actions / dialogs subscribe via `useReactiveVar` instead of receiving `setQuery` / `setCurrentConditions` / `refetch` props. This eliminates the prop-drill that previously coupled operation components to their parent's render tree.
 
-6. **Retire `SHARED_CACHE_QUERY_OPTIONS`** at the call-site level. With cache normalization in place, the per-call-site opt-in stops being the right abstraction:
-   - The settings list pages that previously relied on it now get refetch propagation through normalized cache + mutation callbacks instead.
-   - The constant file (`apollo/options.ts`) stays as long as one or two truly per-call-site escape hatches remain (`useGetSubscriptionUsageQuery`'s `cache-and-network` is one such); but the `SHARED_CACHE_QUERY_OPTIONS` name and its `cache-first` value are removed.
+6. **Keep `SHARED_CACHE_QUERY_OPTIONS`, repurposed as `cache-and-network`.** The constant survives but its value changes from `cache-first` to `cache-and-network` so that:
+   - mutation `update(cache)` / `refetchQueries` callbacks broadcast to every observer of the same slice (this is the precondition for `addTypename: true` to deliver value);
+   - revisits paint cached data immediately AND fire a network request in parallel, so another project member's edits become visible on the next mount without a hard reload — settings is shared across an OWNER + multiple admins + a viewer, not a single-user surface as the earlier drafts assumed.
 
-   Net effect: each consumer either uses the global default (`no-cache`, for transient one-shot reads) or names its own `fetchPolicy` explicitly when it needs cache participation. The "spread this constant" pattern goes away.
+   Each consumer either uses the global default (`no-cache`, for transient one-shot reads) or spreads `SHARED_CACHE_QUERY_OPTIONS` to participate in the shared cache slice. The "spread this constant" pattern stays, but the previously-needed `fetchPolicy: 'cache-and-network'` literal overrides on detail-content / subscription-usage call sites collapse back into the same constant — there's no longer a distinction between "shared cache" and "cross-tab fresh" opt-ins, because the constant covers both.
 
 ## Consequences
 
@@ -68,7 +67,9 @@ A real reconnaissance pass (rather than estimation) shows that the cache-write s
 **Bad**
 
 - Every list-affecting mutation now carries a small `update(cache)` block. A mutation written without one fails silently (the server change is correct, but the local cache doesn't reflect it). The codebase needs a review-time habit of asking "what does this mutation invalidate?" for any new mutation.
+- **`update*` mutations must return the fields the cache needs to merge.** Apollo's auto-merge by `__typename + id` writes whatever the mutation response carries; if the response only selects `{ id }` the cached entity keeps its stale fields. `updateAttribute` / `updateEvent` / `updateLocalization` / `updateTheme` mirror their list query's selection set for this reason.
 - Cache normalization couples queries that select overlapping field sets. If `getAttribute` returns `{id, displayName, description}` and `listAttributes` returns `{id, displayName, codeName}`, the cache stores all four fields under one `Attribute:{id}` entry. A later read of `listAttributes` sees `description` populated; this is harmless when the values agree but can surface bugs where one query returns a stale or partial entity. Apollo emits dev-mode console warnings for merge conflicts.
+- **One network request per mount of each consuming page.** Acceptable for settings + users/companies + the facade — none mount frequently. Settings sub-pages and the facade in particular only mount on explicit navigation, so the per-mount cost is small.
 - The persisted localStorage cache is invalidated on the next deploy (intentional, via the key bump). Existing users see a brief load-from-network on first visit instead of restored cache. Acceptable; the alternative (in-place migration) is fragile.
 
 **Smoke surface**
@@ -107,7 +108,8 @@ Delay this until a future version where it can have a dedicated sprint.
 
 ## Triggers to Revisit
 
-- A query's response shape grows to the point that the cache merge starts dropping fields silently (Apollo dev warnings indicate this). At that point, the affected query type needs an explicit `merge` policy added to `typePolicies`, or its fields need to be split into a fragment.
+- A high-frequency mount target needs cache participation. Today's consumers (settings list pages, facade hooks, segments entity + a few detail-page lookups) all have low mount frequency, so one network per mount is cheap. If a frequently-remounted page joins this set, weigh that page's freshness need against `cache-first` overrides per call site (with the caveat that cross-member visibility regresses).
+- A query's response shape grows to the point that the cache merge starts dropping fields silently (Apollo dev warnings indicate this). At that point, the affected query type needs an explicit `merge` policy added to `typePolicies`, or its fields need to be split into a fragment imported into both list query and update mutation.
 - The `update(cache)` callbacks become repetitive enough that an abstraction (helper functions, or per-domain cache utilities) is warranted. Right now the patterns are simple enough (one-liner evict, one-liner modify) that ad-hoc per-mutation callbacks are fine; if a typical mutation grows past ~10 lines of cache logic, factor out.
 - A new app shell wants different cache semantics. As of this ADR there is one app (apps/web) — if a future admin / portal app joins, its cache config can stay independent (each app constructs its own Apollo client + cache).
 

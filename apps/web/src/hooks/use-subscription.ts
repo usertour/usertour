@@ -57,17 +57,11 @@ export const useSubscription = (): SubscriptionState => {
     skip: !projectId,
   });
 
-  // `usage` is an externally-accumulating server-side counter (end-users
-  // triggering flows add to it). Nothing on this page mutates it, so
-  // cache-first would freeze the value for the whole SPA session.
-  // cache-and-network keeps Apollo broadcast participation (so a manual
-  // refetch propagates) while also firing network on every mount, which
-  // is the ADR 0005 documented escape hatch for externally-mutated data.
   const {
     usage: currentUsage,
     loading: usageLoading,
     refetch: refetchUsage,
-  } = useGetSubscriptionUsageQuery(projectId, { fetchPolicy: 'cache-and-network' });
+  } = useGetSubscriptionUsageQuery(projectId, SHARED_CACHE_QUERY_OPTIONS);
 
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
   const features = useMemo(

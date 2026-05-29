@@ -1,4 +1,5 @@
 import { useListAttributesQuery, useUserListQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour/icons';
@@ -214,7 +215,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
-    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
   );
   const userAttributes = useDerivedEntityAttributes(
     bizUser?.data as Record<string, unknown> | undefined,
