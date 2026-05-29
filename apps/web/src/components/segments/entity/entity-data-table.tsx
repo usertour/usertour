@@ -3,6 +3,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { useReactiveVar } from '@apollo/client';
 import { useListAttributesQuery } from '@usertour/hooks';
 import {
   ColumnFiltersState,
@@ -17,7 +18,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { AttributeBizTypes, type CurrentConditions, type Segment } from '@usertour/types';
+import { AttributeBizTypes, type Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -40,18 +41,12 @@ interface EntityDataTableProps<TRow extends EntityRow> {
   config: EntityConfig<TRow>;
   segment: Segment;
   environmentId: string;
-  setCurrentConditions: React.Dispatch<React.SetStateAction<CurrentConditions | undefined>>;
-  // Passed through to the toolbar so a column-order update can refresh
-  // segmentList — the mutation doesn't auto-propagate under no-cache.
-  refetchSegments: () => Promise<unknown>;
 }
 
 export function EntityDataTable<TRow extends EntityRow>({
   config,
   segment,
   environmentId,
-  setCurrentConditions,
-  refetchSegments,
 }: EntityDataTableProps<TRow>) {
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
@@ -65,11 +60,9 @@ export function EntityDataTable<TRow extends EntityRow>({
   );
   const navigate = useNavigate();
 
-  // Per-table UI state owns: query (filter), pagination. Toolbar mutates
-  // query via setQuery; DataTable handles pagination via useReactTable.
-  // currentConditions lives one level up because the page header's
-  // FilterSave button also needs to see it.
-  const [query, setQuery] = React.useState<{ [key: string]: unknown }>({});
+  // `query` is shared with the toolbar via the per-entity reactive var
+  // store; pagination is per-mount and stays local.
+  const query = useReactiveVar(config.listState.queryVar);
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 20 });
 
   const effectiveQuery = React.useMemo(
@@ -186,10 +179,7 @@ export function EntityDataTable<TRow extends EntityRow>({
         config={config}
         table={table}
         currentSegment={segment}
-        setQuery={setQuery}
-        setCurrentConditions={setCurrentConditions}
         refetch={refetch}
-        refetchSegments={refetchSegments}
       />
       <DataTable
         data={contents}

@@ -24,7 +24,9 @@ export interface UpdateThemeInput {
 }
 
 export const useCreateThemeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createTheme);
+  const [mutation, { loading, error }] = useMutation(createTheme, {
+    refetchQueries: ['listThemes'],
+  });
   const invoke = async (input: CreateThemeInput): Promise<boolean> => {
     const response = await mutation({ variables: input });
     return !!response.data?.createTheme?.id;
@@ -33,6 +35,7 @@ export const useCreateThemeMutation = () => {
 };
 
 export const useUpdateThemeMutation = () => {
+  // Auto-merged by Apollo via __typename:id.
   const [mutation, { loading, error }] = useMutation(updateTheme);
   const invoke = async (input: UpdateThemeInput): Promise<boolean> => {
     const response = await mutation({ variables: input });
@@ -42,7 +45,9 @@ export const useUpdateThemeMutation = () => {
 };
 
 export const useCopyThemeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(copyTheme);
+  const [mutation, { loading, error }] = useMutation(copyTheme, {
+    refetchQueries: ['listThemes'],
+  });
   const invoke = async (id: string, name: string): Promise<boolean> => {
     const response = await mutation({ variables: { id, name } });
     return !!response.data?.copyTheme?.id;
@@ -51,7 +56,10 @@ export const useCopyThemeMutation = () => {
 };
 
 export const useSetDefaultThemeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(setDefaultTheme);
+  // Flips isDefault on two themes; refetch covers the demoted one too.
+  const [mutation, { loading, error }] = useMutation(setDefaultTheme, {
+    refetchQueries: ['listThemes'],
+  });
   const invoke = async (themeId: string): Promise<boolean> => {
     const response = await mutation({ variables: { themeId } });
     return !!response.data?.setDefaultTheme?.id;
@@ -62,7 +70,13 @@ export const useSetDefaultThemeMutation = () => {
 export const useDeleteThemeMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteTheme);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Theme', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteTheme?.id;
   };
   return { invoke, loading, error };

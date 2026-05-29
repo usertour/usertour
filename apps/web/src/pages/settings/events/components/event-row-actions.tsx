@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useListEventsQuery } from '@usertour/hooks';
 import { Event } from '@usertour/types';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { ResourceRowActions } from '@usertour/ui';
@@ -17,11 +15,7 @@ export const EventRowActions = (props: EventRowActionsProps) => {
   const { event } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { isViewOnly, project } = useAppContext();
-  // Shares Apollo cache slice with SettingsEventList's useListEventsQuery —
-  // see SHARED_CACHE_QUERY_OPTIONS for why this opt-in is needed under the
-  // app-wide `no-cache` default.
-  const { refetch } = useListEventsQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
+  const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
   return (
@@ -58,13 +52,13 @@ export const EventRowActions = (props: EventRowActionsProps) => {
         event={event}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
       <EventDeleteDialog
         data={event}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
     </>
   );

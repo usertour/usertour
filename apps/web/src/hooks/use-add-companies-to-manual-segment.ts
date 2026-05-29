@@ -1,5 +1,4 @@
-import { useMutation } from '@apollo/client';
-import { createBizCompanyOnSegment } from '@usertour/gql';
+import { useCreateBizCompanyOnSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
@@ -7,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 
 /**
- * Mirror of `useAddUsersToSegment` for the company side. Owns the
- * mutation + toast triage; caller owns refetch (typically the `refetch`
- * returned from `useBizListCursor`).
+ * Mirror of `useAddUsersToSegment` for the company side. Toast triage
+ * lives here; the wrapper handles cache via
+ * `refetchQueries: ['queryBizCompany']`.
  */
 export const useAddCompaniesToManualSegment = () => {
-  const [createMutation, { loading }] = useMutation(createBizCompanyOnSegment);
+  const { invoke: createMutation, loading } = useCreateBizCompanyOnSegmentMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -41,7 +40,7 @@ export const useAddCompaniesToManualSegment = () => {
       }));
 
       try {
-        const ret = await createMutation({ variables: { data: { companyOnSegment } } });
+        const ret = await createMutation({ data: { companyOnSegment } });
 
         if (ret.data?.createBizCompanyOnSegment?.success) {
           toast({

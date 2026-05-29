@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useListAttributesQuery } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
-import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { AttributeBizTypes } from '@usertour/types';
 import { Attribute } from '@usertour/types';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { ResourceRowActions } from '@usertour/ui';
@@ -18,11 +15,7 @@ export const AttributeRowActions = (props: AttributeRowActionsProps) => {
   const { attribute } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { isViewOnly, project } = useAppContext();
-  const { refetch } = useListAttributesQuery(project?.id ?? '', AttributeBizTypes.Nil, {
-    ...SHARED_CACHE_QUERY_OPTIONS,
-    skip: !project?.id,
-  });
+  const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
 
   return (
@@ -59,13 +52,13 @@ export const AttributeRowActions = (props: AttributeRowActionsProps) => {
         attribute={attribute}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
       <AttributeDeleteDialog
         data={attribute}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onSubmit={() => refetch()}
+        onSubmit={() => {}}
       />
     </>
   );

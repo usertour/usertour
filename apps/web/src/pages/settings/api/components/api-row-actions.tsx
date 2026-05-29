@@ -6,11 +6,9 @@ import {
   type AccessToken,
   useDeleteAccessTokenMutation,
   useGetAccessTokenQuery,
-  useListAccessTokensQuery,
 } from '@usertour/hooks';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
-import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { ApiKeyDialog } from './api-key-dialog';
 
 interface ApiRowActionsProps {
@@ -23,7 +21,6 @@ export const ApiRowActions = (props: ApiRowActionsProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [revealOpen, setRevealOpen] = useState(false);
   const [shouldFetchToken, setShouldFetchToken] = useState(false);
-  const { refetch } = useListAccessTokensQuery(environmentId, SHARED_CACHE_QUERY_OPTIONS);
   const { isViewOnly } = useAppContext();
   const { invoke: deleteAccessToken, loading: isDeleting } = useDeleteAccessTokenMutation();
   const { data: fullToken, loading: isTokenLoading } = useGetAccessTokenQuery(
@@ -45,7 +42,6 @@ export const ApiRowActions = (props: ApiRowActionsProps) => {
       if (success) {
         toast({ variant: 'success', title: t('settings.api.deleteSuccess') });
         setDeleteOpen(false);
-        refetch();
       } else {
         toast({ variant: 'destructive', title: t('settings.api.deleteFailure') });
       }

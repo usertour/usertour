@@ -1,5 +1,4 @@
-import { useMutation } from '@apollo/client';
-import { createBizUserOnSegment } from '@usertour/gql';
+import { useCreateBizUserOnSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
@@ -7,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 
 /**
- * Adds users to manual segments. Owns the mutation + toast triage;
- * **does not** auto-refetch the user list — caller passes the list's
- * `refetch` (from `useBizListCursor`) and invokes it on success.
+ * Adds users to manual segments. Owns the toast triage; the wrapper
+ * `useCreateBizUserOnSegmentMutation` handles cache refresh via its
+ * built-in `refetchQueries: ['queryBizUser']`.
  */
 export const useAddUsersToSegment = () => {
-  const [createMutation, { loading }] = useMutation(createBizUserOnSegment);
+  const { invoke: createMutation, loading } = useCreateBizUserOnSegmentMutation();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -41,7 +40,7 @@ export const useAddUsersToSegment = () => {
       }));
 
       try {
-        const ret = await createMutation({ variables: { data: { userOnSegment } } });
+        const ret = await createMutation({ data: { userOnSegment } });
 
         if (ret.data?.createBizUserOnSegment?.success) {
           toast({

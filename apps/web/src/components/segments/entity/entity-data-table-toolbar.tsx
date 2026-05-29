@@ -5,14 +5,9 @@ import { WebZIndex } from '@usertour/constants';
 import { Conditions, validateConditions } from '@usertour/business-components';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
-import {
-  AttributeBizTypes,
-  ColumnSetting,
-  CurrentConditions,
-  RulesCondition,
-  Segment,
-} from '@usertour/types';
-import { Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
+import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useReactiveVar } from '@apollo/client';
 import { DataTableViewOptions } from '../table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
@@ -30,26 +25,18 @@ interface EntityDataTableToolbarProps {
   config: EntityConfig<any>;
   table: Table<any>;
   currentSegment: Segment;
-  setQuery: Dispatch<SetStateAction<{ [key: string]: unknown }>>;
-  setCurrentConditions: Dispatch<SetStateAction<CurrentConditions | undefined>>;
   refetch: () => Promise<unknown>;
-  // Refetches the page's segmentList. Used after column-order updates
-  // so the new layout doesn't disappear when the user navigates away
-  // and back (EntityDataTable remounts and reads segment.columns from
-  // the stale list).
-  refetchSegments: () => Promise<unknown>;
 }
 
 export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
-  const {
-    config,
-    table,
-    currentSegment,
-    setQuery,
-    setCurrentConditions,
-    refetch,
-    refetchSegments,
-  } = props;
+  const { config, table, currentSegment, refetch } = props;
+  // Reactive vars take the place of the previously prop-drilled setQuery
+  // / setCurrentConditions. Reading via useReactiveVar isn't required
+  // here (we only write), but importing once keeps the dependency on the
+  // store visible at the top of the file.
+  useReactiveVar(config.listState.queryVar);
+  const setQuery = config.listState.queryVar;
+  const setCurrentConditions = config.listState.currentConditionsVar;
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
   const { attributes: attributeList } = useListAttributesQuery(
@@ -88,14 +75,11 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
       if (!currentSegment) {
         return;
       }
-      // Refetch segmentList so subsequent EntityDataTable remounts
-      // (navigating between segments) rebuild from the saved columns.
-      // The mutation itself can't auto-propagate: addTypename is off
-      // and the global default is no-cache, so the response doesn't
-      // merge into the segmentList query result.
+      // useUpdateSegmentMutation carries refetchQueries: ['listSegment'],
+      // so the new columns appear on subsequent EntityDataTable remounts
+      // without an explicit refetch chain.
       try {
         await updateSegment({ id: currentSegment.id, columns });
-        await refetchSegments();
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -103,7 +87,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
         });
       }
     },
-    [currentSegment, updateSegment, refetchSegments, toast],
+    [currentSegment, updateSegment, toast],
   );
 
   const handleConditionsChange = useCallback(
@@ -122,7 +106,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
       lastProcessedConditionsRef.current = next;
       if (isSameAsLastProcessed) return;
 
-      setQuery((prev) => ({ ...prev, data: next }));
+      setQuery({ ...setQuery(), data: next });
       if (next.length === 0) return;
       setCurrentConditions({ segmentId: segment.id, data: next });
     },
@@ -132,7 +116,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchValue(value);
-      setQuery((prev) => ({ ...prev, search: value }));
+      setQuery({ ...setQuery(), search: value });
     },
     [setQuery],
   );

@@ -10,10 +10,11 @@ import {
 import { EditIcon } from '@usertour/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useReactiveVar } from '@apollo/client';
 import { SegmentEditDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
-import type { CurrentConditions, Segment } from '@usertour/types';
+import type { Segment } from '@usertour/types';
 import { EntityDataTable } from './entity-data-table';
 import { EntityEditDropdownMenu } from './entity-edit-dropdown-menu';
 import { EntitySegmentFilterSave } from './entity-segment-filter-save';
@@ -35,16 +36,16 @@ interface EntityListContentProps<TRow extends EntityRow> {
 export function EntityListContent<TRow extends EntityRow>(props: EntityListContentProps<TRow>) {
   const { config, environmentId, currentSegment, refetchSegments, segmentsIsRefetching } = props;
   const [open, setOpen] = useState(false);
-  // currentConditions = the user's typed-but-not-saved filter. Lives here
-  // because both the FilterSave button in the header AND the DataTable
-  // toolbar (which mutates it) need to see the same value.
-  const [currentConditions, setCurrentConditions] = useState<CurrentConditions | undefined>();
-  // Reset typed-but-unsaved filter when switching segments. Otherwise
-  // FilterSave diffs A's typed conditions against B's saved data and
-  // shows a phantom Save button on B.
+  // The user's typed-but-not-saved filter lives in `config.listState`'s
+  // reactive var; FilterSave subscribes to read it, toolbar updates it.
+  const currentConditions = useReactiveVar(config.listState.currentConditionsVar);
+  // Reset shared list state when switching segments. Without this the
+  // reactive vars (module-level) survive the segment change and leak A's
+  // filter / typed conditions into B's first render.
   useEffect(() => {
-    setCurrentConditions(undefined);
-  }, [currentSegment?.id]);
+    config.listState.queryVar({});
+    config.listState.currentConditionsVar(undefined);
+  }, [currentSegment?.id, config.listState]);
   const { isViewOnly } = useAppContext();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -118,8 +119,6 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
             config={config}
             segment={currentSegment}
             environmentId={environmentId}
-            setCurrentConditions={setCurrentConditions}
-            refetchSegments={refetchSegments}
             key={currentSegment.id}
           />
         )}

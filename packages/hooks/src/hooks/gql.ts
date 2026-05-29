@@ -12,8 +12,13 @@ import {
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
+  createBizCompanyOnSegment,
+  createBizUserOnSegment,
   createEnvironments,
+  createSegment,
   deleteAttribute,
+  deleteBizCompany,
+  deleteBizCompanyOnSegment,
   deleteContent,
   deleteEnvironments,
   deleteSegment,
@@ -289,7 +294,9 @@ export const useQueryInviteListQuery = (
 };
 
 export const useInviteTeamMemberMutation = () => {
-  const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation);
+  const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation, {
+    refetchQueries: ['getInvites'],
+  });
   const invoke = async (
     projectId: string,
     name: string,
@@ -306,7 +313,9 @@ export const useInviteTeamMemberMutation = () => {
 };
 
 export const useCancelInviteMutation = () => {
-  const [mutation, { loading, error }] = useMutation(cancelInvite);
+  const [mutation, { loading, error }] = useMutation(cancelInvite, {
+    refetchQueries: ['getInvites'],
+  });
   const invoke = async (projectId: string, inviteId: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, inviteId } });
     return !!response.data?.cancelInvite;
@@ -316,7 +325,9 @@ export const useCancelInviteMutation = () => {
 };
 
 export const useRemoveTeamMemberMutation = () => {
-  const [mutation, { loading, error }] = useMutation(removeTeamMember);
+  const [mutation, { loading, error }] = useMutation(removeTeamMember, {
+    refetchQueries: ['getTeamMembers'],
+  });
   const invoke = async (projectId: string, userId: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, userId } });
     return !!response.data?.removeTeamMember;
@@ -326,7 +337,11 @@ export const useRemoveTeamMemberMutation = () => {
 };
 
 export const useChangeTeamMemberRoleMutation = () => {
-  const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation);
+  // Server returns the updated row; Apollo merge handles role flip on
+  // the existing TeamMember entity. The list query needs no refetch.
+  const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation, {
+    refetchQueries: ['getTeamMembers'],
+  });
   const invoke = async (projectId: string, userId: string, role: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, userId, role } });
     return !!response.data?.changeTeamMemberRole;
@@ -443,7 +458,9 @@ export type CreateAttributeMutationVariables = {
 };
 
 export const useCreateAttributeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createAttribute);
+  const [mutation, { loading, error }] = useMutation(createAttribute, {
+    refetchQueries: ['listAttributes'],
+  });
   const invoke = async (data: CreateAttributeMutationVariables) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createAttribute;
@@ -732,7 +749,13 @@ export const useCreateContentVersionMutation = () => {
 export const useDeleteAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteAttribute);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Attribute', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteAttribute?.id;
   };
   return { invoke, loading, error };
@@ -741,7 +764,13 @@ export const useDeleteAttributeMutation = () => {
 export const useDeleteSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteSegment);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Segment', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteSegment?.success;
   };
   return { invoke, loading, error };
@@ -750,8 +779,12 @@ export const useDeleteSegmentMutation = () => {
 // Server's UpdateSegment input picks { name, data, id, columns } from
 // Segment — all optional except id. Wrapper mirrors that so the same
 // invoke handles both filter-condition saves and column-setting saves.
+// Apollo merges the response into the existing Segment entity by
+// __typename:id, no update callback needed.
 export const useUpdateSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateSegment);
+  const [mutation, { loading, error }] = useMutation(updateSegment, {
+    refetchQueries: ['listSegment'],
+  });
   const invoke = async (data: {
     id: string;
     name?: string;
@@ -776,7 +809,13 @@ export const useDeleteContentMutation = () => {
 export const useDeleteEnvironmentsMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteEnvironments);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Environment', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteEnvironments?.id;
   };
   return { invoke, loading, error };
@@ -788,7 +827,9 @@ export interface CreateEnvironmentInput {
 }
 
 export const useCreateEnvironmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createEnvironments);
+  const [mutation, { loading, error }] = useMutation(createEnvironments, {
+    refetchQueries: ['userEnvironments'],
+  });
   const invoke = async (input: CreateEnvironmentInput): Promise<string | undefined> => {
     const response = await mutation({ variables: input });
     return response.data?.createEnvironments?.id as string | undefined;
@@ -803,7 +844,12 @@ export interface UpdateEnvironmentInput {
 }
 
 export const useUpdateEnvironmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateEnvironments);
+  // setPrimary flips isPrimary on two rows; refetch covers the demoted one.
+  // Plain rename auto-merges via __typename:id but we refetch anyway so
+  // the caller doesn't need to know which path it took.
+  const [mutation, { loading, error }] = useMutation(updateEnvironments, {
+    refetchQueries: ['userEnvironments'],
+  });
   const invoke = async (input: UpdateEnvironmentInput): Promise<boolean> => {
     const response = await mutation({ variables: input });
     return !!response.data?.updateEnvironments?.id;
@@ -821,6 +867,7 @@ export interface UpdateAttributeInput {
 }
 
 export const useUpdateAttributeMutation = () => {
+  // Auto-merged by Apollo via __typename:id.
   const [mutation, { loading, error }] = useMutation(updateAttribute);
   const invoke = async (data: UpdateAttributeInput): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
@@ -855,7 +902,17 @@ export const useDeleteBizUserMutation = () => {
     success: boolean;
     count: number;
   }> => {
-    const response = await mutation({ variables: { data } });
+    const response = await mutation({
+      variables: { data },
+      // Hard delete; evict each BizUser entity so any paginated list
+      // (queryBizUser via relayStylePagination) drops the row.
+      update(cache) {
+        for (const id of data.ids) {
+          cache.evict({ id: cache.identify({ __typename: 'BizUser', id }) });
+        }
+        cache.gc();
+      },
+    });
     return {
       success: !!response.data?.deleteBizUser?.success,
       count: response.data?.deleteBizUser?.count ?? 0,
@@ -865,7 +922,13 @@ export const useDeleteBizUserMutation = () => {
 };
 
 export const useDeleteBizUserOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment);
+  // Removes a relationship, not the user itself — the user entity stays
+  // in cache, but the segment's view of users needs to be refetched
+  // because Apollo can't infer "this user is no longer in this segment"
+  // from a count response.
+  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment, {
+    refetchQueries: ['queryBizUser'],
+  });
   const invoke = async (data: {
     bizUserIds: string[];
     segmentId: string;
@@ -877,6 +940,66 @@ export const useDeleteBizUserOnSegmentMutation = () => {
     return {
       success: !!response.data?.deleteBizUserOnSegment?.success,
       count: response.data?.deleteBizUserOnSegment?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
+};
+
+// Generic data type lets callers pass the entity-specific shape
+// (`CreatSegment` for create, `CreateBizUserOnSegment` for add-to-segment,
+// etc.) without the wrapper having to know every server input type.
+type MutationVariables = { data: Record<string, unknown> };
+
+export const useCreateSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createSegment, {
+    refetchQueries: ['listSegment'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useCreateBizUserOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createBizUserOnSegment, {
+    refetchQueries: ['queryBizUser'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useCreateBizCompanyOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createBizCompanyOnSegment, {
+    refetchQueries: ['queryBizCompany'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizCompanyOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizCompanyOnSegment, {
+    refetchQueries: ['queryBizCompany'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizCompanyMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizCompany);
+  const invoke = async (data: {
+    ids: string[];
+    environmentId: string;
+  }): Promise<{ success: boolean; count: number }> => {
+    const response = await mutation({
+      variables: { data },
+      update(cache) {
+        for (const id of data.ids) {
+          cache.evict({ id: cache.identify({ __typename: 'BizCompany', id }) });
+        }
+        cache.gc();
+      },
+    });
+    return {
+      success: !!response.data?.deleteBizCompany?.success,
+      count: response.data?.deleteBizCompany?.count ?? 0,
     };
   };
   return { invoke, loading, error };

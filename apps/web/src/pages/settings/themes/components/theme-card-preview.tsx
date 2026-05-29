@@ -1,6 +1,4 @@
 import { useAppContext } from '@/contexts/app-context';
-import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useListThemesQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
@@ -23,9 +21,6 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
   const containerRef = useRef(null);
 
   const { project, isViewOnly } = useAppContext();
-  // Subscribes to the same cache slice as SettingsThemeList; refetches
-  // here propagate to the grid via Apollo's broadcast.
-  const { refetch } = useListThemesQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
   const { globalStyle, themeSetting } = useSettingsStyles(theme.settings);
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -38,10 +33,6 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
     },
     [project, navigate, theme.id],
   );
-
-  const handleOnSuccess = useCallback(() => {
-    refetch();
-  }, [refetch]);
 
   return (
     <>
@@ -62,7 +53,7 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
               </span>
             )}
           </div>
-          <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSuccess} disabled={isViewOnly}>
+          <ThemeEditDropdownMenu theme={theme} onSubmit={() => {}} disabled={isViewOnly}>
             <Button variant={'ghost'} size={'icon'}>
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>

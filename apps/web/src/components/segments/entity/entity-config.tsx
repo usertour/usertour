@@ -16,6 +16,7 @@ import {
   type Segment as SegmentType,
 } from '@usertour/types';
 import { useUserListQuery, useCompanyListQuery } from '@usertour/hooks';
+import { userListState, companyListState } from './entity-list-state';
 import { Group2LineIcon } from '@usertour/icons';
 import type { ComponentType, ReactElement } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -80,6 +81,8 @@ export interface EntityI18nKeys {
 
 export interface EntityConfig<TRow> {
   kind: EntityKind;
+  // Reactive var pair for this entity's list page (query + currentConditions).
+  listState: import('./entity-list-state').BizListState;
   // Data — Apollo list-query wrapper (per ADR 0002)
   useListQuery: EntityListQueryFn<TRow>;
   useTableColumns: (args: { isViewOnly: boolean }) => ColumnDef<TRow>[];
@@ -128,6 +131,7 @@ const CompanyDetailContentAdapter = ({ environmentId, id }: EntityDetailContentP
 
 export const USER_CONFIG: EntityConfig<BizUser> = {
   kind: 'user',
+  listState: userListState,
   useListQuery: useUserListQuery,
   useTableColumns: useUserTableColumns,
   useAddToManualSegment: useAddUsersAdapter,
@@ -158,6 +162,7 @@ export const USER_CONFIG: EntityConfig<BizUser> = {
 
 export const COMPANY_CONFIG: EntityConfig<BizCompany> = {
   kind: 'company',
+  listState: companyListState,
   useListQuery: useCompanyListQuery,
   useTableColumns: useCompanyTableColumns,
   useAddToManualSegment: useAddCompaniesAdapter,

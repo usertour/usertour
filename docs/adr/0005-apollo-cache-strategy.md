@@ -1,7 +1,7 @@
 # 0005: Apollo cache strategy — `no-cache` default + `SHARED_CACHE_QUERY_OPTIONS` opt-in
 
 - **Date:** 2026-05-29
-- **Status:** Accepted
+- **Status:** Superseded by [0006](./0006-normalized-cache-and-mutation-updates.md)
 
 ## Context
 
