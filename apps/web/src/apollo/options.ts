@@ -12,9 +12,19 @@ import type { QueryHookOptions } from '@apollo/client';
  * same query+variables behave like two independent fetches —
  * `refetch()` on one updates only itself.
  *
- * `cache-and-network` writes responses through the cache, so the
- * broadcast notifies every observer of the same cache slice. The
- * tradeoff is one extra network request per mount of each consumer.
+ * `cache-first` writes responses through the cache, so subscribers
+ * with matching query+variables share the same cache slice. The first
+ * observer fires one network request; subsequent observers read from
+ * cache without firing additional requests. A `refetch()` from any
+ * observer hits the network, writes the cache, and broadcasts to every
+ * subscriber.
+ *
+ * Tradeoff: revisits read cached data first (no automatic background
+ * refresh). For data that mutates only via user actions on the same
+ * page (settings lists, etc.) this is fine — those mutations trigger
+ * explicit refetches. For data that changes externally (cross-tab,
+ * cross-device), opt that specific call site into `cache-and-network`
+ * instead.
  *
  * Usage:
  *
@@ -30,5 +40,5 @@ import type { QueryHookOptions } from '@apollo/client';
  * this file.
  */
 export const SHARED_CACHE_QUERY_OPTIONS: QueryHookOptions = {
-  fetchPolicy: 'cache-and-network',
+  fetchPolicy: 'cache-first',
 };
