@@ -991,9 +991,12 @@ export const useDeleteBizCompanyMutation = () => {
   }): Promise<{ success: boolean; count: number }> => {
     const response = await mutation({
       variables: { data },
+      // queryBizCompany returns BizConnection (paginated BizModel),
+      // not BizCompany — companies are stored under `BizModel:{id}` in
+      // the normalized cache. (Users use `BizUser`, the subclass.)
       update(cache) {
         for (const id of data.ids) {
-          cache.evict({ id: cache.identify({ __typename: 'BizCompany', id }) });
+          cache.evict({ id: cache.identify({ __typename: 'BizModel', id }) });
         }
         cache.gc();
       },

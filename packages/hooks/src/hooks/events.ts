@@ -56,7 +56,9 @@ export const useDeleteEventMutation = () => {
       if (!id) {
         return;
       }
-      cache.evict({ id: cache.identify({ __typename: 'Event', id }) });
+      // Server's @ObjectType is `class Events` (plural), so Apollo
+      // caches under `Events:{id}` — using 'Event' silently misses.
+      cache.evict({ id: cache.identify({ __typename: 'Events', id }) });
       cache.gc();
     },
   });

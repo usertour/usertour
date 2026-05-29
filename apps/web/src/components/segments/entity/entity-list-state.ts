@@ -15,10 +15,13 @@ import type { CurrentConditions } from '@usertour/types';
 //   whether the Save button should appear (typed shape diverges from
 //   the segment's saved shape).
 //
-// Module-level: state survives navigation between segments on the same
-// page (typically desired — return to the same filter you left). Cross-
-// tab is not shared (in-memory only); each tab gets its own copy. Fresh
-// reload starts empty.
+// Module-level: state survives in-page navigation that doesn't change
+// the active segment (open a row's detail page, come back — the typed
+// filter is still there). Switching to a different segment is treated
+// as a context change: EntityListContent resets both vars on
+// `currentSegment?.id` change so segment A's typed filter doesn't leak
+// into segment B's first render. Cross-tab is not shared (in-memory
+// only); each tab gets its own copy. Fresh reload starts empty.
 export interface BizListState {
   queryVar: ReactiveVar<Record<string, unknown>>;
   currentConditionsVar: ReactiveVar<CurrentConditions | undefined>;
