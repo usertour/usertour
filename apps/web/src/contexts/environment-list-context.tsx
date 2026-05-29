@@ -1,6 +1,7 @@
 import { ReactNode, createContext, useContext } from 'react';
 import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
 import { Environment } from '@usertour/types';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 export interface EnvironmentListProviderProps {
   children?: ReactNode;
@@ -19,8 +20,14 @@ export const EnvironmentListContext = createContext<EnvironmentListContextValue 
 
 export function EnvironmentListProvider(props: EnvironmentListProviderProps): JSX.Element {
   const { children, projectId } = props;
-  const { environmentList, refetch, loading, isRefetching } =
-    useGetUserEnvironmentsQuery(projectId);
+  // SHARED_CACHE_QUERY_OPTIONS so this query participates in the
+  // normalized cache — without it the global no-cache default keeps
+  // this observable isolated, and the env switcher (which reads from
+  // here) wouldn't reflect cache evicts from useDeleteEnvironmentsMutation.
+  const { environmentList, refetch, loading, isRefetching } = useGetUserEnvironmentsQuery(
+    projectId,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
 
   const value: EnvironmentListContextValue = {
     environmentList,
