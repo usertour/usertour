@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
-import { useApolloClient, useQuery } from '@apollo/client';
+import { useApolloClient } from '@apollo/client';
 import { queryTrackerUsers } from '@usertour/gql';
+import { useQueryTrackerUsersQuery } from '@usertour/hooks';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
 import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
@@ -46,13 +47,6 @@ interface TrackerUserNode {
     externalId: string;
     data: Record<string, any>;
   } | null;
-}
-
-interface PageInfo {
-  startCursor: string | null;
-  endCursor: string | null;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
 const PAGE_SIZES = [10, 20, 30, 40, 50];
@@ -118,28 +112,20 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
 
   const afterCursor = pageIndex > 0 ? cursors[pageIndex - 1] : undefined;
 
-  const { data, loading } = useQuery(queryTrackerUsers, {
-    variables: {
-      first: pageSize,
-      after: afterCursor,
-      query: {
-        environmentId: environment?.id ?? '',
-        contentId,
-        startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '',
-        endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '',
-        timezone,
-      },
-      orderBy: { field: 'createdAt', direction: 'desc' },
+  const { edges, pageInfo, totalCount, loading } = useQueryTrackerUsersQuery({
+    first: pageSize,
+    after: afterCursor,
+    query: {
+      environmentId: environment?.id ?? '',
+      contentId,
+      startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '',
+      endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '',
+      timezone,
     },
-    skip: !dateRange?.from || !dateRange?.to || !environment?.id,
+    options: { skip: !dateRange?.from || !dateRange?.to || !environment?.id },
   });
-
-  const result = data?.queryTrackerUsers;
-  const edges: { cursor: string; node: TrackerUserNode }[] = result?.edges ?? [];
-  const pageInfo: PageInfo | undefined = result?.pageInfo;
-  const totalCount: number = result?.totalCount ?? 0;
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const users = edges.map((e) => e.node);
+  const users = edges.map((e: { node: TrackerUserNode }) => e.node);
 
   const exportQuery = {
     environmentId: environment?.id ?? '',

@@ -2,7 +2,6 @@
 
 import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -20,9 +19,9 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { createContent } from '@usertour/gql';
+import { useCreateContentMutation } from '@usertour/hooks';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
-import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
+import { ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -76,7 +75,7 @@ export const ContentCreateForm = ({
   onSubmit,
   contentType,
 }: ContentCreateFormProps) => {
-  const [createContentMutation] = useMutation(createContent);
+  const { invoke: createContent } = useCreateContentMutation();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { environment } = useAppContext();
   const navigate = useNavigate();
@@ -119,19 +118,13 @@ export const ContentCreateForm = ({
     setIsLoading(true);
     try {
       const data = CONTENT_TYPE_INITIAL_DATA[contentType]?.();
-      const variables = {
+      const content = await createContent({
         name,
-        environmentId: environment?.id,
+        environmentId: environment?.id ?? '',
         type: contentTypeMeta.dataType,
         ...(data != null && { data }),
-      };
-      const ret = await createContentMutation({ variables });
-      if (!ret.data?.createContent?.id) {
-        showError(copy.createErrorMessage);
-        return;
-      }
-      const content = ret.data?.createContent as Content;
-      if (!content?.editedVersionId) {
+      });
+      if (!content?.id || !content?.editedVersionId) {
         showError(copy.createErrorMessage);
         return;
       }

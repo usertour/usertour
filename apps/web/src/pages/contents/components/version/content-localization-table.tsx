@@ -11,8 +11,7 @@ import {
 } from '@usertour/ui';
 import { useContentLocalizations } from '@/hooks/use-content-localizations';
 import { useLocalizationList } from '@/hooks/use-localization-list';
-import { useMutation } from '@apollo/client';
-import { updateVersionLocationData } from '@usertour/gql';
+import { useUpdateVersionLocationDataMutation } from '@usertour/hooks';
 import { VersionOnLocalization } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { format } from 'date-fns';
@@ -26,24 +25,20 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
   const { versionId } = props;
   const { contentLocalizationList, loading, refetch } = useContentLocalizations(versionId);
   const { localizationList } = useLocalizationList();
-  const [mutation] = useMutation(updateVersionLocationData);
+  const { invoke: updateVersionLocation } = useUpdateVersionLocationDataMutation();
   const { toast } = useToast();
   const location = useLocation();
 
   const handleOnCheckedChange = async (enabled: boolean, contentLocale: VersionOnLocalization) => {
     try {
-      const { data } = await mutation({
-        variables: {
-          data: {
-            localizationId: contentLocale.localizationId,
-            versionId: contentLocale.versionId,
-            localized: contentLocale.localized,
-            backup: contentLocale.backup,
-            enabled,
-          },
-        },
+      const success = await updateVersionLocation({
+        localizationId: contentLocale.localizationId,
+        versionId: contentLocale.versionId,
+        localized: contentLocale.localized,
+        backup: contentLocale.backup,
+        enabled,
       });
-      if (data.updateVersionLocationData.id) {
+      if (success) {
         await refetch();
         toast({
           variant: 'success',

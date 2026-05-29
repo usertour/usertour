@@ -2,7 +2,6 @@
 
 import { SpinnerIcon } from '@usertour/icons';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
-import { useMutation } from '@apollo/client';
 import {
   Button,
   Dialog,
@@ -16,7 +15,7 @@ import {
   Checkbox,
   Label,
 } from '@usertour/ui';
-import { unpublishedContentVersion } from '@usertour/gql';
+import { useUnpublishContentVersionMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { Content } from '@usertour/types';
 import * as React from 'react';
@@ -31,7 +30,7 @@ interface ContentUnpublishFormProps {
 
 export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   const { onSuccess, content, open, onOpenChange } = props;
-  const [mutation] = useMutation(unpublishedContentVersion);
+  const { invoke: unpublishVersion } = useUnpublishContentVersionMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { environmentList } = useEnvironmentList();
@@ -107,17 +106,10 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
     setIsLoading(true);
     try {
       const results = await Promise.all(
-        selectedEnvironments.map((envId) =>
-          mutation({
-            variables: {
-              contentId: content.id,
-              environmentId: envId,
-            },
-          }),
-        ),
+        selectedEnvironments.map((envId) => unpublishVersion(content.id, envId)),
       );
 
-      const allSuccess = results.every((result) => result.data?.unpublishedContentVersion?.success);
+      const allSuccess = results.every(Boolean);
       const envNames = selectedEnvironments
         .map((id) => environmentList?.find((env) => env.id === id)?.name)
         .filter(Boolean)

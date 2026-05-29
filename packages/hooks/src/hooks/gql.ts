@@ -444,7 +444,12 @@ export const useUpdateContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateContentVersion);
   const invoke = async (
     versionId: string,
-    content: { data?: any; config?: any; themeId?: string },
+    content: {
+      data?: unknown;
+      config?: unknown;
+      themeId?: string;
+      scheduledAt?: Date | null;
+    },
   ) => {
     const response = await mutation({ variables: { versionId, content } });
     return response.data?.updateContentVersion;
@@ -748,7 +753,12 @@ export const useCreateContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(createContentVersion, {
     refetchQueries: ['listContentVersions'],
   });
-  const invoke = async (data: { versionId: string }) => {
+  const invoke = async (data: {
+    versionId: string;
+    config?: unknown;
+    data?: unknown;
+    themeId?: string;
+  }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createContentVersion;
   };

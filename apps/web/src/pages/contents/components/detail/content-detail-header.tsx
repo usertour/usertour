@@ -7,9 +7,8 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentPublishState } from '@/hooks/use-content-publish-state';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { isVersionPublished } from '@/utils/content';
-import { useMutation } from '@apollo/client';
 import { EnterIcon } from '@radix-ui/react-icons';
-import { updateContent } from '@usertour/gql';
+import { useUpdateContentMutation } from '@usertour/hooks';
 import { PlaneIcon, RiArrowRightSLine, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { ContentDataType } from '@usertour/types';
@@ -96,7 +95,7 @@ export const ContentDetailHeader = () => {
   const { openBuilder } = useContentBuilder();
   const isPublishDisabled = useContentPublishState();
   const [, setSearchParams] = useSearchParams();
-  const [updateContentMutation] = useMutation(updateContent);
+  const { invoke: updateContent } = useUpdateContentMutation();
 
   // Warn user when closing page while saving
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
@@ -125,9 +124,7 @@ export const ContentDetailHeader = () => {
 
   const handleRename = async (name: string) => {
     try {
-      await updateContentMutation({
-        variables: { contentId: content.id, content: { name } },
-      });
+      await updateContent(content.id, { name });
       refetch();
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });

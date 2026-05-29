@@ -1,9 +1,14 @@
-import { type QueryHookOptions, useQuery } from '@apollo/client';
+import { type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
+  createContent,
+  duplicateContent,
   findManyVersionLocations,
   getContent,
   getContentVersion,
   listContentVersions,
+  publishedContentVersion,
+  restoreContentVersion,
+  unpublishedContentVersion,
 } from '@usertour/gql';
 import type { Content, ContentVersion, VersionOnLocalization } from '@usertour/types';
 import { useCallback, useMemo, useRef } from 'react';
@@ -140,4 +145,86 @@ export const useListContentVersionsQuery = (
     fetchNextPage,
     refetch,
   };
+};
+
+// ---- mutations ----
+
+export interface CreateContentInput {
+  type: string;
+  name: string;
+  environmentId: string;
+  buildUrl?: string;
+  data?: unknown;
+  steps?: unknown[];
+}
+
+export const useCreateContentMutation = () => {
+  // Refresh the list so the new row appears — Apollo can't materialise
+  // a new edge from a mutation response.
+  const [mutation, { loading, error }] = useMutation(createContent, {
+    refetchQueries: ['queryContent'],
+  });
+  const invoke = async (input: CreateContentInput): Promise<Content | undefined> => {
+    const response = await mutation({ variables: input });
+    return response.data?.createContent as Content | undefined;
+  };
+  return { invoke, loading, error };
+};
+
+export interface DuplicateContentInput {
+  contentId: string;
+  name: string;
+  targetEnvironmentId?: string;
+}
+
+export const useDuplicateContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(duplicateContent, {
+    refetchQueries: ['queryContent'],
+  });
+  const invoke = async (
+    input: DuplicateContentInput,
+  ): Promise<{ id: string; name: string } | undefined> => {
+    const response = await mutation({ variables: input });
+    return response.data?.duplicateContent;
+  };
+  return { invoke, loading, error };
+};
+
+export const usePublishContentVersionMutation = () => {
+  // Publish flips `Content.contentOnEnvironments[].published` —
+  // refetch the owning content so list cell + detail header reflect
+  // the new state.
+  const [mutation, { loading, error }] = useMutation(publishedContentVersion, {
+    refetchQueries: ['getContent', 'queryContent'],
+  });
+  const invoke = async (versionId: string, environmentId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { versionId, environmentId } });
+    return !!response.data?.publishedContentVersion?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUnpublishContentVersionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(unpublishedContentVersion, {
+    refetchQueries: ['getContent', 'queryContent'],
+  });
+  const invoke = async (contentId: string, environmentId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { contentId, environmentId } });
+    return !!response.data?.unpublishedContentVersion?.success;
+  };
+  return { invoke, loading, error };
+};
+
+export const useRestoreContentVersionMutation = () => {
+  // Restore creates a new editable version + flips
+  // `Content.editedVersionId` — refresh both the content and the
+  // version-history list so the restored draft surfaces immediately.
+  const [mutation, { loading, error }] = useMutation(restoreContentVersion, {
+    refetchQueries: ['getContent', 'listContentVersions'],
+  });
+  const invoke = async (versionId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { versionId } });
+    return !!response.data?.restoreContentVersion?.id;
+  };
+  return { invoke, loading, error };
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useThemeList } from '@/hooks/use-theme-list';
-import { useQuery } from '@apollo/client';
+import { useGetContentVersionQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   ColumnFiltersState,
@@ -16,7 +16,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { getContentVersion } from '@usertour/gql';
 import { CircleIcon } from '@usertour/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -204,10 +203,7 @@ const ContentTableItem = ({
   contentType: string;
   refetch: () => Promise<unknown>;
 }) => {
-  const { data, loading } = useQuery(getContentVersion, {
-    variables: { versionId: content?.editedVersionId },
-    skip: !content?.editedVersionId,
-  });
+  const { version: editedVersion, loading } = useGetContentVersionQuery(content?.editedVersionId);
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const { environment } = useAppContext();
@@ -215,23 +211,22 @@ const ContentTableItem = ({
 
   // Derive all preview data in one pass to avoid chained useEffects and multiple re-renders
   const { currentVersion, currentStep, currentTheme } = useMemo(() => {
-    const version = data?.getContentVersion;
-    const step = version?.steps?.[0];
+    const step = editedVersion?.steps?.[0];
 
     let theme: Theme | undefined;
     if (themeList && themeList.length > 0) {
-      const themeId = step?.themeId ?? version?.themeId;
+      const themeId = step?.themeId ?? editedVersion?.themeId;
       if (themeId) {
         theme = themeList.find((item) => item.id === themeId);
       }
     }
 
     return {
-      currentVersion: version,
+      currentVersion: editedVersion ?? undefined,
       currentStep: step,
       currentTheme: theme,
     };
-  }, [data, themeList]);
+  }, [editedVersion, themeList]);
 
   // Consider loading if query is loading or themeList is not ready yet
   const isLoading = loading || !themeList;

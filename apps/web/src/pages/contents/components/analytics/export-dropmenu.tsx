@@ -8,9 +8,8 @@ import {
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
-import { useQuery } from '@apollo/client';
-import { getContentVersion, listSessionsDetail } from '@usertour/gql';
-import type { BizSession, ContentVersion } from '@usertour/types';
+import { useGetContentVersionQuery, useListSessionsDetailQuery } from '@usertour/hooks';
+import type { BizSession } from '@usertour/types';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
@@ -30,11 +29,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { attributeList } = useAttributeList();
   const { environment } = useAppContext();
   const versionId = content?.publishedVersionId || content?.editedVersionId;
-  const { data } = useQuery(getContentVersion, {
-    variables: { versionId },
-    skip: !versionId,
-  });
-  const version = data?.getContentVersion as ContentVersion;
+  const { version } = useGetContentVersionQuery(versionId);
 
   const query = {
     environmentId: environment?.id ?? '',
@@ -43,14 +38,13 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
     endDate: dateRange?.to?.toISOString(),
     timezone,
   };
-  const orderBy = { field: 'createdAt', direction: 'desc' };
-  const { refetch } = useQuery(listSessionsDetail, {
-    variables: {
-      first: 100,
-      query,
-      orderBy,
-    },
-    skip: true,
+  const orderBy = { field: 'createdAt', direction: 'desc' as const };
+  // `skip: true` — the export handler calls `refetch` imperatively in a
+  // cursor loop instead of letting Apollo auto-fetch.
+  const { refetch } = useListSessionsDetailQuery({
+    query,
+    orderBy,
+    options: { skip: true },
   });
 
   const handleExportCSV = async (includeAllAttributes = false) => {
@@ -97,7 +91,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         contentName: content?.name,
         includeAllAttributes,
         attributeList,
-        version,
+        version: version ?? undefined,
         dateRange,
       });
 
