@@ -780,8 +780,13 @@ export const useDeleteSegmentMutation = () => {
 // Server's UpdateSegment input picks { name, data, id, columns } from
 // Segment — all optional except id. Wrapper mirrors that so the same
 // invoke handles both filter-condition saves and column-setting saves.
-// Apollo merges the response into the existing Segment entity by
-// __typename:id, no update callback needed.
+//
+// Refresh path is `refetchQueries: ['listSegment']`, NOT Apollo
+// auto-merge. The updateSegment gql response only selects `{ id }`
+// (see packages/gql/src/gql/segment.ts), so auto-merge into the cached
+// Segment entity is a no-op. To migrate to auto-merge later, expand
+// the gql response to mirror listSegment's selection set, then drop
+// refetchQueries here.
 export const useUpdateSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateSegment, {
     refetchQueries: ['listSegment'],
@@ -905,8 +910,13 @@ export const useDeleteBizUserMutation = () => {
   }> => {
     const response = await mutation({
       variables: { data },
-      // Hard delete; evict each BizUser entity so any paginated list
-      // (queryBizUser via relayStylePagination) drops the row.
+      // Evict the BizUser entity from any cache slice that holds it.
+      // The user list (useBizListCursor) runs on the global no-cache
+      // default, so list refresh after delete still comes from the
+      // caller's existing refetch chain; this evict targets the
+      // cache-and-network detail-content queries
+      // (`user-detail-content` / `user-session-detail-content`) so a
+      // deleted user disappears from those slices too.
       update(cache) {
         for (const id of data.ids) {
           cache.evict({ id: cache.identify({ __typename: 'BizUser', id }) });
@@ -994,6 +1004,12 @@ export const useDeleteBizCompanyMutation = () => {
       // queryBizCompany returns BizConnection (paginated BizModel),
       // not BizCompany — companies are stored under `BizModel:{id}` in
       // the normalized cache. (Users use `BizUser`, the subclass.)
+      //
+      // Same scope as deleteBizUser's evict: the company list runs
+      // no-cache, so list refresh after delete comes from the caller's
+      // explicit refetch; this evict targets the cache-and-network
+      // company-detail-content slice so the deleted entity disappears
+      // there too.
       update(cache) {
         for (const id of data.ids) {
           cache.evict({ id: cache.identify({ __typename: 'BizModel', id }) });

@@ -109,12 +109,22 @@ export function useLoadMoreAccumulator<T>(
   }, [isLoadingMore, latestPageInfo, setAfterCursor]);
 
   const refresh = useCallback(() => {
+    // If we're past page 1, resetting afterCursor → undefined changes
+    // the wrapper's variables, which makes Apollo's useQuery
+    // auto-refetch with the correct first-page variables. An explicit
+    // `pageRefetch()` here would fire BEFORE the state update applies
+    // — Apollo's observable still holds the old cursor, so we'd waste
+    // a request on the stale page and momentarily paint it before the
+    // real first page lands.
+    // If we're already on page 1, no variables change → no
+    // auto-refetch, so the explicit refetch is required to force
+    // network.
+    const wasPastFirstPage = !!afterCursor;
     reset();
-    // Explicit refetch — if `afterCursor` was already undefined, the
-    // reset alone wouldn't change wrapper variables and Apollo wouldn't
-    // re-issue.
-    pageRefetch();
-  }, [reset, pageRefetch]);
+    if (!wasPastFirstPage) {
+      pageRefetch();
+    }
+  }, [afterCursor, reset, pageRefetch]);
 
   return {
     items,
