@@ -27,9 +27,10 @@ export const useMemberList = () => {
 
   const members = useMemo(() => [...invites, ...teamMembers], [invites, teamMembers]);
   const loading = invitesLoading || teamMembersLoading;
+  // Independent queries; parallel so perceived latency is max(rtt) not
+  // sum(rtt).
   const refetch = useCallback(async () => {
-    await refetchTeamMembers();
-    await refetchInvites();
+    await Promise.all([refetchTeamMembers(), refetchInvites()]);
   }, [refetchTeamMembers, refetchInvites]);
 
   return { members, loading, refetch };

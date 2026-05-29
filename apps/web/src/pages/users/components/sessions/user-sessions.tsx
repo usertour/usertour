@@ -3,14 +3,15 @@ import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Button,
   ListSkeleton,
+  LoadingButton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -25,6 +26,7 @@ import {
   ResourceCenterProgressCell,
   SessionStatusBadge,
 } from '@/components/sessions/session-analytics';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useListEventsQuery, useQuerySessionsByExternalIdQuery } from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@usertour/tailwind';
@@ -35,7 +37,6 @@ import {
   FlowIcon,
   LauncherIcon,
   ResourceCenterIcon,
-  SpinnerIcon,
 } from '@usertour/icons';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { useAppContext } from '@/contexts/app-context';
@@ -161,20 +162,9 @@ const LoadMoreButton = ({
   if (!hasMore) return null;
   return (
     <div className="flex justify-center mt-4">
-      <Button
-        onClick={onLoadMore}
-        disabled={loading}
-        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? (
-          <div className="flex items-center space-x-2">
-            <SpinnerIcon className="w-4 h-4 animate-spin" />
-            <span>Loading...</span>
-          </div>
-        ) : (
-          t('users.sessions.loadMore')
-        )}
-      </Button>
+      <LoadingButton loading={loading} onClick={onLoadMore} variant="outline">
+        {t('users.sessions.loadMore')}
+      </LoadingButton>
     </div>
   );
 };
@@ -189,7 +179,7 @@ interface UserSessionsProps {
 // `useQuerySessionsByExternalIdQuery` (per ADR 0002).
 export const UserSessions = ({ environmentId, externalUserId }: UserSessionsProps) => {
   const { environment, project } = useAppContext();
-  const { eventList } = useListEventsQuery(project?.id, { fetchPolicy: 'cache-and-network' });
+  const { eventList } = useListEventsQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
   const { t } = useTranslation();
   const navigate = useNavigate();
 

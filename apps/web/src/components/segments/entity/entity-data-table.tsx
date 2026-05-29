@@ -2,6 +2,7 @@
 
 import { useAppContext } from '@/contexts/app-context';
 import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useListAttributesQuery } from '@usertour/hooks';
 import {
   ColumnFiltersState,
@@ -51,11 +52,12 @@ export function EntityDataTable<TRow extends EntityRow>({
   const { t } = useTranslation();
   const { isViewOnly, project } = useAppContext();
   const columns = config.useTableColumns({ isViewOnly });
-  // Apollo cache dedups with the toolbar's identical call.
+  // Shares the cache slice with the toolbar's identical call via
+  // SHARED_CACHE_QUERY_OPTIONS — Apollo dedups, single network request.
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
-    { skip: !project?.id },
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
   );
   const navigate = useNavigate();
 

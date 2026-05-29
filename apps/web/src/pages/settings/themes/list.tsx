@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { useListThemesQuery } from '@usertour/hooks';
-import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { ThemeListSkeleton } from './components/theme-list-skeleton';
 import type { Theme } from '@usertour/types';
@@ -31,10 +30,9 @@ export const SettingsThemeList = () => {
   // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
   // false for refetches, so the grid updates in place instead of flashing
   // back to the skeleton when a theme is created/duplicated/deleted.
-  const { themeList, loading, refetch } = useListThemesQuery(
-    project?.id,
-    SHARED_CACHE_QUERY_OPTIONS,
-  );
+  // Single owner of the themes query; ThemeCardPreview takes `refetch`
+  // via prop instead of re-subscribing per card.
+  const { themeList, loading, refetch } = useListThemesQuery(project?.id);
   const { t } = useTranslation();
 
   return (
@@ -50,7 +48,7 @@ export const SettingsThemeList = () => {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
           {themeList?.map((theme: Theme) => (
-            <ThemeCardPreview theme={theme} key={theme.id} />
+            <ThemeCardPreview theme={theme} key={theme.id} onMutationSuccess={refetch} />
           ))}
         </div>
       )}

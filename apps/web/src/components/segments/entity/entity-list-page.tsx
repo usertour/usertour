@@ -1,4 +1,6 @@
+import { NetworkStatus } from '@apollo/client';
 import { useAppContext } from '@/contexts/app-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useCurrentSegment } from '@/hooks/use-current-segment';
 import { filterSegmentsByTypeOrder } from '@/utils/segment';
 import { useSegmentListQuery } from '@usertour/hooks';
@@ -32,6 +34,7 @@ export function EntityListPage<TRow extends EntityRow>({ config }: EntityListPag
     refetch: refetchSegments,
     networkStatus: segmentsNetworkStatus,
   } = useSegmentListQuery(envId ?? '', config.segmentBizType, {
+    ...SHARED_CACHE_QUERY_OPTIONS,
     skip: !envId,
     notifyOnNetworkStatusChange: true,
   });
@@ -62,7 +65,7 @@ export function EntityListPage<TRow extends EntityRow>({ config }: EntityListPag
           environmentId={envId}
           currentSegment={currentSegment}
           refetchSegments={refetchSegments}
-          segmentsIsRefetching={segmentsNetworkStatus === 4}
+          segmentsIsRefetching={segmentsNetworkStatus === NetworkStatus.refetch}
         />
       </ScrollArea>
     </>

@@ -16,6 +16,7 @@ import { Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from
 import { DataTableViewOptions } from '../table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
@@ -41,7 +42,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
     AttributeBizTypes.Nil,
-    { skip: !project?.id },
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !project?.id },
   );
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection, getSelectedCount } = useTableSelection(table);

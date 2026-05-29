@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Capability, type Project } from '@usertour/types';
 import { useActiveProject } from './use-active-project';
 
@@ -8,7 +8,12 @@ import { useActiveProject } from './use-active-project';
 // canonical equivalent.
 export const useCapabilities = () => {
   const project = useActiveProject() as (Project & { capabilities?: Capability[] }) | null;
-  const capabilities: Capability[] = project?.capabilities ?? [];
+  // useMemo so the empty-fallback path doesn't allocate a fresh `[]`
+  // every render and invalidate the `can` callback identity.
+  const capabilities = useMemo<Capability[]>(
+    () => project?.capabilities ?? [],
+    [project?.capabilities],
+  );
   const can = useCallback(
     (capability: Capability) => capabilities.includes(capability),
     [capabilities],

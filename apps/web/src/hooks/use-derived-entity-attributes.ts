@@ -5,7 +5,6 @@ export interface DerivedAttribute {
   name: string;
   value: unknown;
   dataType: AttributeDataType;
-  predefined: boolean;
 }
 
 // Project an entity row's `data` blob into the displayable {name, value,
@@ -31,7 +30,6 @@ export const useDerivedEntityAttributes = (
           name: attr.displayName || attr.codeName,
           value: entityData[key],
           dataType: attr.dataType,
-          predefined: attr.predefined,
         });
       }
     }
