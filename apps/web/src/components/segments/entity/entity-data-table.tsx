@@ -80,6 +80,7 @@ export function EntityDataTable<TRow extends EntityRow>({
     pageCount,
     pagination,
     setPagination,
+    totalCount,
   } = useCursorPagination<TRow, typeof effectiveQuery>({
     query: effectiveQuery,
     useListQuery: config.useListQuery,
@@ -213,7 +214,11 @@ export function EntityDataTable<TRow extends EntityRow>({
         emptyMessage={t(config.i18n.emptyMessage)}
         emptyDescription={t(config.i18n.emptyDescription)}
       />
-      <DataTablePagination table={table} busy={loading || isRefetching} />
+      <DataTablePagination
+        table={table}
+        busy={loading || isRefetching}
+        totalCountText={t(config.i18n.totalCount, { count: totalCount })}
+      />
     </div>
   );
 }

@@ -71,6 +71,10 @@ export interface DataTablePaginationProps<TData extends { id: string }> {
    *  reads "Page N+1". Pass `loading || isRefetching` from the
    *  hook's result to gate the buttons until the response lands. */
   busy?: boolean;
+  /** Optional total-count line on the left of the pagination row
+   *  ("11 users in total."). Caller is responsible for i18n —
+   *  `@usertour/ui` primitives don't import `react-i18next`. */
+  totalCountText?: React.ReactNode;
 }
 
 // Column header props interface
