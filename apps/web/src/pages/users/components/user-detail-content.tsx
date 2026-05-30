@@ -195,7 +195,8 @@ const UserActivityCard = ({
   );
 };
 
-const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
+export const UserDetailContent = (props: UserDetailContentProps) => {
+  const { environmentId, userId } = props;
   const navigator = useNavigate();
   // Detail-page fetch: single user by id. Apollo dedup means navigating
   // here from the list doesn't re-issue the network if the user is
@@ -292,9 +293,5 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
     </>
   );
 };
-
-export function UserDetailContent(props: UserDetailContentProps) {
-  return <UserDetailContentInner {...props} />;
-}
 
 UserDetailContent.displayName = 'UserDetailContent';
