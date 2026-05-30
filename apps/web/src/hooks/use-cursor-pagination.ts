@@ -113,8 +113,20 @@ export function useCursorPagination<TRow, TQuery>(
   // updated by the effect below when `useListQuery` actually returns
   // fresh data, so a mid-flight loading state can't burn the cursor.
   const [committedPageInfo, setCommittedPageInfo] = useState<PageInfo | undefined>();
-  const [committedPageIndex, setCommittedPageIndex] = useState(0);
+  // Pagination snapshot at the moment the current page was committed.
+  // Stored in full (pageIndex AND pageSize) so the "stable" check
+  // below catches both axes — a stale `pageSize` while `pageIndex`
+  // didn't change still has to recompute new request vars.
+  const [committedPagination, setCommittedPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: defaultPageSize,
+  });
   const [totalCount, setTotalCount] = useState(0);
+  // The exact `requestPagination` value that produced the currently
+  // committed page. Held in a ref so the memo below can return it
+  // verbatim when pagination is stable, keeping `useQuery`'s variables
+  // referentially equal across renders and preventing a refire.
+  const lastIssuedRequestRef = useRef<Pagination>({ first: defaultPageSize });
 
   // Detect query identity changes during render. React's documented
   // pattern for "adjust some state when a prop changes" —
@@ -130,33 +142,53 @@ export function useCursorPagination<TRow, TQuery>(
     prevQueryKeyRef.current = queryKey;
     setPagination((prev) => ({ pageIndex: 0, pageSize: prev.pageSize }));
     setCommittedPageInfo(undefined);
-    setCommittedPageIndex(0);
+    setCommittedPagination({ pageIndex: 0, pageSize: pagination.pageSize });
     setTotalCount(0);
+    lastIssuedRequestRef.current = { first: pagination.pageSize };
   }
 
   // Translate the user-facing pagination state into the relay-style
   // cursor args the GraphQL layer expects. Pure derivation — no
-  // useEffect, no setState cascade. `pageCount` is derived from the
-  // LIVE `pagination.pageSize`, fixing the "last page + change page
-  // size" miscount the old hooks had.
+  // useEffect, no setState cascade.
+  //
+  // The "stable" branch is load-bearing. Relay's `first/after` model
+  // can express "the page AFTER cursor X" but not "the page X
+  // currently sits on" — there's no cursor that re-fetches the
+  // current page from scratch. So once a navigation lands and the
+  // commit effect equalises `pagination` with `committedPagination`,
+  // recomputing here from scratch would fall through to
+  // `{ first: pageSize }` (page-1 vars) and `useQuery` would refire,
+  // dropping the user back to page 1. The ref stores the vars that
+  // produced the current page; we return them verbatim until
+  // pagination actually moves.
   const requestPagination = useMemo<Pagination>(() => {
     const { pageIndex, pageSize } = pagination;
+    const stable =
+      pageIndex === committedPagination.pageIndex &&
+      pageSize === committedPagination.pageSize &&
+      committedPageInfo !== undefined;
+    if (stable) {
+      return lastIssuedRequestRef.current;
+    }
+    let next: Pagination;
     if (pageIndex === 0) {
-      return { first: pageSize };
+      next = { first: pageSize };
+    } else {
+      const liveCount = Math.ceil(totalCount / pageSize);
+      if (liveCount > 0 && pageIndex + 1 === liveCount) {
+        const lastSize = totalCount - (liveCount - 1) * pageSize;
+        next = { last: lastSize > 0 ? lastSize : pageSize };
+      } else if (committedPageInfo && pageIndex > committedPagination.pageIndex) {
+        next = { first: pageSize, after: committedPageInfo.endCursor };
+      } else if (committedPageInfo && pageIndex < committedPagination.pageIndex) {
+        next = { last: pageSize, before: committedPageInfo.startCursor };
+      } else {
+        next = { first: pageSize };
+      }
     }
-    const liveCount = Math.ceil(totalCount / pageSize);
-    if (liveCount > 0 && pageIndex + 1 === liveCount) {
-      const lastSize = totalCount - (liveCount - 1) * pageSize;
-      return { last: lastSize > 0 ? lastSize : pageSize };
-    }
-    if (committedPageInfo && pageIndex > committedPageIndex) {
-      return { first: pageSize, after: committedPageInfo.endCursor };
-    }
-    if (committedPageInfo && pageIndex < committedPageIndex) {
-      return { last: pageSize, before: committedPageInfo.startCursor };
-    }
-    return { first: pageSize };
-  }, [pagination, totalCount, committedPageInfo, committedPageIndex]);
+    lastIssuedRequestRef.current = next;
+    return next;
+  }, [pagination, totalCount, committedPageInfo, committedPagination]);
 
   const {
     contents,
@@ -184,11 +216,12 @@ export function useCursorPagination<TRow, TQuery>(
       return;
     }
     setCommittedPageInfo(pageInfo);
-    setCommittedPageIndex(pagination.pageIndex);
+    setCommittedPagination({ ...pagination });
     setTotalCount(tc);
-    // We deliberately do NOT include `pagination.pageIndex` in deps
-    // — it shouldn't drive a commit on its own; only a fresh
-    // response should.
+    // We deliberately do NOT include `pagination` in deps — it
+    // shouldn't drive a commit on its own; only a fresh response
+    // should. The closure reads the current `pagination` value to
+    // record which page this response belongs to.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageInfo, tc]);
 

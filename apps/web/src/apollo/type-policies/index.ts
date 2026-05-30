@@ -28,6 +28,18 @@ import { FieldPolicy, TypePolicies } from '@apollo/client';
 // immutable rows there's nothing to modify mid-cursor. If the server
 // ever does emit a duplicate, surface it as a server bug rather than
 // silently dropping it here.
+//
+// IMPORTANT — single-accumulator-consumer invariant. The `no-after →
+// REPLACE` branch means any consumer firing the base query (no
+// `after`) will overwrite the accumulator with just page 1. Today
+// that's not a problem because the only callers that issue base
+// queries are mutations' `refetchQueries` (which is the *intended*
+// trigger for the replace) plus consumers that mount once and don't
+// re-fire the base. Don't add a second cache-and-network consumer
+// that periodically re-fires the base on the same cell — it would
+// silently nuke an in-progress accumulator built by the fetchMore
+// caller. If a new consumer needs the same field, give it a
+// `fetchPolicy: 'cache-only'` reader.
 type ConnectionShape<TEdge = unknown> = {
   edges: TEdge[];
   [k: string]: unknown;
