@@ -67,6 +67,9 @@ export interface EntityI18nKeys {
   // Empty state
   emptyMessage: string;
   emptyDescription: string;
+  // Table footer — total-count line on the pagination row. Takes
+  // `{ count }` interpolation.
+  totalCount: string;
   // Toolbar / row actions
   addToManualSegment: string;
   deleteAction: string; // 'users.actions.deleteUser' / 'companies.actions.deleteCompany'
@@ -149,6 +152,7 @@ export const USER_CONFIG: EntityConfig<BizUser> = {
     editSegmentNameTooltip: 'users.segments.tooltips.editName',
     emptyMessage: 'users.empty.noUsersFound',
     emptyDescription: 'users.empty.noUsersFoundDescription',
+    totalCount: 'users.list.totalCount',
     addToManualSegment: 'users.actions.addToManualSegment',
     deleteAction: 'users.actions.deleteUser',
     removeFromSegment: 'users.actions.removeFromSegment',
@@ -186,6 +190,7 @@ export const COMPANY_CONFIG: EntityConfig<BizCompany> = {
     editSegmentNameTooltip: 'companies.detail.tooltips.editName',
     emptyMessage: 'companies.empty.noCompaniesFound',
     emptyDescription: 'companies.empty.noCompaniesFoundDescription',
+    totalCount: 'companies.list.totalCount',
     addToManualSegment: 'companies.actions.addToManualSegment',
     deleteAction: 'companies.actions.deleteCompany',
     removeFromSegment: 'companies.actions.removeFromSegment',
