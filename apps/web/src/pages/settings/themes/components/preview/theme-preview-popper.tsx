@@ -14,7 +14,7 @@ import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@userto
 import { PREVIEW_BASIC } from '@usertour/constants';
 import { useRef } from 'react';
 import { Rect } from './types';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface ThemePreviewPopperProps {
   contents: ContentEditorRoot[];
@@ -29,7 +29,7 @@ export const ThemePreviewPopper = (props: ThemePreviewPopperProps) => {
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;
   const progressEnabled = settings?.progress.enabled;
-  const { shouldShowMadeWith } = useSubscription();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   // Optimized progress display logic
   const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;

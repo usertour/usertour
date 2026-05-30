@@ -27,7 +27,7 @@ import {
   ReloadIcon,
 } from '@radix-ui/react-icons';
 import { cn } from '@usertour/tailwind';
-import { ReactNode, Fragment, useState } from 'react';
+import { ReactNode, Fragment, memo, useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useCompanyActivityFeedQuery, useUserActivityFeedQuery } from '@usertour/hooks';
@@ -35,6 +35,7 @@ import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { sortEventDataEntries, getFieldValue } from '@/utils/session';
 import { QuestionAnswer } from '@/components/sessions/session-detail';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import type { Attribute } from '@usertour/types';
 
 // Group events by date (YYYY-MM-DD)
 function groupEventsByDate(events: BizEvent[]): Map<string, BizEvent[]> {
@@ -155,8 +156,18 @@ interface ActivityFeedRowProps {
   event: BizEvent;
   environmentId?: string;
   isExpanded: boolean;
-  onToggle: () => void;
+  /** Toggle handler receiving the event id, NOT a per-row inline
+   *  closure — the inline-closure form invalidates `React.memo`
+   *  equality every render and erases the point of memoising the
+   *  row. */
+  onToggle: (eventId: string) => void;
   renderTrailingContent?: (event: BizEvent) => ReactNode;
+  /** Hoisted from the row so 20 visible rows don't each instantiate
+   *  their own `useAttributeList` ObservableQuery; the list resolves
+   *  it once and passes the same reference into every row. */
+  attributeList: Attribute[] | undefined;
+  /** Same rationale as `attributeList` — hoisted from the row. */
+  copyWithToast: (text: string, customMessage?: string) => void;
 }
 
 const SESSION_ID_ATTRIBUTES = new Set<string>([
@@ -167,13 +178,16 @@ const SESSION_ID_ATTRIBUTES = new Set<string>([
   EventAttributes.RESOURCE_CENTER_SESSION_ID,
 ]);
 
-const ActivityFeedRow = ({
-  event,
-  environmentId,
-  isExpanded,
-  onToggle,
-  renderTrailingContent,
-}: ActivityFeedRowProps) => {
+const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
+  const {
+    event,
+    environmentId,
+    isExpanded,
+    onToggle,
+    renderTrailingContent,
+    attributeList,
+    copyWithToast,
+  } = props;
   const time = format(new Date(event.createdAt), 'hh:mm a');
   const displayName = getEventDisplayName(event);
   const category = getEventCategory(event);
@@ -185,14 +199,12 @@ const ActivityFeedRow = ({
     environmentId && event.bizSessionId ? getFallbackSessionAttributeKey(event) : null;
   const hasSessionLink = !!fallbackSessionAttributeKey;
   const hasDetails = hasEventData || hasSessionLink;
-  const { attributeList } = useAttributeList();
-  const copyWithToast = useCopyWithToast();
 
   return (
     <Fragment>
       <div
         className="flex min-w-0 items-center py-2.5 px-2 border-b gap-3 text-sm hover:bg-muted/30 cursor-pointer group"
-        onClick={onToggle}
+        onClick={() => onToggle(event.id)}
       >
         <div className="w-20 flex-none text-muted-foreground text-xs">{time}</div>
         <CategoryIcon className={cn('h-4 w-4 flex-none', CATEGORY_ICON_COLOR)} />
@@ -294,6 +306,14 @@ const ActivityFeedRow = ({
   );
 };
 
+// Memoised at the row level so re-renders driven by sibling rows (e.g.
+// expanding a different row → `expandedRowId` changes) only re-render
+// the two rows that flipped, not all 20. Equality is shallow; the
+// callers above ensure `onToggle` / `renderTrailingContent` /
+// `attributeList` / `copyWithToast` are referentially stable per render.
+const ActivityFeedRow = memo(ActivityFeedRowBase);
+ActivityFeedRow.displayName = 'ActivityFeedRow';
+
 interface ActivityFeedListProps {
   events: BizEvent[];
   environmentId?: string;
@@ -304,22 +324,29 @@ interface ActivityFeedListProps {
   renderTrailingContent?: (event: BizEvent) => ReactNode;
 }
 
-export const ActivityFeedList = ({
-  events,
-  environmentId,
-  loading,
-  hasMore,
-  loadMore,
-  emptyMessage,
-  renderTrailingContent,
-}: ActivityFeedListProps) => {
+export const ActivityFeedList = (props: ActivityFeedListProps) => {
+  const { events, environmentId, loading, hasMore, loadMore, emptyMessage, renderTrailingContent } =
+    props;
   const { t } = useTranslation();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const dateGroups = groupEventsByDate(events);
 
-  const handleRowToggle = (id: string) => {
-    setExpandedRowId(expandedRowId === id ? null : id);
-  };
+  // Hoisted from `ActivityFeedRow` — 20 visible rows used to instantiate
+  // these per row. attributeList especially is one of the larger
+  // `cache-and-network` reads in the app.
+  const { attributeList } = useAttributeList();
+  const copyWithToast = useCopyWithToast();
+
+  // `groupEventsByDate` allocates a Map on every render; memo keeps the
+  // reference stable across renders that didn't change `events`.
+  const dateGroups = useMemo(() => groupEventsByDate(events), [events]);
+
+  // `handleRowToggle` receives the event id from the row, so the row's
+  // onClick can stay a static `() => onToggle(event.id)` closure. The
+  // stable callback identity is what lets `React.memo` on the row
+  // actually skip re-renders of non-expanding siblings.
+  const handleRowToggle = useCallback((id: string) => {
+    setExpandedRowId((prev) => (prev === id ? null : id));
+  }, []);
 
   if (loading && events.length === 0) {
     return <ListSkeleton length={5} />;
@@ -349,8 +376,10 @@ export const ActivityFeedList = ({
               event={event}
               environmentId={environmentId}
               isExpanded={expandedRowId === event.id}
-              onToggle={() => handleRowToggle(event.id)}
+              onToggle={handleRowToggle}
               renderTrailingContent={renderTrailingContent}
+              attributeList={attributeList}
+              copyWithToast={copyWithToast}
             />
           ))}
         </Fragment>

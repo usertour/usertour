@@ -27,11 +27,15 @@ import {
 
 import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import { useAppContext } from '@/contexts/app-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useEventList } from '@/hooks/use-event-list';
 import type { PaginationState } from '@tanstack/react-table';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { BizSession } from '@usertour/types';
-import { columns } from './columns';
+import { buildColumns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
@@ -74,6 +78,21 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
   const { refetch: refetchAnalytics } = useContentAnalytics();
   const { environment } = useAppContext();
   const navigate = useNavigate();
+
+  // All ~20 rows in this table belong to the same content / version, so
+  // these three reads are row-shared. Issuing them once here (instead
+  // of inside ProgressCell + StatusCell per row) cuts ~80
+  // ObservableQuery subscriptions down to 3 — Apollo network dedup
+  // already coalesced the requests, but each useQuery still spun up
+  // its own cache watcher chain.
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { eventList } = useEventList();
+  const { version } = useContentVersion(content?.editedVersionId);
+  const columns = useMemo(
+    () => buildColumns({ content, version, eventList }),
+    [content, version, eventList],
+  );
 
   const table = useReactTable({
     data: bizSessions,

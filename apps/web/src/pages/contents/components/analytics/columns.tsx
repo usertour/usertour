@@ -1,12 +1,14 @@
 'use client';
 
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
-import { useEventList } from '@/hooks/use-event-list';
-import { useContentDetail } from '@/hooks/use-content-detail';
-import { useContentVersion } from '@/hooks/use-content-version';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import { BizSession, ContentDataType } from '@usertour/types';
+import {
+  type BizSession,
+  type Content,
+  ContentDataType,
+  type ContentVersion,
+  type Event,
+} from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {
@@ -26,11 +28,27 @@ import {
 } from '@usertour/ui';
 import { Link } from 'react-router-dom';
 
-const ProgressCell = (props: Row<BizSession>) => {
-  const { contentId } = useContentDetailUI();
-  const { content } = useContentDetail(contentId);
-  const { eventList } = useEventList();
-  const { version } = useContentVersion(content?.editedVersionId);
+// Per-row content / version / event data is identical across all 20
+// rows in the table — they're all sessions for the same content. The
+// owning `BizSessionsDataTable` fetches it once and passes it via this
+// shared context so each row cell just reads from closure instead of
+// instantiating its own `cache-and-network` ObservableQuery (which was
+// roughly 80 redundant subscriptions per visible page before).
+
+export interface ColumnContext {
+  content: Content | null;
+  version: ContentVersion | null;
+  eventList: Event[] | undefined;
+}
+
+interface ProgressCellProps {
+  row: Row<BizSession>;
+  ctx: ColumnContext;
+}
+
+const ProgressCell = (props: ProgressCellProps) => {
+  const { row, ctx } = props;
+  const { content, version, eventList } = ctx;
   const contentType = content?.type;
 
   if (!eventList || !content || !version) {
@@ -39,11 +57,11 @@ const ProgressCell = (props: Row<BizSession>) => {
 
   if (contentType === ContentDataType.CHECKLIST) {
     return (
-      <ChecklistProgressCell original={props.original} eventList={eventList} version={version} />
+      <ChecklistProgressCell original={row.original} eventList={eventList} version={version} />
     );
   }
   if (contentType === ContentDataType.FLOW) {
-    return <FlowProgressCell original={props.original} eventList={eventList} />;
+    return <FlowProgressCell original={row.original} eventList={eventList} />;
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherProgressCell />;
@@ -57,15 +75,22 @@ const ProgressCell = (props: Row<BizSession>) => {
   return null;
 };
 
-const StatusCell = ({ original }: Row<BizSession>) => {
-  const { contentId } = useContentDetailUI();
-  const { content } = useContentDetail(contentId);
-  if (!content?.type) return null;
-  return <SessionStatusBadge original={original} contentType={content.type} />;
+interface StatusCellProps {
+  row: Row<BizSession>;
+  ctx: ColumnContext;
+}
+
+const StatusCell = (props: StatusCellProps) => {
+  const { row, ctx } = props;
+  if (!ctx.content?.type) {
+    return null;
+  }
+  return <SessionStatusBadge original={row.original} contentType={ctx.content.type} />;
 };
 
-const LastActivityCell = ({ original }: Row<BizSession>) => {
-  const { bizEvent, createdAt } = original;
+const LastActivityCell = (props: { row: Row<BizSession> }) => {
+  const { row } = props;
+  const { bizEvent, createdAt } = row.original;
 
   const lastTime = bizEvent?.length
     ? new Date(Math.max(...bizEvent.map((event) => new Date(event.createdAt).getTime())))
@@ -85,11 +110,12 @@ const LastActivityCell = ({ original }: Row<BizSession>) => {
   );
 };
 
-const UserCell = ({ original }: Row<BizSession>) => {
+const UserCell = (props: { row: Row<BizSession> }) => {
+  const { row } = props;
   const { environment } = useAppContext();
 
-  const bizUser = original.bizUser;
-  const bizCompany = original.bizCompany;
+  const bizUser = row.original.bizUser;
+  const bizCompany = row.original.bizCompany;
   const email = bizUser?.data?.email || '';
   const name = bizUser?.data?.name || '';
   const externalId = bizUser?.externalId || '';
@@ -112,7 +138,7 @@ const UserCell = ({ original }: Row<BizSession>) => {
         key="company"
         to={`/env/${environment?.id}/company/${bizCompany.id}`}
         className="truncate hover:text-primary hover:underline underline-offset-4"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         {companyName}
       </Link>,
@@ -124,17 +150,17 @@ const UserCell = ({ original }: Row<BizSession>) => {
       <DefaultAvatar seed={externalId || email} name={name} size="md" />
       <div className="flex flex-col min-w-0">
         <Link
-          to={`/env/${environment?.id}/user/${bizUser?.id ?? original.bizUserId}`}
+          to={`/env/${environment?.id}/user/${bizUser?.id ?? row.original.bizUserId}`}
           className="text-sm font-medium truncate hover:text-primary hover:underline underline-offset-4"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
         >
           {primaryText}
         </Link>
         {secondaryParts.length > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-            {secondaryParts.map((part, idx) => (
-              <span key={idx} className="flex items-center gap-1.5 min-w-0">
-                {idx > 0 && <span className="shrink-0">·</span>}
+            {secondaryParts.map((part, index) => (
+              <span key={index} className="flex items-center gap-1.5 min-w-0">
+                {index > 0 && <span className="shrink-0">·</span>}
                 {part}
               </span>
             ))}
@@ -145,30 +171,30 @@ const UserCell = ({ original }: Row<BizSession>) => {
   );
 };
 
-export const columns: ColumnDef<BizSession>[] = [
+export const buildColumns = (ctx: ColumnContext): ColumnDef<BizSession>[] => [
   {
     accessorKey: 'bizUserId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
-    cell: ({ row }) => <UserCell {...row} />,
+    cell: ({ row }) => <UserCell row={row} />,
     enableSorting: false,
     enableHiding: true,
   },
   {
     id: 'status',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) => <StatusCell {...row} />,
+    cell: ({ row }) => <StatusCell row={row} ctx={ctx} />,
     enableSorting: false,
   },
   {
     accessorKey: 'progress',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Progress" />,
-    cell: ({ row }) => <ProgressCell {...row} />,
+    cell: ({ row }) => <ProgressCell row={row} ctx={ctx} />,
     enableSorting: false,
   },
   {
     accessorKey: 'createdAt',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Last activity" />,
-    cell: ({ row }) => <LastActivityCell {...row} />,
+    cell: ({ row }) => <LastActivityCell row={row} />,
     enableSorting: false,
   },
 ];

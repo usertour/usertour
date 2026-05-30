@@ -51,7 +51,7 @@ import {
 } from '@usertour/types';
 
 import { PREVIEW_BASIC } from '@usertour/constants';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface EmptyContentPreviewProps {
   className?: string;
@@ -81,7 +81,7 @@ const FlowPreview = ({
       type: currentStep.type,
     },
   );
-  const { shouldShowMadeWith } = useSubscription();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   // Get width with theme fallback if undefined
   const width =
@@ -224,7 +224,7 @@ const ChecklistPreview = (props: {
   const { currentTheme, currentVersion } = props;
   const data = currentVersion.data as ChecklistData;
   const themeSettings = currentTheme.settings;
-  const { shouldShowMadeWith } = useSubscription();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   return (
     <ChecklistRoot data={data} themeSettings={themeSettings} zIndex={10000}>
@@ -249,7 +249,7 @@ const ResourceCenterPreview = (props: {
   const { currentTheme, currentVersion } = props;
   const data = currentVersion.data as ResourceCenterData;
   const themeSettings = currentTheme.settings;
-  const { shouldShowMadeWith } = useSubscription();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   const normalWidth = themeSettings.resourceCenter?.normalWidth ?? 410;
   const previewHeight = Math.round(normalWidth * 1.4);
