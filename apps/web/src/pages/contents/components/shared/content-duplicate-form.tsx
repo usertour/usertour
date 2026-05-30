@@ -2,7 +2,6 @@
 
 import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -22,7 +21,7 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { duplicateContent } from '@usertour/gql';
+import { useDuplicateContentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType } from '@usertour/types';
 import * as React from 'react';
@@ -47,7 +46,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   const { onSuccess, content, open, onOpenChange } = props;
-  const [mutation] = useMutation(duplicateContent);
+  const { invoke: duplicateContent } = useDuplicateContentMutation();
   const { environment } = useAppContext();
   const contentTypeMeta = getContentTypeMeta(content.type);
 
@@ -73,12 +72,11 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
     try {
-      const variables = {
+      const duplicated = await duplicateContent({
         contentId: content.id,
         name: formValues.name,
-      };
-      const ret = await mutation({ variables });
-      if (ret.data.duplicateContent.id) {
+      });
+      if (duplicated?.id) {
         toast({
           variant: 'success',
           title: `The ${contentTypeMeta.singular} has been successfully created`,

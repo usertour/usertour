@@ -6,7 +6,6 @@ import {
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour/icons';
 import { Segment } from '@usertour/types';
@@ -16,6 +15,12 @@ import { SegmentSidebarSkeleton } from './segment-sidebar-skeleton';
 
 interface SegmentSidebarProps {
   title: string;
+  // Caller passes data via props. Sidebar stays presentational so the
+  // same component can serve users / companies / future entity pages
+  // without coupling to a specific list-fetch hook.
+  segmentList: Segment[] | undefined;
+  currentSegment: Segment | undefined;
+  loading: boolean;
   groupIcon?: React.ReactElement;
   onCreate?: () => void;
   createTooltip?: string;
@@ -24,12 +29,14 @@ interface SegmentSidebarProps {
 
 export function SegmentSidebar({
   title,
+  segmentList,
+  currentSegment,
+  loading,
   groupIcon,
   onCreate,
   createTooltip,
   disabled,
 }: SegmentSidebarProps) {
-  const { segmentList, currentSegment, loading } = useSegmentListContext();
   const [_, setSearchParams] = useSearchParams();
 
   // Default to users icon if not provided

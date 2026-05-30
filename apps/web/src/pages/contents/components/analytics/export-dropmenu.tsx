@@ -7,51 +7,51 @@ import {
 } from '@usertour/ui';
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
-import { useBizSessionContext } from '@/contexts/biz-session-context';
-import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { useQuery } from '@apollo/client';
-import { getContentVersion, listSessionsDetail } from '@usertour/gql';
-import type { BizSession, ContentVersion } from '@usertour/types';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
+import { useGetContentVersionQuery, useListSessionsDetailQuery } from '@usertour/hooks';
+import type { BizSession } from '@usertour/types';
+import { endOfDay, startOfDay } from 'date-fns';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
 import { buildExportPayload } from './export-csv.utils';
 
 type ExportDropdownMenuProps = {
   children: ReactNode;
+  totalCount: number;
 };
 
 export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
-  const { children } = props;
-  const { dateRange, contentId, timezone } = useAnalyticsContext();
-  const { totalCount } = useBizSessionContext();
+  const { children, totalCount } = props;
+  const { dateRange, contentId, timezone } = useAnalyticsUI();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
-  const { content } = useContentDetailContext();
-  const { attributeList } = useAttributeListContext();
+  const { content } = useContentDetail(contentId);
+  const { attributeList } = useAttributeList();
   const { environment } = useAppContext();
   const versionId = content?.publishedVersionId || content?.editedVersionId;
-  const { data } = useQuery(getContentVersion, {
-    variables: { versionId },
-    skip: !versionId,
-  });
-  const version = data?.getContentVersion as ContentVersion;
+  const { version } = useGetContentVersionQuery(versionId);
 
+  // Match the on-screen table's day boundaries (`use-biz-sessions.ts` /
+  // `analytics-question.tsx` / `analytics-tracker-users.tsx` all use
+  // `startOfDay` / `endOfDay`). Raw `toISOString()` would pin the
+  // window to the exact moment the date picker was opened, narrowing
+  // the export against the visible totalCount and missing sessions
+  // near the boundary days.
   const query = {
     environmentId: environment?.id ?? '',
     contentId,
-    startDate: dateRange?.from?.toISOString(),
-    endDate: dateRange?.to?.toISOString(),
+    startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
+    endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
     timezone,
   };
-  const orderBy = { field: 'createdAt', direction: 'desc' };
-  const { refetch } = useQuery(listSessionsDetail, {
-    variables: {
-      first: 100,
-      query,
-      orderBy,
-    },
-    skip: true,
+  const orderBy = { field: 'createdAt', direction: 'desc' as const };
+  // `skip: true` — the export handler calls `refetch` imperatively in a
+  // cursor loop instead of letting Apollo auto-fetch.
+  const { refetch } = useListSessionsDetailQuery({
+    query,
+    orderBy,
+    options: { skip: true },
   });
 
   const handleExportCSV = async (includeAllAttributes = false) => {
@@ -98,7 +98,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         contentName: content?.name,
         includeAllAttributes,
         attributeList,
-        version,
+        version: version ?? undefined,
         dateRange,
       });
 

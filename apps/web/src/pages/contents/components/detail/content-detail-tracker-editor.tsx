@@ -1,8 +1,9 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useEventListContext } from '@/contexts/event-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useEventList } from '@/hooks/use-event-list';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 import { buildConfig } from '@usertour/helpers';
 import { Event, RulesCondition } from '@usertour/types';
@@ -38,7 +39,7 @@ const TrackerEventSelector = ({
   onEventSelect,
   disabled = false,
 }: TrackerEventSelectorProps) => {
-  const { eventList, refetch } = useEventListContext();
+  const { eventList, refetch } = useEventList();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -171,8 +172,9 @@ const TrackerEventSelector = ({
 // ============================================================================
 
 export const ContentDetailTrackerEditor = () => {
-  const { version } = useContentVersionContext();
-  const { content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
   const { isViewOnly } = useAppContext();
   const { debouncedUpdateVersion, saveVersionData } = useContentVersionUpdate();
 

@@ -1,5 +1,6 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour/icons';
 import { AnalyticsData, ContentDataType } from '@usertour/types';
@@ -207,8 +208,9 @@ const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
 );
 
 export const AnalyticsViews = () => {
-  const { analyticsData, loading } = useAnalyticsContext();
-  const { content } = useContentDetailContext();
+  const { analyticsData, loading } = useContentAnalytics();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
   const contentType = content?.type;
 
   if (loading) {

@@ -1,11 +1,13 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useScrollRoot } from '@/contexts/scroll-root-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { ContentVersion } from '@usertour/types';
+import { Content, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';
-import { useInView } from 'react-intersection-observer';
+import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { VersionRow, VersionRowChip } from './version-row';
 
 type VersionGroup = { key: string; label: string; versions: ContentVersion[] };
@@ -27,9 +29,7 @@ const groupVersionsByDay = (versions: ContentVersion[]): VersionGroup[] => {
   return Array.from(groups.values());
 };
 
-const buildAllChipsMap = (
-  content: ReturnType<typeof useContentDetailContext>['content'],
-): Map<string, VersionRowChip[]> => {
+const buildAllChipsMap = (content: Content | null): Map<string, VersionRowChip[]> => {
   const map = new Map<string, VersionRowChip[]>();
   if (content?.editedVersionId) {
     map.set(content.editedVersionId, [{ kind: 'draft' }]);
@@ -57,23 +57,34 @@ const buildAllChipsMap = (
 };
 
 export const VersionHistoryList = () => {
-  const { content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
   const { versionList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
-    useContentVersionListContext();
+    useContentVersionList(contentId);
 
-  const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
-
+  // Library-managed sentinel: handles "fire once per inView" semantics,
+  // resize debounce, and auto-fill termination. `rootRef` must be wired
+  // to the actual scroll container (the outer overflow-y-auto div from
+  // ContentDetailView) — without it, IO measures against the window
+  // viewport and the auto-fill never settles in an inner-scroll layout.
+  const scrollRoot = useScrollRoot();
+  const [sentryRef, { rootRef }] = useInfiniteScroll({
+    loading: loading || loadingMore,
+    hasNextPage,
+    onLoadMore: fetchNextPage,
+    rootMargin: '0px 0px 100px 0px',
+  });
   useEffect(() => {
-    if (inView && hasNextPage && !loading && !loadingMore) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, loading, loadingMore, fetchNextPage]);
+    rootRef(scrollRoot);
+  }, [rootRef, scrollRoot]);
 
   const chipsMap = useMemo(() => buildAllChipsMap(content), [content]);
 
   const groupedHistory = useMemo(() => groupVersionsByDay(versionList), [versionList]);
 
-  if (loading) {
+  // First-load gating only — once any versions are in cache, a
+  // background refetch shouldn't collapse the list to a skeleton.
+  if (loading && versionList.length === 0) {
     return (
       <Card className="flex flex-col p-4 space-y-4 w-full">
         <h3 className="text-lg font-medium flex items-center gap-1">
@@ -152,7 +163,7 @@ export const VersionHistoryList = () => {
         </div>
       )}
 
-      <div ref={sentinelRef} className="flex h-10 items-center justify-center">
+      <div ref={sentryRef} className="flex h-10 items-center justify-center">
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
         {!hasNextPage && versionList.length > 0 && (
           <span className="text-xs text-muted-foreground">End of history</span>

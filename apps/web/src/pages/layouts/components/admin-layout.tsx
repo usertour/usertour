@@ -1,7 +1,4 @@
 import { useAppContext } from '@/contexts/app-context';
-import { AttributeListProvider } from '@/contexts/attribute-list-context';
-import { EnvironmentListProvider } from '@/contexts/environment-list-context';
-import { SubscriptionProvider } from '@/contexts/subscription-context';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { userTourToken } from '@/utils/env';
 import { cn } from '@usertour/tailwind';
@@ -99,15 +96,16 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
   }, [userInfo, posthog]);
 };
 
-// Single mount point for all user-area providers. Stays mounted across
-// nav changes between Admin/Builder/Settings/SystemAdmin shells so the
-// environment-list / attribute-list / subscription queries don't re-fire
-// every time the user changes pages.
+// Outlet for the admin shell. Environment / subscription / event /
+// attribute / theme lists are all hook-based now (`useEnvironmentList`,
+// `useSubscription`, `useEventList`, `useAttributeList`, `useThemeList`)
+// — they dedupe via Apollo's shared cache without needing a Provider
+// at this layer. `packages/contexts/.../{attribute,theme}-list-context`
+// still exists for `packages/builder` consumers; v0.8.6 retires those.
 export const AdminProvidersOutlet = () => {
   const { project, userInfo } = useAppContext();
   useUserTracking(userInfo);
   const projectId = project?.id;
-  const subscriptionId = project?.subscriptionId;
 
   // No active project — either the user has zero memberships or none of
   // their existing memberships is `actived`. Send them to /select-project
@@ -117,14 +115,10 @@ export const AdminProvidersOutlet = () => {
   }
 
   return (
-    <EnvironmentListProvider projectId={projectId}>
-      <AttributeListProvider projectId={projectId}>
-        <SubscriptionProvider projectId={projectId} subscriptionId={subscriptionId}>
-          <UpgradePlanBanner projectId={projectId} />
-          <Outlet />
-        </SubscriptionProvider>
-      </AttributeListProvider>
-    </EnvironmentListProvider>
+    <>
+      <UpgradePlanBanner projectId={projectId} />
+      <Outlet />
+    </>
   );
 };
 

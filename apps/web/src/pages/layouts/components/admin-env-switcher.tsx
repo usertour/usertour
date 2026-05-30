@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { EnvironmentCreateDialog } from '@/pages/settings/environments/components/environment-create-dialog';
 import { Environment } from '@usertour/types';
@@ -30,7 +30,7 @@ export const AdminEnvSwitcher = () => {
   const { environment, isViewOnly } = useAppContext();
   const { selectEnvironment } = useEnvironmentSelection();
 
-  const { environmentList, refetch } = useEnvironmentListContext();
+  const { environmentList, refetch } = useEnvironmentList();
 
   const handleItemClick = React.useCallback(
     (env: Environment) => {

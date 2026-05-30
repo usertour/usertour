@@ -938,6 +938,9 @@ const translations = {
       noUsersFound: 'No users found',
       noUsersFoundDescription: 'Try adjusting your filters or create new users.',
     },
+    list: {
+      totalCount: '{{count}} users in total.',
+    },
     detail: {
       title: 'User Detail',
       breadcrumb: 'Users',
@@ -1192,6 +1195,9 @@ const translations = {
     empty: {
       noCompaniesFound: 'No companies found',
       noCompaniesFoundDescription: 'Try adjusting your filters or create new companies.',
+    },
+    list: {
+      totalCount: '{{count}} companies in total.',
     },
     detail: {
       title: 'Company Detail',

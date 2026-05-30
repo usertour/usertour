@@ -23,7 +23,7 @@ import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from
 import { PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType, type PlanFeatures } from '@usertour/types';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useSubscription } from '@/hooks/use-subscription';
 
 // Define plan type
 interface Plan {
@@ -607,7 +607,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     totalLimit,
     planType,
     loading: subscriptionLoading,
-  } = useSubscriptionContext();
+  } = useSubscription();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
   const { t } = useTranslation();

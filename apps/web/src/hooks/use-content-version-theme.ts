@@ -1,7 +1,8 @@
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useThemeListContext } from '@/contexts/theme-list-context';
-import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour/gql';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useThemeList } from '@/hooks/use-theme-list';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { convertSettings, convertToCssVars, mergeThemeDefaultSettings } from '@usertour/helpers';
 import type { Theme, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo } from 'react';
@@ -30,21 +31,18 @@ export const useContentVersionTheme = (
   options: UseContentVersionThemeOptions = {},
 ): UseContentVersionThemeResult => {
   const { cssVarsType = 'tooltip' } = options;
-  const { version, refetch: refetchVersion } = useContentVersionContext();
-  const { themeList } = useThemeListContext();
-  const [updateVersionMutation] = useMutation(updateContentVersion);
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version, refetch: refetchVersion } = useContentVersion(content?.editedVersionId);
+  const { themeList } = useThemeList();
+  const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
 
   // Auto-set default theme if version has no themeId
   useEffect(() => {
     if (version && !version.themeId && themeList?.length) {
       const defaultTheme = themeList.find((t) => t.isDefault);
       if (defaultTheme) {
-        updateVersionMutation({
-          variables: {
-            versionId: version.id,
-            content: { themeId: defaultTheme.id },
-          },
-        }).then(() => {
+        updateContentVersion(version.id, { themeId: defaultTheme.id }).then(() => {
           refetchVersion();
         });
       }

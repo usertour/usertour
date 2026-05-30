@@ -40,7 +40,7 @@ const ProjectNameFormSkeleton = () => (
 );
 
 export const ProjectNameForm = () => {
-  const { project, refetch, loading } = useAppContext();
+  const { project, loading } = useAppContext();
   const { invoke: updateProjectName } = useUpdateProjectNameMutation();
   const { t } = useTranslation();
 
@@ -51,8 +51,10 @@ export const ProjectNameForm = () => {
       if (!project?.id) {
         return;
       }
+      // updateProjectName's response carries { id, name }; Apollo's
+      // normalized cache auto-merges into the Project entity, so
+      // AppContext re-emits without a manual refetch.
       await updateProjectName(project.id, name);
-      await refetch();
     },
     successMessage: t('settings.project.successToast'),
   });

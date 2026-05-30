@@ -876,6 +876,9 @@ const translations = {
       noUsersFound: '未找到用户',
       noUsersFoundDescription: '请尝试调整筛选条件或创建新用户。',
     },
+    list: {
+      totalCount: '共 {{count}} 个用户。',
+    },
     detail: {
       title: '用户详情',
       breadcrumb: '用户',
@@ -1107,6 +1110,9 @@ const translations = {
     empty: {
       noCompaniesFound: '未找到公司',
       noCompaniesFoundDescription: '请尝试调整筛选条件或创建新公司。',
+    },
+    list: {
+      totalCount: '共 {{count}} 个公司。',
     },
     detail: {
       title: '公司详情',

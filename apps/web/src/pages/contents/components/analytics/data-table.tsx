@@ -25,12 +25,17 @@ import {
   ListSkeleton,
 } from '@usertour/ui';
 
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import { useAppContext } from '@/contexts/app-context';
-import { useBizSessionContext } from '@/contexts/biz-session-context';
-import { useState } from 'react';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useEventList } from '@/hooks/use-event-list';
+import type { PaginationState } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { columns } from './columns';
+import type { BizSession } from '@usertour/types';
+import { buildColumns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
@@ -44,16 +49,50 @@ const columnWidthClass: Record<string, string> = {
   createdAt: 'w-[160px]',
 };
 
-export const BizSessionsDataTable = () => {
+interface BizSessionsDataTableProps {
+  bizSessions: BizSession[];
+  pagination: PaginationState;
+  setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+  pageCount: number;
+  totalCount: number;
+  refetch: () => Promise<unknown>;
+  loading: boolean;
+  isRefetching: boolean;
+}
+
+export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
+  const {
+    bizSessions,
+    pagination,
+    setPagination,
+    pageCount,
+    totalCount,
+    refetch,
+    loading,
+    isRefetching,
+  } = props;
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, bizSessions, refetch, loading } =
-    useBizSessionContext();
-  const { refetch: refetchAnalytics } = useAnalyticsContext();
+  const { refetch: refetchAnalytics } = useContentAnalytics();
   const { environment } = useAppContext();
   const navigate = useNavigate();
+
+  // All ~20 rows in this table belong to the same content / version, so
+  // these three reads are row-shared. Issuing them once here (instead
+  // of inside ProgressCell + StatusCell per row) cuts ~80
+  // ObservableQuery subscriptions down to 3 — Apollo network dedup
+  // already coalesced the requests, but each useQuery still spun up
+  // its own cache watcher chain.
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { eventList } = useEventList();
+  const { version } = useContentVersion(content?.editedVersionId);
+  const columns = useMemo(
+    () => buildColumns({ content, version, eventList }),
+    [content, version, eventList],
+  );
 
   const table = useReactTable({
     data: bizSessions,
@@ -81,11 +120,14 @@ export const BizSessionsDataTable = () => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  if (loading) {
+  // First-load gating only — background refetches (after a delete or
+  // when dateRange changes inside analytics) keep the prior table
+  // rendered instead of collapsing to a skeleton.
+  if (loading && bizSessions.length === 0) {
     return (
       <div className="space-y-4">
         <ListSkeleton length={pagination.pageSize} />
-        <DataTablePagination table={table} />
+        <DataTablePagination table={table} totalCount={totalCount} busy={loading || isRefetching} />
       </div>
     );
   }
@@ -115,7 +157,7 @@ export const BizSessionsDataTable = () => {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  key={row.id || `row-${Math.random()}`}
+                  key={row.id}
                   className="group h-14 cursor-pointer"
                   onClick={() => {
                     if (environment?.id) {
@@ -125,14 +167,11 @@ export const BizSessionsDataTable = () => {
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id || `cell-${Math.random()}`}>
+                    <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                  <TableCell
-                    key={`action-${row.id || Math.random()}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <TableCell key={`action-${row.id}`} onClick={(e) => e.stopPropagation()}>
                     <SessionActionDropdownMenu
                       session={row.original}
                       showViewResponse={row.original.content?.type === ContentDataType.FLOW}
@@ -168,7 +207,7 @@ export const BizSessionsDataTable = () => {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalCount={totalCount} busy={loading || isRefetching} />
     </div>
   );
 };

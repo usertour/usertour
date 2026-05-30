@@ -1,26 +1,14 @@
 'use client';
 
-import { useContentListContext } from '@/contexts/content-list-context';
-import { useThemeListContext } from '@/contexts/theme-list-context';
-import { useQuery } from '@apollo/client';
+import { useScrollRoot } from '@/contexts/scroll-root-context';
+import { useThemeList } from '@/hooks/use-theme-list';
+import { useGetContentVersionQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import {
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { getContentVersion } from '@usertour/gql';
-import { CircleIcon } from '@usertour/icons';
+import { CircleIcon, SpinnerIcon } from '@usertour/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { useNavigate } from 'react-router-dom';
 import { AutoScaledPreviewContainer, Button, Skeleton } from '@usertour/ui';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
@@ -33,12 +21,15 @@ import {
   ResourceCenterPreview,
   TrackerPreview,
 } from '../shared/content-preview';
-import { columns } from './columns';
-import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
 
-const ContentPreviewFooter = ({ content }: { content: Content }) => {
-  const { refetch } = useContentListContext();
+const ContentPreviewFooter = ({
+  content,
+  refetch,
+}: {
+  content: Content;
+  refetch: () => Promise<unknown>;
+}) => {
   const { isViewOnly, environment } = useAppContext();
 
   const isPublished = content?.contentOnEnvironments?.find(
@@ -193,38 +184,36 @@ const ContentPreview = ({
 const ContentTableItem = ({
   content,
   contentType,
+  refetch,
 }: {
   content: Content;
   contentType: string;
+  refetch: () => Promise<unknown>;
 }) => {
-  const { data, loading } = useQuery(getContentVersion, {
-    variables: { versionId: content?.editedVersionId },
-    skip: !content?.editedVersionId,
-  });
+  const { version: editedVersion, loading } = useGetContentVersionQuery(content?.editedVersionId);
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const { environment } = useAppContext();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
 
   // Derive all preview data in one pass to avoid chained useEffects and multiple re-renders
   const { currentVersion, currentStep, currentTheme } = useMemo(() => {
-    const version = data?.getContentVersion;
-    const step = version?.steps?.[0];
+    const step = editedVersion?.steps?.[0];
 
     let theme: Theme | undefined;
     if (themeList && themeList.length > 0) {
-      const themeId = step?.themeId ?? version?.themeId;
+      const themeId = step?.themeId ?? editedVersion?.themeId;
       if (themeId) {
         theme = themeList.find((item) => item.id === themeId);
       }
     }
 
     return {
-      currentVersion: version,
+      currentVersion: editedVersion ?? undefined,
       currentStep: step,
       currentTheme: theme,
     };
-  }, [data, themeList]);
+  }, [editedVersion, themeList]);
 
   // Consider loading if query is loading or themeList is not ready yet
   const isLoading = loading || !themeList;
@@ -259,53 +248,71 @@ const ContentTableItem = ({
           />
         </div>
       </div>
-      <ContentPreviewFooter content={content} />
+      <ContentPreviewFooter content={content} refetch={refetch} />
     </div>
   );
 };
 
-export function DataTable() {
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const { setPagination, pagination, pageCount, contents, contentType } = useContentListContext();
+interface DataTableProps {
+  contents: Content[];
+  contentType: string;
+  hasNextPage: boolean;
+  /** True during the initial / cache-and-network revalidate fetch. */
+  loading: boolean;
+  /** True during `fetchMore` (NetworkStatus 3). */
+  loadingMore: boolean;
+  fetchNextPage: () => Promise<unknown>;
+  refetch: () => Promise<unknown>;
+}
 
-  const table = useReactTable({
-    data: contents,
-    columns,
-    pageCount,
-    manualPagination: true,
-    state: {
-      sorting,
-      pagination,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
+export function DataTable(props: DataTableProps) {
+  const { contents, contentType, hasNextPage, loading, loadingMore, fetchNextPage, refetch } =
+    props;
+  // ScrollArea's Viewport, published by ContentList via ScrollRootProvider —
+  // becomes the IntersectionObserver root so the sentinel triggers against
+  // the actual scrolling element rather than the window viewport.
+  const scrollRoot = useScrollRoot();
+  const [sentryRef, { rootRef }] = useInfiniteScroll({
+    // Suppress the library's onLoadMore during the initial / revalidate
+    // fetch too — passing only `loadingMore` left the base load gated
+    // solely by the internal `fetchingRef` inside `fetchNextPage`,
+    // which diverged from how `VersionHistoryList` wires the same lib.
+    loading: loading || loadingMore,
+    hasNextPage,
+    onLoadMore: fetchNextPage,
+    rootMargin: '0px 0px 200px 0px',
   });
+  useEffect(() => {
+    rootRef(scrollRoot);
+  }, [rootRef, scrollRoot]);
 
   return (
     <div className="space-y-4">
-      {/* <DataTableToolbar table={table} /> */}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {contents.map((content) => (
-          <ContentTableItem content={content} key={content.id} contentType={contentType} />
+          <ContentTableItem
+            content={content}
+            key={content.id}
+            contentType={contentType}
+            refetch={refetch}
+          />
         ))}
       </div>
-      <DataTablePagination table={table} />
+      {hasNextPage && (
+        <div
+          ref={sentryRef}
+          className="flex items-center justify-center py-4 text-muted-foreground"
+        >
+          {loadingMore ? (
+            <span className="flex items-center gap-2 text-sm">
+              <SpinnerIcon className="h-4 w-4 animate-spin" />
+              Loading…
+            </span>
+          ) : (
+            <span className="h-px w-full" aria-hidden />
+          )}
+        </div>
+      )}
     </div>
   );
 }

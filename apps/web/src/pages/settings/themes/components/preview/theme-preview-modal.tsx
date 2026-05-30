@@ -11,7 +11,7 @@ import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour/constants';
 
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface ThemePreviewModalProps {
   contents: ContentEditorRoot[];
@@ -21,7 +21,7 @@ interface ThemePreviewModalProps {
 
 export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
   const { contents, settings, customStyle } = props;
-  const { shouldShowMadeWith } = useSubscriptionContext();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;

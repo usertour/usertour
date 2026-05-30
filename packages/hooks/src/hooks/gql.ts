@@ -12,8 +12,13 @@ import {
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
+  createBizCompanyOnSegment,
+  createBizUserOnSegment,
   createEnvironments,
+  createSegment,
   deleteAttribute,
+  deleteBizCompany,
+  deleteBizCompanyOnSegment,
   deleteContent,
   deleteEnvironments,
   deleteSegment,
@@ -85,6 +90,8 @@ import {
   adminTransferProjectOwnership,
   adminRemoveProjectMember,
   updateInstanceRequire2FA,
+  getTheme,
+  listLocalizations,
 } from '@usertour/gql';
 
 import type {
@@ -105,12 +112,19 @@ import type {
   IntegrationModel,
   SalesforceObjectFields,
   SessionQuery,
+  ColumnSetting,
+  RulesCondition,
+  Theme,
+  Localization,
 } from '@usertour/types';
 
 type UseContentListQueryProps = {
+  // Index signature mirrors the server's ContentQuery input — callers
+  // pass `published` / etc. in addition to the always-required keys.
   query: {
     environmentId: string;
     type?: ContentDataType;
+    [key: string]: unknown;
   };
   options?: QueryHookOptions;
   pagination?: Pagination;
@@ -126,13 +140,18 @@ export const useContentListQuery = ({
   pagination = { first: 1000 },
   options,
 }: UseContentListQueryProps) => {
+  // `...options` spread BEFORE `variables` — a caller-supplied
+  // `options.variables` would otherwise silently overwrite the
+  // pagination / query / orderBy the wrapper just composed. Defensive
+  // but free: `useCursorPagination` already pipes caller-controlled
+  // options straight into wrappers like this one.
   const { data, refetch, error, loading } = useQuery(queryContent, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
   const contentList = data?.queryContent?.edges.map((e: any) => e.node);
   const pageInfo = data?.queryContent?.pageInfo;
@@ -161,13 +180,15 @@ export const useCompanyListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseCompanyListQueryProps & { options?: QueryHookOptions }) => {
-  const { data, refetch, loading, error } = useQuery(queryBizCompany, {
+  // See `useContentListQuery` — `...options` first, `variables` last,
+  // so caller can't accidentally clobber wrapper-composed variables.
+  const { data, refetch, loading, error, networkStatus } = useQuery(queryBizCompany, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const bizCompanyList = data?.queryBizCompany;
@@ -175,7 +196,10 @@ export const useCompanyListQuery = ({
   const pageInfo = bizCompanyList?.pageInfo;
   const totalCount = bizCompanyList?.totalCount || 0;
 
-  return { contents, pageInfo, totalCount, refetch, loading, error };
+  // networkStatus pass-through so callers can derive `isRefetching`
+  // (NetworkStatus.refetch === 4). Opt-in: callers pass
+  // `options.notifyOnNetworkStatusChange: true` to make it meaningful.
+  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
 };
 
 type UseUserListQueryProps = {
@@ -196,13 +220,15 @@ export const useUserListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseUserListQueryProps & { options?: QueryHookOptions }) => {
-  const { data, refetch, loading, error } = useQuery(queryBizUser, {
+  // See `useContentListQuery` — `...options` first, `variables` last,
+  // so caller can't accidentally clobber wrapper-composed variables.
+  const { data, refetch, loading, error, networkStatus } = useQuery(queryBizUser, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const bizUserList = data?.queryBizUser;
@@ -210,27 +236,36 @@ export const useUserListQuery = ({
   const pageInfo = bizUserList?.pageInfo;
   const totalCount = bizUserList?.totalCount || 0;
 
-  return { contents, pageInfo, totalCount, refetch, loading, error };
+  // See useCompanyListQuery — same networkStatus opt-in pattern.
+  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
 };
 
 export const useSegmentListQuery = (
   environmentId: string,
   bizType: string[] = ['COMPANY', 'USER'],
+  options?: QueryHookOptions,
 ) => {
-  const { data, refetch, loading, error } = useQuery(listSegment, {
+  const { data, refetch, loading, error, networkStatus } = useQuery(listSegment, {
     variables: { environmentId },
+    ...options,
   });
   const segments =
     data?.listSegment?.length > 0
       ? data.listSegment.filter((item: Segment) => bizType.includes(item.bizType))
       : [];
 
-  return { segmentList: segments as Segment[], refetch, loading, error };
+  // See useCompanyListQuery — same networkStatus opt-in pattern.
+  return { segmentList: segments as Segment[], refetch, loading, error, networkStatus };
 };
 
-export const useQueryTeamMemberListQuery = (projectId: string) => {
+export const useQueryTeamMemberListQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, refetch, loading, error } = useQuery(getTeamMembers, {
     variables: { projectId },
+    skip: !projectId,
+    ...options,
   });
 
   const teamMembers: TeamMember[] =
@@ -247,9 +282,14 @@ export const useQueryTeamMemberListQuery = (projectId: string) => {
   return { teamMembers, refetch, loading, error };
 };
 
-export const useQueryInviteListQuery = (projectId: string) => {
+export const useQueryInviteListQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, refetch, loading, error } = useQuery(getInvites, {
     variables: { projectId },
+    skip: !projectId,
+    ...options,
   });
 
   const invites: TeamMember[] =
@@ -266,7 +306,9 @@ export const useQueryInviteListQuery = (projectId: string) => {
 };
 
 export const useInviteTeamMemberMutation = () => {
-  const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation);
+  const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation, {
+    refetchQueries: ['getInvites'],
+  });
   const invoke = async (
     projectId: string,
     name: string,
@@ -283,7 +325,9 @@ export const useInviteTeamMemberMutation = () => {
 };
 
 export const useCancelInviteMutation = () => {
-  const [mutation, { loading, error }] = useMutation(cancelInvite);
+  const [mutation, { loading, error }] = useMutation(cancelInvite, {
+    refetchQueries: ['getInvites'],
+  });
   const invoke = async (projectId: string, inviteId: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, inviteId } });
     return !!response.data?.cancelInvite;
@@ -293,7 +337,9 @@ export const useCancelInviteMutation = () => {
 };
 
 export const useRemoveTeamMemberMutation = () => {
-  const [mutation, { loading, error }] = useMutation(removeTeamMember);
+  const [mutation, { loading, error }] = useMutation(removeTeamMember, {
+    refetchQueries: ['getTeamMembers'],
+  });
   const invoke = async (projectId: string, userId: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, userId } });
     return !!response.data?.removeTeamMember;
@@ -303,7 +349,12 @@ export const useRemoveTeamMemberMutation = () => {
 };
 
 export const useChangeTeamMemberRoleMutation = () => {
-  const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation);
+  // changeTeamMemberRole returns only `{ success }`, not a TeamMember
+  // entity, so Apollo can't auto-merge the role flip. Refetch the list
+  // so the displayed role updates.
+  const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation, {
+    refetchQueries: ['getTeamMembers'],
+  });
   const invoke = async (projectId: string, userId: string, role: string): Promise<boolean> => {
     const response = await mutation({ variables: { projectId, userId, role } });
     return !!response.data?.changeTeamMemberRole;
@@ -402,7 +453,12 @@ export const useUpdateContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateContentVersion);
   const invoke = async (
     versionId: string,
-    content: { data?: any; config?: any; themeId?: string },
+    content: {
+      data?: unknown;
+      config?: unknown;
+      themeId?: string;
+      scheduledAt?: Date | null;
+    },
   ) => {
     const response = await mutation({ variables: { versionId, content } });
     return response.data?.updateContentVersion;
@@ -420,7 +476,9 @@ export type CreateAttributeMutationVariables = {
 };
 
 export const useCreateAttributeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createAttribute);
+  const [mutation, { loading, error }] = useMutation(createAttribute, {
+    refetchQueries: ['listAttributes'],
+  });
   const invoke = async (data: CreateAttributeMutationVariables) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createAttribute;
@@ -698,8 +756,18 @@ export const useGetSalesforceObjectFieldsQuery = (
 };
 
 export const useCreateContentVersionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createContentVersion);
-  const invoke = async (data: { versionId: string }) => {
+  // Forking the version inserts a new row at the top of the paginated
+  // version-history list — Apollo's normalized cache can't materialise
+  // a new edge from the mutation response, so refetch the list query.
+  const [mutation, { loading, error }] = useMutation(createContentVersion, {
+    refetchQueries: ['listContentVersions'],
+  });
+  const invoke = async (data: {
+    versionId: string;
+    config?: unknown;
+    data?: unknown;
+    themeId?: string;
+  }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createContentVersion;
   };
@@ -709,7 +777,13 @@ export const useCreateContentVersionMutation = () => {
 export const useDeleteAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteAttribute);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Attribute', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteAttribute?.id;
   };
   return { invoke, loading, error };
@@ -718,18 +792,37 @@ export const useDeleteAttributeMutation = () => {
 export const useDeleteSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteSegment);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Segment', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteSegment?.success;
   };
   return { invoke, loading, error };
 };
 
+// Server's UpdateSegment input picks { name, data, id, columns } from
+// Segment — all optional except id. Wrapper mirrors that so the same
+// invoke handles both filter-condition saves and column-setting saves.
+//
+// Refresh path is `refetchQueries: ['listSegment']`, NOT Apollo
+// auto-merge. The updateSegment gql response only selects `{ id }`
+// (see packages/gql/src/gql/segment.ts), so auto-merge into the cached
+// Segment entity is a no-op. To migrate to auto-merge later, expand
+// the gql response to mirror listSegment's selection set, then drop
+// refetchQueries here.
 export const useUpdateSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateSegment);
+  const [mutation, { loading, error }] = useMutation(updateSegment, {
+    refetchQueries: ['listSegment'],
+  });
   const invoke = async (data: {
     id: string;
-    data: any;
-    name: string;
+    name?: string;
+    data?: RulesCondition[];
+    columns?: ColumnSetting[];
   }): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
     return !!response.data?.updateSegment?.id;
@@ -740,7 +833,17 @@ export const useUpdateSegmentMutation = () => {
 export const useDeleteContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteContent);
   const invoke = async (contentId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { contentId } });
+    const response = await mutation({
+      variables: { contentId },
+      // Server returns `{ success }` only — there's no `id` on the
+      // payload for auto-merge, so do the eviction ourselves. All
+      // observers of the Content slot (list view, detail view, etc.)
+      // see the row disappear without a manual refetch.
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteContent?.success;
   };
   return { invoke, loading, error };
@@ -749,7 +852,13 @@ export const useDeleteContentMutation = () => {
 export const useDeleteEnvironmentsMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteEnvironments);
   const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Environment', id }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteEnvironments?.id;
   };
   return { invoke, loading, error };
@@ -761,7 +870,9 @@ export interface CreateEnvironmentInput {
 }
 
 export const useCreateEnvironmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createEnvironments);
+  const [mutation, { loading, error }] = useMutation(createEnvironments, {
+    refetchQueries: ['userEnvironments'],
+  });
   const invoke = async (input: CreateEnvironmentInput): Promise<string | undefined> => {
     const response = await mutation({ variables: input });
     return response.data?.createEnvironments?.id as string | undefined;
@@ -776,7 +887,12 @@ export interface UpdateEnvironmentInput {
 }
 
 export const useUpdateEnvironmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateEnvironments);
+  // setPrimary flips isPrimary on two rows; refetch covers the demoted one.
+  // Plain rename auto-merges via __typename:id but we refetch anyway so
+  // the caller doesn't need to know which path it took.
+  const [mutation, { loading, error }] = useMutation(updateEnvironments, {
+    refetchQueries: ['userEnvironments'],
+  });
   const invoke = async (input: UpdateEnvironmentInput): Promise<boolean> => {
     const response = await mutation({ variables: input });
     return !!response.data?.updateEnvironments?.id;
@@ -794,6 +910,7 @@ export interface UpdateAttributeInput {
 }
 
 export const useUpdateAttributeMutation = () => {
+  // Auto-merged by Apollo via __typename:id.
   const [mutation, { loading, error }] = useMutation(updateAttribute);
   const invoke = async (data: UpdateAttributeInput): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
@@ -802,11 +919,15 @@ export const useUpdateAttributeMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useGetUserEnvironmentsQuery = (projectId: string | undefined) => {
+export const useGetUserEnvironmentsQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, refetch, loading, error, networkStatus } = useQuery(getUserEnvironments, {
     variables: { projectId },
     notifyOnNetworkStatusChange: true,
     skip: !projectId,
+    ...options,
   });
 
   const isRefetching = networkStatus === NetworkStatus.refetch;
@@ -824,7 +945,22 @@ export const useDeleteBizUserMutation = () => {
     success: boolean;
     count: number;
   }> => {
-    const response = await mutation({ variables: { data } });
+    const response = await mutation({
+      variables: { data },
+      // Evict the BizUser entity from any cache slice that holds it.
+      // The user list (useBizListCursor) runs on the global no-cache
+      // default, so list refresh after delete still comes from the
+      // caller's existing refetch chain; this evict targets the
+      // cache-and-network detail-content queries
+      // (`user-detail-content` / `user-session-detail-content`) so a
+      // deleted user disappears from those slices too.
+      update(cache) {
+        for (const id of data.ids) {
+          cache.evict({ id: cache.identify({ __typename: 'BizUser', id }) });
+        }
+        cache.gc();
+      },
+    });
     return {
       success: !!response.data?.deleteBizUser?.success,
       count: response.data?.deleteBizUser?.count ?? 0,
@@ -834,7 +970,13 @@ export const useDeleteBizUserMutation = () => {
 };
 
 export const useDeleteBizUserOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment);
+  // Removes a relationship, not the user itself — the user entity stays
+  // in cache, but the segment's view of users needs to be refetched
+  // because Apollo can't infer "this user is no longer in this segment"
+  // from a count response.
+  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment, {
+    refetchQueries: ['queryBizUser'],
+  });
   const invoke = async (data: {
     bizUserIds: string[];
     segmentId: string;
@@ -846,6 +988,75 @@ export const useDeleteBizUserOnSegmentMutation = () => {
     return {
       success: !!response.data?.deleteBizUserOnSegment?.success,
       count: response.data?.deleteBizUserOnSegment?.count ?? 0,
+    };
+  };
+  return { invoke, loading, error };
+};
+
+// Generic data type lets callers pass the entity-specific shape
+// (`CreatSegment` for create, `CreateBizUserOnSegment` for add-to-segment,
+// etc.) without the wrapper having to know every server input type.
+type MutationVariables = { data: Record<string, unknown> };
+
+export const useCreateSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createSegment, {
+    refetchQueries: ['listSegment'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useCreateBizUserOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createBizUserOnSegment, {
+    refetchQueries: ['queryBizUser'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useCreateBizCompanyOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createBizCompanyOnSegment, {
+    refetchQueries: ['queryBizCompany'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizCompanyOnSegmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizCompanyOnSegment, {
+    refetchQueries: ['queryBizCompany'],
+  });
+  const invoke = (variables: MutationVariables) => mutation({ variables });
+  return { invoke, loading, error };
+};
+
+export const useDeleteBizCompanyMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteBizCompany);
+  const invoke = async (data: {
+    ids: string[];
+    environmentId: string;
+  }): Promise<{ success: boolean; count: number }> => {
+    const response = await mutation({
+      variables: { data },
+      // queryBizCompany returns BizConnection (paginated BizModel),
+      // not BizCompany — companies are stored under `BizModel:{id}` in
+      // the normalized cache. (Users use `BizUser`, the subclass.)
+      //
+      // Same scope as deleteBizUser's evict: the company list runs
+      // no-cache, so list refresh after delete comes from the caller's
+      // explicit refetch; this evict targets the cache-and-network
+      // company-detail-content slice so the deleted entity disappears
+      // there too.
+      update(cache) {
+        for (const id of data.ids) {
+          cache.evict({ id: cache.identify({ __typename: 'BizModel', id }) });
+        }
+        cache.gc();
+      },
+    });
+    return {
+      success: !!response.data?.deleteBizCompany?.success,
+      count: response.data?.deleteBizCompany?.count ?? 0,
     };
   };
   return { invoke, loading, error };
@@ -1088,4 +1299,30 @@ export const useInvalidateLicenseScopedCache = () => {
     apollo.cache.gc();
     await apollo.refetchQueries({ include: [getUserInfo, globalConfig] }).catch(() => undefined);
   }, [apollo]);
+};
+
+export const useGetThemeQuery = (themeId: string | undefined, options?: QueryHookOptions) => {
+  const { data, refetch, loading, error } = useQuery(getTheme, {
+    variables: { themeId },
+    skip: !themeId,
+    ...options,
+  });
+  return { theme: data?.getTheme as Theme | undefined, refetch, loading, error };
+};
+
+export const useListLocalizationsQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, refetch, loading, error } = useQuery(listLocalizations, {
+    variables: { projectId },
+    skip: !projectId,
+    ...options,
+  });
+  return {
+    localizationList: data?.listLocalizations as Localization[] | undefined,
+    refetch,
+    loading,
+    error,
+  };
 };

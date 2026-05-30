@@ -1,5 +1,4 @@
-import { useMutation } from '@apollo/client';
-import { createSegment } from '@usertour/gql';
+import { useCreateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { CreateSegmentFormValues } from '@/components/segments/segment-form-schema';
@@ -10,7 +9,7 @@ interface CreateCompanySegmentResult {
 }
 
 export const useCreateCompanySegment = () => {
-  const [createMutation, { loading }] = useMutation(createSegment);
+  const { invoke: createMutation, loading } = useCreateSegmentMutation();
 
   const createSegmentAsync = useCallback(
     async (
@@ -24,7 +23,7 @@ export const useCreateCompanySegment = () => {
           data: [],
           environmentId,
         };
-        const ret = await createMutation({ variables: { data } });
+        const ret = await createMutation({ data });
 
         if (!ret.data?.createSegment?.id) {
           return { success: false, error: 'Create operation failed' };

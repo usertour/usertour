@@ -1,21 +1,23 @@
-import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useUpdateSegmentMutation } from '@usertour/hooks';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Segment } from '@usertour/types';
+import { CurrentConditions, Segment } from '@usertour/types';
+
+interface UseSaveCompanySegmentFilterArgs {
+  currentSegment: Segment | undefined;
+  currentConditions: CurrentConditions | undefined;
+  refetchSegments: () => Promise<unknown>;
+}
 
 /**
- * Company-side mirror of `useSaveSegmentFilter`. Same shape, plus
- * `isRefetching` so the Save button stays disabled while the segment list
- * refetches after a save (carries over the existing company-side UX).
- * Reads the `companies.toast.filters.saveSuccess` key instead of the
- * `users.*` namespace — toasts stay entity-specific.
+ * Company-side mirror of `useSaveSegmentFilter`. Same shape; uses the
+ * `companies.toast.filters.saveSuccess` key for entity-specific toast.
  */
-export const useSaveCompanySegmentFilter = (currentSegment?: Segment) => {
+export const useSaveCompanySegmentFilter = (args: UseSaveCompanySegmentFilterArgs) => {
+  const { currentSegment, currentConditions, refetchSegments } = args;
   const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
-  const { refetch, currentConditions, isRefetching } = useSegmentListContext();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -53,12 +55,7 @@ export const useSaveCompanySegmentFilter = (currentSegment?: Segment) => {
           variant: 'success',
           title: t('companies.toast.filters.saveSuccess', { segmentName: currentSegment.name }),
         });
-        // Fire-and-forget so a refetch network blip doesn't get rethrown
-        // into the catch below and surface as a "save failed" toast after
-        // the save itself succeeded server-side. `.catch` swallows the
-        // rejection so it doesn't bubble to window.unhandledrejection.
-        // Button stays disabled via `isRefetching` while the list refreshes.
-        refetch().catch(() => undefined);
+        Promise.resolve(refetchSegments()).catch(() => undefined);
         return true;
       }
       return false;
@@ -69,7 +66,7 @@ export const useSaveCompanySegmentFilter = (currentSegment?: Segment) => {
       });
       return false;
     }
-  }, [currentSegment, currentConditions, updateSegment, toast, t, refetch]);
+  }, [currentSegment, currentConditions, updateSegment, toast, t, refetchSegments]);
 
   useEffect(() => {
     if (
@@ -88,7 +85,6 @@ export const useSaveCompanySegmentFilter = (currentSegment?: Segment) => {
     open,
     isShowButton,
     loading,
-    isRefetching,
     handleOpenDialog,
     handleCloseDialog,
     saveFilter,

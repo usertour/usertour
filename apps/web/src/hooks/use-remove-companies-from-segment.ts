@@ -1,5 +1,4 @@
-import { useMutation } from '@apollo/client';
-import { deleteBizCompanyOnSegment } from '@usertour/gql';
+import { useDeleteBizCompanyOnSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +10,7 @@ interface RemoveCompaniesResult {
 }
 
 export const useRemoveCompaniesFromSegment = () => {
-  const [removeMutation, { loading }] = useMutation(deleteBizCompanyOnSegment);
+  const { invoke: removeMutation, loading } = useDeleteBizCompanyOnSegmentMutation();
   const { t } = useTranslation();
 
   const removeCompanies = useCallback(
@@ -26,7 +25,7 @@ export const useRemoveCompaniesFromSegment = () => {
       };
 
       try {
-        const ret = await removeMutation({ variables: { data } });
+        const ret = await removeMutation({ data });
         if (ret.data?.deleteBizCompanyOnSegment?.success) {
           return { success: true, count: ret.data.deleteBizCompanyOnSegment.count };
         }

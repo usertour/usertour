@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useGetInviteQuery, useGlobalConfigQuery } from '@usertour/hooks';
+import { NotFound } from '@/routes/not-found';
 import { AuthCard } from './components/auth-card';
 import { SignInForm } from './components/sign-in-form';
 import { SignUpForm } from './components/registration-form';
@@ -17,8 +18,10 @@ export const Invite = () => {
   const { data: invite, loading } = useGetInviteQuery(inviteCode ?? '');
   const [view, setView] = useState<View>('main');
 
+  // Route `/auth/invite/:inviteCode` guarantees the path param; fall
+  // back to NotFound for the edge case where it somehow isn't there.
   if (!inviteCode) {
-    return null;
+    return <NotFound />;
   }
 
   // Wait for both the invite lookup and globalConfig before rendering — the

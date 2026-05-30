@@ -1,8 +1,9 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useListAttributesQuery } from '@usertour/hooks';
 import { StorageKeys } from '@usertour/constants';
 import { validateConditions } from '@usertour/business-components';
 import {
+  AttributeBizTypes,
   type Theme,
   ThemeDetailPreviewType,
   type ThemeTypesSetting,
@@ -113,7 +114,12 @@ export const ThemeBuilder = (props: ThemeBuilderProps) => {
 
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { attributeList } = useAttributeListContext();
+  const { project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { skip: !project?.id },
+  );
   const handleSave = useCallback(async () => {
     // Conditions writes every onChange — including the one fired when a
     // user adds a fresh empty user-attr / current-page from the dropdown

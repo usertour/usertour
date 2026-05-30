@@ -30,10 +30,15 @@ export const getUserInfo = gql`
   }
 `;
 
+// Returns the fields `getUserInfo` (`me`) reads so Apollo's normalized
+// cache auto-merges the updated User entity by __typename:id; the
+// AppContext facade then re-emits without a manual refetch.
 export const updateUser = gql`
   mutation updateUser($name: String!, $avatarUrl: String) {
     updateUser(data: { name: $name, avatarUrl: $avatarUrl }) {
       id
+      name
+      avatarUrl
     }
   }
 `;
@@ -42,6 +47,7 @@ export const updateEmail = gql`
   mutation changeEmail($email: String!, $password: String!) {
     changeEmail(data: { email: $email, password: $password }) {
       id
+      email
     }
   }
 `;

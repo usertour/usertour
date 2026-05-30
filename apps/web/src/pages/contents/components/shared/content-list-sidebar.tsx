@@ -6,7 +6,6 @@ import {
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
-import { useContentListContext } from '@/contexts/content-list-context';
 import { FileEditLineIcon, BaseStationLineIcon } from '@usertour/icons';
 import { useSearchParams } from 'react-router-dom';
 
@@ -15,8 +14,11 @@ interface ContentListSidebarProps {
 }
 
 export function ContentListSidebar({ title }: ContentListSidebarProps) {
-  const { query } = useContentListContext();
-  const [, setSearchParams] = useSearchParams();
+  // `published` is single-sourced from the URL. The list hook reads
+  // the same URL param to build its query, so the highlighted item
+  // and the fetched data can't diverge.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isPublished = searchParams.get('published') === '1';
 
   // Extract common styles and logic
   const getItemClassName = (isActive: boolean) =>
@@ -36,16 +38,16 @@ export function ContentListSidebar({ title }: ContentListSidebarProps) {
         <AdminSidebarBodyTitleTemplate>Status</AdminSidebarBodyTitleTemplate>
         <AdminSidebarBodyItemTemplate
           onClick={handleStatusChange(false)}
-          variant={query.published !== true ? 'secondary' : 'ghost'}
-          className={getItemClassName(query.published !== true)}
+          variant={!isPublished ? 'secondary' : 'ghost'}
+          className={getItemClassName(!isPublished)}
         >
           <FileEditLineIcon className="w-4 h-4 mr-1" />
           Draft
         </AdminSidebarBodyItemTemplate>
         <AdminSidebarBodyItemTemplate
           onClick={handleStatusChange(true)}
-          variant={query.published === true ? 'secondary' : 'ghost'}
-          className={getItemClassName(query.published === true)}
+          variant={isPublished ? 'secondary' : 'ghost'}
+          className={getItemClassName(isPublished)}
         >
           <BaseStationLineIcon className="w-4 h-4 mr-1" />
           Published

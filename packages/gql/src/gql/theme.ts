@@ -36,6 +36,8 @@ export const createTheme = gql`
   }
 `;
 
+// Returns the same selection set as `listThemes` so Apollo's normalized
+// cache auto-merges the updated row by __typename:id.
 export const updateTheme = gql`
   mutation updateTheme(
     $id: String!
@@ -48,6 +50,14 @@ export const updateTheme = gql`
       data: { id: $id, name: $name, settings: $settings, isDefault: $isDefault, variations: $variations }
     ) {
       id
+      name
+      projectId
+      createdAt
+      updatedAt
+      settings
+      isDefault
+      isSystem
+      variations
     }
   }
 `;

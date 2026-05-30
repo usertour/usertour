@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppContext } from '@/contexts/app-context';
-import { MemberProvider, useMemberContext } from '@/contexts/member-context';
+import { useMemberList } from '@/hooks/use-member-list';
 import {
   UserAvatar,
   Badge,
@@ -28,9 +27,9 @@ const AddTeamMemberButton = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
-// Pending invites first (matches the existing `[...invites, ...teamMembers]`
-// shape of `useMemberContext`), then name-asc within each group so refetches
-// don't reshuffle rows.
+// Pending invites first (matches the legacy `[...invites, ...teamMembers]`
+// composition in `useMemberList`), then name-asc within each group so
+// refetches don't reshuffle rows.
 const sortMembers = (members: readonly TeamMember[]) =>
   [...members].sort((left, right) => {
     if (left.isInvite !== right.isInvite) {
@@ -39,8 +38,8 @@ const sortMembers = (members: readonly TeamMember[]) =>
     return (left.name ?? '').localeCompare(right.name ?? '');
   });
 
-const MemberListPage = () => {
-  const { members, loading, refetch } = useMemberContext();
+export const SettingsMemberList = () => {
+  const { members, loading, refetch } = useMemberList();
   const { t } = useTranslation();
 
   const rows = useMemo(() => sortMembers(members ?? []), [members]);
@@ -86,18 +85,6 @@ const MemberListPage = () => {
       empty={t('settings.team.empty')}
       getRowKey={(member) => (member.isInvite ? member.inviteId : member.userId) ?? ''}
     />
-  );
-};
-
-export const SettingsMemberList = () => {
-  const { project } = useAppContext();
-  if (!project?.id) {
-    return null;
-  }
-  return (
-    <MemberProvider projectId={project.id}>
-      <MemberListPage />
-    </MemberProvider>
   );
 };
 

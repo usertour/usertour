@@ -213,6 +213,12 @@ export const updateContent = gql`
       buildUrl
       environmentId
       config
+      type
+      editedVersionId
+      publishedVersionId
+      published
+      publishedAt
+      updatedAt
     }
   }
 `;
@@ -282,6 +288,13 @@ export const updateContentVersion = gql`
   mutation updateContentVersion($versionId: String!, $content: VersionInput!) {
     updateContentVersion(data: { versionId: $versionId, content: $content }) {
       id
+      sequence
+      contentId
+      themeId
+      config
+      data
+      scheduledAt
+      updatedAt
     }
   }
 `;

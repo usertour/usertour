@@ -1,4 +1,4 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 import { calculateRate } from '@/utils/analytics';
 
 export const AnalyticsTasks = () => {
-  const { analyticsData, loading } = useAnalyticsContext();
+  const { analyticsData, loading } = useContentAnalytics();
 
   if (loading) {
     return <AnalyticsTasksSkeleton />;

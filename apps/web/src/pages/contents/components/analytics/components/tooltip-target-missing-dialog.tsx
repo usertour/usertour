@@ -25,7 +25,7 @@ import {
   type TooltipTargetMissingResponse,
 } from '@usertour/hooks';
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
 import type { DatePresetKey } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +35,7 @@ import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
-import { useInView } from 'react-intersection-observer';
+import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
 import { formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
 import { cn } from '@usertour/tailwind';
@@ -263,7 +263,7 @@ export const TooltipTargetMissingDialog = ({
     dateRange: globalDateRange,
     selectedPreset: globalSelectedPreset,
     timezone,
-  } = useAnalyticsContext();
+  } = useAnalyticsUI();
   const { invoke: fetchSessions, loading } = useQueryTooltipTargetMissingSessionsLazyQuery();
 
   // Local date range state (independent from global context)
@@ -290,11 +290,6 @@ export const TooltipTargetMissingDialog = ({
       setLocalStepAnalytics(null);
     }
   }, [open, globalDateRange, globalSelectedPreset]);
-
-  const { ref: sentinelRef, inView } = useInView({
-    threshold: 0,
-    root: scrollContainer,
-  });
 
   const buildQueryParams = useCallback(() => {
     if (!environment?.id || !localDateRange?.from || !localDateRange?.to) return null;
@@ -339,12 +334,15 @@ export const TooltipTargetMissingDialog = ({
     setLoadingMore(false);
   }, [buildQueryParams, pageInfo.endCursor, loadingMore, fetchSessions, handleFetchResult]);
 
-  // Load more when sentinel comes into view
+  const [sentryRef, { rootRef }] = useInfiniteScroll({
+    loading: loadingMore || loading || isRefetching,
+    hasNextPage: pageInfo.hasNextPage,
+    onLoadMore: loadMore,
+    rootMargin: '0px 0px 100px 0px',
+  });
   useEffect(() => {
-    if (inView && pageInfo.hasNextPage && !loadingMore && !loading) {
-      loadMore();
-    }
-  }, [inView, pageInfo.hasNextPage, loadingMore, loading, loadMore]);
+    rootRef(scrollContainer);
+  }, [rootRef, scrollContainer]);
 
   // Load initial data when dialog opens or local date range changes
   useEffect(() => {
@@ -437,7 +435,7 @@ export const TooltipTargetMissingDialog = ({
               </Table>
 
               {pageInfo.hasNextPage && (
-                <div ref={sentinelRef} className="py-4">
+                <div ref={sentryRef} className="py-4">
                   {loadingMore && <LoadingSpinner size="sm" />}
                 </div>
               )}

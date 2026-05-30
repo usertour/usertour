@@ -63,6 +63,18 @@ export interface DataTableToolbarProps<TData> {
 // Pagination props interface
 export interface DataTablePaginationProps<TData extends { id: string }> {
   table: Table<TData>;
+  /** Disable Next / Prev / First / Last while a cursor-pagination
+   *  request is in flight. `useCursorPagination` doesn't latch the
+   *  user-facing `pagination` to the *committed* response, so a click
+   *  faster than the network races into computing the same cursor
+   *  twice and the table ends up displaying page N while the pager
+   *  reads "Page N+1". Pass `loading || isRefetching` from the
+   *  hook's result to gate the buttons until the response lands. */
+  busy?: boolean;
+  /** Optional total-count line on the left of the pagination row
+   *  ("11 users in total."). Caller is responsible for i18n —
+   *  `@usertour/ui` primitives don't import `react-i18next`. */
+  totalCountText?: React.ReactNode;
 }
 
 // Column header props interface
@@ -75,7 +87,7 @@ export interface DataTableColumnHeaderProps {
 export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   // Called with the full ColumnSetting[] (ordered) on every toggle/reorder; caller persists it.
-  onColumnsChange?: (columns: ColumnSetting[]) => Promise<void> | void;
+  onColumnsChange?: (columns: ColumnSetting[]) => Promise<void>;
   disabled?: boolean;
 }
 

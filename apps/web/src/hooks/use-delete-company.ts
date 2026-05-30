@@ -1,6 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
-import { deleteBizCompany } from '@usertour/gql';
+import { useDeleteBizCompanyMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 
@@ -12,23 +11,20 @@ interface DeleteCompanyResult {
 
 export const useDeleteCompany = () => {
   const { environment } = useAppContext();
-  const [deleteMutation, { loading }] = useMutation(deleteBizCompany);
+  const { invoke: deleteMutation, loading } = useDeleteBizCompanyMutation();
 
   const deleteCompanies = useCallback(
     async (companyIds: string[]): Promise<DeleteCompanyResult> => {
       if (companyIds.length === 0 || !environment?.id) {
         return { success: false, error: 'Invalid parameters' };
       }
-
-      const data = {
-        ids: companyIds,
-        environmentId: environment.id,
-      };
-
       try {
-        const ret = await deleteMutation({ variables: { data } });
-        if (ret.data?.deleteBizCompany?.success) {
-          return { success: true, count: ret.data.deleteBizCompany.count };
+        const ret = await deleteMutation({
+          ids: companyIds,
+          environmentId: environment.id,
+        });
+        if (ret.success) {
+          return { success: true, count: ret.count };
         }
         return { success: false, error: 'Delete operation failed' };
       } catch (error) {

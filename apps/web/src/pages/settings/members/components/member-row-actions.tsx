@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRightIcon } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
-import { useMemberContext } from '@/contexts/member-context';
+import { useMemberList } from '@/hooks/use-member-list';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { type TeamMember, TeamMemberRole } from '@usertour/types';
 import { ResourceRowActions, type ResourceRowActionItem } from '@usertour/ui';
@@ -18,7 +18,7 @@ interface MemberRowActionsProps {
 export const MemberRowActions = (props: MemberRowActionsProps) => {
   const { data } = props;
   const { project, isViewOnly, refetch: refetchAppContext } = useAppContext();
-  const { refetch } = useMemberContext();
+  const { refetch } = useMemberList();
   const { t } = useTranslation();
   const [cancelInviteOpen, setCancelInviteOpen] = useState(false);
   const [changeRoleOpen, setChangeRoleOpen] = useState(false);

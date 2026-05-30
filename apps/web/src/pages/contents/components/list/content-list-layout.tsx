@@ -1,7 +1,7 @@
 import { Button, Separator, NewItemButton } from '@usertour/ui';
 import { ContentListSkeleton } from './content-list-skeleton';
-import { useContentListContext } from '@/contexts/content-list-context';
 import { useAppContext } from '@/contexts/app-context';
+import { useContentList } from '@/hooks/use-content-list';
 import { EmptyPlaceholder } from '@/components/segments/ui';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useContentCount } from '@usertour/hooks';
@@ -11,6 +11,7 @@ import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'reac
 import { useSearchParams } from 'react-router-dom';
 
 interface ContentListLayoutProps {
+  contentType: string;
   title: string;
   description: ReactNode;
   emptyTitle: string;
@@ -49,6 +50,7 @@ type ContentState = 'loading' | 'empty' | 'filteredEmpty' | 'filteredEmptyDraft'
 
 export const ContentListLayout = memo(
   ({
+    contentType,
     title,
     description,
     emptyTitle,
@@ -64,10 +66,13 @@ export const ContentListLayout = memo(
     const [open, setOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const { isViewOnly, environment } = useAppContext();
-    const { contents, refetch, isLoading, contentType } = useContentListContext();
+    const { contents, hasNextPage, loadingMore, fetchNextPage, refetch, loading } = useContentList(
+      environment?.id,
+      contentType,
+    );
 
     // Derive from URL so draft count is fetched on first paint when visiting ?published=1
-    // (context query may sync from URL in useEffect, causing one render where query.published is stale)
+    // (`useContentList` reads URL on every render so its `published` value also matches)
     const isPublishedView = searchParams.get('published') === '1';
 
     // Only fetch draft count when in Published view to check if draft content exists
@@ -103,7 +108,7 @@ export const ContentListLayout = memo(
     // Compute content state once to avoid multiple conditional checks
     const contentLength = contents?.length ?? 0;
     const contentState = useMemo<ContentState>(() => {
-      if (isLoading) return 'loading';
+      if (loading) return 'loading';
       if (contentLength === 0) {
         // In Published view with draft content = filtered empty
         if (isPublishedView && draftCount > 0) return 'filteredEmpty';
@@ -111,7 +116,7 @@ export const ContentListLayout = memo(
         return 'empty';
       }
       return 'data';
-    }, [isLoading, contentLength, isPublishedView, draftCount, publishedCount]);
+    }, [loading, contentLength, isPublishedView, draftCount, publishedCount]);
 
     // Refetch counts when content list length changes to ensure UI state is in sync
     // This fixes the issue where unpublishing the last content shows Create button instead of Go to Draft
@@ -179,7 +184,17 @@ export const ContentListLayout = memo(
             </EmptyPlaceholder>
           );
         case 'data':
-          return <DataTable />;
+          return (
+            <DataTable
+              contents={contents}
+              contentType={contentType}
+              hasNextPage={hasNextPage}
+              loading={loading}
+              loadingMore={loadingMore}
+              fetchNextPage={fetchNextPage}
+              refetch={refetch}
+            />
+          );
       }
     }, [
       contentState,
@@ -194,6 +209,12 @@ export const ContentListLayout = memo(
       actualFilteredEmptyDraftDescription,
       handleGoToDraft,
       handleGoToPublished,
+      contents,
+      contentType,
+      hasNextPage,
+      loadingMore,
+      fetchNextPage,
+      refetch,
     ]);
 
     return (

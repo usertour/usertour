@@ -1,6 +1,5 @@
 'use client';
 import { SpinnerIcon } from '@usertour/icons';
-import { useMutation } from '@apollo/client';
 import {
   Button,
   Dialog,
@@ -11,7 +10,7 @@ import {
   DialogTitle,
   useToast,
 } from '@usertour/ui';
-import { restoreContentVersion } from '@usertour/gql';
+import { useRestoreContentVersionMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentVersion } from '@usertour/types';
 import * as React from 'react';
@@ -25,18 +24,16 @@ interface ContentRestoreFormProps {
 
 export const ContentRestoreForm = (props: ContentRestoreFormProps) => {
   const { version, onSubmit, open, onOpenChange } = props;
-  const [mutation] = useMutation(restoreContentVersion);
+  const { invoke: restoreVersion } = useRestoreContentVersionMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
 
   async function handleOnSubmit() {
     try {
       setIsLoading(true);
-      const { data } = await mutation({
-        variables: { versionId: version.id },
-      });
+      const success = await restoreVersion(version.id);
       setIsLoading(false);
-      if (data.restoreContentVersion.id) {
+      if (success) {
         toast({
           variant: 'success',
           title: 'The version retored successfully.',

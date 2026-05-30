@@ -1,5 +1,5 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -16,20 +16,26 @@ import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRestoreForm } from '../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
 import { isPublishedInAllEnvironments } from '@/utils/content';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 
 type ContentVersionActionProps = {
   version: ContentVersion;
 };
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
-  const { refetch, content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  // No `refetch` destructure: the publish / restore mutations declare
+  // `refetchQueries: ['getContent', ...]`, so Apollo refreshes the
+  // owning content on success without each per-row component holding
+  // its own callback. Same reason `useContentVersionList` is gone —
+  // `useRestoreContentVersionMutation` already lists
+  // `listContentVersions` in its refetchQueries.
+  const { content } = useContentDetail(contentId);
   const { isViewOnly } = useAppContext();
 
-  const { refetch: refetchVersionList } = useContentVersionListContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
 
   const isDisabledPublish = isPublishedInAllEnvironments(content, environmentList, version);
 
@@ -73,9 +79,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         versionId={version.id}
         open={openPublish}
         onOpenChange={setOpenPublish}
-        onSubmit={async () => {
-          await refetch();
-          await refetchVersionList();
+        onSubmit={() => {
           setOpenPublish(false);
         }}
       />
@@ -83,9 +87,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         version={version}
         open={openRetore}
         onOpenChange={setOpenRestore}
-        onSubmit={async () => {
-          await refetch();
-          await refetchVersionList();
+        onSubmit={() => {
           setOpenRestore(false);
         }}
       />

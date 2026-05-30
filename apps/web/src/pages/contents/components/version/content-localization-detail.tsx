@@ -1,9 +1,8 @@
-import {
-  ContentLocalizationListProvider,
-  useContentLocalizationListContext,
-} from '@/contexts/content-localization-list-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useLocalizationListContext } from '@/contexts/localization-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useLocalizationList } from '@/hooks/use-localization-list';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentLocalizations } from '@/hooks/use-content-localizations';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
 import { RiArrowLeftLine } from '@usertour/icons';
 import {
@@ -427,7 +426,7 @@ interface ContentLocalizationDetailStepProps {
 const ContentLocalizationDetailStep = (props: ContentLocalizationDetailStepProps) => {
   const { currentStep, index, localization, localizedStepData, onChange } = props;
 
-  const { localizationList } = useLocalizationListContext();
+  const { localizationList } = useLocalizationList();
   const defaultLocate = localizationList?.find((localte) => localte.isDefault);
   if (!currentStep.data || !defaultLocate) {
     return <></>;
@@ -481,9 +480,11 @@ const ContentLocalizationDetailMain = (props: ContentLocalizationDetailMainProps
   const { locateCode } = props;
   const navigator = useNavigate();
   const location = useLocation();
-  const { localizationList } = useLocalizationListContext();
-  const { contentLocalizationList } = useContentLocalizationListContext();
-  const { version } = useContentVersionContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
+  const { localizationList } = useLocalizationList();
+  const { contentLocalizationList } = useContentLocalizations(version?.id);
 
   const localization = localizationList
     ? localizationList.find((locate) => locate.locale === locateCode)
@@ -535,19 +536,15 @@ interface ContentLocalizationDetailProps {
 
 export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps) => {
   const { locateCode } = props;
-  const { version } = useContentVersionContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
 
   if (!version?.id) {
     return <></>;
   }
 
-  return (
-    <>
-      <ContentLocalizationListProvider versionId={version?.id}>
-        <ContentLocalizationDetailMain locateCode={locateCode} />
-      </ContentLocalizationListProvider>
-    </>
-  );
+  return <ContentLocalizationDetailMain locateCode={locateCode} />;
 };
 
 ContentLocalizationDetail.displayName = 'ContentLocalizationDetail';

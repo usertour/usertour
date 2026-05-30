@@ -1,37 +1,30 @@
-import { useAppContext } from '@/contexts/app-context';
-import { ContentDetailProvider } from '@/contexts/content-detail-context';
-import { ContentVersionProvider } from '@/contexts/content-version-context';
-import { ContentVersionListProvider } from '@/contexts/content-version-list-context';
-import { LocalizationListProvider } from '@/contexts/localization-list-context';
+import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
+import { NotFound } from '@/routes/not-found';
+import { ContentTypeName } from '@usertour/types';
 import { useParams } from 'react-router-dom';
 import { ContentDetailHeader } from './components/detail/content-detail-header';
 import { ContentLocalizationDetail } from './components/version/content-localization-detail';
 
 export const ContentLocalization = () => {
-  const { contentId = '', contentType, locateCode } = useParams();
-  const { project } = useAppContext();
-
+  const { contentId, contentType, locateCode } = useParams();
   if (!contentId || !locateCode) {
-    return <></>;
+    return <NotFound />;
   }
 
   return (
-    <ContentVersionListProvider contentId={contentId}>
-      <ContentDetailProvider contentId={contentId} contentType={contentType}>
-        <ContentVersionProvider>
-          <LocalizationListProvider projectId={project?.id}>
-            {/* AdminShellMuted's content card uses `flex h-full w-full`
-                (default flex-row) for its inner sidebar-wrapper, so the header
-                + body need an explicit flex-col container or they end up
-                side-by-side. Same fix as ContentDetailViewInner. */}
-            <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-              <ContentDetailHeader />
-              <ContentLocalizationDetail locateCode={locateCode} />
-            </div>
-          </LocalizationListProvider>
-        </ContentVersionProvider>
-      </ContentDetailProvider>
-    </ContentVersionListProvider>
+    <ContentDetailUIProvider
+      contentId={contentId}
+      contentType={contentType as ContentTypeName | undefined}
+    >
+      {/* AdminShellMuted's content card uses `flex h-full w-full`
+          (default flex-row) for its inner sidebar-wrapper, so the header
+          + body need an explicit flex-col container or they end up
+          side-by-side. Same fix as ContentDetailViewInner. */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <ContentDetailHeader />
+        <ContentLocalizationDetail locateCode={locateCode} />
+      </div>
+    </ContentDetailUIProvider>
   );
 };
 

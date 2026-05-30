@@ -14,7 +14,7 @@ import {
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface ThemePreviewChecklistProps {
   expanded?: boolean;
@@ -23,7 +23,7 @@ interface ThemePreviewChecklistProps {
 
 export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   const { expanded = true, settings } = props;
-  const { shouldShowMadeWith } = useSubscriptionContext();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   const [expandedState, setExpandedState] = useState(expanded);
 

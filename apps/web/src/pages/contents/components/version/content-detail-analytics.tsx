@@ -1,6 +1,5 @@
-import { AnalyticsProvider } from '@/contexts/analytics-context';
-import { BizSessionProvider } from '@/contexts/biz-session-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { AnalyticsUIProvider } from '@/contexts/analytics-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { ContentDataType } from '@usertour/types';
 import { AnalyticsDays } from '../analytics/analytics-days';
 import { AnalyticsHeader } from '../analytics/analytics-header';
@@ -14,7 +13,7 @@ import { AnalyticsBlocks } from '../analytics/analytics-blocks';
 
 export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const { contentId } = props;
-  const { content } = useContentDetailContext();
+  const { content } = useContentDetail(contentId);
   const contentType = content?.type;
   if (!contentType) {
     return null;
@@ -23,25 +22,21 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const isEventBased = contentType === ContentDataType.TRACKER;
 
   return (
-    <>
-      <AnalyticsProvider contentId={contentId}>
-        <BizSessionProvider contentId={contentId}>
-          <div className="px-6 py-8 xl:px-8">
-            <div className="space-y-4 justify-center flex flex-col  max-w-screen-xl mx-auto">
-              <AnalyticsHeader />
-              <AnalyticsViews />
-              <AnalyticsDays />
-              {contentType === ContentDataType.FLOW && <AnalyticsSteps />}
-              {contentType === ContentDataType.FLOW && <AnalyticsQuestion contentId={contentId} />}
-              {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
-              {contentType === ContentDataType.RESOURCE_CENTER && <AnalyticsBlocks />}
-              {isEventBased && <AnalyticsTrackerUsers contentId={contentId} />}
-              {!isEventBased && <AnalyticsSessions />}
-            </div>
-          </div>
-        </BizSessionProvider>
-      </AnalyticsProvider>
-    </>
+    <AnalyticsUIProvider contentId={contentId}>
+      <div className="px-6 py-8 xl:px-8">
+        <div className="space-y-4 justify-center flex flex-col  max-w-screen-xl mx-auto">
+          <AnalyticsHeader />
+          <AnalyticsViews />
+          <AnalyticsDays />
+          {contentType === ContentDataType.FLOW && <AnalyticsSteps />}
+          {contentType === ContentDataType.FLOW && <AnalyticsQuestion contentId={contentId} />}
+          {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
+          {contentType === ContentDataType.RESOURCE_CENTER && <AnalyticsBlocks />}
+          {isEventBased && <AnalyticsTrackerUsers contentId={contentId} />}
+          {!isEventBased && <AnalyticsSessions />}
+        </div>
+      </div>
+    </AnalyticsUIProvider>
   );
 };
 
