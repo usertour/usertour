@@ -128,7 +128,7 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  key={row.id || `row-${Math.random()}`}
+                  key={row.id}
                   className="group h-14 cursor-pointer"
                   onClick={() => {
                     if (environment?.id) {

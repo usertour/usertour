@@ -56,6 +56,7 @@ export const queryBizSession = gql`
           state
           contentId
           bizUser {
+            id
             externalId
             data
           }
