@@ -53,10 +53,20 @@ interface BizSessionsDataTableProps {
   totalCount: number;
   refetch: () => Promise<unknown>;
   loading: boolean;
+  isRefetching: boolean;
 }
 
 export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
-  const { bizSessions, pagination, setPagination, pageCount, totalCount, refetch, loading } = props;
+  const {
+    bizSessions,
+    pagination,
+    setPagination,
+    pageCount,
+    totalCount,
+    refetch,
+    loading,
+    isRefetching,
+  } = props;
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -98,7 +108,7 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
     return (
       <div className="space-y-4">
         <ListSkeleton length={pagination.pageSize} />
-        <DataTablePagination table={table} totalCount={totalCount} busy={loading} />
+        <DataTablePagination table={table} totalCount={totalCount} busy={loading || isRefetching} />
       </div>
     );
   }
@@ -138,14 +148,11 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id || `cell-${Math.random()}`}>
+                    <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                  <TableCell
-                    key={`action-${row.id || Math.random()}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <TableCell key={`action-${row.id}`} onClick={(e) => e.stopPropagation()}>
                     <SessionActionDropdownMenu
                       session={row.original}
                       showViewResponse={row.original.content?.type === ContentDataType.FLOW}
@@ -181,7 +188,7 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} totalCount={totalCount} />
+      <DataTablePagination table={table} totalCount={totalCount} busy={loading || isRefetching} />
     </div>
   );
 };

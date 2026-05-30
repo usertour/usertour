@@ -42,6 +42,7 @@ export const AnalyticsSessions = () => {
     setPagination,
     refetch,
     loading,
+    isRefetching,
   } = useCursorPagination({
     query,
     useListQuery: useQueryBizSessionsQuery,
@@ -79,6 +80,7 @@ export const AnalyticsSessions = () => {
             totalCount={totalCount}
             refetch={refetch}
             loading={loading}
+            isRefetching={isRefetching}
           />
         </CardContent>
       </Card>
