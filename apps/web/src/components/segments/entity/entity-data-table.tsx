@@ -75,6 +75,7 @@ export function EntityDataTable<TRow extends EntityRow>({
   const {
     rows: contents,
     loading,
+    isRefetching,
     refetch,
     pageCount,
     pagination,
@@ -212,7 +213,7 @@ export function EntityDataTable<TRow extends EntityRow>({
         emptyMessage={t(config.i18n.emptyMessage)}
         emptyDescription={t(config.i18n.emptyDescription)}
       />
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} busy={loading || isRefetching} />
     </div>
   );
 }

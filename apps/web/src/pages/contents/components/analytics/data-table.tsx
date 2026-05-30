@@ -98,7 +98,7 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
     return (
       <div className="space-y-4">
         <ListSkeleton length={pagination.pageSize} />
-        <DataTablePagination table={table} totalCount={totalCount} />
+        <DataTablePagination table={table} totalCount={totalCount} busy={loading} />
       </div>
     );
   }
