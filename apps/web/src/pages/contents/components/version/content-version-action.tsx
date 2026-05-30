@@ -1,6 +1,5 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
-import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -25,10 +24,15 @@ type ContentVersionActionProps = {
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
   const { contentId } = useContentDetailUI();
-  const { content, refetch } = useContentDetail(contentId);
+  // No `refetch` destructure: the publish / restore mutations declare
+  // `refetchQueries: ['getContent', ...]`, so Apollo refreshes the
+  // owning content on success without each per-row component holding
+  // its own callback. Same reason `useContentVersionList` is gone —
+  // `useRestoreContentVersionMutation` already lists
+  // `listContentVersions` in its refetchQueries.
+  const { content } = useContentDetail(contentId);
   const { isViewOnly } = useAppContext();
 
-  const { refetch: refetchVersionList } = useContentVersionList(contentId);
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
   const { environmentList } = useEnvironmentList();
@@ -75,9 +79,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         versionId={version.id}
         open={openPublish}
         onOpenChange={setOpenPublish}
-        onSubmit={async () => {
-          await refetch();
-          await refetchVersionList();
+        onSubmit={() => {
           setOpenPublish(false);
         }}
       />
@@ -85,9 +87,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         version={version}
         open={openRetore}
         onOpenChange={setOpenRestore}
-        onSubmit={async () => {
-          await refetch();
-          await refetchVersionList();
+        onSubmit={() => {
           setOpenRestore(false);
         }}
       />
