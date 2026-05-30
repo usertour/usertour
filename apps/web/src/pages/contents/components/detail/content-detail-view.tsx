@@ -41,8 +41,11 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { environment } = useAppContext();
   const { content, loading: contentLoading } = useContentDetail(contentId);
   const { versionList, loading: versionListLoading } = useContentVersionList(contentId);
-  const { loading: themeLoading } = useThemeList();
-  const { loading: segmentLoading } = useSegmentList(environment?.id, SEGMENT_BIZ_TYPES);
+  const { themeList, loading: themeLoading } = useThemeList();
+  const { segmentList, loading: segmentLoading } = useSegmentList(
+    environment?.id,
+    SEGMENT_BIZ_TYPES,
+  );
   const { t } = useTranslation();
 
   // DOM node of the outer overflow div, published through context to any
@@ -68,8 +71,8 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const isLoading =
     (contentLoading && !content) ||
     (versionListLoading && versionList.length === 0) ||
-    themeLoading ||
-    segmentLoading;
+    (themeLoading && (!themeList || themeList.length === 0)) ||
+    (segmentLoading && (!segmentList || segmentList.length === 0));
 
   if (isLoading) {
     return <ContentLoading message={t('common.loading')} />;

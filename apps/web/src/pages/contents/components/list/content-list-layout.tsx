@@ -189,6 +189,7 @@ export const ContentListLayout = memo(
               contents={contents}
               contentType={contentType}
               hasNextPage={hasNextPage}
+              loading={loading}
               loadingMore={loadingMore}
               fetchNextPage={fetchNextPage}
               refetch={refetch}

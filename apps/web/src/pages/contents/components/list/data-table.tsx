@@ -257,19 +257,27 @@ interface DataTableProps {
   contents: Content[];
   contentType: string;
   hasNextPage: boolean;
+  /** True during the initial / cache-and-network revalidate fetch. */
+  loading: boolean;
+  /** True during `fetchMore` (NetworkStatus 3). */
   loadingMore: boolean;
   fetchNextPage: () => Promise<unknown>;
   refetch: () => Promise<unknown>;
 }
 
 export function DataTable(props: DataTableProps) {
-  const { contents, contentType, hasNextPage, loadingMore, fetchNextPage, refetch } = props;
+  const { contents, contentType, hasNextPage, loading, loadingMore, fetchNextPage, refetch } =
+    props;
   // ScrollArea's Viewport, published by ContentList via ScrollRootProvider —
   // becomes the IntersectionObserver root so the sentinel triggers against
   // the actual scrolling element rather than the window viewport.
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
-    loading: loadingMore,
+    // Suppress the library's onLoadMore during the initial / revalidate
+    // fetch too — passing only `loadingMore` left the base load gated
+    // solely by the internal `fetchingRef` inside `fetchNextPage`,
+    // which diverged from how `VersionHistoryList` wires the same lib.
+    loading: loading || loadingMore,
     hasNextPage,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 200px 0px',
