@@ -1,5 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { ScrollRootProvider } from '@/contexts/scroll-root-context';
+import { NotFound } from '@/routes/not-found';
 import { ScrollArea } from '@usertour/ui';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { ReactNode, useState } from 'react';
@@ -202,13 +203,19 @@ export const ContentList = () => {
   // it as the IntersectionObserver root for infinite scroll.
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
-  if (!contentType || !environment || !project) {
+  // AppContext is hydrating; brief null beats a transient loading flash.
+  if (!environment || !project) {
     return null;
   }
 
+  // Missing path param (shouldn't happen if the route matched) or
+  // unknown slug in the URL — render the standard 404.
+  if (!contentType) {
+    return <NotFound />;
+  }
   const config = CONTENT_CONFIG[contentType];
   if (!config) {
-    return null;
+    return <NotFound />;
   }
 
   // Trigger button: `New {{type}}` per the convention shared with
