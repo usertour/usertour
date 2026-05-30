@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { NotFound } from '@/routes/not-found';
 import { ThemeBuilder } from './components/theme-builder';
 
 export const SettingsThemeDetail = () => {
@@ -64,8 +65,10 @@ export const SettingsThemeDetail = () => {
     return <ContentLoading message={t('common.loading')} />;
   }
 
+  // Server returned null for a finished query — theme doesn't exist or
+  // the user has no access. Surface as 404 instead of a blank screen.
   if (!theme) {
-    return null;
+    return <NotFound />;
   }
 
   const themesListPath = projectId ? `/project/${projectId}/settings/themes` : null;

@@ -1,10 +1,13 @@
 import { ContentLoading } from '@usertour/ui';
-import {
-  ContentDetailProviderWrapper,
-  useContentDetailProviderWrapper,
-} from '@/contexts/content-detail-provider';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useAppContext } from '@/contexts/app-context';
+import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
+import { ScrollRootProvider } from '@/contexts/scroll-root-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
+import { useSegmentList } from '@/hooks/use-segment-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentTypeName } from '@usertour/types';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentDetailAnalytics } from '../version/content-detail-analytics';
 import { ContentDetailVersion } from '../version/content-detail-version';
@@ -21,12 +24,55 @@ export interface ContentDetailViewProps {
   contentType: ContentTypeName;
 }
 
-// Inner component that uses the provider context
+// bizType filter for the segment hook. Module-level constant keeps
+// the reference stable across renders so `useSegmentList`'s `useMemo`
+// deps don't re-compute the filtered list every paint.
+const SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
+
+// Inner component that pulls server data via hooks. Replaces the
+// previous `ContentDetailProviderWrapper` + `useContentDetailProviderWrapper`
+// shape — the aggregator was just composing six Providers and
+// summing their loading flags, which is what `useContentDetail` /
+// `useContentVersion` / `useContentVersionList` plus the existing
+// list-context loadings now do directly. Cleaner, and removes the
+// latent "themeListLoading kicks first-load blank-gate" footgun.
 const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { type, contentId, contentType } = props;
-  const { isLoading } = useContentDetailProviderWrapper();
-  const { content } = useContentDetailContext();
+  const { environment } = useAppContext();
+  const { content, loading: contentLoading } = useContentDetail(contentId);
+  const { versionList, loading: versionListLoading } = useContentVersionList(contentId);
+  const { themeList, loading: themeLoading } = useThemeList();
+  const { segmentList, loading: segmentLoading } = useSegmentList(
+    environment?.id,
+    SEGMENT_BIZ_TYPES,
+  );
   const { t } = useTranslation();
+
+  // DOM node of the outer overflow div, published through context to any
+  // infinite-scroll list inside (`VersionHistoryList`, etc.).
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
+
+  // First-load gating — `loading && !data` so background refetches
+  // (e.g. theme list refetch after a setting change) don't unmount
+  // the entire detail tree. Same lesson as the v0.8.4 builder fix.
+  //
+  // Intentionally NOT gating on `(versionLoading && !version)`. When a
+  // restore / publish-then-edit mutation creates a new edited version,
+  // `content.editedVersionId` flips, `useContentVersion` switches to a
+  // fresh cache slot, and `version` is briefly `null` while the new
+  // version loads. The old gate misread that transient `null` as
+  // "first load" and replaced the whole tree with `ContentLoading`,
+  // producing a page-wide flash. Panels that genuinely need
+  // `editedVersion` (`ContentDetailContent` / Settings /
+  // TrackerEditor) already self-gate with `if (!version) return null;`,
+  // so the brief null state shows as a blank content area at worst —
+  // and tabs that don't need `editedVersion` (Versions, Analytics)
+  // are entirely undisturbed.
+  const isLoading =
+    (contentLoading && !content) ||
+    (versionListLoading && versionList.length === 0) ||
+    (themeLoading && (!themeList || themeList.length === 0)) ||
+    (segmentLoading && (!segmentList || segmentList.length === 0));
 
   if (isLoading) {
     return <ContentLoading message={t('common.loading')} />;
@@ -44,24 +90,32 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
     // AdminShellMuted's content card uses `flex h-full w-full` (default
     // flex-row) for its inner sidebar-wrapper. Without an explicit flex-col
     // here, header + route content would sit side-by-side instead of stacked.
-    <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-      <ContentDetailHeader />
-      {type === 'detail' && contentType === ContentTypeName.TRACKERS && (
-        <div className="px-6 py-8 xl:px-8">
-          <ContentDetailTrackerEditor />
-        </div>
-      )}
-      {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
-        <div className="px-6 py-8 xl:px-8">
-          <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
-            <ContentDetailSettings />
-            <ContentDetailContent />
+    //
+    // `setScrollRoot` captures the actual scrolling element so descendants
+    // running `useInfiniteScroll` can register it as the IntersectionObserver
+    // root via context; without this the IO measures against the window
+    // viewport and infinite-scroll lists never settle inside an inner
+    // overflow.
+    <div ref={setScrollRoot} className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <ScrollRootProvider value={scrollRoot}>
+        <ContentDetailHeader />
+        {type === 'detail' && contentType === ContentTypeName.TRACKERS && (
+          <div className="px-6 py-8 xl:px-8">
+            <ContentDetailTrackerEditor />
           </div>
-        </div>
-      )}
-      {type === 'versions' && <ContentDetailVersion />}
-      {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
-      {type === 'localization' && <ContentLocalizationList />}
+        )}
+        {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
+          <div className="px-6 py-8 xl:px-8">
+            <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
+              <ContentDetailSettings />
+              <ContentDetailContent />
+            </div>
+          </div>
+        )}
+        {type === 'versions' && <ContentDetailVersion />}
+        {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
+        {type === 'localization' && <ContentLocalizationList />}
+      </ScrollRootProvider>
     </div>
   );
 };
@@ -71,10 +125,13 @@ ContentDetailViewInner.displayName = 'ContentDetailViewInner';
 export const ContentDetailView = (props: ContentDetailViewProps) => {
   const { contentId, contentType } = props;
 
+  // Theme / segment / event lists are all hook-based now — Apollo
+  // shared-cache makes them dedupe across the subtree without a
+  // Provider hop.
   return (
-    <ContentDetailProviderWrapper contentId={contentId} contentType={contentType}>
+    <ContentDetailUIProvider contentId={contentId} contentType={contentType}>
       <ContentDetailViewInner {...props} />
-    </ContentDetailProviderWrapper>
+    </ContentDetailUIProvider>
   );
 };
 

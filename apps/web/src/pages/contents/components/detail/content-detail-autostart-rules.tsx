@@ -1,6 +1,6 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useEventListContext } from '@/contexts/event-list-context';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useAttributeList } from '@/hooks/use-attribute-list';
+import { useEventList } from '@/hooks/use-event-list';
+import { useSegmentList } from '@/hooks/use-segment-list';
 import { WebZIndex } from '@usertour/constants';
 import { Label, Switch, QuestionTooltip } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
@@ -36,6 +36,12 @@ export enum ContentDetailAutoStartRulesType {
 // with nothing to match. The local toggle still reflects user intent so the
 // Conditions panel and empty-state card stay visible until the user adds a
 // condition or flips the toggle off.
+// bizType filter for the autostart-rules segment picker. Module-level
+// constant so the array reference stays stable across renders — same
+// reference across renders matches `useSegmentList`'s useMemo deps so
+// the filtered list doesn't recompute every paint.
+const AUTOSTART_SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
+
 const coerceEnabledForPersist = (flag: boolean, conds: RulesCondition[]) =>
   flag && conds.length > 0;
 
@@ -126,9 +132,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
   // All hooks must be called before any conditional returns
   const id = useId();
-  const { attributeList } = useAttributeListContext();
-  const { segmentList } = useSegmentListContext();
-  const { eventList } = useEventListContext();
+  const { attributeList } = useAttributeList();
+  const { segmentList } = useSegmentList(environmentId, AUTOSTART_SEGMENT_BIZ_TYPES);
+  const { eventList } = useEventList();
   const { contents } = useContentListQuery({
     query: { environmentId },
     options: { skip: !environmentId },

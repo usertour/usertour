@@ -1,8 +1,8 @@
 import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useAttributeList } from '@/hooks/use-attribute-list';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
+import { useSubscription } from '@/hooks/use-subscription';
 import { WebBuilder } from '@usertour/builder';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,13 +21,9 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const { contentId, environmentId, contentType, initialStepIndex } = props;
   const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
-  const { loading: environmentLoading, environmentList } = useEnvironmentListContext();
-  const { loading: attributeLoading, attributeList } = useAttributeListContext();
-  const {
-    loading: subscriptionLoading,
-    shouldShowMadeWith,
-    subscription,
-  } = useSubscriptionContext();
+  const { loading: environmentLoading, environmentList } = useEnvironmentList();
+  const { loading: attributeLoading, attributeList } = useAttributeList();
+  const { loading: subscriptionLoading, shouldShowMadeWith, subscription } = useSubscription();
   const { loading: appLoading } = useAppContext();
   const { t } = useTranslation();
 
@@ -62,14 +58,14 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
     navigate(url);
   };
 
-  // Distinguish first-load from background refetch. With the four
-  // AdminProvidersOutlet Context providers participating in the
-  // normalized cache, any mutation that carries
-  // `refetchQueries: ['listAttributes' | 'getUserEnvironments' | ...]`
+  // Distinguish first-load from background refetch. The hooks /
+  // attribute Context all participate in the normalized cache, so any
+  // mutation that carries
+  // `refetchQueries: ['listAttributes' | 'getUserEnvironments' | …]`
   // — e.g. creating an attribute from the builder's "Bind to user
-  // attribute" UI — will flip the Provider's `loading` to true while
-  // it refetches. Treating that the same as first-load would unmount
-  // the entire WebBuilder, blank the screen, and remount it once the
+  // attribute" UI — will flip `loading` to true while the cache slot
+  // refetches. Treating that the same as first-load would unmount the
+  // entire WebBuilder, blank the screen, and remount it once the
   // refetch lands — i.e. exactly the "page reloads after creating
   // attribute" regression. Gate the loading screen on "loading AND
   // no data yet" so subsequent refetches keep the builder rendered.

@@ -2,14 +2,14 @@ import { Navigate } from 'react-router-dom';
 import { storage } from '@usertour/helpers';
 import { StorageKeys } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { FullPageSpinner } from './full-page-spinner';
 
 // Default landing for "/" when the user is logged in.
 // Order: in-memory context env > last-used env from localStorage > primary env > first env.
 export const LandingRedirect = () => {
   const { environment, userInfo } = useAppContext();
-  const { environmentList, loading } = useEnvironmentListContext();
+  const { environmentList, loading } = useEnvironmentList();
 
   if (environment?.id) {
     return <Navigate to={`/env/${environment.id}/flows`} replace />;

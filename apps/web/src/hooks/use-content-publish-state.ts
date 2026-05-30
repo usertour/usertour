@@ -1,16 +1,18 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { isPublishedInAllEnvironments } from '@/utils/content';
 import { ContentDataType } from '@usertour/types';
 import { useMemo } from 'react';
 
 export const useContentPublishState = () => {
-  const { content } = useContentDetailContext();
-  const { version, isSaving } = useContentVersionContext();
+  const { contentId, isSaving } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
   const { isViewOnly } = useAppContext();
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
 
   return useMemo(() => {
     if (isPublishedInAllEnvironments(content, environmentList, version)) {

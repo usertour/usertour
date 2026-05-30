@@ -1,8 +1,8 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
-import { useMutation } from '@apollo/client';
-import { createContentVersion, updateContentVersion } from '@usertour/gql';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
+import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
@@ -11,11 +11,12 @@ import { useDebouncedCallback } from 'use-debounce';
 import { isVersionPublished } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
-  const { version, refetch: refetchVersion, setIsSaving } = useContentVersionContext();
-  const { content, refetch: refetchContent } = useContentDetailContext();
-  const { refetch: refetchVersionList } = useContentVersionListContext();
-  const [mutation] = useMutation(updateContentVersion);
-  const [createVersion] = useMutation(createContentVersion);
+  const { contentId, setIsSaving } = useContentDetailUI();
+  const { content, refetch: refetchContent } = useContentDetail(contentId);
+  const { version, refetch: refetchVersion } = useContentVersion(content?.editedVersionId);
+  const { refetch: refetchVersionList } = useContentVersionList(contentId);
+  const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
+  const { invoke: createContentVersion } = useCreateContentVersionMutation();
   const { toast } = useToast();
 
   /**
@@ -30,20 +31,16 @@ export const useContentVersionUpdate = () => {
         return version.id;
       }
 
-      const result = await createVersion({
-        variables: {
-          data: {
-            versionId: version.id,
-            config: configOverride ?? version.config,
-          },
-        },
+      const result = await createContentVersion({
+        versionId: version.id,
+        config: configOverride ?? version.config,
       });
 
-      const newVersionId = result.data?.createContentVersion?.id;
+      const newVersionId = result?.id;
       if (!newVersionId) throw new Error('Failed to create new version');
       return newVersionId;
     },
-    [version, content, createVersion],
+    [version, content, createContentVersion],
   );
 
   /**
@@ -58,15 +55,10 @@ export const useContentVersionUpdate = () => {
 
         const editableVersionId = await ensureEditableVersionId();
         const forked = editableVersionId !== version.id;
-        await mutation({
-          variables: {
-            versionId: editableVersionId,
-            content: {
-              themeId: version.themeId,
-              data: newData,
-              config: version.config,
-            },
-          },
+        await updateContentVersion(editableVersionId, {
+          themeId: version.themeId,
+          data: newData,
+          config: version.config,
         });
 
         await Promise.all([
@@ -83,7 +75,7 @@ export const useContentVersionUpdate = () => {
     [
       version,
       content,
-      mutation,
+      updateContentVersion,
       ensureEditableVersionId,
       refetchContent,
       refetchVersion,
@@ -110,18 +102,13 @@ export const useContentVersionUpdate = () => {
         // If we forked, config was already set during fork — done.
         // If not forked, we need to update config explicitly.
         if (!forked) {
-          const { data } = await mutation({
-            variables: {
-              versionId: version.id,
-              content: {
-                themeId: version.themeId,
-                data: version.data,
-                config: cfg,
-              },
-            },
+          const updated = await updateContentVersion(version.id, {
+            themeId: version.themeId,
+            data: version.data,
+            config: cfg,
           });
 
-          if (!data?.updateContentVersion?.id) {
+          if (!updated?.id) {
             throw new Error('Failed to update version');
           }
         }
@@ -146,7 +133,7 @@ export const useContentVersionUpdate = () => {
       version,
       content,
       ensureEditableVersionId,
-      mutation,
+      updateContentVersion,
       refetchContent,
       refetchVersion,
       refetchVersionList,
@@ -191,12 +178,7 @@ export const useContentVersionUpdate = () => {
 
         const editableVersionId = await ensureEditableVersionId();
         const forked = editableVersionId !== version.id;
-        await mutation({
-          variables: {
-            versionId: editableVersionId,
-            content: { themeId },
-          },
-        });
+        await updateContentVersion(editableVersionId, { themeId });
 
         await Promise.all([
           refetchContent(),
@@ -212,7 +194,7 @@ export const useContentVersionUpdate = () => {
     [
       version,
       content,
-      mutation,
+      updateContentVersion,
       ensureEditableVersionId,
       refetchContent,
       refetchVersion,
@@ -233,12 +215,7 @@ export const useContentVersionUpdate = () => {
 
         const editableVersionId = await ensureEditableVersionId();
         const forked = editableVersionId !== version.id;
-        await mutation({
-          variables: {
-            versionId: editableVersionId,
-            content: { scheduledAt },
-          },
-        });
+        await updateContentVersion(editableVersionId, { scheduledAt });
 
         await Promise.all([
           refetchContent(),
@@ -254,7 +231,7 @@ export const useContentVersionUpdate = () => {
     [
       version,
       content,
-      mutation,
+      updateContentVersion,
       ensureEditableVersionId,
       refetchContent,
       refetchVersion,

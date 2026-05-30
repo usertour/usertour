@@ -1,5 +1,4 @@
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { Card } from '@usertour/ui';
 import { buildConfig } from '@usertour/helpers';
 import { ContentDataType, RulesCondition } from '@usertour/types';
@@ -9,6 +8,8 @@ import {
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
 import { useAppContext } from '@/contexts/app-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
 const getContentTypeLabel = (contentType: ContentDataType): string => {
@@ -62,8 +63,9 @@ const HideRulesTooltips = (contentType: ContentDataType) => {
 };
 
 export const ContentDetailSettings = () => {
-  const { version } = useContentVersionContext();
-  const { content } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
   const { isViewOnly } = useAppContext();
   const { debouncedUpdateVersion } = useContentVersionUpdate();
 

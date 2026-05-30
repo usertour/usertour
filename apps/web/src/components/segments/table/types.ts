@@ -63,6 +63,14 @@ export interface DataTableToolbarProps<TData> {
 // Pagination props interface
 export interface DataTablePaginationProps<TData extends { id: string }> {
   table: Table<TData>;
+  /** Disable Next / Prev / First / Last while a cursor-pagination
+   *  request is in flight. `useCursorPagination` doesn't latch the
+   *  user-facing `pagination` to the *committed* response, so a click
+   *  faster than the network races into computing the same cursor
+   *  twice and the table ends up displaying page N while the pager
+   *  reads "Page N+1". Pass `loading || isRefetching` from the
+   *  hook's result to gate the buttons until the response lands. */
+  busy?: boolean;
 }
 
 // Column header props interface

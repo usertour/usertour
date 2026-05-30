@@ -2,10 +2,10 @@
 
 import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { isVersionPublished } from '@/utils/content';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -26,8 +26,11 @@ import {
   RadioGroupItem,
   useToast,
 } from '@usertour/ui';
-import { createContentVersion, updateContent } from '@usertour/gql';
-import { useOpenSelector } from '@usertour/hooks';
+import {
+  useCreateContentVersionMutation,
+  useOpenSelector,
+  useUpdateContentMutation,
+} from '@usertour/hooks';
 import { getAuthToken, getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content } from '@usertour/types';
 import { useCallback } from 'react';
@@ -54,11 +57,13 @@ const defaultValues: Partial<FormValues> = {
 };
 
 export const ContentEditForm = (props: ContentEditFormProps) => {
-  const { open, onOpenChange, showBuilderType = true } = props;
+  const { content, open, onOpenChange, showBuilderType = true } = props;
   const { project, environment } = useAppContext();
-  const { content, refetch, contentType } = useContentDetailContext();
-  const { refetch: refetchVersionList } = useContentVersionListContext();
-  const [mutation] = useMutation(updateContent);
+  const { contentId, contentType } = useContentDetailUI();
+  const { refetch } = useContentDetail(contentId);
+  const { refetch: refetchVersionList } = useContentVersionList(contentId);
+  const { invoke: updateContent } = useUpdateContentMutation();
+  const { invoke: createContentVersion } = useCreateContentVersionMutation();
   const navigate = useNavigate();
   // const [open, setOpen] = useState(false);
   const form = useForm<FormValues>({
@@ -74,8 +79,6 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   });
   const { toast } = useToast();
 
-  const [createVersion] = useMutation(createContentVersion);
-
   const handleOpenEditor = async (
     projectId: string,
     content: Content,
@@ -88,20 +91,14 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
     // instead of the legacy Content.publishedVersionId field — same fix
     // as useContentBuilder, see schema deprecation note on the field.
     if (versionId && isVersionPublished(content, versionId)) {
-      const { data } = await createVersion({
-        variables: {
-          data: {
-            versionId,
-          },
-        },
-      });
-      if (!data?.createContentVersion?.id) {
+      const created = await createContentVersion({ versionId });
+      if (!created?.id) {
         return toast({
           variant: 'destructive',
           title: 'Failed to create a new version.',
         });
       }
-      versionId = data?.createContentVersion?.id;
+      versionId = created.id;
       await refetch();
       await refetchVersionList();
     }
@@ -128,9 +125,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
     async (formData: FormValues) => {
       const { buildUrl, type } = formData;
 
-      await mutation({
-        variables: { contentId: content?.id, content: { buildUrl } },
-      });
+      await updateContent(content?.id, { buildUrl });
       if (!content || !project?.id || !environment?.token) {
         return toast({
           variant: 'destructive',

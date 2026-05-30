@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { storage } from '@usertour/helpers';
 import { StorageKeys } from '@usertour/constants';
 import { Environment } from '@usertour/types';
@@ -19,7 +19,7 @@ import { useParams } from 'react-router-dom';
 export const useEnvironmentSelection = () => {
   const { envId } = useParams();
   const { setEnvironment, userInfo, environment } = useAppContext();
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
 
   // Memoize storage key to avoid recalculation
   const storageKey = useMemo(

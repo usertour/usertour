@@ -6,7 +6,7 @@ import { useSaveSegmentFilter } from '@/hooks/use-save-segment-filter';
 import { useSaveCompanySegmentFilter } from '@/hooks/use-save-company-segment-filter';
 import { UserDetailContent } from '@/pages/users/components/user-detail-content';
 import { CompanyDetailContent } from '@/pages/companies/components/company-detail-content';
-import type { BizListQueryArgs, BizListQueryResult } from '@/hooks/use-biz-list-cursor';
+import type { CursorListQueryFn } from '@/hooks/use-cursor-pagination';
 import {
   type Attribute,
   AttributeBizTypes,
@@ -31,7 +31,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export type EntityKind = 'user' | 'company';
 
-export type EntityListQueryFn<TRow> = (args: BizListQueryArgs) => BizListQueryResult<TRow>;
+export type EntityListQueryFn<TRow> = CursorListQueryFn<TRow>;
 
 export interface EntityAddToManualSegmentHookResult {
   add: (ids: string[], segment: SegmentType) => Promise<boolean>;

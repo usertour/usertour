@@ -1,6 +1,6 @@
 'use client';
 
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { DateRangePicker } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { useDateRangePresets } from './use-date-range-presets';
@@ -12,7 +12,7 @@ import { useDateRangePresets } from './use-date-range-presets';
  * primitive.
  */
 export function CalendarDateRangePicker({ className }: { className?: string }) {
-  const { dateRange, setDateRange, selectedPreset, setSelectedPreset } = useAnalyticsContext();
+  const { dateRange, setDateRange, selectedPreset, setSelectedPreset } = useAnalyticsUI();
   const { t } = useTranslation();
   const presets = useDateRangePresets();
 

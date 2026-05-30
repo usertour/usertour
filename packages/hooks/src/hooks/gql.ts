@@ -119,9 +119,12 @@ import type {
 } from '@usertour/types';
 
 type UseContentListQueryProps = {
+  // Index signature mirrors the server's ContentQuery input — callers
+  // pass `published` / etc. in addition to the always-required keys.
   query: {
     environmentId: string;
     type?: ContentDataType;
+    [key: string]: unknown;
   };
   options?: QueryHookOptions;
   pagination?: Pagination;
@@ -137,13 +140,18 @@ export const useContentListQuery = ({
   pagination = { first: 1000 },
   options,
 }: UseContentListQueryProps) => {
+  // `...options` spread BEFORE `variables` — a caller-supplied
+  // `options.variables` would otherwise silently overwrite the
+  // pagination / query / orderBy the wrapper just composed. Defensive
+  // but free: `useCursorPagination` already pipes caller-controlled
+  // options straight into wrappers like this one.
   const { data, refetch, error, loading } = useQuery(queryContent, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
   const contentList = data?.queryContent?.edges.map((e: any) => e.node);
   const pageInfo = data?.queryContent?.pageInfo;
@@ -172,13 +180,15 @@ export const useCompanyListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseCompanyListQueryProps & { options?: QueryHookOptions }) => {
+  // See `useContentListQuery` — `...options` first, `variables` last,
+  // so caller can't accidentally clobber wrapper-composed variables.
   const { data, refetch, loading, error, networkStatus } = useQuery(queryBizCompany, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const bizCompanyList = data?.queryBizCompany;
@@ -210,13 +220,15 @@ export const useUserListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseUserListQueryProps & { options?: QueryHookOptions }) => {
+  // See `useContentListQuery` — `...options` first, `variables` last,
+  // so caller can't accidentally clobber wrapper-composed variables.
   const { data, refetch, loading, error, networkStatus } = useQuery(queryBizUser, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const bizUserList = data?.queryBizUser;
@@ -441,7 +453,12 @@ export const useUpdateContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateContentVersion);
   const invoke = async (
     versionId: string,
-    content: { data?: any; config?: any; themeId?: string },
+    content: {
+      data?: unknown;
+      config?: unknown;
+      themeId?: string;
+      scheduledAt?: Date | null;
+    },
   ) => {
     const response = await mutation({ variables: { versionId, content } });
     return response.data?.updateContentVersion;
@@ -739,8 +756,18 @@ export const useGetSalesforceObjectFieldsQuery = (
 };
 
 export const useCreateContentVersionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createContentVersion);
-  const invoke = async (data: { versionId: string }) => {
+  // Forking the version inserts a new row at the top of the paginated
+  // version-history list — Apollo's normalized cache can't materialise
+  // a new edge from the mutation response, so refetch the list query.
+  const [mutation, { loading, error }] = useMutation(createContentVersion, {
+    refetchQueries: ['listContentVersions'],
+  });
+  const invoke = async (data: {
+    versionId: string;
+    config?: unknown;
+    data?: unknown;
+    themeId?: string;
+  }) => {
     const response = await mutation({ variables: { data } });
     return response.data?.createContentVersion;
   };
@@ -806,7 +833,17 @@ export const useUpdateSegmentMutation = () => {
 export const useDeleteContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteContent);
   const invoke = async (contentId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { contentId } });
+    const response = await mutation({
+      variables: { contentId },
+      // Server returns `{ success }` only — there's no `id` on the
+      // payload for auto-merge, so do the eviction ourselves. All
+      // observers of the Content slot (list view, detail view, etc.)
+      // see the row disappear without a manual refetch.
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
+        cache.gc();
+      },
+    });
     return !!response.data?.deleteContent?.success;
   };
   return { invoke, loading, error };

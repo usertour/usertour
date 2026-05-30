@@ -9,36 +9,36 @@ import {
   TableRow,
   useToast,
 } from '@usertour/ui';
-import { useContentLocalizationListContext } from '@/contexts/content-localization-list-context';
-import { useLocalizationListContext } from '@/contexts/localization-list-context';
-import { useMutation } from '@apollo/client';
-import { updateVersionLocationData } from '@usertour/gql';
+import { useContentLocalizations } from '@/hooks/use-content-localizations';
+import { useLocalizationList } from '@/hooks/use-localization-list';
+import { useUpdateVersionLocationDataMutation } from '@usertour/hooks';
 import { VersionOnLocalization } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router-dom';
 
-export const ContentLocalizationTable = () => {
-  const { contentLocalizationList, loading, refetch } = useContentLocalizationListContext();
-  const { localizationList } = useLocalizationListContext();
-  const [mutation] = useMutation(updateVersionLocationData);
+interface ContentLocalizationTableProps {
+  versionId: string;
+}
+
+export const ContentLocalizationTable = (props: ContentLocalizationTableProps) => {
+  const { versionId } = props;
+  const { contentLocalizationList, loading, refetch } = useContentLocalizations(versionId);
+  const { localizationList } = useLocalizationList();
+  const { invoke: updateVersionLocation } = useUpdateVersionLocationDataMutation();
   const { toast } = useToast();
   const location = useLocation();
 
   const handleOnCheckedChange = async (enabled: boolean, contentLocale: VersionOnLocalization) => {
     try {
-      const { data } = await mutation({
-        variables: {
-          data: {
-            localizationId: contentLocale.localizationId,
-            versionId: contentLocale.versionId,
-            localized: contentLocale.localized,
-            backup: contentLocale.backup,
-            enabled,
-          },
-        },
+      const success = await updateVersionLocation({
+        localizationId: contentLocale.localizationId,
+        versionId: contentLocale.versionId,
+        localized: contentLocale.localized,
+        backup: contentLocale.backup,
+        enabled,
       });
-      if (data.updateVersionLocationData.id) {
+      if (success) {
         await refetch();
         toast({
           variant: 'success',
@@ -53,7 +53,9 @@ export const ContentLocalizationTable = () => {
     }
   };
 
-  if (loading) {
+  // First-load gating only — once rows are in cache, a background
+  // refetch shouldn't flash the skeleton in place of the table.
+  if (loading && contentLocalizationList.length === 0) {
     return <ListSkeleton />;
   }
 

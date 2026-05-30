@@ -9,10 +9,9 @@ import { useCallback, useMemo } from 'react';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useActiveProject } from './use-active-project';
 
-// Composes subscription + project-config + usage into a single shape,
-// mirroring the legacy `useSubscriptionContext` value. Reads the active
-// project internally so callers don't have to plumb projectId /
-// subscriptionId through.
+// Composes subscription + project-config + usage into a single shape.
+// Reads the active project internally so callers don't have to plumb
+// projectId / subscriptionId through.
 export interface SubscriptionState {
   subscription: Subscription | null;
   currentUsage: number;

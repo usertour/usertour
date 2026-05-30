@@ -1,4 +1,5 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import { useQueryContentQuestionAnalyticsQuery } from '@usertour/hooks';
 import { endOfDay, format, startOfDay } from 'date-fns';
 import { AnswerCount, ContentQuestionAnalytics } from '@usertour/types';
 import { AnalyticsNPS } from './analytics-nps';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { AnalyticsScale } from './analytics-scale';
 import { useAppContext } from '@/contexts/app-context';
 import { AnalyticsQuestionSkeleton } from './analytics-skeleton';
@@ -142,8 +143,9 @@ AnalyticsMultipleChoice.displayName = 'AnalyticsMultipleChoice';
 
 export const AnalyticsQuestion = (props: { contentId: string }) => {
   const { contentId } = props;
-  const { dateRange, timezone, analyticsData, loading } = useAnalyticsContext();
-  const { content, refetch } = useContentDetailContext();
+  const { dateRange, timezone } = useAnalyticsUI();
+  const { analyticsData, loading } = useContentAnalytics();
+  const { content, refetch } = useContentDetail(contentId);
 
   const startDate = dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '';
   const endDate = dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '';

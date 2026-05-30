@@ -6,9 +6,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // has to feed it into the wrapper's pagination input), the hook owns
 // the accumulator buffer + the in-flight-more flag.
 //
-// Distinct from `useBizListCursor` — that engine drives a TanStack
-// Table's page-replace semantics; this one accumulates rows for a
-// "load more" button (sessions, company memberships, etc.).
+// Distinct from `useCursorPagination` — that primitive drives a
+// TanStack Table's page-replace semantics; this one accumulates rows
+// for a "Load More" button (company memberships, etc.).
+//
+// IMPORTANT: assumes a `no-cache`-style Apollo query where each
+// response's `pageInfo` is a freshly-created object (referentially
+// unique per fetch). The append effect keys off `pageInfo` identity.
+// Pairing this hook with a `cache-and-network` query whose `pageInfo`
+// lives in the normalized cache would produce stable references
+// across renders and silently drop appends. See
+// `useListContentVersionsQuery` for the cache-and-network variant —
+// it takes a different path entirely (typePolicy merge + fetchMore).
 //
 // All args are flat primitives / stable references on purpose: the
 // earlier `{ page, cursor }` grouping caused effect-dep churn (the

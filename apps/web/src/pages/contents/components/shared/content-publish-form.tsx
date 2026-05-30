@@ -1,7 +1,6 @@
 'use client';
 import { SpinnerIcon } from '@usertour/icons';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { useMutation, useQuery } from '@apollo/client';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import {
   Button,
   Dialog,
@@ -14,12 +13,12 @@ import {
   Checkbox,
   Label,
 } from '@usertour/ui';
-import { getContentVersion, publishedContentVersion } from '@usertour/gql';
+import { useGetContentVersionQuery, usePublishContentVersionMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { ContentVersion } from '@usertour/types';
 import * as React from 'react';
 import { useCallback } from 'react';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentPublishFormProps {
@@ -31,19 +30,18 @@ interface ContentPublishFormProps {
 
 export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { versionId, onSubmit, open, onOpenChange } = props;
-  const [mutation] = useMutation(publishedContentVersion);
+  const { invoke: publishVersion } = usePublishContentVersionMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
-  const { environmentList } = useEnvironmentListContext();
+  const { environmentList } = useEnvironmentList();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
-  const { content, refetch } = useContentDetailContext();
+  const { contentId } = useContentDetailUI();
+  const { content, refetch } = useContentDetail(contentId);
   const contentTypeMeta = getContentTypeMeta(content?.type);
 
-  const contentVersion = useQuery(getContentVersion, {
-    variables: { versionId },
-    skip: !open,
-  });
-  const version: ContentVersion | undefined = contentVersion?.data?.getContentVersion;
+  // `skip: !open` so the dialog only pays for this query when it's
+  // actually visible.
+  const { version } = useGetContentVersionQuery(versionId, { skip: !open });
 
   React.useEffect(() => {
     if (open) {
@@ -125,14 +123,10 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     try {
       setIsLoading(true);
       const results = await Promise.all(
-        selectedEnvironments.map((envId) =>
-          mutation({
-            variables: { versionId: versionId, environmentId: envId },
-          }),
-        ),
+        selectedEnvironments.map((envId) => publishVersion(versionId, envId)),
       );
 
-      const allSuccess = results.every((result) => !!result.data?.publishedContentVersion?.id);
+      const allSuccess = results.every(Boolean);
       const envNames = selectedEnvironments
         .map((id) => environmentList.find((env) => env.id === id)?.name)
         .filter(Boolean)
@@ -152,7 +146,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       showToast(false, getErrorMessage(error));
       setIsLoading(false);
     }
-  }, [environmentList, mutation, onSubmit, selectedEnvironments, toast, versionId]);
+  }, [environmentList, publishVersion, onSubmit, selectedEnvironments, toast, versionId]);
 
   if (!version) {
     return null;

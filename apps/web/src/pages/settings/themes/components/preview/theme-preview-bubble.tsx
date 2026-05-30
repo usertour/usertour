@@ -17,7 +17,7 @@ import {
 } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour/constants';
 
-import { useSubscription } from '@/hooks/use-subscription';
+import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface ThemePreviewBubbleProps {
   contents: ContentEditorRoot[];
@@ -27,7 +27,7 @@ interface ThemePreviewBubbleProps {
 
 export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
   const { contents, settings } = props;
-  const { shouldShowMadeWith } = useSubscription();
+  const shouldShowMadeWith = useShouldShowMadeWith();
 
   // Use unified settings hook for CSS vars and avatar URL
   const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(

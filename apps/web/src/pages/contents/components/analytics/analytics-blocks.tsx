@@ -1,4 +1,4 @@
-import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsViewsByBlock } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
@@ -44,7 +44,7 @@ const getRankDotClass = (rank: number, isIdle: boolean) => {
 };
 
 export const AnalyticsBlocks = () => {
-  const { analyticsData, loading } = useAnalyticsContext();
+  const { analyticsData, loading } = useContentAnalytics();
 
   if (loading) {
     return <AnalyticsTasksSkeleton />;

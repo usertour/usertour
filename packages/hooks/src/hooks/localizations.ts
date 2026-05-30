@@ -4,6 +4,7 @@ import {
   deleteLocalization,
   setDefaultLocalization,
   updateLocalization,
+  updateVersionLocationData,
 } from '@usertour/gql';
 
 export interface CreateLocalizationInput {
@@ -52,6 +53,25 @@ export const useDeleteLocalizationMutation = () => {
       },
     });
     return !!response.data?.deleteLocalization?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export interface UpdateVersionLocationDataInput {
+  localizationId: string;
+  versionId: string;
+  localized?: unknown;
+  backup?: unknown;
+  enabled?: boolean;
+}
+
+export const useUpdateVersionLocationDataMutation = () => {
+  // Auto-merged into the `VersionOnLocalization:id` slot — the table
+  // re-renders the toggled row without a manual refetch.
+  const [mutation, { loading, error }] = useMutation(updateVersionLocationData);
+  const invoke = async (input: UpdateVersionLocationDataInput): Promise<boolean> => {
+    const response = await mutation({ variables: { data: input } });
+    return !!response.data?.updateVersionLocationData?.id;
   };
   return { invoke, loading, error };
 };

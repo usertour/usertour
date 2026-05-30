@@ -1,14 +1,14 @@
 import { EditableTitle, Button, useToast } from '@usertour/ui';
 import { MoreButton } from '@/components/section-breadcrumb-header';
 import { useAppContext } from '@/contexts/app-context';
-import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentPublishState } from '@/hooks/use-content-publish-state';
+import { useContentVersion } from '@/hooks/use-content-version';
 import { isVersionPublished } from '@/utils/content';
-import { useMutation } from '@apollo/client';
 import { EnterIcon } from '@radix-ui/react-icons';
-import { updateContent } from '@usertour/gql';
+import { useUpdateContentMutation } from '@usertour/hooks';
 import { PlaneIcon, RiArrowRightSLine, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { ContentDataType } from '@usertour/types';
@@ -37,7 +37,7 @@ interface MainNavProps {
 function MainNav({ className }: MainNavProps) {
   const { contentId } = useParams();
   const { environment } = useAppContext();
-  const { contentType } = useContentDetailContext();
+  const { contentType } = useContentDetailUI();
   const location = useLocation();
   const baseUrl = `/env/${environment?.id}/${contentType}/${contentId}`;
   const { t } = useTranslation();
@@ -87,14 +87,15 @@ export const ContentDetailHeader = () => {
   const navigator = useNavigate();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { content, refetch, contentType, loading } = useContentDetailContext();
+  const { contentId, contentType, isSaving } = useContentDetailUI();
+  const { content, refetch, loading } = useContentDetail(contentId);
   const [openPublish, setOpenPublish] = useState(false);
-  const { version, isSaving } = useContentVersionContext();
+  const { version } = useContentVersion(content?.editedVersionId);
   const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
   const isPublishDisabled = useContentPublishState();
   const [, setSearchParams] = useSearchParams();
-  const [updateContentMutation] = useMutation(updateContent);
+  const { invoke: updateContent } = useUpdateContentMutation();
 
   // Warn user when closing page while saving
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
@@ -103,7 +104,10 @@ export const ContentDetailHeader = () => {
     }
   });
 
-  if (loading) {
+  // First-load gating only — once `content` is in cache, a background
+  // refetch (auto-merge, list refresh, etc.) shouldn't collapse the
+  // header to a skeleton mid-edit.
+  if (loading && !content) {
     return <ContentDetailHeaderSkeleton />;
   }
 
@@ -120,9 +124,7 @@ export const ContentDetailHeader = () => {
 
   const handleRename = async (name: string) => {
     try {
-      await updateContentMutation({
-        variables: { contentId: content.id, content: { name } },
-      });
+      await updateContent(content.id, { name });
       refetch();
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });

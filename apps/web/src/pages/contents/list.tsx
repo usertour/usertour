@@ -1,10 +1,9 @@
 import { useAppContext } from '@/contexts/app-context';
-import { ContentListProvider } from '@/contexts/content-list-context';
-import { EventListProvider } from '@/contexts/event-list-context';
-import { ThemeListProvider } from '@/contexts/theme-list-context';
+import { ScrollRootProvider } from '@/contexts/scroll-root-context';
+import { NotFound } from '@/routes/not-found';
 import { ScrollArea } from '@usertour/ui';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ContentDataType } from '@usertour/types';
@@ -200,13 +199,23 @@ export const ContentList = () => {
   const { environment, project } = useAppContext();
   const { t } = useTranslation();
 
-  if (!contentType || !environment || !project) {
+  // Hold the ScrollArea Viewport DOM node so the DataTable can register
+  // it as the IntersectionObserver root for infinite scroll.
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
+
+  // AppContext is hydrating; brief null beats a transient loading flash.
+  if (!environment || !project) {
     return null;
   }
 
+  // Missing path param (shouldn't happen if the route matched) or
+  // unknown slug in the URL — render the standard 404.
+  if (!contentType) {
+    return <NotFound />;
+  }
   const config = CONTENT_CONFIG[contentType];
   if (!config) {
-    return null;
+    return <NotFound />;
   }
 
   // Trigger button: `New {{type}}` per the convention shared with
@@ -216,22 +225,20 @@ export const ContentList = () => {
   });
 
   return (
-    <ContentListProvider
-      environmentId={environment?.id}
-      key="environmentId"
-      contentType={contentType}
-    >
-      <ThemeListProvider projectId={project?.id}>
-        <EventListProvider projectId={project?.id}>
-          <ContentListSidebar title={config.title} />
-          <ScrollArea className="h-full w-full">
-            <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
-              <ContentListLayout {...config} createButtonText={createButtonText} />
-            </div>
-          </ScrollArea>
-        </EventListProvider>
-      </ThemeListProvider>
-    </ContentListProvider>
+    <>
+      <ContentListSidebar title={config.title} />
+      <ScrollArea className="h-full w-full" viewportRef={setScrollRoot}>
+        <ScrollRootProvider value={scrollRoot}>
+          <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
+            <ContentListLayout
+              {...config}
+              contentType={contentType}
+              createButtonText={createButtonText}
+            />
+          </div>
+        </ScrollRootProvider>
+      </ScrollArea>
+    </>
   );
 };
 
