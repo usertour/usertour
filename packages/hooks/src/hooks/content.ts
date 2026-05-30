@@ -79,7 +79,7 @@ export const useFindManyVersionLocationsQuery = (
 // from an in-view sentinel and Apollo's `updateQuery` appends the new
 // edges into the same cache slot so the rendered grid grows.
 
-const CONTENT_LIST_PAGE_SIZE = 30;
+const CONTENT_LIST_PAGE_SIZE = 20;
 
 // Module-level so the default `orderBy` is referentially stable across
 // renders — folded into `useCallback` deps without churning
@@ -143,22 +143,13 @@ export const useListContentsQuery = ({
     }
     fetchingRef.current = true;
     try {
+      // Cache-level merge owned by the typePolicy on `Query.queryContent`
+      // (apps/web/src/apollo/type-policies). No `updateQuery` here —
+      // and crucially, mutations' `refetchQueries: ['queryContent']`
+      // (create / duplicate / publish / unpublish) replace the
+      // accumulator with a fresh page 1 instead of leaving it stale.
       await fetchMore({
         variables: { first: pageSize, after: endCursor, query, orderBy },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) {
-            return prev;
-          }
-          return {
-            queryContent: {
-              ...fetchMoreResult.queryContent,
-              edges: [
-                ...(prev.queryContent?.edges ?? []),
-                ...(fetchMoreResult.queryContent?.edges ?? []),
-              ],
-            },
-          };
-        },
       });
     } finally {
       fetchingRef.current = false;

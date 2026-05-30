@@ -1,16 +1,62 @@
 import { initialI18n, initialUser } from '@/apollo/state';
-import { TypePolicies } from '@apollo/client';
+import { FieldPolicy, TypePolicies } from '@apollo/client';
 
-// No `relayStylePagination` for the queryBizUser / queryBizCompany /
-// queryBizUserEvents / queryBizCompanyEvents fields. `relayStylePagination`
-// accumulates `edges` across requests with the same keyArgs, which
-// clashes with `useBizListCursor`'s page-replace semantics — if those
-// list queries ever opt into cache participation, an accumulating
-// merge would render previous pages on top of the current one. With
-// the default behavior (Apollo treats each unique-variables call as
-// its own cache slot), cursor-based page replacement works correctly
-// when those queries do opt in. Add back only if rendering moves to
-// infinite-scroll accumulation.
+// Shared shape for every infinite-scroll accumulator field.
+//
+//  - `after` present  → fetchMore: append incoming edges after existing
+//  - `after` absent   → base fetch (initial load OR mutation
+//                       `refetchQueries`): REPLACE with incoming.
+//
+// The replace-on-no-cursor semantic is deliberate. An earlier draft
+// kept the larger of `existing` / `incoming` to defend against per-row
+// components re-issuing the same `cache-and-network` query and
+// overwriting the accumulator. That anti-pattern has been removed at
+// the call sites (`ContentVersionAction` no longer holds redundant
+// query refs), so the guard now only causes harm: when a restore /
+// publish-then-edit mutation refetches `listContentVersions` and the
+// new page-1 carries the just-created version, the "keep larger"
+// branch drops the new edge and the user can't see their version
+// until a hard reload.
+//
+// No dedup: the server uses `@devoxa/prisma-relay-cursor-connection`
+// uniformly across all four fields, and the queries are ordered by
+// immutable `createdAt`. Strict-exclusive cursor semantics mean
+// consecutive pages can't carry overlapping edges. An earlier draft
+// of this helper carried a cursor-keyed `dedupBy` defensively (copied
+// from a comment in the activity-feed loader that warned about
+// "mid-cursor row modification"), but with `createdAt` ordering on
+// immutable rows there's nothing to modify mid-cursor. If the server
+// ever does emit a duplicate, surface it as a server bug rather than
+// silently dropping it here.
+type ConnectionShape<TEdge = unknown> = {
+  edges: TEdge[];
+  [k: string]: unknown;
+};
+
+const accumulatorMerge = <TEdge>(keyArgs: string[]): FieldPolicy<ConnectionShape<TEdge>> => ({
+  keyArgs,
+  merge(existing, incoming, { args }) {
+    if (!existing) {
+      return incoming;
+    }
+    const after = (args as { after?: string } | null)?.after;
+    if (!after) {
+      return incoming;
+    }
+    return {
+      ...incoming,
+      edges: [...(existing.edges ?? []), ...(incoming.edges ?? [])],
+    };
+  },
+});
+
+// `queryBizUser` / `queryBizCompany` are deliberately absent here —
+// they're driven by `useBizListCursor`'s page-replace semantics (each
+// page click swaps the visible slice; cache slot is keyed by the full
+// variable set including the cursor). Adding an accumulator merge
+// would render previous pages on top of the current one. The Events
+// variants (queryBizUserEvents / queryBizCompanyEvents) are different
+// operations — they back the activity feed and DO want accumulation.
 export const TypePolicy: TypePolicies = {
   Query: {
     fields: {
@@ -38,39 +84,21 @@ export const TypePolicy: TypePolicies = {
         },
       },
 
-      // `listContentVersions` is rendered with infinite-scroll accumulation
-      // (sentinel-driven `fetchMore`) AND consumed by per-row components
-      // (`ContentVersionAction`) that each re-invoke the same query under
-      // `cache-and-network`. Without a merge policy, every per-row mount's
-      // response — which is just page 1 (no `after`) — overwrites the
-      // accumulated cache and resets the list, which lets the sentinel
-      // re-enter the viewport, fires `fetchMore` again, and runs forever.
+      // Infinite-scroll pagination, accumulator semantics.
       //
-      // The merge keeps the *larger* of `existing` / `incoming` when the
-      // call has no cursor (base refetch), so a single-page refetch
-      // can't shrink an accumulated multi-page result. When the call
-      // *does* have an `after`, it's a `fetchMore` and we append.
-      listContentVersions: {
-        keyArgs: ['contentId'],
-        merge(existing, incoming, { args }) {
-          if (!existing) {
-            return incoming;
-          }
-          const after = args?.after as string | undefined;
-          const existingEdges = existing?.edges ?? [];
-          const incomingEdges = incoming?.edges ?? [];
-          if (after) {
-            return {
-              ...incoming,
-              edges: [...existingEdges, ...incomingEdges],
-            };
-          }
-          if (existingEdges.length > incomingEdges.length) {
-            return existing;
-          }
-          return incoming;
-        },
-      },
+      // `keyArgs` lists **top-level GraphQL field arguments**, not
+      // properties nested inside them. For the activity-feed queries,
+      // `environmentId` / `userId` / `companyId` live INSIDE the
+      // `query` arg (`BizEventQuery!`), so keying by `['query',
+      // 'orderBy']` is what distinguishes per-user / per-company /
+      // per-filter cache slots. Listing nested names directly would
+      // make Apollo fall back to "all variables" keyArgs and each
+      // `fetchMore` (with a different `after`) would land in its own
+      // slot — the watch query would never see appended pages.
+      listContentVersions: accumulatorMerge(['contentId']),
+      queryContent: accumulatorMerge(['query', 'orderBy']),
+      queryBizUserEvents: accumulatorMerge(['query', 'orderBy']),
+      queryBizCompanyEvents: accumulatorMerge(['query', 'orderBy']),
     },
   },
 };

@@ -63,6 +63,12 @@ const useActivityFeedQuery = (
     }
     fetchingRef.current = true;
     try {
+      // Cache-level merge with id-based dedup owned by the typePolicy
+      // on `Query.queryBizUserEvents` / `Query.queryBizCompanyEvents`
+      // (apps/web/src/apollo/type-policies). The activity feed's
+      // reload button (`refetch`) is the no-cursor base fetch path
+      // — the typePolicy replaces the accumulator with the fresh
+      // page 1 instead of leaving stale events on top.
       await fetchMore({
         variables: {
           first: PAGE_SIZE,
@@ -70,37 +76,11 @@ const useActivityFeedQuery = (
           query,
           orderBy: { field: 'createdAt', direction: 'desc' },
         },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) {
-            return prev;
-          }
-          const prevConnection = (prev as Record<string, ActivityFeedConnection>)[queryKey];
-          const nextConnection = (fetchMoreResult as Record<string, ActivityFeedConnection>)[
-            queryKey
-          ];
-          // Dedup by node id — server pagination can repeat an edge if
-          // a row was modified mid-cursor. Preserves the behaviour of
-          // the previous `setEvents` accumulator.
-          const existingIds = new Set(prevConnection.edges.map((edge) => edge.node.id));
-          const mergedEdges = [...prevConnection.edges];
-          for (const edge of nextConnection.edges) {
-            if (!existingIds.has(edge.node.id)) {
-              mergedEdges.push(edge);
-            }
-          }
-          return {
-            ...fetchMoreResult,
-            [queryKey]: {
-              ...nextConnection,
-              edges: mergedEdges,
-            },
-          };
-        },
       });
     } finally {
       fetchingRef.current = false;
     }
-  }, [endCursor, fetchMore, hasNextPage, loading, query, queryKey]);
+  }, [endCursor, fetchMore, hasNextPage, loading, query]);
 
   return {
     events,
