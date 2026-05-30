@@ -81,6 +81,11 @@ export const useFindManyVersionLocationsQuery = (
 
 const CONTENT_LIST_PAGE_SIZE = 30;
 
+// Module-level so the default `orderBy` is referentially stable across
+// renders — folded into `useCallback` deps without churning
+// `fetchNextPage`'s identity.
+const DEFAULT_CONTENT_ORDER_BY = { field: 'createdAt', direction: 'desc' } as const;
+
 interface QueryContentVariables {
   environmentId: string;
   type?: ContentDataType;
@@ -107,7 +112,7 @@ interface UseListContentsArgs {
 
 export const useListContentsQuery = ({
   query,
-  orderBy = { field: 'createdAt', direction: 'desc' },
+  orderBy = DEFAULT_CONTENT_ORDER_BY,
   pageSize = CONTENT_LIST_PAGE_SIZE,
   options,
 }: UseListContentsArgs) => {
@@ -221,22 +226,12 @@ export const useListContentVersionsQuery = (
     }
     fetchingRef.current = true;
     try {
+      // The cache-level merge is owned by the typePolicy on
+      // `Query.listContentVersions` (apps/web/src/apollo/type-policies),
+      // which also guards against per-row `cache-and-network` mounts
+      // overwriting the accumulator. No `updateQuery` here.
       await fetchMore({
         variables: { contentId, first: VERSION_LIST_PAGE_SIZE, after: endCursor },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) {
-            return prev;
-          }
-          return {
-            listContentVersions: {
-              ...fetchMoreResult.listContentVersions,
-              edges: [
-                ...(prev.listContentVersions?.edges ?? []),
-                ...(fetchMoreResult.listContentVersions?.edges ?? []),
-              ],
-            },
-          };
-        },
       });
     } finally {
       fetchingRef.current = false;

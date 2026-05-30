@@ -1,7 +1,8 @@
 import { useAppContext } from '@/contexts/app-context';
+import { ScrollRootProvider } from '@/contexts/scroll-root-context';
 import { ScrollArea } from '@usertour/ui';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ContentDataType } from '@usertour/types';
@@ -197,6 +198,10 @@ export const ContentList = () => {
   const { environment, project } = useAppContext();
   const { t } = useTranslation();
 
+  // Hold the ScrollArea Viewport DOM node so the DataTable can register
+  // it as the IntersectionObserver root for infinite scroll.
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
+
   if (!contentType || !environment || !project) {
     return null;
   }
@@ -215,14 +220,16 @@ export const ContentList = () => {
   return (
     <>
       <ContentListSidebar title={config.title} />
-      <ScrollArea className="h-full w-full">
-        <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
-          <ContentListLayout
-            {...config}
-            contentType={contentType}
-            createButtonText={createButtonText}
-          />
-        </div>
+      <ScrollArea className="h-full w-full" viewportRef={setScrollRoot}>
+        <ScrollRootProvider value={scrollRoot}>
+          <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
+            <ContentListLayout
+              {...config}
+              contentType={contentType}
+              createButtonText={createButtonText}
+            />
+          </div>
+        </ScrollRootProvider>
       </ScrollArea>
     </>
   );

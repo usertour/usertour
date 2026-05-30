@@ -1,5 +1,6 @@
 'use client';
 
+import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { useGetContentVersionQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
@@ -7,7 +8,7 @@ import { CircleIcon, SpinnerIcon } from '@usertour/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useInView } from 'react-intersection-observer';
+import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { useNavigate } from 'react-router-dom';
 import { AutoScaledPreviewContainer, Button, Skeleton } from '@usertour/ui';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
@@ -263,15 +264,19 @@ interface DataTableProps {
 
 export function DataTable(props: DataTableProps) {
   const { contents, contentType, hasNextPage, loadingMore, fetchNextPage, refetch } = props;
-  // Sentinel at the bottom of the grid — when it scrolls into view we
-  // pull the next cursor page. Same pattern as the version-history list.
-  const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
-
+  // ScrollArea's Viewport, published by ContentList via ScrollRootProvider —
+  // becomes the IntersectionObserver root so the sentinel triggers against
+  // the actual scrolling element rather than the window viewport.
+  const scrollRoot = useScrollRoot();
+  const [sentryRef, { rootRef }] = useInfiniteScroll({
+    loading: loadingMore,
+    hasNextPage,
+    onLoadMore: fetchNextPage,
+    rootMargin: '0px 0px 200px 0px',
+  });
   useEffect(() => {
-    if (inView && hasNextPage && !loadingMore) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, loadingMore, fetchNextPage]);
+    rootRef(scrollRoot);
+  }, [rootRef, scrollRoot]);
 
   return (
     <div className="space-y-4">
@@ -287,7 +292,7 @@ export function DataTable(props: DataTableProps) {
       </div>
       {hasNextPage && (
         <div
-          ref={sentinelRef}
+          ref={sentryRef}
           className="flex items-center justify-center py-4 text-muted-foreground"
         >
           {loadingMore ? (

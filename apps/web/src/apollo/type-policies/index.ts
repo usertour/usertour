@@ -37,6 +37,40 @@ export const TypePolicy: TypePolicies = {
           return { ...existing, ...incoming };
         },
       },
+
+      // `listContentVersions` is rendered with infinite-scroll accumulation
+      // (sentinel-driven `fetchMore`) AND consumed by per-row components
+      // (`ContentVersionAction`) that each re-invoke the same query under
+      // `cache-and-network`. Without a merge policy, every per-row mount's
+      // response — which is just page 1 (no `after`) — overwrites the
+      // accumulated cache and resets the list, which lets the sentinel
+      // re-enter the viewport, fires `fetchMore` again, and runs forever.
+      //
+      // The merge keeps the *larger* of `existing` / `incoming` when the
+      // call has no cursor (base refetch), so a single-page refetch
+      // can't shrink an accumulated multi-page result. When the call
+      // *does* have an `after`, it's a `fetchMore` and we append.
+      listContentVersions: {
+        keyArgs: ['contentId'],
+        merge(existing, incoming, { args }) {
+          if (!existing) {
+            return incoming;
+          }
+          const after = args?.after as string | undefined;
+          const existingEdges = existing?.edges ?? [];
+          const incomingEdges = incoming?.edges ?? [];
+          if (after) {
+            return {
+              ...incoming,
+              edges: [...existingEdges, ...incomingEdges],
+            };
+          }
+          if (existingEdges.length > incomingEdges.length) {
+            return existing;
+          }
+          return incoming;
+        },
+      },
     },
   },
 };

@@ -35,7 +35,7 @@ import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
-import { useInView } from 'react-intersection-observer';
+import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
 import { formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
 import { cn } from '@usertour/tailwind';
@@ -291,11 +291,6 @@ export const TooltipTargetMissingDialog = ({
     }
   }, [open, globalDateRange, globalSelectedPreset]);
 
-  const { ref: sentinelRef, inView } = useInView({
-    threshold: 0,
-    root: scrollContainer,
-  });
-
   const buildQueryParams = useCallback(() => {
     if (!environment?.id || !localDateRange?.from || !localDateRange?.to) return null;
     return {
@@ -339,12 +334,15 @@ export const TooltipTargetMissingDialog = ({
     setLoadingMore(false);
   }, [buildQueryParams, pageInfo.endCursor, loadingMore, fetchSessions, handleFetchResult]);
 
-  // Load more when sentinel comes into view
+  const [sentryRef, { rootRef }] = useInfiniteScroll({
+    loading: loadingMore || loading || isRefetching,
+    hasNextPage: pageInfo.hasNextPage,
+    onLoadMore: loadMore,
+    rootMargin: '0px 0px 100px 0px',
+  });
   useEffect(() => {
-    if (inView && pageInfo.hasNextPage && !loadingMore && !loading) {
-      loadMore();
-    }
-  }, [inView, pageInfo.hasNextPage, loadingMore, loading, loadMore]);
+    rootRef(scrollContainer);
+  }, [rootRef, scrollContainer]);
 
   // Load initial data when dialog opens or local date range changes
   useEffect(() => {
@@ -437,7 +435,7 @@ export const TooltipTargetMissingDialog = ({
               </Table>
 
               {pageInfo.hasNextPage && (
-                <div ref={sentinelRef} className="py-4">
+                <div ref={sentryRef} className="py-4">
                   {loadingMore && <LoadingSpinner size="sm" />}
                 </div>
               )}

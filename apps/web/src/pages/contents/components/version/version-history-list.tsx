@@ -1,4 +1,5 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
@@ -6,7 +7,7 @@ import { SpinnerIcon } from '@usertour/icons';
 import { Content, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';
-import { useInView } from 'react-intersection-observer';
+import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { VersionRow, VersionRowChip } from './version-row';
 
 type VersionGroup = { key: string; label: string; versions: ContentVersion[] };
@@ -61,13 +62,21 @@ export const VersionHistoryList = () => {
   const { versionList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
     useContentVersionList(contentId);
 
-  const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
-
+  // Library-managed sentinel: handles "fire once per inView" semantics,
+  // resize debounce, and auto-fill termination. `rootRef` must be wired
+  // to the actual scroll container (the outer overflow-y-auto div from
+  // ContentDetailView) — without it, IO measures against the window
+  // viewport and the auto-fill never settles in an inner-scroll layout.
+  const scrollRoot = useScrollRoot();
+  const [sentryRef, { rootRef }] = useInfiniteScroll({
+    loading: loading || loadingMore,
+    hasNextPage,
+    onLoadMore: fetchNextPage,
+    rootMargin: '0px 0px 100px 0px',
+  });
   useEffect(() => {
-    if (inView && hasNextPage && !loading && !loadingMore) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, loading, loadingMore, fetchNextPage]);
+    rootRef(scrollRoot);
+  }, [rootRef, scrollRoot]);
 
   const chipsMap = useMemo(() => buildAllChipsMap(content), [content]);
 
@@ -154,7 +163,7 @@ export const VersionHistoryList = () => {
         </div>
       )}
 
-      <div ref={sentinelRef} className="flex h-10 items-center justify-center">
+      <div ref={sentryRef} className="flex h-10 items-center justify-center">
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
         {!hasNextPage && versionList.length > 0 && (
           <span className="text-xs text-muted-foreground">End of history</span>

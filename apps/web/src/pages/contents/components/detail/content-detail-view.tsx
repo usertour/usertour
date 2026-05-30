@@ -1,12 +1,14 @@
 import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
+import { ScrollRootProvider } from '@/contexts/scroll-root-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { useSegmentList } from '@/hooks/use-segment-list';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentTypeName } from '@usertour/types';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentDetailAnalytics } from '../version/content-detail-analytics';
 import { ContentDetailVersion } from '../version/content-detail-version';
@@ -45,6 +47,10 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { loading: segmentLoading } = useSegmentList(environment?.id, SEGMENT_BIZ_TYPES);
   const { t } = useTranslation();
 
+  // DOM node of the outer overflow div, published through context to any
+  // infinite-scroll list inside (`VersionHistoryList`, etc.).
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
+
   // First-load gating — `loading && !data` so background refetches
   // (e.g. theme list refetch after a setting change) don't unmount
   // the entire detail tree. Same lesson as the v0.8.4 builder fix.
@@ -71,24 +77,32 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
     // AdminShellMuted's content card uses `flex h-full w-full` (default
     // flex-row) for its inner sidebar-wrapper. Without an explicit flex-col
     // here, header + route content would sit side-by-side instead of stacked.
-    <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-      <ContentDetailHeader />
-      {type === 'detail' && contentType === ContentTypeName.TRACKERS && (
-        <div className="px-6 py-8 xl:px-8">
-          <ContentDetailTrackerEditor />
-        </div>
-      )}
-      {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
-        <div className="px-6 py-8 xl:px-8">
-          <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
-            <ContentDetailSettings />
-            <ContentDetailContent />
+    //
+    // `setScrollRoot` captures the actual scrolling element so descendants
+    // running `useInfiniteScroll` can register it as the IntersectionObserver
+    // root via context; without this the IO measures against the window
+    // viewport and infinite-scroll lists never settle inside an inner
+    // overflow.
+    <div ref={setScrollRoot} className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <ScrollRootProvider value={scrollRoot}>
+        <ContentDetailHeader />
+        {type === 'detail' && contentType === ContentTypeName.TRACKERS && (
+          <div className="px-6 py-8 xl:px-8">
+            <ContentDetailTrackerEditor />
           </div>
-        </div>
-      )}
-      {type === 'versions' && <ContentDetailVersion />}
-      {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
-      {type === 'localization' && <ContentLocalizationList />}
+        )}
+        {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
+          <div className="px-6 py-8 xl:px-8">
+            <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
+              <ContentDetailSettings />
+              <ContentDetailContent />
+            </div>
+          </div>
+        )}
+        {type === 'versions' && <ContentDetailVersion />}
+        {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
+        {type === 'localization' && <ContentLocalizationList />}
+      </ScrollRootProvider>
     </div>
   );
 };
