@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // Pairing this hook with a `cache-and-network` query whose `pageInfo`
 // lives in the normalized cache would produce stable references
 // across renders and silently drop appends. See
-// `useLoadMoreContentVersions` for the cache-and-network variant —
+// `useListContentVersionsQuery` for the cache-and-network variant —
 // it takes a different path entirely (typePolicy merge + fetchMore).
 //
 // All args are flat primitives / stable references on purpose: the
