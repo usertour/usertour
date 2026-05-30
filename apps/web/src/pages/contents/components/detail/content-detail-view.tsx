@@ -3,7 +3,6 @@ import { useAppContext } from '@/contexts/app-context';
 import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
 import { ScrollRootProvider } from '@/contexts/scroll-root-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
-import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { useSegmentList } from '@/hooks/use-segment-list';
 import { useThemeList } from '@/hooks/use-theme-list';
@@ -41,7 +40,6 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { type, contentId, contentType } = props;
   const { environment } = useAppContext();
   const { content, loading: contentLoading } = useContentDetail(contentId);
-  const { version, loading: versionLoading } = useContentVersion(content?.editedVersionId);
   const { versionList, loading: versionListLoading } = useContentVersionList(contentId);
   const { loading: themeLoading } = useThemeList();
   const { loading: segmentLoading } = useSegmentList(environment?.id, SEGMENT_BIZ_TYPES);
@@ -54,9 +52,21 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   // First-load gating — `loading && !data` so background refetches
   // (e.g. theme list refetch after a setting change) don't unmount
   // the entire detail tree. Same lesson as the v0.8.4 builder fix.
+  //
+  // Intentionally NOT gating on `(versionLoading && !version)`. When a
+  // restore / publish-then-edit mutation creates a new edited version,
+  // `content.editedVersionId` flips, `useContentVersion` switches to a
+  // fresh cache slot, and `version` is briefly `null` while the new
+  // version loads. The old gate misread that transient `null` as
+  // "first load" and replaced the whole tree with `ContentLoading`,
+  // producing a page-wide flash. Panels that genuinely need
+  // `editedVersion` (`ContentDetailContent` / Settings /
+  // TrackerEditor) already self-gate with `if (!version) return null;`,
+  // so the brief null state shows as a blank content area at worst —
+  // and tabs that don't need `editedVersion` (Versions, Analytics)
+  // are entirely undisturbed.
   const isLoading =
     (contentLoading && !content) ||
-    (versionLoading && !version) ||
     (versionListLoading && versionList.length === 0) ||
     themeLoading ||
     segmentLoading;
