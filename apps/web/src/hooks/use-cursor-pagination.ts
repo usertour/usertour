@@ -218,6 +218,20 @@ export function useCursorPagination<TRow, TQuery>(
     setCommittedPageInfo(pageInfo);
     setCommittedPagination({ ...pagination });
     setTotalCount(tc);
+    // Clamp `pageIndex` when a mutation `refetch()` (typically bulk
+    // delete) shrinks `totalCount` below the page the user was
+    // sitting on. Without this, sitting on Page 5/5 and deleting
+    // all 20 rows leaves pager reading "Page 5 of 4" — pageCount
+    // recomputed to 4 from the new total, but `pagination.pageIndex`
+    // never moves. First Prev click then no-ops because Apollo dedups
+    // the (still-valid) `{ last: 20 }` request the memo recomputes
+    // from the now-shorter page-count.
+    if (pagination.pageSize > 0) {
+      const newPageCount = Math.ceil(tc / pagination.pageSize);
+      if (newPageCount > 0 && pagination.pageIndex >= newPageCount) {
+        setPagination((prev) => ({ ...prev, pageIndex: newPageCount - 1 }));
+      }
+    }
     // We deliberately do NOT include `pagination` in deps — it
     // shouldn't drive a commit on its own; only a fresh response
     // should. The closure reads the current `pagination` value to

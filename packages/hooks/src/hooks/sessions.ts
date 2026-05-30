@@ -28,13 +28,16 @@ export const useQueryBizSessionsQuery = ({
   pagination = { first: 10 },
   options,
 }: UseQueryBizSessionsArgs) => {
+  // See `useContentListQuery` in `gql.ts` — `...options` first,
+  // `variables` last, so caller can't accidentally clobber
+  // wrapper-composed variables.
   const { data, refetch, error, loading, networkStatus } = useQuery(queryBizSession, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const connection = data?.queryBizSession;

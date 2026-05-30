@@ -140,13 +140,18 @@ export const useContentListQuery = ({
   pagination = { first: 1000 },
   options,
 }: UseContentListQueryProps) => {
+  // `...options` spread BEFORE `variables` — a caller-supplied
+  // `options.variables` would otherwise silently overwrite the
+  // pagination / query / orderBy the wrapper just composed. Defensive
+  // but free: `useCursorPagination` already pipes caller-controlled
+  // options straight into wrappers like this one.
   const { data, refetch, error, loading } = useQuery(queryContent, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
   const contentList = data?.queryContent?.edges.map((e: any) => e.node);
   const pageInfo = data?.queryContent?.pageInfo;
@@ -175,13 +180,15 @@ export const useCompanyListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseCompanyListQueryProps & { options?: QueryHookOptions }) => {
+  // See `useContentListQuery` — `...options` first, `variables` last,
+  // so caller can't accidentally clobber wrapper-composed variables.
   const { data, refetch, loading, error, networkStatus } = useQuery(queryBizCompany, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const bizCompanyList = data?.queryBizCompany;
@@ -213,13 +220,15 @@ export const useUserListQuery = ({
   pagination = { first: 10 },
   options,
 }: UseUserListQueryProps & { options?: QueryHookOptions }) => {
+  // See `useContentListQuery` — `...options` first, `variables` last,
+  // so caller can't accidentally clobber wrapper-composed variables.
   const { data, refetch, loading, error, networkStatus } = useQuery(queryBizUser, {
+    ...options,
     variables: {
       ...pagination,
       query,
       orderBy,
     },
-    ...options,
   });
 
   const bizUserList = data?.queryBizUser;
