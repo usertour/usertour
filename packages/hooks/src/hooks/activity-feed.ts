@@ -1,7 +1,8 @@
 import { type DocumentNode, type QueryHookOptions, useQuery } from '@apollo/client';
 import { queryBizCompanyEvents, queryBizUserEvents } from '@usertour/gql';
 import type { BizEvent, PageInfo } from '@usertour/types';
-import { useCallback, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
+import { useCursorFetchMore } from './use-cursor-fetch-more';
 
 // Domain wrapper for `queryBizUserEvents` / `queryBizCompanyEvents`
 // activity-feed queries. Cursor pagination via Apollo's `fetchMore`
@@ -53,34 +54,25 @@ const useActivityFeedQuery = (
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
   const endCursor = connection?.pageInfo?.endCursor ?? null;
 
-  // networkStatus === 3 is NetworkStatus.fetchMore.
-  const loadingMore = networkStatus === 3;
-  const fetchingRef = useRef(false);
-
-  const loadMore = useCallback(async () => {
-    if (!hasNextPage || loading || fetchingRef.current || !endCursor) {
-      return;
-    }
-    fetchingRef.current = true;
-    try {
-      // Cache-level merge with id-based dedup owned by the typePolicy
-      // on `Query.queryBizUserEvents` / `Query.queryBizCompanyEvents`
-      // (apps/web/src/apollo/type-policies). The activity feed's
-      // reload button (`refetch`) is the no-cursor base fetch path
-      // — the typePolicy replaces the accumulator with the fresh
-      // page 1 instead of leaving stale events on top.
-      await fetchMore({
-        variables: {
-          first: PAGE_SIZE,
-          after: endCursor,
-          query,
-          orderBy: { field: 'createdAt', direction: 'desc' },
-        },
-      });
-    } finally {
-      fetchingRef.current = false;
-    }
-  }, [endCursor, fetchMore, hasNextPage, loading, query]);
+  // Cache-level merge with id-based dedup owned by the typePolicy on
+  // `Query.queryBizUserEvents` / `Query.queryBizCompanyEvents`
+  // (apps/web/src/apollo/type-policies). The activity feed's reload
+  // button (`refetch`) is the no-cursor base fetch path — the
+  // typePolicy replaces the accumulator with the fresh page 1 instead
+  // of leaving stale events on top.
+  const { loadingMore, fetchNextPage: loadMore } = useCursorFetchMore({
+    loading,
+    networkStatus,
+    hasNextPage,
+    endCursor,
+    fetchMore,
+    buildVariables: (after) => ({
+      first: PAGE_SIZE,
+      after,
+      query,
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    }),
+  });
 
   return {
     events,

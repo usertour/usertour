@@ -62,13 +62,14 @@ const accumulatorMerge = <TEdge>(keyArgs: string[]): FieldPolicy<ConnectionShape
   },
 });
 
-// `queryBizUser` / `queryBizCompany` are deliberately absent here —
-// they're driven by `useBizListCursor`'s page-replace semantics (each
-// page click swaps the visible slice; cache slot is keyed by the full
-// variable set including the cursor). Adding an accumulator merge
-// would render previous pages on top of the current one. The Events
-// variants (queryBizUserEvents / queryBizCompanyEvents) are different
-// operations — they back the activity feed and DO want accumulation.
+// `queryBizUser` / `queryBizCompany` / `queryBizSession` are
+// deliberately absent here — they're driven by `useCursorPagination`'s
+// page-replace semantics (each page click swaps the visible slice;
+// cache slot is keyed by the full variable set including the cursor).
+// Adding an accumulator merge would render previous pages on top of
+// the current one. The Events variants (queryBizUserEvents /
+// queryBizCompanyEvents) are different operations — they back the
+// activity feed and DO want accumulation.
 export const TypePolicy: TypePolicies = {
   Query: {
     fields: {

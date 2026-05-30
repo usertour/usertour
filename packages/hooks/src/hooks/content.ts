@@ -17,7 +17,8 @@ import type {
   ContentVersion,
   VersionOnLocalization,
 } from '@usertour/types';
-import { useCallback, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
+import { useCursorFetchMore } from './use-cursor-fetch-more';
 
 // Domain wrappers for content-detail / version / localization queries.
 // Lives outside the catch-all `gql.ts` per the convention established
@@ -134,27 +135,19 @@ export const useListContentsQuery = ({
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
   const endCursor = connection?.pageInfo?.endCursor ?? null;
 
-  const loadingMore = networkStatus === 3;
-  const fetchingRef = useRef(false);
-
-  const fetchNextPage = useCallback(async () => {
-    if (!hasNextPage || loading || fetchingRef.current || !endCursor) {
-      return;
-    }
-    fetchingRef.current = true;
-    try {
-      // Cache-level merge owned by the typePolicy on `Query.queryContent`
-      // (apps/web/src/apollo/type-policies). No `updateQuery` here —
-      // and crucially, mutations' `refetchQueries: ['queryContent']`
-      // (create / duplicate / publish / unpublish) replace the
-      // accumulator with a fresh page 1 instead of leaving it stale.
-      await fetchMore({
-        variables: { first: pageSize, after: endCursor, query, orderBy },
-      });
-    } finally {
-      fetchingRef.current = false;
-    }
-  }, [endCursor, fetchMore, hasNextPage, loading, pageSize, query, orderBy]);
+  // Cache-level merge owned by the typePolicy on `Query.queryContent`
+  // (apps/web/src/apollo/type-policies). No `updateQuery` here — and
+  // crucially, mutations' `refetchQueries: ['queryContent']` (create /
+  // duplicate / publish / unpublish) replace the accumulator with a
+  // fresh page 1 instead of leaving it stale.
+  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+    loading,
+    networkStatus,
+    hasNextPage,
+    endCursor,
+    fetchMore,
+    buildVariables: (after) => ({ first: pageSize, after, query, orderBy }),
+  });
 
   return {
     contents,
@@ -204,30 +197,21 @@ export const useListContentVersionsQuery = (
   const endCursor = connection?.pageInfo?.endCursor ?? null;
   const totalCount = connection?.totalCount ?? 0;
 
-  // networkStatus === 3 is NetworkStatus.fetchMore. Keep `loading`
-  // clean ("first load only") so consumers don't collapse the rendered
-  // list while a page is appending — the v0.8.4 lesson applied to
-  // fetchMore.
-  const loadingMore = networkStatus === 3;
-  const fetchingRef = useRef(false);
-
-  const fetchNextPage = useCallback(async () => {
-    if (!hasNextPage || loading || fetchingRef.current || !endCursor) {
-      return;
-    }
-    fetchingRef.current = true;
-    try {
-      // The cache-level merge is owned by the typePolicy on
-      // `Query.listContentVersions` (apps/web/src/apollo/type-policies),
-      // which also guards against per-row `cache-and-network` mounts
-      // overwriting the accumulator. No `updateQuery` here.
-      await fetchMore({
-        variables: { contentId, first: VERSION_LIST_PAGE_SIZE, after: endCursor },
-      });
-    } finally {
-      fetchingRef.current = false;
-    }
-  }, [contentId, endCursor, fetchMore, hasNextPage, loading]);
+  // The cache-level merge is owned by the typePolicy on
+  // `Query.listContentVersions` (apps/web/src/apollo/type-policies).
+  // No `updateQuery` here. The accumulator relies on the
+  // "single-accumulator-consumer" invariant documented at the
+  // typePolicy site: a base refetch (no `after`) replaces, so adding a
+  // second cache-and-network consumer of the same cell would collapse
+  // the accumulator to page 1.
+  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+    loading,
+    networkStatus,
+    hasNextPage,
+    endCursor,
+    fetchMore,
+    buildVariables: (after) => ({ contentId, first: VERSION_LIST_PAGE_SIZE, after }),
+  });
 
   return {
     versionList,

@@ -120,6 +120,14 @@ const { items, hasMore, loading: effectiveLoading, loadMore, refresh } =
 - **The cursor stays caller-owned.** The hook can't own it because
   the caller has to feed it back into the underlying Apollo wrapper
   on each render.
+- **Only pair with `no-cache`-style queries.** The append effect keys
+  off `pageInfo` *identity* — each response must produce a fresh
+  `PageInfo` object reference. A `cache-and-network` query whose
+  `pageInfo` lives in the normalized Apollo cache returns the same
+  reference across renders for unchanged data, and the effect would
+  fail to re-fire on legitimate refetches. If you need cache
+  participation for the same list shape, use the typePolicy
+  accumulator route (`§1`) instead.
 
 ## 3. Page-button cursor pagination (`useCursorPagination`)
 
