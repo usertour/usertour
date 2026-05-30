@@ -1,39 +1,54 @@
 import { Card, CardContent, CardHeader, CardTitle, Button, QuestionTooltip } from '@usertour/ui';
-import { useEffect, useState } from 'react';
-import type { PaginationState } from '@tanstack/react-table';
+import { useMemo } from 'react';
+import { endOfDay, startOfDay } from 'date-fns';
+import { useQueryBizSessionsQuery } from '@usertour/hooks';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
-import { useBizSessions } from '@/hooks/use-biz-sessions';
+import { useAppContext } from '@/contexts/app-context';
+import { useCursorPagination } from '@/hooks/use-cursor-pagination';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';
 import { DownloadIcon } from 'lucide-react';
 
-const DEFAULT_PAGINATION: PaginationState = { pageIndex: 0, pageSize: 10 };
+const PAGE_SIZE = 10;
 
 export const AnalyticsSessions = () => {
   const { contentId, dateRange, timezone } = useAnalyticsUI();
-  // Pagination is page-scoped: the toolbar (ExportDropdownMenu) and the
-  // table (BizSessionsDataTable) share the same hook call so they see
-  // the same totalCount.
-  const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+  const { environment } = useAppContext();
 
-  // Reset to page 1 whenever the analytics date range changes.
-  // Ported from the old `BizSessionProvider` — without this, after
-  // narrowing the range to a smaller window the table can stay on a
-  // page index that no longer exists.
-  useEffect(() => {
-    if (!dateRange) {
-      return;
-    }
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [dateRange]);
-
-  const { bizSessions, totalCount, pageCount, refetch, loading } = useBizSessions(
-    contentId,
-    pagination,
-    dateRange,
-    timezone,
+  // `useCursorPagination` watches this object's identity to know when
+  // to reset pagination back to page 1 — any field change (date
+  // range, env switch, …) triggers a synchronous reset in the same
+  // render, so the next useQuery fires with the new query AND a
+  // fresh cursor in one round trip. `useMemo` keeps the reference
+  // stable across renders that don't actually change the shape.
+  const query = useMemo(
+    () => ({
+      environmentId: environment?.id ?? '',
+      contentId,
+      startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
+      endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
+      timezone,
+    }),
+    [environment?.id, contentId, dateRange?.from, dateRange?.to, timezone],
   );
+
+  const {
+    rows: bizSessions,
+    totalCount,
+    pageCount,
+    pagination,
+    setPagination,
+    refetch,
+    loading,
+  } = useCursorPagination({
+    query,
+    useListQuery: useQueryBizSessionsQuery,
+    defaultPageSize: PAGE_SIZE,
+    skip: !environment?.id,
+    options: SHARED_CACHE_QUERY_OPTIONS,
+  });
 
   return (
     <>
@@ -43,8 +58,8 @@ export const AnalyticsSessions = () => {
             <div className="grow flex items-center gap-1">
               Sessions
               <QuestionTooltip>
-                Each row is one user's engagement session with this content, showing when it started
-                and its current state.
+                Each user's engagement session with this content, showing when it started and its
+                current state.
               </QuestionTooltip>
             </div>
             <ExportDropdownMenu totalCount={totalCount}>

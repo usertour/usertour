@@ -28,7 +28,7 @@ export const useQueryBizSessionsQuery = ({
   pagination = { first: 10 },
   options,
 }: UseQueryBizSessionsArgs) => {
-  const { data, refetch, error, loading } = useQuery(queryBizSession, {
+  const { data, refetch, error, loading, networkStatus } = useQuery(queryBizSession, {
     variables: {
       ...pagination,
       query,
@@ -38,12 +38,16 @@ export const useQueryBizSessionsQuery = ({
   });
 
   const connection = data?.queryBizSession;
-  const bizSessions: BizSession[] =
+  // Return shape aligned with the other list-query wrappers
+  // (`useUserListQuery` / `useCompanyListQuery`) so callers can plug
+  // any of them into `useCursorPagination` without per-entity
+  // adapters. `networkStatus` exposed for `isRefetching` derivation.
+  const contents: BizSession[] =
     connection?.edges?.map((edge: { node: BizSession }) => edge.node) ?? [];
   const pageInfo: PageInfo | undefined = connection?.pageInfo;
   const totalCount: number = connection?.totalCount ?? 0;
 
-  return { bizSessions, pageInfo, totalCount, refetch, error, loading };
+  return { contents, pageInfo, totalCount, refetch, error, loading, networkStatus };
 };
 
 // ---- listSessionsDetail ----

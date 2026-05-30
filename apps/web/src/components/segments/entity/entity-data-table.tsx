@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppContext } from '@/contexts/app-context';
-import { useBizListCursor } from '@/hooks/use-biz-list-cursor';
+import { useCursorPagination } from '@/hooks/use-cursor-pagination';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useReactiveVar } from '@apollo/client';
 import { useListAttributesQuery } from '@usertour/hooks';
@@ -61,20 +61,29 @@ export function EntityDataTable<TRow extends EntityRow>({
   const navigate = useNavigate();
 
   // `query` is shared with the toolbar via the per-entity reactive var
-  // store; pagination is per-mount and stays local.
+  // store. Pagination is owned by `useCursorPagination` — when this
+  // memoised `effectiveQuery` reference changes (segment switch,
+  // filter edit, etc.) the hook synchronously resets pagination
+  // to page 1 in the same render, so a stale-cursor request can't
+  // escape between the filter change and the reset.
   const query = useReactiveVar(config.listState.queryVar);
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 20 });
-
   const effectiveQuery = React.useMemo(
-    () => ({ ...query, segmentId: segment.id }),
-    [query, segment.id],
+    () => ({ environmentId, ...query, segmentId: segment.id }),
+    [environmentId, query, segment.id],
   );
 
-  const { contents, loading, refetch, pageCount } = useBizListCursor<TRow>({
-    environmentId,
-    query: effectiveQuery,
+  const {
+    rows: contents,
+    loading,
+    refetch,
+    pageCount,
     pagination,
+    setPagination,
+  } = useCursorPagination<TRow, typeof effectiveQuery>({
+    query: effectiveQuery,
     useListQuery: config.useListQuery,
+    skip: !environmentId,
+    options: SHARED_CACHE_QUERY_OPTIONS,
   });
 
   // Dynamic columns merge segment-configured order/visibility with the
