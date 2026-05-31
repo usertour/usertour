@@ -1,14 +1,7 @@
 import { defaultStep, getErrorMessage, isEqual } from '@usertour/helpers';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { ReactNode, createContext, useCallback, useContext, useEffect, useRef } from 'react';
+import { useStore } from 'zustand';
 import { useEvent } from 'react-use';
 
 import { useToast } from '@usertour/ui';
@@ -22,54 +15,28 @@ import {
   useAddContentStepsMutation,
   useAddContentStepMutation,
 } from '@usertour/hooks';
+import {
+  type BuilderStore,
+  type BuilderStoreState,
+  createBuilderStore,
+} from '../store/builder-store';
+import { BuilderMode } from './builder-mode';
+import type { CurrentMode } from './builder-mode';
 
-export enum BuilderMode {
-  ELEMENT_SELECTOR = 'element-selector',
-  FLOW_STEP_DETAIL = 'flow-step-detail',
-  FLOW_STEP_TRIGGER = 'flow-step-trigger',
-  FLOW = 'flow',
-  LAUNCHER = 'launcher',
-  CHECKLIST = 'checklist',
-  BANNER = 'banner',
-  RESOURCE_CENTER = 'resource-center',
-  LAUNCHER_TARGET = 'launcher-target',
-  LAUNCHER_TOOLTIP = 'launcher-tooltip',
-  CHECKLIST_ITEM = 'checklist-item',
-  RESOURCE_CENTER_BLOCK = 'resource-center-block',
-  RESOURCE_CENTER_TAB = 'resource-center-tab',
-  NONE = 'none',
-}
+// Re-export the mode enum + types so the public path
+// `@usertour/builder-v2` (via contexts/index.tsx) keeps the same
+// surface for the 114 existing useBuilderContext consumers.
+export {
+  BuilderMode,
+  type BuilderSelectorMode,
+  type BuilderTriggerMode,
+  type BuilderCommonMode,
+  type CurrentMode,
+} from './builder-mode';
 
-export interface BuilderSelectorMode {
-  mode: BuilderMode.ELEMENT_SELECTOR;
-  backMode?: BuilderMode;
-  data?: {
-    isInput: boolean;
-  };
-  triggerConditionData?: {
-    index: number;
-    conditionIndex: number;
-    type: string;
-  };
-}
-
-export interface BuilderTriggerMode {
-  mode: BuilderMode.FLOW_STEP_TRIGGER;
-  data?: any;
-  triggerConditionData?: {
-    index: number;
-    conditionIndex: number;
-    type: string;
-  };
-}
-
-export interface BuilderCommonMode {
-  mode: Exclude<BuilderMode, BuilderMode.FLOW_STEP_TRIGGER | BuilderMode.ELEMENT_SELECTOR>;
-  data?: any;
-}
-
-export type CurrentMode = BuilderCommonMode | BuilderSelectorMode | BuilderTriggerMode;
-
+// The legacy public surface — what every `useBuilderContext()` caller
+// destructures from. Preserved verbatim so the 114 consumers don't
+// change in this commit.
 interface BuilderContextProps {
   currentMode: CurrentMode;
   setCurrentMode: React.Dispatch<React.SetStateAction<CurrentMode>>;
@@ -121,7 +88,31 @@ interface BuilderContextProps {
   shouldShowMadeWith?: boolean;
 }
 
-export const BuilderContext = createContext<BuilderContextProps | null>(null);
+// Carries the per-mount Zustand store + the imperative methods +
+// the immutable config. `useBuilderContext()` merges all three into
+// the legacy shape above; per-mount lookup is via React Context.
+interface BuilderProviderContextValue {
+  store: BuilderStore;
+  methods: {
+    initContent: BuilderContextProps['initContent'];
+    saveContent: BuilderContextProps['saveContent'];
+    updateCurrentStep: BuilderContextProps['updateCurrentStep'];
+    fetchContentAndVersion: BuilderContextProps['fetchContentAndVersion'];
+    createStep: BuilderContextProps['createStep'];
+    createNewStep: BuilderContextProps['createNewStep'];
+  };
+  config: {
+    webHost: string;
+    usertourjsUrl: string;
+    isWebBuilder: boolean;
+    onSaved: () => Promise<void>;
+    shouldShowMadeWith: boolean;
+    zIndex: number;
+  };
+  contentRef: React.MutableRefObject<HTMLDivElement | undefined>;
+}
+
+const BuilderProviderContext = createContext<BuilderProviderContextValue | null>(null);
 
 export interface BuilderProviderProps {
   children?: ReactNode;
@@ -141,138 +132,148 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     onSaved,
     shouldShowMadeWith = true,
   } = props;
-  const [currentStep, setCurrentStep] = useState<Step | null>(null);
-  const [environmentId, setEnvironmentId] = useState<string>('');
-  const [envToken, setEnvToken] = useState<string>('');
-  const [projectId, setProjectId] = useState<string>('');
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [selectorOutput, setSelectorOutput] = useState<SelectorOutput | null>(null);
-  const [isShowError, setIsShowError] = useState<boolean>(false);
-  const [position, setPosition] = useState('left');
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState('');
-  const [currentMode, setCurrentMode] = useState<CurrentMode>({
-    mode: BuilderMode.NONE,
-  });
-  const [currentContent, setCurrentContent] = useState<Content | undefined>();
+
+  // One store per mount — `useRef + if (!current)` is the standard
+  // Zustand-with-Provider idiom (createBuilderStore would otherwise
+  // run on every render and discard state).
+  const storeRef = useRef<BuilderStore>();
+  if (!storeRef.current) {
+    storeRef.current = createBuilderStore();
+  }
+  const store = storeRef.current;
   const contentRef = useRef<HTMLDivElement | undefined>();
-  const [currentVersion, setCurrentVersion] = useState<ContentVersion | undefined>();
-  const [backupVersion, setBackupVersion] = useState<ContentVersion | undefined>();
-  const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
   const { toast } = useToast();
 
-  // GraphQL hooks
   const { invoke: getContent } = useGetContentLazyQuery();
   const { invoke: getContentVersion } = useGetContentVersionLazyQuery();
   const { invoke: addContentSteps } = useAddContentStepsMutation();
   const { invoke: addContentStep } = useAddContentStepMutation();
 
-  const updateCurrentStep = (fn: Step | ((pre: Step) => Step)) => {
-    setCurrentStep((pre) => {
-      if (typeof fn === 'function') {
-        return pre ? fn(pre) : pre;
+  const updateCurrentStep = useCallback(
+    (fn: Step | ((pre: Step) => Step)) => {
+      const setCurrentStep = store.getState().setCurrentStep;
+      setCurrentStep((pre) => {
+        if (typeof fn === 'function') {
+          return pre ? fn(pre) : pre;
+        }
+        return fn;
+      });
+    },
+    [store],
+  );
+
+  const fetchContent = useCallback(
+    async (contentId: string) => {
+      if (!contentId) {
+        return false;
       }
-      return fn;
-    });
-  };
+      const content = await getContent(contentId);
+      if (!content) {
+        return false;
+      }
+      return content as Content;
+    },
+    [getContent],
+  );
 
-  const fetchContent = async (contentId: string) => {
-    if (!contentId) {
-      return false;
-    }
-    const content = await getContent(contentId);
-    if (!content) {
-      return false;
-    }
-    return content as Content;
-  };
+  const fetchVersion = useCallback(
+    async (versionId: string) => {
+      const version = await getContentVersion(versionId);
+      if (!version) {
+        return false;
+      }
+      return version as ContentVersion;
+    },
+    [getContentVersion],
+  );
 
-  const fetchVersion = async (versionId: string) => {
-    const version = await getContentVersion(versionId);
+  const fetchContentAndVersion = useCallback(
+    async (contentId: string, versionId: string) => {
+      if (!contentId || !versionId) {
+        return false;
+      }
+      const content = await fetchContent(contentId);
+      if (!content) {
+        return false;
+      }
+      const state = store.getState();
+      state.setCurrentContent(content);
+      const version = await fetchVersion(versionId);
+      if (!version) {
+        return false;
+      }
+      state.setCurrentVersion(JSON.parse(JSON.stringify(version)));
+      state.setBackupVersion(JSON.parse(JSON.stringify(version)));
+      return { content, version };
+    },
+    [fetchContent, fetchVersion, store],
+  );
 
-    if (!version) {
-      return false;
-    }
-    return version as ContentVersion;
-  };
+  const initContent = useCallback(
+    async (message: any) => {
+      const {
+        contentId,
+        environmentId,
+        envToken,
+        url = '',
+        versionId,
+        projectId,
+        initialStepIndex,
+      } = message;
+      if (!environmentId || (!isWebBuilder && !envToken)) {
+        return false;
+      }
 
-  const fetchContentAndVersion = async (contentId: string, versionId: string) => {
-    if (!contentId || !versionId) {
-      return false;
-    }
-    const content = await fetchContent(contentId);
-    if (!content) {
-      return false;
-    }
-    setCurrentContent(content);
-    const version = await fetchVersion(versionId);
-    if (!version) {
-      return false;
-    }
-    setCurrentVersion(JSON.parse(JSON.stringify(version)));
-    setBackupVersion(JSON.parse(JSON.stringify(version)));
-    return { content, version };
-  };
+      const state = store.getState();
+      state.setEnvToken(envToken);
+      state.setIsLoading(true);
+      state.setCurrentLocation(url);
+      state.setEnvironmentId(environmentId);
+      state.setProjectId(projectId);
+      const result = await fetchContentAndVersion(contentId, versionId);
+      if (!result) {
+        store.getState().setIsLoading(false);
+        return false;
+      }
+      store.getState().setIsLoading(false);
 
-  const initContent = async (message: any) => {
-    const {
-      contentId,
-      environmentId,
-      envToken,
-      url = '',
-      versionId,
-      projectId,
-      initialStepIndex,
-    } = message;
-    if (!environmentId || (!isWebBuilder && !envToken)) {
-      return false;
-    }
+      const { content, version } = result;
+      const versionType = content.type.toString();
+      const versionMode = versionType as BuilderMode;
+      const hasMode = Object.values(BuilderMode).includes(versionMode);
 
-    setEnvToken(envToken);
-    setIsLoading(true);
-    setCurrentLocation(url);
-    setEnvironmentId(environmentId);
-    setProjectId(projectId);
-    const result = await fetchContentAndVersion(contentId, versionId);
-    if (!result) {
-      setIsLoading(false);
-      return false;
-    }
-    setIsLoading(false);
+      // Handle initial step for flow type - directly open step editor
+      if (
+        versionType === ContentDataType.FLOW &&
+        initialStepIndex !== undefined &&
+        version.steps?.[initialStepIndex]
+      ) {
+        const step = version.steps[initialStepIndex];
+        const _step = JSON.parse(
+          JSON.stringify({
+            ...step,
+            setting: { ...defaultStep.setting, ...step.setting },
+          }),
+        );
+        const innerState = store.getState();
+        innerState.setCurrentStep(_step);
+        innerState.setCurrentIndex(initialStepIndex);
+        innerState.setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
+        return true;
+      }
 
-    const { content, version } = result;
-    const versionType = content.type.toString();
-    const versionMode = versionType as BuilderMode;
-    const hasMode = Object.values(BuilderMode).includes(versionMode);
-
-    // Handle initial step for flow type - directly open step editor
-    if (
-      versionType === ContentDataType.FLOW &&
-      initialStepIndex !== undefined &&
-      version.steps?.[initialStepIndex]
-    ) {
-      const step = version.steps[initialStepIndex];
-      const _step = JSON.parse(
-        JSON.stringify({
-          ...step,
-          setting: { ...defaultStep.setting, ...step.setting },
-        }),
-      );
-      setCurrentStep(_step);
-      setCurrentIndex(initialStepIndex);
-      setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
+      if (versionType !== ContentDataType.FLOW && hasMode) {
+        store.getState().setCurrentMode({ mode: versionType as BuilderMode });
+      } else {
+        store.getState().setCurrentMode({ mode: BuilderMode.FLOW });
+      }
       return true;
-    }
-
-    if (versionType !== ContentDataType.FLOW && hasMode) {
-      setCurrentMode({ mode: versionType as BuilderMode });
-    } else {
-      setCurrentMode({ mode: BuilderMode.FLOW });
-    }
-    return true;
-  };
+    },
+    [fetchContentAndVersion, isWebBuilder, store],
+  );
 
   const saveContent = useCallback(async () => {
+    const { currentVersion, backupVersion } = store.getState();
     if (!currentVersion || !backupVersion || isEqual(currentVersion, backupVersion)) {
       return;
     }
@@ -280,7 +281,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     if (!currentVersion || !currentVersion.id) {
       return;
     }
-    setIsLoading(true);
+    store.getState().setIsLoading(true);
     const steps = currentVersion.steps
       ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
           ...step,
@@ -304,122 +305,180 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         title: getErrorMessage(error),
       });
     }
-    setIsLoading(false);
-  }, [currentVersion, backupVersion, addContentSteps, fetchContentAndVersion, toast, setIsLoading]);
+    store.getState().setIsLoading(false);
+  }, [addContentSteps, fetchContentAndVersion, store, toast]);
 
-  const createStep = async (currentVersion: ContentVersion, step: Step) => {
-    try {
-      const createdStep = await addContentStep({ ...step, versionId: currentVersion.id });
-      if (createdStep) {
-        await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
-        return createdStep as Step;
+  const createStep = useCallback(
+    async (currentVersion: ContentVersion, step: Step) => {
+      try {
+        const createdStep = await addContentStep({ ...step, versionId: currentVersion.id });
+        if (createdStep) {
+          await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
+          return createdStep as Step;
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: getErrorMessage(error),
+        });
       }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-    }
-  };
+    },
+    [addContentStep, fetchContentAndVersion, toast],
+  );
 
-  const createNewStep = async (
-    currentVersion: ContentVersion,
-    sequence: number,
-    stepType?: string,
-    stepToDuplicate?: Step,
-  ) => {
-    const finalStepType = stepType || stepToDuplicate?.type || 'tooltip';
-    const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
+  const createNewStep = useCallback(
+    async (
+      currentVersion: ContentVersion,
+      sequence: number,
+      stepType?: string,
+      stepToDuplicate?: Step,
+    ) => {
+      const finalStepType = stepType || stepToDuplicate?.type || 'tooltip';
+      const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
 
-    let step: Step;
-    if (stepToDuplicate) {
-      // Duplicate step within the same flow - need new cvid
-      const duplicated = duplicateStep(stepToDuplicate);
-      step = {
-        ...duplicated,
-        cvid: undefined, // Remove cvid to generate new one within the same flow
-        name: generateUniqueCopyName(stepToDuplicate.name, existingStepNames),
-        sequence,
-      } as Step;
-    } else {
-      step = {
-        ...defaultStep,
-        type: finalStepType,
-        name: 'Untitled',
-        data: getEmptyDataForType(),
-        sequence,
-        setting: {
-          ...defaultStep.setting,
-          // width is undefined by default (Auto - uses theme default)
-        },
-      };
-    }
+      let step: Step;
+      if (stepToDuplicate) {
+        // Duplicate step within the same flow - need new cvid
+        const duplicated = duplicateStep(stepToDuplicate);
+        step = {
+          ...duplicated,
+          cvid: undefined, // Remove cvid to generate new one within the same flow
+          name: generateUniqueCopyName(stepToDuplicate.name, existingStepNames),
+          sequence,
+        } as Step;
+      } else {
+        step = {
+          ...defaultStep,
+          type: finalStepType,
+          name: 'Untitled',
+          data: getEmptyDataForType(),
+          sequence,
+          setting: {
+            ...defaultStep.setting,
+            // width is undefined by default (Auto - uses theme default)
+          },
+        };
+      }
 
-    return await createStep(currentVersion, step);
-  };
+      return await createStep(currentVersion, step);
+    },
+    [createStep],
+  );
 
+  // Auto-save: trip on currentVersion / backupVersion diff. Reads
+  // straight from the store so the effect re-fires when either slice
+  // changes (subscribe → set local trigger ref → effect re-runs).
+  const currentVersion = useStore(store, (s) => s.currentVersion);
+  const backupVersion = useStore(store, (s) => s.backupVersion);
   useEffect(() => {
     if (currentVersion && backupVersion && !isEqual(currentVersion, backupVersion)) {
-      saveContent();
+      void saveContent();
     }
   }, [currentVersion, backupVersion, saveContent]);
 
-  // Warn user when closing page while saving
+  // Warn user when closing page while saving — same beforeunload guard
+  // as V1; reads `isLoading` from store via subscription.
+  const isLoading = useStore(store, (s) => s.isLoading);
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
     if (isLoading) {
       e.preventDefault();
     }
   });
 
-  const value = {
-    currentMode,
-    setCurrentMode,
-    selectorOutput,
-    setSelectorOutput,
-    environmentId,
-    setEnvironmentId,
-    initContent,
-    saveContent,
-    currentStep,
-    setCurrentStep,
-    currentIndex,
-    setCurrentIndex,
-    position,
-    setPosition,
-    isLoading,
-    setIsLoading,
-    zIndex: 0,
-    currentLocation,
-    projectId,
-    setProjectId,
-    currentContent,
-    setCurrentContent,
-    currentVersion,
-    setCurrentVersion,
-    backupVersion,
-    currentTheme,
-    setCurrentTheme,
-    updateCurrentStep,
-    usertourjsUrl,
-    webHost,
-    isWebBuilder,
-    onSaved,
-    isShowError,
-    setIsShowError,
+  const providerValue = useRef<BuilderProviderContextValue>();
+  // Refresh the value object on each render so closure-captured methods
+  // see fresh hook returns (useGetContent etc. rebind when Apollo state
+  // changes). Cheap — 114 consumers re-render anyway because they
+  // currently destructure the whole context.
+  providerValue.current = {
+    store,
+    methods: {
+      initContent,
+      saveContent,
+      updateCurrentStep,
+      fetchContentAndVersion,
+      createStep,
+      createNewStep,
+    },
+    config: {
+      webHost,
+      usertourjsUrl,
+      isWebBuilder,
+      onSaved,
+      shouldShowMadeWith,
+      zIndex: 0,
+    },
     contentRef,
-    fetchContentAndVersion,
-    createStep,
-    createNewStep,
-    envToken,
-    shouldShowMadeWith,
   };
-  return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;
+
+  return (
+    <BuilderProviderContext.Provider value={providerValue.current}>
+      {children}
+    </BuilderProviderContext.Provider>
+  );
 };
 
+// Direct store access — for future selector-based subscription
+// migration (perf optimization). Not used by existing consumers.
+export const useBuilderStore = <T,>(selector: (state: BuilderStoreState) => T): T => {
+  const ctx = useContext(BuilderProviderContext);
+  if (!ctx) {
+    throw new Error('useBuilderStore must be used within a BuilderProvider.');
+  }
+  return useStore(ctx.store, selector);
+};
+
+// Legacy adapter — returns the full context shape that V1 consumers
+// destructure from. Subscribes to the whole store state so consumers
+// re-render on any state change (same behavior as the old Context
+// value). Migrating hot consumers to `useBuilderStore(selector)` is a
+// follow-up commit.
 export function useBuilderContext(): BuilderContextProps {
-  const context = useContext(BuilderContext);
-  if (!context) {
+  const ctx = useContext(BuilderProviderContext);
+  if (!ctx) {
     throw new Error('useBuilderContext must be used within a BuilderProvider.');
   }
-  return context;
+  const state = useStore(ctx.store, (s) => s);
+  return {
+    currentMode: state.currentMode,
+    setCurrentMode: state.setCurrentMode,
+    environmentId: state.environmentId,
+    setEnvironmentId: state.setEnvironmentId,
+    envToken: state.envToken,
+    currentStep: state.currentStep,
+    setCurrentStep: state.setCurrentStep,
+    currentIndex: state.currentIndex,
+    setCurrentIndex: state.setCurrentIndex,
+    selectorOutput: state.selectorOutput,
+    setSelectorOutput: state.setSelectorOutput,
+    position: state.position,
+    setPosition: state.setPosition,
+    isLoading: state.isLoading,
+    setIsLoading: state.setIsLoading,
+    currentLocation: state.currentLocation,
+    projectId: state.projectId,
+    setProjectId: state.setProjectId,
+    currentContent: state.currentContent,
+    setCurrentContent: state.setCurrentContent,
+    currentVersion: state.currentVersion,
+    setCurrentVersion: state.setCurrentVersion,
+    backupVersion: state.backupVersion,
+    currentTheme: state.currentTheme,
+    setCurrentTheme: state.setCurrentTheme,
+    isShowError: state.isShowError,
+    setIsShowError: state.setIsShowError,
+    saveContent: ctx.methods.saveContent,
+    initContent: ctx.methods.initContent,
+    updateCurrentStep: ctx.methods.updateCurrentStep,
+    fetchContentAndVersion: ctx.methods.fetchContentAndVersion,
+    createStep: ctx.methods.createStep,
+    createNewStep: ctx.methods.createNewStep,
+    webHost: ctx.config.webHost,
+    usertourjsUrl: ctx.config.usertourjsUrl,
+    isWebBuilder: ctx.config.isWebBuilder,
+    onSaved: ctx.config.onSaved,
+    shouldShowMadeWith: ctx.config.shouldShowMadeWith,
+    zIndex: ctx.config.zIndex,
+    contentRef: ctx.contentRef,
+  };
 }
