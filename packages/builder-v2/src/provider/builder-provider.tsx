@@ -1,16 +1,16 @@
 import { createContext, useMemo, useRef } from 'react';
-import { useAutoSave } from '../provider/use-auto-save';
-import { useBeforeunloadGuard } from '../provider/use-beforeunload-guard';
-import { useContentLoader } from '../provider/use-content-loader';
-import { useSaveContent } from '../provider/use-save-content';
-import { useUndoShortcuts } from '../provider/use-undo-shortcuts';
+import { useAutoSave } from './use-auto-save';
+import { useBeforeunloadGuard } from './use-beforeunload-guard';
+import { useContentLoader } from './use-content-loader';
+import { useSaveContent } from './use-save-content';
+import { useUndoShortcuts } from './use-undo-shortcuts';
 import { type BuilderStore, createBuilderStore } from '../store/builder-store';
 import { BuilderLeaveGuard } from '../shell/builder-leave-guard';
-import type { BuilderProviderContextValue, BuilderProviderProps } from './builder-context-types';
+import type { BuilderProviderContextValue, BuilderProviderProps } from './types';
 
-// The React Context object. Shared with the legacy adapter
-// (useBuilderContext) and the selector-based hooks (useBuilderStore +
-// friends) — both import it from this file.
+// The React Context object. The four public access hooks
+// (useBuilderStore / useBuilderMethods / useBuilderConfig /
+// useBuilderContentRef) import it from this file.
 export const BuilderProviderContext = createContext<BuilderProviderContextValue | null>(null);
 
 export const BuilderProvider = (props: BuilderProviderProps) => {

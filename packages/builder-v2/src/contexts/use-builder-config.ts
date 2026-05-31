@@ -1,6 +1,6 @@
 import { useContext } from 'react';
-import type { BuilderProviderContextValue } from './builder-context-types';
-import { BuilderProviderContext } from './builder-provider';
+import type { BuilderProviderContextValue } from '../provider/types';
+import { BuilderProviderContext } from '../provider/builder-provider';
 
 // Static config passed to BuilderProvider as props — webHost /
 // usertourjsUrl / isWebBuilder / onSaved / shouldShowMadeWith /

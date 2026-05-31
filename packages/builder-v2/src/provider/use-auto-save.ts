@@ -2,7 +2,7 @@ import { isEqual } from '@usertour/helpers';
 import type { ContentVersion } from '@usertour/types';
 import { useCallback, useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
-import type { BuilderProviderMethods } from '../contexts/builder-context-types';
+import type { BuilderProviderMethods } from './types';
 import type { BuilderStore } from '../store/builder-store';
 
 export interface UseAutoSaveArgs {

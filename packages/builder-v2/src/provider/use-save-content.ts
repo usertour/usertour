@@ -2,7 +2,7 @@ import { getErrorMessage, isEqual } from '@usertour/helpers';
 import { useAddContentStepsMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
-import type { BuilderProviderMethods } from '../contexts/builder-context-types';
+import type { BuilderProviderMethods } from './types';
 import type { BuilderStore } from '../store/builder-store';
 import { debug } from '../utils/logger';
 

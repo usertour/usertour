@@ -1,7 +1,7 @@
 import { useThemeList } from '../hooks/use-theme-list';
 import { useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderMethods, useBuilderStore } from '../contexts';
-import { WebBuilderProvider, useWebBuilderProvider } from '../contexts/web-builder-provider';
+import { WebBuilderProvider, useWebBuilderProvider } from '../provider/web-builder-provider';
 import { WebBuilderLoading } from '../components/web-builder-loading';
 import { BannerBuilder } from '../pages/banner';
 import { ChecklistBuilder } from '../pages/checklist';

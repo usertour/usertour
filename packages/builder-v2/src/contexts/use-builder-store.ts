@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderStoreState } from '../store/builder-store';
-import { BuilderProviderContext } from './builder-provider';
+import { BuilderProviderContext } from '../provider/builder-provider';
 
 // Selector-based store access — the perf-friendly path. Use this for
 // hot consumers that only need one or two store fields; it subscribes

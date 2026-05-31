@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext } from 'react';
-import { BuilderProvider } from './builder-context';
+import { BuilderProvider } from './builder-provider';
 import { useAttributeList } from '../hooks/use-attribute-list';
 import { useContentList } from '../hooks/use-content-list';
 import { useThemeList } from '../hooks/use-theme-list';

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { BuilderProviderContext } from './builder-provider';
+import { BuilderProviderContext } from '../provider/builder-provider';
 
 // The Provider-owned <div> ref that step content (Bubble / Modal /
 // Popper) attaches to. Identity-stable across the Provider lifetime

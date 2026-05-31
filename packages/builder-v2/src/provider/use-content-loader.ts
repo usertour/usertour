@@ -3,7 +3,7 @@ import { useGetContentLazyQuery, useGetContentVersionLazyQuery } from '@usertour
 import { type Content, ContentDataType, type ContentVersion } from '@usertour/types';
 import { useCallback } from 'react';
 import { BuilderMode } from '../contexts/builder-mode';
-import type { BuilderProviderMethods } from '../contexts/builder-context-types';
+import type { BuilderProviderMethods } from './types';
 import type { BuilderStore } from '../store/builder-store';
 
 export interface UseContentLoaderArgs {
