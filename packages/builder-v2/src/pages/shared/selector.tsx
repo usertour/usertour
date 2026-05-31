@@ -10,7 +10,7 @@ import {
 import { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useEvent } from 'react-use';
 
-import { BuilderMode, BuilderSelectorMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, BuilderSelectorMode, useBuilderStore } from '../../contexts';
 import { postMessageToWindow, postProxyMessageToWindow } from '../../utils/post-message';
 
 import { ElementSelector } from '../../components/element-selector';
@@ -32,7 +32,9 @@ const elementSelectorStyle: CSSProperties = {
 
 export const Selector = () => {
   const [enabledSelector, setEnabledSelector] = useState(true);
-  const { setSelectorOutput, currentMode, setCurrentMode } = useBuilderContext();
+  const setSelectorOutput = useBuilderStore((state) => state.setSelectorOutput);
+  const currentMode = useBuilderStore((state) => state.currentMode);
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
 
   const { upload } = useAws();
 

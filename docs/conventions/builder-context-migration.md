@@ -1,12 +1,13 @@
-# builder-v2: migrating off `useBuilderContext`
+# builder-v2: focused hooks instead of `useBuilderContext`
 
-`useBuilderContext()` is the legacy god-adapter on the v2 builder
-Provider. It returns a 30+ field object built from a full-store
-`useStore(s => s)` subscription, so every consumer re-renders on any
-state change. New code should use four focused hooks instead.
+`useBuilderContext()` was the legacy god-adapter on the v2 builder
+Provider. It returned a 30+ field object built from a full-store
+`useStore(s => s)` subscription, so every consumer re-rendered on any
+state change. PRs D–I retired it across all ~60 call sites; new code
+should use one of the four focused hooks instead.
 
-This doc is the per-field translation table — use it when migrating
-a file off `useBuilderContext()`.
+This doc is the per-field translation table — kept as a reference if
+you need to reconstruct the old call shape.
 
 ## Pick the right hook
 
@@ -126,13 +127,13 @@ hooks gives the biggest perf payoff because every consumer of the
 per-type hook inherits the saving — fix them as part of the per-page
 PRs (E-H), not separately.
 
-## Migration order
+## Migration order (historical)
 
 | PR | Scope |
 |---|---|
-| D | Scaffold the three new hooks + deprecate adapter + migrate `use-type-editor.ts` + Banner pilot |
-| E | Flow page + `use-flow-editor.ts` (12 useBuilderContext refs) |
+| D | Scaffolded the three new hooks + deprecated adapter + migrated `use-type-editor.ts` + Banner pilot |
+| E | Flow page + `use-flow-editor.ts` |
 | F | Checklist page + `use-checklist-editor.ts` |
 | G | Launcher page + `use-launcher-editor.ts` |
 | H | ResourceCenter page + `use-resource-center-editor.ts` |
-| I | Cross-type consumers (`components/`, `shell/`, `hooks/`) + delete `useBuilderContext` + the adapter file |
+| I | Cross-type consumers (`components/`, `shell/`, `hooks/`) + deletion of `useBuilderContext` adapter |

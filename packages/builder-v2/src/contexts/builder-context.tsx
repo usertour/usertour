@@ -1,26 +1,24 @@
-// Backward-compatible barrel — preserves the original
-// `from '../contexts/builder-context'` import path used by internal
-// callers (content-popper / content-bubble / content-modal /
-// builder-leave-guard / hooks/use-*-list / use-type-editor) and the
-// indirect `from '../../contexts'` barrel used by ~60 consumer files.
+// Barrel for the v2 builder Provider surface. Re-exports the public
+// hooks + types so internal callers can keep using the existing
+// `from '../contexts/builder-context'` / `from '../../contexts'`
+// import paths.
 //
-// New code should import from the focused modules directly:
-//   - BuilderProvider          → ./builder-provider
-//   - useBuilderStore + selectors → ./use-builder-store
-//   - useBuilderMethods        → ./use-builder-methods
-//   - useBuilderConfig         → ./use-builder-config
-//   - useBuilderContentRef     → ./use-builder-content-ref
-//   - useBuilderContext (DEPRECATED) → ./use-builder-context
-//   - BuilderContextProps etc. → ./builder-context-types
-//   - BuilderMode enum + types → ./builder-mode
+// The legacy `useBuilderContext` god-adapter was retired in PR I —
+// consumers split into:
+//   - useBuilderStore(selector)  → state fields, one selector per field
+//   - useBuilderMethods()        → saveContent / initContent /
+//                                  fetchContentAndVersion /
+//                                  setAutoSaveValidator (mount-stable)
+//   - useBuilderConfig()         → webHost / usertourjsUrl /
+//                                  isWebBuilder / onSaved /
+//                                  shouldShowMadeWith / zIndex
+//                                  (mount-stable)
+//   - useBuilderContentRef()     → Provider-owned content <div> ref
 //
-// See docs/conventions/builder-context-migration.md for the per-field
-// mapping that turns `useBuilderContext` destructures into focused-hook
-// calls. The legacy adapter stays until every consumer is migrated;
-// PRs E-I do this in page-sized batches.
+// docs/conventions/builder-context-migration.md is the canonical
+// per-field mapping if you need to reconstruct the old call shape.
 export { BuilderProvider } from './builder-provider';
 export type { BuilderProviderProps } from './builder-context-types';
-export { useBuilderContext } from './use-builder-context';
 export { useBuilderMethods } from './use-builder-methods';
 export { useBuilderConfig } from './use-builder-config';
 export { useBuilderContentRef } from './use-builder-content-ref';

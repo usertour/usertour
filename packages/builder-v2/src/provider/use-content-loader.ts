@@ -3,7 +3,7 @@ import { useGetContentLazyQuery, useGetContentVersionLazyQuery } from '@usertour
 import { type Content, ContentDataType, type ContentVersion } from '@usertour/types';
 import { useCallback } from 'react';
 import { BuilderMode } from '../contexts/builder-mode';
-import type { BuilderContextProps } from '../contexts/builder-context-types';
+import type { BuilderProviderMethods } from '../contexts/builder-context-types';
 import type { BuilderStore } from '../store/builder-store';
 
 export interface UseContentLoaderArgs {
@@ -12,8 +12,8 @@ export interface UseContentLoaderArgs {
 }
 
 export interface UseContentLoaderReturn {
-  fetchContentAndVersion: BuilderContextProps['fetchContentAndVersion'];
-  initContent: BuilderContextProps['initContent'];
+  fetchContentAndVersion: BuilderProviderMethods['fetchContentAndVersion'];
+  initContent: BuilderProviderMethods['initContent'];
 }
 
 // Encapsulates the Provider's content-loading lifecycle:
@@ -58,7 +58,7 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
     [getContentVersion],
   );
 
-  const fetchContentAndVersion = useCallback<BuilderContextProps['fetchContentAndVersion']>(
+  const fetchContentAndVersion = useCallback<BuilderProviderMethods['fetchContentAndVersion']>(
     async (contentId, versionId) => {
       if (!contentId || !versionId) {
         return false;
@@ -84,7 +84,7 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
     [fetchContent, fetchVersion, store],
   );
 
-  const initContent = useCallback<BuilderContextProps['initContent']>(
+  const initContent = useCallback<BuilderProviderMethods['initContent']>(
     async (message) => {
       const { contentId, environmentId, envToken, versionId, projectId, initialStepIndex } =
         message;

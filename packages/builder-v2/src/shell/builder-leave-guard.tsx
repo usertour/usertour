@@ -1,7 +1,7 @@
 'use client';
 
 import { useBlocker } from 'react-router-dom';
-import { useBuilderContext, useSaveState } from '../contexts/builder-context';
+import { useBuilderMethods, useSaveState } from '../contexts/builder-context';
 import { LeaveConfirmDialog } from './leave-confirm-dialog';
 
 // SPA-internal navigation guard. V1 only had `beforeunload` (covers
@@ -18,7 +18,7 @@ import { LeaveConfirmDialog } from './leave-confirm-dialog';
 // state). 'idle' and 'saved' are clean and allow navigation through.
 
 export const BuilderLeaveGuard = () => {
-  const { saveContent } = useBuilderContext();
+  const { saveContent } = useBuilderMethods();
   const saveState = useSaveState();
   const isDirty =
     saveState.status === 'dirty' || saveState.status === 'saving' || saveState.status === 'error';

@@ -26,7 +26,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 
-import { useBuilderContext } from '../contexts/builder-context';
+import { useBuilderConfig } from '../contexts/builder-context';
 import { useAws } from '../hooks/use-aws';
 import { loadGoogleFontCss } from '../utils/loader';
 
@@ -73,7 +73,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       },
     );
 
-    const { shouldShowMadeWith = true } = useBuilderContext();
+    const { shouldShowMadeWith = true } = useBuilderConfig();
 
     const handleEditorValueChange = (value: any) => {
       setData(value);

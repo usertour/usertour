@@ -5,7 +5,7 @@ import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBuilderContext } from '../contexts';
+import { useBuilderStore } from '../contexts';
 
 // Mirrors useConditionsSaveGate. Returns a guard the consumer calls right
 // before its save action; runs validateActions over each provided list
@@ -18,7 +18,8 @@ export function useActionsSaveGate() {
   const { toast } = useToast();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { currentVersion, currentStep } = useBuilderContext();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const currentStep = useBuilderStore((state) => state.currentStep);
 
   return useCallback(
     (...lists: (RulesCondition[] | undefined)[]): boolean => {

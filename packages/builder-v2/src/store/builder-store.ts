@@ -18,14 +18,14 @@ enablePatches();
 // correctly without freezing.
 setAutoFreeze(false);
 
-// Per-mount Zustand store for the builder's coordinated state. Replaces
-// the BuilderContext god-context's state fields. Imperative methods
-// (saveContent / initContent / fetchContentAndVersion / createStep /
-// createNewStep / updateCurrentStep) stay in the Provider because they
-// close over Apollo hook returns that can't live inside a non-React
-// store. The Provider exposes the legacy `useBuilderContext()` shape
-// (state ⊕ methods ⊕ config) so the 114 existing consumers don't
-// change in this commit; selector-based subscription is a later step.
+// Per-mount Zustand store for the builder's coordinated state.
+// Consumers read via `useBuilderStore(selector)` — one selector per
+// field is the recommended pattern; the store's value is its
+// selector-friendly subscription topology. Imperative methods
+// (saveContent / initContent / fetchContentAndVersion /
+// setAutoSaveValidator) stay in the Provider because they close over
+// Apollo hook returns that can't live in a non-React store;
+// consumers read them via `useBuilderMethods()`.
 
 // Save FSM — discriminated union tracking the auto-save lifecycle.
 // V1 used a single boolean `isLoading` overloaded with two semantics
@@ -81,8 +81,8 @@ export interface BuilderState {
   history: HistoryStack;
 }
 
-// Public setters — exposed via `useBuilderContext()` to all consumers
-// (V1 builder-shaped API).
+// Public setters — exposed on the store for `useBuilderStore`
+// selector access by any consumer.
 //
 // `envToken` and `backupVersion` are set only internally by the
 // Provider's `initContent` / `fetchContentAndVersion`, so they have
@@ -107,7 +107,9 @@ export interface BuilderStateSetters {
 
 // Private setters — used by Provider internals or read off the raw
 // store via `useBuilderStore(s => s.setX)` by per-type editor hooks
-// (useFlowEditor, etc.). Not exposed via `useBuilderContext()`.
+// (useFlowEditor, etc.). Intentionally separated from the public
+// setters so cross-type consumers can't reach into Flow-only buffers
+// by accident.
 export interface BuilderStatePrivateSetters {
   setEnvToken: (value: string) => void;
   setBackupVersion: (value: ContentVersion | undefined) => void;

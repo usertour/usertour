@@ -6,7 +6,7 @@ import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBuilderContext } from '../contexts';
+import { useBuilderStore } from '../contexts';
 
 // Returns a guard the consumer can call right before its save action.
 // The guard:
@@ -25,7 +25,8 @@ export function useConditionsSaveGate() {
   const { toast } = useToast();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { environmentId, projectId } = useBuilderContext();
+  const environmentId = useBuilderStore((state) => state.environmentId);
+  const projectId = useBuilderStore((state) => state.projectId);
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
 

@@ -5,9 +5,6 @@ import { BuilderProviderContext } from './builder-provider';
 // Popper) attaches to. Identity-stable across the Provider lifetime
 // (it's a useRef). Reading this hook costs zero subscriptions —
 // consumers re-render only when their parent does.
-//
-// Preferred over `useBuilderContext()` for any component that only
-// needs the ref. See docs/conventions/builder-context-migration.md.
 export const useBuilderContentRef = (): React.MutableRefObject<HTMLDivElement | undefined> => {
   const ctx = useContext(BuilderProviderContext);
   if (!ctx) {

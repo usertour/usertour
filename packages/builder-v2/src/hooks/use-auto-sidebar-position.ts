@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useBuilderContext } from '../contexts';
+import { useBuilderStore } from '../contexts';
 import { ContentSide, getOppositeSide, getPositionSide, SidebarSide } from '../utils/position';
 import { useContentPosition } from './use-content-position';
 
@@ -8,7 +8,8 @@ import { useContentPosition } from './use-content-position';
  * Only adjusts once when content position changes, allowing manual user override
  */
 export function useAutoSidebarPosition(): void {
-  const { position, setPosition } = useBuilderContext();
+  const position = useBuilderStore((state) => state.position);
+  const setPosition = useBuilderStore((state) => state.setPosition);
   const contentPosition = useContentPosition();
   // Track the last content position we adjusted for to avoid re-adjusting on manual changes
   const lastAdjustedPositionRef = useRef<string | undefined>(undefined);

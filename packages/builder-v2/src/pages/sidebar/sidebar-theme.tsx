@@ -20,23 +20,19 @@ import { useCallback, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
   const [updateContentVersionMutation] = useMutation(updateContentVersion);
   const { toast } = useToast();
-  const {
-    currentVersion,
-    setCurrentVersion,
-    projectId,
-    zIndex,
-    webHost,
-    isWebBuilder,
-    setIsLoading,
-    fetchContentAndVersion,
-  } = useBuilderContext();
+  const { zIndex, webHost, isWebBuilder } = useBuilderConfig();
+  const { fetchContentAndVersion } = useBuilderMethods();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
+  const projectId = useBuilderStore((state) => state.projectId);
+  const setIsLoading = useBuilderStore((state) => state.setIsLoading);
 
   useEffect(() => {
     if (currentVersion && !currentVersion.themeId && themeList) {

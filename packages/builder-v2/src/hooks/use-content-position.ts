@@ -6,7 +6,7 @@ import {
   ThemeTypesSetting,
 } from '@usertour/types';
 import { useMemo } from 'react';
-import { useBuilderContext } from '../contexts';
+import { useBuilderStore } from '../contexts';
 import { useCurrentTheme } from './use-current-theme';
 
 /**
@@ -18,7 +18,8 @@ import { useCurrentTheme } from './use-current-theme';
  * @returns The content position or undefined
  */
 export function useContentPosition(): ModalPosition | string | undefined {
-  const { currentStep, currentContent } = useBuilderContext();
+  const currentStep = useBuilderStore((state) => state.currentStep);
+  const currentContent = useBuilderStore((state) => state.currentContent);
   // Need to fallback to default theme to get placement position
   const theme = useCurrentTheme({ fallbackToDefault: true });
 

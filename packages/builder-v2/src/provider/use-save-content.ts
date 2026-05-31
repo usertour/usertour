@@ -2,17 +2,17 @@ import { getErrorMessage, isEqual } from '@usertour/helpers';
 import { useAddContentStepsMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
-import type { BuilderContextProps } from '../contexts/builder-context-types';
+import type { BuilderProviderMethods } from '../contexts/builder-context-types';
 import type { BuilderStore } from '../store/builder-store';
 import { debug } from '../utils/logger';
 
 export interface UseSaveContentArgs {
   store: BuilderStore;
-  fetchContentAndVersion: BuilderContextProps['fetchContentAndVersion'];
+  fetchContentAndVersion: BuilderProviderMethods['fetchContentAndVersion'];
 }
 
 export interface UseSaveContentReturn {
-  saveContent: BuilderContextProps['saveContent'];
+  saveContent: BuilderProviderMethods['saveContent'];
 }
 
 // Save FSM driver. Two responsibilities:
@@ -37,7 +37,7 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
   // (useRef preserves across renders).
   const saveCounterRef = useRef(0);
 
-  const saveContent = useCallback<BuilderContextProps['saveContent']>(async () => {
+  const saveContent = useCallback<BuilderProviderMethods['saveContent']>(async () => {
     const { currentVersion, backupVersion } = store.getState();
     if (!currentVersion || !backupVersion || isEqual(currentVersion, backupVersion)) {
       return;

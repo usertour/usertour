@@ -4,14 +4,15 @@ import { Card } from '@usertour/ui';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../contexts';
 
 interface SidebarContainerProps {
   children: React.ReactNode;
   className?: string;
 }
 export const SidebarContainer = ({ children, className }: SidebarContainerProps) => {
-  const { position, zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const position = useBuilderStore((state) => state.position);
   const sidbarRef = useRef<HTMLDivElement | null>(null);
   return (
     <div

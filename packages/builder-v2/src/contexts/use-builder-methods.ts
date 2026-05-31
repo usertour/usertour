@@ -10,9 +10,6 @@ import { BuilderProviderContext } from './builder-provider';
 // for the entire Provider lifetime. Reading this hook costs zero
 // subscriptions — consumers re-render only when their parent does,
 // not when store state changes.
-//
-// Preferred over `useBuilderContext()` for any component that only
-// needs methods. See docs/conventions/builder-context-migration.md.
 export const useBuilderMethods = (): BuilderProviderContextValue['methods'] => {
   const ctx = useContext(BuilderProviderContext);
   if (!ctx) {

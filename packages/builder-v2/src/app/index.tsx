@@ -1,6 +1,6 @@
 import { useThemeList } from '../hooks/use-theme-list';
 import { useEffect, useRef, useState } from 'react';
-import { BuilderMode, useBuilderContext } from '../contexts';
+import { BuilderMode, useBuilderMethods, useBuilderStore } from '../contexts';
 import { WebBuilderProvider, useWebBuilderProvider } from '../contexts/web-builder-provider';
 import { WebBuilderLoading } from '../components/web-builder-loading';
 import { BannerBuilder } from '../pages/banner';
@@ -11,7 +11,9 @@ import { ResourceCenterBuilder } from '../pages/resource-center';
 import { BuilderSideBar } from '../pages/sidebar';
 
 const Container = () => {
-  const { currentMode, currentVersion, setCurrentTheme } = useBuilderContext();
+  const currentMode = useBuilderStore((state) => state.currentMode);
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const setCurrentTheme = useBuilderStore((state) => state.setCurrentTheme);
   const { themeList } = useThemeList();
 
   useEffect(() => {
@@ -78,7 +80,9 @@ export interface WebBuilderProps {
 // Inner component that uses the provider context
 function WebBuilderContent(props: WebBuilderProps) {
   const { contentId, environmentId, versionId, projectId, envToken, initialStepIndex } = props;
-  const { initContent, currentMode, currentIndex } = useBuilderContext();
+  const { initContent } = useBuilderMethods();
+  const currentMode = useBuilderStore((state) => state.currentMode);
+  const currentIndex = useBuilderStore((state) => state.currentIndex);
   const { isLoading: providerLoading } = useWebBuilderProvider();
   const [isInitializing, setIsInitializing] = useState(true);
   const onStepIndexChangeRef = useRef(props.onStepIndexChange);

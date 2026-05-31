@@ -8,7 +8,7 @@ import { cn } from '@usertour/tailwind';
 import anime from 'animejs/lib/anime.es.js';
 import { useEffect, useState } from 'react';
 
-import { useBuilderContext } from '../../contexts';
+import { useBuilderStore } from '../../contexts';
 
 interface SideBarMiniProps {
   // container: React.MutableRefObject<HTMLDivElement>;
@@ -17,7 +17,8 @@ interface SideBarMiniProps {
 }
 
 export const SidebarMini = (props: SideBarMiniProps) => {
-  const { position, setPosition } = useBuilderContext();
+  const position = useBuilderStore((state) => state.position);
+  const setPosition = useBuilderStore((state) => state.setPosition);
   const { container, containerWidth = 312 } = props;
   const [isMini, setIsMini] = useState(false);
   const handleHideSideBar = () => {

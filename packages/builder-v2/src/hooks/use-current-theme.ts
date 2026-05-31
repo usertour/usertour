@@ -2,7 +2,7 @@ import { useThemeList } from './use-theme-list';
 import { Theme } from '@usertour/types';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';
-import { useBuilderContext } from '../contexts';
+import { useBuilderStore } from '../contexts';
 
 interface UseCurrentThemeOptions {
   /** Whether to fall back to the default theme if no themeId is found */
@@ -16,7 +16,8 @@ interface UseCurrentThemeOptions {
  */
 export function useCurrentTheme(options: UseCurrentThemeOptions = {}): Theme | undefined {
   const { fallbackToDefault = false } = options;
-  const { currentStep, currentVersion } = useBuilderContext();
+  const currentStep = useBuilderStore((state) => state.currentStep);
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { themeList } = useThemeList();
 
   return useMemo(() => {

@@ -25,7 +25,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
-import { useBuilderContext } from '../contexts/builder-context';
+import { useBuilderConfig } from '../contexts/builder-context';
 
 export interface ContentModalProps {
   currentStep: Step;
@@ -64,7 +64,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
     const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings, { type: 'modal' });
-    const { shouldShowMadeWith = true } = useBuilderContext();
+    const { shouldShowMadeWith = true } = useBuilderConfig();
 
     const handleEditorValueChange = (value: any) => {
       setData(value);

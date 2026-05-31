@@ -9,9 +9,6 @@ import { BuilderProviderContext } from './builder-provider';
 // Mount-stable: reading this hook costs zero subscriptions —
 // consumers re-render only when their parent does, not when store
 // state changes.
-//
-// Preferred over `useBuilderContext()` for any component that only
-// needs config. See docs/conventions/builder-context-migration.md.
 export const useBuilderConfig = (): BuilderProviderContextValue['config'] => {
   const ctx = useContext(BuilderProviderContext);
   if (!ctx) {

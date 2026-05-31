@@ -2,16 +2,16 @@ import { isEqual } from '@usertour/helpers';
 import type { ContentVersion } from '@usertour/types';
 import { useCallback, useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
-import type { BuilderContextProps } from '../contexts/builder-context-types';
+import type { BuilderProviderMethods } from '../contexts/builder-context-types';
 import type { BuilderStore } from '../store/builder-store';
 
 export interface UseAutoSaveArgs {
   store: BuilderStore;
-  saveContent: BuilderContextProps['saveContent'];
+  saveContent: BuilderProviderMethods['saveContent'];
 }
 
 export interface UseAutoSaveReturn {
-  setAutoSaveValidator: BuilderContextProps['setAutoSaveValidator'];
+  setAutoSaveValidator: BuilderProviderMethods['setAutoSaveValidator'];
 }
 
 // Auto-save driver. Subscribes to currentVersion + backupVersion diff.
@@ -28,7 +28,7 @@ export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
   const { store, saveContent } = args;
 
   const autoSaveValidatorRef = useRef<((version: ContentVersion) => boolean) | null>(null);
-  const setAutoSaveValidator = useCallback<BuilderContextProps['setAutoSaveValidator']>((fn) => {
+  const setAutoSaveValidator = useCallback<BuilderProviderMethods['setAutoSaveValidator']>((fn) => {
     autoSaveValidatorRef.current = fn;
   }, []);
 
