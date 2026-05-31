@@ -1,0 +1,244 @@
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { RiDraggable, RiSettings3Line } from '@usertour/icons';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
+import { Delete2Icon } from '@usertour/icons';
+import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
+import { serializeBlockName } from '@usertour/helpers';
+import { forwardRef, useState } from 'react';
+import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
+import {
+  BLOCK_TYPE_LABELS,
+  getResourceCenterBlockTypeIcon,
+} from '../resource-center-block-options';
+
+interface BlockContentProps {
+  onClick?: (action: 'edit' | 'delete', block: ResourceCenterBlock) => void;
+  listeners?: Record<string, any>;
+  attributes?: Record<string, any>;
+  block: ResourceCenterBlock;
+  style?: React.CSSProperties;
+}
+
+const DeleteDialog = ({
+  onDelete,
+  children,
+}: {
+  onDelete: () => void;
+  children: React.ReactNode;
+}) => (
+  <AlertDialog>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Delete</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+        <AlertDialogDescription>
+          After deletion, it will not be possible to access or recover the data through any means.
+          Please confirm.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={onDelete} variant={'destructive'}>
+          Delete
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
+
+const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
+  ({ onClick, listeners = {}, attributes = {}, block, style }, ref) => {
+    const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
+    const BlockTypeIcon = getResourceCenterBlockTypeIcon(block.type);
+    const nameText =
+      block.type === ResourceCenterBlockType.ACTION ||
+      block.type === ResourceCenterBlockType.SUB_PAGE ||
+      block.type === ResourceCenterBlockType.CONTENT_LIST ||
+      block.type === ResourceCenterBlockType.LIVE_CHAT
+        ? serializeBlockName(block.name)
+        : '';
+    const label = nameText || typeLabel;
+    return (
+      <div
+        ref={ref}
+        {...attributes}
+        style={style}
+        className="bg-background-700 p-2.5 rounded-lg flex flex-col"
+      >
+        <div className="flex items-center justify-between">
+          <div className="grow inline-flex items-center text-sm">
+            <RiDraggable size={16} className="shrink-0 cursor-move -mr-0.5" {...listeners} />
+            {BlockTypeIcon ? (
+              <BlockTypeIcon width={16} height={16} className="h-4 w-4 shrink-0 mr-1" />
+            ) : null}
+            <span className="w-36 truncate" title={label}>
+              {label}
+            </span>
+          </div>
+
+          <div className="flex-none flex gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-fit"
+                    onClick={() => onClick?.('edit', block)}
+                  >
+                    <RiSettings3Line size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <DeleteDialog onDelete={() => onClick?.('delete', block)}>
+              <Button variant="ghost" size="sm" className="p-1 h-fit">
+                <Delete2Icon className="h-4 w-4 text-foreground" />
+              </Button>
+            </DeleteDialog>
+          </div>
+        </div>
+      </div>
+    );
+  },
+);
+
+const SortableBlock = ({ id, onClick, block }: any) => {
+  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0 : 1,
+  };
+
+  return (
+    <BlockContent
+      ref={setNodeRef}
+      block={block}
+      style={style}
+      onClick={onClick}
+      listeners={listeners}
+      attributes={attributes}
+    />
+  );
+};
+
+export const ResourceCenterBlocks = () => {
+  const { setCurrentMode } = useBuilderContext();
+  const { localData, currentTabId, setCurrentBlock, removeBlock, reorderBlocks } =
+    useResourceCenterContext();
+
+  if (!localData) {
+    return null;
+  }
+
+  // Get current tab's blocks
+  const currentTab = localData.tabs.find((t) => t.id === currentTabId);
+  const blocks = currentTab?.blocks ?? [];
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleEditBlock = (block: ResourceCenterBlock) => {
+    setCurrentBlock(block);
+    setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER_BLOCK });
+  };
+
+  const handleOnClick = (action: 'edit' | 'delete', block: ResourceCenterBlock) => {
+    if (action === 'edit') {
+      handleEditBlock(block);
+    } else if (action === 'delete') {
+      removeBlock(block.id);
+    }
+  };
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (active && over && active.id !== over?.id) {
+      const from = blocks.findIndex((block) => block.id === active.id);
+      const to = blocks.findIndex((block) => block.id === over.id);
+      if (from !== -1 && to !== -1) {
+        reorderBlocks(from, to);
+      }
+      setActiveId(null);
+    }
+  };
+
+  const activeBlock = blocks.find((block) => block.id === activeId);
+
+  return (
+    <>
+      <div className="flex justify-between items-center space-x-1">
+        <h1 className="text-sm">{currentTab?.name ? `"${currentTab.name}" blocks` : 'Blocks'}</h1>
+      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
+          {blocks.map((block) => (
+            <SortableBlock id={block.id} onClick={handleOnClick} key={block.id} block={block} />
+          ))}
+        </SortableContext>
+        <DragOverlay>{activeBlock ? <BlockContent block={activeBlock} /> : null}</DragOverlay>
+      </DndContext>
+    </>
+  );
+};
+
+ResourceCenterBlocks.displayName = 'ResourceCenterBlocks';

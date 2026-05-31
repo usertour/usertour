@@ -4,6 +4,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useSubscription } from '@/hooks/use-subscription';
 import { WebBuilder } from '@usertour/builder';
+import { WebBuilder as WebBuilderNext } from '@usertour/builder-v2';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -20,7 +21,13 @@ interface ContentDetailBuilderProps {
 export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const { contentId, environmentId, contentType, initialStepIndex } = props;
   const navigate = useNavigate();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Dev/QA toggle for the V2 builder. V2 is a fork of V1 plus an
+  // architecture refactor (Zustand + immer + save FSM + leave blocker);
+  // visual/behavior contract stays identical until flipped. After
+  // verification we'll flip the default in this file (`!== 'v1'`) and
+  // V1 becomes the opt-out path.
+  const useV2 = searchParams.get('builder') === 'v2';
   const { loading: environmentLoading, environmentList } = useEnvironmentList();
   const { loading: attributeLoading, attributeList } = useAttributeList();
   const { loading: subscriptionLoading, shouldShowMadeWith, subscription } = useSubscription();
@@ -79,8 +86,10 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
     return <ContentLoading message={t('common.loading')} />;
   }
 
+  const BuilderImpl = useV2 ? WebBuilderNext : WebBuilder;
+
   return (
-    <WebBuilder
+    <BuilderImpl
       {...props}
       initialStepIndex={initialStepIndex}
       onStepIndexChange={handleStepIndexChange}
