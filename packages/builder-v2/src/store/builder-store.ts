@@ -1,8 +1,22 @@
 import type { Content, ContentVersion, Step, Theme } from '@usertour/types';
 import { createStore } from 'zustand/vanilla';
+import { enablePatches, produceWithPatches, applyPatches, setAutoFreeze, type Patch } from 'immer';
 import type { SelectorOutput } from '../utils/screenshot';
 import type { CurrentMode } from '../contexts/builder-mode';
 import { BuilderMode } from '../contexts/builder-mode';
+
+// immer's patch generation must be opted into globally. Cheap module-
+// init side effect; idempotent across multiple imports.
+enablePatches();
+// Disable autoFreeze: V1 consumers mutate parts of currentVersion
+// in place (legacy spread-then-mutate patterns, third-party libs
+// like dnd-kit that take direct refs to array entries). With
+// autoFreeze on, immer's frozen `next` objects break those code
+// paths — observed as a setRef → state-update → re-render infinite
+// loop after step delete (dnd-kit refs on the now-frozen steps
+// array re-triggering on every render). Patches still work
+// correctly without freezing.
+setAutoFreeze(false);
 
 // Per-mount Zustand store for the builder's coordinated state. Replaces
 // the BuilderContext god-context's state fields. Imperative methods
@@ -31,6 +45,23 @@ export type SaveState =
   | { status: 'saved'; savedAt: number }
   | { status: 'error'; error: Error };
 
+// Undo / redo history for `currentVersion`. Each entry is a pair of
+// patches captured via immer's produceWithPatches: forward applied
+// to redo, inverse applied to undo. Stacks are bounded only by user
+// patience (no cap yet — ContentVersion is small KB-scale; bound when
+// memory matters).
+export interface HistoryEntry {
+  forward: Patch[];
+  inverse: Patch[];
+}
+
+export interface HistoryStack {
+  past: HistoryEntry[];
+  future: HistoryEntry[];
+}
+
+const EMPTY_HISTORY: HistoryStack = { past: [], future: [] };
+
 export interface BuilderState {
   currentMode: CurrentMode;
   environmentId: string;
@@ -48,6 +79,7 @@ export interface BuilderState {
   position: string;
   isLoading: boolean;
   saveState: SaveState;
+  history: HistoryStack;
 }
 
 // Only setters that the public `BuilderContextProps` API exposes today.
@@ -78,9 +110,25 @@ export interface BuilderStatePrivateSetters {
   // Save FSM transition. Provider's saveContent is the only writer;
   // consumers read via `useSaveState()`.
   transitionSaveState: (next: SaveState | ((prev: SaveState) => SaveState)) => void;
+  // Server-driven currentVersion update — used by Provider's
+  // fetchContentAndVersion after init/save. Bypasses history capture
+  // so save round-trips don't pollute the undo stack; the public
+  // `setCurrentVersion` is the only path that pushes onto past.
+  setCurrentVersionFromServer: (value: ContentVersion | undefined) => void;
 }
 
-export type BuilderStoreState = BuilderState & BuilderStateSetters & BuilderStatePrivateSetters;
+// Undo/redo actions on `currentVersion`. Reading the stacks
+// (canUndo / canRedo) is via selectors on `history`.
+export interface BuilderHistoryActions {
+  undo: () => void;
+  redo: () => void;
+  clearHistory: () => void;
+}
+
+export type BuilderStoreState = BuilderState &
+  BuilderStateSetters &
+  BuilderStatePrivateSetters &
+  BuilderHistoryActions;
 
 export type BuilderStore = ReturnType<typeof createBuilderStore>;
 
@@ -118,6 +166,7 @@ const initialState: BuilderState = {
   position: 'left',
   isLoading: true,
   saveState: { status: 'idle' },
+  history: EMPTY_HISTORY,
 };
 
 export const createBuilderStore = () =>
@@ -129,7 +178,35 @@ export const createBuilderStore = () =>
     setCurrentStep: makeSetter('currentStep', set, get),
     setCurrentIndex: makeSetter('currentIndex', set, get),
     setCurrentContent: makeSetter('currentContent', set, get),
-    setCurrentVersion: makeSetter('currentVersion', set, get),
+    // Public setCurrentVersion captures patches via immer and pushes
+    // them onto the undo stack. setCurrentVersionFromServer (private,
+    // below) bypasses this — Provider's fetchContentAndVersion uses
+    // it so save round-trips don't pollute the undo history.
+    setCurrentVersion: (value) => {
+      const prev = get().currentVersion;
+      if (!prev) {
+        const next = typeof value === 'function' ? value(prev) : value;
+        set({ currentVersion: next });
+        return;
+      }
+      // produceWithPatches handles both call forms; when the recipe
+      // returns a new value (rather than mutating draft), immer emits
+      // a coarse root-replace patch — correct semantically, just less
+      // memory-efficient than fine-grained per-field patches.
+      const recipe =
+        typeof value === 'function'
+          ? (value as (draft: ContentVersion) => ContentVersion | undefined)
+          : () => value as ContentVersion;
+      const [next, forward, inverse] = produceWithPatches(prev, recipe);
+      const past = get().history.past;
+      set({
+        currentVersion: next as ContentVersion,
+        history: {
+          past: [...past, { forward, inverse }],
+          future: [],
+        },
+      });
+    },
     setCurrentTheme: makeSetter('currentTheme', set, get),
     setSelectorOutput: makeSetter('selectorOutput', set, get),
     setIsShowError: makeSetter('isShowError', set, get),
@@ -138,8 +215,42 @@ export const createBuilderStore = () =>
     setEnvToken: (value) => set({ envToken: value }),
     setCurrentLocation: (value) => set({ currentLocation: value }),
     setBackupVersion: (value) => set({ backupVersion: value }),
+    setCurrentVersionFromServer: (value) => set({ currentVersion: value }),
     transitionSaveState: (next) => {
       const computed = typeof next === 'function' ? next(get().saveState) : next;
       set({ saveState: computed });
     },
+    undo: () => {
+      const { past, future } = get().history;
+      const prev = get().currentVersion;
+      if (past.length === 0 || !prev) {
+        return;
+      }
+      const entry = past[past.length - 1];
+      const next = applyPatches(prev, entry.inverse);
+      set({
+        currentVersion: next,
+        history: {
+          past: past.slice(0, -1),
+          future: [...future, entry],
+        },
+      });
+    },
+    redo: () => {
+      const { past, future } = get().history;
+      const prev = get().currentVersion;
+      if (future.length === 0 || !prev) {
+        return;
+      }
+      const entry = future[future.length - 1];
+      const next = applyPatches(prev, entry.forward);
+      set({
+        currentVersion: next,
+        history: {
+          past: [...past, entry],
+          future: future.slice(0, -1),
+        },
+      });
+    },
+    clearHistory: () => set({ history: EMPTY_HISTORY }),
   }));

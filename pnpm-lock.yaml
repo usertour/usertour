@@ -1153,6 +1153,9 @@ importers:
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3
+      immer:
+        specifier: ^10.1.1
+        version: 10.1.1
       is-hotkey:
         specifier: ^0.2.0
         version: 0.2.0

@@ -202,7 +202,11 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       if (!version) {
         return false;
       }
-      state.setCurrentVersion(JSON.parse(JSON.stringify(version)));
+      // Server-driven write — bypass the patch-capturing public setter
+      // so save round-trips don't pollute the undo stack. The user can
+      // still undo across a save boundary; the undone state then
+      // re-triggers auto-save with the older content.
+      state.setCurrentVersionFromServer(JSON.parse(JSON.stringify(version)));
       state.setBackupVersion(JSON.parse(JSON.stringify(version)));
       return { content, version };
     },
@@ -236,6 +240,10 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         return false;
       }
       store.getState().setIsLoading(false);
+      // Initial-load checkpoint: the freshly-fetched version is the
+      // origin; nothing earlier is reachable via undo. (Save-induced
+      // fetches don't clear history — those just refresh the baseline.)
+      store.getState().clearHistory();
 
       const { content, version } = result;
       const versionType = content.type.toString();
@@ -435,6 +443,36 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     }
   });
 
+  // Builder-level undo / redo keyboard shortcuts. Skipped when an
+  // editable element is focused — text inputs / contenteditable areas
+  // have their own native undo for the text they manage, and hijacking
+  // Cmd+Z there would interfere with intra-field editing. The
+  // ContentEditor inside rich-text step content runs its own undo
+  // inside the contenteditable; this binding only catches Cmd+Z when
+  // focus is on chrome (sidebar buttons, canvas, body).
+  useEvent('keydown', (e: KeyboardEvent) => {
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod) {
+      return;
+    }
+    const active = document.activeElement;
+    const inEditable =
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      (active instanceof HTMLElement && active.isContentEditable);
+    if (inEditable) {
+      return;
+    }
+    const key = e.key.toLowerCase();
+    if (key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      store.getState().undo();
+    } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+      e.preventDefault();
+      store.getState().redo();
+    }
+  });
+
   const providerValue = useRef<BuilderProviderContextValue>();
   // Refresh the value object on each render so closure-captured methods
   // see fresh hook returns (useGetContent etc. rebind when Apollo state
@@ -483,6 +521,15 @@ export const useBuilderStore = <T,>(selector: (state: BuilderStoreState) => T): 
 // boolean `isLoading` exposes. Not yet wired in any consumer; the
 // migration of SidebarFooter to use this is a follow-up commit.
 export const useSaveState = () => useBuilderStore((s) => s.saveState);
+
+// Undo / redo affordances — for UI buttons on top of the Cmd+Z /
+// Cmd+Shift+Z / Cmd+Y keyboard shortcuts wired at the Provider level.
+// canUndo / canRedo are reactive selectors; undo / redo are stable
+// store method refs (safe to bind directly to a button onClick).
+export const useCanUndo = () => useBuilderStore((s) => s.history.past.length > 0);
+export const useCanRedo = () => useBuilderStore((s) => s.history.future.length > 0);
+export const useUndo = () => useBuilderStore((s) => s.undo);
+export const useRedo = () => useBuilderStore((s) => s.redo);
 
 // Legacy adapter — returns the full context shape that V1 consumers
 // destructure from. Subscribes to the whole store state so consumers
