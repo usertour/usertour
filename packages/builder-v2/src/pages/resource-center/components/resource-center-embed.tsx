@@ -25,7 +25,8 @@ import {
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderContext, useResourceCenterContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
+import { useResourceCenterEditor } from '../use-resource-center-editor';
 import { useAws } from '../../../hooks/use-aws';
 
 /** Inner panel content that can access the widget's ResourceCenterContext */
@@ -35,7 +36,7 @@ const ResourceCenterEmbedContent = ({
   messageEditSlots: Record<string, React.ReactNode>;
 }) => {
   const { currentPage } = useWidgetResourceCenterContext();
-  const { localData, updateBlock } = useResourceCenterContext();
+  const { data: localData, updateBlock } = useResourceCenterEditor();
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
   const { attributeList } = useAttributeList();
@@ -97,7 +98,7 @@ const ResourceCenterEmbedContent = ({
 };
 
 export const ResourceCenterEmbed = () => {
-  const { localData, updateBlock } = useResourceCenterContext();
+  const { data: localData, updateBlock } = useResourceCenterEditor();
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
   const [expanded, setExpanded] = useState(true);

@@ -14,7 +14,8 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
 import {
@@ -25,7 +26,7 @@ import {
 
 const TabSettingsHeader = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { setEditingTab } = useResourceCenterContext();
+  const { setEditingTab } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -47,7 +48,8 @@ const TabSettingsHeader = () => {
 };
 
 const TabSettingsBody = () => {
-  const { editingTab, setEditingTab, zIndex, isShowError } = useResourceCenterContext();
+  const { editingTab, setEditingTab, isShowError } = useResourceCenterEditor();
+  const { zIndex } = useBuilderContext();
 
   if (!editingTab) {
     return null;
@@ -114,7 +116,7 @@ const TabSettingsBody = () => {
 };
 
 const TabSettingsFooter = () => {
-  const { saveEditingTab, isLoading } = useResourceCenterContext();
+  const { saveEditingTab, isLoading } = useResourceCenterEditor();
   return (
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={saveEditingTab}>

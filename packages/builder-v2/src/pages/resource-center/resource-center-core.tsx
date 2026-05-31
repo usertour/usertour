@@ -23,7 +23,8 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { useBuilderContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
@@ -132,7 +133,13 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
 };
 
 const ResourceCenterCoreBody = () => {
-  const { localData, zIndex, addBlock, updateLocalData, currentTabId } = useResourceCenterContext();
+  const {
+    data: localData,
+    addBlock,
+    updateData: updateLocalData,
+    currentTabId,
+  } = useResourceCenterEditor();
+  const { zIndex } = useBuilderContext();
 
   if (!localData) {
     return null;
@@ -249,11 +256,10 @@ const ResourceCenterCoreHeader = () => {
 };
 
 const ResourceCenterCoreFooter = () => {
-  const { isLoading, onSaved } = useBuilderContext();
-  const { flushSave } = useResourceCenterContext();
+  const { isLoading, onSaved, saveContent } = useBuilderContext();
 
   const handleSave = async () => {
-    await flushSave();
+    await saveContent();
     await onSaved?.();
   };
 

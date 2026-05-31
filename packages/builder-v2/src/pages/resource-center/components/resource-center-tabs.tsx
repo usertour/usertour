@@ -40,7 +40,8 @@ import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { forwardRef, useState } from 'react';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
+import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { useResourceCenterEditor } from '../use-resource-center-editor';
 import { getActiveIcon } from '../../../components/icon-picker/utils';
 
 interface TabContentProps {
@@ -186,14 +187,14 @@ const SortableTab = ({
 export const ResourceCenterTabs = () => {
   const { setCurrentMode } = useBuilderContext();
   const {
-    localData,
+    data: localData,
     currentTabId,
     setCurrentTabId,
     addTab,
     removeTab,
     reorderTabs,
     setEditingTab,
-  } = useResourceCenterContext();
+  } = useResourceCenterEditor();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(

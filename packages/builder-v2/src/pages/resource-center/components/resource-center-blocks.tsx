@@ -36,7 +36,8 @@ import { Delete2Icon } from '@usertour/icons';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
+import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { useResourceCenterEditor } from '../use-resource-center-editor';
 import {
   BLOCK_TYPE_LABELS,
   getResourceCenterBlockTypeIcon,
@@ -170,8 +171,13 @@ const SortableBlock = ({ id, onClick, block }: any) => {
 
 export const ResourceCenterBlocks = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { localData, currentTabId, setCurrentBlock, removeBlock, reorderBlocks } =
-    useResourceCenterContext();
+  const {
+    data: localData,
+    currentTabId,
+    setCurrentBlock,
+    removeBlock,
+    reorderBlocks,
+  } = useResourceCenterEditor();
 
   if (!localData) {
     return null;

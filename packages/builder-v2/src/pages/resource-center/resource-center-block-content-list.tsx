@@ -52,7 +52,8 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -129,7 +130,7 @@ const ContentItemIcon = ({
 
 const BlockContentListHeader = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { setCurrentBlock } = useResourceCenterContext();
+  const { setCurrentBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -155,9 +156,9 @@ interface BlockContentListBodyProps {
 }
 
 const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
-  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { environmentId, projectId } = useBuilderContext();
+  const { environmentId, projectId, zIndex } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
@@ -575,7 +576,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
 };
 
 const BlockContentListFooter = () => {
-  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
+  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
   const gate = useConditionsSaveGate();
   const handleSave = () => {
     if (!gate(currentBlock?.onlyShowBlockConditions)) return;
@@ -618,9 +619,9 @@ interface ContentListItemEditorBodyProps {
 }
 
 const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps) => {
-  const { currentBlock, setCurrentBlock, zIndex } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { environmentId, projectId } = useBuilderContext();
+  const { environmentId, projectId, zIndex } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
@@ -753,7 +754,7 @@ const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps
 
 export const ResourceCenterBlockContentList = () => {
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const { currentBlock } = useResourceCenterContext();
+  const { currentBlock } = useResourceCenterEditor();
 
   const { contents: flowContents } = useContentListQuery({
     query: {

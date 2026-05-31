@@ -32,7 +32,8 @@ import {
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import type { ReactNode } from 'react';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -129,7 +130,7 @@ const PROVIDER_FLASH_WARNINGS: Partial<Record<LiveChatProvider, ProviderFlashWar
 
 const BlockLiveChatHeader = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { setCurrentBlock } = useResourceCenterContext();
+  const { setCurrentBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -151,9 +152,9 @@ const BlockLiveChatHeader = () => {
 };
 
 const BlockLiveChatBody = () => {
-  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { environmentId, projectId } = useBuilderContext();
+  const { environmentId, projectId, zIndex } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
@@ -350,7 +351,7 @@ const BlockLiveChatBody = () => {
 };
 
 const BlockLiveChatFooter = () => {
-  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
+  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
   const gate = useConditionsSaveGate();
   const handleSave = () => {
     if (!gate(currentBlock?.onlyShowBlockConditions)) return;

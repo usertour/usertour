@@ -20,14 +20,15 @@ import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 
 const BlockMessageHeader = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { setCurrentBlock } = useResourceCenterContext();
+  const { setCurrentBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -49,7 +50,7 @@ const BlockMessageHeader = () => {
 };
 
 const BlockMessageBody = () => {
-  const { currentBlock, setCurrentBlock } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
   const { environmentId, projectId } = useBuilderContext();
@@ -113,7 +114,7 @@ const BlockMessageBody = () => {
 };
 
 const BlockMessageFooter = () => {
-  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
+  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
   const gate = useConditionsSaveGate();
   const handleSave = () => {
     if (!gate(currentBlock?.onlyShowBlockConditions)) return;

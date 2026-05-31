@@ -27,7 +27,8 @@ import {
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -41,7 +42,7 @@ import {
 
 const BlockActionHeader = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { setCurrentBlock } = useResourceCenterContext();
+  const { setCurrentBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -63,10 +64,10 @@ const BlockActionHeader = () => {
 };
 
 const BlockActionBody = () => {
-  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { environmentId, projectId } = useBuilderContext();
+  const { environmentId, projectId, zIndex } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
@@ -202,7 +203,7 @@ const BlockActionBody = () => {
 };
 
 const BlockActionFooter = () => {
-  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
+  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
   const conditionsGate = useConditionsSaveGate();
   const actionsGate = useActionsSaveGate();
   const handleSave = () => {

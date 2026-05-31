@@ -9,12 +9,12 @@ import { ResourceCenterBlockContentList } from './resource-center-block-content-
 import { ResourceCenterBlockLiveChat } from './resource-center-block-live-chat';
 import { ResourceCenterTabSettings } from './resource-center-tab-settings';
 import { ResourceCenterEmbed } from './components/resource-center-embed';
-import { useResourceCenterContext } from '../../contexts';
+import { useResourceCenterEditor } from './use-resource-center-editor';
 import { ResourceCenterBlockType } from '@usertour/types';
 
 export const ResourceCenterBuilder = () => {
   const { currentMode } = useBuilderContext();
-  const { currentBlock } = useResourceCenterContext();
+  const { currentBlock } = useResourceCenterEditor();
 
   useAutoSidebarPosition();
 
