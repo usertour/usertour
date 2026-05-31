@@ -25,16 +25,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from '../../contexts';
+import { useFlowEditor } from './use-flow-editor';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../sidebar/sidebar-mini';
 import { useListAttributesQuery } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {
-  const { setCurrentMode, currentStep, currentContent, currentIndex } = useBuilderContext();
-
-  const handleBackup = () => {
-    setCurrentMode({ mode: BuilderMode.FLOW });
-  };
+  const { currentContent } = useBuilderContext();
+  const { currentStep, currentIndex, exitToFlow } = useFlowEditor();
 
   return (
     <CardHeader className="flex-none p-5 space-y-2">
@@ -43,7 +41,7 @@ const FlowBuilderTriggerHeader = () => {
         <Button
           variant="link"
           size="icon"
-          onClick={handleBackup}
+          onClick={exitToFlow}
           className="mr-2 text-foreground w-6 h-8"
         >
           <ChevronLeftIcon className="h-6 w-6 " />
@@ -58,16 +56,9 @@ const FlowBuilderTriggerHeader = () => {
 
 const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boolean }) => {
   const { attributes, loading } = props;
-  const {
-    zIndex,
-    currentStep,
-    updateCurrentStep,
-    currentVersion,
-    isWebBuilder,
-    currentContent,
-    createNewStep,
-    setCurrentMode,
-  } = useBuilderContext();
+  const { zIndex, currentVersion, isWebBuilder, currentContent, setCurrentMode } =
+    useBuilderContext();
+  const { currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
 
   const { contents } = useContentList();
   const { showError, setShowError } = useTriggerContext();
@@ -207,8 +198,8 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
 
 const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   const { attributes } = props;
-  const { setCurrentMode, currentStep, fetchContentAndVersion, currentVersion } =
-    useBuilderContext();
+  const { fetchContentAndVersion, currentVersion } = useBuilderContext();
+  const { currentStep, exitToFlow } = useFlowEditor();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updateContentStepMutation] = useMutation(updateContentStep);
@@ -261,8 +252,8 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
       });
     }
     setIsLoading(false);
-    setCurrentMode({ mode: BuilderMode.FLOW });
-  }, [currentStep, attributes]);
+    exitToFlow();
+  }, [currentStep, attributes, exitToFlow]);
 
   return (
     <CardFooter className="flex-none p-5">

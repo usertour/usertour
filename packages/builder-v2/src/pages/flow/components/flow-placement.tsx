@@ -11,19 +11,12 @@ import {
 } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement';
 import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { useFlowEditor } from '../use-flow-editor';
 
 export const FlowPlacement = () => {
-  const {
-    isShowError,
-    zIndex,
-    currentStep,
-    currentContent,
-    isWebBuilder,
-    updateCurrentStep,
-    setCurrentMode,
-    createNewStep,
-    currentVersion,
-  } = useBuilderContext();
+  const { zIndex, currentContent, isWebBuilder, setCurrentMode, currentVersion } =
+    useBuilderContext();
+  const { isShowError, currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
 
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();

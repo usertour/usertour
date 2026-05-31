@@ -67,7 +67,6 @@ export interface BuilderState {
   environmentId: string;
   envToken: string;
   projectId: string;
-  currentLocation: string;
   currentStep: Step | null;
   currentIndex: number;
   currentContent: Content | undefined;
@@ -82,31 +81,40 @@ export interface BuilderState {
   history: HistoryStack;
 }
 
-// Only setters that the public `BuilderContextProps` API exposes today.
-// `envToken`, `currentLocation`, `backupVersion` are set internally
-// (by `initContent` / `fetchContentAndVersion`) — they have no public
-// setter in V1's BuilderContext, so they have no public setter here.
+// Public setters — exposed via `useBuilderContext()` to all consumers
+// (V1 builder-shaped API).
+//
+// `envToken` and `backupVersion` are set only internally by the
+// Provider's `initContent` / `fetchContentAndVersion`, so they have
+// private setters (below) and no public one.
+//
+// Flow-specific cursors (`currentStep`, `currentIndex`, `isShowError`)
+// are read by cross-type hooks (use-current-theme, use-content-position,
+// use-actions-save-gate) but only written from Flow code. Their setters
+// live in the private group below; Flow writes go through
+// `useFlowEditor()` which reads them off `useBuilderStore` directly.
 export interface BuilderStateSetters {
   setCurrentMode: React.Dispatch<React.SetStateAction<CurrentMode>>;
   setEnvironmentId: React.Dispatch<React.SetStateAction<string>>;
   setProjectId: React.Dispatch<React.SetStateAction<string>>;
-  setCurrentStep: React.Dispatch<React.SetStateAction<Step | null>>;
-  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
   setSelectorOutput: React.Dispatch<React.SetStateAction<SelectorOutput | null>>;
-  setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   setPosition: React.Dispatch<React.SetStateAction<string>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-// Private setters used by Provider's imperative methods only — not
-// exposed via `useBuilderContext`.
+// Private setters — used by Provider internals or read off the raw
+// store via `useBuilderStore(s => s.setX)` by per-type editor hooks
+// (useFlowEditor, etc.). Not exposed via `useBuilderContext()`.
 export interface BuilderStatePrivateSetters {
   setEnvToken: (value: string) => void;
-  setCurrentLocation: (value: string) => void;
   setBackupVersion: (value: ContentVersion | undefined) => void;
+  // Flow-only buffers — writers live in useFlowEditor.
+  setCurrentStep: React.Dispatch<React.SetStateAction<Step | null>>;
+  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
+  setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   // Save FSM transition. Provider's saveContent is the only writer;
   // consumers read via `useSaveState()`.
   transitionSaveState: (next: SaveState | ((prev: SaveState) => SaveState)) => void;
@@ -154,7 +162,6 @@ const initialState: BuilderState = {
   environmentId: '',
   envToken: '',
   projectId: '',
-  currentLocation: '',
   currentStep: null,
   currentIndex: 0,
   currentContent: undefined,
@@ -213,7 +220,6 @@ export const createBuilderStore = () =>
     setPosition: makeSetter('position', set, get),
     setIsLoading: makeSetter('isLoading', set, get),
     setEnvToken: (value) => set({ envToken: value }),
-    setCurrentLocation: (value) => set({ currentLocation: value }),
     setBackupVersion: (value) => set({ backupVersion: value }),
     setCurrentVersionFromServer: (value) => set({ currentVersion: value }),
     transitionSaveState: (next) => {

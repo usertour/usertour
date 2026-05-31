@@ -28,7 +28,8 @@ import {
 import { cn } from '@usertour/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useBuilderContext } from '../../contexts';
+import { useFlowEditor } from './use-flow-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useCurrentTheme } from '../../hooks/use-current-theme';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
@@ -54,11 +55,8 @@ import { useAddContentStepMutation, useUpdateContentStepMutation } from '@userto
 import { ContentBubble } from '../../components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {
-  const { setCurrentMode, currentStep, currentContent, updateCurrentStep } = useBuilderContext();
-
-  const handleBackup = () => {
-    setCurrentMode({ mode: BuilderMode.FLOW });
-  };
+  const { currentContent } = useBuilderContext();
+  const { currentStep, updateCurrentStep, exitToFlow } = useFlowEditor();
 
   const handleStepNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateCurrentStep((pre) => ({
@@ -74,7 +72,7 @@ const FlowBuilderDetailHeader = () => {
         <Button
           variant="link"
           size="icon"
-          onClick={handleBackup}
+          onClick={exitToFlow}
           className="mr-2 text-foreground w-6 h-8"
         >
           <ChevronLeftIcon className="h-6 w-6 " />
@@ -92,8 +90,8 @@ const FlowBuilderDetailHeader = () => {
 };
 
 const FlowBuilderDetailBody = () => {
-  const { zIndex, currentStep, updateCurrentStep, currentTheme, projectId, webHost, isWebBuilder } =
-    useBuilderContext();
+  const { zIndex, currentTheme, projectId, webHost, isWebBuilder } = useBuilderContext();
+  const { currentStep, updateCurrentStep } = useFlowEditor();
   const { themeList } = useThemeList();
 
   // Get the effective theme for the current step (step > version > default)
@@ -244,15 +242,8 @@ const FlowBuilderDetailBody = () => {
 };
 
 const FlowBuilderDetailFooter = () => {
-  const {
-    setCurrentMode,
-    currentIndex,
-    currentStep,
-    fetchContentAndVersion,
-    currentVersion,
-    setIsShowError,
-    contentRef,
-  } = useBuilderContext();
+  const { fetchContentAndVersion, currentVersion, contentRef } = useBuilderContext();
+  const { currentIndex, currentStep, setIsShowError, exitToFlow } = useFlowEditor();
   const [backupStepData] = useState(currentStep);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { invoke: addContentStep } = useAddContentStepMutation();
@@ -341,8 +332,8 @@ const FlowBuilderDetailFooter = () => {
       });
     }
     setIsLoading(false);
-    setCurrentMode({ mode: BuilderMode.FLOW });
-  }, [currentStep, currentIndex, backupStepData, contentRef, actionsGate]);
+    exitToFlow();
+  }, [currentStep, currentIndex, backupStepData, contentRef, actionsGate, exitToFlow]);
 
   return (
     <CardFooter className="flex-none p-5">
@@ -355,18 +346,9 @@ const FlowBuilderDetailFooter = () => {
 };
 
 const FlowBuilderDetailEmbed = () => {
-  const {
-    zIndex,
-    currentStep,
-    updateCurrentStep,
-    currentVersion,
-    contentRef,
-    currentIndex,
-    selectorOutput,
-    currentContent,
-    projectId,
-    createNewStep,
-  } = useBuilderContext();
+  const { zIndex, currentVersion, contentRef, selectorOutput, currentContent, projectId } =
+    useBuilderContext();
+  const { currentStep, currentIndex, updateCurrentStep, createNewStep } = useFlowEditor();
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
   const theme = useCurrentTheme({ fallbackToDefault: true });

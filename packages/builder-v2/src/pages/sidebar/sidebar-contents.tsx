@@ -12,7 +12,6 @@ import {
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -46,8 +45,8 @@ import {
 import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 
-import { defaultStep } from '@usertour/helpers';
 import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useFlowEditor } from '../flow/use-flow-editor';
 import { stepIsReachable } from '../../utils/content-validate';
 
 // Get stable unique identifier for a step
@@ -229,14 +228,8 @@ const SortableItem = memo(({ id, index, step, onClick, isReachable }: SortableIt
 SortableItem.displayName = 'SortableItem';
 
 export const SidebarContents = () => {
-  const {
-    setSelectorOutput,
-    setCurrentIndex,
-    setCurrentMode,
-    currentVersion,
-    setCurrentVersion,
-    setCurrentStep,
-  } = useBuilderContext();
+  const { currentVersion } = useBuilderContext();
+  const { removeStep, reorderSteps, enterStepSubMode } = useFlowEditor();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -279,51 +272,21 @@ export const SidebarContents = () => {
     return stepsWithMeta[activeIndex];
   }, [activeId, currentVersion?.steps, stepsWithMeta]);
 
-  const handleDeleteStep = useCallback(
-    (index: number) => {
-      setCurrentVersion((prev) => {
-        if (prev?.steps) {
-          const copySteps = [...prev.steps];
-          copySteps.splice(index, 1);
-          return { ...prev, steps: copySteps };
-        }
-        return prev;
-      });
-    },
-    [setCurrentVersion],
-  );
-
-  const handleEditStep = useCallback(
-    (step: Step, index: number, mode: BuilderMode) => {
-      setSelectorOutput(null);
-      const _step = JSON.parse(
-        JSON.stringify({
-          ...step,
-          setting: { ...defaultStep.setting, ...step.setting },
-        }),
-      );
-      setCurrentStep(_step);
-      setCurrentIndex(index);
-      setCurrentMode({ mode });
-    },
-    [setSelectorOutput, setCurrentStep, setCurrentIndex, setCurrentMode],
-  );
-
   const handleOnClick = useCallback(
     (action: string, index: number) => {
       if (!currentVersion?.steps) {
         return;
       }
-      const _step = currentVersion.steps[index];
       if (action === 'delete') {
-        handleDeleteStep(index);
-      } else {
-        const mode: BuilderMode =
-          action === 'trigger' ? BuilderMode.FLOW_STEP_TRIGGER : BuilderMode.FLOW_STEP_DETAIL;
-        handleEditStep(_step, index, mode);
+        removeStep(index);
+        return;
       }
+      const step = currentVersion.steps[index];
+      const mode: BuilderMode =
+        action === 'trigger' ? BuilderMode.FLOW_STEP_TRIGGER : BuilderMode.FLOW_STEP_DETAIL;
+      enterStepSubMode(step, index, mode);
     },
-    [currentVersion?.steps, handleDeleteStep, handleEditStep],
+    [currentVersion?.steps, removeStep, enterStepSubMode],
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -334,26 +297,21 @@ export const SidebarContents = () => {
     ({ active, over }: DragEndEvent) => {
       setActiveId(null);
 
-      if (!active || !over || active.id === over.id) {
+      if (!active || !over || active.id === over.id || !currentVersion?.steps) {
         return;
       }
 
-      setCurrentVersion((prev) => {
-        if (!prev?.steps) {
-          return prev;
-        }
+      const steps = currentVersion.steps;
+      const oldIndex = steps.findIndex((step, i) => getStepId(step, i) === active.id);
+      const newIndex = steps.findIndex((step, i) => getStepId(step, i) === over.id);
 
-        const oldIndex = prev.steps.findIndex((s, i) => getStepId(s, i) === active.id);
-        const newIndex = prev.steps.findIndex((s, i) => getStepId(s, i) === over.id);
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
 
-        if (oldIndex === -1 || newIndex === -1) {
-          return prev;
-        }
-
-        return { ...prev, steps: arrayMove(prev.steps, oldIndex, newIndex) };
-      });
+      reorderSteps(oldIndex, newIndex);
     },
-    [setCurrentVersion],
+    [currentVersion?.steps, reorderSteps],
   );
 
   if (!currentVersion?.steps) {

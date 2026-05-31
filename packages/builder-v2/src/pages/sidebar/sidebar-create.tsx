@@ -3,10 +3,10 @@ import { Button, Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour/constants';
 import { StepContentType, ContentEditorRoot } from '@usertour/types';
 import { PopperPreview } from '../../components/preview';
-import { getDefaultDataForType, getEmptyDataForType } from '../../utils/default-data';
-import { defaultStep } from '@usertour/helpers';
-import { useCallback, useMemo } from 'react';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { getDefaultDataForType } from '../../utils/default-data';
+import { useMemo } from 'react';
+import { useBuilderContext } from '../../contexts';
+import { useFlowEditor } from '../flow/use-flow-editor';
 
 interface ContentTypeConfig {
   data: ContentEditorRoot[];
@@ -48,15 +48,8 @@ const CONTENT_TYPE_CONFIGS: Omit<ContentTypeConfig, 'data'>[] = [
 ];
 
 export const SidebarCreate = ({ container }: SidebarCreateProps) => {
-  const {
-    setCurrentIndex,
-    setCurrentMode,
-    currentVersion,
-    currentTheme,
-    zIndex,
-    setCurrentStep,
-    isWebBuilder,
-  } = useBuilderContext();
+  const { currentTheme, zIndex } = useBuilderContext();
+  const { startCreateStep } = useFlowEditor();
 
   // Memoize content list to avoid recalculating on every render
   const contentList = useMemo<ContentTypeConfig[]>(() => {
@@ -65,43 +58,6 @@ export const SidebarCreate = ({ container }: SidebarCreateProps) => {
       data: getDefaultDataForType(config.type),
     }));
   }, []);
-
-  const handleCreateStep = useCallback(
-    (type: string, _content?: unknown) => {
-      if (!currentVersion) {
-        return;
-      }
-
-      const index = currentVersion.steps?.length ?? 0;
-      const emptyData = getEmptyDataForType();
-
-      setCurrentStep({
-        ...defaultStep,
-        setting: {
-          ...defaultStep.setting,
-          // width is undefined by default (Auto - uses theme default)
-        },
-        type,
-        name: 'Untitled',
-        data: emptyData,
-        sequence: index,
-      });
-
-      setCurrentIndex(index);
-
-      // Determine the appropriate mode based on builder type and step type
-      if (isWebBuilder) {
-        setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
-      } else {
-        const mode =
-          type === StepContentType.TOOLTIP
-            ? BuilderMode.ELEMENT_SELECTOR
-            : BuilderMode.FLOW_STEP_DETAIL;
-        setCurrentMode({ mode });
-      }
-    },
-    [currentVersion, setCurrentStep, setCurrentIndex, setCurrentMode, isWebBuilder],
-  );
 
   const popoverZIndex = useMemo(() => zIndex + EXTENSION_SIDEBAR_POPPER, [zIndex]);
 
@@ -135,7 +91,7 @@ export const SidebarCreate = ({ container }: SidebarCreateProps) => {
                 height={content.height}
                 data={content.data}
                 text={content.text}
-                onClick={handleCreateStep}
+                onClick={startCreateStep}
               />
             ))}
           </div>

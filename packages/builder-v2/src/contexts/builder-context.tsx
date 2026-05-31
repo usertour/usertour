@@ -15,13 +15,10 @@ import { useEvent } from 'react-use';
 import { useToast } from '@usertour/ui';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
-import { getEmptyDataForType } from '../utils/default-data';
-import { duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
   useGetContentVersionLazyQuery,
   useAddContentStepsMutation,
-  useAddContentStepMutation,
   useUpdateContentVersionMutation,
 } from '@usertour/hooks';
 import {
@@ -44,9 +41,14 @@ export {
   type CurrentMode,
 } from './builder-mode';
 
-// The legacy public surface — what every `useBuilderContext()` caller
-// destructures from. Preserved verbatim so the 114 consumers don't
-// change in this commit.
+// The public surface every `useBuilderContext()` caller destructures
+// from. Cross-type fields and cross-type imperative methods live here.
+//
+// Flow-only cursors (`currentStep`, `currentIndex`, `isShowError`) are
+// exposed read-only — they're consumed by cross-type hooks
+// (use-current-theme for step.themeId inheritance, use-content-position
+// for step.setting.position, etc.) and by app/index.tsx's URL mirror.
+// Writes go through `useFlowEditor()`, not through this hook.
 interface BuilderContextProps {
   currentMode: CurrentMode;
   setCurrentMode: React.Dispatch<React.SetStateAction<CurrentMode>>;
@@ -55,10 +57,10 @@ interface BuilderContextProps {
   envToken: string;
   saveContent: () => Promise<void>;
   initContent: (message: any) => Promise<boolean>;
+  // Flow-only cursors — read-only on the public surface.
   currentStep: Step | null;
-  setCurrentStep: React.Dispatch<React.SetStateAction<Step | null>>;
   currentIndex: number;
-  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
+  isShowError: boolean;
   selectorOutput?: SelectorOutput | null;
   setSelectorOutput: React.Dispatch<React.SetStateAction<SelectorOutput | null>>;
   position: string;
@@ -66,7 +68,6 @@ interface BuilderContextProps {
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   zIndex: number;
-  currentLocation: string;
   projectId: string;
   setProjectId: React.Dispatch<React.SetStateAction<string>>;
   currentContent: Content | undefined;
@@ -76,33 +77,22 @@ interface BuilderContextProps {
   backupVersion: ContentVersion | undefined;
   setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
   currentTheme: Theme | undefined;
-  updateCurrentStep: (fn: (pre: Step) => Step) => void;
   webHost: string;
   usertourjsUrl: string;
   isWebBuilder: boolean;
   onSaved: () => Promise<void>;
-  isShowError: boolean;
-  setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   contentRef: React.MutableRefObject<HTMLDivElement | undefined>;
   fetchContentAndVersion: (
     contentId: string,
     versionId: string,
   ) => Promise<false | { content: Content; version: ContentVersion }>;
-  createStep: (currentVersion: ContentVersion, step: Step) => Promise<Step | undefined>;
-  createNewStep: (
-    currentVersion: ContentVersion,
-    sequence: number,
-    stepType?: string,
-    duplicateStep?: Step,
-  ) => Promise<Step | undefined>;
   shouldShowMadeWith?: boolean;
   // Per-type editors register a validator; the auto-save useEffect
   // consults it before triggering saveContent for data-dirty edits.
   // Returns false → skip THIS auto-save cycle (saveState stays
   // 'dirty'; explicit saveContent() calls still go through). Used
   // by Launcher to avoid persisting incomplete action chips while
-  // the user is mid-edit. Pass null to clear. Originally Phase 1
-  // ADR's "validation gates on auto-save" item; landed in PR κ.
+  // the user is mid-edit. Pass null to clear.
   setAutoSaveValidator: (fn: ((version: ContentVersion) => boolean) | null) => void;
 }
 
@@ -114,10 +104,7 @@ interface BuilderProviderContextValue {
   methods: {
     initContent: BuilderContextProps['initContent'];
     saveContent: BuilderContextProps['saveContent'];
-    updateCurrentStep: BuilderContextProps['updateCurrentStep'];
     fetchContentAndVersion: BuilderContextProps['fetchContentAndVersion'];
-    createStep: BuilderContextProps['createStep'];
-    createNewStep: BuilderContextProps['createNewStep'];
     setAutoSaveValidator: BuilderContextProps['setAutoSaveValidator'];
   };
   config: {
@@ -166,21 +153,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   const { invoke: getContent } = useGetContentLazyQuery();
   const { invoke: getContentVersion } = useGetContentVersionLazyQuery();
   const { invoke: addContentSteps } = useAddContentStepsMutation();
-  const { invoke: addContentStep } = useAddContentStepMutation();
   const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
-
-  const updateCurrentStep = useCallback(
-    (fn: Step | ((pre: Step) => Step)) => {
-      const setCurrentStep = store.getState().setCurrentStep;
-      setCurrentStep((pre) => {
-        if (typeof fn === 'function') {
-          return pre ? fn(pre) : pre;
-        }
-        return fn;
-      });
-    },
-    [store],
-  );
 
   const fetchContent = useCallback(
     async (contentId: string) => {
@@ -235,15 +208,8 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
 
   const initContent = useCallback(
     async (message: any) => {
-      const {
-        contentId,
-        environmentId,
-        envToken,
-        url = '',
-        versionId,
-        projectId,
-        initialStepIndex,
-      } = message;
+      const { contentId, environmentId, envToken, versionId, projectId, initialStepIndex } =
+        message;
       if (!environmentId || (!isWebBuilder && !envToken)) {
         return false;
       }
@@ -251,7 +217,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       const state = store.getState();
       state.setEnvToken(envToken);
       state.setIsLoading(true);
-      state.setCurrentLocation(url);
       state.setEnvironmentId(environmentId);
       state.setProjectId(projectId);
       const result = await fetchContentAndVersion(contentId, versionId);
@@ -390,63 +355,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     }
   }, [addContentSteps, updateContentVersion, fetchContentAndVersion, store, toast]);
 
-  const createStep = useCallback(
-    async (currentVersion: ContentVersion, step: Step) => {
-      try {
-        const createdStep = await addContentStep({ ...step, versionId: currentVersion.id });
-        if (createdStep) {
-          await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
-          return createdStep as Step;
-        }
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-      }
-    },
-    [addContentStep, fetchContentAndVersion, toast],
-  );
-
-  const createNewStep = useCallback(
-    async (
-      currentVersion: ContentVersion,
-      sequence: number,
-      stepType?: string,
-      stepToDuplicate?: Step,
-    ) => {
-      const finalStepType = stepType || stepToDuplicate?.type || 'tooltip';
-      const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
-
-      let step: Step;
-      if (stepToDuplicate) {
-        // Duplicate step within the same flow - need new cvid
-        const duplicated = duplicateStep(stepToDuplicate);
-        step = {
-          ...duplicated,
-          cvid: undefined, // Remove cvid to generate new one within the same flow
-          name: generateUniqueCopyName(stepToDuplicate.name, existingStepNames),
-          sequence,
-        } as Step;
-      } else {
-        step = {
-          ...defaultStep,
-          type: finalStepType,
-          name: 'Untitled',
-          data: getEmptyDataForType(),
-          sequence,
-          setting: {
-            ...defaultStep.setting,
-            // width is undefined by default (Auto - uses theme default)
-          },
-        };
-      }
-
-      return await createStep(currentVersion, step);
-    },
-    [createStep],
-  );
-
   // Per-type auto-save validator. Per-type editors call
   // setAutoSaveValidator on mount to register a predicate, clear it
   // (pass null) on unmount. The auto-save useEffect consults it; a
@@ -475,31 +383,22 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   // pinned at first render while still dispatching to the latest
   // closure on every call.
   const methodsRef = useRef({
-    updateCurrentStep,
     fetchContentAndVersion,
     initContent,
     saveContent,
-    createStep,
-    createNewStep,
     setAutoSaveValidator,
   });
   methodsRef.current = {
-    updateCurrentStep,
     fetchContentAndVersion,
     initContent,
     saveContent,
-    createStep,
-    createNewStep,
     setAutoSaveValidator,
   };
   const stableMethods = useMemo<BuilderProviderContextValue['methods']>(
     () => ({
-      updateCurrentStep: (fn) => methodsRef.current.updateCurrentStep(fn),
       fetchContentAndVersion: (cid, vid) => methodsRef.current.fetchContentAndVersion(cid, vid),
       initContent: (msg) => methodsRef.current.initContent(msg),
       saveContent: () => methodsRef.current.saveContent(),
-      createStep: (cv, step) => methodsRef.current.createStep(cv, step),
-      createNewStep: (cv, seq, type, dup) => methodsRef.current.createNewStep(cv, seq, type, dup),
       setAutoSaveValidator: (fn) => methodsRef.current.setAutoSaveValidator(fn),
     }),
     [],
@@ -651,10 +550,10 @@ export function useBuilderContext(): BuilderContextProps {
     environmentId: state.environmentId,
     setEnvironmentId: state.setEnvironmentId,
     envToken: state.envToken,
+    // Flow cursors — exposed read-only; writes go through useFlowEditor().
     currentStep: state.currentStep,
-    setCurrentStep: state.setCurrentStep,
     currentIndex: state.currentIndex,
-    setCurrentIndex: state.setCurrentIndex,
+    isShowError: state.isShowError,
     selectorOutput: state.selectorOutput,
     setSelectorOutput: state.setSelectorOutput,
     position: state.position,
@@ -665,7 +564,6 @@ export function useBuilderContext(): BuilderContextProps {
     // still see `isLoading: true` while a save is in flight.
     isLoading: state.isLoading || state.saveState.status === 'saving',
     setIsLoading: state.setIsLoading,
-    currentLocation: state.currentLocation,
     projectId: state.projectId,
     setProjectId: state.setProjectId,
     currentContent: state.currentContent,
@@ -675,14 +573,9 @@ export function useBuilderContext(): BuilderContextProps {
     backupVersion: state.backupVersion,
     currentTheme: state.currentTheme,
     setCurrentTheme: state.setCurrentTheme,
-    isShowError: state.isShowError,
-    setIsShowError: state.setIsShowError,
     saveContent: ctx.methods.saveContent,
     initContent: ctx.methods.initContent,
-    updateCurrentStep: ctx.methods.updateCurrentStep,
     fetchContentAndVersion: ctx.methods.fetchContentAndVersion,
-    createStep: ctx.methods.createStep,
-    createNewStep: ctx.methods.createNewStep,
     setAutoSaveValidator: ctx.methods.setAutoSaveValidator,
     webHost: ctx.config.webHost,
     usertourjsUrl: ctx.config.usertourjsUrl,
