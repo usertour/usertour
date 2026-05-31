@@ -45,9 +45,7 @@ import {
   ContentListItem,
   LauncherIconSource,
   ResourceCenterBlockType,
-  ResourceCenterContentListBlock,
   RulesCondition,
-  type RichTextNode,
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
@@ -63,66 +61,8 @@ import {
   ContentErrorAnchor,
   ContentErrorContent,
 } from '../../components/content-error';
-import { IconsList } from '@usertour/widget';
-
-// ============================================================================
-// Resolve content list item icon for builder preview
-// ============================================================================
-
-const ContentItemIcon = ({
-  item,
-  block,
-}: {
-  item: ContentListItem;
-  block: ResourceCenterContentListBlock;
-}) => {
-  const source = item.iconSource;
-
-  // Resolve which icon source/type/url to use
-  let resolvedSource: LauncherIconSource;
-  let resolvedType: string;
-  let resolvedUrl: string | undefined;
-
-  if (!source || source === LauncherIconSource.INHERIT) {
-    // Use block-level default by content type
-    if (item.contentType === 'flow') {
-      resolvedSource = block.flowIconSource;
-      resolvedType = block.flowIconType;
-      resolvedUrl = block.flowIconUrl;
-    } else {
-      resolvedSource = block.checklistIconSource;
-      resolvedType = block.checklistIconType;
-      resolvedUrl = block.checklistIconUrl;
-    }
-  } else if (source === LauncherIconSource.NONE) {
-    return null;
-  } else {
-    resolvedSource = source;
-    resolvedType = item.iconType ?? '';
-    resolvedUrl = item.iconUrl;
-  }
-
-  if (resolvedSource === LauncherIconSource.NONE) {
-    return null;
-  }
-
-  if (
-    (resolvedSource === LauncherIconSource.UPLOAD || resolvedSource === LauncherIconSource.URL) &&
-    resolvedUrl
-  ) {
-    return <img src={resolvedUrl} alt="" className="flex-shrink-0 object-contain w-4 h-4" />;
-  }
-
-  if (resolvedSource === LauncherIconSource.BUILTIN && resolvedType) {
-    const iconItem = IconsList.find((i) => i.name === resolvedType);
-    if (iconItem) {
-      const Icon = iconItem.ICON;
-      return <Icon size={16} className="flex-shrink-0" />;
-    }
-  }
-
-  return null;
-};
+import { ContentItemIcon } from './block-content-list/content-item-icon';
+import { ItemEditorBody, ItemEditorHeader } from './block-content-list/item-editor';
 
 // ============================================================================
 // Content List Block — Main Page
@@ -593,162 +533,6 @@ const BlockContentListFooter = () => {
 };
 
 // ============================================================================
-// Content List Item — Editing Sub-Page
-// ============================================================================
-
-interface ContentListItemEditorHeaderProps {
-  itemName: string;
-  onBack: () => void;
-}
-
-const ContentListItemEditorHeader = ({ itemName, onBack }: ContentListItemEditorHeaderProps) => {
-  return (
-    <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row space-x-1 text-base items-center">
-        <Button variant="link" size="icon" onClick={onBack} className="text-foreground w-6 h-8">
-          <ChevronLeftIcon className="h-6 w-6" />
-        </Button>
-        <span className="truncate">{itemName}</span>
-      </CardTitle>
-    </CardHeader>
-  );
-};
-
-interface ContentListItemEditorBodyProps {
-  itemIndex: number;
-}
-
-const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps) => {
-  const { currentBlock, setCurrentBlock } = useResourceCenterEditor();
-  const { attributeList } = useAttributeList();
-  const { environmentId, projectId, zIndex } = useBuilderContext();
-  const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
-  const { eventList } = useListEventsQuery(projectId);
-  const { t } = useTranslation();
-
-  if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.CONTENT_LIST) {
-    return null;
-  }
-
-  const item = currentBlock.contentItems[itemIndex];
-  if (!item) return null;
-
-  const updateItem = (updates: Partial<ContentListItem>) => {
-    setCurrentBlock((prev) => {
-      if (!prev || prev.type !== ResourceCenterBlockType.CONTENT_LIST) return null;
-      const newItems = [...prev.contentItems];
-      newItems[itemIndex] = { ...newItems[itemIndex], ...updates };
-      return { ...prev, contentItems: newItems };
-    });
-  };
-
-  const handleIconChange = (updates: {
-    iconType?: string;
-    iconSource?: LauncherIconSource;
-    iconUrl?: string;
-  }) => {
-    updateItem({
-      ...(updates.iconType !== undefined && { iconType: updates.iconType }),
-      ...(updates.iconSource !== undefined && { iconSource: updates.iconSource }),
-      ...(updates.iconUrl !== undefined ? { iconUrl: updates.iconUrl } : { iconUrl: undefined }),
-    });
-  };
-
-  const handleNavigateUrlChange = (value: Descendant[]) => {
-    updateItem({ navigateUrl: value as unknown as RichTextNode[], navigateOpenType: 'same' });
-  };
-
-  const handleOnlyShowItemChange = (value: boolean) => {
-    updateItem({ onlyShowItem: value });
-  };
-
-  const handleOnlyShowItemConditionsChange = (value: RulesCondition[]) => {
-    updateItem({ onlyShowItemConditions: value });
-  };
-
-  return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
-      <ScrollArea className="h-full">
-        <div className="flex-col space-y-3 p-4">
-          {/* Custom icon for this item */}
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center gap-1">
-              <Label>Custom icon for this item</Label>
-              <QuestionTooltip>
-                <p>
-                  Override the default icon for this item. Select "Default" to use the block
-                  default.
-                </p>
-              </QuestionTooltip>
-            </div>
-            <IconPicker
-              type={item.iconType ?? ''}
-              iconSource={item.iconSource ?? LauncherIconSource.INHERIT}
-              iconUrl={item.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
-              showNoIcon={true}
-              showInherit={true}
-              onChange={handleIconChange}
-            />
-          </div>
-
-          {/* Navigate to URL */}
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center gap-1">
-              <Label>Navigate to URL when clicked</Label>
-              <QuestionTooltip>
-                <p>
-                  Navigate the user to this URL when the item is clicked. Supports user attributes.
-                </p>
-              </QuestionTooltip>
-            </div>
-            <PopperEditorMini
-              zIndex={zIndex + EXTENSION_SELECT}
-              initialValue={
-                (item.navigateUrl as Descendant[]) ?? [
-                  { type: 'paragraph', children: [{ text: '' }] },
-                ]
-              }
-              onValueChange={handleNavigateUrlChange}
-              attributes={attributeList}
-            />
-          </div>
-
-          {/* Only list item if... */}
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor="only-show-item" className="font-normal">
-                Only list item if...
-              </Label>
-              <Switch
-                id="only-show-item"
-                className="data-[state=unchecked]:bg-input"
-                checked={item.onlyShowItem}
-                onCheckedChange={handleOnlyShowItemChange}
-              />
-            </div>
-            {item.onlyShowItem && (
-              <Conditions
-                onChange={handleOnlyShowItemConditionsChange}
-                conditions={item.onlyShowItemConditions ?? []}
-                attributes={attributeList}
-                contents={[]}
-                segments={segmentList}
-                events={eventList}
-                token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
-                t={t}
-              />
-            )}
-          </div>
-        </div>
-      </ScrollArea>
-    </CardContent>
-  );
-};
-
-// ============================================================================
 // Root Component
 // ============================================================================
 
@@ -788,11 +572,8 @@ export const ResourceCenterBlockContentList = () => {
   if (editingItemIndex !== null) {
     return (
       <SidebarContainer>
-        <ContentListItemEditorHeader
-          itemName={editingItemName}
-          onBack={() => setEditingItemIndex(null)}
-        />
-        <ContentListItemEditorBody itemIndex={editingItemIndex} />
+        <ItemEditorHeader itemName={editingItemName} onBack={() => setEditingItemIndex(null)} />
+        <ItemEditorBody itemIndex={editingItemIndex} />
         <CardFooter className="flex-none p-5">
           <Button className="w-full h-10" onClick={() => setEditingItemIndex(null)}>
             Done
