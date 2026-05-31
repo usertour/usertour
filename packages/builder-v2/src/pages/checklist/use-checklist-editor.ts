@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { ChecklistData, ChecklistItemType } from '@usertour/types';
 import { useTypeEditor } from '../../hooks/use-type-editor';
-import { useBuilderContext, BuilderMode } from '../../contexts';
+import { useBuilderStore, BuilderMode } from '../../contexts';
 import { checklistTypeConfig } from './checklist-config';
 
 // Checklist-flavoured editor. Wraps useTypeEditor and adds the
@@ -25,7 +25,7 @@ export interface UseChecklistEditorReturn {
 
 export const useChecklistEditor = (): UseChecklistEditorReturn => {
   const editor = useTypeEditor(checklistTypeConfig);
-  const { setCurrentMode } = useBuilderContext();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
 
   const data = editor.data;
   const items = data?.items ?? [];

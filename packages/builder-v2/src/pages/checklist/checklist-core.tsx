@@ -23,7 +23,7 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { useChecklistEditor } from './use-checklist-editor';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
@@ -47,7 +47,7 @@ const defaultItem = {
 
 const ChecklistCoreBody = () => {
   const { data: localData, addItem, updateData: updateLocalData } = useChecklistEditor();
-  const { zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
 
   if (!localData) {
     return null;
@@ -183,7 +183,7 @@ const ChecklistCoreBody = () => {
 };
 
 const ChecklistCoreHeader = () => {
-  const { currentContent } = useBuilderContext();
+  const currentContent = useBuilderStore((state) => state.currentContent);
   return (
     <CardHeader className="flex-none p-4 space-y-3">
       <CardTitle className="flex h-8">
@@ -194,7 +194,13 @@ const ChecklistCoreHeader = () => {
 };
 
 const ChecklistCoreFooter = () => {
-  const { isLoading, onSaved, saveContent } = useBuilderContext();
+  // isLoading merges initial-content load + save-in-flight (legacy
+  // overload). Per docs/conventions/builder-context-migration.md.
+  const isLoading = useBuilderStore(
+    (state) => state.isLoading || state.saveState.status === 'saving',
+  );
+  const { onSaved } = useBuilderConfig();
+  const { saveContent } = useBuilderMethods();
 
   const handleSave = async () => {
     await saveContent();
