@@ -393,8 +393,21 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   // saveContent). On clean (after server round-trip resets
   // backupVersion = currentVersion) → settle saveState back to
   // 'saved' if it was 'saving', otherwise leave error/idle alone.
+  //
+  // `saveContent` is captured via a ref rather than the useEffect
+  // dep array — its useCallback dependencies (Apollo mutation invoke
+  // refs from useAddContentStepsMutation, fetchContentAndVersion's
+  // chain back to useGetContentLazyQuery) are not ref-stable across
+  // renders. Listing it as a dep makes the effect re-fire every
+  // render; once currentVersion != backupVersion (e.g. after a step
+  // delete), each fire transitions saveState and triggers another
+  // render, compounding into an infinite render loop. The ref keeps
+  // the effect's deps narrow to the actual trigger inputs while
+  // always invoking the latest saveContent closure.
   const currentVersion = useStore(store, (s) => s.currentVersion);
   const backupVersion = useStore(store, (s) => s.backupVersion);
+  const saveContentRef = useRef(saveContent);
+  saveContentRef.current = saveContent;
   useEffect(() => {
     if (!currentVersion || !backupVersion) {
       return;
@@ -405,9 +418,9 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         .transitionSaveState((prev) =>
           prev.status === 'dirty' || prev.status === 'saving' ? prev : { status: 'dirty' },
         );
-      void saveContent();
+      void saveContentRef.current();
     }
-  }, [currentVersion, backupVersion, saveContent, store]);
+  }, [currentVersion, backupVersion, store]);
 
   // beforeunload guard: warn on either "still loading content" (isLoading)
   // or "save in flight / dirty buffer" (saveState). V1 only checked
