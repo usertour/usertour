@@ -22,6 +22,7 @@ import {
   useGetContentVersionLazyQuery,
   useAddContentStepsMutation,
   useAddContentStepMutation,
+  useUpdateContentVersionMutation,
 } from '@usertour/hooks';
 import {
   type BuilderStore,
@@ -157,6 +158,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   const { invoke: getContentVersion } = useGetContentVersionLazyQuery();
   const { invoke: addContentSteps } = useAddContentStepsMutation();
   const { invoke: addContentStep } = useAddContentStepMutation();
+  const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
 
   const updateCurrentStep = useCallback(
     (fn: Step | ((pre: Step) => Step)) => {
@@ -306,29 +308,61 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     if (!currentVersion.id) {
       return;
     }
+
+    // Dispatcher: pick which mutation(s) to dispatch based on what's
+    // dirty. `addContentSteps` writes steps + themeId; `updateContentVersion`
+    // writes the per-type data blob. PR γ tracked only the steps path;
+    // PR ζ extends to the data path so per-type editors can drop their
+    // own save loops and route through this FSM via setCurrentVersion.
+    // Both mutations are server-side idempotent on (versionId, payload),
+    // so the per-save identity check (saveCounterRef) still applies if
+    // both fire in parallel for a single in-flight save.
+    const stepsDirty =
+      !isEqual(currentVersion.steps, backupVersion.steps) ||
+      currentVersion.themeId !== backupVersion.themeId;
+    const dataDirty = !isEqual(currentVersion.data, backupVersion.data);
+    if (!stepsDirty && !dataDirty) {
+      return;
+    }
+
     const saveId = ++saveCounterRef.current;
     store.getState().transitionSaveState({ status: 'saving', saveId });
-    const steps = currentVersion.steps
-      ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
-          ...step,
-          sequence: index,
-        }))
-      : [];
-    const variables = {
-      contentId: currentVersion.contentId,
-      versionId: currentVersion.id,
-      themeId: currentVersion.themeId,
-      steps,
-    };
+
+    const pending: Array<Promise<unknown>> = [];
+    if (stepsDirty) {
+      const steps = currentVersion.steps
+        ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
+            ...step,
+            sequence: index,
+          }))
+        : [];
+      pending.push(
+        addContentSteps({
+          contentId: currentVersion.contentId,
+          versionId: currentVersion.id,
+          themeId: currentVersion.themeId,
+          steps,
+        }),
+      );
+    }
+    if (dataDirty) {
+      pending.push(updateContentVersion(currentVersion.id, { data: currentVersion.data }));
+    }
+
     try {
-      const response = await addContentSteps(variables);
-      // Identity check: a newer save has started while this one was
-      // in flight — discard our response. The newer save will drive
-      // the final saveState transition.
+      const responses = await Promise.all(pending);
+      // Identity check: a newer save has started while this one was in
+      // flight — discard our response. The newer save will drive the
+      // final saveState transition.
       if (saveId !== saveCounterRef.current) {
         return;
       }
-      if (response) {
+      // Treat the save as successful if every dispatched mutation
+      // resolved truthy (addContentSteps + updateContentVersion both
+      // return data objects on success; nullish means the wrapper hook
+      // swallowed an error without throwing).
+      const allOk = responses.every((r) => Boolean(r));
+      if (allOk) {
         await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
         if (saveId === saveCounterRef.current) {
           store.getState().transitionSaveState({ status: 'saved', savedAt: Date.now() });
@@ -345,7 +379,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         title: getErrorMessage(error),
       });
     }
-  }, [addContentSteps, fetchContentAndVersion, store, toast]);
+  }, [addContentSteps, updateContentVersion, fetchContentAndVersion, store, toast]);
 
   const createStep = useCallback(
     async (currentVersion: ContentVersion, step: Step) => {
