@@ -1,0 +1,102 @@
+import { createContext, useMemo, useRef } from 'react';
+import { useAutoSave } from '../provider/use-auto-save';
+import { useBeforeunloadGuard } from '../provider/use-beforeunload-guard';
+import { useContentLoader } from '../provider/use-content-loader';
+import { useSaveContent } from '../provider/use-save-content';
+import { useUndoShortcuts } from '../provider/use-undo-shortcuts';
+import { type BuilderStore, createBuilderStore } from '../store/builder-store';
+import { BuilderLeaveGuard } from '../shell/builder-leave-guard';
+import type { BuilderProviderContextValue, BuilderProviderProps } from './builder-context-types';
+
+// The React Context object. Shared with the legacy adapter
+// (useBuilderContext) and the selector-based hooks (useBuilderStore +
+// friends) — both import it from this file.
+export const BuilderProviderContext = createContext<BuilderProviderContextValue | null>(null);
+
+export const BuilderProvider = (props: BuilderProviderProps) => {
+  const {
+    children,
+    webHost = '',
+    usertourjsUrl = '',
+    isWebBuilder = false,
+    onSaved,
+    shouldShowMadeWith = true,
+  } = props;
+
+  // One store per mount — the `useRef + if (!current)` idiom is the
+  // standard Zustand-with-Provider pattern (calling createBuilderStore
+  // unguarded would re-create the store on every render and discard
+  // state).
+  const storeRef = useRef<BuilderStore>();
+  if (!storeRef.current) {
+    storeRef.current = createBuilderStore();
+  }
+  const store = storeRef.current;
+  const contentRef = useRef<HTMLDivElement | undefined>();
+
+  // Compose the Provider's behaviours. Each hook owns one concern and
+  // returns whatever the next hook (or the public surface) needs.
+  const { fetchContentAndVersion, initContent } = useContentLoader({ store, isWebBuilder });
+  const { saveContent } = useSaveContent({ store, fetchContentAndVersion });
+  const { setAutoSaveValidator } = useAutoSave({ store, saveContent });
+  useUndoShortcuts({ store });
+  useBeforeunloadGuard({ store });
+
+  // Ref-stable wrappers for every imperative method exposed via
+  // useBuilderContext. Each underlying useCallback's deps include
+  // Apollo hook return refs that are not ref-stable across renders —
+  // so the useCallbacks themselves don't memoize, and any consumer
+  // that lists one of them in a useEffect / useMemo dep array would
+  // re-fire every render. With state changes (e.g. step delete
+  // making currentVersion != backupVersion), the re-fire compounds
+  // into an infinite render loop. Wrap each method in a useRef +
+  // useMemo-of-`[]` thunk so the exposed identity is pinned at first
+  // render while still dispatching to the latest closure on every call.
+  const methodsRef = useRef({
+    fetchContentAndVersion,
+    initContent,
+    saveContent,
+    setAutoSaveValidator,
+  });
+  methodsRef.current = {
+    fetchContentAndVersion,
+    initContent,
+    saveContent,
+    setAutoSaveValidator,
+  };
+  const stableMethods = useMemo<BuilderProviderContextValue['methods']>(
+    () => ({
+      fetchContentAndVersion: (cid, vid) => methodsRef.current.fetchContentAndVersion(cid, vid),
+      initContent: (msg) => methodsRef.current.initContent(msg),
+      saveContent: () => methodsRef.current.saveContent(),
+      setAutoSaveValidator: (fn) => methodsRef.current.setAutoSaveValidator(fn),
+    }),
+    [],
+  );
+
+  // Provider value is memoized on stableMethods + config so its
+  // identity is pinned for the Provider mount lifetime.
+  const providerValue = useMemo<BuilderProviderContextValue>(
+    () => ({
+      store,
+      methods: stableMethods,
+      config: {
+        webHost,
+        usertourjsUrl,
+        isWebBuilder,
+        onSaved,
+        shouldShowMadeWith,
+        zIndex: 0,
+      },
+      contentRef,
+    }),
+    [store, stableMethods, webHost, usertourjsUrl, isWebBuilder, onSaved, shouldShowMadeWith],
+  );
+
+  return (
+    <BuilderProviderContext.Provider value={providerValue}>
+      <BuilderLeaveGuard />
+      {children}
+    </BuilderProviderContext.Provider>
+  );
+};
