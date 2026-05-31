@@ -24,7 +24,7 @@ import { cn } from '@usertour/tailwind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
 import { BuilderMode, useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
-import { TriggerProvider, useTriggerContext } from '../../contexts';
+import { TriggerProvider, useTriggerContext } from './trigger-context';
 import { useFlowEditor } from './use-flow-editor';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../sidebar/sidebar-mini';
