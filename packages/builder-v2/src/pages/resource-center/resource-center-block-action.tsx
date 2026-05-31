@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../contexts';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
@@ -41,7 +41,7 @@ import {
 } from '../../components/content-error';
 
 const BlockActionHeader = () => {
-  const { setCurrentMode } = useBuilderContext();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { setCurrentBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
@@ -67,7 +67,9 @@ const BlockActionBody = () => {
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { environmentId, projectId, zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const environmentId = useBuilderStore((state) => state.environmentId);
+  const projectId = useBuilderStore((state) => state.projectId);
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);

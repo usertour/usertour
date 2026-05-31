@@ -23,7 +23,7 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
@@ -139,7 +139,7 @@ const ResourceCenterCoreBody = () => {
     updateData: updateLocalData,
     currentTabId,
   } = useResourceCenterEditor();
-  const { zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
 
   if (!localData) {
     return null;
@@ -245,7 +245,7 @@ const ResourceCenterCoreBody = () => {
 };
 
 const ResourceCenterCoreHeader = () => {
-  const { currentContent } = useBuilderContext();
+  const currentContent = useBuilderStore((state) => state.currentContent);
   return (
     <CardHeader className="flex-none p-4 space-y-3">
       <CardTitle className="flex h-8">
@@ -256,7 +256,13 @@ const ResourceCenterCoreHeader = () => {
 };
 
 const ResourceCenterCoreFooter = () => {
-  const { isLoading, onSaved, saveContent } = useBuilderContext();
+  // isLoading merges initial-content load + save-in-flight (legacy
+  // overload). Per docs/conventions/builder-context-migration.md.
+  const isLoading = useBuilderStore(
+    (state) => state.isLoading || state.saveState.status === 'saving',
+  );
+  const { onSaved } = useBuilderConfig();
+  const { saveContent } = useBuilderMethods();
 
   const handleSave = async () => {
     await saveContent();

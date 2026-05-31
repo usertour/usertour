@@ -1,4 +1,4 @@
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderStore } from '../../contexts';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
 import { ResourceCenterCore } from './resource-center-core';
 import { ResourceCenterBlockRichText } from './resource-center-block-rich-text';
@@ -13,7 +13,7 @@ import { useResourceCenterEditor } from './use-resource-center-editor';
 import { ResourceCenterBlockType } from '@usertour/types';
 
 export const ResourceCenterBuilder = () => {
-  const { currentMode } = useBuilderContext();
+  const currentMode = useBuilderStore((state) => state.currentMode);
   const { currentBlock } = useResourceCenterEditor();
 
   useAutoSidebarPosition();

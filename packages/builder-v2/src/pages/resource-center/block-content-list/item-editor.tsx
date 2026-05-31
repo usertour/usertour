@@ -24,7 +24,7 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { useBuilderContext } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
 import { useAttributeList } from '../../../hooks/use-attribute-list';
 import { useToken } from '../../../hooks/use-token';
@@ -59,7 +59,9 @@ export interface ItemEditorBodyProps {
 export const ItemEditorBody = ({ itemIndex }: ItemEditorBodyProps) => {
   const { currentBlock, setCurrentBlock } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { environmentId, projectId, zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const environmentId = useBuilderStore((state) => state.environmentId);
+  const projectId = useBuilderStore((state) => state.projectId);
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);

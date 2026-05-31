@@ -14,7 +14,7 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../contexts';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
@@ -25,7 +25,7 @@ import {
 } from '../../components/content-error';
 
 const TabSettingsHeader = () => {
-  const { setCurrentMode } = useBuilderContext();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { setEditingTab } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
@@ -49,7 +49,7 @@ const TabSettingsHeader = () => {
 
 const TabSettingsBody = () => {
   const { editingTab, setEditingTab, isShowError } = useResourceCenterEditor();
-  const { zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
 
   if (!editingTab) {
     return null;

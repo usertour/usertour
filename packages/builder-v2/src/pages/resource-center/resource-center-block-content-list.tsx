@@ -50,7 +50,7 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../contexts';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -69,7 +69,7 @@ import { ItemEditorBody, ItemEditorHeader } from './block-content-list/item-edit
 // ============================================================================
 
 const BlockContentListHeader = () => {
-  const { setCurrentMode } = useBuilderContext();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { setCurrentBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
@@ -98,7 +98,9 @@ interface BlockContentListBodyProps {
 const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { environmentId, projectId, zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const environmentId = useBuilderStore((state) => state.environmentId);
+  const projectId = useBuilderStore((state) => state.projectId);
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
@@ -539,16 +541,17 @@ const BlockContentListFooter = () => {
 export const ResourceCenterBlockContentList = () => {
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const { currentBlock } = useResourceCenterEditor();
+  const environmentId = useBuilderStore((state) => state.environmentId);
 
   const { contents: flowContents } = useContentListQuery({
     query: {
-      environmentId: useBuilderContext().environmentId,
+      environmentId,
       type: ContentDataType.FLOW,
     },
   });
   const { contents: checklistContents } = useContentListQuery({
     query: {
-      environmentId: useBuilderContext().environmentId,
+      environmentId,
       type: ContentDataType.CHECKLIST,
     },
   });

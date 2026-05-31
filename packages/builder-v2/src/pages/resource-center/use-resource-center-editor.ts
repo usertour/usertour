@@ -7,7 +7,7 @@ import {
   type ResourceCenterTab,
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderStore } from '../../contexts';
 import { useTypeEditor } from '../../hooks/use-type-editor';
 import { resourceCenterTypeConfig, type ResourceCenterUIState } from './resource-center-config';
 
@@ -74,7 +74,7 @@ export interface UseResourceCenterEditorReturn {
 
 export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
   const editor = useTypeEditor(resourceCenterTypeConfig);
-  const { setCurrentMode } = useBuilderContext();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
 
   const data = editor.data;
   const uiState = editor.uiState;
@@ -125,7 +125,8 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
   );
 
   // Reset error state when switching blocks or tabs — same V1 effect.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: setIsShowError is ref-stable; we want to fire on slot id changes only
+  // setIsShowError is ref-stable; the deps are intentionally only
+  // the slot ids so the effect fires on selection change only.
   useEffect(() => {
     setIsShowError(false);
   }, [uiState.currentBlock?.id, uiState.editingTab?.id]);

@@ -25,7 +25,7 @@ import {
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderContext } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
 import { useAws } from '../../../hooks/use-aws';
 
@@ -38,7 +38,7 @@ const ResourceCenterEmbedContent = ({
   const { currentPage } = useWidgetResourceCenterContext();
   const { data: localData, updateBlock } = useResourceCenterEditor();
   const { upload } = useAws();
-  const { projectId } = useBuilderContext();
+  const projectId = useBuilderStore((state) => state.projectId);
   const { attributeList } = useAttributeList();
 
   const handleCustomUploadRequest = useCallback(
@@ -103,12 +103,10 @@ export const ResourceCenterEmbed = () => {
   const [theme, setTheme] = useState<Theme | undefined>();
   const [expanded, setExpanded] = useState(true);
   const { themeList } = useThemeList();
-  const {
-    currentVersion,
-    projectId,
-    environmentId,
-    shouldShowMadeWith = true,
-  } = useBuilderContext();
+  const { shouldShowMadeWith = true } = useBuilderConfig();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const projectId = useBuilderStore((state) => state.projectId);
+  const environmentId = useBuilderStore((state) => state.environmentId);
   const { attributeList } = useAttributeList();
 
   // Query flows and checklists for content list block preview
