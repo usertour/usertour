@@ -2,7 +2,7 @@
 
 import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 
-import { useBuilderContext, useBannerContext } from '../../contexts';
+import { useBuilderContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar/sidebar-container';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
@@ -41,11 +41,14 @@ const BannerBuilderHeader = () => {
 };
 
 const BannerBuilderFooter = () => {
-  const { isLoading, onSaved } = useBuilderContext();
-  const { flushSave } = useBannerContext();
+  const { isLoading, onSaved, saveContent } = useBuilderContext();
 
   const handleSave = async () => {
-    await flushSave();
+    // saveContent is idempotent — bails if not dirty — and awaits the
+    // dispatched mutations + the post-save fetchContentAndVersion
+    // before resolving. After it returns, currentVersion = backupVersion
+    // and onSaved can navigate away cleanly.
+    await saveContent();
     await onSaved?.();
   };
 

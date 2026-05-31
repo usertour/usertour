@@ -1,9 +1,9 @@
 import { Input } from '@usertour/ui';
 
-import { useBannerContext } from '../../../contexts';
+import { useBannerEditor } from '../use-banner-editor';
 
 export const BannerZIndex = () => {
-  const { updateLocalData, localData } = useBannerContext();
+  const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
   if (!localData) {
     return null;

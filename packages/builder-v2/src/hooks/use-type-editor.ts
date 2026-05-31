@@ -24,31 +24,51 @@ export interface UseTypeEditorReturn<TData, TUIState> {
   isLoading: boolean;
 }
 
+// CONFIG STABILITY: callers must pass a module-level config record,
+// not an inline object. Inline configs would change identity every
+// render and invalidate updateData's ref, which would cascade through
+// any consumer useEffect / useMemo dep arrays (same class of bug as
+// PR γ + arch fix). The recommended pattern is one config per
+// content type, declared at module top:
+//   const bannerTypeConfig: BuilderTypeConfig<BannerData> = { ... };
+//   const editor = useTypeEditor(bannerTypeConfig);
+
 export const useTypeEditor = <TData, TUIState = undefined>(
   config: BuilderTypeConfig<TData, TUIState>,
 ): UseTypeEditorReturn<TData, TUIState> => {
   const { isLoading } = useBuilderContext();
   const rawData = useBuilderStore((state) => state.currentVersion?.data) as TData | undefined;
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
-  const normalize =
-    config.normalize ??
-    ((value: TData | undefined): TData => (value ?? config.defaultData) as TData);
-  const data = rawData !== undefined ? normalize(rawData) : undefined;
 
+  const normalizeData = (value: TData | undefined): TData =>
+    config.normalize ? config.normalize(value) : ((value ?? config.defaultData) as TData);
+  const data = rawData !== undefined ? normalizeData(rawData) : undefined;
+
+  // updateData spreads NORMALIZED prev data (not raw) so the first
+  // edit also commits any default-merging done by normalize. V1's
+  // BannerContext used to do this via a seeding useEffect that
+  // pushed the normalized server data into localState + the
+  // lastSavedDataRef on mount; here we fold that into the writer
+  // so the abstraction is read-time normalization + write-time
+  // materialization, no separate seeding effect.
   const updateData = useCallback(
     (updates: Partial<TData>) => {
       setCurrentVersion((prev) => {
         if (!prev) {
           return prev;
         }
-        const currentData = (prev.data as TData | undefined) ?? config.defaultData;
+        const normalized = normalizeData(prev.data as TData | undefined);
         return {
           ...prev,
-          data: { ...currentData, ...updates },
+          data: { ...normalized, ...updates },
         };
       });
     },
-    [setCurrentVersion, config.defaultData],
+    // Config is required to be stable (see CONFIG STABILITY comment),
+    // so we intentionally omit it from the dep array — same approach
+    // as PR α's makeSetter helpers.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: stable config required
+    [setCurrentVersion],
   );
 
   // Per-type UI state is local — lives per-type-mount, dies on

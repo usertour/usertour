@@ -1,5 +1,4 @@
 import { ReactNode, createContext, useContext } from 'react';
-import { BannerProvider } from './banner-context';
 import { BuilderProvider } from './builder-context';
 import { ChecklistProvider } from './checklist-context';
 import { LauncherProvider } from './launcher-context';
@@ -57,15 +56,13 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
       usertourjsUrl={usertourjsUrl}
       shouldShowMadeWith={shouldShowMadeWith}
     >
-      <BannerProvider>
-        <LauncherProvider>
-          <ChecklistProvider>
-            <ResourceCenterProvider>
-              <WebBuilderContent>{children}</WebBuilderContent>
-            </ResourceCenterProvider>
-          </ChecklistProvider>
-        </LauncherProvider>
-      </BannerProvider>
+      <LauncherProvider>
+        <ChecklistProvider>
+          <ResourceCenterProvider>
+            <WebBuilderContent>{children}</WebBuilderContent>
+          </ResourceCenterProvider>
+        </ChecklistProvider>
+      </LauncherProvider>
     </BuilderProvider>
   );
 }

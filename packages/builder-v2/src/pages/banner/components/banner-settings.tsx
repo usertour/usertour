@@ -2,7 +2,7 @@
 
 import { Label, QuestionTooltip, Switch } from '@usertour/ui';
 
-import { useBannerContext } from '../../../contexts';
+import { useBannerEditor } from '../use-banner-editor';
 
 const SETTINGS_ITEMS: readonly {
   key:
@@ -37,7 +37,7 @@ const SETTINGS_ITEMS: readonly {
 ];
 
 export const BannerSettings = () => {
-  const { localData, updateLocalData } = useBannerContext();
+  const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
   if (!localData) {
     return null;

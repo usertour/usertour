@@ -18,7 +18,8 @@ import {
 
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
-import { useBuilderContext, useBannerContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
+import { useBannerEditor } from '../use-banner-editor';
 
 const EMBED_PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; label: string }[] = [
   { value: BannerEmbedPlacement.TOP_OF_PAGE, label: 'Top of page' },
@@ -42,7 +43,7 @@ const labelStyles = 'flex justify-start items-center space-x-1';
 
 export const BannerEmbedPlacementSelect = () => {
   const { zIndex, isShowError, isWebBuilder, currentContent } = useBuilderContext();
-  const { localData, updateLocalData } = useBannerContext();
+  const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
   const handleTargetChange = useCallback(
     (value: Partial<ElementSelectorPropsData>) => {

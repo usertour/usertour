@@ -15,7 +15,8 @@ import {
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useBuilderContext, useBannerContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
+import { useBannerEditor } from '../use-banner-editor';
 import { useCurrentTheme } from '../../../hooks/use-current-theme';
 import { useAws } from '../../../hooks/use-aws';
 import { getDefaultDataForType } from '../../../utils/default-data';
@@ -25,7 +26,7 @@ const DEFAULT_BANNER_CONTENTS = getDefaultDataForType('tooltip') as ContentEdito
 
 export const BannerEmbed = () => {
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
-  const { localData, updateLocalData } = useBannerContext();
+  const { data: localData, updateData: updateLocalData } = useBannerEditor();
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
   const { attributeList } = useAttributeList();

@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
 
-import { useBannerContext } from '../../../contexts';
+import { useBannerEditor } from '../use-banner-editor';
 
 const defaultMargin: BannerOuterMargin = {
   top: 0,
@@ -15,7 +15,7 @@ const defaultMargin: BannerOuterMargin = {
 };
 
 export const BannerLayout = () => {
-  const { localData, updateLocalData } = useBannerContext();
+  const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
   const handleNumberChange = useCallback(
     (key: 'maxEmbedWidth' | 'maxContentWidth' | 'borderRadius') =>
