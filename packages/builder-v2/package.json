@@ -64,7 +64,8 @@
     "immer": "^10.1.1"
   },
   "peerDependencies": {
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "react-router-dom": "^6.4.0"
   },
   "devDependencies": {
     "@types/chrome": "0.0.241",

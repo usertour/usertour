@@ -28,6 +28,7 @@ import {
   type BuilderStoreState,
   createBuilderStore,
 } from '../store/builder-store';
+import { BuilderLeaveGuard } from '../shell/builder-leave-guard';
 import { BuilderMode } from './builder-mode';
 import type { CurrentMode } from './builder-mode';
 
@@ -535,6 +536,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
 
   return (
     <BuilderProviderContext.Provider value={providerValue}>
+      <BuilderLeaveGuard />
       {children}
     </BuilderProviderContext.Provider>
   );
