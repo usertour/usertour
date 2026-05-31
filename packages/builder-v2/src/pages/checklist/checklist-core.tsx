@@ -23,7 +23,8 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderContext, useChecklistContext } from '../../contexts';
+import { useBuilderContext } from '../../contexts';
+import { useChecklistEditor } from './use-checklist-editor';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
@@ -45,7 +46,8 @@ const defaultItem = {
 };
 
 const ChecklistCoreBody = () => {
-  const { localData, zIndex, addItem, updateLocalData } = useChecklistContext();
+  const { data: localData, addItem, updateData: updateLocalData } = useChecklistEditor();
+  const { zIndex } = useBuilderContext();
 
   if (!localData) {
     return null;
@@ -192,11 +194,10 @@ const ChecklistCoreHeader = () => {
 };
 
 const ChecklistCoreFooter = () => {
-  const { isLoading, onSaved } = useBuilderContext();
-  const { flushSave } = useChecklistContext();
+  const { isLoading, onSaved, saveContent } = useBuilderContext();
 
   const handleSave = async () => {
-    await flushSave();
+    await saveContent();
     await onSaved?.();
   };
 

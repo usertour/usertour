@@ -1,6 +1,5 @@
 import { ReactNode, createContext, useContext } from 'react';
 import { BuilderProvider } from './builder-context';
-import { ChecklistProvider } from './checklist-context';
 import { LauncherProvider } from './launcher-context';
 import { ResourceCenterProvider } from './resource-center-context';
 import { useAttributeList } from '../hooks/use-attribute-list';
@@ -57,11 +56,9 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
       shouldShowMadeWith={shouldShowMadeWith}
     >
       <LauncherProvider>
-        <ChecklistProvider>
-          <ResourceCenterProvider>
-            <WebBuilderContent>{children}</WebBuilderContent>
-          </ResourceCenterProvider>
-        </ChecklistProvider>
+        <ResourceCenterProvider>
+          <WebBuilderContent>{children}</WebBuilderContent>
+        </ResourceCenterProvider>
       </LauncherProvider>
     </BuilderProvider>
   );

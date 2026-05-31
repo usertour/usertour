@@ -27,7 +27,8 @@ import {
 } from '@usertour/types';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useChecklistEditor } from './use-checklist-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -35,7 +36,7 @@ import { SidebarContainer } from '../sidebar';
 
 const ChecklistItemHeader = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { setCurrentItem } = useChecklistContext();
+  const { setCurrentItem } = useChecklistEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -57,10 +58,10 @@ const ChecklistItemHeader = () => {
 };
 
 const ChecklistItemBody = () => {
-  const { currentItem, setCurrentItem, zIndex } = useChecklistContext();
+  const { currentItem, setCurrentItem } = useChecklistEditor();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { environmentId, projectId } = useBuilderContext();
+  const { environmentId, projectId, zIndex } = useBuilderContext();
   const formPrefix = useId();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
@@ -185,7 +186,7 @@ const ChecklistItemBody = () => {
 };
 
 const ChecklistItemFooter = () => {
-  const { saveCurrentItem, currentItem, isLoading } = useChecklistContext();
+  const { saveCurrentItem, currentItem, isLoading } = useChecklistEditor();
   const conditionsGate = useConditionsSaveGate();
   const actionsGate = useActionsSaveGate();
   const handleSave = () => {

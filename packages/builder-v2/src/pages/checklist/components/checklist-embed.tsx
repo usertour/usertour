@@ -18,11 +18,12 @@ import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
 import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderContext, useChecklistContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
+import { useChecklistEditor } from '../use-checklist-editor';
 
 export const ChecklistEmbed = () => {
-  const { localData, currentItem, updateLocalData } = useChecklistContext();
+  const { data: localData, currentItem, updateData: updateLocalData } = useChecklistEditor();
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
   const { themeList } = useThemeList();

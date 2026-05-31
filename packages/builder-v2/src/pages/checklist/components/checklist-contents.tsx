@@ -36,7 +36,8 @@ import {
 import { Delete2Icon } from '@usertour/icons';
 import { ChecklistItemType } from '@usertour/types';
 import { forwardRef, useState } from 'react';
-import { BuilderMode, useBuilderContext, useChecklistContext } from '../../../contexts';
+import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { useChecklistEditor } from '../use-checklist-editor';
 // Add interface for component props
 interface ChecklistContentProps {
   onClick?: (action: 'edit' | 'delete', item: ChecklistItemType) => void;
@@ -155,7 +156,12 @@ const SortableItem = ({ id, onClick, item }: any) => {
 
 export const ChecklistContents = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { localData, updateLocalData, setCurrentItem, removeItem } = useChecklistContext();
+  const {
+    data: localData,
+    updateData: updateLocalData,
+    setCurrentItem,
+    removeItem,
+  } = useChecklistEditor();
 
   if (!localData) {
     return null;
