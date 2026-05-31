@@ -7,14 +7,15 @@ import { SpinnerIcon } from '@usertour/icons';
 import { LauncherData } from '@usertour/types';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentWidth } from '../../components/content-width';
-import { useLauncherContext } from '../../contexts/launcher-context';
+import { useBuilderContext } from '../../contexts';
+import { useLauncherEditor } from './use-launcher-editor';
 import { SidebarContainer } from '../sidebar';
 import { LauncherPosition } from './components/launcher-position';
 import { LauncherSettings } from './components/launcher-settings';
 import { useCallback } from 'react';
 
 const LauncherTooltipHeader = () => {
-  const { backToLauncher, setLauncherTooltip } = useLauncherContext();
+  const { backToLauncher, setLauncherTooltip } = useLauncherEditor();
 
   const handleBackToLauncher = () => {
     backToLauncher();
@@ -39,7 +40,8 @@ const LauncherTooltipHeader = () => {
 };
 
 const LauncherTooltipBody = () => {
-  const { launcherTooltip, zIndex, setLauncherTooltip } = useLauncherContext();
+  const { launcherTooltip, setLauncherTooltip } = useLauncherEditor();
+  const { zIndex } = useBuilderContext();
 
   const updateLauncherTooltip = (updates: Partial<LauncherData['tooltip']>) => {
     setLauncherTooltip((prev) => {
@@ -86,8 +88,13 @@ const LauncherTooltipBody = () => {
 };
 
 const LauncherTooltipFooter = () => {
-  const { isLoading, updateLocalData, launcherTooltip, backToLauncher, setLauncherTooltip } =
-    useLauncherContext();
+  const {
+    isLoading,
+    updateData: updateLocalData,
+    launcherTooltip,
+    backToLauncher,
+    setLauncherTooltip,
+  } = useLauncherEditor();
 
   const saveTooltip = useCallback(() => {
     updateLocalData({ tooltip: launcherTooltip });

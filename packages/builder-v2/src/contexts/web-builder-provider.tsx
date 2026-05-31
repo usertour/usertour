@@ -1,6 +1,5 @@
 import { ReactNode, createContext, useContext } from 'react';
 import { BuilderProvider } from './builder-context';
-import { LauncherProvider } from './launcher-context';
 import { ResourceCenterProvider } from './resource-center-context';
 import { useAttributeList } from '../hooks/use-attribute-list';
 import { useContentList } from '../hooks/use-content-list';
@@ -55,11 +54,9 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
       usertourjsUrl={usertourjsUrl}
       shouldShowMadeWith={shouldShowMadeWith}
     >
-      <LauncherProvider>
-        <ResourceCenterProvider>
-          <WebBuilderContent>{children}</WebBuilderContent>
-        </ResourceCenterProvider>
-      </LauncherProvider>
+      <ResourceCenterProvider>
+        <WebBuilderContent>{children}</WebBuilderContent>
+      </ResourceCenterProvider>
     </BuilderProvider>
   );
 }

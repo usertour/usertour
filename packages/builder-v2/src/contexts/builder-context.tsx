@@ -96,6 +96,14 @@ interface BuilderContextProps {
     duplicateStep?: Step,
   ) => Promise<Step | undefined>;
   shouldShowMadeWith?: boolean;
+  // Per-type editors register a validator; the auto-save useEffect
+  // consults it before triggering saveContent for data-dirty edits.
+  // Returns false → skip THIS auto-save cycle (saveState stays
+  // 'dirty'; explicit saveContent() calls still go through). Used
+  // by Launcher to avoid persisting incomplete action chips while
+  // the user is mid-edit. Pass null to clear. Originally Phase 1
+  // ADR's "validation gates on auto-save" item; landed in PR κ.
+  setAutoSaveValidator: (fn: ((version: ContentVersion) => boolean) | null) => void;
 }
 
 // Carries the per-mount Zustand store + the imperative methods +
@@ -110,6 +118,7 @@ interface BuilderProviderContextValue {
     fetchContentAndVersion: BuilderContextProps['fetchContentAndVersion'];
     createStep: BuilderContextProps['createStep'];
     createNewStep: BuilderContextProps['createNewStep'];
+    setAutoSaveValidator: BuilderContextProps['setAutoSaveValidator'];
   };
   config: {
     webHost: string;
@@ -438,6 +447,19 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     [createStep],
   );
 
+  // Per-type auto-save validator. Per-type editors call
+  // setAutoSaveValidator on mount to register a predicate, clear it
+  // (pass null) on unmount. The auto-save useEffect consults it; a
+  // veto skips THIS auto-save cycle but keeps saveState = 'dirty', so
+  // the user can still explicitly Save (which bypasses) and the leave
+  // guard (PR ε) still prompts on navigation. See Launcher migration
+  // (PR κ) for the canonical use: skip persisting partial action chips
+  // while the user is still filling them out.
+  const autoSaveValidatorRef = useRef<((version: ContentVersion) => boolean) | null>(null);
+  const setAutoSaveValidator = useCallback((fn: ((version: ContentVersion) => boolean) | null) => {
+    autoSaveValidatorRef.current = fn;
+  }, []);
+
   // Ref-stable wrappers for every imperative method exposed via
   // useBuilderContext. Each underlying useCallback's deps include
   // Apollo hook return refs (useAddContentStepsMutation,
@@ -459,6 +481,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     saveContent,
     createStep,
     createNewStep,
+    setAutoSaveValidator,
   });
   methodsRef.current = {
     updateCurrentStep,
@@ -467,6 +490,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     saveContent,
     createStep,
     createNewStep,
+    setAutoSaveValidator,
   };
   const stableMethods = useMemo<BuilderProviderContextValue['methods']>(
     () => ({
@@ -476,6 +500,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       saveContent: () => methodsRef.current.saveContent(),
       createStep: (cv, step) => methodsRef.current.createStep(cv, step),
       createNewStep: (cv, seq, type, dup) => methodsRef.current.createNewStep(cv, seq, type, dup),
+      setAutoSaveValidator: (fn) => methodsRef.current.setAutoSaveValidator(fn),
     }),
     [],
   );
@@ -499,6 +524,14 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         .transitionSaveState((prev) =>
           prev.status === 'dirty' || prev.status === 'saving' ? prev : { status: 'dirty' },
         );
+      // Per-type validator veto (PR κ): keep saveState dirty but skip
+      // this auto-save cycle. Explicit Save (saveContent called from
+      // a button) bypasses this — it goes straight to saveContent,
+      // not through this useEffect.
+      const validator = autoSaveValidatorRef.current;
+      if (validator && !validator(currentVersion)) {
+        return;
+      }
       void stableMethods.saveContent();
     }
   }, [currentVersion, backupVersion, store, stableMethods]);
@@ -650,6 +683,7 @@ export function useBuilderContext(): BuilderContextProps {
     fetchContentAndVersion: ctx.methods.fetchContentAndVersion,
     createStep: ctx.methods.createStep,
     createNewStep: ctx.methods.createNewStep,
+    setAutoSaveValidator: ctx.methods.setAutoSaveValidator,
     webHost: ctx.config.webHost,
     usertourjsUrl: ctx.config.usertourjsUrl,
     isWebBuilder: ctx.config.isWebBuilder,

@@ -1,9 +1,9 @@
 import { GearIcon } from '@radix-ui/react-icons';
 import { ElementIcon } from '@usertour/icons';
-import { useLauncherContext } from '../../../contexts';
+import { useLauncherEditor } from '../use-launcher-editor';
 
 export const LauncherTargetPreview = () => {
-  const { gotoLauncherTarget } = useLauncherContext();
+  const { gotoLauncherTarget } = useLauncherEditor();
 
   return (
     <div className="space-y-3">

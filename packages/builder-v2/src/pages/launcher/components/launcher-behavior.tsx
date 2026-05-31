@@ -25,8 +25,9 @@ import {
   RulesCondition,
 } from '@usertour/types';
 import { useCallback } from 'react';
-import { useBuilderContext, useLauncherContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
 import { BuilderMode } from '../../../contexts';
+import { useLauncherEditor } from '../use-launcher-editor';
 
 interface TriggerDropdownProps {
   value: string;
@@ -74,7 +75,11 @@ export const LauncherBehavior = () => {
   const { setCurrentMode, zIndex, currentVersion } = useBuilderContext();
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
-  const { localData, updateLocalDataBehavior, setLauncherTooltip } = useLauncherContext();
+  const {
+    data: localData,
+    updateDataBehavior: updateLocalDataBehavior,
+    setLauncherTooltip,
+  } = useLauncherEditor();
   const { t } = useTranslation();
 
   const handleStateChange = useCallback(

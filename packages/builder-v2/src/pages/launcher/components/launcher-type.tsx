@@ -2,10 +2,12 @@ import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { Input } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
 import { LauncherContentType, IconPicker } from '../../../components/';
-import { useLauncherContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
+import { useLauncherEditor } from '../use-launcher-editor';
 
 export const LauncherType = () => {
-  const { updateLocalData, zIndex, localData } = useLauncherContext();
+  const { updateData: updateLocalData, data: localData } = useLauncherEditor();
+  const { zIndex } = useBuilderContext();
   const sidebarZIndex = zIndex + EXTENSION_SIDEBAR_MAIN;
 
   if (!localData) {

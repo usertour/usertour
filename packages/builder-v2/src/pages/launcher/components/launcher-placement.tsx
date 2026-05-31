@@ -3,7 +3,8 @@ import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import { useEffect } from 'react';
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
-import { BuilderMode, useBuilderContext, useLauncherContext } from '../../../contexts';
+import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { useLauncherEditor } from '../use-launcher-editor';
 
 export const LauncherPlacement = () => {
   const {
@@ -15,7 +16,7 @@ export const LauncherPlacement = () => {
     isWebBuilder,
     setCurrentMode,
   } = useBuilderContext();
-  const { setLauncherTarget, launcherTarget } = useLauncherContext();
+  const { setLauncherTarget, launcherTarget } = useLauncherEditor();
 
   const handleTargetChange = (element: ElementSelectorPropsData) => {
     setLauncherTarget((prev) =>

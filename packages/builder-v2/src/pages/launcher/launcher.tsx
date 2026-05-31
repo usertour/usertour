@@ -3,29 +3,32 @@
 import { useAttributeList } from '../../hooks/use-attribute-list';
 import { useContentList } from '../../hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
-import { LauncherActionType } from '@usertour/types';
+import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
-import { BuilderMode, useBuilderContext, useLauncherContext } from '../../contexts';
+import { BuilderMode, useBuilderContext } from '../../contexts';
 import { LauncherBuilderEmbed } from './components/launcher-embed';
 import { LauncherCore } from './launcher-core';
 import { LauncherTarget } from './launcher-target';
 import { LauncherTooltip } from './launcher-tooltip';
 
-// Register the launcher-context save validator at the route level so it
-// survives subpage switches (LAUNCHER ↔ LAUNCHER_TARGET ↔ LAUNCHER_TOOLTIP).
-// LauncherBehavior previously owned this, but it unmounts when the user
-// enters tooltip or target mode — any save dispatched from those subpages
-// would then bypass the gate. LauncherBuilder is always mounted while in
-// the launcher route and sits inside both AttributeListProvider and
-// ContentListProvider, so it can supply the ValidateContext.
+// Register the auto-save validator at the route level so it survives
+// subpage switches (LAUNCHER ↔ LAUNCHER_TARGET ↔ LAUNCHER_TOOLTIP).
+// LauncherBuilder is always mounted while in the launcher route — it
+// sits inside both AttributeListProvider and ContentListProvider, so
+// the validation closure has access to ValidateContext data.
+// Phase 1 ADR's "validation gates on auto-save" item: vetoes auto-
+// save when an action chip is incomplete, keeping saveState dirty
+// so the leave guard still prompts but the server isn't polluted.
+// Explicit Save (Save button) bypasses the gate.
 const useRegisterLauncherSaveValidator = () => {
-  const { setSaveValidator } = useLauncherContext();
+  const { setAutoSaveValidator, currentVersion } = useBuilderContext();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { currentVersion } = useBuilderContext();
 
   useEffect(() => {
-    setSaveValidator((data) => {
+    setAutoSaveValidator((version) => {
+      const data = version.data as LauncherData | undefined;
+      if (!data) return true;
       // Only the perform-action behavior surfaces an action list. In tooltip
       // mode the chips are hidden and any residue on data.behavior.actions
       // would block legitimate tooltip saves, so skip validation entirely.
@@ -41,8 +44,8 @@ const useRegisterLauncherSaveValidator = () => {
         }).length === 0
       );
     });
-    return () => setSaveValidator(null);
-  }, [setSaveValidator, attributeList, contents, currentVersion]);
+    return () => setAutoSaveValidator(null);
+  }, [setAutoSaveValidator, attributeList, contents, currentVersion]);
 };
 
 export const LauncherBuilder = () => {

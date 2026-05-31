@@ -4,13 +4,13 @@ import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { ContentAlignment } from '../../components/content-alignment';
-import { useLauncherContext } from '../../contexts';
+import { useLauncherEditor } from './use-launcher-editor';
 import { SidebarContainer } from '../sidebar';
 import { LauncherPlacement } from './components/launcher-placement';
 import { useCallback } from 'react';
 
 const LauncherTargetHeader = () => {
-  const { backToLauncher, setLauncherTarget } = useLauncherContext();
+  const { backToLauncher, setLauncherTarget } = useLauncherEditor();
 
   const handleBackToLauncher = () => {
     backToLauncher();
@@ -35,7 +35,7 @@ const LauncherTargetHeader = () => {
 };
 
 const LauncherTargetBody = () => {
-  const { launcherTarget, setLauncherTarget } = useLauncherContext();
+  const { launcherTarget, setLauncherTarget } = useLauncherEditor();
 
   if (!launcherTarget) {
     return null;
@@ -66,8 +66,13 @@ const LauncherTargetBody = () => {
 };
 
 const LauncherTargetFooter = () => {
-  const { isLoading, launcherTarget, backToLauncher, updateLocalData, setLauncherTarget } =
-    useLauncherContext();
+  const {
+    isLoading,
+    launcherTarget,
+    backToLauncher,
+    updateData: updateLocalData,
+    setLauncherTarget,
+  } = useLauncherEditor();
 
   const handleSave = useCallback(() => {
     if (launcherTarget) {

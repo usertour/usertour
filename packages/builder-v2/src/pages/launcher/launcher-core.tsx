@@ -2,7 +2,8 @@
 
 import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { LauncherActionType } from '@usertour/types';
-import { useBuilderContext, useLauncherContext } from '../../contexts';
+import { useBuilderContext } from '../../contexts';
+import { useLauncherEditor } from './use-launcher-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
@@ -41,8 +42,8 @@ const LauncherCoreHeader = () => {
 };
 
 const LauncherCoreFooter = () => {
-  const { isLoading, onSaved } = useBuilderContext();
-  const { flushSave, localData } = useLauncherContext();
+  const { isLoading, onSaved, saveContent } = useBuilderContext();
+  const { data: localData } = useLauncherEditor();
   const actionsGate = useActionsSaveGate();
 
   const handleSave = async () => {
@@ -57,7 +58,7 @@ const LauncherCoreFooter = () => {
     ) {
       return;
     }
-    await flushSave();
+    await saveContent();
     await onSaved?.();
   };
 

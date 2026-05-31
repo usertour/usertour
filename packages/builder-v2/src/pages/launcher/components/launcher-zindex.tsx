@@ -1,8 +1,8 @@
 import { Input } from '@usertour/ui';
-import { useLauncherContext } from '../../../contexts';
+import { useLauncherEditor } from '../use-launcher-editor';
 
 export const LauncherZIndex = () => {
-  const { updateLocalData, localData } = useLauncherContext();
+  const { updateData: updateLocalData, data: localData } = useLauncherEditor();
 
   if (!localData) {
     return null;

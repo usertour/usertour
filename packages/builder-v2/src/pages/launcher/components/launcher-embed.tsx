@@ -3,8 +3,9 @@ import { ContentEditorRoot } from '@usertour/editor';
 import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useBuilderContext, useLauncherContext } from '../../../contexts';
+import { useBuilderContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
+import { useLauncherEditor } from '../use-launcher-editor';
 import { LauncherContentMain } from './launcher-content';
 import { PlusIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
@@ -17,8 +18,12 @@ export const LauncherBuilderEmbed = () => {
   const [theme, setTheme] = useState<Theme | undefined>();
   const { zIndex, currentVersion } = useBuilderContext();
   const { themeList } = useThemeList();
-  const { localData, updateLocalDataTooltip, launcherTarget, launcherTooltip } =
-    useLauncherContext();
+  const {
+    data: localData,
+    updateDataTooltip: updateLocalDataTooltip,
+    launcherTarget,
+    launcherTooltip,
+  } = useLauncherEditor();
   const { upload } = useAws();
 
   useEffect(() => {
