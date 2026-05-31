@@ -3,7 +3,7 @@ import { ContentEditorRoot } from '@usertour/editor';
 import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useBuilderContext } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { useLauncherEditor } from '../use-launcher-editor';
 import { LauncherContentMain } from './launcher-content';
@@ -16,7 +16,8 @@ const centerClasses =
 export const LauncherBuilderEmbed = () => {
   const triggerRef = useRef<any>();
   const [theme, setTheme] = useState<Theme | undefined>();
-  const { zIndex, currentVersion } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { themeList } = useThemeList();
   const {
     data: localData,

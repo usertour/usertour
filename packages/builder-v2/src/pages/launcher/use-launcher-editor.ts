@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { LauncherData } from '@usertour/types';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderStore } from '../../contexts';
 import { useTypeEditor } from '../../hooks/use-type-editor';
 import { launcherTypeConfig, type LauncherUIState } from './launcher-config';
 
@@ -31,7 +31,7 @@ export interface UseLauncherEditorReturn {
 
 export const useLauncherEditor = (): UseLauncherEditorReturn => {
   const editor = useTypeEditor(launcherTypeConfig);
-  const { setCurrentMode } = useBuilderContext();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
 
   const data = editor.data;
   const uiState = editor.uiState;

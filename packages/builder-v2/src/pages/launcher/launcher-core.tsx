@@ -2,7 +2,7 @@
 
 import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { LauncherActionType } from '@usertour/types';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { useLauncherEditor } from './use-launcher-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { SidebarContainer } from '../sidebar';
@@ -31,7 +31,7 @@ const LauncherCoreBody = () => {
 };
 
 const LauncherCoreHeader = () => {
-  const { currentContent } = useBuilderContext();
+  const currentContent = useBuilderStore((state) => state.currentContent);
   return (
     <CardHeader className="flex-none p-4 space-y-3">
       <CardTitle className="flex h-8	">
@@ -42,7 +42,13 @@ const LauncherCoreHeader = () => {
 };
 
 const LauncherCoreFooter = () => {
-  const { isLoading, onSaved, saveContent } = useBuilderContext();
+  // isLoading merges initial-content load + save-in-flight (legacy
+  // overload). Per docs/conventions/builder-context-migration.md.
+  const isLoading = useBuilderStore(
+    (state) => state.isLoading || state.saveState.status === 'saving',
+  );
+  const { onSaved } = useBuilderConfig();
+  const { saveContent } = useBuilderMethods();
   const { data: localData } = useLauncherEditor();
   const actionsGate = useActionsSaveGate();
 

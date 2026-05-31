@@ -3,19 +3,16 @@ import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import { useEffect } from 'react';
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
-import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useLauncherEditor } from '../use-launcher-editor';
 
 export const LauncherPlacement = () => {
-  const {
-    isShowError,
-    currentMode,
-    selectorOutput,
-    zIndex,
-    currentContent,
-    isWebBuilder,
-    setCurrentMode,
-  } = useBuilderContext();
+  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const isShowError = useBuilderStore((state) => state.isShowError);
+  const currentMode = useBuilderStore((state) => state.currentMode);
+  const selectorOutput = useBuilderStore((state) => state.selectorOutput);
+  const currentContent = useBuilderStore((state) => state.currentContent);
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { setLauncherTarget, launcherTarget } = useLauncherEditor();
 
   const handleTargetChange = (element: ElementSelectorPropsData) => {

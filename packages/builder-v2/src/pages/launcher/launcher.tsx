@@ -5,7 +5,7 @@ import { useContentList } from '../../hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { LauncherBuilderEmbed } from './components/launcher-embed';
 import { LauncherCore } from './launcher-core';
 import { LauncherTarget } from './launcher-target';
@@ -21,7 +21,8 @@ import { LauncherTooltip } from './launcher-tooltip';
 // so the leave guard still prompts but the server isn't polluted.
 // Explicit Save (Save button) bypasses the gate.
 const useRegisterLauncherSaveValidator = () => {
-  const { setAutoSaveValidator, currentVersion } = useBuilderContext();
+  const { setAutoSaveValidator } = useBuilderMethods();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
 
@@ -49,7 +50,7 @@ const useRegisterLauncherSaveValidator = () => {
 };
 
 export const LauncherBuilder = () => {
-  const { currentMode } = useBuilderContext();
+  const currentMode = useBuilderStore((state) => state.currentMode);
   useRegisterLauncherSaveValidator();
   return (
     <>

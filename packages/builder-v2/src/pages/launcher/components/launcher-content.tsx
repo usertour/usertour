@@ -18,7 +18,7 @@ import {
   Theme,
 } from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
-import { useBuilderContext } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useAttributeList } from '../../../hooks/use-attribute-list';
 export interface LauncherContentProps {
   zIndex: number;
@@ -33,7 +33,8 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
   (props: LauncherContentProps, ref) => {
     const { zIndex, triggerRef, theme, data, onValueChange, onCustomUploadRequest } = props;
     const launcherRef = useRef<HTMLDivElement>(null);
-    const { projectId, shouldShowMadeWith = true } = useBuilderContext();
+    const { shouldShowMadeWith = true } = useBuilderConfig();
+    const projectId = useBuilderStore((state) => state.projectId);
 
     const { attributeList } = useAttributeList();
     const triggerReference = useMemo(

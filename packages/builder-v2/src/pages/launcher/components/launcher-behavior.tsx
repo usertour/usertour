@@ -25,7 +25,7 @@ import {
   RulesCondition,
 } from '@usertour/types';
 import { useCallback } from 'react';
-import { useBuilderContext } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { BuilderMode } from '../../../contexts';
 import { useLauncherEditor } from '../use-launcher-editor';
 
@@ -72,7 +72,9 @@ const TRIGGER_EVENT_OPTIONS = [
 ] as const;
 
 export const LauncherBehavior = () => {
-  const { setCurrentMode, zIndex, currentVersion } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
   const {

@@ -7,7 +7,7 @@ import { SpinnerIcon } from '@usertour/icons';
 import { LauncherData } from '@usertour/types';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentWidth } from '../../components/content-width';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig } from '../../contexts';
 import { useLauncherEditor } from './use-launcher-editor';
 import { SidebarContainer } from '../sidebar';
 import { LauncherPosition } from './components/launcher-position';
@@ -41,7 +41,7 @@ const LauncherTooltipHeader = () => {
 
 const LauncherTooltipBody = () => {
   const { launcherTooltip, setLauncherTooltip } = useLauncherEditor();
-  const { zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
 
   const updateLauncherTooltip = (updates: Partial<LauncherData['tooltip']>) => {
     setLauncherTooltip((prev) => {
