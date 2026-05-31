@@ -18,7 +18,7 @@ import {
 
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
-import { useBuilderContext } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useBannerEditor } from '../use-banner-editor';
 
 const EMBED_PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; label: string }[] = [
@@ -42,7 +42,9 @@ const EMBED_PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; label: string }[] 
 const labelStyles = 'flex justify-start items-center space-x-1';
 
 export const BannerEmbedPlacementSelect = () => {
-  const { zIndex, isShowError, isWebBuilder, currentContent } = useBuilderContext();
+  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const isShowError = useBuilderStore((state) => state.isShowError);
+  const currentContent = useBuilderStore((state) => state.currentContent);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
   const handleTargetChange = useCallback(

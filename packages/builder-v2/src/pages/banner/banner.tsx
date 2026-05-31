@@ -2,7 +2,7 @@
 
 import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { SidebarContainer } from '../sidebar/sidebar-container';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
@@ -30,7 +30,7 @@ const BannerBuilderBody = () => {
 };
 
 const BannerBuilderHeader = () => {
-  const { currentContent } = useBuilderContext();
+  const currentContent = useBuilderStore((state) => state.currentContent);
   return (
     <CardHeader className="flex-none p-4 space-y-3">
       <CardTitle className="flex h-8">
@@ -41,7 +41,13 @@ const BannerBuilderHeader = () => {
 };
 
 const BannerBuilderFooter = () => {
-  const { isLoading, onSaved, saveContent } = useBuilderContext();
+  // isLoading merges initial-content load + save-in-flight (legacy
+  // overload). Per docs/conventions/builder-context-migration.md.
+  const isLoading = useBuilderStore(
+    (state) => state.isLoading || state.saveState.status === 'saving',
+  );
+  const { onSaved } = useBuilderConfig();
+  const { saveContent } = useBuilderMethods();
 
   const handleSave = async () => {
     // saveContent is idempotent — bails if not dirty — and awaits the

@@ -3,14 +3,19 @@ import { useStore } from 'zustand';
 import type { BuilderContextProps } from './builder-context-types';
 import { BuilderProviderContext } from './builder-provider';
 
-// Legacy adapter — returns the full context shape that the existing
-// consumers (~100 files) destructure from. Subscribes to the whole
-// store state so consumers re-render on any state change.
-//
-// Migrating hot consumers to `useBuilderStore(selector)` is a
-// follow-up perf step; this hook stays around indefinitely as the
-// stable public surface for shared component code that doesn't want
-// to think about selector ergonomics.
+/**
+ * @deprecated Subscribes to the whole store, so every consumer
+ * re-renders on any state change. Migrate to one of:
+ *   - `useBuilderStore(s => s.X)` for state fields
+ *   - `useBuilderMethods()` for imperative methods (saveContent /
+ *     initContent / fetchContentAndVersion / setAutoSaveValidator)
+ *   - `useBuilderConfig()` for static config (zIndex / isWebBuilder /
+ *     webHost / usertourjsUrl / onSaved / shouldShowMadeWith)
+ *   - `useBuilderContentRef()` for the Provider-owned content <div> ref
+ *
+ * See docs/conventions/builder-context-migration.md for the per-field
+ * mapping and the page-by-page migration order.
+ */
 export const useBuilderContext = (): BuilderContextProps => {
   const ctx = useContext(BuilderProviderContext);
   if (!ctx) {

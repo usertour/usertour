@@ -1,5 +1,5 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
-import { useBuilderContext, useBuilderStore } from '../contexts/builder-context';
+import { useBuilderStore } from '../contexts/builder-context';
 import type { BuilderTypeConfig } from '../types/builder-type-config';
 
 // Ties a BuilderTypeConfig into the Zustand store + Save FSM. Per-type
@@ -13,8 +13,9 @@ import type { BuilderTypeConfig } from '../types/builder-type-config';
 //              updateContentVersion server-side.
 // uiState    — per-type UI cursor / buffer; pure local useState,
 //              not persisted.
-// isLoading  — derived from useBuilderContext (PR γ already merges
-//              save-in-flight into isLoading for legacy consumers).
+// isLoading  — merges initial-content load + save-in-flight, mirroring
+//              the legacy useBuilderContext().isLoading overload that
+//              per-type save buttons / form-disable bindings rely on.
 
 export interface UseTypeEditorReturn<TData, TUIState> {
   data: TData | undefined;
@@ -36,7 +37,9 @@ export interface UseTypeEditorReturn<TData, TUIState> {
 export const useTypeEditor = <TData, TUIState = undefined>(
   config: BuilderTypeConfig<TData, TUIState>,
 ): UseTypeEditorReturn<TData, TUIState> => {
-  const { isLoading } = useBuilderContext();
+  const isLoading = useBuilderStore(
+    (state) => state.isLoading || state.saveState.status === 'saving',
+  );
   const rawData = useBuilderStore((state) => state.currentVersion?.data) as TData | undefined;
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
 
@@ -65,9 +68,7 @@ export const useTypeEditor = <TData, TUIState = undefined>(
       });
     },
     // Config is required to be stable (see CONFIG STABILITY comment),
-    // so we intentionally omit it from the dep array — same approach
-    // as PR α's makeSetter helpers.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: stable config required
+    // so it's intentionally omitted from the dep array.
     [setCurrentVersion],
   );
 
