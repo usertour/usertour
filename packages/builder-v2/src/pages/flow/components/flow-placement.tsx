@@ -1,6 +1,7 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/ui';
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useContentList } from '../../../hooks/use-content-list';
 import { getAuthToken } from '@usertour/helpers';
 import { window } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
@@ -24,8 +25,8 @@ export const FlowPlacement = () => {
     currentVersion,
   } = useBuilderContext();
 
-  const { contents } = useContentListContext();
-  const { attributeList } = useAttributeListContext();
+  const { contents } = useContentList();
+  const { attributeList } = useAttributeList();
 
   const handleTargetChange = (target: ElementSelectorPropsData) => {
     updateCurrentStep((pre) => ({

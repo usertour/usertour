@@ -1,17 +1,12 @@
 import { ReactNode, createContext, useContext } from 'react';
-import {
-  AttributeListProvider,
-  useAttributeListContext,
-  useContentListContext,
-  useThemeListContext,
-} from '@usertour/contexts';
-import { ContentListProvider } from '@usertour/contexts';
-import { ThemeListProvider } from '@usertour/contexts';
 import { BannerProvider } from './banner-context';
 import { BuilderProvider } from './builder-context';
 import { ChecklistProvider } from './checklist-context';
 import { LauncherProvider } from './launcher-context';
 import { ResourceCenterProvider } from './resource-center-context';
+import { useAttributeList } from '../hooks/use-attribute-list';
+import { useContentList } from '../hooks/use-content-list';
+import { useThemeList } from '../hooks/use-theme-list';
 
 export interface WebBuilderProviderProps {
   children: ReactNode;
@@ -31,11 +26,15 @@ export interface WebBuilderProviderValue {
 
 const WebBuilderProviderContext = createContext<WebBuilderProviderValue | undefined>(undefined);
 
-// Inner component to access builder context and provide loading state
+// Aggregates the loading state of the three upstream data hooks (theme
+// / attribute / content list). Replaces what used to be three nested
+// `<XxxListProvider>` wrappers — the hooks read projectId / environmentId
+// from the Zustand store and Apollo's normalized cache deduplicates
+// requests across every other consumer in the builder tree.
 function WebBuilderContent({ children }: { children: ReactNode }) {
-  const { loading: attributeListLoading } = useAttributeListContext();
-  const { loading: contentListLoading } = useContentListContext();
-  const { loading: themeListLoading } = useThemeListContext();
+  const { loading: themeListLoading } = useThemeList();
+  const { loading: attributeListLoading } = useAttributeList();
+  const { loading: contentListLoading } = useContentList();
 
   const value: WebBuilderProviderValue = {
     isLoading: attributeListLoading || contentListLoading || themeListLoading,
@@ -49,7 +48,7 @@ function WebBuilderContent({ children }: { children: ReactNode }) {
 }
 
 export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element {
-  const { children, environmentId, projectId, onSaved, usertourjsUrl, shouldShowMadeWith } = props;
+  const { children, onSaved, usertourjsUrl, shouldShowMadeWith } = props;
 
   return (
     <BuilderProvider
@@ -62,22 +61,7 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
         <LauncherProvider>
           <ChecklistProvider>
             <ResourceCenterProvider>
-              <ThemeListProvider projectId={projectId}>
-                <AttributeListProvider projectId={projectId}>
-                  <ContentListProvider
-                    environmentId={environmentId}
-                    key={'environmentId'}
-                    contentType={undefined}
-                    defaultQuery={{}}
-                    defaultPagination={{
-                      pageSize: 1000,
-                      pageIndex: 0,
-                    }}
-                  >
-                    <WebBuilderContent>{children}</WebBuilderContent>
-                  </ContentListProvider>
-                </AttributeListProvider>
-              </ThemeListProvider>
+              <WebBuilderContent>{children}</WebBuilderContent>
             </ResourceCenterProvider>
           </ChecklistProvider>
         </LauncherProvider>

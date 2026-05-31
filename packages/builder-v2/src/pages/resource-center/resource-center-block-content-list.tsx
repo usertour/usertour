@@ -27,7 +27,7 @@ import {
   Switch,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
 import {
   ChecklistIcon,
   CloseIcon,
@@ -156,7 +156,7 @@ interface BlockContentListBodyProps {
 
 const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
   const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
@@ -619,7 +619,7 @@ interface ContentListItemEditorBodyProps {
 
 const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps) => {
   const { currentBlock, setCurrentBlock, zIndex } = useResourceCenterContext();
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);

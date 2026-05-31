@@ -1,4 +1,4 @@
-import { useThemeListContext } from '@usertour/contexts';
+import { useThemeList } from '../../../hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
 import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
@@ -16,7 +16,7 @@ export const LauncherBuilderEmbed = () => {
   const triggerRef = useRef<any>();
   const [theme, setTheme] = useState<Theme | undefined>();
   const { zIndex, currentVersion } = useBuilderContext();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
   const { localData, updateLocalDataTooltip, launcherTarget, launcherTooltip } =
     useLauncherContext();
   const { upload } = useAws();

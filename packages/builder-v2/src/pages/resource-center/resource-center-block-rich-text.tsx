@@ -13,7 +13,8 @@ import {
   Switch,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useContentList } from '../../hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
@@ -49,8 +50,8 @@ const BlockMessageHeader = () => {
 
 const BlockMessageBody = () => {
   const { currentBlock, setCurrentBlock } = useResourceCenterContext();
-  const { attributeList } = useAttributeListContext();
-  const { contents } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents } = useContentList();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);

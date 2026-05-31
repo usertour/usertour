@@ -13,7 +13,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
-import { useContentListContext } from '@usertour/contexts';
+import { useContentList } from '../../hooks/use-content-list';
 import { updateContentStep } from '@usertour/gql';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage, hasError } from '@usertour/helpers';
@@ -69,7 +69,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
     setCurrentMode,
   } = useBuilderContext();
 
-  const { contents } = useContentListContext();
+  const { contents } = useContentList();
   const { showError, setShowError } = useTriggerContext();
   const { token } = useToken();
   const emptyTrigger = { conditions: [], actions: [] };

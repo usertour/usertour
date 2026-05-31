@@ -13,7 +13,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { EXTENSION_SELECT, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour/constants';
-import { useThemeListContext } from '@usertour/contexts';
+import { useThemeList } from '../../hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 
@@ -24,7 +24,7 @@ import { useBuilderContext } from '../../contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
 
 export const SidebarTheme = () => {
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
   const [updateContentVersionMutation] = useMutation(updateContentVersion);
   const { toast } = useToast();
   const {

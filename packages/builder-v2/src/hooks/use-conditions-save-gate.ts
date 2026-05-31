@@ -1,5 +1,6 @@
 import { validateConditions } from '@usertour/business-components';
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from './use-attribute-list';
+import { useContentList } from './use-content-list';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
@@ -22,8 +23,8 @@ import { useBuilderContext } from '../contexts';
 export function useConditionsSaveGate() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { attributeList } = useAttributeListContext();
-  const { contents } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents } = useContentList();
   const { environmentId, projectId } = useBuilderContext();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);

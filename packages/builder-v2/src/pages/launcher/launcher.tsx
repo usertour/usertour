@@ -1,6 +1,7 @@
 'use client';
 
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useContentList } from '../../hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
 import { LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
@@ -19,8 +20,8 @@ import { LauncherTooltip } from './launcher-tooltip';
 // ContentListProvider, so it can supply the ValidateContext.
 const useRegisterLauncherSaveValidator = () => {
   const { setSaveValidator } = useLauncherContext();
-  const { attributeList } = useAttributeListContext();
-  const { contents } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents } = useContentList();
   const { currentVersion } = useBuilderContext();
 
   useEffect(() => {

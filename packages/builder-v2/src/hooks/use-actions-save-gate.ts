@@ -1,4 +1,5 @@
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from './use-attribute-list';
+import { useContentList } from './use-content-list';
 import { validateActions } from '@usertour/editor';
 import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
@@ -15,8 +16,8 @@ import { useBuilderContext } from '../contexts';
 export function useActionsSaveGate() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { attributeList } = useAttributeListContext();
-  const { contents } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents } = useContentList();
   const { currentVersion, currentStep } = useBuilderContext();
 
   return useCallback(

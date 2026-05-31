@@ -13,7 +13,8 @@ import {
   Switch,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useContentList } from '../../hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
 import { Actions } from '@usertour/editor';
@@ -57,8 +58,8 @@ const ChecklistItemHeader = () => {
 
 const ChecklistItemBody = () => {
   const { currentItem, setCurrentItem, zIndex } = useChecklistContext();
-  const { attributeList } = useAttributeListContext();
-  const { contents } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents } = useContentList();
   const { environmentId, projectId } = useBuilderContext();
   const formPrefix = useId();
   const { token } = useToken();

@@ -13,7 +13,7 @@ import {
   Label,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
@@ -58,7 +58,7 @@ const BlockSubPageHeader = () => {
 
 const BlockSubPageBody = () => {
   const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);

@@ -1,4 +1,4 @@
-import { useThemeListContext } from '@usertour/contexts';
+import { useThemeList } from './use-theme-list';
 import { Theme } from '@usertour/types';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';
@@ -17,7 +17,7 @@ interface UseCurrentThemeOptions {
 export function useCurrentTheme(options: UseCurrentThemeOptions = {}): Theme | undefined {
   const { fallbackToDefault = false } = options;
   const { currentStep, currentVersion } = useBuilderContext();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
 
   return useMemo(() => {
     if (!themeList || themeList.length === 0) return undefined;

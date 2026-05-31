@@ -1,4 +1,4 @@
-import { useThemeListContext } from '@usertour/contexts';
+import { useThemeList } from '../hooks/use-theme-list';
 import { useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../contexts';
 import { WebBuilderProvider, useWebBuilderProvider } from '../contexts/web-builder-provider';
@@ -12,7 +12,7 @@ import { BuilderSideBar } from '../pages/sidebar';
 
 const Container = () => {
   const { currentMode, currentVersion, setCurrentTheme } = useBuilderContext();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
 
   useEffect(() => {
     if (!currentVersion) {

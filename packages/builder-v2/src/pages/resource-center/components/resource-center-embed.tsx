@@ -1,5 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
-import { useAttributeListContext, useThemeListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useThemeList } from '../../../hooks/use-theme-list';
 import {
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -37,7 +38,7 @@ const ResourceCenterEmbedContent = ({
   const { localData, updateBlock } = useResourceCenterContext();
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
 
   const handleCustomUploadRequest = useCallback(
     (file: File): Promise<string> => upload(file),
@@ -100,14 +101,14 @@ export const ResourceCenterEmbed = () => {
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
   const [expanded, setExpanded] = useState(true);
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
   const {
     currentVersion,
     projectId,
     environmentId,
     shouldShowMadeWith = true,
   } = useBuilderContext();
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
 
   // Query flows and checklists for content list block preview
   const { contents: flowContents } = useContentListQuery({

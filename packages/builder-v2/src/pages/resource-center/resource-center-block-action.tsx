@@ -12,7 +12,8 @@ import {
   Label,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useContentList } from '../../hooks/use-content-list';
 import { Actions, PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { SpinnerIcon } from '@usertour/icons';
@@ -63,8 +64,8 @@ const BlockActionHeader = () => {
 
 const BlockActionBody = () => {
   const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
-  const { attributeList } = useAttributeListContext();
-  const { contents } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents } = useContentList();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);

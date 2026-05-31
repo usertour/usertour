@@ -1,5 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useContentList } from '../../../hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
 import { ContentEditor } from '@usertour/editor';
@@ -27,8 +28,8 @@ export const BannerEmbed = () => {
   const { localData, updateLocalData } = useBannerContext();
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
-  const { attributeList } = useAttributeListContext();
-  const { contents: contentList } = useContentListContext();
+  const { attributeList } = useAttributeList();
+  const { contents: contentList } = useContentList();
 
   const wrapperRect = useSize(wrapperEl);
 

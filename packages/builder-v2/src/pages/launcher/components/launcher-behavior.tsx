@@ -1,7 +1,7 @@
 import { ChevronDownIcon, GearIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeListContext } from '@usertour/contexts';
-import { useContentListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useContentList } from '../../../hooks/use-content-list';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,8 +72,8 @@ const TRIGGER_EVENT_OPTIONS = [
 
 export const LauncherBehavior = () => {
   const { setCurrentMode, zIndex, currentVersion } = useBuilderContext();
-  const { contents } = useContentListContext();
-  const { attributeList } = useAttributeListContext();
+  const { contents } = useContentList();
+  const { attributeList } = useAttributeList();
   const { localData, updateLocalDataBehavior, setLauncherTooltip } = useLauncherContext();
   const { t } = useTranslation();
 

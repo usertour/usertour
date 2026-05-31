@@ -1,5 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
-import { useAttributeListContext, useThemeListContext } from '@usertour/contexts';
+import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useThemeList } from '../../../hooks/use-theme-list';
 import { useChecklistPreviewAnimation } from '@usertour/hooks';
 import {
   ChecklistContainer,
@@ -24,12 +25,12 @@ export const ChecklistEmbed = () => {
   const { localData, currentItem, updateLocalData } = useChecklistContext();
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
   const { currentVersion, projectId, shouldShowMadeWith = true } = useBuilderContext();
   const [expanded, setExpanded] = useState(
     localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );
-  const { attributeList } = useAttributeListContext();
+  const { attributeList } = useAttributeList();
 
   // Use shared hook for animation and completion state management
   const { completedItemIds, animatedItemIds, handleItemClick } =

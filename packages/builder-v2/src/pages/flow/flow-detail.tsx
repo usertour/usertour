@@ -41,11 +41,9 @@ import { ContentSettings, ContentSettingsData } from '../../components/content-s
 import { ContentTheme } from '../../components/content-theme';
 import { ContentWidth } from '../../components/content-width';
 import { SidebarMini } from '../sidebar/sidebar-mini';
-import {
-  useAttributeListContext,
-  useContentListContext,
-  useThemeListContext,
-} from '@usertour/contexts';
+import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useContentList } from '../../hooks/use-content-list';
+import { useThemeList } from '../../hooks/use-theme-list';
 import { postProxyMessageToWindow } from '../../utils/post-message';
 import { ContentEditorRoot } from '@usertour/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
@@ -96,7 +94,7 @@ const FlowBuilderDetailHeader = () => {
 const FlowBuilderDetailBody = () => {
   const { zIndex, currentStep, updateCurrentStep, currentTheme, projectId, webHost, isWebBuilder } =
     useBuilderContext();
-  const { themeList } = useThemeListContext();
+  const { themeList } = useThemeList();
 
   // Get the effective theme for the current step (step > version > default)
   const effectiveTheme = useCurrentTheme({ fallbackToDefault: true });
@@ -369,8 +367,8 @@ const FlowBuilderDetailEmbed = () => {
     projectId,
     createNewStep,
   } = useBuilderContext();
-  const { contents } = useContentListContext();
-  const { attributeList } = useAttributeListContext();
+  const { contents } = useContentList();
+  const { attributeList } = useAttributeList();
   const theme = useCurrentTheme({ fallbackToDefault: true });
   const triggerRef = useRef<SVGSVGElement>(null);
 
