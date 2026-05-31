@@ -1,6 +1,14 @@
 import { defaultStep, getErrorMessage, isEqual } from '@usertour/helpers';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
-import { ReactNode, createContext, useCallback, useContext, useEffect, useRef } from 'react';
+import {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useStore } from 'zustand';
 import { useEvent } from 'react-use';
 
@@ -395,27 +403,57 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     [createStep],
   );
 
+  // Ref-stable wrappers for every imperative method exposed via
+  // useBuilderContext. Each underlying useCallback's deps include
+  // Apollo hook return refs (useAddContentStepsMutation,
+  // useGetContentLazyQuery, etc.) that are not ref-stable across
+  // renders — so the useCallbacks themselves don't memoize, and any
+  // consumer that lists one of them in a useEffect / useMemo dep
+  // array would re-fire every render. With state changes (e.g. step
+  // delete makes currentVersion != backupVersion), the re-fire
+  // compounds into an infinite render loop (observed in
+  // FlowBuilderTrigger / ConditionWait / SidebarTheme / ScrollArea
+  // depending on which consumer triggered first). Wrap each method
+  // in a useRef + useMemo-of-`[]` thunk so the exposed identity is
+  // pinned at first render while still dispatching to the latest
+  // closure on every call.
+  const methodsRef = useRef({
+    updateCurrentStep,
+    fetchContentAndVersion,
+    initContent,
+    saveContent,
+    createStep,
+    createNewStep,
+  });
+  methodsRef.current = {
+    updateCurrentStep,
+    fetchContentAndVersion,
+    initContent,
+    saveContent,
+    createStep,
+    createNewStep,
+  };
+  const stableMethods = useMemo<BuilderProviderContextValue['methods']>(
+    () => ({
+      updateCurrentStep: (fn) => methodsRef.current.updateCurrentStep(fn),
+      fetchContentAndVersion: (cid, vid) => methodsRef.current.fetchContentAndVersion(cid, vid),
+      initContent: (msg) => methodsRef.current.initContent(msg),
+      saveContent: () => methodsRef.current.saveContent(),
+      createStep: (cv, step) => methodsRef.current.createStep(cv, step),
+      createNewStep: (cv, seq, type, dup) => methodsRef.current.createNewStep(cv, seq, type, dup),
+    }),
+    [],
+  );
+
   // Auto-save driver: subscribe to currentVersion + backupVersion
   // diff. On dirty → transition saveState to 'dirty' and trigger a
   // save (race-safe via saveCounterRef identity check inside
   // saveContent). On clean (after server round-trip resets
   // backupVersion = currentVersion) → settle saveState back to
   // 'saved' if it was 'saving', otherwise leave error/idle alone.
-  //
-  // `saveContent` is captured via a ref rather than the useEffect
-  // dep array — its useCallback dependencies (Apollo mutation invoke
-  // refs from useAddContentStepsMutation, fetchContentAndVersion's
-  // chain back to useGetContentLazyQuery) are not ref-stable across
-  // renders. Listing it as a dep makes the effect re-fire every
-  // render; once currentVersion != backupVersion (e.g. after a step
-  // delete), each fire transitions saveState and triggers another
-  // render, compounding into an infinite render loop. The ref keeps
-  // the effect's deps narrow to the actual trigger inputs while
-  // always invoking the latest saveContent closure.
+  // Uses stableMethods.saveContent so the effect's deps don't bounce.
   const currentVersion = useStore(store, (s) => s.currentVersion);
   const backupVersion = useStore(store, (s) => s.backupVersion);
-  const saveContentRef = useRef(saveContent);
-  saveContentRef.current = saveContent;
   useEffect(() => {
     if (!currentVersion || !backupVersion) {
       return;
@@ -426,9 +464,9 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         .transitionSaveState((prev) =>
           prev.status === 'dirty' || prev.status === 'saving' ? prev : { status: 'dirty' },
         );
-      void saveContentRef.current();
+      void stableMethods.saveContent();
     }
-  }, [currentVersion, backupVersion, store]);
+  }, [currentVersion, backupVersion, store, stableMethods]);
 
   // beforeunload guard: warn on either "still loading content" (isLoading)
   // or "save in flight / dirty buffer" (saveState). V1 only checked
@@ -473,34 +511,30 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     }
   });
 
-  const providerValue = useRef<BuilderProviderContextValue>();
-  // Refresh the value object on each render so closure-captured methods
-  // see fresh hook returns (useGetContent etc. rebind when Apollo state
-  // changes). Cheap — 114 consumers re-render anyway because they
-  // currently destructure the whole context.
-  providerValue.current = {
-    store,
-    methods: {
-      initContent,
-      saveContent,
-      updateCurrentStep,
-      fetchContentAndVersion,
-      createStep,
-      createNewStep,
-    },
-    config: {
-      webHost,
-      usertourjsUrl,
-      isWebBuilder,
-      onSaved,
-      shouldShowMadeWith,
-      zIndex: 0,
-    },
-    contentRef,
-  };
+  // Provider value is memoized on stableMethods + config so its
+  // identity is pinned for the Provider mount lifetime. Each method
+  // dispatches to the latest closure via methodsRef; the wrapper
+  // refs themselves never change, so consumer useEffect / useMemo
+  // dep arrays that list these methods stay stable across renders.
+  const providerValue = useMemo<BuilderProviderContextValue>(
+    () => ({
+      store,
+      methods: stableMethods,
+      config: {
+        webHost,
+        usertourjsUrl,
+        isWebBuilder,
+        onSaved,
+        shouldShowMadeWith,
+        zIndex: 0,
+      },
+      contentRef,
+    }),
+    [store, stableMethods, webHost, usertourjsUrl, isWebBuilder, onSaved, shouldShowMadeWith],
+  );
 
   return (
-    <BuilderProviderContext.Provider value={providerValue.current}>
+    <BuilderProviderContext.Provider value={providerValue}>
       {children}
     </BuilderProviderContext.Provider>
   );
