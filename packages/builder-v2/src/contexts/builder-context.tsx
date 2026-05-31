@@ -272,16 +272,25 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     [fetchContentAndVersion, isWebBuilder, store],
   );
 
+  // Monotonic counter for in-flight save identity. When a newer save
+  // is dispatched while an older one is still awaiting its response,
+  // the older response is ignored on commit — the server is
+  // idempotent on the (contentId, versionId, steps) payload so
+  // letting both requests complete is fine; only the latest result
+  // is honored. Per-Provider-mount (useRef preserves across renders).
+  const saveCounterRef = useRef(0);
+
   const saveContent = useCallback(async () => {
     const { currentVersion, backupVersion } = store.getState();
     if (!currentVersion || !backupVersion || isEqual(currentVersion, backupVersion)) {
       return;
     }
     debug('saveContent:', currentVersion);
-    if (!currentVersion || !currentVersion.id) {
+    if (!currentVersion.id) {
       return;
     }
-    store.getState().setIsLoading(true);
+    const saveId = ++saveCounterRef.current;
+    store.getState().transitionSaveState({ status: 'saving', saveId });
     const steps = currentVersion.steps
       ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
           ...step,
@@ -296,16 +305,29 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     };
     try {
       const response = await addContentSteps(variables);
+      // Identity check: a newer save has started while this one was
+      // in flight — discard our response. The newer save will drive
+      // the final saveState transition.
+      if (saveId !== saveCounterRef.current) {
+        return;
+      }
       if (response) {
         await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
+        if (saveId === saveCounterRef.current) {
+          store.getState().transitionSaveState({ status: 'saved', savedAt: Date.now() });
+        }
       }
     } catch (error) {
+      if (saveId !== saveCounterRef.current) {
+        return;
+      }
+      const err = error instanceof Error ? error : new Error(getErrorMessage(error));
+      store.getState().transitionSaveState({ status: 'error', error: err });
       toast({
         variant: 'destructive',
         title: getErrorMessage(error),
       });
     }
-    store.getState().setIsLoading(false);
   }, [addContentSteps, fetchContentAndVersion, store, toast]);
 
   const createStep = useCallback(
@@ -365,22 +387,37 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     [createStep],
   );
 
-  // Auto-save: trip on currentVersion / backupVersion diff. Reads
-  // straight from the store so the effect re-fires when either slice
-  // changes (subscribe → set local trigger ref → effect re-runs).
+  // Auto-save driver: subscribe to currentVersion + backupVersion
+  // diff. On dirty → transition saveState to 'dirty' and trigger a
+  // save (race-safe via saveCounterRef identity check inside
+  // saveContent). On clean (after server round-trip resets
+  // backupVersion = currentVersion) → settle saveState back to
+  // 'saved' if it was 'saving', otherwise leave error/idle alone.
   const currentVersion = useStore(store, (s) => s.currentVersion);
   const backupVersion = useStore(store, (s) => s.backupVersion);
   useEffect(() => {
-    if (currentVersion && backupVersion && !isEqual(currentVersion, backupVersion)) {
+    if (!currentVersion || !backupVersion) {
+      return;
+    }
+    if (!isEqual(currentVersion, backupVersion)) {
+      store
+        .getState()
+        .transitionSaveState((prev) =>
+          prev.status === 'dirty' || prev.status === 'saving' ? prev : { status: 'dirty' },
+        );
       void saveContent();
     }
-  }, [currentVersion, backupVersion, saveContent]);
+  }, [currentVersion, backupVersion, saveContent, store]);
 
-  // Warn user when closing page while saving — same beforeunload guard
-  // as V1; reads `isLoading` from store via subscription.
+  // beforeunload guard: warn on either "still loading content" (isLoading)
+  // or "save in flight / dirty buffer" (saveState). V1 only checked
+  // isLoading; PR γ broadens it so the user is also warned about
+  // unsaved local edits that haven't reached the server yet.
   const isLoading = useStore(store, (s) => s.isLoading);
+  const saveState = useStore(store, (s) => s.saveState);
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
-    if (isLoading) {
+    const saveInFlight = saveState.status === 'saving' || saveState.status === 'dirty';
+    if (isLoading || saveInFlight) {
       e.preventDefault();
     }
   });
@@ -428,6 +465,12 @@ export const useBuilderStore = <T,>(selector: (state: BuilderStoreState) => T): 
   return useStore(ctx.store, selector);
 };
 
+// Save FSM accessor — for components that want richer save-status UI
+// (saved-Xs-ago label, error retry button, etc.) than the overloaded
+// boolean `isLoading` exposes. Not yet wired in any consumer; the
+// migration of SidebarFooter to use this is a follow-up commit.
+export const useSaveState = () => useBuilderStore((s) => s.saveState);
+
 // Legacy adapter — returns the full context shape that V1 consumers
 // destructure from. Subscribes to the whole store state so consumers
 // re-render on any state change (same behavior as the old Context
@@ -453,7 +496,11 @@ export function useBuilderContext(): BuilderContextProps {
     setSelectorOutput: state.setSelectorOutput,
     position: state.position,
     setPosition: state.setPosition,
-    isLoading: state.isLoading,
+    // Derived: V1's `isLoading` was overloaded (loading content OR
+    // saving). PR γ pulled saving into saveState; merge them back
+    // here so legacy consumers (SidebarFooter spinner, form disable)
+    // still see `isLoading: true` while a save is in flight.
+    isLoading: state.isLoading || state.saveState.status === 'saving',
     setIsLoading: state.setIsLoading,
     currentLocation: state.currentLocation,
     projectId: state.projectId,

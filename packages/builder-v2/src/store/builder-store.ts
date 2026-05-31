@@ -13,6 +13,24 @@ import { BuilderMode } from '../contexts/builder-mode';
 // (state ⊕ methods ⊕ config) so the 114 existing consumers don't
 // change in this commit; selector-based subscription is a later step.
 
+// Save FSM — discriminated union tracking the auto-save lifecycle.
+// V1 used a single boolean `isLoading` overloaded with two semantics
+// (loading initial content vs saving in flight) plus no in-flight
+// tracking, which gave three race classes: edit-during-save (stale
+// snapshot overwrites new edit on response), multiple concurrent
+// saves (no guard), and unmounted-during-save warnings. PR γ
+// separates "saving" out of isLoading and adds an explicit FSM with
+// per-save identity check (older responses are ignored when a newer
+// save has started). HTTP-level abort isn't attempted — server
+// writes are idempotent, so letting older requests complete and
+// discarding their responses is the correct semantic.
+export type SaveState =
+  | { status: 'idle' }
+  | { status: 'dirty' }
+  | { status: 'saving'; saveId: number }
+  | { status: 'saved'; savedAt: number }
+  | { status: 'error'; error: Error };
+
 export interface BuilderState {
   currentMode: CurrentMode;
   environmentId: string;
@@ -29,6 +47,7 @@ export interface BuilderState {
   isShowError: boolean;
   position: string;
   isLoading: boolean;
+  saveState: SaveState;
 }
 
 // Only setters that the public `BuilderContextProps` API exposes today.
@@ -56,6 +75,9 @@ export interface BuilderStatePrivateSetters {
   setEnvToken: (value: string) => void;
   setCurrentLocation: (value: string) => void;
   setBackupVersion: (value: ContentVersion | undefined) => void;
+  // Save FSM transition. Provider's saveContent is the only writer;
+  // consumers read via `useSaveState()`.
+  transitionSaveState: (next: SaveState | ((prev: SaveState) => SaveState)) => void;
 }
 
 export type BuilderStoreState = BuilderState & BuilderStateSetters & BuilderStatePrivateSetters;
@@ -95,6 +117,7 @@ const initialState: BuilderState = {
   isShowError: false,
   position: 'left',
   isLoading: true,
+  saveState: { status: 'idle' },
 };
 
 export const createBuilderStore = () =>
@@ -115,4 +138,8 @@ export const createBuilderStore = () =>
     setEnvToken: (value) => set({ envToken: value }),
     setCurrentLocation: (value) => set({ currentLocation: value }),
     setBackupVersion: (value) => set({ backupVersion: value }),
+    transitionSaveState: (next) => {
+      const computed = typeof next === 'function' ? next(get().saveState) : next;
+      set({ saveState: computed });
+    },
   }));
