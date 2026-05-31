@@ -28,7 +28,12 @@ import {
 import { cn } from '@usertour/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
-import { useBuilderContext } from '../../contexts';
+import {
+  useBuilderConfig,
+  useBuilderContentRef,
+  useBuilderMethods,
+  useBuilderStore,
+} from '../../contexts';
 import { useFlowEditor } from './use-flow-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useCurrentTheme } from '../../hooks/use-current-theme';
@@ -55,7 +60,7 @@ import { useAddContentStepMutation, useUpdateContentStepMutation } from '@userto
 import { ContentBubble } from '../../components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {
-  const { currentContent } = useBuilderContext();
+  const currentContent = useBuilderStore((state) => state.currentContent);
   const { currentStep, updateCurrentStep, exitToFlow } = useFlowEditor();
 
   const handleStepNameChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +95,9 @@ const FlowBuilderDetailHeader = () => {
 };
 
 const FlowBuilderDetailBody = () => {
-  const { zIndex, currentTheme, projectId, webHost, isWebBuilder } = useBuilderContext();
+  const { zIndex, webHost, isWebBuilder } = useBuilderConfig();
+  const currentTheme = useBuilderStore((state) => state.currentTheme);
+  const projectId = useBuilderStore((state) => state.projectId);
   const { currentStep, updateCurrentStep } = useFlowEditor();
   const { themeList } = useThemeList();
 
@@ -242,7 +249,9 @@ const FlowBuilderDetailBody = () => {
 };
 
 const FlowBuilderDetailFooter = () => {
-  const { fetchContentAndVersion, currentVersion, contentRef } = useBuilderContext();
+  const { fetchContentAndVersion } = useBuilderMethods();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const contentRef = useBuilderContentRef();
   const { currentIndex, currentStep, setIsShowError, exitToFlow } = useFlowEditor();
   const [backupStepData] = useState(currentStep);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -346,8 +355,12 @@ const FlowBuilderDetailFooter = () => {
 };
 
 const FlowBuilderDetailEmbed = () => {
-  const { zIndex, currentVersion, contentRef, selectorOutput, currentContent, projectId } =
-    useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const contentRef = useBuilderContentRef();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const selectorOutput = useBuilderStore((state) => state.selectorOutput);
+  const currentContent = useBuilderStore((state) => state.currentContent);
+  const projectId = useBuilderStore((state) => state.projectId);
   const { currentStep, currentIndex, updateCurrentStep, createNewStep } = useFlowEditor();
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
@@ -447,7 +460,8 @@ const FlowBuilderDetailEmbed = () => {
 
 export const FlowBuilderDetail = () => {
   const ref = useRef<HTMLDivElement>(null);
-  const { zIndex, position } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const position = useBuilderStore((state) => state.position);
 
   // Auto-adjust sidebar position when content position overlaps
   useAutoSidebarPosition();

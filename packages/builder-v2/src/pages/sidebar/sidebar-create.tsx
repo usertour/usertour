@@ -5,7 +5,7 @@ import { StepContentType, ContentEditorRoot } from '@usertour/types';
 import { PopperPreview } from '../../components/preview';
 import { getDefaultDataForType } from '../../utils/default-data';
 import { useMemo } from 'react';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../contexts';
 import { useFlowEditor } from '../flow/use-flow-editor';
 
 interface ContentTypeConfig {
@@ -48,7 +48,8 @@ const CONTENT_TYPE_CONFIGS: Omit<ContentTypeConfig, 'data'>[] = [
 ];
 
 export const SidebarCreate = ({ container }: SidebarCreateProps) => {
-  const { currentTheme, zIndex } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const currentTheme = useBuilderStore((state) => state.currentTheme);
   const { startCreateStep } = useFlowEditor();
 
   // Memoize content list to avoid recalculating on every render

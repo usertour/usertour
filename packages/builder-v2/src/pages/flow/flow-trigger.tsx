@@ -23,7 +23,7 @@ import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from '../../contexts';
 import { useFlowEditor } from './use-flow-editor';
 import { useToken } from '../../hooks/use-token';
@@ -31,7 +31,7 @@ import { SidebarMini } from '../sidebar/sidebar-mini';
 import { useListAttributesQuery } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {
-  const { currentContent } = useBuilderContext();
+  const currentContent = useBuilderStore((state) => state.currentContent);
   const { currentStep, currentIndex, exitToFlow } = useFlowEditor();
 
   return (
@@ -56,8 +56,10 @@ const FlowBuilderTriggerHeader = () => {
 
 const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boolean }) => {
   const { attributes, loading } = props;
-  const { zIndex, currentVersion, isWebBuilder, currentContent, setCurrentMode } =
-    useBuilderContext();
+  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const currentContent = useBuilderStore((state) => state.currentContent);
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
 
   const { contents } = useContentList();
@@ -198,7 +200,8 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
 
 const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   const { attributes } = props;
-  const { fetchContentAndVersion, currentVersion } = useBuilderContext();
+  const { fetchContentAndVersion } = useBuilderMethods();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { currentStep, exitToFlow } = useFlowEditor();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -267,7 +270,9 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
 
 export const FlowBuilderTrigger = () => {
   const ref = useRef<HTMLDivElement>(null);
-  const { zIndex, position, projectId } = useBuilderContext();
+  const { zIndex } = useBuilderConfig();
+  const position = useBuilderStore((state) => state.position);
+  const projectId = useBuilderStore((state) => state.projectId);
 
   const { attributes, loading } = useListAttributesQuery(projectId, AttributeBizTypes.Nil);
 

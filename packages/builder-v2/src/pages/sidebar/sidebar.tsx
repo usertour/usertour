@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { SidebarContents } from './sidebar-contents';
 import { SidebarCreate } from './sidebar-create';
 import { SidebarFooter } from './sidebar-footer';
@@ -13,8 +13,16 @@ import { SidebarMini } from './sidebar-mini';
 import { SidebarTheme } from './sidebar-theme';
 
 export const BuilderSideBar = () => {
-  const { position, currentContent, currentVersion, zIndex, saveContent, isLoading, onSaved } =
-    useBuilderContext();
+  const { zIndex, onSaved } = useBuilderConfig();
+  const { saveContent } = useBuilderMethods();
+  const position = useBuilderStore((state) => state.position);
+  const currentContent = useBuilderStore((state) => state.currentContent);
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  // isLoading merges initial-content load + save-in-flight (legacy
+  // overload). Per docs/conventions/builder-context-migration.md.
+  const isLoading = useBuilderStore(
+    (state) => state.isLoading || state.saveState.status === 'saving',
+  );
   const sidbarRef = useRef<HTMLDivElement | null>(null);
 
   const handleSave = async () => {

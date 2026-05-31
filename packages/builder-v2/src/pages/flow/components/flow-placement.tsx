@@ -10,12 +10,14 @@ import {
   ContentPlacementProvider,
 } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement';
-import { BuilderMode, useBuilderContext } from '../../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useFlowEditor } from '../use-flow-editor';
 
 export const FlowPlacement = () => {
-  const { zIndex, currentContent, isWebBuilder, setCurrentMode, currentVersion } =
-    useBuilderContext();
+  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const currentContent = useBuilderStore((state) => state.currentContent);
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { isShowError, currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
 
   const { contents } = useContentList();

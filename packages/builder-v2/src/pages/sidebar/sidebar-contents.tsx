@@ -45,7 +45,7 @@ import {
 import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 
-import { BuilderMode, useBuilderContext } from '../../contexts';
+import { BuilderMode, useBuilderStore } from '../../contexts';
 import { useFlowEditor } from '../flow/use-flow-editor';
 import { stepIsReachable } from '../../utils/content-validate';
 
@@ -228,7 +228,7 @@ const SortableItem = memo(({ id, index, step, onClick, isReachable }: SortableIt
 SortableItem.displayName = 'SortableItem';
 
 export const SidebarContents = () => {
-  const { currentVersion } = useBuilderContext();
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { removeStep, reorderSteps, enterStepSubMode } = useFlowEditor();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(

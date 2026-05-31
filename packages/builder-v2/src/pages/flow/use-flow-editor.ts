@@ -9,7 +9,7 @@ import {
 import { useAddContentStepMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { type ContentVersion, type Step, StepContentType } from '@usertour/types';
-import { BuilderMode, useBuilderContext, useBuilderStore } from '../../contexts';
+import { BuilderMode, useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { getEmptyDataForType } from '../../utils/default-data';
 
 // Flow-flavoured editor — analogous to useBannerEditor / etc. but
@@ -27,20 +27,26 @@ import { getEmptyDataForType } from '../../utils/default-data';
 // - sub-mode navigation helpers
 //
 // Read-side fields (currentStep / currentIndex / isShowError) are
-// still exposed on useBuilderContext for cross-type hooks
-// (use-current-theme reads step.themeId for theme inheritance,
-// use-content-position reads step.setting.position, etc.) and
-// app/index.tsx's URL mirroring for ?step=N.
+// store fields cross-type hooks read (use-current-theme reads
+// step.themeId for theme inheritance, use-content-position reads
+// step.setting.position, etc.) and app/index.tsx's URL mirror for
+// ?step=N. Writers live here in this hook.
 
 export const useFlowEditor = () => {
-  // Cross-type Provider bits
-  const { currentVersion, fetchContentAndVersion, setCurrentMode, isWebBuilder, isLoading } =
-    useBuilderContext();
+  // Cross-type Provider bits — focused-hook split per
+  // docs/conventions/builder-context-migration.md
+  const { isWebBuilder } = useBuilderConfig();
+  const { fetchContentAndVersion } = useBuilderMethods();
+  const currentVersion = useBuilderStore((s) => s.currentVersion);
+  const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);
+  const isLoading = useBuilderStore((s) => s.isLoading || s.saveState.status === 'saving');
+
   const { toast } = useToast();
   const { invoke: addContentStep } = useAddContentStepMutation();
 
-  // Flow store fields — direct store access (private setters not
-  // on useBuilderContext public surface).
+  // Flow store fields — direct store access. The setters are on the
+  // private surface (BuilderStatePrivateSetters); they only flow out
+  // through this hook, not through useBuilderContext.
   const currentStep = useBuilderStore((s) => s.currentStep);
   const currentIndex = useBuilderStore((s) => s.currentIndex);
   const isShowError = useBuilderStore((s) => s.isShowError);
