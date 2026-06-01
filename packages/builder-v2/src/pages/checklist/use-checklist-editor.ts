@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { ChecklistData, ChecklistItemType } from '@usertour/types';
 import { useTypeEditor } from '../../hooks/use-type-editor';
+import { useListField } from '../../hooks/use-list-field';
 import { useBuilderStore, BuilderMode } from '../../contexts';
 import { checklistTypeConfig } from './checklist-config';
 
@@ -18,7 +19,6 @@ export interface UseChecklistEditorReturn {
   setCurrentItem: React.Dispatch<React.SetStateAction<ChecklistItemType | null>>;
   addItem: (item: ChecklistItemType) => void;
   removeItem: (id: string) => void;
-  reorderItems: (startIndex: number, endIndex: number) => void;
   saveCurrentItem: () => void;
   isLoading: boolean;
 }
@@ -32,29 +32,10 @@ export const useChecklistEditor = (): UseChecklistEditorReturn => {
   const currentItem = editor.uiState;
   const setCurrentItem = editor.setUIState;
 
-  const addItem = useCallback(
-    (item: ChecklistItemType) => {
-      editor.updateData({ items: [...items, item] });
-    },
-    [editor.updateData, items],
-  );
-
-  const removeItem = useCallback(
-    (id: string) => {
-      editor.updateData({ items: items.filter((item) => item.id !== id) });
-    },
-    [editor.updateData, items],
-  );
-
-  const reorderItems = useCallback(
-    (startIndex: number, endIndex: number) => {
-      const next = [...items];
-      const [removed] = next.splice(startIndex, 1);
-      next.splice(endIndex, 0, removed);
-      editor.updateData({ items: next });
-    },
-    [editor.updateData, items],
-  );
+  const itemList = useListField<ChecklistItemType>({
+    items,
+    setItems: (next) => editor.updateData({ items: next }),
+  });
 
   const saveCurrentItem = useCallback(() => {
     if (!currentItem) {
@@ -72,9 +53,8 @@ export const useChecklistEditor = (): UseChecklistEditorReturn => {
     updateData: editor.updateData,
     currentItem,
     setCurrentItem,
-    addItem,
-    removeItem,
-    reorderItems,
+    addItem: itemList.add,
+    removeItem: itemList.removeById,
     saveCurrentItem,
     isLoading: editor.isLoading,
   };

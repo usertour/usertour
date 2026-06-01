@@ -9,6 +9,7 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import { BuilderMode, useBuilderStore } from '../../contexts';
 import { useTypeEditor } from '../../hooks/use-type-editor';
+import { useListField } from '../../hooks/use-list-field';
 import { resourceCenterTypeConfig, type ResourceCenterUIState } from './resource-center-config';
 
 // Validate block required fields before explicit save. V1 ran this
@@ -141,6 +142,27 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
 
   const updateData = editor.updateData;
   const currentTabId = uiState.currentTabId;
+  const currentTab = data?.tabs.find((tab) => tab.id === currentTabId) ?? null;
+
+  // Array transforms for tabs (top-level) and the current tab's blocks
+  // (nested via updateTabBlocks). Per-op side effects — re-pointing the
+  // active tab, validation, mode exit — stay in the wrappers below.
+  const tabList = useListField<ResourceCenterTab>({
+    items: data?.tabs ?? [],
+    setItems: (next) => {
+      if (data) {
+        updateData({ tabs: next });
+      }
+    },
+  });
+  const blockList = useListField<ResourceCenterBlock>({
+    items: currentTab?.blocks ?? [],
+    setItems: (next) => {
+      if (data && currentTabId) {
+        updateData(updateTabBlocks(data, currentTabId, () => next));
+      }
+    },
+  });
 
   // ── Tab operations ─────────────────────────────────────────────────
 
@@ -149,10 +171,10 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
       if (!data) {
         return;
       }
-      updateData({ tabs: [...data.tabs, tab] });
+      tabList.add(tab);
       setCurrentTabId(tab.id);
     },
-    [data, updateData, setCurrentTabId],
+    [data, tabList.add, setCurrentTabId],
   );
 
   const removeTab = useCallback(
@@ -168,31 +190,6 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
       }
     },
     [data, currentTabId, updateData, setCurrentTabId],
-  );
-
-  const updateTab = useCallback(
-    (tabId: string, updates: Partial<ResourceCenterTab>) => {
-      if (!data) {
-        return;
-      }
-      updateData({
-        tabs: data.tabs.map((tab) => (tab.id === tabId ? { ...tab, ...updates } : tab)),
-      });
-    },
-    [data, updateData],
-  );
-
-  const reorderTabs = useCallback(
-    (startIndex: number, endIndex: number) => {
-      if (!data) {
-        return;
-      }
-      const tabs = [...data.tabs];
-      const [removed] = tabs.splice(startIndex, 1);
-      tabs.splice(endIndex, 0, removed);
-      updateData({ tabs });
-    },
-    [data, updateData],
   );
 
   const saveEditingTab = useCallback(() => {
@@ -222,62 +219,7 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
   }, [uiState.editingTab, data, updateData, setEditingTab, setIsShowError, setCurrentMode]);
 
-  // ── Block operations (scoped to currentTabId) ──────────────────────
-
-  const addBlock = useCallback(
-    (block: ResourceCenterBlock) => {
-      if (!data || !currentTabId) {
-        return;
-      }
-      updateData(updateTabBlocks(data, currentTabId, (blocks) => [...blocks, block]));
-    },
-    [data, currentTabId, updateData],
-  );
-
-  const removeBlock = useCallback(
-    (id: string) => {
-      if (!data || !currentTabId) {
-        return;
-      }
-      updateData(
-        updateTabBlocks(data, currentTabId, (blocks) => blocks.filter((b) => b.id !== id)),
-      );
-    },
-    [data, currentTabId, updateData],
-  );
-
-  const updateBlock = useCallback(
-    (id: string, updates: Partial<ResourceCenterBlock>) => {
-      if (!data || !currentTabId) {
-        return;
-      }
-      updateData(
-        updateTabBlocks(data, currentTabId, (blocks) =>
-          blocks.map((block) =>
-            block.id === id ? ({ ...block, ...updates } as ResourceCenterBlock) : block,
-          ),
-        ),
-      );
-    },
-    [data, currentTabId, updateData],
-  );
-
-  const reorderBlocks = useCallback(
-    (startIndex: number, endIndex: number) => {
-      if (!data || !currentTabId) {
-        return;
-      }
-      updateData(
-        updateTabBlocks(data, currentTabId, (blocks) => {
-          const newBlocks = [...blocks];
-          const [removed] = newBlocks.splice(startIndex, 1);
-          newBlocks.splice(endIndex, 0, removed);
-          return newBlocks;
-        }),
-      );
-    },
-    [data, currentTabId, updateData],
-  );
+  // ── Block operations (scoped to currentTabId via blockList above) ───
 
   const saveCurrentBlock = useCallback(() => {
     const currentBlock = uiState.currentBlock;
@@ -304,15 +246,15 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     setCurrentTabId,
     addTab,
     removeTab,
-    updateTab,
-    reorderTabs,
+    updateTab: tabList.updateById,
+    reorderTabs: tabList.reorder,
     editingTab: uiState.editingTab,
     setEditingTab,
     saveEditingTab,
-    addBlock,
-    removeBlock,
-    updateBlock,
-    reorderBlocks,
+    addBlock: blockList.add,
+    removeBlock: blockList.removeById,
+    updateBlock: blockList.updateById,
+    reorderBlocks: blockList.reorder,
     currentBlock: uiState.currentBlock,
     setCurrentBlock,
     saveCurrentBlock,
