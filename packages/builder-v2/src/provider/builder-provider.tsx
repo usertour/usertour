@@ -5,7 +5,7 @@ import { useContentLoader } from './use-content-loader';
 import { useSaveContent } from './use-save-content';
 import { useUndoShortcuts } from './use-undo-shortcuts';
 import { type BuilderStore, createBuilderStore } from '../store/builder-store';
-import { BuilderLeaveGuard } from '../shell/builder-leave-guard';
+import { BuilderLeaveGuard } from '../guards/builder-leave-guard';
 import type { BuilderProviderContextValue, BuilderProviderProps } from './types';
 
 // The React Context object. The four public access hooks
