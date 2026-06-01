@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { BuilderMode, useBuilderStore } from '../contexts';
-import { WebBuilderProvider, useWebBuilderProvider } from '../provider/web-builder-provider';
+import { BuilderProvider } from '../provider/builder-provider';
 import { useBuilderInit } from '../provider/use-builder-init';
+import { useListsLoading } from '../hooks/use-lists-loading';
 import { useSyncCurrentTheme } from '../hooks/use-sync-current-theme';
 import { WebBuilderLoading } from '../components/web-builder-loading';
 import { MODE_COMPONENTS } from './mode-component-map';
@@ -28,17 +29,22 @@ export interface WebBuilderProps {
   onStepIndexChange?: (stepIndex: number | undefined) => void;
 }
 
-// Inner component: drives init, then gates on a single `ready` signal.
-function WebBuilderContent(props: WebBuilderProps) {
+interface WebBuilderContentProps {
+  contentId: string;
+  versionId: string;
+  initialStepIndex?: number;
+  onStepIndexChange?: (stepIndex: number | undefined) => void;
+}
+
+// Inner content — runs inside BuilderProvider. Drives init and observes
+// the shared lists' loading, then gates on a single combined signal
+// before handing off to the mode router.
+function WebBuilderContent(props: WebBuilderContentProps) {
   const { contentId, versionId, initialStepIndex } = props;
   const currentMode = useBuilderStore((state) => state.currentMode);
   const currentIndex = useBuilderStore((state) => state.currentIndex);
-  const { isLoading: listsLoading } = useWebBuilderProvider();
-  const { ready } = useBuilderInit({
-    contentId,
-    versionId,
-    initialStepIndex,
-  });
+  const listsLoading = useListsLoading();
+  const { ready } = useBuilderInit({ contentId, versionId, initialStepIndex });
   const onStepIndexChangeRef = useRef(props.onStepIndexChange);
 
   useEffect(() => {
@@ -65,11 +71,30 @@ function WebBuilderContent(props: WebBuilderProps) {
 }
 
 export const WebBuilder = (props: WebBuilderProps) => {
-  const { shouldShowMadeWith, ...restProps } = props;
+  const {
+    onSaved,
+    shouldShowMadeWith,
+    environmentId,
+    projectId,
+    contentId,
+    versionId,
+    initialStepIndex,
+    onStepIndexChange,
+  } = props;
   return (
-    <WebBuilderProvider {...restProps} shouldShowMadeWith={shouldShowMadeWith}>
-      <WebBuilderContent {...restProps} />
-    </WebBuilderProvider>
+    <BuilderProvider
+      onSaved={onSaved}
+      shouldShowMadeWith={shouldShowMadeWith}
+      environmentId={environmentId}
+      projectId={projectId}
+    >
+      <WebBuilderContent
+        contentId={contentId}
+        versionId={versionId}
+        initialStepIndex={initialStepIndex}
+        onStepIndexChange={onStepIndexChange}
+      />
+    </BuilderProvider>
   );
 };
 
