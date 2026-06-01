@@ -3,12 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderMethods, useBuilderStore } from '../contexts';
 import { WebBuilderProvider, useWebBuilderProvider } from '../provider/web-builder-provider';
 import { WebBuilderLoading } from '../components/web-builder-loading';
-import { BannerBuilder } from '../pages/banner';
-import { ChecklistBuilder } from '../pages/checklist';
-import { FlowBuilderDetail, FlowBuilderTrigger } from '../pages/flow';
-import { LauncherBuilder } from '../pages/launcher';
-import { ResourceCenterBuilder } from '../pages/resource-center';
-import { BuilderSideBar } from '../pages/sidebar';
+import { MODE_COMPONENTS } from './mode-component-map';
 
 const Container = () => {
   const currentMode = useBuilderStore((state) => state.currentMode);
@@ -28,39 +23,8 @@ const Container = () => {
     }
   }, [themeList, currentVersion]);
 
-  if (currentMode.mode === BuilderMode.FLOW_STEP_DETAIL) {
-    return <FlowBuilderDetail />;
-  }
-  if (currentMode.mode === BuilderMode.FLOW_STEP_TRIGGER) {
-    return <FlowBuilderTrigger />;
-  }
-  if (
-    currentMode.mode === BuilderMode.LAUNCHER ||
-    currentMode.mode === BuilderMode.LAUNCHER_TARGET ||
-    currentMode.mode === BuilderMode.LAUNCHER_TOOLTIP
-  ) {
-    return <LauncherBuilder />;
-  }
-  if (
-    currentMode.mode === BuilderMode.CHECKLIST ||
-    currentMode.mode === BuilderMode.CHECKLIST_ITEM
-  ) {
-    return <ChecklistBuilder />;
-  }
-  if (currentMode.mode === BuilderMode.BANNER) {
-    return <BannerBuilder />;
-  }
-  if (
-    currentMode.mode === BuilderMode.RESOURCE_CENTER ||
-    currentMode.mode === BuilderMode.RESOURCE_CENTER_BLOCK ||
-    currentMode.mode === BuilderMode.RESOURCE_CENTER_TAB
-  ) {
-    return <ResourceCenterBuilder />;
-  }
-  if (currentMode.mode === BuilderMode.FLOW) {
-    return <BuilderSideBar />;
-  }
-  return <></>;
+  const Active = MODE_COMPONENTS[currentMode.mode];
+  return Active ? <Active /> : null;
 };
 
 export interface WebBuilderProps {
