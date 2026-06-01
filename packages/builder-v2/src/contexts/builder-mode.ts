@@ -24,11 +24,6 @@ export enum BuilderMode {
 export interface BuilderTriggerMode {
   mode: BuilderMode.FLOW_STEP_TRIGGER;
   data?: any;
-  triggerConditionData?: {
-    index: number;
-    conditionIndex: number;
-    type: string;
-  };
 }
 
 export interface BuilderCommonMode {
