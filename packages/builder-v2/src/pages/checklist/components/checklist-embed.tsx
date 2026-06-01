@@ -18,7 +18,7 @@ import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
 import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderConfig, useBuilderStore } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore, useProjectId } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { useChecklistEditor } from '../use-checklist-editor';
 
@@ -29,7 +29,7 @@ export const ChecklistEmbed = () => {
   const { themeList } = useThemeList();
   const { shouldShowMadeWith = true } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
   const [expanded, setExpanded] = useState(
     localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );

@@ -63,8 +63,6 @@ const EMPTY_HISTORY: HistoryStack = { past: [], future: [] };
 
 export interface BuilderState {
   currentMode: CurrentMode;
-  environmentId: string;
-  projectId: string;
   currentStep: Step | null;
   currentIndex: number;
   currentContent: Content | undefined;
@@ -97,8 +95,6 @@ export interface BuilderState {
 // `useFlowEditor()` which reads them off `useBuilderStore` directly.
 export interface BuilderStateSetters {
   setCurrentMode: React.Dispatch<React.SetStateAction<CurrentMode>>;
-  setEnvironmentId: React.Dispatch<React.SetStateAction<string>>;
-  setProjectId: React.Dispatch<React.SetStateAction<string>>;
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
@@ -161,8 +157,6 @@ const makeSetter = <K extends keyof BuilderState>(
 
 const initialState: BuilderState = {
   currentMode: { mode: BuilderMode.NONE },
-  environmentId: '',
-  projectId: '',
   currentStep: null,
   currentIndex: 0,
   currentContent: undefined,
@@ -180,8 +174,6 @@ export const createBuilderStore = () =>
   createStore<BuilderStoreState>((set, get) => ({
     ...initialState,
     setCurrentMode: makeSetter('currentMode', set, get),
-    setEnvironmentId: makeSetter('environmentId', set, get),
-    setProjectId: makeSetter('projectId', set, get),
     setCurrentStep: makeSetter('currentStep', set, get),
     setCurrentIndex: makeSetter('currentIndex', set, get),
     setCurrentContent: makeSetter('currentContent', set, get),

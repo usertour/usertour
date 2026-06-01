@@ -42,10 +42,15 @@ function WebBuilderContent({ children }: { children: ReactNode }) {
 }
 
 export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element {
-  const { children, onSaved, shouldShowMadeWith } = props;
+  const { children, onSaved, shouldShowMadeWith, environmentId, projectId } = props;
 
   return (
-    <BuilderProvider onSaved={onSaved} shouldShowMadeWith={shouldShowMadeWith}>
+    <BuilderProvider
+      onSaved={onSaved}
+      shouldShowMadeWith={shouldShowMadeWith}
+      environmentId={environmentId}
+      projectId={projectId}
+    >
       <WebBuilderContent>{children}</WebBuilderContent>
     </BuilderProvider>
   );

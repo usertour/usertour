@@ -29,6 +29,7 @@ import {
   useBuilderContentRef,
   useBuilderMethods,
   useBuilderStore,
+  useProjectId,
 } from '../../contexts';
 import { useFlowEditor } from './use-flow-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
@@ -92,7 +93,7 @@ const FlowBuilderDetailHeader = () => {
 const FlowBuilderDetailBody = () => {
   const { zIndex } = useBuilderConfig();
   const currentTheme = useBuilderStore((state) => state.currentTheme);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
   const { currentStep, updateCurrentStep } = useFlowEditor();
   const { themeList } = useThemeList();
 
@@ -348,7 +349,7 @@ const FlowBuilderDetailEmbed = () => {
   const contentRef = useBuilderContentRef();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const currentContent = useBuilderStore((state) => state.currentContent);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
   const { currentStep, currentIndex, updateCurrentStep, createNewStep } = useFlowEditor();
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();

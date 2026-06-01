@@ -20,7 +20,7 @@ import { useCallback, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore, useProjectId } from '../../contexts';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
@@ -30,7 +30,7 @@ export const SidebarTheme = () => {
   const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
   const setIsLoading = useBuilderStore((state) => state.setIsLoading);
 
   useEffect(() => {

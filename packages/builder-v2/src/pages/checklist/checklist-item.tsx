@@ -27,7 +27,13 @@ import {
 } from '@usertour/types';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../contexts';
+import {
+  BuilderMode,
+  useBuilderConfig,
+  useBuilderStore,
+  useEnvironmentId,
+  useProjectId,
+} from '../../contexts';
 import { useChecklistEditor } from './use-checklist-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
@@ -62,8 +68,8 @@ const ChecklistItemBody = () => {
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
   const { zIndex } = useBuilderConfig();
-  const environmentId = useBuilderStore((state) => state.environmentId);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const environmentId = useEnvironmentId();
+  const projectId = useProjectId();
   const formPrefix = useId();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);

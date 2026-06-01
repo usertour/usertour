@@ -10,7 +10,7 @@
 //   - useBuilderStore / useSaveState / useCanUndo / useCanRedo /
 //     useUndo / useRedo  → ./use-builder-store
 //   - useBuilderMethods  → ./use-builder-methods
-//   - useBuilderConfig   → ./use-builder-config
+//   - useBuilderConfig / useEnvironmentId / useProjectId → ./use-builder-config
 //   - useBuilderContentRef → ./use-builder-content-ref
 //   - BuilderMode enum + types → ./builder-mode
 //   - BuilderProvider + BuilderProviderProps → ../provider/
@@ -21,7 +21,7 @@
 export { BuilderProvider } from '../provider/builder-provider';
 export type { BuilderProviderProps } from '../provider/types';
 export { useBuilderMethods } from './use-builder-methods';
-export { useBuilderConfig } from './use-builder-config';
+export { useBuilderConfig, useEnvironmentId, useProjectId } from './use-builder-config';
 export { useBuilderContentRef } from './use-builder-content-ref';
 export {
   useBuilderStore,

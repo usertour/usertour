@@ -15,7 +15,7 @@ import {
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useBuilderStore } from '../../../contexts';
+import { useProjectId } from '../../../contexts';
 import { useBannerEditor } from '../use-banner-editor';
 import { useCurrentTheme } from '../../../hooks/use-current-theme';
 import { useAws } from '../../../hooks/use-aws';
@@ -28,7 +28,7 @@ export const BannerEmbed = () => {
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
   const { upload } = useAws();
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
   const { attributeList } = useAttributeList();
   const { contents: contentList } = useContentList();
 

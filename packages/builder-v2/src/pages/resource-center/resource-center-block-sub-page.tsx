@@ -22,7 +22,13 @@ import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../contexts';
+import {
+  BuilderMode,
+  useBuilderConfig,
+  useBuilderStore,
+  useEnvironmentId,
+  useProjectId,
+} from '../../contexts';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -61,8 +67,8 @@ const BlockSubPageBody = () => {
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { zIndex } = useBuilderConfig();
-  const environmentId = useBuilderStore((state) => state.environmentId);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const environmentId = useEnvironmentId();
+  const projectId = useProjectId();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);

@@ -30,15 +30,13 @@ export interface WebBuilderProps {
 
 // Inner component: drives init, then gates on a single `ready` signal.
 function WebBuilderContent(props: WebBuilderProps) {
-  const { contentId, environmentId, versionId, projectId, initialStepIndex } = props;
+  const { contentId, versionId, initialStepIndex } = props;
   const currentMode = useBuilderStore((state) => state.currentMode);
   const currentIndex = useBuilderStore((state) => state.currentIndex);
   const { isLoading: listsLoading } = useWebBuilderProvider();
   const { ready } = useBuilderInit({
     contentId,
     versionId,
-    environmentId,
-    projectId,
     initialStepIndex,
   });
   const onStepIndexChangeRef = useRef(props.onStepIndexChange);

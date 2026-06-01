@@ -21,10 +21,17 @@ export interface BuilderProviderMethods {
 
 // Static config passed to BuilderProvider as props. Never changes
 // after Provider mount; exposed via useBuilderConfig.
+//
+// environmentId / projectId are the workspace identity. They're fixed
+// props (not async-seeded into the draft store), so they live here as
+// immutable config and the data hooks read them via
+// useEnvironmentId / useProjectId.
 export interface BuilderProviderConfig {
   onSaved: () => Promise<void>;
   shouldShowMadeWith: boolean;
   zIndex: number;
+  environmentId: string;
+  projectId: string;
 }
 
 // Carries the per-mount Zustand store + the imperative methods +
@@ -44,4 +51,6 @@ export interface BuilderProviderProps {
   children?: ReactNode;
   onSaved: () => Promise<void>;
   shouldShowMadeWith?: boolean;
+  environmentId: string;
+  projectId: string;
 }

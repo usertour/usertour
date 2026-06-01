@@ -6,8 +6,6 @@ import { BuilderMode, deriveInitialMode, useBuilderMethods, useBuilderStore } fr
 export interface BuilderInitParams {
   contentId: string;
   versionId: string;
-  environmentId: string;
-  projectId: string;
   initialStepIndex?: number;
 }
 
@@ -23,11 +21,9 @@ export interface BuilderInitParams {
 // fetchContentAndVersion); I4 initial mode via deriveInitialMode; I5
 // initialStepIndex opens the step; I6 single `ready` gate.
 export const useBuilderInit = (params: BuilderInitParams): { ready: boolean } => {
-  const { contentId, versionId, environmentId, projectId, initialStepIndex } = params;
+  const { contentId, versionId, initialStepIndex } = params;
   const { fetchContentAndVersion } = useBuilderMethods();
   // Store setters are stable refs — no subscription churn.
-  const setEnvironmentId = useBuilderStore((s) => s.setEnvironmentId);
-  const setProjectId = useBuilderStore((s) => s.setProjectId);
   const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);
   const setCurrentStep = useBuilderStore((s) => s.setCurrentStep);
   const setCurrentIndex = useBuilderStore((s) => s.setCurrentIndex);
@@ -35,14 +31,12 @@ export const useBuilderInit = (params: BuilderInitParams): { ready: boolean } =>
 
   const [ready, setReady] = useState(false);
 
-  // environmentId / projectId / initialStepIndex are read at hydrate time
-  // but deliberately NOT in the dep array — re-hydration is keyed on the
-  // (contentId, versionId) identity only, matching pre-C3 semantics.
+  // initialStepIndex is read at hydrate time but deliberately NOT in the
+  // dep array — re-hydration is keyed on the (contentId, versionId)
+  // identity only, matching pre-C3 semantics.
   useEffect(() => {
     let cancelled = false;
     setReady(false);
-    setEnvironmentId(environmentId);
-    setProjectId(projectId);
 
     (async () => {
       const result = await fetchContentAndVersion(contentId, versionId);

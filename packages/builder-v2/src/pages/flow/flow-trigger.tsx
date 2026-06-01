@@ -23,7 +23,7 @@ import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore, useProjectId } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from './trigger-context';
 import { useFlowEditor } from './use-flow-editor';
 import { useToken } from '../../hooks/use-token';
@@ -250,7 +250,7 @@ export const FlowBuilderTrigger = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex } = useBuilderConfig();
   const position = useBuilderStore((state) => state.position);
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
 
   const { attributes, loading } = useListAttributesQuery(projectId, AttributeBizTypes.Nil);
 

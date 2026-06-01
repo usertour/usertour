@@ -25,7 +25,12 @@ import {
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderConfig, useBuilderStore } from '../../../contexts';
+import {
+  useBuilderConfig,
+  useBuilderStore,
+  useEnvironmentId,
+  useProjectId,
+} from '../../../contexts';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
 import { useAws } from '../../../hooks/use-aws';
 
@@ -38,7 +43,7 @@ const ResourceCenterEmbedContent = ({
   const { currentPage } = useWidgetResourceCenterContext();
   const { data: localData, updateBlock } = useResourceCenterEditor();
   const { upload } = useAws();
-  const projectId = useBuilderStore((state) => state.projectId);
+  const projectId = useProjectId();
   const { attributeList } = useAttributeList();
 
   const handleCustomUploadRequest = useCallback(
@@ -105,8 +110,8 @@ export const ResourceCenterEmbed = () => {
   const { themeList } = useThemeList();
   const { shouldShowMadeWith = true } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const projectId = useBuilderStore((state) => state.projectId);
-  const environmentId = useBuilderStore((state) => state.environmentId);
+  const projectId = useProjectId();
+  const environmentId = useEnvironmentId();
   const { attributeList } = useAttributeList();
 
   // Query flows and checklists for content list block preview
