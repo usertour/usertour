@@ -12,7 +12,6 @@ export interface WebBuilderProviderProps {
   projectId: string;
   envToken: string;
   onSaved: () => Promise<void>;
-  usertourjsUrl?: string;
   shouldShowMadeWith?: boolean;
 }
 
@@ -44,14 +43,10 @@ function WebBuilderContent({ children }: { children: ReactNode }) {
 }
 
 export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element {
-  const { children, onSaved, usertourjsUrl, shouldShowMadeWith } = props;
+  const { children, onSaved, shouldShowMadeWith } = props;
 
   return (
-    <BuilderProvider
-      onSaved={onSaved}
-      usertourjsUrl={usertourjsUrl}
-      shouldShowMadeWith={shouldShowMadeWith}
-    >
+    <BuilderProvider onSaved={onSaved} shouldShowMadeWith={shouldShowMadeWith}>
       <WebBuilderContent>{children}</WebBuilderContent>
     </BuilderProvider>
   );

@@ -2,9 +2,8 @@ import { useContext } from 'react';
 import type { BuilderProviderContextValue } from '../provider/types';
 import { BuilderProviderContext } from '../provider/builder-provider';
 
-// Static config passed to BuilderProvider as props — webHost /
-// usertourjsUrl / onSaved / shouldShowMadeWith / zIndex. Never
-// changes after Provider mount.
+// Static config passed to BuilderProvider as props — onSaved /
+// shouldShowMadeWith / zIndex. Never changes after Provider mount.
 //
 // Mount-stable: reading this hook costs zero subscriptions —
 // consumers re-render only when their parent does, not when store

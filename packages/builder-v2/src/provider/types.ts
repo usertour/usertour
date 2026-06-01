@@ -23,8 +23,6 @@ export interface BuilderProviderMethods {
 // Static config passed to BuilderProvider as props. Never changes
 // after Provider mount; exposed via useBuilderConfig.
 export interface BuilderProviderConfig {
-  webHost: string;
-  usertourjsUrl: string;
   onSaved: () => Promise<void>;
   shouldShowMadeWith: boolean;
   zIndex: number;
@@ -45,8 +43,6 @@ export interface BuilderProviderContextValue {
 
 export interface BuilderProviderProps {
   children?: ReactNode;
-  webHost?: string;
-  usertourjsUrl?: string;
   onSaved: () => Promise<void>;
   shouldShowMadeWith?: boolean;
 }

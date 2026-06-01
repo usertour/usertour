@@ -33,6 +33,8 @@ export interface WebBuilderProps {
   versionId: string;
   projectId: string;
   envToken: string;
+  // Accepted for parity with the v1 builder's shared call site in apps/web;
+  // web-only v2 has no SDK-preview path that consumes it.
   usertourjsUrl?: string;
   onSaved: () => Promise<void>;
   isLoading?: boolean;
