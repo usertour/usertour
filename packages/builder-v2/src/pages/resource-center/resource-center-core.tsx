@@ -3,9 +3,6 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import {
   CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -23,11 +20,10 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { useBuilderConfig } from '../../contexts';
+import { useSidebarSave } from '../../hooks/use-sidebar-save';
 import { useResourceCenterEditor } from './use-resource-center-editor';
-import { SidebarContainer } from '../sidebar';
-import { SidebarFooter } from '../sidebar/sidebar-footer';
-import { SidebarHeader } from '../sidebar/sidebar-header';
+import { BuilderSidebarLayout } from '../sidebar/builder-sidebar-layout';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ResourceCenterBlocks } from './components/resource-center-blocks';
 import { ResourceCenterTabs } from './components/resource-center-tabs';
@@ -244,45 +240,12 @@ const ResourceCenterCoreBody = () => {
   );
 };
 
-const ResourceCenterCoreHeader = () => {
-  const currentContent = useBuilderStore((state) => state.currentContent);
-  return (
-    <CardHeader className="flex-none p-4 space-y-3">
-      <CardTitle className="flex h-8">
-        <SidebarHeader title={currentContent?.name ?? ''} />
-      </CardTitle>
-    </CardHeader>
-  );
-};
-
-const ResourceCenterCoreFooter = () => {
-  // isLoading merges initial-content load + save-in-flight (legacy
-  // overload). Per docs/conventions/builder-context-migration.md.
-  const isLoading = useBuilderStore(
-    (state) => state.isLoading || state.saveState.status === 'saving',
-  );
-  const { onSaved } = useBuilderConfig();
-  const { saveContent } = useBuilderMethods();
-
-  const handleSave = async () => {
-    await saveContent();
-    await onSaved?.();
-  };
-
-  return (
-    <CardFooter className="flex p-5">
-      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
-    </CardFooter>
-  );
-};
-
 export const ResourceCenterCore = () => {
+  const handleSave = useSidebarSave();
   return (
-    <SidebarContainer>
-      <ResourceCenterCoreHeader />
+    <BuilderSidebarLayout onSave={handleSave}>
       <ResourceCenterCoreBody />
-      <ResourceCenterCoreFooter />
-    </SidebarContainer>
+    </BuilderSidebarLayout>
   );
 };
 

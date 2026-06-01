@@ -1,14 +1,12 @@
 'use client';
 
-import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
+import { CardContent, ScrollArea } from '@usertour/ui';
 import { LauncherActionType } from '@usertour/types';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
-import { useLauncherEditor } from './use-launcher-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
-import { SidebarContainer } from '../sidebar';
-import { SidebarFooter } from '../sidebar/sidebar-footer';
-import { SidebarHeader } from '../sidebar/sidebar-header';
+import { useSidebarSave } from '../../hooks/use-sidebar-save';
+import { BuilderSidebarLayout } from '../sidebar/builder-sidebar-layout';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
+import { useLauncherEditor } from './use-launcher-editor';
 import { LauncherBehavior } from './components/launcher-behavior';
 import { LauncherTargetPreview } from './components/launcher-target-preview';
 import { LauncherType } from './components/launcher-type';
@@ -30,58 +28,24 @@ const LauncherCoreBody = () => {
   );
 };
 
-const LauncherCoreHeader = () => {
-  const currentContent = useBuilderStore((state) => state.currentContent);
-  return (
-    <CardHeader className="flex-none p-4 space-y-3">
-      <CardTitle className="flex h-8	">
-        <SidebarHeader title={currentContent?.name ?? ''} />
-      </CardTitle>
-    </CardHeader>
-  );
-};
-
-const LauncherCoreFooter = () => {
-  // isLoading merges initial-content load + save-in-flight (legacy
-  // overload). Per docs/conventions/builder-context-migration.md.
-  const isLoading = useBuilderStore(
-    (state) => state.isLoading || state.saveState.status === 'saving',
-  );
-  const { onSaved } = useBuilderConfig();
-  const { saveContent } = useBuilderMethods();
+export const LauncherCore = () => {
   const { data: localData } = useLauncherEditor();
   const actionsGate = useActionsSaveGate();
-
-  const handleSave = async () => {
-    // Block the explicit Save click on incomplete behavior actions when the
-    // perform-action tab is active. In show-tooltip mode the actions list is
-    // hidden — any residue on data.behavior.actions is stale and shouldn't
-    // gate saves. The launcher context's debounced auto-save applies the
-    // same actionType check; this gate adds a toast for the direct click.
-    if (
-      localData?.behavior?.actionType === LauncherActionType.PERFORM_ACTION &&
-      !actionsGate(localData?.behavior?.actions)
-    ) {
-      return;
-    }
-    await saveContent();
-    await onSaved?.();
-  };
-
+  // Block the explicit Save on incomplete behavior actions when the
+  // perform-action tab is active. In show-tooltip mode the actions list
+  // is hidden — any residue on data.behavior.actions is stale and
+  // shouldn't gate saves. The auto-save validator applies the same check.
+  const handleSave = useSidebarSave({
+    canSave: () =>
+      !(
+        localData?.behavior?.actionType === LauncherActionType.PERFORM_ACTION &&
+        !actionsGate(localData?.behavior?.actions)
+      ),
+  });
   return (
-    <CardFooter className="flex p-5">
-      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
-    </CardFooter>
-  );
-};
-
-export const LauncherCore = () => {
-  return (
-    <SidebarContainer>
-      <LauncherCoreHeader />
+    <BuilderSidebarLayout onSave={handleSave}>
       <LauncherCoreBody />
-      <LauncherCoreFooter />
-    </SidebarContainer>
+    </BuilderSidebarLayout>
   );
 };
 

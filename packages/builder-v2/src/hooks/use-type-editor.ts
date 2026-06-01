@@ -1,5 +1,5 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
-import { useBuilderStore } from '../contexts/builder-context';
+import { useBuilderStore, useIsBusy } from '../contexts/builder-context';
 import type { BuilderTypeConfig } from '../types/builder-type-config';
 
 // Editor abstraction for the four data-blob content types — Banner,
@@ -47,9 +47,7 @@ export interface UseTypeEditorReturn<TData, TUIState> {
 export const useTypeEditor = <TData, TUIState = undefined>(
   config: BuilderTypeConfig<TData, TUIState>,
 ): UseTypeEditorReturn<TData, TUIState> => {
-  const isLoading = useBuilderStore(
-    (state) => state.isLoading || state.saveState.status === 'saving',
-  );
+  const isLoading = useIsBusy();
   const rawData = useBuilderStore((state) => state.currentVersion?.data) as TData | undefined;
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
 

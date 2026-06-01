@@ -4,9 +4,6 @@ import { PlusCircledIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
   QuestionTooltip,
@@ -23,11 +20,10 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { useBuilderConfig } from '../../contexts';
+import { useSidebarSave } from '../../hooks/use-sidebar-save';
 import { useChecklistEditor } from './use-checklist-editor';
-import { SidebarContainer } from '../sidebar';
-import { SidebarFooter } from '../sidebar/sidebar-footer';
-import { SidebarHeader } from '../sidebar/sidebar-header';
+import { BuilderSidebarLayout } from '../sidebar/builder-sidebar-layout';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ChecklistContents } from './components/checklist-contents';
 
@@ -182,45 +178,12 @@ const ChecklistCoreBody = () => {
   );
 };
 
-const ChecklistCoreHeader = () => {
-  const currentContent = useBuilderStore((state) => state.currentContent);
-  return (
-    <CardHeader className="flex-none p-4 space-y-3">
-      <CardTitle className="flex h-8">
-        <SidebarHeader title={currentContent?.name ?? ''} />
-      </CardTitle>
-    </CardHeader>
-  );
-};
-
-const ChecklistCoreFooter = () => {
-  // isLoading merges initial-content load + save-in-flight (legacy
-  // overload). Per docs/conventions/builder-context-migration.md.
-  const isLoading = useBuilderStore(
-    (state) => state.isLoading || state.saveState.status === 'saving',
-  );
-  const { onSaved } = useBuilderConfig();
-  const { saveContent } = useBuilderMethods();
-
-  const handleSave = async () => {
-    await saveContent();
-    await onSaved?.();
-  };
-
-  return (
-    <CardFooter className="flex p-5">
-      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
-    </CardFooter>
-  );
-};
-
 export const ChecklistCore = () => {
+  const handleSave = useSidebarSave();
   return (
-    <SidebarContainer>
-      <ChecklistCoreHeader />
+    <BuilderSidebarLayout onSave={handleSave}>
       <ChecklistCoreBody />
-      <ChecklistCoreFooter />
-    </SidebarContainer>
+    </BuilderSidebarLayout>
   );
 };
 

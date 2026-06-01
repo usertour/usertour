@@ -19,6 +19,12 @@ export const useBuilderStore = <T>(selector: (state: BuilderStoreState) => T): T
 // boolean `isLoading` exposes.
 export const useSaveState = () => useBuilderStore((s) => s.saveState);
 
+// Busy = initial-content load OR a save in flight. The canonical
+// "disable the form / show the footer spinner" predicate, folding the
+// two states that sidebar pages + form bindings used to merge inline.
+export const useIsBusy = () =>
+  useBuilderStore((s) => s.isLoading || s.saveState.status === 'saving');
+
 // Undo / redo affordances — for UI buttons on top of the Cmd+Z /
 // Cmd+Shift+Z / Cmd+Y keyboard shortcuts wired at the Provider level.
 // canUndo / canRedo are reactive selectors; undo / redo are stable

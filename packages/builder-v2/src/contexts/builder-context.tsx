@@ -26,6 +26,7 @@ export { useBuilderContentRef } from './use-builder-content-ref';
 export {
   useBuilderStore,
   useSaveState,
+  useIsBusy,
   useCanUndo,
   useCanRedo,
   useUndo,

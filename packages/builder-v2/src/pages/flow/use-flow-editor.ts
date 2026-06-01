@@ -9,7 +9,7 @@ import {
 import { useAddContentStepMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { type ContentVersion, type Step } from '@usertour/types';
-import { BuilderMode, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { BuilderMode, useBuilderMethods, useBuilderStore, useIsBusy } from '../../contexts';
 import { getEmptyDataForType } from '../../utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
@@ -43,7 +43,7 @@ export const useFlowEditor = () => {
   const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((s) => s.currentVersion);
   const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);
-  const isLoading = useBuilderStore((s) => s.isLoading || s.saveState.status === 'saving');
+  const isLoading = useIsBusy();
 
   const { toast } = useToast();
   const { invoke: addContentStep } = useAddContentStepMutation();

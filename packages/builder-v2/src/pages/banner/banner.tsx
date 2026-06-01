@@ -1,11 +1,9 @@
 'use client';
 
-import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
+import { CardContent, ScrollArea } from '@usertour/ui';
 
-import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
-import { SidebarContainer } from '../sidebar/sidebar-container';
-import { SidebarFooter } from '../sidebar/sidebar-footer';
-import { SidebarHeader } from '../sidebar/sidebar-header';
+import { useSidebarSave } from '../../hooks/use-sidebar-save';
+import { BuilderSidebarLayout } from '../sidebar/builder-sidebar-layout';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { BannerEmbed } from './components/banner-embed';
 import { BannerEmbedPlacementSelect } from './components/banner-embed-placement';
@@ -29,50 +27,13 @@ const BannerBuilderBody = () => {
   );
 };
 
-const BannerBuilderHeader = () => {
-  const currentContent = useBuilderStore((state) => state.currentContent);
-  return (
-    <CardHeader className="flex-none p-4 space-y-3">
-      <CardTitle className="flex h-8">
-        <SidebarHeader title={currentContent?.name ?? ''} />
-      </CardTitle>
-    </CardHeader>
-  );
-};
-
-const BannerBuilderFooter = () => {
-  // isLoading merges initial-content load + save-in-flight (legacy
-  // overload). Per docs/conventions/builder-context-migration.md.
-  const isLoading = useBuilderStore(
-    (state) => state.isLoading || state.saveState.status === 'saving',
-  );
-  const { onSaved } = useBuilderConfig();
-  const { saveContent } = useBuilderMethods();
-
-  const handleSave = async () => {
-    // saveContent is idempotent — bails if not dirty — and awaits the
-    // dispatched mutations + the post-save fetchContentAndVersion
-    // before resolving. After it returns, currentVersion = backupVersion
-    // and onSaved can navigate away cleanly.
-    await saveContent();
-    await onSaved?.();
-  };
-
-  return (
-    <CardFooter className="flex p-5">
-      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
-    </CardFooter>
-  );
-};
-
 export const BannerBuilder = () => {
+  const handleSave = useSidebarSave();
   return (
     <>
-      <SidebarContainer>
-        <BannerBuilderHeader />
+      <BuilderSidebarLayout onSave={handleSave}>
         <BannerBuilderBody />
-        <BannerBuilderFooter />
-      </SidebarContainer>
+      </BuilderSidebarLayout>
       <BannerEmbed />
     </>
   );
