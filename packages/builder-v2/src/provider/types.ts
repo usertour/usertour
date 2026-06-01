@@ -11,7 +11,6 @@ import type { BuilderStore } from '../store/builder-store';
 // `setAutoSaveValidator` accepts null to clear a previously
 // registered validator (per-type editor unmount); see use-auto-save.
 export interface BuilderProviderMethods {
-  initContent: (message: any) => Promise<boolean>;
   saveContent: () => Promise<void>;
   fetchContentAndVersion: (
     contentId: string,

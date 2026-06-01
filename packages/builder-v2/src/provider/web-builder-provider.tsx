@@ -10,7 +10,6 @@ export interface WebBuilderProviderProps {
   environmentId: string;
   versionId: string;
   projectId: string;
-  envToken: string;
   onSaved: () => Promise<void>;
   shouldShowMadeWith?: boolean;
 }

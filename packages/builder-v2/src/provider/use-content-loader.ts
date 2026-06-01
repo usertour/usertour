@@ -1,8 +1,6 @@
-import { defaultStep } from '@usertour/helpers';
 import { useGetContentLazyQuery, useGetContentVersionLazyQuery } from '@usertour/hooks';
-import { type Content, ContentDataType, type ContentVersion } from '@usertour/types';
+import type { Content, ContentVersion } from '@usertour/types';
 import { useCallback } from 'react';
-import { BuilderMode } from '../contexts/builder-mode';
 import type { BuilderProviderMethods } from './types';
 import type { BuilderStore } from '../store/builder-store';
 
@@ -12,21 +10,16 @@ export interface UseContentLoaderArgs {
 
 export interface UseContentLoaderReturn {
   fetchContentAndVersion: BuilderProviderMethods['fetchContentAndVersion'];
-  initContent: BuilderProviderMethods['initContent'];
 }
 
-// Encapsulates the Provider's content-loading lifecycle:
+// The Provider's content-loading primitive:
 //   - fetchContent / fetchVersion: thin wrappers around the Apollo
 //     lazy queries
 //   - fetchContentAndVersion: composes the two + writes
 //     currentContent / currentVersion / backupVersion into the store.
-//     Uses setCurrentVersionFromServer so save round-trips don't
-//     pollute the undo stack.
-//   - initContent: top-level entry called once by the host on mount.
-//     Seeds environmentId / projectId / envToken, drives the first
-//     fetch, sets currentMode based on content type, clears history
-//     (initial-load checkpoint), and handles the FLOW + initialStepIndex
-//     "open directly to step N" deep-link case.
+//     Uses setCurrentVersionFromServer so save round-trips don't pollute
+//     the undo stack. Called by useBuilderInit (initial controlled
+//     hydrate) and useSaveContent (post-save re-baseline).
 export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderReturn => {
   const { store } = args;
   const { invoke: getContent } = useGetContentLazyQuery();
@@ -83,64 +76,5 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
     [fetchContent, fetchVersion, store],
   );
 
-  const initContent = useCallback<BuilderProviderMethods['initContent']>(
-    async (message) => {
-      const { contentId, environmentId, envToken, versionId, projectId, initialStepIndex } =
-        message;
-      if (!environmentId) {
-        return false;
-      }
-
-      const state = store.getState();
-      state.setEnvToken(envToken);
-      state.setIsLoading(true);
-      state.setEnvironmentId(environmentId);
-      state.setProjectId(projectId);
-      const result = await fetchContentAndVersion(contentId, versionId);
-      if (!result) {
-        store.getState().setIsLoading(false);
-        return false;
-      }
-      store.getState().setIsLoading(false);
-      // Initial-load checkpoint: the freshly-fetched version is the
-      // origin; nothing earlier is reachable via undo. (Save-induced
-      // fetches don't clear history — those just refresh the baseline.)
-      store.getState().clearHistory();
-
-      const { content, version } = result;
-      const versionType = content.type.toString();
-      const versionMode = versionType as BuilderMode;
-      const hasMode = Object.values(BuilderMode).includes(versionMode);
-
-      // Handle initial step for flow type - directly open step editor
-      if (
-        versionType === ContentDataType.FLOW &&
-        initialStepIndex !== undefined &&
-        version.steps?.[initialStepIndex]
-      ) {
-        const step = version.steps[initialStepIndex];
-        const cloned = JSON.parse(
-          JSON.stringify({
-            ...step,
-            setting: { ...defaultStep.setting, ...step.setting },
-          }),
-        );
-        const innerState = store.getState();
-        innerState.setCurrentStep(cloned);
-        innerState.setCurrentIndex(initialStepIndex);
-        innerState.setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
-        return true;
-      }
-
-      if (versionType !== ContentDataType.FLOW && hasMode) {
-        store.getState().setCurrentMode({ mode: versionType as BuilderMode });
-      } else {
-        store.getState().setCurrentMode({ mode: BuilderMode.FLOW });
-      }
-      return true;
-    },
-    [fetchContentAndVersion, store],
-  );
-
-  return { fetchContentAndVersion, initContent };
+  return { fetchContentAndVersion };
 };

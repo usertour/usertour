@@ -21,8 +21,8 @@ setAutoFreeze(false);
 // Consumers read via `useBuilderStore(selector)` — one selector per
 // field is the recommended pattern; the store's value is its
 // selector-friendly subscription topology. Imperative methods
-// (saveContent / initContent / fetchContentAndVersion /
-// setAutoSaveValidator) stay in the Provider because they close over
+// (saveContent / fetchContentAndVersion / setAutoSaveValidator) stay in
+// the Provider because they close over
 // Apollo hook returns that can't live in a non-React store;
 // consumers read them via `useBuilderMethods()`.
 
@@ -64,7 +64,6 @@ const EMPTY_HISTORY: HistoryStack = { past: [], future: [] };
 export interface BuilderState {
   currentMode: CurrentMode;
   environmentId: string;
-  envToken: string;
   projectId: string;
   currentStep: Step | null;
   currentIndex: number;
@@ -74,6 +73,11 @@ export interface BuilderState {
   currentTheme: Theme | undefined;
   isShowError: boolean;
   position: string;
+  // True only while a non-FSM mutation (currently the theme change in
+  // sidebar-theme) is in flight; folded into `useIsBusy` + the
+  // beforeunload guard. The initial-content load is no longer tracked
+  // here — that gate moved to `ready` in useBuilderInit — so this
+  // starts `false`.
   isLoading: boolean;
   saveState: SaveState;
   history: HistoryStack;
@@ -82,9 +86,9 @@ export interface BuilderState {
 // Public setters — exposed on the store for `useBuilderStore`
 // selector access by any consumer.
 //
-// `envToken` and `backupVersion` are set only internally by the
-// Provider's `initContent` / `fetchContentAndVersion`, so they have
-// private setters (below) and no public one.
+// `backupVersion` is set only internally by the Provider's
+// `fetchContentAndVersion`, so it has a private setter (below) and no
+// public one.
 //
 // Flow-specific cursors (`currentStep`, `currentIndex`, `isShowError`)
 // are read by cross-type hooks (use-current-theme, use-content-position,
@@ -108,7 +112,6 @@ export interface BuilderStateSetters {
 // setters so cross-type consumers can't reach into Flow-only buffers
 // by accident.
 export interface BuilderStatePrivateSetters {
-  setEnvToken: (value: string) => void;
   setBackupVersion: (value: ContentVersion | undefined) => void;
   // Flow-only buffers — writers live in useFlowEditor.
   setCurrentStep: React.Dispatch<React.SetStateAction<Step | null>>;
@@ -159,7 +162,6 @@ const makeSetter = <K extends keyof BuilderState>(
 const initialState: BuilderState = {
   currentMode: { mode: BuilderMode.NONE },
   environmentId: '',
-  envToken: '',
   projectId: '',
   currentStep: null,
   currentIndex: 0,
@@ -169,7 +171,7 @@ const initialState: BuilderState = {
   currentTheme: undefined,
   isShowError: false,
   position: 'left',
-  isLoading: true,
+  isLoading: false,
   saveState: { status: 'idle' },
   history: EMPTY_HISTORY,
 };
@@ -216,7 +218,6 @@ export const createBuilderStore = () =>
     setIsShowError: makeSetter('isShowError', set, get),
     setPosition: makeSetter('position', set, get),
     setIsLoading: makeSetter('isLoading', set, get),
-    setEnvToken: (value) => set({ envToken: value }),
     setBackupVersion: (value) => set({ backupVersion: value }),
     setCurrentVersionFromServer: (value) => set({ currentVersion: value }),
     transitionSaveState: (next) => {

@@ -29,7 +29,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
 
   // Compose the Provider's behaviours. Each hook owns one concern and
   // returns whatever the next hook (or the public surface) needs.
-  const { fetchContentAndVersion, initContent } = useContentLoader({ store });
+  const { fetchContentAndVersion } = useContentLoader({ store });
   const { saveContent } = useSaveContent({ store, fetchContentAndVersion });
   const { setAutoSaveValidator } = useAutoSave({ store, saveContent });
   useUndoShortcuts({ store });
@@ -47,20 +47,17 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   // render while still dispatching to the latest closure on every call.
   const methodsRef = useRef({
     fetchContentAndVersion,
-    initContent,
     saveContent,
     setAutoSaveValidator,
   });
   methodsRef.current = {
     fetchContentAndVersion,
-    initContent,
     saveContent,
     setAutoSaveValidator,
   };
   const stableMethods = useMemo<BuilderProviderContextValue['methods']>(
     () => ({
       fetchContentAndVersion: (cid, vid) => methodsRef.current.fetchContentAndVersion(cid, vid),
-      initContent: (msg) => methodsRef.current.initContent(msg),
       saveContent: () => methodsRef.current.saveContent(),
       setAutoSaveValidator: (fn) => methodsRef.current.setAutoSaveValidator(fn),
     }),

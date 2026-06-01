@@ -4,6 +4,8 @@
 // here; `builder-context.tsx` re-exports `BuilderMode` so consumers
 // have one import path.
 
+import { ContentDataType } from '@usertour/types';
+
 export enum BuilderMode {
   FLOW_STEP_DETAIL = 'flow-step-detail',
   FLOW_STEP_TRIGGER = 'flow-step-trigger',
@@ -31,3 +33,18 @@ export interface BuilderCommonMode {
 }
 
 export type CurrentMode = BuilderCommonMode | BuilderTriggerMode;
+
+// Initial builder mode for a content type — the single source for the
+// type→mode mapping. (app/mode-component-map then maps the resulting
+// mode → component.) Unmapped types (e.g. TRACKER) fall back to FLOW,
+// matching pre-C3 behaviour.
+const CONTENT_TYPE_TO_MODE: Partial<Record<ContentDataType, BuilderMode>> = {
+  [ContentDataType.FLOW]: BuilderMode.FLOW,
+  [ContentDataType.CHECKLIST]: BuilderMode.CHECKLIST,
+  [ContentDataType.LAUNCHER]: BuilderMode.LAUNCHER,
+  [ContentDataType.BANNER]: BuilderMode.BANNER,
+  [ContentDataType.RESOURCE_CENTER]: BuilderMode.RESOURCE_CENTER,
+};
+
+export const deriveInitialMode = (contentType: string): BuilderMode =>
+  CONTENT_TYPE_TO_MODE[contentType as ContentDataType] ?? BuilderMode.FLOW;

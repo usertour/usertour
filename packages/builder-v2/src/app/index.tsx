@@ -1,28 +1,14 @@
-import { useThemeList } from '../hooks/use-theme-list';
-import { useEffect, useRef, useState } from 'react';
-import { BuilderMode, useBuilderMethods, useBuilderStore } from '../contexts';
+import { useEffect, useRef } from 'react';
+import { BuilderMode, useBuilderStore } from '../contexts';
 import { WebBuilderProvider, useWebBuilderProvider } from '../provider/web-builder-provider';
+import { useBuilderInit } from '../provider/use-builder-init';
+import { useSyncCurrentTheme } from '../hooks/use-sync-current-theme';
 import { WebBuilderLoading } from '../components/web-builder-loading';
 import { MODE_COMPONENTS } from './mode-component-map';
 
 const Container = () => {
+  useSyncCurrentTheme();
   const currentMode = useBuilderStore((state) => state.currentMode);
-  const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const setCurrentTheme = useBuilderStore((state) => state.setCurrentTheme);
-  const { themeList } = useThemeList();
-
-  useEffect(() => {
-    if (!currentVersion) {
-      return;
-    }
-    if (themeList) {
-      const theme = themeList.find((theme) => theme.id === currentVersion.themeId);
-      if (theme) {
-        setCurrentTheme(theme);
-      }
-    }
-  }, [themeList, currentVersion]);
-
   const Active = MODE_COMPONENTS[currentMode.mode];
   return Active ? <Active /> : null;
 };
@@ -32,7 +18,6 @@ export interface WebBuilderProps {
   environmentId: string;
   versionId: string;
   projectId: string;
-  envToken: string;
   // Accepted for parity with the v1 builder's shared call site in apps/web;
   // web-only v2 has no SDK-preview path that consumes it.
   usertourjsUrl?: string;
@@ -43,50 +28,38 @@ export interface WebBuilderProps {
   onStepIndexChange?: (stepIndex: number | undefined) => void;
 }
 
-// Inner component that uses the provider context
+// Inner component: drives init, then gates on a single `ready` signal.
 function WebBuilderContent(props: WebBuilderProps) {
-  const { contentId, environmentId, versionId, projectId, envToken, initialStepIndex } = props;
-  const { initContent } = useBuilderMethods();
+  const { contentId, environmentId, versionId, projectId, initialStepIndex } = props;
   const currentMode = useBuilderStore((state) => state.currentMode);
   const currentIndex = useBuilderStore((state) => state.currentIndex);
-  const { isLoading: providerLoading } = useWebBuilderProvider();
-  const [isInitializing, setIsInitializing] = useState(true);
+  const { isLoading: listsLoading } = useWebBuilderProvider();
+  const { ready } = useBuilderInit({
+    contentId,
+    versionId,
+    environmentId,
+    projectId,
+    initialStepIndex,
+  });
   const onStepIndexChangeRef = useRef(props.onStepIndexChange);
 
   useEffect(() => {
     onStepIndexChangeRef.current = props.onStepIndexChange;
   }, [props.onStepIndexChange]);
 
+  // Mirror the active step into the URL (store → URL). Only after `ready`
+  // so it can't clobber the initial ?step before useBuilderInit reads it.
   useEffect(() => {
-    (async () => {
-      const params = {
-        contentId,
-        environmentId,
-        versionId,
-        projectId,
-        envToken,
-        initialStepIndex,
-      };
-      await initContent(params);
-      setIsInitializing(false);
-    })();
-  }, []);
-
-  // Mirror the active step into the URL so deep-links and refresh keep the
-  // user in the same panel. Skip while initializing to avoid clobbering the
-  // initial ?step=N before initContent has had a chance to read it.
-  useEffect(() => {
-    if (isInitializing) {
+    if (!ready) {
       return;
     }
     const isStepMode =
       currentMode.mode === BuilderMode.FLOW_STEP_DETAIL ||
       currentMode.mode === BuilderMode.FLOW_STEP_TRIGGER;
     onStepIndexChangeRef.current?.(isStepMode ? currentIndex : undefined);
-  }, [currentMode.mode, currentIndex, isInitializing]);
+  }, [currentMode.mode, currentIndex, ready]);
 
-  // Show loading if any provider is loading or if we're still initializing
-  if (providerLoading || isInitializing) {
+  if (!ready || listsLoading) {
     return <WebBuilderLoading message="Loading builder..." />;
   }
 

@@ -3,7 +3,7 @@ import type { BuilderProviderContextValue } from '../provider/types';
 import { BuilderProviderContext } from '../provider/builder-provider';
 
 // Imperative methods exposed by BuilderProvider — saveContent /
-// initContent / fetchContentAndVersion / setAutoSaveValidator.
+// fetchContentAndVersion / setAutoSaveValidator.
 //
 // Mount-stable: the Provider pins method identity via methodsRef +
 // useMemo([]) on mount, so the returned object is the same reference

@@ -9,7 +9,7 @@ import { useBuilderStore } from '../contexts/builder-context';
 // pagination state machine isn't used here (the builder mounts it
 // with pageSize: 1000 which effectively disables pagination); first:
 // 1000 inline matches that behavior. environmentId comes from the
-// Zustand store, queried after initContent has set it (skip until
+// Zustand store, queried after useBuilderInit has set it (skip until
 // then).
 
 export const useContentList = () => {

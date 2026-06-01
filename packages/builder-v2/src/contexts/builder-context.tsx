@@ -34,6 +34,7 @@ export {
 } from './use-builder-store';
 export {
   BuilderMode,
+  deriveInitialMode,
   type BuilderTriggerMode,
   type BuilderCommonMode,
   type CurrentMode,
