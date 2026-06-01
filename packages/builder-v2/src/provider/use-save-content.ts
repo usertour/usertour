@@ -97,6 +97,19 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
         if (saveId === saveCounterRef.current) {
           store.getState().transitionSaveState({ status: 'saved', savedAt: Date.now() });
         }
+      } else {
+        // A dispatched mutation resolved nullish — the wrapper hook
+        // swallowed a server "no data" response without throwing, so the
+        // catch below never runs. Surface it as an error here, otherwise
+        // saveState is stuck at 'saving' forever and the leave guard +
+        // footer spinners wedge with no feedback. (The line-87 identity
+        // guard already returned for superseded saves, so we're current.)
+        const err = new Error('Save failed: the server returned no data.');
+        store.getState().transitionSaveState({ status: 'error', error: err });
+        toast({
+          variant: 'destructive',
+          title: 'Save failed',
+        });
       }
     } catch (error) {
       if (saveId !== saveCounterRef.current) {
