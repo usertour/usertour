@@ -1,9 +1,8 @@
 // Mode enum + per-mode payload types — extracted from builder-context
 // to break the cycle between `builder-context.tsx` and the Zustand
 // store factory (`store/builder-store.ts`). Both files import from
-// here; `builder-context.tsx` re-exports for backward compat so the
-// public path `@usertour/builder-v2` keeps the same surface for the
-// 114 existing useBuilderContext consumers.
+// here; `builder-context.tsx` re-exports `BuilderMode` so consumers
+// have one import path.
 
 export enum BuilderMode {
   FLOW_STEP_DETAIL = 'flow-step-detail',

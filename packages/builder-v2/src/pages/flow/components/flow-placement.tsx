@@ -63,21 +63,6 @@ export const FlowPlacement = () => {
             <OpenInNewWindowIcon className="ml-1" />
           </Button>
         </div>
-        {/* <ContentPlacementTabs>
-          <ContentPlacementTabsContent value="manual">
-            <ContentPlacementManual />
-          </ContentPlacementTabsContent>
-          <ContentPlacementTabsContent value="auto">
-            <ContentPlacementAuto />
-          </ContentPlacementTabsContent>
-          <ContentPlacementActions
-            createStep={createNewStep}
-            currentStep={currentStep || undefined}
-            attributeList={attributeList}
-            contents={contents}
-            currentVersion={currentVersion}
-          />
-        </ContentPlacementTabs> */}
         <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
           <ContentPlacementManual />
           <ContentPlacementActions

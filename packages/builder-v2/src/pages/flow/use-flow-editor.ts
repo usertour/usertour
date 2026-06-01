@@ -50,7 +50,7 @@ export const useFlowEditor = () => {
 
   // Flow store fields — direct store access. The setters are on the
   // private surface (BuilderStatePrivateSetters); they only flow out
-  // through this hook, not through useBuilderContext.
+  // through this hook, not the public store surface.
   const currentStep = useBuilderStore((s) => s.currentStep);
   const currentIndex = useBuilderStore((s) => s.currentIndex);
   const isShowError = useBuilderStore((s) => s.isShowError);

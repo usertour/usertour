@@ -36,7 +36,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   useBeforeunloadGuard({ store });
 
   // Ref-stable wrappers for every imperative method exposed via
-  // useBuilderContext. Each underlying useCallback's deps include
+  // useBuilderMethods. Each underlying useCallback's deps include
   // Apollo hook return refs that are not ref-stable across renders —
   // so the useCallbacks themselves don't memoize, and any consumer
   // that lists one of them in a useEffect / useMemo dep array would
