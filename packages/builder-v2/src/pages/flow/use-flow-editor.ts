@@ -12,25 +12,30 @@ import { type ContentVersion, type Step, StepContentType } from '@usertour/types
 import { BuilderMode, useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { getEmptyDataForType } from '../../utils/default-data';
 
-// Flow-flavoured editor — analogous to useBannerEditor / etc. but
-// doesn't extend useTypeEditor because Flow's "data" lives in
-// currentVersion.steps (array) not currentVersion.data (blob).
+// Editor abstraction for Flow content. Parallel to useTypeEditor
+// (which serves Banner / Checklist / Launcher / ResourceCenter), not a
+// specialization of it.
 //
-// Owns all Flow-specific writes:
-// - step-array mutators (remove / reorder) → setCurrentVersion →
-//   PR ζ FSM dispatcher → addContentSteps mutation
-// - currentStep / currentIndex local buffer (mounted in Zustand store
-//   as private setters, only accessible via this hook)
-// - createStep / createNewStep (Apollo addContentStep mutation, only
-//   Flow uses these — used to be on BuilderProvider but were Flow-
-//   specific from day one)
-// - sub-mode navigation helpers
+// Flow doesn't fit useTypeEditor because its data shape and mutation
+// pattern are structurally different:
+// - Data lives in currentVersion.steps[] (a top-level sibling array),
+//   not currentVersion.data (a JSON blob)
+// - Mutations are list operations (add / remove / reorder, plus the
+//   Apollo addContentStep mutation for individual step creation),
+//   not partial-merge updates
+// - Sub-mode editing needs a currentStep local buffer that's shared
+//   across multiple components, so it lives in the Zustand store as
+//   private setters instead of useState
 //
-// Read-side fields (currentStep / currentIndex / isShowError) are
-// store fields cross-type hooks read (use-current-theme reads
-// step.themeId for theme inheritance, use-content-position reads
-// step.setting.position, etc.) and app/index.tsx's URL mirror for
-// ?step=N. Writers live here in this hook.
+// What both hooks share via the Provider: the save FSM (both write
+// through setCurrentVersion), the undo/redo stack, the leave guard,
+// the auto-save validator gate.
+//
+// Read-side store fields (currentStep / currentIndex / isShowError)
+// stay on the public store surface because cross-type hooks read them
+// — use-current-theme inherits step.themeId, use-content-position
+// reads step.setting.position, app/index.tsx mirrors currentIndex
+// into the ?step=N URL param. Writers stay here.
 
 export const useFlowEditor = () => {
   // Cross-type Provider bits — focused-hook split per

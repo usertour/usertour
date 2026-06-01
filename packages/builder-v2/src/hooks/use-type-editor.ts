@@ -2,20 +2,31 @@ import { useCallback, useState, type Dispatch, type SetStateAction } from 'react
 import { useBuilderStore } from '../contexts/builder-context';
 import type { BuilderTypeConfig } from '../types/builder-type-config';
 
-// Ties a BuilderTypeConfig into the Zustand store + Save FSM. Per-type
-// editors call this instead of running their own debounced save loop.
+// Editor abstraction for the four data-blob content types — Banner,
+// Checklist, Launcher, ResourceCenter. They each edit
+// `currentVersion.data` (a JSON blob) via partial-merge updates and
+// share the same save lifecycle, so a single hook fits all four.
+//
+// Flow does NOT use this hook. Flow edits `currentVersion.steps[]`
+// (a top-level sibling array, not a sub-field of `data`) with list
+// operations (add/remove/reorder) instead of partial merge, plus a
+// dedicated `currentStep` local buffer for sub-mode editing. Those
+// requirements don't fit useTypeEditor's contract, so Flow has its
+// own `useFlowEditor` hook at pages/flow/use-flow-editor.ts. The two
+// hooks share the Provider's save FSM (both write via
+// `setCurrentVersion`) but diverge on data shape and mutation pattern.
 //
 // data       — current per-type data, normalized; undefined until
 //              currentVersion has loaded.
 // updateData — mutates `currentVersion.data` via setCurrentVersion,
-//              which (a) pushes patches onto the undo stack (PR δ)
-//              and (b) trips the FSM dispatcher (PR ζ) to fire
+//              which (a) pushes patches onto the undo stack and
+//              (b) trips the FSM dispatcher to fire
 //              updateContentVersion server-side.
 // uiState    — per-type UI cursor / buffer; pure local useState,
 //              not persisted.
 // isLoading  — merges initial-content load + save-in-flight, mirroring
-//              the legacy useBuilderContext().isLoading overload that
-//              per-type save buttons / form-disable bindings rely on.
+//              the legacy isLoading overload that per-type save
+//              buttons / form-disable bindings rely on.
 
 export interface UseTypeEditorReturn<TData, TUIState> {
   data: TData | undefined;
@@ -28,9 +39,8 @@ export interface UseTypeEditorReturn<TData, TUIState> {
 // CONFIG STABILITY: callers must pass a module-level config record,
 // not an inline object. Inline configs would change identity every
 // render and invalidate updateData's ref, which would cascade through
-// any consumer useEffect / useMemo dep arrays (same class of bug as
-// PR γ + arch fix). The recommended pattern is one config per
-// content type, declared at module top:
+// any consumer useEffect / useMemo dep arrays. The recommended
+// pattern is one config per content type, declared at module top:
 //   const bannerTypeConfig: BuilderTypeConfig<BannerData> = { ... };
 //   const editor = useTypeEditor(bannerTypeConfig);
 
