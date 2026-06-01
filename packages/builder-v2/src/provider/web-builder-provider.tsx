@@ -48,7 +48,6 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
 
   return (
     <BuilderProvider
-      isWebBuilder={true}
       onSaved={onSaved}
       usertourjsUrl={usertourjsUrl}
       shouldShowMadeWith={shouldShowMadeWith}

@@ -10,14 +10,13 @@ import {
   ContentPlacementProvider,
 } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement';
-import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../../contexts';
+import { useBuilderConfig, useBuilderStore } from '../../../contexts';
 import { useFlowEditor } from '../use-flow-editor';
 
 export const FlowPlacement = () => {
-  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const { zIndex } = useBuilderConfig();
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { isShowError, currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
 
   const { contents } = useContentList();
@@ -37,13 +36,6 @@ export const FlowPlacement = () => {
     }));
   };
 
-  const handleElementChange = () => {
-    setCurrentMode({
-      mode: BuilderMode.ELEMENT_SELECTOR,
-      backMode: BuilderMode.FLOW_STEP_DETAIL,
-    });
-  };
-
   const handleAboutPlacement = () => {
     window?.open(
       'https://docs.usertour.io/building-experiences/creating-your-first-flow#tooltip-placement-tooltips-only',
@@ -58,9 +50,7 @@ export const FlowPlacement = () => {
       target={currentStep?.target}
       screenshot={currentStep?.screenshot}
       onTargetChange={handleTargetChange}
-      onChangeElement={handleElementChange}
       buildUrl={currentContent?.buildUrl}
-      isWebBuilder={isWebBuilder}
       onScreenChange={handleScreenChange}
       token={getAuthToken()}
       subTitle="Show tooltip on this element"

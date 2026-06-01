@@ -14,14 +14,7 @@ import type { BuilderProviderContextValue, BuilderProviderProps } from './types'
 export const BuilderProviderContext = createContext<BuilderProviderContextValue | null>(null);
 
 export const BuilderProvider = (props: BuilderProviderProps) => {
-  const {
-    children,
-    webHost = '',
-    usertourjsUrl = '',
-    isWebBuilder = false,
-    onSaved,
-    shouldShowMadeWith = true,
-  } = props;
+  const { children, webHost = '', usertourjsUrl = '', onSaved, shouldShowMadeWith = true } = props;
 
   // One store per mount — the `useRef + if (!current)` idiom is the
   // standard Zustand-with-Provider pattern (calling createBuilderStore
@@ -36,7 +29,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
 
   // Compose the Provider's behaviours. Each hook owns one concern and
   // returns whatever the next hook (or the public surface) needs.
-  const { fetchContentAndVersion, initContent } = useContentLoader({ store, isWebBuilder });
+  const { fetchContentAndVersion, initContent } = useContentLoader({ store });
   const { saveContent } = useSaveContent({ store, fetchContentAndVersion });
   const { setAutoSaveValidator } = useAutoSave({ store, saveContent });
   useUndoShortcuts({ store });
@@ -83,14 +76,13 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       config: {
         webHost,
         usertourjsUrl,
-        isWebBuilder,
         onSaved,
         shouldShowMadeWith,
         zIndex: 0,
       },
       contentRef,
     }),
-    [store, stableMethods, webHost, usertourjsUrl, isWebBuilder, onSaved, shouldShowMadeWith],
+    [store, stableMethods, webHost, usertourjsUrl, onSaved, shouldShowMadeWith],
   );
 
   return (

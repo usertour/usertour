@@ -42,7 +42,7 @@ const EMBED_PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; label: string }[] 
 const labelStyles = 'flex justify-start items-center space-x-1';
 
 export const BannerEmbedPlacementSelect = () => {
-  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const { zIndex } = useBuilderConfig();
   const isShowError = useBuilderStore((state) => state.isShowError);
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
@@ -112,7 +112,6 @@ export const BannerEmbedPlacementSelect = () => {
           target={localData.containerElement}
           onTargetChange={handleTargetChange}
           buildUrl={currentContent?.buildUrl}
-          isWebBuilder={isWebBuilder}
           subTitle="Container element for banner"
         >
           <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">

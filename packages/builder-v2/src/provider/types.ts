@@ -25,7 +25,6 @@ export interface BuilderProviderMethods {
 export interface BuilderProviderConfig {
   webHost: string;
   usertourjsUrl: string;
-  isWebBuilder: boolean;
   onSaved: () => Promise<void>;
   shouldShowMadeWith: boolean;
   zIndex: number;
@@ -46,7 +45,6 @@ export interface BuilderProviderContextValue {
 
 export interface BuilderProviderProps {
   children?: ReactNode;
-  isWebBuilder?: boolean;
   webHost?: string;
   usertourjsUrl?: string;
   onSaved: () => Promise<void>;

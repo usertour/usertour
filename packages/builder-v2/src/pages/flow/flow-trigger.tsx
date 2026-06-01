@@ -23,7 +23,7 @@ import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
-import { BuilderMode, useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from './trigger-context';
 import { useFlowEditor } from './use-flow-editor';
 import { useToken } from '../../hooks/use-token';
@@ -56,10 +56,9 @@ const FlowBuilderTriggerHeader = () => {
 
 const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boolean }) => {
   const { attributes, loading } = props;
-  const { zIndex, isWebBuilder } = useBuilderConfig();
+  const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const currentContent = useBuilderStore((state) => state.currentContent);
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const { currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
 
   const { contents } = useContentList();
@@ -127,20 +126,6 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
     });
   };
 
-  const handleOnRulesConditionElementChange = (
-    index: number,
-    conditionIndex: number,
-    type: string,
-  ) => {
-    const isInput = type === 'text-input' || type === 'text-fill';
-    setCurrentMode({
-      mode: BuilderMode.ELEMENT_SELECTOR,
-      data: { isInput },
-      backMode: BuilderMode.FLOW_STEP_TRIGGER,
-      triggerConditionData: { index, conditionIndex, type },
-    });
-  };
-
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full ">
@@ -179,13 +164,6 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
                 onWaitChange={(wait) => {
                   handleOnWaitChange(wait, index);
                 }}
-                onRulesConditionElementChange={
-                  isWebBuilder
-                    ? undefined
-                    : (conditionIndex, type) => {
-                        handleOnRulesConditionElementChange(index, conditionIndex, type);
-                      }
-                }
               />
             ))}
           <Button className="w-full" variant="secondary" onClick={handleOnClick}>

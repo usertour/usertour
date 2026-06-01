@@ -10,9 +10,7 @@ export const ContentPlacementAuto = () => {
   const {
     target,
     zIndex,
-    isWebBuilder,
     screenshot,
-    onChangeElement,
     onTargetChange,
     buildUrl,
     token,
@@ -36,42 +34,24 @@ export const ContentPlacementAuto = () => {
     <ContentError open={isShowError && (!target?.selectors || target?.selectors.length === 0)}>
       <div className="flex flex-col space-y-2">
         <h1 className="text-sm">{subTitle}</h1>
-        {!isWebBuilder ? (
-          <div
-            className="rounded-2xl flex-col overflow-hidden"
-            onClick={(e) => onChangeElement?.(e.currentTarget)}
-          >
+        <SelectorDialog
+          onSuccess={handleElementSelectSuccess}
+          buildUrl={buildUrl || ''}
+          zIndex={zIndex + EXTENSION_SELECT}
+          token={token || ''}
+        >
+          <div className="rounded-2xl flex-col overflow-hidden">
             <div className="w-[242px] h-[130px] overflow-hidden">
               <img src={screenshot?.mini} alt="" />
             </div>
-
             <ContentErrorAnchor>
               <Button className="w-full rounded-none">
                 <Crosshair2Icon className="mr-2" />
-                Select another element
+                {!target ? 'Select element' : 'Select another element'}
               </Button>
             </ContentErrorAnchor>
           </div>
-        ) : (
-          <SelectorDialog
-            onSuccess={handleElementSelectSuccess}
-            buildUrl={buildUrl || ''}
-            zIndex={zIndex + EXTENSION_SELECT}
-            token={token || ''}
-          >
-            <div className="rounded-2xl flex-col overflow-hidden">
-              <div className="w-[242px] h-[130px] overflow-hidden">
-                <img src={screenshot?.mini} alt="" />
-              </div>
-              <ContentErrorAnchor>
-                <Button className="w-full rounded-none">
-                  <Crosshair2Icon className="mr-2" />
-                  {!target ? 'Select element' : 'Select another element'}
-                </Button>
-              </ContentErrorAnchor>
-            </div>
-          </SelectorDialog>
-        )}
+        </SelectorDialog>
 
         <PrecisionSelect
           value={target?.precision}

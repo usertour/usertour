@@ -6,7 +6,6 @@
 // 114 existing useBuilderContext consumers.
 
 export enum BuilderMode {
-  ELEMENT_SELECTOR = 'element-selector',
   FLOW_STEP_DETAIL = 'flow-step-detail',
   FLOW_STEP_TRIGGER = 'flow-step-trigger',
   FLOW = 'flow',
@@ -22,19 +21,6 @@ export enum BuilderMode {
   NONE = 'none',
 }
 
-export interface BuilderSelectorMode {
-  mode: BuilderMode.ELEMENT_SELECTOR;
-  backMode?: BuilderMode;
-  data?: {
-    isInput: boolean;
-  };
-  triggerConditionData?: {
-    index: number;
-    conditionIndex: number;
-    type: string;
-  };
-}
-
 export interface BuilderTriggerMode {
   mode: BuilderMode.FLOW_STEP_TRIGGER;
   data?: any;
@@ -46,8 +32,8 @@ export interface BuilderTriggerMode {
 }
 
 export interface BuilderCommonMode {
-  mode: Exclude<BuilderMode, BuilderMode.FLOW_STEP_TRIGGER | BuilderMode.ELEMENT_SELECTOR>;
+  mode: Exclude<BuilderMode, BuilderMode.FLOW_STEP_TRIGGER>;
   data?: any;
 }
 
-export type CurrentMode = BuilderCommonMode | BuilderSelectorMode | BuilderTriggerMode;
+export type CurrentMode = BuilderCommonMode | BuilderTriggerMode;

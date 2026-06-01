@@ -5,10 +5,8 @@ export interface ContentPlacementContextValue {
   target: ElementSelectorPropsData | undefined;
   onTargetChange: (value: Partial<ElementSelectorPropsData>) => void;
   zIndex: number;
-  isWebBuilder?: boolean;
   isShowError?: boolean;
   screenshot?: StepScreenshot;
-  onChangeElement?: (element: Element) => void;
   buildUrl?: string;
   token?: string;
   subTitle?: string;

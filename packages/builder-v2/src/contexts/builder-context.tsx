@@ -33,7 +33,6 @@ export {
 } from './use-builder-store';
 export {
   BuilderMode,
-  type BuilderSelectorMode,
   type BuilderTriggerMode,
   type BuilderCommonMode,
   type CurrentMode,

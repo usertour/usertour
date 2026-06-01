@@ -12,7 +12,7 @@ import {
   QuestionTooltip,
   useToast,
 } from '@usertour/ui';
-import { EXTENSION_SELECT, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour/constants';
+import { EXTENSION_SELECT } from '@usertour/constants';
 import { useThemeList } from '../../hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
@@ -21,13 +21,12 @@ import { useMutation } from '@apollo/client';
 import { updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
-import { postProxyMessageToWindow } from '../../utils/post-message';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
   const [updateContentVersionMutation] = useMutation(updateContentVersion);
   const { toast } = useToast();
-  const { zIndex, webHost, isWebBuilder } = useBuilderConfig();
+  const { zIndex } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
@@ -75,13 +74,7 @@ export const SidebarTheme = () => {
       return;
     }
     const url = `/project/${projectId}/settings/theme/${currentVersion.themeId}`;
-    if (isWebBuilder) {
-      return window.open(url, '_blank');
-    }
-    postProxyMessageToWindow({
-      kind: MESSAGE_CRX_OPEN_NEW_TARGET,
-      url: `${webHost}${url}`,
-    });
+    window.open(url, '_blank');
   }, [currentVersion]);
 
   return (

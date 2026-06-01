@@ -8,8 +8,8 @@ import {
 } from '@usertour/helpers';
 import { useAddContentStepMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
-import { type ContentVersion, type Step, StepContentType } from '@usertour/types';
-import { BuilderMode, useBuilderConfig, useBuilderMethods, useBuilderStore } from '../../contexts';
+import { type ContentVersion, type Step } from '@usertour/types';
+import { BuilderMode, useBuilderMethods, useBuilderStore } from '../../contexts';
 import { getEmptyDataForType } from '../../utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
@@ -40,7 +40,6 @@ import { getEmptyDataForType } from '../../utils/default-data';
 export const useFlowEditor = () => {
   // Cross-type Provider bits — focused-hook split per
   // docs/conventions/builder-context-migration.md
-  const { isWebBuilder } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((s) => s.currentVersion);
   const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);
@@ -58,7 +57,6 @@ export const useFlowEditor = () => {
   const setCurrentStep = useBuilderStore((s) => s.setCurrentStep);
   const setCurrentIndex = useBuilderStore((s) => s.setCurrentIndex);
   const setIsShowError = useBuilderStore((s) => s.setIsShowError);
-  const setSelectorOutput = useBuilderStore((s) => s.setSelectorOutput);
   const setCurrentVersion = useBuilderStore((s) => s.setCurrentVersion);
 
   const steps = currentVersion?.steps ?? [];
@@ -160,7 +158,6 @@ export const useFlowEditor = () => {
 
   const enterStepSubMode = useCallback(
     (step: Step, index: number, mode: BuilderMode) => {
-      setSelectorOutput(null);
       const cloned = JSON.parse(
         JSON.stringify({
           ...step,
@@ -171,7 +168,7 @@ export const useFlowEditor = () => {
       setCurrentIndex(index);
       setCurrentMode({ mode });
     },
-    [setSelectorOutput, setCurrentStep, setCurrentIndex, setCurrentMode],
+    [setCurrentStep, setCurrentIndex, setCurrentMode],
   );
 
   const exitToFlow = useCallback(() => {
@@ -193,19 +190,9 @@ export const useFlowEditor = () => {
         sequence: index,
       });
       setCurrentIndex(index);
-      if (isWebBuilder) {
-        setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
-        return;
-      }
-      // Chrome-extension builder routes tooltip-type steps through
-      // ELEMENT_SELECTOR first to pick the target DOM element.
-      const mode =
-        type === StepContentType.TOOLTIP
-          ? BuilderMode.ELEMENT_SELECTOR
-          : BuilderMode.FLOW_STEP_DETAIL;
-      setCurrentMode({ mode });
+      setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
     },
-    [currentVersion, isWebBuilder, setCurrentStep, setCurrentIndex, setCurrentMode],
+    [currentVersion, setCurrentStep, setCurrentIndex, setCurrentMode],
   );
 
   return {

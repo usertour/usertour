@@ -8,7 +8,6 @@ import type { BuilderStore } from '../store/builder-store';
 
 export interface UseContentLoaderArgs {
   store: BuilderStore;
-  isWebBuilder: boolean;
 }
 
 export interface UseContentLoaderReturn {
@@ -29,7 +28,7 @@ export interface UseContentLoaderReturn {
 //     (initial-load checkpoint), and handles the FLOW + initialStepIndex
 //     "open directly to step N" deep-link case.
 export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderReturn => {
-  const { store, isWebBuilder } = args;
+  const { store } = args;
   const { invoke: getContent } = useGetContentLazyQuery();
   const { invoke: getContentVersion } = useGetContentVersionLazyQuery();
 
@@ -88,7 +87,7 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
     async (message) => {
       const { contentId, environmentId, envToken, versionId, projectId, initialStepIndex } =
         message;
-      if (!environmentId || (!isWebBuilder && !envToken)) {
+      if (!environmentId) {
         return false;
       }
 
@@ -140,7 +139,7 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
       }
       return true;
     },
-    [fetchContentAndVersion, isWebBuilder, store],
+    [fetchContentAndVersion, store],
   );
 
   return { fetchContentAndVersion, initContent };

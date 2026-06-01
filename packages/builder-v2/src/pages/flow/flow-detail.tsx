@@ -13,11 +13,7 @@ import {
   Separator,
   useToast,
 } from '@usertour/ui';
-import {
-  EXTENSION_CONTENT_POPPER,
-  EXTENSION_CONTENT_SIDEBAR,
-  MESSAGE_CRX_OPEN_NEW_TARGET,
-} from '@usertour/constants';
+import { EXTENSION_CONTENT_POPPER, EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
 import {
   Align,
   ContentAlignmentData,
@@ -26,7 +22,7 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, Ref, useCallback, useMemo, useRef, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
 import {
   useBuilderConfig,
@@ -50,7 +46,6 @@ import { SidebarMini } from '../sidebar/sidebar-mini';
 import { useAttributeList } from '../../hooks/use-attribute-list';
 import { useContentList } from '../../hooks/use-content-list';
 import { useThemeList } from '../../hooks/use-theme-list';
-import { postProxyMessageToWindow } from '../../utils/post-message';
 import { ContentEditorRoot } from '@usertour/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
 import { PlusIcon, SpinnerIcon } from '@usertour/icons';
@@ -95,7 +90,7 @@ const FlowBuilderDetailHeader = () => {
 };
 
 const FlowBuilderDetailBody = () => {
-  const { zIndex, webHost, isWebBuilder } = useBuilderConfig();
+  const { zIndex } = useBuilderConfig();
   const currentTheme = useBuilderStore((state) => state.currentTheme);
   const projectId = useBuilderStore((state) => state.projectId);
   const { currentStep, updateCurrentStep } = useFlowEditor();
@@ -115,13 +110,7 @@ const FlowBuilderDetailBody = () => {
       return false;
     }
     const url = `/project/${projectId}/settings/theme/${currentStep.themeId || currentTheme.id}`;
-    if (isWebBuilder) {
-      return window.open(url, '_blank');
-    }
-    postProxyMessageToWindow({
-      kind: MESSAGE_CRX_OPEN_NEW_TARGET,
-      url: `${webHost}${url}`,
-    });
+    window.open(url, '_blank');
   }, [currentStep, currentTheme]);
 
   const handleAlignmentChange = (value: ContentAlignmentData) => {
@@ -358,7 +347,6 @@ const FlowBuilderDetailEmbed = () => {
   const { zIndex } = useBuilderConfig();
   const contentRef = useBuilderContentRef();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const selectorOutput = useBuilderStore((state) => state.selectorOutput);
   const currentContent = useBuilderStore((state) => state.currentContent);
   const projectId = useBuilderStore((state) => state.projectId);
   const { currentStep, currentIndex, updateCurrentStep, createNewStep } = useFlowEditor();
@@ -373,22 +361,6 @@ const FlowBuilderDetailEmbed = () => {
 
   const centerClasses =
     'w-auto h-6 left-[50%] top-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%]';
-
-  useEffect(() => {
-    if (selectorOutput) {
-      const { target, screenshot } = selectorOutput;
-      updateCurrentStep((pre) => ({
-        ...pre,
-        screenshot,
-        target: {
-          ...pre.target,
-          selectors: target.selectors,
-          content: target.content,
-          selectorsList: target.selectorsList,
-        },
-      }));
-    }
-  }, [selectorOutput]);
 
   if (!currentStep || !theme || !projectId) {
     return <></>;

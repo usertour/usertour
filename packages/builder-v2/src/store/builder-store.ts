@@ -1,7 +1,6 @@
 import type { Content, ContentVersion, Step, Theme } from '@usertour/types';
 import { createStore } from 'zustand/vanilla';
 import { enablePatches, produceWithPatches, applyPatches, setAutoFreeze, type Patch } from 'immer';
-import type { SelectorOutput } from '../utils/screenshot';
 import type { CurrentMode } from '../contexts/builder-mode';
 import { BuilderMode } from '../contexts/builder-mode';
 
@@ -73,7 +72,6 @@ export interface BuilderState {
   currentVersion: ContentVersion | undefined;
   backupVersion: ContentVersion | undefined;
   currentTheme: Theme | undefined;
-  selectorOutput: SelectorOutput | null;
   isShowError: boolean;
   position: string;
   isLoading: boolean;
@@ -100,7 +98,6 @@ export interface BuilderStateSetters {
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
-  setSelectorOutput: React.Dispatch<React.SetStateAction<SelectorOutput | null>>;
   setPosition: React.Dispatch<React.SetStateAction<string>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -170,7 +167,6 @@ const initialState: BuilderState = {
   currentVersion: undefined,
   backupVersion: undefined,
   currentTheme: undefined,
-  selectorOutput: null,
   isShowError: false,
   position: 'left',
   isLoading: true,
@@ -217,7 +213,6 @@ export const createBuilderStore = () =>
       });
     },
     setCurrentTheme: makeSetter('currentTheme', set, get),
-    setSelectorOutput: makeSetter('selectorOutput', set, get),
     setIsShowError: makeSetter('isShowError', set, get),
     setPosition: makeSetter('position', set, get),
     setIsLoading: makeSetter('isLoading', set, get),
