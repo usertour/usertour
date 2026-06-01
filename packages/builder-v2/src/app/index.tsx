@@ -1,18 +1,11 @@
-import { useEffect, useRef } from 'react';
-import { BuilderMode, useBuilderStore } from '../contexts';
+import { useBuilderStore } from '../contexts';
 import { BuilderProvider } from '../provider/builder-provider';
 import { useBuilderInit } from '../provider/use-builder-init';
 import { useListsLoading } from '../hooks/use-lists-loading';
+import { useStepUrlSync } from '../hooks/use-step-url-sync';
 import { useSyncCurrentTheme } from '../hooks/use-sync-current-theme';
 import { WebBuilderLoading } from '../components/web-builder-loading';
 import { MODE_COMPONENTS } from './mode-component-map';
-
-const Container = () => {
-  useSyncCurrentTheme();
-  const currentMode = useBuilderStore((state) => state.currentMode);
-  const Active = MODE_COMPONENTS[currentMode.mode];
-  return Active ? <Active /> : null;
-};
 
 export interface WebBuilderProps {
   contentId: string;
@@ -36,38 +29,23 @@ interface WebBuilderContentProps {
   onStepIndexChange?: (stepIndex: number | undefined) => void;
 }
 
-// Inner content — runs inside BuilderProvider. Drives init and observes
-// the shared lists' loading, then gates on a single combined signal
-// before handing off to the mode router.
+// The builder, inside BuilderProvider: drives init, observes the shared
+// lists' loading, syncs the current theme + the ?step URL, gates on a
+// single `ready` signal, then routes to the active mode's component.
 function WebBuilderContent(props: WebBuilderContentProps) {
-  const { contentId, versionId, initialStepIndex } = props;
-  const currentMode = useBuilderStore((state) => state.currentMode);
-  const currentIndex = useBuilderStore((state) => state.currentIndex);
-  const listsLoading = useListsLoading();
+  const { contentId, versionId, initialStepIndex, onStepIndexChange } = props;
   const { ready } = useBuilderInit({ contentId, versionId, initialStepIndex });
-  const onStepIndexChangeRef = useRef(props.onStepIndexChange);
-
-  useEffect(() => {
-    onStepIndexChangeRef.current = props.onStepIndexChange;
-  }, [props.onStepIndexChange]);
-
-  // Mirror the active step into the URL (store → URL). Only after `ready`
-  // so it can't clobber the initial ?step before useBuilderInit reads it.
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
-    const isStepMode =
-      currentMode.mode === BuilderMode.FLOW_STEP_DETAIL ||
-      currentMode.mode === BuilderMode.FLOW_STEP_TRIGGER;
-    onStepIndexChangeRef.current?.(isStepMode ? currentIndex : undefined);
-  }, [currentMode.mode, currentIndex, ready]);
+  const listsLoading = useListsLoading();
+  useStepUrlSync(ready, onStepIndexChange);
+  useSyncCurrentTheme();
+  const currentMode = useBuilderStore((state) => state.currentMode);
 
   if (!ready || listsLoading) {
     return <WebBuilderLoading message="Loading builder..." />;
   }
 
-  return <Container />;
+  const Active = MODE_COMPONENTS[currentMode.mode];
+  return Active ? <Active /> : null;
 }
 
 export const WebBuilder = (props: WebBuilderProps) => {

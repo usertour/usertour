@@ -12,68 +12,44 @@ export interface UseContentLoaderReturn {
   fetchContentAndVersion: BuilderProviderMethods['fetchContentAndVersion'];
 }
 
-// The Provider's content-loading primitive:
-//   - fetchContent / fetchVersion: thin wrappers around the Apollo
-//     lazy queries
-//   - fetchContentAndVersion: composes the two + writes
-//     currentContent / currentVersion / backupVersion into the store.
-//     Uses setCurrentVersionFromServer so save round-trips don't pollute
-//     the undo stack. Called by useBuilderInit (initial controlled
-//     hydrate) and useSaveContent (post-save re-baseline).
+// The Provider's content-loading primitive. Fetches the content + its
+// version via the Apollo lazy queries, then writes currentContent /
+// currentVersion / backupVersion into the store. currentVersion goes
+// through setCurrentVersionFromServer so save round-trips don't pollute
+// the undo stack. Both fetches must succeed before any write, so a
+// failure never leaves the store half-updated. Called by useBuilderInit
+// (initial controlled hydrate) and useSaveContent (post-save re-baseline).
 export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderReturn => {
   const { store } = args;
   const { invoke: getContent } = useGetContentLazyQuery();
   const { invoke: getContentVersion } = useGetContentVersionLazyQuery();
 
-  const fetchContent = useCallback(
-    async (contentId: string) => {
-      if (!contentId) {
-        return false;
-      }
-      const content = await getContent(contentId);
-      if (!content) {
-        return false;
-      }
-      return content as Content;
-    },
-    [getContent],
-  );
-
-  const fetchVersion = useCallback(
-    async (versionId: string) => {
-      const version = await getContentVersion(versionId);
-      if (!version) {
-        return false;
-      }
-      return version as ContentVersion;
-    },
-    [getContentVersion],
-  );
-
   const fetchContentAndVersion = useCallback<BuilderProviderMethods['fetchContentAndVersion']>(
     async (contentId, versionId) => {
       if (!contentId || !versionId) {
-        return false;
+        return null;
       }
-      const content = await fetchContent(contentId);
+      const content = await getContent(contentId);
       if (!content) {
-        return false;
+        return null;
       }
-      const state = store.getState();
-      state.setCurrentContent(content);
-      const version = await fetchVersion(versionId);
+      const version = await getContentVersion(versionId);
       if (!version) {
-        return false;
+        return null;
       }
-      // Server-driven write — bypass the patch-capturing public setter
-      // so save round-trips don't pollute the undo stack. The user can
-      // still undo across a save boundary; the undone state then
-      // re-triggers auto-save with the older content.
-      state.setCurrentVersionFromServer(JSON.parse(JSON.stringify(version)));
-      state.setBackupVersion(JSON.parse(JSON.stringify(version)));
-      return { content, version };
+      // Both fetched — write atomically so a failed version fetch never
+      // leaves currentContent updated against a stale version.
+      const state = store.getState();
+      state.setCurrentContent(content as Content);
+      // Two independent deep clones: currentVersion is the mutable draft,
+      // backupVersion the pristine baseline for dirty-diffing — they must
+      // not share references. setCurrentVersionFromServer bypasses the
+      // patch-capturing public setter so the load doesn't enter undo history.
+      state.setCurrentVersionFromServer(structuredClone(version) as ContentVersion);
+      state.setBackupVersion(structuredClone(version) as ContentVersion);
+      return { content: content as Content, version: version as ContentVersion };
     },
-    [fetchContent, fetchVersion, store],
+    [getContent, getContentVersion, store],
   );
 
   return { fetchContentAndVersion };

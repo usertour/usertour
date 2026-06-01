@@ -15,7 +15,7 @@ export interface BuilderProviderMethods {
   fetchContentAndVersion: (
     contentId: string,
     versionId: string,
-  ) => Promise<false | { content: Content; version: ContentVersion }>;
+  ) => Promise<{ content: Content; version: ContentVersion } | null>;
   setAutoSaveValidator: (fn: ((version: ContentVersion) => boolean) | null) => void;
 }
 
