@@ -19,7 +19,7 @@ import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { BuilderMode, useBuilderStore, useEnvironmentId, useProjectId } from '../../core';
+import { useEnvironmentId, useProjectId } from '../../core';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -27,8 +27,7 @@ import { SidebarContainer } from '../../components/sidebar';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 
 const BlockDividerHeader = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
-  const { setCurrentBlock } = useResourceCenterEditor();
+  const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row items-center space-x-1 text-base">
@@ -37,7 +36,7 @@ const BlockDividerHeader = () => {
           size="icon"
           onClick={() => {
             setCurrentBlock(null);
-            setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
+            exitBlock();
           }}
           className="text-foreground w-6 h-8"
         >

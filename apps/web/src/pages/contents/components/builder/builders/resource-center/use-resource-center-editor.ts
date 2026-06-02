@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   LiveChatProvider,
   type ResourceCenterBlock,
@@ -7,7 +8,6 @@ import {
   type ResourceCenterTab,
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
-import { BuilderMode, useBuilderStore } from '../../core';
 import { useTypeEditor } from '../../hooks/use-type-editor';
 import { useListField } from '../../hooks/use-list-field';
 import { resourceCenterTypeConfig, type ResourceCenterUIState } from './resource-center-config';
@@ -51,9 +51,10 @@ const updateTabBlocks = (
 export interface UseResourceCenterEditorReturn {
   data: ResourceCenterData | undefined;
   updateData: (updates: Partial<ResourceCenterData>) => void;
-  // Tab ops
+  // Active tab — sourced from the route (tab/:tabId), null outside the tab
+  // routes (e.g. the preview embed beside <Routes>).
   currentTabId: string | null;
-  setCurrentTabId: (tabId: string | null) => void;
+  // Tab ops
   addTab: (tab: ResourceCenterTab) => void;
   removeTab: (tabId: string) => void;
   updateTab: (tabId: string, updates: Partial<ResourceCenterTab>) => void;
@@ -61,7 +62,7 @@ export interface UseResourceCenterEditorReturn {
   editingTab: ResourceCenterTab | null;
   setEditingTab: React.Dispatch<React.SetStateAction<ResourceCenterTab | null>>;
   saveEditingTab: () => void;
-  // Block ops (scoped to currentTabId)
+  // Block ops (scoped to the route :tabId, except updateBlock — see below)
   addBlock: (block: ResourceCenterBlock) => void;
   removeBlock: (id: string) => void;
   updateBlock: (id: string, updates: Partial<ResourceCenterBlock>) => void;
@@ -69,13 +70,24 @@ export interface UseResourceCenterEditorReturn {
   currentBlock: ResourceCenterBlock | null;
   setCurrentBlock: React.Dispatch<React.SetStateAction<ResourceCenterBlock | null>>;
   saveCurrentBlock: () => void;
+  // Sub-view navigation — the descendant router owns which view is open.
+  gotoTab: (tabId: string) => void;
+  gotoBlock: (blockId: string) => void;
+  gotoTabSettings: (tabId: string) => void;
+  exitBlock: () => void;
+  exitTabSettings: () => void;
   isShowError: boolean;
   isLoading: boolean;
 }
 
 export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
   const editor = useTypeEditor(resourceCenterTypeConfig);
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
+  const navigate = useNavigate();
+  // The route is the source of truth for the active tab (tab/:tabId). undefined
+  // when this hook runs outside the tab routes — the preview embed sits beside
+  // <Routes> and only needs data + updateBlock, so null is fine there.
+  const { tabId } = useParams();
+  const currentTabId = tabId ?? null;
 
   const data = editor.data;
   const uiState = editor.uiState;
@@ -83,7 +95,7 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
 
   // Per-slot UI accessors. Each setter shells out to setUIState with
   // the right partial; same dispatcher pattern as Launcher's two-slot
-  // setters, scaled to four slots.
+  // setters.
   const setCurrentBlock = useCallback<
     React.Dispatch<React.SetStateAction<ResourceCenterBlock | null>>
   >(
@@ -112,12 +124,6 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     },
     [setUIState],
   );
-  const setCurrentTabId = useCallback(
-    (tabId: string | null) => {
-      setUIState((prev: ResourceCenterUIState) => ({ ...prev, currentTabId: tabId }));
-    },
-    [setUIState],
-  );
   const setIsShowError = useCallback(
     (next: boolean) => {
       setUIState((prev: ResourceCenterUIState) => ({ ...prev, isShowError: next }));
@@ -132,21 +138,12 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     setIsShowError(false);
   }, [uiState.currentBlock?.id, uiState.editingTab?.id]);
 
-  // Auto-select first tab when data loads and no tab is currently
-  // selected — same V1 effect.
-  useEffect(() => {
-    if (data?.tabs?.length && !uiState.currentTabId) {
-      setCurrentTabId(data.tabs[0].id);
-    }
-  }, [data, uiState.currentTabId, setCurrentTabId]);
-
   const updateData = editor.updateData;
-  const currentTabId = uiState.currentTabId;
   const currentTab = data?.tabs.find((tab) => tab.id === currentTabId) ?? null;
 
   // Array transforms for tabs (top-level) and the current tab's blocks
-  // (nested via updateTabBlocks). Per-op side effects — re-pointing the
-  // active tab, validation, mode exit — stay in the wrappers below.
+  // (nested via updateTabBlocks). Per-op side effects — validation, view
+  // exit — stay in the wrappers below.
   const tabList = useListField<ResourceCenterTab>({
     items: data?.tabs ?? [],
     setItems: (next) => {
@@ -164,6 +161,58 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     },
   });
 
+  // updateBlock searches ALL tabs by block id rather than scoping to
+  // currentTabId: the preview embed edits rich-text / sub-page block content
+  // and has no :tabId (it renders beside <Routes>). Block ids are unique
+  // across the RC, so a global find-and-update is correct — and it fixes a
+  // latent bug where the old currentTabId-scoped update silently no-op'd when
+  // the embed's active page belonged to a non-selected tab.
+  const updateBlock = useCallback(
+    (id: string, updates: Partial<ResourceCenterBlock>) => {
+      if (!data) {
+        return;
+      }
+      updateData({
+        tabs: data.tabs.map((tab) => ({
+          ...tab,
+          blocks: tab.blocks.map((block) =>
+            block.id === id ? ({ ...block, ...updates } as ResourceCenterBlock) : block,
+          ),
+        })),
+      });
+    },
+    [data, updateData],
+  );
+
+  // ── Sub-view navigation ────────────────────────────────────────────
+  // relative: 'path' so '..' counts URL segments under the RC base
+  // (.../tab/:tabId{,/settings,/block/:blockId}), independent of how the
+  // routes nest.
+  const gotoTab = useCallback(
+    (id: string) => {
+      navigate(`../${id}`, { relative: 'path' });
+    },
+    [navigate],
+  );
+  const gotoBlock = useCallback(
+    (id: string) => {
+      navigate(`block/${id}`, { relative: 'path' });
+    },
+    [navigate],
+  );
+  const gotoTabSettings = useCallback(
+    (id: string) => {
+      navigate(`../${id}/settings`, { relative: 'path' });
+    },
+    [navigate],
+  );
+  const exitBlock = useCallback(() => {
+    navigate('../..', { relative: 'path' });
+  }, [navigate]);
+  const exitTabSettings = useCallback(() => {
+    navigate('..', { relative: 'path' });
+  }, [navigate]);
+
   // ── Tab operations ─────────────────────────────────────────────────
 
   const addTab = useCallback(
@@ -172,24 +221,23 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
         return;
       }
       tabList.add(tab);
-      setCurrentTabId(tab.id);
     },
-    [data, tabList.add, setCurrentTabId],
+    [data, tabList.add],
   );
 
   const removeTab = useCallback(
-    (tabId: string) => {
+    (id: string) => {
       if (!data) {
         return;
       }
-      const newTabs = data.tabs.filter((tab) => tab.id !== tabId);
+      const newTabs = data.tabs.filter((tab) => tab.id !== id);
       updateData({ tabs: newTabs });
-      // Re-point currentTabId only when removing the active tab.
-      if (currentTabId === tabId) {
-        setCurrentTabId(newTabs[0]?.id ?? null);
+      // Removing the active (route) tab — move to the first remaining tab.
+      if (currentTabId === id && newTabs[0]) {
+        navigate(`../${newTabs[0].id}`, { relative: 'path' });
       }
     },
-    [data, currentTabId, updateData, setCurrentTabId],
+    [data, currentTabId, updateData, navigate],
   );
 
   const saveEditingTab = useCallback(() => {
@@ -216,10 +264,10 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
       ),
     });
     setEditingTab(null);
-    setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
-  }, [uiState.editingTab, data, updateData, setEditingTab, setIsShowError, setCurrentMode]);
+    exitTabSettings();
+  }, [uiState.editingTab, data, updateData, setEditingTab, setIsShowError, exitTabSettings]);
 
-  // ── Block operations (scoped to currentTabId via blockList above) ───
+  // ── Block operations (scoped to the route :tabId via blockList above) ──
 
   const saveCurrentBlock = useCallback(() => {
     const currentBlock = uiState.currentBlock;
@@ -236,14 +284,13 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
         blocks.map((block) => (block.id === currentBlock.id ? currentBlock : block)),
       ),
     );
-    setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
-  }, [uiState.currentBlock, currentTabId, data, updateData, setIsShowError, setCurrentMode]);
+    exitBlock();
+  }, [uiState.currentBlock, currentTabId, data, updateData, setIsShowError, exitBlock]);
 
   return {
     data,
     updateData,
     currentTabId,
-    setCurrentTabId,
     addTab,
     removeTab,
     updateTab: tabList.updateById,
@@ -253,11 +300,16 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     saveEditingTab,
     addBlock: blockList.add,
     removeBlock: blockList.removeById,
-    updateBlock: blockList.updateById,
+    updateBlock,
     reorderBlocks: blockList.reorder,
     currentBlock: uiState.currentBlock,
     setCurrentBlock,
     saveCurrentBlock,
+    gotoTab,
+    gotoBlock,
+    gotoTabSettings,
+    exitBlock,
+    exitTabSettings,
     isShowError: uiState.isShowError,
     isLoading: editor.isLoading,
   };

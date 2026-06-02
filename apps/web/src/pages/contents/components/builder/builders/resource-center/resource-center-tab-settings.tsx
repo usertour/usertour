@@ -14,7 +14,9 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
-import { BuilderMode, useBuilderConfig, useBuilderStore } from '../../core';
+import { useLayoutEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useBuilderConfig } from '../../core';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { SidebarContainer } from '../../components/sidebar';
 import { IconPicker } from '../../components/icon-picker';
@@ -25,8 +27,7 @@ import {
 } from '../../components/content-error';
 
 const TabSettingsHeader = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
-  const { setEditingTab } = useResourceCenterEditor();
+  const { setEditingTab, exitTabSettings } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -35,7 +36,7 @@ const TabSettingsHeader = () => {
           size="icon"
           onClick={() => {
             setEditingTab(null);
-            setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
+            exitTabSettings();
           }}
           className="text-foreground w-6 h-8"
         >
@@ -128,6 +129,15 @@ const TabSettingsFooter = () => {
 };
 
 export const ResourceCenterTabSettings = () => {
+  const { tabId } = useParams();
+  const { data, setEditingTab } = useResourceCenterEditor();
+  // Seed the editingTab draft from the :tabId route param on mount — covers
+  // nav, deep-link and refresh. Shallow clone (settings edits name + icon only).
+  useLayoutEffect(() => {
+    const tab = data?.tabs.find((t) => t.id === tabId);
+    setEditingTab(tab ? { ...tab } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabId]);
   return (
     <SidebarContainer>
       <TabSettingsHeader />

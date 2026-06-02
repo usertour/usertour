@@ -36,7 +36,6 @@ import { Delete2Icon } from '@usertour/icons';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';
-import { BuilderMode, useBuilderStore } from '../../../core';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
 import {
   BLOCK_TYPE_LABELS,
@@ -170,11 +169,10 @@ const SortableBlock = ({ id, onClick, block }: any) => {
 };
 
 export const ResourceCenterBlocks = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const {
     data: localData,
     currentTabId,
-    setCurrentBlock,
+    gotoBlock,
     removeBlock,
     reorderBlocks,
   } = useResourceCenterEditor();
@@ -196,8 +194,7 @@ export const ResourceCenterBlocks = () => {
   const blocks = currentTab?.blocks ?? [];
 
   const handleEditBlock = (block: ResourceCenterBlock) => {
-    setCurrentBlock(block);
-    setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER_BLOCK });
+    gotoBlock(block.id);
   };
 
   const handleOnClick = (action: 'edit' | 'delete', block: ResourceCenterBlock) => {

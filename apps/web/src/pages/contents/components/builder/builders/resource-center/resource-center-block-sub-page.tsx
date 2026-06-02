@@ -22,13 +22,7 @@ import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import {
-  BuilderMode,
-  useBuilderConfig,
-  useBuilderStore,
-  useEnvironmentId,
-  useProjectId,
-} from '../../core';
+import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../core';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -41,8 +35,7 @@ import {
 } from '../../components/content-error';
 
 const BlockSubPageHeader = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
-  const { setCurrentBlock } = useResourceCenterEditor();
+  const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -51,7 +44,7 @@ const BlockSubPageHeader = () => {
           size="icon"
           onClick={() => {
             setCurrentBlock(null);
-            setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
+            exitBlock();
           }}
           className="text-foreground w-6 h-8"
         >

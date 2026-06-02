@@ -5,20 +5,18 @@ import { BannerBuilder } from './builders/banner';
 import { ChecklistRouter } from './builders/checklist';
 import { FlowRouter } from './builders/flow';
 import { LauncherRouter } from './builders/launcher';
-import { ResourceCenterBuilder } from './builders/resource-center';
+import { ResourceCenterRouter } from './builders/resource-center';
 import { WebBuilderLoading } from './components/web-builder-loading';
 import { useListsLoading } from './hooks/use-lists-loading';
 import { useSyncCurrentTheme } from './hooks/use-sync-current-theme';
 
-// Mode→component dispatch for the still-store-mode-driven types (Banner /
-// ResourceCenter). Flow / Launcher / Checklist have moved to route-driven
-// views (their routers, descendant <Routes>); the remaining types migrate in
-// later phases, after which this map and `currentMode` are removed.
+// Mode→component dispatch for the still-store-mode-driven types. Flow /
+// Launcher / Checklist / ResourceCenter have moved to route-driven views
+// (their routers, descendant <Routes>); only Banner (a single view) still
+// dispatches on currentMode — it migrates in phase 5, after which this map and
+// `currentMode` are removed.
 const MODE_COMPONENTS: Partial<Record<BuilderMode, ComponentType>> = {
   [BuilderMode.BANNER]: BannerBuilder,
-  [BuilderMode.RESOURCE_CENTER]: ResourceCenterBuilder,
-  [BuilderMode.RESOURCE_CENTER_BLOCK]: ResourceCenterBuilder,
-  [BuilderMode.RESOURCE_CENTER_TAB]: ResourceCenterBuilder,
 };
 
 export interface WebBuilderProps {
@@ -32,9 +30,9 @@ export interface WebBuilderProps {
 
 // The builder, inside BuilderProvider: drives init, observes the shared lists'
 // loading, syncs the theme, gates on `ready`, then hands off the view. Flow,
-// Launcher and Checklist are route-driven — their routers own sub-views via a
-// descendant <Routes> under the builder route's `/*`; the other types still
-// dispatch on currentMode until their route phases land.
+// Launcher, Checklist and ResourceCenter are route-driven — their routers own
+// sub-views via a descendant <Routes> under the builder route's `/*`; Banner
+// still dispatches on currentMode until its route phase lands.
 function WebBuilderContent() {
   const { ready } = useBuilderInit({});
   const listsLoading = useListsLoading();
@@ -54,6 +52,9 @@ function WebBuilderContent() {
   }
   if (currentContent?.type === ContentDataType.CHECKLIST) {
     return <ChecklistRouter />;
+  }
+  if (currentContent?.type === ContentDataType.RESOURCE_CENTER) {
+    return <ResourceCenterRouter />;
   }
 
   const Active = MODE_COMPONENTS[currentMode.mode];

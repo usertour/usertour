@@ -40,7 +40,6 @@ import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { forwardRef, useState } from 'react';
-import { BuilderMode, useBuilderStore } from '../../../core';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
 import { getActiveIcon } from '../../../components/icon-picker/utils';
 
@@ -185,15 +184,14 @@ const SortableTab = ({
 };
 
 export const ResourceCenterTabs = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const {
     data: localData,
     currentTabId,
-    setCurrentTabId,
     addTab,
     removeTab,
     reorderTabs,
-    setEditingTab,
+    gotoTab,
+    gotoTabSettings,
   } = useResourceCenterEditor();
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -212,10 +210,9 @@ export const ResourceCenterTabs = () => {
 
   const handleOnClick = (action: 'select' | 'edit' | 'delete', tab: ResourceCenterTab) => {
     if (action === 'select') {
-      setCurrentTabId(tab.id);
+      gotoTab(tab.id);
     } else if (action === 'edit') {
-      setEditingTab({ ...tab });
-      setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER_TAB });
+      gotoTabSettings(tab.id);
     } else if (action === 'delete') {
       removeTab(tab.id);
     }
@@ -230,8 +227,7 @@ export const ResourceCenterTabs = () => {
       blocks: [],
     };
     addTab(tab);
-    setEditingTab({ ...tab });
-    setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER_TAB });
+    gotoTabSettings(tab.id);
   };
 
   const handleDragStart = (event: DragStartEvent) => {

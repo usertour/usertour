@@ -32,13 +32,7 @@ import {
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import type { ReactNode } from 'react';
-import {
-  BuilderMode,
-  useBuilderConfig,
-  useBuilderStore,
-  useEnvironmentId,
-  useProjectId,
-} from '../../core';
+import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../core';
 import { useResourceCenterEditor } from './use-resource-center-editor';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
@@ -135,8 +129,7 @@ const PROVIDER_FLASH_WARNINGS: Partial<Record<LiveChatProvider, ProviderFlashWar
 };
 
 const BlockLiveChatHeader = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
-  const { setCurrentBlock } = useResourceCenterEditor();
+  const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -145,7 +138,7 @@ const BlockLiveChatHeader = () => {
           size="icon"
           onClick={() => {
             setCurrentBlock(null);
-            setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
+            exitBlock();
           }}
           className="text-foreground w-6 h-8"
         >
