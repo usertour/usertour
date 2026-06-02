@@ -1,4 +1,4 @@
-import { useThemeList } from './use-theme-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';

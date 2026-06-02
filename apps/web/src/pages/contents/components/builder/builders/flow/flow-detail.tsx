@@ -45,9 +45,9 @@ import { ContentSettings, ContentSettingsData } from '../../components/content-s
 import { ContentTheme } from '../../components/content-theme';
 import { ContentWidth } from '../../components/content-width';
 import { SidebarMini } from '../../components/sidebar/sidebar-mini';
-import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '../../hooks/use-content-list';
-import { useThemeList } from '../../hooks/use-theme-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
 import { PlusIcon, SpinnerIcon } from '@usertour/icons';

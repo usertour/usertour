@@ -1,5 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
-import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '../../../hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';

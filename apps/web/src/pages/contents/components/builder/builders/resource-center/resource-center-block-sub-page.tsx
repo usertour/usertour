@@ -13,7 +13,7 @@ import {
   Label,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';

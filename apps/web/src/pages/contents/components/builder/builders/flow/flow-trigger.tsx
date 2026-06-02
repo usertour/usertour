@@ -1,6 +1,5 @@
 'use client';
 
-import { useMutation } from '@apollo/client';
 import { ChevronLeftIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -14,7 +13,6 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
 import { useContentList } from '../../hooks/use-content-list';
-import { updateContentStep } from '@usertour/gql';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage, hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
@@ -29,7 +27,7 @@ import { useFlowEditor } from './use-flow-editor';
 import { useSeedStepFromRoute } from './use-seed-step-from-route';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../../components/sidebar/sidebar-mini';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery, useUpdateContentStepMutation } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
@@ -184,13 +182,13 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   const { currentStep, exitToFlow } = useFlowEditor();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [updateContentStepMutation] = useMutation(updateContentStep);
+  const { invoke: updateContentStep } = useUpdateContentStepMutation();
   const { toast } = useToast();
   const { setShowError } = useTriggerContext();
 
   const handleSave = useCallback(async () => {
     setShowError(false);
-    if (!currentStep || !currentStep.trigger || !attributes) {
+    if (!currentStep || !currentStep.id || !currentStep.trigger || !attributes) {
       return;
     }
     for (let index = 0; index < currentStep.trigger.length; index++) {
@@ -218,13 +216,8 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
     setIsLoading(true);
     try {
       const trigger = currentStep?.trigger || [];
-      const ret = await updateContentStepMutation({
-        variables: {
-          stepId: currentStep.id,
-          data: { trigger },
-        },
-      });
-      if (ret.data.updateContentStep && currentVersion?.contentId) {
+      const updated = await updateContentStep(currentStep.id, { trigger });
+      if (updated && currentVersion?.contentId) {
         await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
       }
     } catch (error) {

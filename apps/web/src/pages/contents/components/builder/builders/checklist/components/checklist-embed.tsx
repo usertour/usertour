@@ -1,6 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
-import { useAttributeList } from '../../../hooks/use-attribute-list';
-import { useThemeList } from '../../../hooks/use-theme-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { useChecklistPreviewAnimation } from '@usertour/hooks';
 import {
   ChecklistContainer,

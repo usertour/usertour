@@ -13,18 +13,17 @@ import {
   useToast,
 } from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { useThemeList } from '../../hooks/use-theme-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 
-import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour/gql';
+import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useBuilderConfig, useBuilderMethods, useBuilderStore, useProjectId } from '../../core';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
-  const [updateContentVersionMutation] = useMutation(updateContentVersion);
+  const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
   const { toast } = useToast();
   const { zIndex } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
@@ -43,16 +42,14 @@ export const SidebarTheme = () => {
   }, [currentVersion, themeList]);
 
   const handleThemeChange = async (value: string) => {
+    if (!currentVersion) {
+      return;
+    }
     try {
-      const ret = await updateContentVersionMutation({
-        variables: {
-          versionId: currentVersion?.id,
-          content: { themeId: value },
-        },
-      });
+      const updated = await updateContentVersion(currentVersion.id, { themeId: value });
       setIsLoading(true);
-      if (ret.data.updateContentVersion && currentVersion?.contentId) {
-        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
+      if (updated && currentVersion.contentId) {
+        await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
       } else {
         return toast({
           variant: 'destructive',

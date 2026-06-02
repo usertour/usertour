@@ -19,7 +19,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderConfig, useProjectId } from '../../../core';
-import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 export interface LauncherContentProps {
   zIndex: number;
   triggerRef?: React.RefObject<any> | undefined;

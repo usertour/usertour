@@ -1,4 +1,4 @@
-import { useAttributeList } from './use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from './use-content-list';
 import { validateActions } from '@usertour/editor';
 import { useToast } from '@usertour/ui';

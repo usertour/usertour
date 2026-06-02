@@ -1,6 +1,6 @@
-import { useAttributeList } from './use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from './use-content-list';
-import { useThemeList } from './use-theme-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 
 // True while any of the builder's shared lists (theme / attribute /
 // content) is still loading. Each underlying hook reads Apollo's

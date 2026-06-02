@@ -1,4 +1,4 @@
-import { useThemeList } from '../../../hooks/use-theme-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
 import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';

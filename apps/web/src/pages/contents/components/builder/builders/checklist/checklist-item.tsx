@@ -13,7 +13,7 @@ import {
   Switch,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '../../hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';

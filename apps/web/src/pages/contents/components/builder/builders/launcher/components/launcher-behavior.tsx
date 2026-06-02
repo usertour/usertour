@@ -1,6 +1,6 @@
 import { ChevronDownIcon, GearIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '../../../hooks/use-content-list';
 import {
   DropdownMenu,

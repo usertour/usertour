@@ -27,7 +27,7 @@ import {
   Switch,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
-import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import {
   ChecklistIcon,
   CloseIcon,

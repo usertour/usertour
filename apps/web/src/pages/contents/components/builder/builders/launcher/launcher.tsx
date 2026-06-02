@@ -1,6 +1,6 @@
 'use client';
 
-import { useAttributeList } from '../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '../../hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';

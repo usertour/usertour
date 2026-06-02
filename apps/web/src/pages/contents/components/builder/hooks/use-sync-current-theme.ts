@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useBuilderStore } from '../core';
-import { useThemeList } from './use-theme-list';
+import { useThemeList } from '@/hooks/use-theme-list';
 
 // Keeps store.currentTheme in sync with currentVersion.themeId as the
 // theme list loads / the version changes. Extracted out of the routing

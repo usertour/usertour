@@ -26,7 +26,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../../core';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
-import { useAttributeList } from '../../../hooks/use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useToken } from '../../../hooks/use-token';
 import { IconPicker } from '../../../components/icon-picker';
 

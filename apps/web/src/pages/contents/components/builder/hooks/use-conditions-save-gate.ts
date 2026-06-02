@@ -1,5 +1,5 @@
 import { validateConditions } from '@usertour/business-components';
-import { useAttributeList } from './use-attribute-list';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from './use-content-list';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
