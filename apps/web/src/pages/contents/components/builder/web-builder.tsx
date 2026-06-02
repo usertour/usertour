@@ -1,10 +1,10 @@
 import { ContentDataType } from '@usertour/types';
 import { BuilderProvider, useBuilderInit, useBuilderStore } from './core';
 import { BannerBuilder } from './builders/banner';
-import { ChecklistRouter } from './builders/checklist';
-import { FlowRouter } from './builders/flow';
-import { LauncherRouter } from './builders/launcher';
-import { ResourceCenterRouter } from './builders/resource-center';
+import { ChecklistBuilder } from './builders/checklist';
+import { FlowBuilder } from './builders/flow';
+import { LauncherBuilder } from './builders/launcher';
+import { ResourceCenterBuilder } from './builders/resource-center';
 import { WebBuilderLoading } from './components/web-builder-loading';
 import { useListsLoading } from './hooks/use-lists-loading';
 import { useSyncCurrentTheme } from './hooks/use-sync-current-theme';
@@ -36,13 +36,13 @@ function WebBuilderContent() {
 
   switch (currentContent?.type) {
     case ContentDataType.FLOW:
-      return <FlowRouter />;
+      return <FlowBuilder />;
     case ContentDataType.LAUNCHER:
-      return <LauncherRouter />;
+      return <LauncherBuilder />;
     case ContentDataType.CHECKLIST:
-      return <ChecklistRouter />;
+      return <ChecklistBuilder />;
     case ContentDataType.RESOURCE_CENTER:
-      return <ResourceCenterRouter />;
+      return <ResourceCenterBuilder />;
     case ContentDataType.BANNER:
       return <BannerBuilder />;
     default:

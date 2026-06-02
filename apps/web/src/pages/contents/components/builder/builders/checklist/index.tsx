@@ -1,1 +1,1 @@
-export { ChecklistRouter } from './checklist';
+export { ChecklistBuilder } from './checklist';

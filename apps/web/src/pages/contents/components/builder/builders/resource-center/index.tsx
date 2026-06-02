@@ -1,1 +1,1 @@
-export { ResourceCenterRouter } from './resource-center';
+export { ResourceCenterBuilder } from './resource-center';

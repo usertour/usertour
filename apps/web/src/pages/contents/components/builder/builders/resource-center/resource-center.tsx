@@ -66,11 +66,11 @@ const ResourceCenterBlockEditor = () => {
   }
 };
 
-// The ResourceCenter builder's view router (a descendant <Routes> under the
-// builder route's /*). tab/:tabId is the source of truth for the active tab;
-// settings / block are scoped under it. The preview embed sits OUTSIDE
-// <Routes> so it stays mounted across sub-view switches.
-export const ResourceCenterRouter = () => {
+// The ResourceCenter builder — a descendant <Routes> under the builder
+// route's /* routing its sub-views. tab/:tabId is the source of truth for the
+// active tab; settings / block are scoped under it. The preview embed sits
+// OUTSIDE <Routes> so it stays mounted across sub-view switches.
+export const ResourceCenterBuilder = () => {
   useAutoSidebarPosition();
   return (
     <>
@@ -85,4 +85,4 @@ export const ResourceCenterRouter = () => {
   );
 };
 
-ResourceCenterRouter.displayName = 'ResourceCenterRouter';
+ResourceCenterBuilder.displayName = 'ResourceCenterBuilder';

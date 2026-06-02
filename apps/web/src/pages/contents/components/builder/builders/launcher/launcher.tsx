@@ -12,8 +12,8 @@ import { LauncherCore } from './launcher-core';
 import { LauncherTarget } from './launcher-target';
 import { LauncherTooltip } from './launcher-tooltip';
 
-// Register the auto-save validator at the router level so it survives
-// sub-view switches (index ↔ target ↔ tooltip). LauncherRouter renders it
+// Register the auto-save validator at the builder root so it survives
+// sub-view switches (index ↔ target ↔ tooltip). LauncherBuilder renders it
 // OUTSIDE <Routes>, so it stays mounted across sub-views — it sits inside
 // both AttributeListProvider and ContentListProvider, so the validation
 // closure has access to ValidateContext data. Phase 1 ADR's "validation
@@ -49,12 +49,12 @@ const useRegisterLauncherSaveValidator = () => {
   }, [setAutoSaveValidator, attributeList, contents, currentVersion]);
 };
 
-// The Launcher builder's view router (a descendant `<Routes>` under the
-// builder route's `/*`). The URL owns which sub-view is open; the
+// The Launcher builder — a descendant `<Routes>` under the builder route's
+// `/*` routing its sub-views. The URL owns which sub-view is open; the
 // target/tooltip drafts are seeded from currentVersion on each sub-view's
 // mount (see LauncherTarget / LauncherTooltip). The save validator and the
 // preview embed sit OUTSIDE <Routes> so they stay mounted across switches.
-export const LauncherRouter = () => {
+export const LauncherBuilder = () => {
   useRegisterLauncherSaveValidator();
   return (
     <>
@@ -68,4 +68,4 @@ export const LauncherRouter = () => {
   );
 };
 
-LauncherRouter.displayName = 'LauncherRouter';
+LauncherBuilder.displayName = 'LauncherBuilder';
