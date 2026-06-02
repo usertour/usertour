@@ -15,7 +15,6 @@ packages:
   - "packages/types"
   - "packages/business-components"
   - "packages/builder"
-  - "packages/builder-v2"
   - "packages/contexts"
   - "packages/editor"
   - "packages/finder"

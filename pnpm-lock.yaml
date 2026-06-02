@@ -614,9 +614,6 @@ importers:
       '@usertour/builder':
         specifier: workspace:^
         version: link:../../packages/builder
-      '@usertour/builder-v2':
-        specifier: workspace:^
-        version: link:../../packages/builder-v2
       '@usertour/business-components':
         specifier: workspace:^
         version: link:../../packages/business-components
@@ -659,6 +656,9 @@ importers:
       '@usertour/widget':
         specifier: workspace:^
         version: link:../../packages/widget
+      animejs:
+        specifier: ^3.2.1
+        version: 3.2.2
       axios:
         specifier: ^1.6.0
         version: 1.7.7(debug@4.4.3)
@@ -695,6 +695,9 @@ importers:
       i18next-browser-languagedetector:
         specifier: ^8.0.2
         version: 8.2.0
+      immer:
+        specifier: ^10.1.1
+        version: 10.1.1
       install:
         specifier: ^0.13.0
         version: 0.13.0
@@ -773,10 +776,16 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+      zustand:
+        specifier: ^4.5.5
+        version: 4.5.5(@types/react@18.2.15)(immer@10.1.1)(react@18.2.0)
     devDependencies:
       '@medusajs/ui-preset':
         specifier: ^1.0.2
         version: 1.1.4(tailwindcss@3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))
+      '@types/animejs':
+        specifier: ^3.1.12
+        version: 3.1.12
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -786,6 +795,9 @@ importers:
       '@types/jest':
         specifier: 29.4.0
         version: 29.4.0
+      '@types/lodash':
+        specifier: ^4.17.13
+        version: 4.17.13
       '@types/node':
         specifier: ^20.4.5
         version: 20.17.5
@@ -988,202 +1000,6 @@ importers:
       '@types/chrome':
         specifier: 0.0.241
         version: 0.0.241
-      '@types/lodash':
-        specifier: ^4.17.13
-        version: 4.17.13
-      '@types/node':
-        specifier: 20.4.2
-        version: 20.4.2
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      autoprefixer:
-        specifier: ^10.4.14
-        version: 10.4.20(postcss@8.4.47)
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      postcss:
-        specifier: ^8.4.27
-        version: 8.4.47
-      postcss-import:
-        specifier: ^15.1.0
-        version: 15.1.0(postcss@8.4.47)
-      prettier:
-        specifier: 3.0.0
-        version: 3.0.0
-      tailwindcss:
-        specifier: ^3.4.10
-        version: 3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3))
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/builder-v2:
-    dependencies:
-      '@apollo/client':
-        specifier: ^3.7.17
-        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
-      '@dnd-kit/core':
-        specifier: ^6.1.0
-        version: 6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/sortable':
-        specifier: ^8.0.0
-        version: 8.0.0(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@18.2.0)
-      '@floating-ui/dom':
-        specifier: ^1.4.4
-        version: 1.7.4
-      '@floating-ui/react':
-        specifier: ^0.24.3
-        version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@floating-ui/react-dom':
-        specifier: ^2.0.0
-        version: 2.1.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@hookform/resolvers':
-        specifier: ^5.4.0
-        version: 5.4.0(react-hook-form@7.76.1(react@18.2.0))
-      '@radix-ui/react-dialog':
-        specifier: ^1.0.4
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-dropdown-menu':
-        specifier: ^2.0.5
-        version: 2.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.1(react@18.2.0)
-      '@radix-ui/react-slider':
-        specifier: ^1.1.2
-        version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-slot':
-        specifier: ^1.0.2
-        version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
-      '@types/animejs':
-        specifier: ^3.1.12
-        version: 3.1.12
-      '@usertour/business-components':
-        specifier: workspace:^
-        version: link:../business-components
-      '@usertour/constants':
-        specifier: workspace:^
-        version: link:../constants
-      '@usertour/contexts':
-        specifier: workspace:^
-        version: link:../contexts
-      '@usertour/editor':
-        specifier: workspace:^
-        version: link:../editor
-      '@usertour/finder':
-        specifier: workspace:^
-        version: link:../finder
-      '@usertour/gql':
-        specifier: workspace:^
-        version: link:../gql
-      '@usertour/helpers':
-        specifier: workspace:^
-        version: link:../helpers
-      '@usertour/hooks':
-        specifier: workspace:^
-        version: link:../hooks
-      '@usertour/icons':
-        specifier: workspace:^
-        version: link:../icons
-      '@usertour/react-compose-refs':
-        specifier: workspace:^
-        version: link:../radix/compose-refs
-      '@usertour/react-use-size':
-        specifier: workspace:^
-        version: link:../radix/use-size
-      '@usertour/tailwind':
-        specifier: workspace:^
-        version: link:../tailwind
-      '@usertour/types':
-        specifier: workspace:^
-        version: link:../types
-      '@usertour/ui':
-        specifier: workspace:^
-        version: link:../ui
-      '@usertour/widget':
-        specifier: workspace:^
-        version: link:../widget
-      animejs:
-        specifier: ^3.2.1
-        version: 3.2.2
-      axios:
-        specifier: ^1.6.0
-        version: 1.7.7(debug@4.4.3)
-      clsx:
-        specifier: ^2.0.0
-        version: 2.1.1
-      deepmerge-ts:
-        specifier: ^7.1.3
-        version: 7.1.3
-      escape-html:
-        specifier: ^1.0.3
-        version: 1.0.3
-      immer:
-        specifier: ^10.1.1
-        version: 10.1.1
-      is-hotkey:
-        specifier: ^0.2.0
-        version: 0.2.0
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      rc-upload:
-        specifier: ^4.3.5
-        version: 4.8.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      react:
-        specifier: 18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: 18.2.0
-        version: 18.2.0(react@18.2.0)
-      react-hook-form:
-        specifier: ^7.55.0
-        version: 7.76.1(react@18.2.0)
-      react-i18next:
-        specifier: ^15.6.0
-        version: 15.6.1(i18next@25.3.2(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
-      react-router-dom:
-        specifier: ^6.4.0
-        version: 6.27.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      react-use:
-        specifier: ^17.4.0
-        version: 17.5.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      use-debounce:
-        specifier: ^10.0.5
-        version: 10.0.5(react@18.2.0)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-      zustand:
-        specifier: ^4.5.5
-        version: 4.5.5(@types/react@18.2.15)(immer@10.1.1)(react@18.2.0)
-    devDependencies:
       '@types/lodash':
         specifier: ^4.17.13
         version: 4.17.13

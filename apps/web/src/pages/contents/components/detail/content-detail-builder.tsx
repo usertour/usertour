@@ -4,7 +4,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useSubscription } from '@/hooks/use-subscription';
 import { WebBuilder } from '@usertour/builder';
-import { WebBuilder as WebBuilderNext } from '@usertour/builder-v2';
+import { WebBuilder as WebBuilderNext } from '../builder';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -22,12 +22,10 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const { contentId, versionId, projectId, environmentId, contentType, initialStepIndex } = props;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  // Dev/QA toggle for the V2 builder. V2 is a fork of V1 plus an
-  // architecture refactor (Zustand + immer + save FSM + leave blocker);
-  // visual/behavior contract stays identical until flipped. After
-  // verification we'll flip the default in this file (`!== 'v1'`) and
-  // V1 becomes the opt-out path.
-  const useV2 = searchParams.get('builder') === 'v2';
+  // V2 is the default builder. V1 (@usertour/builder, the legacy fork) is
+  // kept as an opt-out fallback via `?builder=v1` while V2 is validated in
+  // production; remove the V1 branch once V2 is fully trusted.
+  const useV1 = searchParams.get('builder') === 'v1';
   const { loading: environmentLoading, environmentList } = useEnvironmentList();
   const { loading: attributeLoading, attributeList } = useAttributeList();
   const { loading: subscriptionLoading, shouldShowMadeWith, subscription } = useSubscription();
@@ -89,26 +87,26 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   // V1 and V2 have diverged: V2 owns its `?step` deep-link internally and is
   // web-only, so it takes a minimal prop set. V1 keeps the host-driven
   // initialStepIndex / onStepIndexChange + usertourjsUrl contract.
-  if (useV2) {
+  if (useV1) {
     return (
-      <WebBuilderNext
-        contentId={contentId}
-        versionId={versionId}
-        projectId={projectId}
-        environmentId={environmentId}
+      <WebBuilder
+        {...props}
+        initialStepIndex={initialStepIndex}
+        onStepIndexChange={handleStepIndexChange}
         onSaved={handleOnSaved}
+        usertourjsUrl={`${import.meta.env.VITE_USERTOUR_JSURL}`}
         shouldShowMadeWith={shouldShowMadeWith}
       />
     );
   }
 
   return (
-    <WebBuilder
-      {...props}
-      initialStepIndex={initialStepIndex}
-      onStepIndexChange={handleStepIndexChange}
+    <WebBuilderNext
+      contentId={contentId}
+      versionId={versionId}
+      projectId={projectId}
+      environmentId={environmentId}
       onSaved={handleOnSaved}
-      usertourjsUrl={`${import.meta.env.VITE_USERTOUR_JSURL}`}
       shouldShowMadeWith={shouldShowMadeWith}
     />
   );
