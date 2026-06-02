@@ -1,22 +1,26 @@
-import { BuilderMode, useBuilderStore } from '../../core';
+import { Route, Routes } from 'react-router-dom';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
 import { ChecklistCore } from './checklist-core';
 import { ChecklistItem } from './checklist-item';
 import { ChecklistEmbed } from './components/checklist-embed';
 
-export const ChecklistBuilder = () => {
-  const currentMode = useBuilderStore((state) => state.currentMode);
-
-  // Auto-adjust sidebar position when checklist position overlaps
+// The Checklist builder's view router (a descendant `<Routes>` under the
+// builder route's `/*`). The URL owns which sub-view is open; ChecklistItem
+// seeds its currentItem draft from currentVersion by the :itemId param on
+// mount. The preview embed sits OUTSIDE <Routes> so it stays mounted across
+// sub-view switches.
+export const ChecklistRouter = () => {
+  // Auto-adjust sidebar position when the checklist position overlaps.
   useAutoSidebarPosition();
-
   return (
     <>
-      {currentMode?.mode === BuilderMode.CHECKLIST && <ChecklistCore />}
-      {currentMode?.mode === BuilderMode.CHECKLIST_ITEM && <ChecklistItem />}
+      <Routes>
+        <Route index element={<ChecklistCore />} />
+        <Route path="item/:itemId" element={<ChecklistItem />} />
+      </Routes>
       <ChecklistEmbed />
     </>
   );
 };
 
-ChecklistBuilder.displayName = 'ChecklistBuilder';
+ChecklistRouter.displayName = 'ChecklistRouter';

@@ -25,15 +25,10 @@ import {
   RulesCondition,
   RulesType,
 } from '@usertour/types';
-import { useId } from 'react';
+import { useId, useLayoutEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  BuilderMode,
-  useBuilderConfig,
-  useBuilderStore,
-  useEnvironmentId,
-  useProjectId,
-} from '../../core';
+import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../core';
 import { useChecklistEditor } from './use-checklist-editor';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
@@ -41,8 +36,7 @@ import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../../components/sidebar';
 
 const ChecklistItemHeader = () => {
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
-  const { setCurrentItem } = useChecklistEditor();
+  const { backToChecklist, setCurrentItem } = useChecklistEditor();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -51,7 +45,7 @@ const ChecklistItemHeader = () => {
           size="icon"
           onClick={() => {
             setCurrentItem(null);
-            setCurrentMode({ mode: BuilderMode.CHECKLIST });
+            backToChecklist();
           }}
           className="text-foreground w-6 h-8"
         >
@@ -220,6 +214,17 @@ const ChecklistItemFooter = () => {
 };
 
 export const ChecklistItem = () => {
+  const { itemId } = useParams();
+  const { data, setCurrentItem } = useChecklistEditor();
+  // Seed the currentItem draft from the :itemId route param when the sub-view
+  // mounts — covers nav, deep-link and refresh. Clone so the buffer is an
+  // independent draft (edits never mutate currentVersion until save). The
+  // `ready` gate above WebBuilderContent guarantees data is loaded here.
+  useLayoutEffect(() => {
+    const item = data?.items?.find((it) => it.id === itemId);
+    setCurrentItem(item ? (JSON.parse(JSON.stringify(item)) as ChecklistItemType) : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
   return (
     <SidebarContainer>
       <ChecklistItemHeader />
