@@ -4,7 +4,7 @@ import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
 import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
 import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
-import { debug } from '@/pages/contents/components/builder/core/utils/logger';
+import { debug } from '@/pages/contents/components/builder/utils/logger';
 
 export interface UseSaveContentArgs {
   store: BuilderStore;

@@ -28,7 +28,7 @@ import {
   useEnvironmentId,
   useProjectId,
 } from '@/pages/contents/components/builder/core';
-import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useAws } from '@usertour/hooks';
 

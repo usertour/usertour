@@ -18,13 +18,13 @@ import { useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { SidebarContainer } from '@/pages/contents/components/builder/core/components/sidebar';
-import { IconPicker } from '@/pages/contents/components/builder/core/components/icon-picker';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 import {
   ContentError,
   ContentErrorAnchor,
   ContentErrorContent,
-} from '@/pages/contents/components/builder/core/components/content-error';
+} from '@/pages/contents/components/builder/components/content-error';
 
 const TabSettingsHeader = () => {
   const { setEditingTab, exitTabSettings } = useResourceCenterEditor();

@@ -9,13 +9,13 @@ import {
   useBuilderStore,
   useIsBusy,
 } from '@/pages/contents/components/builder/core';
-import { useSidebarSave } from '@/pages/contents/components/builder/core/hooks/use-sidebar-save';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { SidebarContents } from '@/pages/contents/components/builder/flow/sidebar-contents';
 import { SidebarCreate } from '@/pages/contents/components/builder/flow/sidebar-create';
-import { SidebarFooter } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-footer';
-import { SidebarHeader } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-header';
-import { SidebarMini } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-mini';
-import { SidebarTheme } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-theme';
+import { SidebarFooter } from '@/pages/contents/components/builder/components/sidebar/sidebar-footer';
+import { SidebarHeader } from '@/pages/contents/components/builder/components/sidebar/sidebar-header';
+import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 
 export const BuilderSideBar = () => {
   const { zIndex } = useBuilderConfig();

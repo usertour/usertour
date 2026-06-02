@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
-import { useAutoSidebarPosition } from '@/pages/contents/components/builder/core/hooks/use-auto-sidebar-position';
+import { useAutoSidebarPosition } from '@/pages/contents/components/builder/hooks/use-auto-sidebar-position';
 import { ChecklistCore } from '@/pages/contents/components/builder/checklist/checklist-core';
 import { ChecklistItem } from '@/pages/contents/components/builder/checklist/checklist-item';
 import { ChecklistEmbed } from '@/pages/contents/components/builder/checklist/components/checklist-embed';

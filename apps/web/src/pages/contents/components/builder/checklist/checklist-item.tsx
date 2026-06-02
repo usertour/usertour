@@ -14,7 +14,7 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/core/hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
 import { Actions } from '@usertour/editor';
@@ -34,10 +34,10 @@ import {
   useProjectId,
 } from '@/pages/contents/components/builder/core';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
-import { useActionsSaveGate } from '@/pages/contents/components/builder/core/hooks/use-actions-save-gate';
-import { useConditionsSaveGate } from '@/pages/contents/components/builder/core/hooks/use-conditions-save-gate';
-import { useToken } from '@/pages/contents/components/builder/core/hooks/use-token';
-import { SidebarContainer } from '@/pages/contents/components/builder/core/components/sidebar';
+import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
+import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 
 const ChecklistItemHeader = () => {
   const { backToChecklist, setCurrentItem } = useChecklistEditor();

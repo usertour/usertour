@@ -1,7 +1,7 @@
 'use client';
 
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/core/hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';

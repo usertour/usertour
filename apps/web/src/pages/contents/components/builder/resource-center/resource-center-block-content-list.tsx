@@ -56,15 +56,15 @@ import {
   useProjectId,
 } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { useConditionsSaveGate } from '@/pages/contents/components/builder/core/hooks/use-conditions-save-gate';
-import { useToken } from '@/pages/contents/components/builder/core/hooks/use-token';
-import { SidebarContainer } from '@/pages/contents/components/builder/core/components/sidebar';
-import { IconPicker } from '@/pages/contents/components/builder/core/components/icon-picker';
+import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 import {
   ContentError,
   ContentErrorAnchor,
   ContentErrorContent,
-} from '@/pages/contents/components/builder/core/components/content-error';
+} from '@/pages/contents/components/builder/components/content-error';
 import { ContentItemIcon } from '@/pages/contents/components/builder/resource-center/block-content-list/content-item-icon';
 import {
   ItemEditorBody,

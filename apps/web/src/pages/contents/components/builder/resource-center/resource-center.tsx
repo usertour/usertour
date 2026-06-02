@@ -6,7 +6,7 @@ import {
   type ResourceCenterData,
 } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
-import { useAutoSidebarPosition } from '@/pages/contents/components/builder/core/hooks/use-auto-sidebar-position';
+import { useAutoSidebarPosition } from '@/pages/contents/components/builder/hooks/use-auto-sidebar-position';
 import { ResourceCenterCore } from '@/pages/contents/components/builder/resource-center/resource-center-core';
 import { ResourceCenterBlockRichText } from '@/pages/contents/components/builder/resource-center/resource-center-block-rich-text';
 import { ResourceCenterBlockDivider } from '@/pages/contents/components/builder/resource-center/resource-center-block-divider';

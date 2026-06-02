@@ -1,6 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/core/hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
 import { ContentEditor } from '@usertour/editor';
@@ -17,9 +17,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useProjectId } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useAws } from '@usertour/hooks';
-import { getDefaultDataForType } from '@/pages/contents/components/builder/core/utils/default-data';
+import { getDefaultDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import { BrowserPreview } from '@/pages/contents/components/builder/banner/components/browser-preview';
 
 const DEFAULT_BANNER_CONTENTS = getDefaultDataForType('tooltip') as ContentEditorRoot[];

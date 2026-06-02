@@ -13,7 +13,7 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/core/hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
@@ -21,9 +21,9 @@ import { RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { useConditionsSaveGate } from '@/pages/contents/components/builder/core/hooks/use-conditions-save-gate';
-import { useToken } from '@/pages/contents/components/builder/core/hooks/use-token';
-import { SidebarContainer } from '@/pages/contents/components/builder/core/components/sidebar';
+import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 
 const BlockDividerHeader = () => {

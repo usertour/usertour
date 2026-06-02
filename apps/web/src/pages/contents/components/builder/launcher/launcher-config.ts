@@ -1,6 +1,6 @@
 import type { LauncherData } from '@usertour/types';
 import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
-import { defaultLauncherData } from '@/pages/contents/components/builder/core/utils/default-data';
+import { defaultLauncherData } from '@/pages/contents/components/builder/utils/default-data';
 
 // Launcher has two per-type UI buffers — the in-flight `tooltip` and
 // `target` drafts the user is editing in the sub-modes — so TUIState

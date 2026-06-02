@@ -2,10 +2,10 @@
 
 import { CardContent, ScrollArea } from '@usertour/ui';
 import { LauncherActionType } from '@usertour/types';
-import { useActionsSaveGate } from '@/pages/contents/components/builder/core/hooks/use-actions-save-gate';
-import { useSidebarSave } from '@/pages/contents/components/builder/core/hooks/use-sidebar-save';
-import { BuilderSidebarLayout } from '@/pages/contents/components/builder/core/components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-theme';
+import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { LauncherBehavior } from '@/pages/contents/components/builder/launcher/components/launcher-behavior';
 import { LauncherTargetPreview } from '@/pages/contents/components/builder/launcher/components/launcher-target-preview';

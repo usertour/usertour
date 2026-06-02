@@ -20,7 +20,7 @@ import { Delete2Icon } from '@usertour/icons';
 import { ChecklistItemType } from '@usertour/types';
 import { forwardRef } from 'react';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
-import { SortableList } from '@/pages/contents/components/builder/core/components/sortable-list';
+import { SortableList } from '@/pages/contents/components/builder/components/sortable-list';
 // Add interface for component props
 interface ChecklistContentProps {
   onClick?: (action: 'edit' | 'delete', item: ChecklistItemType) => void;

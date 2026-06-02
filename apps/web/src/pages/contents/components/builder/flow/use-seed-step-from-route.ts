@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { defaultStep } from '@usertour/helpers';
 import type { Step } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
-import { getEmptyDataForType } from '@/pages/contents/components/builder/core/utils/default-data';
+import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // Seeds the Flow edit buffer (currentStep + currentIndex) from the route,
 // replacing the old "clone on enter-click" path so navigation, deep-links and

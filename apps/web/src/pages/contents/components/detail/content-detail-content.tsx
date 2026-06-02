@@ -14,7 +14,7 @@ import {
   Button,
   Card,
 } from '@usertour/ui';
-import { stepIsReachable } from '@/pages/contents/components/builder/core/utils/content-validate';
+import { stepIsReachable } from '@/pages/contents/components/builder/utils/content-validate';
 import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour/icons';
 import { GoogleFontCss } from '@usertour/business-components';
 import {

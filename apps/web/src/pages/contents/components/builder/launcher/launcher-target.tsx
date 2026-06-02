@@ -3,9 +3,9 @@
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { ContentAlignment } from '@/pages/contents/components/builder/core/components/content-alignment';
+import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { SidebarContainer } from '@/pages/contents/components/builder/core/components/sidebar';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 import { LauncherPlacement } from '@/pages/contents/components/builder/launcher/components/launcher-placement';
 import { useCallback, useLayoutEffect } from 'react';
 

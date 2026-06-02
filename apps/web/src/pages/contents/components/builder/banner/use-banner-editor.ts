@@ -1,4 +1,4 @@
-import { useTypeEditor } from '@/pages/contents/components/builder/core/hooks/use-type-editor';
+import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-type-editor';
 import { bannerTypeConfig } from '@/pages/contents/components/builder/banner/banner-config';
 
 // Banner-flavoured wrapper over useTypeEditor. Hides the config

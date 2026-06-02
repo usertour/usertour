@@ -21,10 +21,10 @@ import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
-import { useSidebarSave } from '@/pages/contents/components/builder/core/hooks/use-sidebar-save';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
-import { BuilderSidebarLayout } from '@/pages/contents/components/builder/core/components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-theme';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 import { ChecklistContents } from '@/pages/contents/components/builder/checklist/components/checklist-contents';
 
 // Common styles

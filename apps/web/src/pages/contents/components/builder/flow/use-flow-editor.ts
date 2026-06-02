@@ -15,7 +15,7 @@ import {
   useBuilderStore,
   useIsBusy,
 } from '@/pages/contents/components/builder/core';
-import { getEmptyDataForType } from '@/pages/contents/components/builder/core/utils/default-data';
+import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
 // (which serves Banner / Checklist / Launcher / ResourceCenter), not a

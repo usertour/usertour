@@ -20,7 +20,7 @@ import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef } from 'react';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { SortableList } from '@/pages/contents/components/builder/core/components/sortable-list';
+import { SortableList } from '@/pages/contents/components/builder/components/sortable-list';
 import {
   BLOCK_TYPE_LABELS,
   getResourceCenterBlockTypeIcon,

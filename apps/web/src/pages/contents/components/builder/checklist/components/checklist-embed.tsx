@@ -18,7 +18,7 @@ import { ChecklistInitialDisplay, ContentEditorElementType } from '@usertour/typ
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
-import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useAws } from '@usertour/hooks';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 

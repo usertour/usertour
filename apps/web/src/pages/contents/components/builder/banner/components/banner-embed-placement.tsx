@@ -16,8 +16,8 @@ import {
   SelectValue,
 } from '@usertour/ui';
 
-import { ContentPlacementProvider } from '@/pages/contents/components/builder/core/components/content-placement';
-import { ContentPlacementManual } from '@/pages/contents/components/builder/core/components/content-placement/content-placement-manual';
+import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
+import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
 

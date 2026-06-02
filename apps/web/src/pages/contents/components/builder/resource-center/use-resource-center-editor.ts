@@ -8,8 +8,8 @@ import {
   type ResourceCenterTab,
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
-import { useTypeEditor } from '@/pages/contents/components/builder/core/hooks/use-type-editor';
-import { useListField } from '@/pages/contents/components/builder/core/hooks/use-list-field';
+import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-type-editor';
+import { useListField } from '@/pages/contents/components/builder/hooks/use-list-field';
 import {
   resourceCenterTypeConfig,
   type ResourceCenterUIState,

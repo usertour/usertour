@@ -1,15 +1,15 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/ui';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/core/hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { getAuthToken } from '@usertour/helpers';
 import { window } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import {
   ContentPlacementActions,
   ContentPlacementProvider,
-} from '@/pages/contents/components/builder/core/components/content-placement';
-import { ContentPlacementManual } from '@/pages/contents/components/builder/core/components/content-placement';
+} from '@/pages/contents/components/builder/components/content-placement';
+import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement';
 import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 

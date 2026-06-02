@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ChecklistData, ChecklistItemType } from '@usertour/types';
-import { useTypeEditor } from '@/pages/contents/components/builder/core/hooks/use-type-editor';
-import { useListField } from '@/pages/contents/components/builder/core/hooks/use-list-field';
+import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-type-editor';
+import { useListField } from '@/pages/contents/components/builder/hooks/use-list-field';
 import { checklistTypeConfig } from '@/pages/contents/components/builder/checklist/checklist-config';
 
 // Checklist-flavoured editor. Wraps useTypeEditor and adds the imperative

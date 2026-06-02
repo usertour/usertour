@@ -12,7 +12,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
-import { useContentList } from '@/pages/contents/components/builder/core/hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage, hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
@@ -20,7 +20,7 @@ import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ContentTrigger } from '@/pages/contents/components/builder/core/components/content-trigger';
+import { ContentTrigger } from '@/pages/contents/components/builder/components/content-trigger';
 import {
   useBuilderConfig,
   useBuilderMethods,
@@ -33,8 +33,8 @@ import {
 } from '@/pages/contents/components/builder/flow/trigger-context';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { useSeedStepFromRoute } from '@/pages/contents/components/builder/flow/use-seed-step-from-route';
-import { useToken } from '@/pages/contents/components/builder/core/hooks/use-token';
-import { SidebarMini } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-mini';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
 import { useListAttributesQuery, useUpdateContentStepMutation } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {

@@ -21,10 +21,10 @@ import {
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
-import { useSidebarSave } from '@/pages/contents/components/builder/core/hooks/use-sidebar-save';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { BuilderSidebarLayout } from '@/pages/contents/components/builder/core/components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '@/pages/contents/components/builder/core/components/sidebar/sidebar-theme';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 import { ResourceCenterBlocks } from '@/pages/contents/components/builder/resource-center/components/resource-center-blocks';
 import { ResourceCenterTabs } from '@/pages/contents/components/builder/resource-center/components/resource-center-tabs';
 import { BLOCK_TYPE_OPTIONS } from '@/pages/contents/components/builder/resource-center/resource-center-block-options';

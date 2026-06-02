@@ -5,11 +5,11 @@ import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } fr
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { SpinnerIcon } from '@usertour/icons';
 import { LauncherData } from '@usertour/types';
-import { ContentAlignment } from '@/pages/contents/components/builder/core/components/content-alignment';
-import { ContentWidth } from '@/pages/contents/components/builder/core/components/content-width';
+import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
+import { ContentWidth } from '@/pages/contents/components/builder/components/content-width';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { SidebarContainer } from '@/pages/contents/components/builder/core/components/sidebar';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 import { LauncherPosition } from '@/pages/contents/components/builder/launcher/components/launcher-position';
 import { LauncherSettings } from '@/pages/contents/components/builder/launcher/components/launcher-settings';
 import { useCallback, useLayoutEffect } from 'react';

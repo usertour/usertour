@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LauncherData } from '@usertour/types';
-import { useTypeEditor } from '@/pages/contents/components/builder/core/hooks/use-type-editor';
+import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-type-editor';
 import {
   launcherTypeConfig,
   type LauncherUIState,

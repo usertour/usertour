@@ -1,7 +1,7 @@
 import { getAuthToken } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
-import { ContentPlacementProvider } from '@/pages/contents/components/builder/core/components/content-placement';
-import { ContentPlacementManual } from '@/pages/contents/components/builder/core/components/content-placement/content-placement-manual';
+import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
+import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 

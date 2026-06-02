@@ -31,8 +31,8 @@ import {
 } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useToken } from '@/pages/contents/components/builder/core/hooks/use-token';
-import { IconPicker } from '@/pages/contents/components/builder/core/components/icon-picker';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 
 // Sub-page editor for a single CONTENT_LIST block item. Mounted when
 // the parent root sets `editingItemIndex` to a non-null value; the

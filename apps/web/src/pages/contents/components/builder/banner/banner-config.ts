@@ -1,7 +1,7 @@
 import { type BannerData, DEFAULT_BANNER_DATA } from '@usertour/types';
 import { isUndefined } from 'lodash';
 import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
-import { getEmptyDataForType } from '@/pages/contents/components/builder/core/utils/default-data';
+import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // V1's BannerContext normalized fresh server data by (a) merging in
 // DEFAULT_BANNER_DATA defaults and (b) falling back to a default

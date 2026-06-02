@@ -9,7 +9,7 @@ import {
   LauncherRoot,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
-import { getEmptyDataForType } from '@/pages/contents/components/builder/core/utils/default-data';
+import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import {
   ContentActionsItemType,
   LauncherActionType,

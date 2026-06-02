@@ -2,7 +2,7 @@ import { ContentEditorRoot } from '@usertour/editor';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
 import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
-import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useAws } from '@usertour/hooks';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { LauncherContentMain } from '@/pages/contents/components/builder/launcher/components/launcher-content';

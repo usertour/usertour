@@ -1,10 +1,7 @@
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { Input } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
-import {
-  LauncherContentType,
-  IconPicker,
-} from '@/pages/contents/components/builder/core/components';
+import { LauncherContentType, IconPicker } from '@/pages/contents/components/builder/components';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 
