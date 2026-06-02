@@ -2,7 +2,7 @@ import { useThemeList } from './use-theme-list';
 import { Theme } from '@usertour/types';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';
-import { useBuilderStore } from '../contexts';
+import { useBuilderStore } from '../core';
 
 interface UseCurrentThemeOptions {
   /** Whether to fall back to the default theme if no themeId is found */

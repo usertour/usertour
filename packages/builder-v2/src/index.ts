@@ -1,2 +1,2 @@
-export { WebBuilder } from './app/';
-export type { WebBuilderProps } from './app/';
+export { WebBuilder } from './web-builder';
+export type { WebBuilderProps } from './web-builder';

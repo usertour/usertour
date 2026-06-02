@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useBuilderStore } from '../contexts';
+import { useBuilderStore } from '../core';
 import { useThemeList } from './use-theme-list';
 
 // Keeps store.currentTheme in sync with currentVersion.themeId as the

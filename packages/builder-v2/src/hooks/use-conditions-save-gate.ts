@@ -6,7 +6,7 @@ import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEnvironmentId, useProjectId } from '../contexts';
+import { useEnvironmentId, useProjectId } from '../core';
 
 // Returns a guard the consumer can call right before its save action.
 // The guard:

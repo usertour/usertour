@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { listAttributes } from '@usertour/gql';
 import type { Attribute } from '@usertour/types';
-import { useProjectId } from '../contexts/builder-context';
+import { useProjectId } from '../core';
 
 // Direct Apollo replacement for `useAttributeListContext`. Mirrors the
 // upstream Provider's `useQuery(listAttributes, { projectId,

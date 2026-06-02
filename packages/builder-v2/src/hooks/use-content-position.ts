@@ -6,7 +6,7 @@ import {
   ThemeTypesSetting,
 } from '@usertour/types';
 import { useMemo } from 'react';
-import { useBuilderStore } from '../contexts';
+import { useBuilderStore } from '../core';
 import { useCurrentTheme } from './use-current-theme';
 
 /**

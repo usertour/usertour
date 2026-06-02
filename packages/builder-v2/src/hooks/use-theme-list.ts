@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { listThemes } from '@usertour/gql';
 import type { Theme } from '@usertour/types';
-import { useProjectId } from '../contexts/builder-context';
+import { useProjectId } from '../core';
 
 // Direct Apollo replacement for `useThemeListContext` — same query
 // (`listThemes`), same shape consumers destructure (`{ themeList,

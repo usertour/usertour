@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { BuilderMode, useBuilderStore } from '../contexts';
+import { BuilderMode, useBuilderStore } from '../core';
 
 // Mirrors the active Flow step index into the URL (store → URL) once the
 // builder is `ready`. The callback is held in a ref so a fresh callback

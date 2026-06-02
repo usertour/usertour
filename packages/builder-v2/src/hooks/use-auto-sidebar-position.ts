@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useBuilderStore } from '../contexts';
+import { useBuilderStore } from '../core';
 import { ContentSide, getOppositeSide, getPositionSide, SidebarSide } from '../utils/position';
 import { useContentPosition } from './use-content-position';
 

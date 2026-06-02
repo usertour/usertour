@@ -1,7 +1,7 @@
 'use client';
 
 import { useBlocker } from 'react-router-dom';
-import { useBuilderMethods, useSaveState } from '../contexts/builder-context';
+import { useBuilderMethods, useSaveState } from '../core';
 import { LeaveConfirmDialog } from './leave-confirm-dialog';
 
 // SPA-internal navigation guard. V1 only had `beforeunload` (covers

@@ -1,6 +1,6 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
-import { useBuilderStore, useIsBusy } from '../contexts/builder-context';
-import type { BuilderTypeConfig } from '../types/builder-type-config';
+import { useBuilderStore, useIsBusy } from '../core';
+import type { BuilderTypeConfig } from '../core/builder-type-config';
 
 // Editor abstraction for the four data-blob content types — Banner,
 // Checklist, Launcher, ResourceCenter. They each edit
@@ -12,7 +12,7 @@ import type { BuilderTypeConfig } from '../types/builder-type-config';
 // operations (add/remove/reorder) instead of partial merge, plus a
 // dedicated `currentStep` local buffer for sub-mode editing. Those
 // requirements don't fit useTypeEditor's contract, so Flow has its
-// own `useFlowEditor` hook at pages/flow/use-flow-editor.ts. The two
+// own `useFlowEditor` hook at builders/flow/use-flow-editor.ts. The two
 // hooks share the Provider's save FSM (both write via
 // `setCurrentVersion`) but diverge on data shape and mutation pattern.
 //

@@ -28,7 +28,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
-import { useBuilderConfig } from '../contexts/builder-context';
+import { useBuilderConfig } from '../core';
 
 export interface ContentPopperProps {
   currentStep: Step;

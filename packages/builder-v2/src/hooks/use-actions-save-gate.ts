@@ -5,7 +5,7 @@ import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBuilderStore } from '../contexts';
+import { useBuilderStore } from '../core';
 
 // Mirrors useConditionsSaveGate. Returns a guard the consumer calls right
 // before its save action; runs validateActions over each provided list

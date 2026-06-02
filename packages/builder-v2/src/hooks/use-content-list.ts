@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { queryContent } from '@usertour/gql';
 import type { Content } from '@usertour/types';
-import { useEnvironmentId } from '../contexts/builder-context';
+import { useEnvironmentId } from '../core';
 
 // Direct Apollo replacement for `useContentListContext` — narrower
 // surface than the upstream Provider because builder consumers only
