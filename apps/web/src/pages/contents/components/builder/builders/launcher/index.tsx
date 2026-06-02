@@ -1,1 +1,1 @@
-export { LauncherBuilder } from './launcher';
+export { LauncherRouter } from './launcher';

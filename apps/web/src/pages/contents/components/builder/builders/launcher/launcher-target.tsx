@@ -7,7 +7,7 @@ import { ContentAlignment } from '../../components/content-alignment';
 import { useLauncherEditor } from './use-launcher-editor';
 import { SidebarContainer } from '../../components/sidebar';
 import { LauncherPlacement } from './components/launcher-placement';
-import { useCallback } from 'react';
+import { useCallback, useLayoutEffect } from 'react';
 
 const LauncherTargetHeader = () => {
   const { backToLauncher, setLauncherTarget } = useLauncherEditor();
@@ -93,6 +93,16 @@ const LauncherTargetFooter = () => {
 };
 
 export const LauncherTarget = () => {
+  const { data, setLauncherTarget } = useLauncherEditor();
+  // Seed the target draft from currentVersion when the sub-view mounts, so
+  // nav, deep-link and refresh all land on a populated panel. Layout effect
+  // (before paint) because the body gates on `launcherTarget` — seeding
+  // post-paint would flash a blank frame. The `ready` gate above
+  // WebBuilderContent guarantees currentVersion is loaded here.
+  useLayoutEffect(() => {
+    setLauncherTarget(data?.target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <SidebarContainer>
       <LauncherTargetHeader />

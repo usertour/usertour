@@ -5,21 +5,21 @@ import { useContentList } from '../../hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
-import { BuilderMode, useBuilderMethods, useBuilderStore } from '../../core';
+import { Route, Routes } from 'react-router-dom';
+import { useBuilderMethods, useBuilderStore } from '../../core';
 import { LauncherBuilderEmbed } from './components/launcher-embed';
 import { LauncherCore } from './launcher-core';
 import { LauncherTarget } from './launcher-target';
 import { LauncherTooltip } from './launcher-tooltip';
 
-// Register the auto-save validator at the route level so it survives
-// subpage switches (LAUNCHER ↔ LAUNCHER_TARGET ↔ LAUNCHER_TOOLTIP).
-// LauncherBuilder is always mounted while in the launcher route — it
-// sits inside both AttributeListProvider and ContentListProvider, so
-// the validation closure has access to ValidateContext data.
-// Phase 1 ADR's "validation gates on auto-save" item: vetoes auto-
-// save when an action chip is incomplete, keeping saveState dirty
-// so the leave guard still prompts but the server isn't polluted.
-// Explicit Save (Save button) bypasses the gate.
+// Register the auto-save validator at the router level so it survives
+// sub-view switches (index ↔ target ↔ tooltip). LauncherRouter renders it
+// OUTSIDE <Routes>, so it stays mounted across sub-views — it sits inside
+// both AttributeListProvider and ContentListProvider, so the validation
+// closure has access to ValidateContext data. Phase 1 ADR's "validation
+// gates on auto-save" item: vetoes auto-save when an action chip is
+// incomplete, keeping saveState dirty so the leave guard still prompts but
+// the server isn't polluted. Explicit Save (Save button) bypasses the gate.
 const useRegisterLauncherSaveValidator = () => {
   const { setAutoSaveValidator } = useBuilderMethods();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
@@ -49,17 +49,23 @@ const useRegisterLauncherSaveValidator = () => {
   }, [setAutoSaveValidator, attributeList, contents, currentVersion]);
 };
 
-export const LauncherBuilder = () => {
-  const currentMode = useBuilderStore((state) => state.currentMode);
+// The Launcher builder's view router (a descendant `<Routes>` under the
+// builder route's `/*`). The URL owns which sub-view is open; the
+// target/tooltip drafts are seeded from currentVersion on each sub-view's
+// mount (see LauncherTarget / LauncherTooltip). The save validator and the
+// preview embed sit OUTSIDE <Routes> so they stay mounted across switches.
+export const LauncherRouter = () => {
   useRegisterLauncherSaveValidator();
   return (
     <>
-      {currentMode?.mode === BuilderMode.LAUNCHER && <LauncherCore />}
-      {currentMode?.mode === BuilderMode.LAUNCHER_TARGET && <LauncherTarget />}
-      {currentMode?.mode === BuilderMode.LAUNCHER_TOOLTIP && <LauncherTooltip />}
+      <Routes>
+        <Route index element={<LauncherCore />} />
+        <Route path="target" element={<LauncherTarget />} />
+        <Route path="tooltip" element={<LauncherTooltip />} />
+      </Routes>
       <LauncherBuilderEmbed />
     </>
   );
 };
 
-LauncherBuilder.displayName = 'LauncherBuilder';
+LauncherRouter.displayName = 'LauncherRouter';

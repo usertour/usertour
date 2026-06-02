@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { LauncherData } from '@usertour/types';
-import { BuilderMode, useBuilderStore } from '../../core';
 import { useTypeEditor } from '../../hooks/use-type-editor';
 import { launcherTypeConfig, type LauncherUIState } from './launcher-config';
 
@@ -11,8 +11,11 @@ import { launcherTypeConfig, type LauncherUIState } from './launcher-config';
 // the data shape into three logical groups the user edits separately;
 // per-slot TUIState accessors (launcherTooltip / setLauncherTooltip
 // and the target pair) so call sites don't have to spread into the
-// composite TUIState struct; sub-mode navigation helpers
-// (backToLauncher / gotoLauncherTarget) that wrap setCurrentMode.
+// composite TUIState struct; sub-view navigation helpers
+// (backToLauncher / gotoLauncherTarget / gotoLauncherTooltip) that move
+// the descendant router — the URL owns which sub-view is open, and the
+// target/tooltip drafts are seeded from currentVersion on the sub-view's
+// mount (see LauncherTarget / LauncherTooltip), not here.
 
 export interface UseLauncherEditorReturn {
   data: LauncherData | undefined;
@@ -26,12 +29,13 @@ export interface UseLauncherEditorReturn {
   setLauncherTarget: React.Dispatch<React.SetStateAction<LauncherData['target'] | undefined>>;
   backToLauncher: () => void;
   gotoLauncherTarget: () => void;
+  gotoLauncherTooltip: () => void;
   isLoading: boolean;
 }
 
 export const useLauncherEditor = (): UseLauncherEditorReturn => {
   const editor = useTypeEditor(launcherTypeConfig);
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
+  const navigate = useNavigate();
 
   const data = editor.data;
   const uiState = editor.uiState;
@@ -107,14 +111,21 @@ export const useLauncherEditor = (): UseLauncherEditorReturn => {
     [editor.updateData, data],
   );
 
+  // Sub-view navigation — the descendant router owns which launcher
+  // sub-view is open (index / target / tooltip). The target & tooltip
+  // drafts are seeded from currentVersion on each sub-view's mount, so
+  // these only move the URL.
   const backToLauncher = useCallback(() => {
-    setCurrentMode({ mode: BuilderMode.LAUNCHER });
-  }, [setCurrentMode]);
+    navigate('..');
+  }, [navigate]);
 
   const gotoLauncherTarget = useCallback(() => {
-    setCurrentMode({ mode: BuilderMode.LAUNCHER_TARGET });
-    setLauncherTarget(data?.target);
-  }, [setCurrentMode, data?.target, setLauncherTarget]);
+    navigate('target');
+  }, [navigate]);
+
+  const gotoLauncherTooltip = useCallback(() => {
+    navigate('tooltip');
+  }, [navigate]);
 
   return {
     data,
@@ -128,6 +139,7 @@ export const useLauncherEditor = (): UseLauncherEditorReturn => {
     setLauncherTarget,
     backToLauncher,
     gotoLauncherTarget,
+    gotoLauncherTooltip,
     isLoading: editor.isLoading,
   };
 };

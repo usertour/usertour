@@ -12,7 +12,7 @@ import { useLauncherEditor } from './use-launcher-editor';
 import { SidebarContainer } from '../../components/sidebar';
 import { LauncherPosition } from './components/launcher-position';
 import { LauncherSettings } from './components/launcher-settings';
-import { useCallback } from 'react';
+import { useCallback, useLayoutEffect } from 'react';
 
 const LauncherTooltipHeader = () => {
   const { backToLauncher, setLauncherTooltip } = useLauncherEditor();
@@ -113,6 +113,12 @@ const LauncherTooltipFooter = () => {
 };
 
 export const LauncherTooltip = () => {
+  const { data, setLauncherTooltip } = useLauncherEditor();
+  // Seed the tooltip draft from currentVersion on mount — see LauncherTarget.
+  useLayoutEffect(() => {
+    setLauncherTooltip(data?.tooltip);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <SidebarContainer>
       <LauncherTooltipHeader />

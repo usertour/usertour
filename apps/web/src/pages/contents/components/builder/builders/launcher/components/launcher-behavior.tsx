@@ -26,7 +26,6 @@ import {
 } from '@usertour/types';
 import { useCallback } from 'react';
 import { useBuilderConfig, useBuilderStore } from '../../../core';
-import { BuilderMode } from '../../../core';
 import { useLauncherEditor } from '../use-launcher-editor';
 
 interface TriggerDropdownProps {
@@ -73,14 +72,13 @@ const TRIGGER_EVENT_OPTIONS = [
 
 export const LauncherBehavior = () => {
   const { zIndex } = useBuilderConfig();
-  const setCurrentMode = useBuilderStore((state) => state.setCurrentMode);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
   const {
     data: localData,
     updateDataBehavior: updateLocalDataBehavior,
-    setLauncherTooltip,
+    gotoLauncherTooltip,
   } = useLauncherEditor();
   const { t } = useTranslation();
 
@@ -94,11 +92,11 @@ export const LauncherBehavior = () => {
   );
 
   const handleSwitchToTooltip = useCallback(() => {
-    if (!localData?.tooltip) return;
-
-    setCurrentMode({ mode: BuilderMode.LAUNCHER_TOOLTIP });
-    setLauncherTooltip(localData.tooltip);
-  }, [localData?.tooltip, setCurrentMode, setLauncherTooltip]);
+    if (!localData?.tooltip) {
+      return;
+    }
+    gotoLauncherTooltip();
+  }, [localData?.tooltip, gotoLauncherTooltip]);
 
   if (!localData) {
     return null;
