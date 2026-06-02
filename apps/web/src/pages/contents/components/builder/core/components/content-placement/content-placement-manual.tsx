@@ -7,7 +7,6 @@ import {
   ContentErrorContent,
 } from '@/pages/contents/components/builder/core/components/content-error';
 import { useContentPlacement } from '@/pages/contents/components/builder/core/components/content-placement/content-placement-context';
-import { SelectorButtons } from '@/pages/contents/components/builder/core/components/content-placement/selector-buttons';
 import { SequenceSelect } from '@/pages/contents/components/builder/core/components/content-placement/sequence-select';
 
 export const ContentPlacementManual = () => {
@@ -23,13 +22,6 @@ export const ContentPlacementManual = () => {
   const handleSelectorChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       onTargetChange({ customSelector: e.target.value });
-    },
-    [onTargetChange],
-  );
-
-  const handleSelectorSelect = useCallback(
-    (selector: string) => {
-      onTargetChange({ customSelector: selector });
     },
     [onTargetChange],
   );
@@ -76,8 +68,6 @@ export const ContentPlacementManual = () => {
               onChange={handleSelectorChange}
             />
           </ContentErrorAnchor>
-
-          <SelectorButtons selectors={target?.selectorsList} onSelect={handleSelectorSelect} />
 
           <SequenceSelect
             value={target?.sequence}

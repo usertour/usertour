@@ -17,9 +17,5 @@ export {
   useBuilderStore,
   useSaveState,
   useIsBusy,
-  useCanUndo,
-  useCanRedo,
-  useUndo,
-  useRedo,
 } from '@/pages/contents/components/builder/core/access/use-builder-store';
 export { useBuilderInit } from '@/pages/contents/components/builder/core/lifecycle/use-builder-init';

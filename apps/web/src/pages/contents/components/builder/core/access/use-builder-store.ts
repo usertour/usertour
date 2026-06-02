@@ -24,12 +24,3 @@ export const useSaveState = () => useBuilderStore((s) => s.saveState);
 // two states that sidebar pages + form bindings used to merge inline.
 export const useIsBusy = () =>
   useBuilderStore((s) => s.isLoading || s.saveState.status === 'saving');
-
-// Undo / redo affordances — for UI buttons on top of the Cmd+Z /
-// Cmd+Shift+Z / Cmd+Y keyboard shortcuts wired at the Provider level.
-// canUndo / canRedo are reactive selectors; undo / redo are stable
-// store method refs (safe to bind directly to a button onClick).
-export const useCanUndo = () => useBuilderStore((s) => s.history.past.length > 0);
-export const useCanRedo = () => useBuilderStore((s) => s.history.future.length > 0);
-export const useUndo = () => useBuilderStore((s) => s.undo);
-export const useRedo = () => useBuilderStore((s) => s.redo);

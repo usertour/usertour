@@ -39,8 +39,8 @@ import { getEmptyDataForType } from '@/pages/contents/components/builder/core/ut
 // Read-side store fields (currentStep / currentIndex / isShowError)
 // stay on the public store surface because cross-type hooks read them
 // — use-current-theme inherits step.themeId, use-content-position
-// reads step.setting.position, app/index.tsx mirrors currentIndex
-// into the ?step=N URL param. Writers stay here.
+// reads step.setting.position, and use-seed-step-from-route seeds
+// currentStep from the `step/:index` route param. Writers stay here.
 
 export const useFlowEditor = () => {
   // Cross-type Provider bits — focused-hook split per

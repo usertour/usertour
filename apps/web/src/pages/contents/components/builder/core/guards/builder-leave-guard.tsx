@@ -9,9 +9,8 @@ import { LeaveConfirmDialog } from '@/pages/contents/components/builder/core/gua
 // `useBlocker` covers in-app pathname changes — clicking sidebar
 // links, browser back/forward, programmatic navigate() calls.
 //
-// shouldBlock fires only on pathname change, not on search-param
-// changes — the builder updates `?step=N` on every step click and
-// those aren't user-perceivable "leaving" actions.
+// shouldBlock compares pathname only, so search-param-only changes
+// pass through — they aren't user-perceivable "leaving" actions.
 //
 // shouldBlock dirty-check covers 'dirty' (edited, not yet saved),
 // 'saving' (in flight), and 'error' (failed, still has unsaved

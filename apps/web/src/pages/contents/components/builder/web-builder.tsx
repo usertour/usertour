@@ -26,8 +26,8 @@ export interface WebBuilderProps {
 // loading, syncs the theme, gates on `ready`, then dispatches on the content
 // type to that type's view. Flow / Launcher / Checklist / ResourceCenter own
 // their sub-views via a descendant <Routes> (under the builder route's `/*`);
-// Banner is a single view with no sub-routes. The old store `currentMode` +
-// MODE_COMPONENTS dispatch is gone — the URL is the view's source of truth.
+// Banner is a single view with no sub-routes. The URL is the view's source of
+// truth.
 function WebBuilderContent() {
   const { ready } = useBuilderInit();
   const listsLoading = useListsLoading();
