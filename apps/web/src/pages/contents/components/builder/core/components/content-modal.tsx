@@ -10,7 +10,7 @@ import {
   useStepWidth,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
-import { loadGoogleFontCss } from '@/pages/contents/components/builder/core/utils/loader';
+import { GoogleFontCss } from '@usertour/business-components';
 import {
   Attribute,
   Content,
@@ -20,7 +20,7 @@ import {
   Step,
   Theme,
 } from '@usertour/types';
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { useAws } from '@usertour/hooks';
 import { useOembedInfo } from '@/pages/contents/components/builder/core/hooks/use-oembed-info';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
@@ -69,12 +69,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       onChange(value);
     };
 
-    useEffect(() => {
-      if (themeSetting?.font?.fontFamily) {
-        loadGoogleFontCss(themeSetting.font.fontFamily, document);
-      }
-    }, [themeSetting]);
-
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
     // Get width with theme fallback if undefined
@@ -94,6 +88,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
 
     return (
       <>
+        <GoogleFontCss settings={themeSetting} />
         <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
           <PopperModalContentPotal
             position={currentStep.setting.position}

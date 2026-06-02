@@ -11,7 +11,7 @@ import {
   useStepWidth,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
-import { loadGoogleFontCss } from '@/pages/contents/components/builder/core/utils/loader';
+import { GoogleFontCss } from '@usertour/business-components';
 import {
   Align,
   Attribute,
@@ -23,7 +23,7 @@ import {
   Step,
   Theme,
 } from '@usertour/types';
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { useAws } from '@usertour/hooks';
 import { useOembedInfo } from '@/pages/contents/components/builder/core/hooks/use-oembed-info';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
@@ -70,12 +70,6 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       onChange(value);
     };
 
-    useEffect(() => {
-      if (themeSetting?.font?.fontFamily) {
-        loadGoogleFontCss(themeSetting.font.fontFamily, document);
-      }
-    }, [themeSetting]);
-
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
     // Get width with theme fallback if undefined
@@ -100,6 +94,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
 
     return (
       <>
+        <GoogleFontCss settings={themeSetting} />
         <Popper triggerRef={triggerRef} open={true} zIndex={zIndex} globalStyle={globalStyle}>
           {currentStep.setting?.enabledBackdrop && (
             <PopperOverlay blockTarget={currentStep.setting.enabledBlockTarget} />

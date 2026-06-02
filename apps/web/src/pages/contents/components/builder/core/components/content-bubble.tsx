@@ -21,12 +21,12 @@ import {
   Theme,
   StepContentType,
 } from '@usertour/types';
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useState } from 'react';
 
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useAws } from '@usertour/hooks';
 import { useOembedInfo } from '@/pages/contents/components/builder/core/hooks/use-oembed-info';
-import { loadGoogleFontCss } from '@/pages/contents/components/builder/core/utils/loader';
+import { GoogleFontCss } from '@usertour/business-components';
 
 export interface ContentBubbleProps {
   currentStep: Step;
@@ -78,12 +78,6 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       onChange(value);
     };
 
-    useEffect(() => {
-      if (themeSetting?.font?.fontFamily) {
-        loadGoogleFontCss(themeSetting.font.fontFamily, document);
-      }
-    }, [themeSetting]);
-
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
     // Get width with theme fallback if undefined
@@ -105,58 +99,61 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
     const showAvatar = themeSetting?.avatar?.type !== AvatarType.NONE;
 
     return (
-      <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
-        <PopperBubblePortal
-          position={themeSetting?.bubble?.placement?.position ?? 'rightBottom'}
-          positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
-          positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
-          width={`${width}px`}
-          avatarSize={themeSetting?.avatar?.size}
-          avatarSrc={avatarUrl}
-          avatarComponent={avatarComponent}
-          showAvatar={showAvatar}
-          enabledBackdrop={currentStep.setting.enabledBackdrop}
-          onBackdropClick={undefined}
-          ref={ref}
-        >
-          <PopperContent>
-            {currentStep.setting.skippable && <PopperClose />}
-            {showTopProgress && (
-              <PopperProgress
-                width={60}
-                type={progressType}
-                currentStepIndex={currentIndex}
-                position={progressPosition}
-                totalSteps={totalSteps}
+      <>
+        <GoogleFontCss settings={themeSetting} />
+        <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
+          <PopperBubblePortal
+            position={themeSetting?.bubble?.placement?.position ?? 'rightBottom'}
+            positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
+            positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
+            width={`${width}px`}
+            avatarSize={themeSetting?.avatar?.size}
+            avatarSrc={avatarUrl}
+            avatarComponent={avatarComponent}
+            showAvatar={showAvatar}
+            enabledBackdrop={currentStep.setting.enabledBackdrop}
+            onBackdropClick={undefined}
+            ref={ref}
+          >
+            <PopperContent>
+              {currentStep.setting.skippable && <PopperClose />}
+              {showTopProgress && (
+                <PopperProgress
+                  width={60}
+                  type={progressType}
+                  currentStepIndex={currentIndex}
+                  position={progressPosition}
+                  totalSteps={totalSteps}
+                />
+              )}
+              <ContentEditor
+                zIndex={zIndex + EXTENSION_CONTENT_MODAL}
+                enabledElementTypes={enabledElementTypes}
+                customUploadRequest={upload}
+                initialValue={data}
+                projectId={projectId}
+                attributes={attributeList}
+                contentList={contents}
+                currentVersion={currentVersion}
+                currentStep={currentStep}
+                onValueChange={handleEditorValueChange}
+                getOembedInfo={getOembedInfo}
+                createStep={createStep}
               />
-            )}
-            <ContentEditor
-              zIndex={zIndex + EXTENSION_CONTENT_MODAL}
-              enabledElementTypes={enabledElementTypes}
-              customUploadRequest={upload}
-              initialValue={data}
-              projectId={projectId}
-              attributes={attributeList}
-              contentList={contents}
-              currentVersion={currentVersion}
-              currentStep={currentStep}
-              onValueChange={handleEditorValueChange}
-              getOembedInfo={getOembedInfo}
-              createStep={createStep}
-            />
-            {showBottomProgress && (
-              <PopperProgress
-                width={60}
-                type={progressType}
-                currentStepIndex={currentIndex}
-                position={progressPosition}
-                totalSteps={totalSteps}
-              />
-            )}
-            {shouldShowMadeWith && <PopperMadeWith />}
-          </PopperContent>
-        </PopperBubblePortal>
-      </Popper>
+              {showBottomProgress && (
+                <PopperProgress
+                  width={60}
+                  type={progressType}
+                  currentStepIndex={currentIndex}
+                  position={progressPosition}
+                  totalSteps={totalSteps}
+                />
+              )}
+              {shouldShowMadeWith && <PopperMadeWith />}
+            </PopperContent>
+          </PopperBubblePortal>
+        </Popper>
+      </>
     );
   },
 );
