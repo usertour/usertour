@@ -30,31 +30,34 @@ import {
   useBuilderMethods,
   useBuilderStore,
   useProjectId,
-} from '../../core';
-import { useFlowEditor } from './use-flow-editor';
-import { useSeedStepFromRoute } from './use-seed-step-from-route';
-import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
-import { useCurrentTheme } from '../../hooks/use-current-theme';
-import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
-import { collectStepActions } from '../../utils/collect-step-actions';
-import { ContentAlignment } from '../../components/content-alignment';
-import { ContentModal } from '../../components/content-modal';
-import { ContentModalPlacement } from '../../components/content-modal-placement';
-import { ContentPopper } from '../../components/content-popper';
-import { ContentSettings, ContentSettingsData } from '../../components/content-settings';
-import { ContentTheme } from '../../components/content-theme';
-import { ContentWidth } from '../../components/content-width';
-import { SidebarMini } from '../../components/sidebar/sidebar-mini';
+} from '@/pages/contents/components/builder/core';
+import { useFlowEditor } from '@/pages/contents/components/builder/builders/flow/use-flow-editor';
+import { useSeedStepFromRoute } from '@/pages/contents/components/builder/builders/flow/use-seed-step-from-route';
+import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
+import { useAutoSidebarPosition } from '@/pages/contents/components/builder/hooks/use-auto-sidebar-position';
+import { collectStepActions } from '@/pages/contents/components/builder/utils/collect-step-actions';
+import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
+import { ContentModal } from '@/pages/contents/components/builder/components/content-modal';
+import { ContentModalPlacement } from '@/pages/contents/components/builder/components/content-modal-placement';
+import { ContentPopper } from '@/pages/contents/components/builder/components/content-popper';
+import {
+  ContentSettings,
+  ContentSettingsData,
+} from '@/pages/contents/components/builder/components/content-settings';
+import { ContentTheme } from '@/pages/contents/components/builder/components/content-theme';
+import { ContentWidth } from '@/pages/contents/components/builder/components/content-width';
+import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
 import { PlusIcon, SpinnerIcon } from '@usertour/icons';
-import { ContentType } from '../../components/content-type';
-import { FlowPlacement } from './components/flow-placement';
+import { ContentType } from '@/pages/contents/components/builder/components/content-type';
+import { FlowPlacement } from '@/pages/contents/components/builder/builders/flow/components/flow-placement';
 import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour/hooks';
-import { ContentBubble } from '../../components/content-bubble';
+import { ContentBubble } from '@/pages/contents/components/builder/components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);

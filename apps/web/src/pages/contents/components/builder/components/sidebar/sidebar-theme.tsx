@@ -19,7 +19,12 @@ import { useCallback, useEffect } from 'react';
 
 import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore, useProjectId } from '../../core';
+import {
+  useBuilderConfig,
+  useBuilderMethods,
+  useBuilderStore,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();

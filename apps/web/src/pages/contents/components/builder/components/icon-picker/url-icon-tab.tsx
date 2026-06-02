@@ -1,8 +1,8 @@
 import React from 'react';
 import { Button, Input } from '@usertour/ui';
 import { ArrowRightIcon } from '@usertour/icons';
-import { useIconUrl } from './hooks/use-icon-url';
-import type { UrlIconTabProps } from './types';
+import { useIconUrl } from '@/pages/contents/components/builder/components/icon-picker/hooks/use-icon-url';
+import type { UrlIconTabProps } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 export const UrlIconTab = React.memo<UrlIconTabProps>(
   ({ iconUrl, iconSource, onUrlSubmit, isUploading }) => {

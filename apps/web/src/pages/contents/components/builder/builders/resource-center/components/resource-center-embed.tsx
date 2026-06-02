@@ -25,8 +25,13 @@ import {
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderConfig, useBuilderStore, useEnvironmentId, useProjectId } from '../../../core';
-import { useResourceCenterEditor } from '../use-resource-center-editor';
+import {
+  useBuilderConfig,
+  useBuilderStore,
+  useEnvironmentId,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
 import { useAws } from '@usertour/hooks';
 
 /** Inner panel content that can access the widget's ResourceCenterContext */

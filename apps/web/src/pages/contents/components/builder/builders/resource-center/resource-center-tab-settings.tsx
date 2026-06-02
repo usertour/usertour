@@ -16,15 +16,15 @@ import { SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
 import { useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useBuilderConfig } from '../../core';
-import { useResourceCenterEditor } from './use-resource-center-editor';
-import { SidebarContainer } from '../../components/sidebar';
-import { IconPicker } from '../../components/icon-picker';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 import {
   ContentError,
   ContentErrorAnchor,
   ContentErrorContent,
-} from '../../components/content-error';
+} from '@/pages/contents/components/builder/components/content-error';
 
 const TabSettingsHeader = () => {
   const { setEditingTab, exitTabSettings } = useResourceCenterEditor();

@@ -50,19 +50,26 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../core';
-import { useResourceCenterEditor } from './use-resource-center-editor';
-import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
-import { useToken } from '../../hooks/use-token';
-import { SidebarContainer } from '../../components/sidebar';
-import { IconPicker } from '../../components/icon-picker';
+import {
+  useBuilderConfig,
+  useEnvironmentId,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
+import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 import {
   ContentError,
   ContentErrorAnchor,
   ContentErrorContent,
-} from '../../components/content-error';
-import { ContentItemIcon } from './block-content-list/content-item-icon';
-import { ItemEditorBody, ItemEditorHeader } from './block-content-list/item-editor';
+} from '@/pages/contents/components/builder/components/content-error';
+import { ContentItemIcon } from '@/pages/contents/components/builder/builders/resource-center/block-content-list/content-item-icon';
+import {
+  ItemEditorBody,
+  ItemEditorHeader,
+} from '@/pages/contents/components/builder/builders/resource-center/block-content-list/item-editor';
 
 // ============================================================================
 // Content List Block — Main Page

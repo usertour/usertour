@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
 
-import { useBannerEditor } from '../use-banner-editor';
+import { useBannerEditor } from '@/pages/contents/components/builder/builders/banner/use-banner-editor';
 
 const defaultMargin: BannerOuterMargin = {
   top: 0,

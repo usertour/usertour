@@ -1,5 +1,5 @@
 import { useContentListQuery } from '@usertour/hooks';
-import { useEnvironmentId } from '../core';
+import { useEnvironmentId } from '@/pages/contents/components/builder/core';
 
 // Builder-local wrapper over the shared `useContentListQuery`. The
 // builder needs the FULL content list (all types — e.g. the

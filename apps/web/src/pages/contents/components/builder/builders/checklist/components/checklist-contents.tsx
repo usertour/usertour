@@ -36,7 +36,7 @@ import {
 import { Delete2Icon } from '@usertour/icons';
 import { ChecklistItemType } from '@usertour/types';
 import { forwardRef, useState } from 'react';
-import { useChecklistEditor } from '../use-checklist-editor';
+import { useChecklistEditor } from '@/pages/contents/components/builder/builders/checklist/use-checklist-editor';
 // Add interface for component props
 interface ChecklistContentProps {
   onClick?: (action: 'edit' | 'delete', item: ChecklistItemType) => void;

@@ -20,14 +20,14 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderConfig } from '../../core';
-import { useSidebarSave } from '../../hooks/use-sidebar-save';
-import { useResourceCenterEditor } from './use-resource-center-editor';
-import { BuilderSidebarLayout } from '../../components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '../../components/sidebar/sidebar-theme';
-import { ResourceCenterBlocks } from './components/resource-center-blocks';
-import { ResourceCenterTabs } from './components/resource-center-tabs';
-import { BLOCK_TYPE_OPTIONS } from './resource-center-block-options';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
+import { ResourceCenterBlocks } from '@/pages/contents/components/builder/builders/resource-center/components/resource-center-blocks';
+import { ResourceCenterTabs } from '@/pages/contents/components/builder/builders/resource-center/components/resource-center-tabs';
+import { BLOCK_TYPE_OPTIONS } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-options';
 import type { ResourceCenterBlock } from '@usertour/types';
 const labelStyles = 'flex justify-start items-center space-x-1';
 

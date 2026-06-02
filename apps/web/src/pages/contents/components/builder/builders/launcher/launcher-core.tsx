@@ -2,15 +2,15 @@
 
 import { CardContent, ScrollArea } from '@usertour/ui';
 import { LauncherActionType } from '@usertour/types';
-import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
-import { useSidebarSave } from '../../hooks/use-sidebar-save';
-import { BuilderSidebarLayout } from '../../components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '../../components/sidebar/sidebar-theme';
-import { useLauncherEditor } from './use-launcher-editor';
-import { LauncherBehavior } from './components/launcher-behavior';
-import { LauncherTargetPreview } from './components/launcher-target-preview';
-import { LauncherType } from './components/launcher-type';
-import { LauncherZIndex } from './components/launcher-zindex';
+import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
+import { LauncherBehavior } from '@/pages/contents/components/builder/builders/launcher/components/launcher-behavior';
+import { LauncherTargetPreview } from '@/pages/contents/components/builder/builders/launcher/components/launcher-target-preview';
+import { LauncherType } from '@/pages/contents/components/builder/builders/launcher/components/launcher-type';
+import { LauncherZIndex } from '@/pages/contents/components/builder/builders/launcher/components/launcher-zindex';
 
 const LauncherCoreBody = () => {
   return (

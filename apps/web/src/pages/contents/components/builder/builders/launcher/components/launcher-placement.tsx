@@ -1,9 +1,9 @@
 import { getAuthToken } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
-import { ContentPlacementProvider } from '../../../components/content-placement';
-import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
-import { useBuilderConfig, useBuilderStore } from '../../../core';
-import { useLauncherEditor } from '../use-launcher-editor';
+import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
+import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
 
 export const LauncherPlacement = () => {
   const { zIndex } = useBuilderConfig();

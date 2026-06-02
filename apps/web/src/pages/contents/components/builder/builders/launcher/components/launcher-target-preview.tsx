@@ -1,6 +1,6 @@
 import { GearIcon } from '@radix-ui/react-icons';
 import { ElementIcon } from '@usertour/icons';
-import { useLauncherEditor } from '../use-launcher-editor';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
 
 export const LauncherTargetPreview = () => {
   const { gotoLauncherTarget } = useLauncherEditor();

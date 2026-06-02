@@ -2,7 +2,10 @@ import React from 'react';
 import { IconsList } from '@usertour/widget';
 import { Tooltip, TooltipContent, TooltipTrigger, Button } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import type { BuiltinIconTabProps, IconButtonProps } from './types';
+import type {
+  BuiltinIconTabProps,
+  IconButtonProps,
+} from '@/pages/contents/components/builder/components/icon-picker/types';
 
 const IconButton = React.memo<IconButtonProps>(({ icon: Icon, text, isSelected, onClick }) => (
   <Tooltip>

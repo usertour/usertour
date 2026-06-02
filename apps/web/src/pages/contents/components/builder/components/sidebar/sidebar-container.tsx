@@ -1,10 +1,10 @@
-import { SidebarMini } from './sidebar-mini';
+import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
 
 import { Card } from '@usertour/ui';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';
-import { useBuilderConfig, useBuilderStore } from '../../core';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
 
 interface SidebarContainerProps {
   children: React.ReactNode;

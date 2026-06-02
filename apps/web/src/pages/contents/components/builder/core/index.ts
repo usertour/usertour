@@ -4,11 +4,15 @@
 // engine's internals (the store factory, the lifecycle hooks, the provider
 // types) live alongside in this folder but are not re-exported — reach them by
 // explicit path only from within core/.
-export { BuilderProvider } from './builder-provider';
-export type { BuilderProviderProps } from './types';
-export { useBuilderMethods } from './access/use-builder-methods';
-export { useBuilderConfig, useEnvironmentId, useProjectId } from './access/use-builder-config';
-export { useBuilderContentRef } from './access/use-builder-content-ref';
+export { BuilderProvider } from '@/pages/contents/components/builder/core/builder-provider';
+export type { BuilderProviderProps } from '@/pages/contents/components/builder/core/types';
+export { useBuilderMethods } from '@/pages/contents/components/builder/core/access/use-builder-methods';
+export {
+  useBuilderConfig,
+  useEnvironmentId,
+  useProjectId,
+} from '@/pages/contents/components/builder/core/access/use-builder-config';
+export { useBuilderContentRef } from '@/pages/contents/components/builder/core/access/use-builder-content-ref';
 export {
   useBuilderStore,
   useSaveState,
@@ -17,5 +21,5 @@ export {
   useCanRedo,
   useUndo,
   useRedo,
-} from './access/use-builder-store';
-export { useBuilderInit } from './lifecycle/use-builder-init';
+} from '@/pages/contents/components/builder/core/access/use-builder-store';
+export { useBuilderInit } from '@/pages/contents/components/builder/core/lifecycle/use-builder-init';

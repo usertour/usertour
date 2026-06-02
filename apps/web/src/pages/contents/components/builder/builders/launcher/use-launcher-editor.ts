@@ -1,8 +1,11 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LauncherData } from '@usertour/types';
-import { useTypeEditor } from '../../hooks/use-type-editor';
-import { launcherTypeConfig, type LauncherUIState } from './launcher-config';
+import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-type-editor';
+import {
+  launcherTypeConfig,
+  type LauncherUIState,
+} from '@/pages/contents/components/builder/builders/launcher/launcher-config';
 
 // Launcher-flavoured editor over useTypeEditor.
 //

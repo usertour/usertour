@@ -1,1 +1,1 @@
-export { ChecklistBuilder } from './checklist';
+export { ChecklistBuilder } from '@/pages/contents/components/builder/builders/checklist/checklist';

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useBuilderConfig, useBuilderMethods } from '../core';
+import { useBuilderConfig, useBuilderMethods } from '@/pages/contents/components/builder/core';
 
 export interface UseSidebarSaveOptions {
   /** Return false to abort the save (e.g. Launcher's incomplete-action

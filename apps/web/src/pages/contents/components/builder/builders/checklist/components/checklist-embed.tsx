@@ -18,9 +18,13 @@ import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
 import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBuilderConfig, useBuilderStore, useProjectId } from '../../../core';
+import {
+  useBuilderConfig,
+  useBuilderStore,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
 import { useAws } from '@usertour/hooks';
-import { useChecklistEditor } from '../use-checklist-editor';
+import { useChecklistEditor } from '@/pages/contents/components/builder/builders/checklist/use-checklist-editor';
 
 export const ChecklistEmbed = () => {
   const { data: localData, currentItem, updateData: updateLocalData } = useChecklistEditor();

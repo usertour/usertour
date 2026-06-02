@@ -11,7 +11,11 @@ import { Actions, validateActions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '@/pages/contents/components/builder/components/content-error';
 
 interface ContentTriggerProps {
   actions: RulesCondition[];

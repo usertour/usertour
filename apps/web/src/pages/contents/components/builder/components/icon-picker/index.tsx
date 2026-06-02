@@ -11,14 +11,14 @@ import {
 } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { LauncherIconSource } from '@usertour/types';
-import { TAB_VALUES } from './constants';
-import { getActiveText } from './utils';
-import { useIconTab } from './hooks/use-icon-tab';
-import { IconTriggerButton } from './icon-trigger-button';
-import { BuiltinIconTab } from './builtin-icon-tab';
-import { UploadIconTab } from './upload-icon-tab';
-import { UrlIconTab } from './url-icon-tab';
-import type { IconPickerProps } from './types';
+import { TAB_VALUES } from '@/pages/contents/components/builder/components/icon-picker/constants';
+import { getActiveText } from '@/pages/contents/components/builder/components/icon-picker/utils';
+import { useIconTab } from '@/pages/contents/components/builder/components/icon-picker/hooks/use-icon-tab';
+import { IconTriggerButton } from '@/pages/contents/components/builder/components/icon-picker/icon-trigger-button';
+import { BuiltinIconTab } from '@/pages/contents/components/builder/components/icon-picker/builtin-icon-tab';
+import { UploadIconTab } from '@/pages/contents/components/builder/components/icon-picker/upload-icon-tab';
+import { UrlIconTab } from '@/pages/contents/components/builder/components/icon-picker/url-icon-tab';
+import type { IconPickerProps } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 export const IconPicker = ({
   type,

@@ -1,12 +1,18 @@
 import { createContext, useMemo, useRef } from 'react';
-import { useAutoSave } from './lifecycle/use-auto-save';
-import { useBeforeunloadGuard } from './lifecycle/use-beforeunload-guard';
-import { useContentLoader } from './lifecycle/use-content-loader';
-import { useSaveContent } from './lifecycle/use-save-content';
-import { useUndoShortcuts } from './lifecycle/use-undo-shortcuts';
-import { type BuilderStore, createBuilderStore } from './builder-store';
-import { BuilderLeaveGuard } from '../guards/builder-leave-guard';
-import type { BuilderProviderContextValue, BuilderProviderProps } from './types';
+import { useAutoSave } from '@/pages/contents/components/builder/core/lifecycle/use-auto-save';
+import { useBeforeunloadGuard } from '@/pages/contents/components/builder/core/lifecycle/use-beforeunload-guard';
+import { useContentLoader } from '@/pages/contents/components/builder/core/lifecycle/use-content-loader';
+import { useSaveContent } from '@/pages/contents/components/builder/core/lifecycle/use-save-content';
+import { useUndoShortcuts } from '@/pages/contents/components/builder/core/lifecycle/use-undo-shortcuts';
+import {
+  type BuilderStore,
+  createBuilderStore,
+} from '@/pages/contents/components/builder/core/builder-store';
+import { BuilderLeaveGuard } from '@/pages/contents/components/builder/guards/builder-leave-guard';
+import type {
+  BuilderProviderContextValue,
+  BuilderProviderProps,
+} from '@/pages/contents/components/builder/core/types';
 
 // The React Context object. The four public access hooks
 // (useBuilderStore / useBuilderMethods / useBuilderConfig /

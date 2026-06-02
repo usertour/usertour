@@ -1,6 +1,6 @@
 import type { Content, ContentVersion } from '@usertour/types';
 import type { ReactNode } from 'react';
-import type { BuilderStore } from './builder-store';
+import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 
 // Imperative methods exposed by BuilderProvider. Signatures live here
 // so both the Provider value shape and the per-concern provider hooks

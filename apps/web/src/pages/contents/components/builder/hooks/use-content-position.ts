@@ -6,8 +6,8 @@ import {
   ThemeTypesSetting,
 } from '@usertour/types';
 import { useMemo } from 'react';
-import { useBuilderStore } from '../core';
-import { useCurrentTheme } from './use-current-theme';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 
 /**
  * Hook to get the content position based on current content/step type

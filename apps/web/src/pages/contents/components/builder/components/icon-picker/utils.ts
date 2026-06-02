@@ -1,6 +1,6 @@
 import { LauncherIconSource } from '@usertour/types';
 import { IconsList } from '@usertour/widget';
-import { TAB_VALUES } from './constants';
+import { TAB_VALUES } from '@/pages/contents/components/builder/components/icon-picker/constants';
 
 /**
  * Get initial tab based on icon source

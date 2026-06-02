@@ -8,9 +8,12 @@ import {
   type ResourceCenterTab,
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
-import { useTypeEditor } from '../../hooks/use-type-editor';
-import { useListField } from '../../hooks/use-list-field';
-import { resourceCenterTypeConfig, type ResourceCenterUIState } from './resource-center-config';
+import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-type-editor';
+import { useListField } from '@/pages/contents/components/builder/hooks/use-list-field';
+import {
+  resourceCenterTypeConfig,
+  type ResourceCenterUIState,
+} from '@/pages/contents/components/builder/builders/resource-center/resource-center-config';
 
 // Validate block required fields before explicit save. V1 ran this
 // inside saveCurrentBlock; moved verbatim. Auto-save doesn't consult

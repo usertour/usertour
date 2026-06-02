@@ -16,10 +16,10 @@ import {
   SelectValue,
 } from '@usertour/ui';
 
-import { ContentPlacementProvider } from '../../../components/content-placement';
-import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';
-import { useBuilderConfig, useBuilderStore } from '../../../core';
-import { useBannerEditor } from '../use-banner-editor';
+import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
+import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBannerEditor } from '@/pages/contents/components/builder/builders/banner/use-banner-editor';
 
 const EMBED_PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; label: string }[] = [
   { value: BannerEmbedPlacement.TOP_OF_PAGE, label: 'Top of page' },

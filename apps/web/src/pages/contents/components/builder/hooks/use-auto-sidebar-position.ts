@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { useBuilderStore } from '../core';
-import { ContentSide, getOppositeSide, getPositionSide, SidebarSide } from '../utils/position';
-import { useContentPosition } from './use-content-position';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import {
+  ContentSide,
+  getOppositeSide,
+  getPositionSide,
+  SidebarSide,
+} from '@/pages/contents/components/builder/utils/position';
+import { useContentPosition } from '@/pages/contents/components/builder/hooks/use-content-position';
 
 /**
  * Hook to automatically adjust sidebar position when content position overlaps

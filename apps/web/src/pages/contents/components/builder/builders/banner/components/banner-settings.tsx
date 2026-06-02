@@ -2,7 +2,7 @@
 
 import { Label, QuestionTooltip, Switch } from '@usertour/ui';
 
-import { useBannerEditor } from '../use-banner-editor';
+import { useBannerEditor } from '@/pages/contents/components/builder/builders/banner/use-banner-editor';
 
 const SETTINGS_ITEMS: readonly {
   key:

@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useToast } from '@usertour/ui';
 import { LauncherIconSource } from '@usertour/types';
-import { validateUrl } from '../utils';
+import { validateUrl } from '@/pages/contents/components/builder/components/icon-picker/utils';
 
 interface UseIconUrlProps {
   iconUrl?: string;

@@ -1,7 +1,7 @@
 import { ChevronDownIcon, GearIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '../../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,8 @@ import {
   RulesCondition,
 } from '@usertour/types';
 import { useCallback } from 'react';
-import { useBuilderConfig, useBuilderStore } from '../../../core';
-import { useLauncherEditor } from '../use-launcher-editor';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
 
 interface TriggerDropdownProps {
   value: string;

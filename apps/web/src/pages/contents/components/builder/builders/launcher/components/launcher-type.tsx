@@ -1,9 +1,9 @@
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { Input } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
-import { LauncherContentType, IconPicker } from '../../../components/';
-import { useBuilderConfig } from '../../../core';
-import { useLauncherEditor } from '../use-launcher-editor';
+import { LauncherContentType, IconPicker } from '@/pages/contents/components/builder/components';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
 
 export const LauncherType = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();

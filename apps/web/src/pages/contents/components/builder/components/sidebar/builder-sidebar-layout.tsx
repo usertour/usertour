@@ -1,9 +1,9 @@
 import { CardFooter, CardHeader, CardTitle } from '@usertour/ui';
 import type { ReactNode } from 'react';
-import { useBuilderStore, useIsBusy } from '../../core';
-import { SidebarContainer } from './sidebar-container';
-import { SidebarFooter } from './sidebar-footer';
-import { SidebarHeader } from './sidebar-header';
+import { useBuilderStore, useIsBusy } from '@/pages/contents/components/builder/core';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar/sidebar-container';
+import { SidebarFooter } from '@/pages/contents/components/builder/components/sidebar/sidebar-footer';
+import { SidebarHeader } from '@/pages/contents/components/builder/components/sidebar/sidebar-header';
 
 export interface BuilderSidebarLayoutProps {
   /** Per-type body — the page's own `<CardContent>` settings panel. */

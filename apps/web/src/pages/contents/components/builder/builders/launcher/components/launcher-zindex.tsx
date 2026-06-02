@@ -1,5 +1,5 @@
 import { Input } from '@usertour/ui';
-import { useLauncherEditor } from '../use-launcher-editor';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
 
 export const LauncherZIndex = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();

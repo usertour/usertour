@@ -1,5 +1,5 @@
 import { useEvent } from 'react-use';
-import type { BuilderStore } from '../builder-store';
+import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 
 export interface UseUndoShortcutsArgs {
   store: BuilderStore;

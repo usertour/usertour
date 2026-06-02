@@ -1,6 +1,6 @@
 import { Input } from '@usertour/ui';
 
-import { useBannerEditor } from '../use-banner-editor';
+import { useBannerEditor } from '@/pages/contents/components/builder/builders/banner/use-banner-editor';
 
 export const BannerZIndex = () => {
   const { data: localData, updateData: updateLocalData } = useBannerEditor();

@@ -3,7 +3,7 @@ import { ModalPosition } from '@usertour/types';
 import { ContentModalPlacementData } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { useState } from 'react';
-import { InputNumber } from './shared/input';
+import { InputNumber } from '@/pages/contents/components/builder/components/shared/input';
 
 const PlacementButton = (props: {
   position: ModalPosition;

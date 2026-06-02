@@ -1,8 +1,8 @@
 import { Label, QuestionTooltip, Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/ui';
 import { Align, AlignType, ContentAlignmentData, Side } from '@usertour/types';
 import { useState } from 'react';
-import { Alignment } from './shared/alignment';
-import { InputNumber } from './shared/input';
+import { Alignment } from '@/pages/contents/components/builder/components/shared/alignment';
+import { InputNumber } from '@/pages/contents/components/builder/components/shared/input';
 
 export interface ContentAlignmentProps {
   initialValue: ContentAlignmentData;

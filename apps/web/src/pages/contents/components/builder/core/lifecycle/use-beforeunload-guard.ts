@@ -1,6 +1,6 @@
 import { useEvent } from 'react-use';
 import { useStore } from 'zustand';
-import type { BuilderStore } from '../builder-store';
+import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 
 export interface UseBeforeunloadGuardArgs {
   store: BuilderStore;

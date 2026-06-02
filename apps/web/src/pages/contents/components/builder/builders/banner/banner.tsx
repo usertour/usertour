@@ -2,14 +2,14 @@
 
 import { CardContent, ScrollArea } from '@usertour/ui';
 
-import { useSidebarSave } from '../../hooks/use-sidebar-save';
-import { BuilderSidebarLayout } from '../../components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '../../components/sidebar/sidebar-theme';
-import { BannerEmbed } from './components/banner-embed';
-import { BannerEmbedPlacementSelect } from './components/banner-embed-placement';
-import { BannerSettings } from './components/banner-settings';
-import { BannerLayout } from './components/banner-layout';
-import { BannerZIndex } from './components/banner-zindex';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
+import { BannerEmbed } from '@/pages/contents/components/builder/builders/banner/components/banner-embed';
+import { BannerEmbedPlacementSelect } from '@/pages/contents/components/builder/builders/banner/components/banner-embed-placement';
+import { BannerSettings } from '@/pages/contents/components/builder/builders/banner/components/banner-settings';
+import { BannerLayout } from '@/pages/contents/components/builder/builders/banner/components/banner-layout';
+import { BannerZIndex } from '@/pages/contents/components/builder/builders/banner/components/banner-zindex';
 
 const BannerBuilderBody = () => {
   return (

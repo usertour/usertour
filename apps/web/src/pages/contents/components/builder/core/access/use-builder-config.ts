@@ -1,6 +1,6 @@
 import { useContext } from 'react';
-import type { BuilderProviderContextValue } from '../types';
-import { BuilderProviderContext } from '../builder-provider';
+import type { BuilderProviderContextValue } from '@/pages/contents/components/builder/core/types';
+import { BuilderProviderContext } from '@/pages/contents/components/builder/core/builder-provider';
 
 // Static config passed to BuilderProvider as props — onSaved /
 // shouldShowMadeWith / zIndex / environmentId / projectId. Never

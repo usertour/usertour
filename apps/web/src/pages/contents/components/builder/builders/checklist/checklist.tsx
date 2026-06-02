@@ -1,8 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
-import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
-import { ChecklistCore } from './checklist-core';
-import { ChecklistItem } from './checklist-item';
-import { ChecklistEmbed } from './components/checklist-embed';
+import { useAutoSidebarPosition } from '@/pages/contents/components/builder/hooks/use-auto-sidebar-position';
+import { ChecklistCore } from '@/pages/contents/components/builder/builders/checklist/checklist-core';
+import { ChecklistItem } from '@/pages/contents/components/builder/builders/checklist/checklist-item';
+import { ChecklistEmbed } from '@/pages/contents/components/builder/builders/checklist/components/checklist-embed';
 
 // The Checklist builder — a descendant `<Routes>` under the builder route's
 // `/*` routing its sub-views. The URL owns which sub-view is open;

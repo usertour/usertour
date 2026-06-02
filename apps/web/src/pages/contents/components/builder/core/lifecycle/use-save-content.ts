@@ -2,9 +2,9 @@ import { getErrorMessage, isEqual } from '@usertour/helpers';
 import { useAddContentStepsMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
-import type { BuilderProviderMethods } from '../types';
-import type { BuilderStore } from '../builder-store';
-import { debug } from '../../utils/logger';
+import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
+import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
+import { debug } from '@/pages/contents/components/builder/utils/logger';
 
 export interface UseSaveContentArgs {
   store: BuilderStore;

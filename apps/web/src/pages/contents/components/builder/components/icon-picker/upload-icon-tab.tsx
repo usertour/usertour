@@ -3,10 +3,10 @@ import Upload from 'rc-upload';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
-import { ACCEPT_FILE_TYPES } from './constants';
-import { IconPreview } from './icon-preview';
-import { useIconUpload } from './hooks/use-icon-upload';
-import type { UploadIconTabProps } from './types';
+import { ACCEPT_FILE_TYPES } from '@/pages/contents/components/builder/components/icon-picker/constants';
+import { IconPreview } from '@/pages/contents/components/builder/components/icon-picker/icon-preview';
+import { useIconUpload } from '@/pages/contents/components/builder/components/icon-picker/hooks/use-icon-upload';
+import type { UploadIconTabProps } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 export const UploadIconTab = React.memo<UploadIconTabProps>(
   ({ iconUrl, iconSource, onUploadSuccess, onRemove }) => {

@@ -20,12 +20,12 @@ import {
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { useBuilderConfig } from '../../core';
-import { useSidebarSave } from '../../hooks/use-sidebar-save';
-import { useChecklistEditor } from './use-checklist-editor';
-import { BuilderSidebarLayout } from '../../components/sidebar/builder-sidebar-layout';
-import { SidebarTheme } from '../../components/sidebar/sidebar-theme';
-import { ChecklistContents } from './components/checklist-contents';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
+import { useChecklistEditor } from '@/pages/contents/components/builder/builders/checklist/use-checklist-editor';
+import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
+import { ChecklistContents } from '@/pages/contents/components/builder/builders/checklist/components/checklist-contents';
 
 // Common styles
 const flexBetween = 'flex items-center justify-between space-x-2';

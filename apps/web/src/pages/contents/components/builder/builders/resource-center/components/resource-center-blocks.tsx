@@ -36,11 +36,11 @@ import { Delete2Icon } from '@usertour/icons';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';
-import { useResourceCenterEditor } from '../use-resource-center-editor';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
 import {
   BLOCK_TYPE_LABELS,
   getResourceCenterBlockTypeIcon,
-} from '../resource-center-block-options';
+} from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-options';
 
 interface BlockContentProps {
   onClick?: (action: 'edit' | 'delete', block: ResourceCenterBlock) => void;

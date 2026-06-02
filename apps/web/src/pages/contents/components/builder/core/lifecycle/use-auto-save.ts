@@ -2,8 +2,8 @@ import { isEqual } from '@usertour/helpers';
 import type { ContentVersion } from '@usertour/types';
 import { useCallback, useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
-import type { BuilderProviderMethods } from '../types';
-import type { BuilderStore } from '../builder-store';
+import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
+import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 
 export interface UseAutoSaveArgs {
   store: BuilderStore;

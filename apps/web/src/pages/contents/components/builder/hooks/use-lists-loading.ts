@@ -1,5 +1,5 @@
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from './use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useThemeList } from '@/hooks/use-theme-list';
 
 // True while any of the builder's shared lists (theme / attribute /

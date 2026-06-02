@@ -14,7 +14,7 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
 import { Actions } from '@usertour/editor';
@@ -28,12 +28,16 @@ import {
 import { useId, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../core';
-import { useChecklistEditor } from './use-checklist-editor';
-import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
-import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
-import { useToken } from '../../hooks/use-token';
-import { SidebarContainer } from '../../components/sidebar';
+import {
+  useBuilderConfig,
+  useEnvironmentId,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
+import { useChecklistEditor } from '@/pages/contents/components/builder/builders/checklist/use-checklist-editor';
+import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
+import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 
 const ChecklistItemHeader = () => {
   const { backToChecklist, setCurrentItem } = useChecklistEditor();

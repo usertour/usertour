@@ -24,11 +24,15 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { useBuilderConfig, useEnvironmentId, useProjectId } from '../../../core';
-import { useResourceCenterEditor } from '../use-resource-center-editor';
+import {
+  useBuilderConfig,
+  useEnvironmentId,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useToken } from '../../../hooks/use-token';
-import { IconPicker } from '../../../components/icon-picker';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 
 // Sub-page editor for a single CONTENT_LIST block item. Mounted when
 // the parent root sets `editingItemIndex` to a non-null value; the

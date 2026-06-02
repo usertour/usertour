@@ -5,13 +5,13 @@ import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } fr
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { SpinnerIcon } from '@usertour/icons';
 import { LauncherData } from '@usertour/types';
-import { ContentAlignment } from '../../components/content-alignment';
-import { ContentWidth } from '../../components/content-width';
-import { useBuilderConfig } from '../../core';
-import { useLauncherEditor } from './use-launcher-editor';
-import { SidebarContainer } from '../../components/sidebar';
-import { LauncherPosition } from './components/launcher-position';
-import { LauncherSettings } from './components/launcher-settings';
+import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
+import { ContentWidth } from '@/pages/contents/components/builder/components/content-width';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { LauncherPosition } from '@/pages/contents/components/builder/builders/launcher/components/launcher-position';
+import { LauncherSettings } from '@/pages/contents/components/builder/builders/launcher/components/launcher-settings';
 import { useCallback, useLayoutEffect } from 'react';
 
 const LauncherTooltipHeader = () => {

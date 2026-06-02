@@ -1,6 +1,6 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
-import { useBuilderStore, useIsBusy } from '../core';
-import type { BuilderTypeConfig } from '../core/builder-type-config';
+import { useBuilderStore, useIsBusy } from '@/pages/contents/components/builder/core';
+import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
 
 // Editor abstraction for the four data-blob content types — Banner,
 // Checklist, Launcher, ResourceCenter. They each edit

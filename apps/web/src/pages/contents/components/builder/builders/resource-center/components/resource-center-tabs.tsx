@@ -40,8 +40,8 @@ import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { forwardRef, useState } from 'react';
-import { useResourceCenterEditor } from '../use-resource-center-editor';
-import { getActiveIcon } from '../../../components/icon-picker/utils';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
+import { getActiveIcon } from '@/pages/contents/components/builder/components/icon-picker/utils';
 
 interface TabContentProps {
   tab: ResourceCenterTab;

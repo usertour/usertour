@@ -3,10 +3,10 @@ import { ContentEditorRoot } from '@usertour/editor';
 import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useBuilderConfig, useBuilderStore } from '../../../core';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useAws } from '@usertour/hooks';
-import { useLauncherEditor } from '../use-launcher-editor';
-import { LauncherContentMain } from './launcher-content';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
+import { LauncherContentMain } from '@/pages/contents/components/builder/builders/launcher/components/launcher-content';
 import { PlusIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 

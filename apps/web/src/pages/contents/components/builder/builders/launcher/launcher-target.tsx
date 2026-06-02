@@ -3,10 +3,10 @@
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { ContentAlignment } from '../../components/content-alignment';
-import { useLauncherEditor } from './use-launcher-editor';
-import { SidebarContainer } from '../../components/sidebar';
-import { LauncherPlacement } from './components/launcher-placement';
+import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
+import { useLauncherEditor } from '@/pages/contents/components/builder/builders/launcher/use-launcher-editor';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { LauncherPlacement } from '@/pages/contents/components/builder/builders/launcher/components/launcher-placement';
 import { useCallback, useLayoutEffect } from 'react';
 
 const LauncherTargetHeader = () => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useBuilderConfig } from '../access/use-builder-config';
-import { useBuilderMethods } from '../access/use-builder-methods';
-import { useBuilderStore } from '../access/use-builder-store';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core/access/use-builder-config';
+import { useBuilderMethods } from '@/pages/contents/components/builder/core/access/use-builder-methods';
+import { useBuilderStore } from '@/pages/contents/components/builder/core/access/use-builder-store';
 
 // The whole builder load lifecycle, in one place. contentId / versionId come
 // from config (the Provider's identity); the effect is keyed on them, so a

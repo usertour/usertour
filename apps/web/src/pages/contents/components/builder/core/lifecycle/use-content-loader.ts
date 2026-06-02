@@ -1,8 +1,8 @@
 import { useGetContentLazyQuery, useGetContentVersionLazyQuery } from '@usertour/hooks';
 import type { Content, ContentVersion } from '@usertour/types';
 import { useCallback } from 'react';
-import type { BuilderProviderMethods } from '../types';
-import type { BuilderStore } from '../builder-store';
+import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
+import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 
 export interface UseContentLoaderArgs {
   store: BuilderStore;

@@ -4,14 +4,18 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';
-import { useBuilderConfig, useBuilderStore, useIsBusy } from '../../core';
-import { useSidebarSave } from '../../hooks/use-sidebar-save';
-import { SidebarContents } from './sidebar-contents';
-import { SidebarCreate } from './sidebar-create';
-import { SidebarFooter } from '../../components/sidebar/sidebar-footer';
-import { SidebarHeader } from '../../components/sidebar/sidebar-header';
-import { SidebarMini } from '../../components/sidebar/sidebar-mini';
-import { SidebarTheme } from '../../components/sidebar/sidebar-theme';
+import {
+  useBuilderConfig,
+  useBuilderStore,
+  useIsBusy,
+} from '@/pages/contents/components/builder/core';
+import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
+import { SidebarContents } from '@/pages/contents/components/builder/builders/flow/sidebar-contents';
+import { SidebarCreate } from '@/pages/contents/components/builder/builders/flow/sidebar-create';
+import { SidebarFooter } from '@/pages/contents/components/builder/components/sidebar/sidebar-footer';
+import { SidebarHeader } from '@/pages/contents/components/builder/components/sidebar/sidebar-header';
+import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
+import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 
 export const BuilderSideBar = () => {
   const { zIndex } = useBuilderConfig();

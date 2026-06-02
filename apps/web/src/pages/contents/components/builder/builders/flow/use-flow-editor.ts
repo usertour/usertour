@@ -10,8 +10,12 @@ import {
 import { useAddContentStepMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { type ContentVersion, type Step } from '@usertour/types';
-import { useBuilderMethods, useBuilderStore, useIsBusy } from '../../core';
-import { getEmptyDataForType } from '../../utils/default-data';
+import {
+  useBuilderMethods,
+  useBuilderStore,
+  useIsBusy,
+} from '@/pages/contents/components/builder/core';
+import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
 // (which serves Banner / Checklist / Launcher / ResourceCenter), not a

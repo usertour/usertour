@@ -8,7 +8,7 @@ import { cn } from '@usertour/tailwind';
 import anime from 'animejs/lib/anime.es.js';
 import { useEffect, useState } from 'react';
 
-import { useBuilderStore } from '../../core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 
 interface SideBarMiniProps {
   // container: React.MutableRefObject<HTMLDivElement>;

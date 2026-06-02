@@ -1,10 +1,14 @@
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
 import { ChangeEvent, useCallback } from 'react';
-import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
-import { useContentPlacement } from './content-placement-context';
-import { SelectorButtons } from './selector-buttons';
-import { SequenceSelect } from './sequence-select';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '@/pages/contents/components/builder/components/content-error';
+import { useContentPlacement } from '@/pages/contents/components/builder/components/content-placement/content-placement-context';
+import { SelectorButtons } from '@/pages/contents/components/builder/components/content-placement/selector-buttons';
+import { SequenceSelect } from '@/pages/contents/components/builder/components/content-placement/sequence-select';
 
 export const ContentPlacementManual = () => {
   const { target, onTargetChange, zIndex, isShowError } = useContentPlacement();

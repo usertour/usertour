@@ -5,18 +5,18 @@ import {
   ResourceCenterBlockType,
   type ResourceCenterData,
 } from '@usertour/types';
-import { useBuilderStore } from '../../core';
-import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
-import { ResourceCenterCore } from './resource-center-core';
-import { ResourceCenterBlockRichText } from './resource-center-block-rich-text';
-import { ResourceCenterBlockDivider } from './resource-center-block-divider';
-import { ResourceCenterBlockAction } from './resource-center-block-action';
-import { ResourceCenterBlockSubPage } from './resource-center-block-sub-page';
-import { ResourceCenterBlockContentList } from './resource-center-block-content-list';
-import { ResourceCenterBlockLiveChat } from './resource-center-block-live-chat';
-import { ResourceCenterTabSettings } from './resource-center-tab-settings';
-import { ResourceCenterEmbed } from './components/resource-center-embed';
-import { useResourceCenterEditor } from './use-resource-center-editor';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useAutoSidebarPosition } from '@/pages/contents/components/builder/hooks/use-auto-sidebar-position';
+import { ResourceCenterCore } from '@/pages/contents/components/builder/builders/resource-center/resource-center-core';
+import { ResourceCenterBlockRichText } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-rich-text';
+import { ResourceCenterBlockDivider } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-divider';
+import { ResourceCenterBlockAction } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-action';
+import { ResourceCenterBlockSubPage } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-sub-page';
+import { ResourceCenterBlockContentList } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-content-list';
+import { ResourceCenterBlockLiveChat } from '@/pages/contents/components/builder/builders/resource-center/resource-center-block-live-chat';
+import { ResourceCenterTabSettings } from '@/pages/contents/components/builder/builders/resource-center/resource-center-tab-settings';
+import { ResourceCenterEmbed } from '@/pages/contents/components/builder/builders/resource-center/components/resource-center-embed';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
 
 // index → redirect to the first tab. The RC always opens on a tab; tab/:tabId
 // is the source of truth for the active tab (replacing uiState.currentTabId).

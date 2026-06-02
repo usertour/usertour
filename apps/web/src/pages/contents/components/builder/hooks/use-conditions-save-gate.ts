@@ -1,12 +1,12 @@
 import { validateConditions } from '@usertour/business-components';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from './use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEnvironmentId, useProjectId } from '../core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 
 // Returns a guard the consumer can call right before its save action.
 // The guard:

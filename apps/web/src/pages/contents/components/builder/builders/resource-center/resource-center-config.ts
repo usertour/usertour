@@ -1,5 +1,5 @@
 import type { ResourceCenterBlock, ResourceCenterData, ResourceCenterTab } from '@usertour/types';
-import type { BuilderTypeConfig } from '../../core/builder-type-config';
+import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
 
 // ResourceCenter's per-type UI buffer holds the in-flight sub-mode drafts the
 // user is editing — currentBlock and editingTab — plus an isShowError flag for

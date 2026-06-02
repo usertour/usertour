@@ -6,8 +6,8 @@ import {
 } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from 'lodash';
-import type { BuilderTypeConfig } from '../../core/builder-type-config';
-import { getDefaultDataForType } from '../../utils/default-data';
+import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
+import { getDefaultDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // V1's ChecklistContext merged DEFAULT_CHECKLIST_DATA via deepmerge
 // (vs Banner's spread — checklist has nested settings that need

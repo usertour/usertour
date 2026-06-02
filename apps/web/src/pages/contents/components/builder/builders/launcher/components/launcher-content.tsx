@@ -9,7 +9,7 @@ import {
   LauncherRoot,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
-import { getEmptyDataForType } from '../../../utils/default-data';
+import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import {
   ContentActionsItemType,
   LauncherActionType,
@@ -18,7 +18,7 @@ import {
   Theme,
 } from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
-import { useBuilderConfig, useProjectId } from '../../../core';
+import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 export interface LauncherContentProps {
   zIndex: number;

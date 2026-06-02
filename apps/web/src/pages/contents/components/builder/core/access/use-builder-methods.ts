@@ -1,6 +1,6 @@
 import { useContext } from 'react';
-import type { BuilderProviderContextValue } from '../types';
-import { BuilderProviderContext } from '../builder-provider';
+import type { BuilderProviderContextValue } from '@/pages/contents/components/builder/core/types';
+import { BuilderProviderContext } from '@/pages/contents/components/builder/core/builder-provider';
 
 // Imperative methods exposed by BuilderProvider — saveContent /
 // fetchContentAndVersion / setAutoSaveValidator.

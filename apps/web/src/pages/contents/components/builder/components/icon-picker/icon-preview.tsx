@@ -1,5 +1,5 @@
 import React from 'react';
-import type { IconPreviewProps } from './types';
+import type { IconPreviewProps } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 const SIZE_CLASSES = {
   small: 'w-4 h-4',

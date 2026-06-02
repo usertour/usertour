@@ -23,10 +23,10 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 
-import { useBuilderConfig } from '../core';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useAws } from '@usertour/hooks';
-import { useOembedInfo } from '../hooks/use-oembed-info';
-import { loadGoogleFontCss } from '../utils/loader';
+import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
+import { loadGoogleFontCss } from '@/pages/contents/components/builder/utils/loader';
 
 export interface ContentBubbleProps {
   currentStep: Step;

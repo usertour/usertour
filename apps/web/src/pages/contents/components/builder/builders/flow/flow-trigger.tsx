@@ -12,7 +12,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
-import { useContentList } from '../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage, hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
@@ -20,13 +20,21 @@ import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ContentTrigger } from '../../components/content-trigger';
-import { useBuilderConfig, useBuilderMethods, useBuilderStore, useProjectId } from '../../core';
-import { TriggerProvider, useTriggerContext } from './trigger-context';
-import { useFlowEditor } from './use-flow-editor';
-import { useSeedStepFromRoute } from './use-seed-step-from-route';
-import { useToken } from '../../hooks/use-token';
-import { SidebarMini } from '../../components/sidebar/sidebar-mini';
+import { ContentTrigger } from '@/pages/contents/components/builder/components/content-trigger';
+import {
+  useBuilderConfig,
+  useBuilderMethods,
+  useBuilderStore,
+  useProjectId,
+} from '@/pages/contents/components/builder/core';
+import {
+  TriggerProvider,
+  useTriggerContext,
+} from '@/pages/contents/components/builder/builders/flow/trigger-context';
+import { useFlowEditor } from '@/pages/contents/components/builder/builders/flow/use-flow-editor';
+import { useSeedStepFromRoute } from '@/pages/contents/components/builder/builders/flow/use-seed-step-from-route';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
 import { useListAttributesQuery, useUpdateContentStepMutation } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {

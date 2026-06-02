@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@usertour/ui';
 import { useAws } from '@usertour/hooks';
-import type { RcUploadOption } from '../types';
+import type { RcUploadOption } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 interface UseIconUploadProps {
   onUploadSuccess: (url: string) => void;

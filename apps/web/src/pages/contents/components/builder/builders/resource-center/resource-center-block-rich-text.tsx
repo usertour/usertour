@@ -14,17 +14,17 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { useEnvironmentId, useProjectId } from '../../core';
-import { useResourceCenterEditor } from './use-resource-center-editor';
-import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
-import { useToken } from '../../hooks/use-token';
-import { SidebarContainer } from '../../components/sidebar';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
+import { useResourceCenterEditor } from '@/pages/contents/components/builder/builders/resource-center/use-resource-center-editor';
+import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
+import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
+import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 
 const BlockMessageHeader = () => {
   const { setCurrentBlock, exitBlock } = useResourceCenterEditor();

@@ -1,1 +1,1 @@
-export { PopperPreview } from './popper-preview';
+export { PopperPreview } from '@/pages/contents/components/builder/components/preview/popper-preview';

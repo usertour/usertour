@@ -1,17 +1,17 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/ui';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '../../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { getAuthToken } from '@usertour/helpers';
 import { window } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import {
   ContentPlacementActions,
   ContentPlacementProvider,
-} from '../../../components/content-placement';
-import { ContentPlacementManual } from '../../../components/content-placement';
-import { useBuilderConfig, useBuilderStore } from '../../../core';
-import { useFlowEditor } from '../use-flow-editor';
+} from '@/pages/contents/components/builder/components/content-placement';
+import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useFlowEditor } from '@/pages/contents/components/builder/builders/flow/use-flow-editor';
 
 export const FlowPlacement = () => {
   const { zIndex } = useBuilderConfig();

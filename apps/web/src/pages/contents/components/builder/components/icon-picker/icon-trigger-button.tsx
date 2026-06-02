@@ -2,9 +2,9 @@ import React from 'react';
 import { CaretSortIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/ui';
 import { LauncherIconSource } from '@usertour/types';
-import { getActiveIcon } from './utils';
-import { IconPreview } from './icon-preview';
-import type { IconTriggerButtonProps } from './types';
+import { getActiveIcon } from '@/pages/contents/components/builder/components/icon-picker/utils';
+import { IconPreview } from '@/pages/contents/components/builder/components/icon-picker/icon-preview';
+import type { IconTriggerButtonProps } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTriggerButtonProps>(
   ({ iconSource, iconUrl, iconType, activeText, ...props }, ref) => {

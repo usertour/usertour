@@ -1,16 +1,16 @@
 'use client';
 
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '../../hooks/use-content-list';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { useBuilderMethods, useBuilderStore } from '../../core';
-import { LauncherBuilderEmbed } from './components/launcher-embed';
-import { LauncherCore } from './launcher-core';
-import { LauncherTarget } from './launcher-target';
-import { LauncherTooltip } from './launcher-tooltip';
+import { useBuilderMethods, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { LauncherBuilderEmbed } from '@/pages/contents/components/builder/builders/launcher/components/launcher-embed';
+import { LauncherCore } from '@/pages/contents/components/builder/builders/launcher/launcher-core';
+import { LauncherTarget } from '@/pages/contents/components/builder/builders/launcher/launcher-target';
+import { LauncherTooltip } from '@/pages/contents/components/builder/builders/launcher/launcher-tooltip';
 
 // Register the auto-save validator at the builder root so it survives
 // sub-view switches (index ↔ target ↔ tooltip). LauncherBuilder renders it

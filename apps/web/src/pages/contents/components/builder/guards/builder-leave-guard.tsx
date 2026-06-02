@@ -1,8 +1,8 @@
 'use client';
 
 import { useBlocker } from 'react-router-dom';
-import { useBuilderMethods, useSaveState } from '../core';
-import { LeaveConfirmDialog } from './leave-confirm-dialog';
+import { useBuilderMethods, useSaveState } from '@/pages/contents/components/builder/core';
+import { LeaveConfirmDialog } from '@/pages/contents/components/builder/guards/leave-confirm-dialog';
 
 // SPA-internal navigation guard. V1 only had `beforeunload` (covers
 // browser-level exit: tab close, refresh, external link). React Router

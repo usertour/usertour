@@ -2,11 +2,11 @@ import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { Button, Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour/constants';
 import { StepContentType, ContentEditorRoot } from '@usertour/types';
-import { PopperPreview } from '../../components/preview';
-import { getDefaultDataForType } from '../../utils/default-data';
+import { PopperPreview } from '@/pages/contents/components/builder/components/preview';
+import { getDefaultDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import { useMemo } from 'react';
-import { useBuilderConfig, useBuilderStore } from '../../core';
-import { useFlowEditor } from './use-flow-editor';
+import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useFlowEditor } from '@/pages/contents/components/builder/builders/flow/use-flow-editor';
 
 interface ContentTypeConfig {
   data: ContentEditorRoot[];

@@ -1,13 +1,17 @@
 import { ContentDataType } from '@usertour/types';
-import { BuilderProvider, useBuilderInit, useBuilderStore } from './core';
-import { BannerBuilder } from './builders/banner';
-import { ChecklistBuilder } from './builders/checklist';
-import { FlowBuilder } from './builders/flow';
-import { LauncherBuilder } from './builders/launcher';
-import { ResourceCenterBuilder } from './builders/resource-center';
-import { WebBuilderLoading } from './components/web-builder-loading';
-import { useListsLoading } from './hooks/use-lists-loading';
-import { useSyncCurrentTheme } from './hooks/use-sync-current-theme';
+import {
+  BuilderProvider,
+  useBuilderInit,
+  useBuilderStore,
+} from '@/pages/contents/components/builder/core';
+import { BannerBuilder } from '@/pages/contents/components/builder/builders/banner';
+import { ChecklistBuilder } from '@/pages/contents/components/builder/builders/checklist';
+import { FlowBuilder } from '@/pages/contents/components/builder/builders/flow';
+import { LauncherBuilder } from '@/pages/contents/components/builder/builders/launcher';
+import { ResourceCenterBuilder } from '@/pages/contents/components/builder/builders/resource-center';
+import { WebBuilderLoading } from '@/pages/contents/components/builder/components/web-builder-loading';
+import { useListsLoading } from '@/pages/contents/components/builder/hooks/use-lists-loading';
+import { useSyncCurrentTheme } from '@/pages/contents/components/builder/hooks/use-sync-current-theme';
 
 export interface WebBuilderProps {
   contentId: string;

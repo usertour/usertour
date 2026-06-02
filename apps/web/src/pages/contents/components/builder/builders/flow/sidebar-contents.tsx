@@ -45,9 +45,9 @@ import {
 import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 
-import { useBuilderStore } from '../../core';
-import { useFlowEditor } from './use-flow-editor';
-import { stepIsReachable } from '../../utils/content-validate';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useFlowEditor } from '@/pages/contents/components/builder/builders/flow/use-flow-editor';
+import { stepIsReachable } from '@/pages/contents/components/builder/utils/content-validate';
 
 // Get stable unique identifier for a step
 const getStepId = (step: Step, index: number): string => {

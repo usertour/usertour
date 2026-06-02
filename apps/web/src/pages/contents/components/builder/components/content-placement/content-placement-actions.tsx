@@ -3,7 +3,7 @@ import { Label } from '@usertour/ui';
 import { Actions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, Step } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { useContentPlacement } from './content-placement-context';
+import { useContentPlacement } from '@/pages/contents/components/builder/components/content-placement/content-placement-context';
 
 interface ContentPlacementActionsProps {
   children?: React.ReactNode;

@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useMemo } from 'react';
 import { LauncherIconSource } from '@usertour/types';
-import { getInitialTab } from '../utils';
+import { getInitialTab } from '@/pages/contents/components/builder/components/icon-picker/utils';
 
 interface UseIconTabProps {
   iconSource: LauncherIconSource;
