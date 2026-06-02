@@ -4,7 +4,7 @@ import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBuilderConfig, useBuilderStore } from '../../../core';
-import { useAws } from '../../../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import { useLauncherEditor } from '../use-launcher-editor';
 import { LauncherContentMain } from './launcher-content';
 import { PlusIcon } from '@usertour/icons';

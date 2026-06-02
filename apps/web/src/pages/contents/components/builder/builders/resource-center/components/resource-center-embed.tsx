@@ -27,7 +27,7 @@ import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useBuilderStore, useEnvironmentId, useProjectId } from '../../../core';
 import { useResourceCenterEditor } from '../use-resource-center-editor';
-import { useAws } from '../../../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 
 /** Inner panel content that can access the widget's ResourceCenterContext */
 const ResourceCenterEmbedContent = ({

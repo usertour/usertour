@@ -24,7 +24,7 @@ import {
   Theme,
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
-import { useAws } from '../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import { useOembedInfo } from '../hooks/use-oembed-info';
 import { useBuilderConfig } from '../core';
 

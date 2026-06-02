@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
   Separator,
 } from '@usertour/ui';
-import { useAws } from '@usertour/builder/src/hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import { ImageEditIcon, SpinnerIcon } from '@usertour/icons';
 import type {
   ContentEditorButtonElement,

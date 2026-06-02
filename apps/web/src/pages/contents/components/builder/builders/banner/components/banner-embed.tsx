@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useProjectId } from '../../../core';
 import { useBannerEditor } from '../use-banner-editor';
 import { useCurrentTheme } from '../../../hooks/use-current-theme';
-import { useAws } from '../../../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import { getDefaultDataForType } from '../../../utils/default-data';
 import { BrowserPreview } from './browser-preview';
 

@@ -19,7 +19,7 @@ import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usert
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useBuilderStore, useProjectId } from '../../../core';
-import { useAws } from '../../../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import { useChecklistEditor } from '../use-checklist-editor';
 
 export const ChecklistEmbed = () => {

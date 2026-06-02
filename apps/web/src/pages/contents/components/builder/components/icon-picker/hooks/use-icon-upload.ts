@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@usertour/ui';
-import { useAws } from '../../../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import type { RcUploadOption } from '../types';
 
 interface UseIconUploadProps {

@@ -24,7 +24,7 @@ import {
 import { forwardRef, useEffect, useState } from 'react';
 
 import { useBuilderConfig } from '../core';
-import { useAws } from '../hooks/use-aws';
+import { useAws } from '@usertour/hooks';
 import { useOembedInfo } from '../hooks/use-oembed-info';
 import { loadGoogleFontCss } from '../utils/loader';
 
