@@ -79,6 +79,14 @@ export interface BuilderState {
   isLoading: boolean;
   saveState: SaveState;
   history: HistoryStack;
+  // Per-type sub-mode UI buffer (Launcher target/tooltip, Checklist item,
+  // ResourceCenter block/tab). Held here — not in useTypeEditor's local
+  // state — so the sub-editor's Header/Body/Footer, which each call the
+  // editor hook, share ONE draft. `unknown` because each content type's
+  // shape differs; one builder mount edits one content/type, so there's no
+  // cross-type bleed. useTypeEditor read-time-defaults it to the type's
+  // config.defaultUIState.
+  typeEditorUIState: unknown;
 }
 
 // Public setters — exposed on the store for `useBuilderStore`
@@ -121,6 +129,9 @@ export interface BuilderStatePrivateSetters {
   // so save round-trips don't pollute the undo stack; the public
   // `setCurrentVersion` is the only path that pushes onto past.
   setCurrentVersionFromServer: (value: ContentVersion | undefined) => void;
+  // Per-type sub-mode UI buffer setter — written via useTypeEditor's
+  // setUIState; every per-type editor instance shares this one slot.
+  setTypeEditorUIState: React.Dispatch<React.SetStateAction<unknown>>;
 }
 
 // Undo/redo actions on `currentVersion`. Reading the stacks
@@ -168,6 +179,7 @@ const initialState: BuilderState = {
   isLoading: false,
   saveState: { status: 'idle' },
   history: EMPTY_HISTORY,
+  typeEditorUIState: undefined,
 };
 
 export const createBuilderStore = () =>
@@ -212,6 +224,7 @@ export const createBuilderStore = () =>
     setIsLoading: makeSetter('isLoading', set, get),
     setBackupVersion: (value) => set({ backupVersion: value }),
     setCurrentVersionFromServer: (value) => set({ currentVersion: value }),
+    setTypeEditorUIState: makeSetter('typeEditorUIState', set, get),
     transitionSaveState: (next) => {
       const computed = typeof next === 'function' ? next(get().saveState) : next;
       set({ saveState: computed });

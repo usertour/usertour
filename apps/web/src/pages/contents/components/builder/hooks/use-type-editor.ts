@@ -1,4 +1,4 @@
-import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { useBuilderStore, useIsBusy } from '../core';
 import type { BuilderTypeConfig } from '../core/builder-type-config';
 
@@ -10,7 +10,7 @@ import type { BuilderTypeConfig } from '../core/builder-type-config';
 // Flow does NOT use this hook. Flow edits `currentVersion.steps[]`
 // (a top-level sibling array, not a sub-field of `data`) with list
 // operations (add/remove/reorder) instead of partial merge, plus a
-// dedicated `currentStep` local buffer for sub-mode editing. Those
+// dedicated `currentStep` store buffer for sub-mode editing. Those
 // requirements don't fit useTypeEditor's contract, so Flow has its
 // own `useFlowEditor` hook at builders/flow/use-flow-editor.ts. The two
 // hooks share the Provider's save FSM (both write via
@@ -22,8 +22,16 @@ import type { BuilderTypeConfig } from '../core/builder-type-config';
 //              which (a) pushes patches onto the undo stack and
 //              (b) trips the FSM dispatcher to fire
 //              updateContentVersion server-side.
-// uiState    — per-type UI cursor / buffer; pure local useState,
-//              not persisted.
+// uiState    — per-type sub-mode UI buffer (Launcher target/tooltip,
+//              Checklist editing item, ResourceCenter current block/tab).
+//              Held in the per-mount STORE, not local useState, so it is
+//              SHARED across every component that calls this hook in one
+//              edit session. A sub-editor splits into Header/Body/Footer
+//              that each call the hook; they must read/write the SAME
+//              draft. (Local useState gave each call its own copy → the
+//              sub-editor body read an unseeded buffer and rendered blank
+//              — a v2 regression vs v1's shared per-type Context.) Same
+//              read-time-default / write-time-materialize shape as `data`.
 // isLoading  — merges initial-content load + save-in-flight, mirroring
 //              the legacy isLoading overload that per-type save
 //              buttons / form-disable bindings rely on.
@@ -80,12 +88,29 @@ export const useTypeEditor = <TData, TUIState = undefined>(
     [setCurrentVersion],
   );
 
-  // Per-type UI state is local — lives per-type-mount, dies on
-  // unmount. If a config didn't supply defaultUIState the slot is
-  // effectively unused; we still useState (with undefined) to keep
-  // the hook shape stable across configs with / without UI state.
-  const [uiState, setUIState] = useState<TUIState>(
-    (config.defaultUIState ?? (undefined as unknown as TUIState)) as TUIState,
+  // Per-type sub-mode UI buffer — read from the SHARED per-mount store
+  // slot (not local useState) so the sub-editor's Header/Body/Footer all
+  // see one draft. Read-time default to config.defaultUIState, write-time
+  // materialize — same pattern as `data` above.
+  const rawUIState = useBuilderStore((state) => state.typeEditorUIState) as TUIState | undefined;
+  const setTypeEditorUIState = useBuilderStore((state) => state.setTypeEditorUIState);
+
+  const uiState =
+    rawUIState !== undefined
+      ? rawUIState
+      : ((config.defaultUIState ?? (undefined as unknown)) as TUIState);
+
+  const setUIState = useCallback<Dispatch<SetStateAction<TUIState>>>(
+    (value) => {
+      const fallback = (config.defaultUIState ?? (undefined as unknown)) as TUIState;
+      setTypeEditorUIState((prev: unknown) => {
+        const base = (prev !== undefined ? prev : fallback) as TUIState;
+        return typeof value === 'function' ? (value as (p: TUIState) => TUIState)(base) : value;
+      });
+    },
+    // config.defaultUIState is stable (CONFIG STABILITY) so listing it
+    // doesn't re-fire; setTypeEditorUIState is a stable store setter.
+    [setTypeEditorUIState, config.defaultUIState],
   );
 
   return { data, updateData, uiState, setUIState, isLoading };
