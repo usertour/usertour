@@ -45,7 +45,7 @@ import {
 import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 
-import { BuilderMode, useBuilderStore } from '../../core';
+import { useBuilderStore } from '../../core';
 import { useFlowEditor } from './use-flow-editor';
 import { stepIsReachable } from '../../utils/content-validate';
 
@@ -281,9 +281,7 @@ export const SidebarContents = () => {
         removeStep(index);
         return;
       }
-      const mode: BuilderMode =
-        action === 'trigger' ? BuilderMode.FLOW_STEP_TRIGGER : BuilderMode.FLOW_STEP_DETAIL;
-      enterStepSubMode(index, mode);
+      enterStepSubMode(index, action === 'trigger' ? 'trigger' : 'detail');
     },
     [currentVersion?.steps, removeStep, enterStepSubMode],
   );

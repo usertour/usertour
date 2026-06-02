@@ -1,8 +1,6 @@
 import type { Content, ContentVersion, Step, Theme } from '@usertour/types';
 import { createStore } from 'zustand/vanilla';
 import { enablePatches, produceWithPatches, applyPatches, setAutoFreeze, type Patch } from 'immer';
-import type { CurrentMode } from './builder-mode';
-import { BuilderMode } from './builder-mode';
 
 // immer's patch generation must be opted into globally. Cheap module-
 // init side effect; idempotent across multiple imports.
@@ -62,7 +60,6 @@ export interface HistoryStack {
 const EMPTY_HISTORY: HistoryStack = { past: [], future: [] };
 
 export interface BuilderState {
-  currentMode: CurrentMode;
   currentStep: Step | null;
   currentIndex: number;
   currentContent: Content | undefined;
@@ -102,7 +99,6 @@ export interface BuilderState {
 // live in the private group below; Flow writes go through
 // `useFlowEditor()` which reads them off `useBuilderStore` directly.
 export interface BuilderStateSetters {
-  setCurrentMode: React.Dispatch<React.SetStateAction<CurrentMode>>;
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
@@ -167,7 +163,6 @@ const makeSetter = <K extends keyof BuilderState>(
 };
 
 const initialState: BuilderState = {
-  currentMode: { mode: BuilderMode.NONE },
   currentStep: null,
   currentIndex: 0,
   currentContent: undefined,
@@ -185,7 +180,6 @@ const initialState: BuilderState = {
 export const createBuilderStore = () =>
   createStore<BuilderStoreState>((set, get) => ({
     ...initialState,
-    setCurrentMode: makeSetter('currentMode', set, get),
     setCurrentStep: makeSetter('currentStep', set, get),
     setCurrentIndex: makeSetter('currentIndex', set, get),
     setCurrentContent: makeSetter('currentContent', set, get),

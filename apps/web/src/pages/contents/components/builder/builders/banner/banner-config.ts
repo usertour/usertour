@@ -1,6 +1,5 @@
 import { type BannerData, DEFAULT_BANNER_DATA } from '@usertour/types';
 import { isUndefined } from 'lodash';
-import { BuilderMode } from '../../core/builder-mode';
 import type { BuilderTypeConfig } from '../../core/builder-type-config';
 import { getEmptyDataForType } from '../../utils/default-data';
 
@@ -22,7 +21,6 @@ const normalizeBannerData = (raw: BannerData | undefined): BannerData => {
 };
 
 export const bannerTypeConfig: BuilderTypeConfig<BannerData> = {
-  mode: BuilderMode.BANNER,
   defaultData: DEFAULT_BANNER_DATA,
   normalize: normalizeBannerData,
 };

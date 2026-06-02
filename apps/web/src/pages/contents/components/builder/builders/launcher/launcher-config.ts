@@ -1,5 +1,4 @@
 import type { LauncherData } from '@usertour/types';
-import { BuilderMode } from '../../core/builder-mode';
 import type { BuilderTypeConfig } from '../../core/builder-type-config';
 import { defaultLauncherData } from '../../utils/default-data';
 
@@ -20,7 +19,6 @@ export interface LauncherUIState {
 // LauncherProvider also just did `currentVersion.data || defaultLauncherData`.
 
 export const launcherTypeConfig: BuilderTypeConfig<LauncherData, LauncherUIState> = {
-  mode: BuilderMode.LAUNCHER,
   defaultData: defaultLauncherData,
   defaultUIState: { tooltip: undefined, target: undefined },
 };

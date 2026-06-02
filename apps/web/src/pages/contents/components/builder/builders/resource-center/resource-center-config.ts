@@ -1,5 +1,4 @@
 import type { ResourceCenterBlock, ResourceCenterData, ResourceCenterTab } from '@usertour/types';
-import { BuilderMode } from '../../core/builder-mode';
 import type { BuilderTypeConfig } from '../../core/builder-type-config';
 
 // ResourceCenter's per-type UI buffer holds the in-flight sub-mode drafts the
@@ -24,7 +23,6 @@ export const resourceCenterTypeConfig: BuilderTypeConfig<
   ResourceCenterData,
   ResourceCenterUIState
 > = {
-  mode: BuilderMode.RESOURCE_CENTER,
   defaultData: emptyResourceCenterData,
   defaultUIState: {
     currentBlock: null,

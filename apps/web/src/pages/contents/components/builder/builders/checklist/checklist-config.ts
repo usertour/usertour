@@ -6,7 +6,6 @@ import {
 } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from 'lodash';
-import { BuilderMode } from '../../core/builder-mode';
 import type { BuilderTypeConfig } from '../../core/builder-type-config';
 import { getDefaultDataForType } from '../../utils/default-data';
 
@@ -26,7 +25,6 @@ const normalizeChecklistData = (raw: ChecklistData | undefined): ChecklistData =
 };
 
 export const checklistTypeConfig: BuilderTypeConfig<ChecklistData, ChecklistItemType | null> = {
-  mode: BuilderMode.CHECKLIST,
   defaultData: DEFAULT_CHECKLIST_DATA,
   normalize: normalizeChecklistData,
   defaultUIState: null,

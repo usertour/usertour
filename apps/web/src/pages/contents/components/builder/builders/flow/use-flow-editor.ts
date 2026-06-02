@@ -10,7 +10,7 @@ import {
 import { useAddContentStepMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { type ContentVersion, type Step } from '@usertour/types';
-import { BuilderMode, useBuilderMethods, useBuilderStore, useIsBusy } from '../../core';
+import { useBuilderMethods, useBuilderStore, useIsBusy } from '../../core';
 import { getEmptyDataForType } from '../../utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
@@ -163,8 +163,8 @@ export const useFlowEditor = () => {
   // exit from a depth-1 step/trigger route, so `..` returns to the overview.
 
   const enterStepSubMode = useCallback(
-    (index: number, mode: BuilderMode) => {
-      navigate(mode === BuilderMode.FLOW_STEP_TRIGGER ? `trigger/${index}` : `step/${index}`);
+    (index: number, target: 'detail' | 'trigger') => {
+      navigate(target === 'trigger' ? `trigger/${index}` : `step/${index}`);
     },
     [navigate],
   );

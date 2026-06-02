@@ -1,44 +1,28 @@
-import { defaultStep } from '@usertour/helpers';
-import { ContentDataType } from '@usertour/types';
 import { useEffect, useState } from 'react';
-import { BuilderMode, deriveInitialMode } from '../builder-mode';
 import { useBuilderConfig } from '../access/use-builder-config';
 import { useBuilderMethods } from '../access/use-builder-methods';
 import { useBuilderStore } from '../access/use-builder-store';
 
-export interface BuilderInitParams {
-  initialStepIndex?: number;
-}
-
-// The whole builder load lifecycle, in one place. Replaces the v1
-// `initContent(message: any)` kitchen-sink + the mount effect +
-// `isInitializing` flag. contentId / versionId come from config (the
-// Provider's identity); the effect is keyed on them, so a change
-// re-hydrates — defensive, since in the route-mounted web app they're
-// stable per mount. Hydration stays controlled one-way (server → store
-// draft via fetchContentAndVersion); the draft model is deliberate, this
-// hook never binds the cache.
+// The whole builder load lifecycle, in one place. contentId / versionId come
+// from config (the Provider's identity); the effect is keyed on them, so a
+// change re-hydrates — defensive, since in the route-mounted web app they're
+// stable per mount. Hydration stays controlled one-way (server → store draft
+// via fetchContentAndVersion); the draft model is deliberate, this hook never
+// binds the cache.
 //
-// Invariants: I1 hydrate only here + on save re-baseline; I2 re-run on
-// id change; I3 clearHistory only on initial load (not on save's
-// fetchContentAndVersion); I4 initial mode via deriveInitialMode; I5
-// initialStepIndex opens the step; I6 single `ready` gate.
-export const useBuilderInit = (params: BuilderInitParams): { ready: boolean } => {
-  const { initialStepIndex } = params;
+// Invariants: I1 hydrate only here + on save re-baseline; I2 re-run on id
+// change; I3 clearHistory only on initial load (not on save's
+// fetchContentAndVersion); I4 single `ready` gate. The active sub-view is NOT
+// seeded here — it's URL-driven (each type's router seeds its edit buffer from
+// the route param on mount), so init just fetches, baselines, and unblocks.
+export const useBuilderInit = (): { ready: boolean } => {
   // contentId / versionId are immutable config — the Provider's identity.
   const { contentId, versionId } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
-  // Store setters are stable refs — no subscription churn.
-  const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);
-  const setCurrentStep = useBuilderStore((s) => s.setCurrentStep);
-  const setCurrentIndex = useBuilderStore((s) => s.setCurrentIndex);
   const clearHistory = useBuilderStore((s) => s.clearHistory);
 
   const [ready, setReady] = useState(false);
 
-  // initialStepIndex is read at hydrate time but deliberately NOT in the
-  // dep array — re-hydration is keyed on the (contentId, versionId)
-  // identity only, matching pre-C3 semantics.
   useEffect(() => {
     let cancelled = false;
     setReady(false);
@@ -48,31 +32,11 @@ export const useBuilderInit = (params: BuilderInitParams): { ready: boolean } =>
       if (cancelled) {
         return;
       }
-      if (!result) {
-        // Fetch failed (e.g. soft-deleted). Unblock — currentContent stays
-        // undefined and Container renders nothing, same as pre-C3.
-        setReady(true);
-        return;
-      }
-      // I3: the freshly-fetched version is the undo origin.
-      clearHistory();
-
-      const { content, version } = result;
-      if (
-        content.type === ContentDataType.FLOW &&
-        initialStepIndex !== undefined &&
-        version.steps?.[initialStepIndex]
-      ) {
-        const step = version.steps[initialStepIndex];
-        setCurrentStep(
-          JSON.parse(
-            JSON.stringify({ ...step, setting: { ...defaultStep.setting, ...step.setting } }),
-          ),
-        );
-        setCurrentIndex(initialStepIndex);
-        setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
-      } else {
-        setCurrentMode({ mode: deriveInitialMode(content.type) });
+      // I3: the freshly-fetched version is the undo origin. On fetch failure
+      // (e.g. soft-deleted) currentContent stays undefined and the dispatcher
+      // renders nothing — just unblock.
+      if (result) {
+        clearHistory();
       }
       setReady(true);
     })();
