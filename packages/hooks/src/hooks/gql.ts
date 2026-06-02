@@ -309,17 +309,15 @@ export const useInviteTeamMemberMutation = () => {
   const [inviteTeamMember, { loading, error }] = useMutation(inviteTeamMemberMutation, {
     refetchQueries: ['getInvites'],
   });
-  const invoke = async (
-    projectId: string,
-    name: string,
-    email: string,
-    role: string,
-  ): Promise<boolean> => {
-    const response = await inviteTeamMember({
-      variables: { projectId, name, email, role },
-    });
-    return !!response.data?.inviteTeamMember;
-  };
+  const invoke = useCallback(
+    async (projectId: string, name: string, email: string, role: string): Promise<boolean> => {
+      const response = await inviteTeamMember({
+        variables: { projectId, name, email, role },
+      });
+      return !!response.data?.inviteTeamMember;
+    },
+    [inviteTeamMember],
+  );
 
   return { invoke, loading, error };
 };
@@ -328,10 +326,13 @@ export const useCancelInviteMutation = () => {
   const [mutation, { loading, error }] = useMutation(cancelInvite, {
     refetchQueries: ['getInvites'],
   });
-  const invoke = async (projectId: string, inviteId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { projectId, inviteId } });
-    return !!response.data?.cancelInvite;
-  };
+  const invoke = useCallback(
+    async (projectId: string, inviteId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, inviteId } });
+      return !!response.data?.cancelInvite;
+    },
+    [mutation],
+  );
 
   return { invoke, loading, error };
 };
@@ -340,10 +341,13 @@ export const useRemoveTeamMemberMutation = () => {
   const [mutation, { loading, error }] = useMutation(removeTeamMember, {
     refetchQueries: ['getTeamMembers'],
   });
-  const invoke = async (projectId: string, userId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { projectId, userId } });
-    return !!response.data?.removeTeamMember;
-  };
+  const invoke = useCallback(
+    async (projectId: string, userId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, userId } });
+      return !!response.data?.removeTeamMember;
+    },
+    [mutation],
+  );
 
   return { invoke, loading, error };
 };
@@ -355,38 +359,50 @@ export const useChangeTeamMemberRoleMutation = () => {
   const [mutation, { loading, error }] = useMutation(changeTeamMemberRoleMutation, {
     refetchQueries: ['getTeamMembers'],
   });
-  const invoke = async (projectId: string, userId: string, role: string): Promise<boolean> => {
-    const response = await mutation({ variables: { projectId, userId, role } });
-    return !!response.data?.changeTeamMemberRole;
-  };
+  const invoke = useCallback(
+    async (projectId: string, userId: string, role: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, userId, role } });
+      return !!response.data?.changeTeamMemberRole;
+    },
+    [mutation],
+  );
 
   return { invoke, loading, error };
 };
 
 export const useActiveUserProjectMutation = () => {
   const [mutation, { loading, error }] = useMutation(activeUserProject);
-  const invoke = async (userId: string, projectId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { userId, projectId } });
-    return !!response.data?.activeUserProject;
-  };
+  const invoke = useCallback(
+    async (userId: string, projectId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { userId, projectId } });
+      return !!response.data?.activeUserProject;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteSessionMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteSession);
-  const invoke = async (sessionId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { sessionId } });
-    return !!response.data?.deleteSession;
-  };
+  const invoke = useCallback(
+    async (sessionId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { sessionId } });
+      return !!response.data?.deleteSession;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useEndSessionMutation = () => {
   const [mutation, { loading, error }] = useMutation(endSession);
-  const invoke = async (sessionId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { sessionId } });
-    return !!response.data?.endSession;
-  };
+  const invoke = useCallback(
+    async (sessionId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { sessionId } });
+      return !!response.data?.endSession;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -439,30 +455,33 @@ export const useQueryContentQuestionAnalyticsQuery = (
 
 export const useUpdateContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateContent);
-  const invoke = async (
-    contentId: string,
-    content: Pick<Content, 'name' | 'config' | 'buildUrl'>,
-  ) => {
-    const response = await mutation({ variables: { contentId, content } });
-    return response.data?.updateContent;
-  };
+  const invoke = useCallback(
+    async (contentId: string, content: Pick<Content, 'name' | 'config' | 'buildUrl'>) => {
+      const response = await mutation({ variables: { contentId, content } });
+      return response.data?.updateContent;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateContentVersion);
-  const invoke = async (
-    versionId: string,
-    content: {
-      data?: unknown;
-      config?: unknown;
-      themeId?: string;
-      scheduledAt?: Date | null;
+  const invoke = useCallback(
+    async (
+      versionId: string,
+      content: {
+        data?: unknown;
+        config?: unknown;
+        themeId?: string;
+        scheduledAt?: Date | null;
+      },
+    ) => {
+      const response = await mutation({ variables: { versionId, content } });
+      return response.data?.updateContentVersion;
     },
-  ) => {
-    const response = await mutation({ variables: { versionId, content } });
-    return response.data?.updateContentVersion;
-  };
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -479,10 +498,13 @@ export const useCreateAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(createAttribute, {
     refetchQueries: ['listAttributes'],
   });
-  const invoke = async (data: CreateAttributeMutationVariables) => {
-    const response = await mutation({ variables: { data } });
-    return response.data?.createAttribute;
-  };
+  const invoke = useCallback(
+    async (data: CreateAttributeMutationVariables) => {
+      const response = await mutation({ variables: { data } });
+      return response.data?.createAttribute;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -501,23 +523,29 @@ export const useListAttributesQuery = (
 
 export const useCreateCheckoutSessionMutation = () => {
   const [mutation, { loading, error }] = useMutation(createCheckoutSession);
-  const invoke = async (data: {
-    projectId: string;
-    planType: string;
-    interval: string;
-  }): Promise<string> => {
-    const response = await mutation({ variables: { data } });
-    return response.data?.createCheckoutSession;
-  };
+  const invoke = useCallback(
+    async (data: {
+      projectId: string;
+      planType: string;
+      interval: string;
+    }): Promise<string> => {
+      const response = await mutation({ variables: { data } });
+      return response.data?.createCheckoutSession;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useCreatePortalSessionMutation = () => {
   const [mutation, { loading, error }] = useMutation(createPortalSession);
-  const invoke = async (projectId: string): Promise<string> => {
-    const response = await mutation({ variables: { projectId } });
-    return response.data?.createPortalSession;
-  };
+  const invoke = useCallback(
+    async (projectId: string): Promise<string> => {
+      const response = await mutation({ variables: { projectId } });
+      return response.data?.createPortalSession;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -564,10 +592,13 @@ export const useGlobalConfigQuery = () => {
 
 export const useUpdateProjectNameMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateProjectName);
-  const invoke = async (projectId: string, name: string): Promise<boolean> => {
-    const response = await mutation({ variables: { projectId, name } });
-    return !!response.data?.updateProjectName;
-  };
+  const invoke = useCallback(
+    async (projectId: string, name: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, name } });
+      return !!response.data?.updateProjectName;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -581,22 +612,28 @@ export const useListIntegrationsQuery = (environmentId: string, options?: QueryH
 
 export const useUpdateIntegrationMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateIntegration);
-  const invoke = async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
-    const response = await mutation({
-      variables: { environmentId, provider, input },
-    });
-    return response.data?.updateIntegration;
-  };
+  const invoke = useCallback(
+    async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
+      const response = await mutation({
+        variables: { environmentId, provider, input },
+      });
+      return response.data?.updateIntegration;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 // Builder related hooks
 export const useGetContentLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContent);
-  const invoke = async (contentId: string) => {
-    const response = await query({ variables: { contentId } });
-    return response.data?.getContent;
-  };
+  const invoke = useCallback(
+    async (contentId: string) => {
+      const response = await query({ variables: { contentId } });
+      return response.data?.getContent;
+    },
+    [query],
+  );
   return { invoke, loading, error };
 };
 
@@ -631,19 +668,25 @@ export const useGetIntegrationQuery = (
 
 export const useDisconnectIntegrationMutation = () => {
   const [mutation, { loading, error }] = useMutation(DisconnectIntegration);
-  const invoke = async (environmentId: string, provider: string) => {
-    const response = await mutation({ variables: { environmentId, provider } });
-    return response.data?.disconnectIntegration;
-  };
+  const invoke = useCallback(
+    async (environmentId: string, provider: string) => {
+      const response = await mutation({ variables: { environmentId, provider } });
+      return response.data?.disconnectIntegration;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useGetContentVersionLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContentVersion);
-  const invoke = async (versionId: string) => {
-    const response = await query({ variables: { versionId } });
-    return response.data?.getContentVersion;
-  };
+  const invoke = useCallback(
+    async (versionId: string) => {
+      const response = await query({ variables: { versionId } });
+      return response.data?.getContentVersion;
+    },
+    [query],
+  );
   return { invoke, loading, error };
 };
 
@@ -668,74 +711,92 @@ export const useGetIntegrationObjectMappingQuery = (id: string, options?: QueryH
 
 export const useUpsertIntegrationObjectMappingMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping);
-  const invoke = async (
-    integrationId: string,
-    input: {
-      sourceObjectType: string;
-      destinationObjectType: string;
-      settings?: any;
-      enabled?: boolean;
+  const invoke = useCallback(
+    async (
+      integrationId: string,
+      input: {
+        sourceObjectType: string;
+        destinationObjectType: string;
+        settings?: any;
+        enabled?: boolean;
+      },
+    ) => {
+      const response = await mutation({ variables: { integrationId, input } });
+      return response.data?.upsertIntegrationObjectMapping;
     },
-  ) => {
-    const response = await mutation({ variables: { integrationId, input } });
-    return response.data?.upsertIntegrationObjectMapping;
-  };
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useAddContentStepsMutation = () => {
   const [mutation, { loading, error }] = useMutation(addContentSteps);
-  const invoke = async (variables: {
-    contentId: string;
-    versionId: string;
-    themeId: string;
-    steps: any[];
-  }) => {
-    const response = await mutation({ variables });
-    return response.data?.addContentSteps;
-  };
+  const invoke = useCallback(
+    async (variables: {
+      contentId: string;
+      versionId: string;
+      themeId: string;
+      steps: any[];
+    }) => {
+      const response = await mutation({ variables });
+      return response.data?.addContentSteps;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateIntegrationObjectMappingMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateIntegrationObjectMapping);
-  const invoke = async (
-    id: string,
-    input: {
-      settings?: any;
-      enabled?: boolean;
+  const invoke = useCallback(
+    async (
+      id: string,
+      input: {
+        settings?: any;
+        enabled?: boolean;
+      },
+    ) => {
+      const response = await mutation({ variables: { id, input } });
+      return response.data?.updateIntegrationObjectMapping;
     },
-  ) => {
-    const response = await mutation({ variables: { id, input } });
-    return response.data?.updateIntegrationObjectMapping;
-  };
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useAddContentStepMutation = () => {
   const [mutation, { loading, error }] = useMutation(addContentStep);
-  const invoke = async (data: { [key: string]: any; versionId: string }) => {
-    const response = await mutation({ variables: { data } });
-    return response.data?.addContentStep;
-  };
+  const invoke = useCallback(
+    async (data: { [key: string]: any; versionId: string }) => {
+      const response = await mutation({ variables: { data } });
+      return response.data?.addContentStep;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteIntegrationObjectMappingMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping);
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { id } });
-    return !!response.data?.deleteIntegrationObjectMapping;
-  };
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({ variables: { id } });
+      return !!response.data?.deleteIntegrationObjectMapping;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateContentStepMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateContentStep);
-  const invoke = async (stepId: string, data: { [key: string]: any }) => {
-    const response = await mutation({ variables: { stepId, data } });
-    return response.data?.updateContentStep;
-  };
+  const invoke = useCallback(
+    async (stepId: string, data: { [key: string]: any }) => {
+      const response = await mutation({ variables: { stepId, data } });
+      return response.data?.updateContentStep;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -762,45 +823,54 @@ export const useCreateContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(createContentVersion, {
     refetchQueries: ['listContentVersions'],
   });
-  const invoke = async (data: {
-    versionId: string;
-    config?: unknown;
-    data?: unknown;
-    themeId?: string;
-  }) => {
-    const response = await mutation({ variables: { data } });
-    return response.data?.createContentVersion;
-  };
+  const invoke = useCallback(
+    async (data: {
+      versionId: string;
+      config?: unknown;
+      data?: unknown;
+      themeId?: string;
+    }) => {
+      const response = await mutation({ variables: { data } });
+      return response.data?.createContentVersion;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteAttribute);
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({
-      variables: { id },
-      update(cache) {
-        cache.evict({ id: cache.identify({ __typename: 'Attribute', id }) });
-        cache.gc();
-      },
-    });
-    return !!response.data?.deleteAttribute?.id;
-  };
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({
+        variables: { id },
+        update(cache) {
+          cache.evict({ id: cache.identify({ __typename: 'Attribute', id }) });
+          cache.gc();
+        },
+      });
+      return !!response.data?.deleteAttribute?.id;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteSegment);
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({
-      variables: { id },
-      update(cache) {
-        cache.evict({ id: cache.identify({ __typename: 'Segment', id }) });
-        cache.gc();
-      },
-    });
-    return !!response.data?.deleteSegment?.success;
-  };
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({
+        variables: { id },
+        update(cache) {
+          cache.evict({ id: cache.identify({ __typename: 'Segment', id }) });
+          cache.gc();
+        },
+      });
+      return !!response.data?.deleteSegment?.success;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -818,49 +888,58 @@ export const useUpdateSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateSegment, {
     refetchQueries: ['listSegment'],
   });
-  const invoke = async (data: {
-    id: string;
-    name?: string;
-    data?: RulesCondition[];
-    columns?: ColumnSetting[];
-  }): Promise<boolean> => {
-    const response = await mutation({ variables: { data } });
-    return !!response.data?.updateSegment?.id;
-  };
+  const invoke = useCallback(
+    async (data: {
+      id: string;
+      name?: string;
+      data?: RulesCondition[];
+      columns?: ColumnSetting[];
+    }): Promise<boolean> => {
+      const response = await mutation({ variables: { data } });
+      return !!response.data?.updateSegment?.id;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteContent);
-  const invoke = async (contentId: string): Promise<boolean> => {
-    const response = await mutation({
-      variables: { contentId },
-      // Server returns `{ success }` only — there's no `id` on the
-      // payload for auto-merge, so do the eviction ourselves. All
-      // observers of the Content slot (list view, detail view, etc.)
-      // see the row disappear without a manual refetch.
-      update(cache) {
-        cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
-        cache.gc();
-      },
-    });
-    return !!response.data?.deleteContent?.success;
-  };
+  const invoke = useCallback(
+    async (contentId: string): Promise<boolean> => {
+      const response = await mutation({
+        variables: { contentId },
+        // Server returns `{ success }` only — there's no `id` on the
+        // payload for auto-merge, so do the eviction ourselves. All
+        // observers of the Content slot (list view, detail view, etc.)
+        // see the row disappear without a manual refetch.
+        update(cache) {
+          cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
+          cache.gc();
+        },
+      });
+      return !!response.data?.deleteContent?.success;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteEnvironmentsMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteEnvironments);
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({
-      variables: { id },
-      update(cache) {
-        cache.evict({ id: cache.identify({ __typename: 'Environment', id }) });
-        cache.gc();
-      },
-    });
-    return !!response.data?.deleteEnvironments?.id;
-  };
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({
+        variables: { id },
+        update(cache) {
+          cache.evict({ id: cache.identify({ __typename: 'Environment', id }) });
+          cache.gc();
+        },
+      });
+      return !!response.data?.deleteEnvironments?.id;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -873,10 +952,13 @@ export const useCreateEnvironmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(createEnvironments, {
     refetchQueries: ['userEnvironments'],
   });
-  const invoke = async (input: CreateEnvironmentInput): Promise<string | undefined> => {
-    const response = await mutation({ variables: input });
-    return response.data?.createEnvironments?.id as string | undefined;
-  };
+  const invoke = useCallback(
+    async (input: CreateEnvironmentInput): Promise<string | undefined> => {
+      const response = await mutation({ variables: input });
+      return response.data?.createEnvironments?.id as string | undefined;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -893,10 +975,13 @@ export const useUpdateEnvironmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateEnvironments, {
     refetchQueries: ['userEnvironments'],
   });
-  const invoke = async (input: UpdateEnvironmentInput): Promise<boolean> => {
-    const response = await mutation({ variables: input });
-    return !!response.data?.updateEnvironments?.id;
-  };
+  const invoke = useCallback(
+    async (input: UpdateEnvironmentInput): Promise<boolean> => {
+      const response = await mutation({ variables: input });
+      return !!response.data?.updateEnvironments?.id;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -912,10 +997,13 @@ export interface UpdateAttributeInput {
 export const useUpdateAttributeMutation = () => {
   // Auto-merged by Apollo via __typename:id.
   const [mutation, { loading, error }] = useMutation(updateAttribute);
-  const invoke = async (data: UpdateAttributeInput): Promise<boolean> => {
-    const response = await mutation({ variables: { data } });
-    return !!response.data?.updateAttribute?.id;
-  };
+  const invoke = useCallback(
+    async (data: UpdateAttributeInput): Promise<boolean> => {
+      const response = await mutation({ variables: { data } });
+      return !!response.data?.updateAttribute?.id;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -938,34 +1026,37 @@ export const useGetUserEnvironmentsQuery = (
 
 export const useDeleteBizUserMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizUser);
-  const invoke = async (data: {
-    ids: string[];
-    environmentId: string;
-  }): Promise<{
-    success: boolean;
-    count: number;
-  }> => {
-    const response = await mutation({
-      variables: { data },
-      // Evict the BizUser entity from any cache slice that holds it.
-      // The user list (useBizListCursor) runs on the global no-cache
-      // default, so list refresh after delete still comes from the
-      // caller's existing refetch chain; this evict targets the
-      // cache-and-network detail-content queries
-      // (`user-detail-content` / `user-session-detail-content`) so a
-      // deleted user disappears from those slices too.
-      update(cache) {
-        for (const id of data.ids) {
-          cache.evict({ id: cache.identify({ __typename: 'BizUser', id }) });
-        }
-        cache.gc();
-      },
-    });
-    return {
-      success: !!response.data?.deleteBizUser?.success,
-      count: response.data?.deleteBizUser?.count ?? 0,
-    };
-  };
+  const invoke = useCallback(
+    async (data: {
+      ids: string[];
+      environmentId: string;
+    }): Promise<{
+      success: boolean;
+      count: number;
+    }> => {
+      const response = await mutation({
+        variables: { data },
+        // Evict the BizUser entity from any cache slice that holds it.
+        // The user list (useBizListCursor) runs on the global no-cache
+        // default, so list refresh after delete still comes from the
+        // caller's existing refetch chain; this evict targets the
+        // cache-and-network detail-content queries
+        // (`user-detail-content` / `user-session-detail-content`) so a
+        // deleted user disappears from those slices too.
+        update(cache) {
+          for (const id of data.ids) {
+            cache.evict({ id: cache.identify({ __typename: 'BizUser', id }) });
+          }
+          cache.gc();
+        },
+      });
+      return {
+        success: !!response.data?.deleteBizUser?.success,
+        count: response.data?.deleteBizUser?.count ?? 0,
+      };
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -977,19 +1068,22 @@ export const useDeleteBizUserOnSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment, {
     refetchQueries: ['queryBizUser'],
   });
-  const invoke = async (data: {
-    bizUserIds: string[];
-    segmentId: string;
-  }): Promise<{
-    success: boolean;
-    count: number;
-  }> => {
-    const response = await mutation({ variables: { data } });
-    return {
-      success: !!response.data?.deleteBizUserOnSegment?.success,
-      count: response.data?.deleteBizUserOnSegment?.count ?? 0,
-    };
-  };
+  const invoke = useCallback(
+    async (data: {
+      bizUserIds: string[];
+      segmentId: string;
+    }): Promise<{
+      success: boolean;
+      count: number;
+    }> => {
+      const response = await mutation({ variables: { data } });
+      return {
+        success: !!response.data?.deleteBizUserOnSegment?.success,
+        count: response.data?.deleteBizUserOnSegment?.count ?? 0,
+      };
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -1002,7 +1096,7 @@ export const useCreateSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(createSegment, {
     refetchQueries: ['listSegment'],
   });
-  const invoke = (variables: MutationVariables) => mutation({ variables });
+  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
   return { invoke, loading, error };
 };
 
@@ -1010,7 +1104,7 @@ export const useCreateBizUserOnSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(createBizUserOnSegment, {
     refetchQueries: ['queryBizUser'],
   });
-  const invoke = (variables: MutationVariables) => mutation({ variables });
+  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
   return { invoke, loading, error };
 };
 
@@ -1018,7 +1112,7 @@ export const useCreateBizCompanyOnSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(createBizCompanyOnSegment, {
     refetchQueries: ['queryBizCompany'],
   });
-  const invoke = (variables: MutationVariables) => mutation({ variables });
+  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
   return { invoke, loading, error };
 };
 
@@ -1026,39 +1120,42 @@ export const useDeleteBizCompanyOnSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizCompanyOnSegment, {
     refetchQueries: ['queryBizCompany'],
   });
-  const invoke = (variables: MutationVariables) => mutation({ variables });
+  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
   return { invoke, loading, error };
 };
 
 export const useDeleteBizCompanyMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizCompany);
-  const invoke = async (data: {
-    ids: string[];
-    environmentId: string;
-  }): Promise<{ success: boolean; count: number }> => {
-    const response = await mutation({
-      variables: { data },
-      // queryBizCompany returns BizConnection (paginated BizModel),
-      // not BizCompany — companies are stored under `BizModel:{id}` in
-      // the normalized cache. (Users use `BizUser`, the subclass.)
-      //
-      // Same scope as deleteBizUser's evict: the company list runs
-      // no-cache, so list refresh after delete comes from the caller's
-      // explicit refetch; this evict targets the cache-and-network
-      // company-detail-content slice so the deleted entity disappears
-      // there too.
-      update(cache) {
-        for (const id of data.ids) {
-          cache.evict({ id: cache.identify({ __typename: 'BizModel', id }) });
-        }
-        cache.gc();
-      },
-    });
-    return {
-      success: !!response.data?.deleteBizCompany?.success,
-      count: response.data?.deleteBizCompany?.count ?? 0,
-    };
-  };
+  const invoke = useCallback(
+    async (data: {
+      ids: string[];
+      environmentId: string;
+    }): Promise<{ success: boolean; count: number }> => {
+      const response = await mutation({
+        variables: { data },
+        // queryBizCompany returns BizConnection (paginated BizModel),
+        // not BizCompany — companies are stored under `BizModel:{id}` in
+        // the normalized cache. (Users use `BizUser`, the subclass.)
+        //
+        // Same scope as deleteBizUser's evict: the company list runs
+        // no-cache, so list refresh after delete comes from the caller's
+        // explicit refetch; this evict targets the cache-and-network
+        // company-detail-content slice so the deleted entity disappears
+        // there too.
+        update(cache) {
+          for (const id of data.ids) {
+            cache.evict({ id: cache.identify({ __typename: 'BizModel', id }) });
+          }
+          cache.gc();
+        },
+      });
+      return {
+        success: !!response.data?.deleteBizCompany?.success,
+        count: response.data?.deleteBizCompany?.count ?? 0,
+      };
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -1101,12 +1198,15 @@ export const useGetProjectConfigQuery = (
 export const useUpdateProjectLicenseMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateProjectLicense);
 
-  const invoke = async (projectId: string, license: string) => {
-    const response = await mutation({
-      variables: { projectId, license },
-    });
-    return response.data?.updateProjectLicense;
-  };
+  const invoke = useCallback(
+    async (projectId: string, license: string) => {
+      const response = await mutation({
+        variables: { projectId, license },
+      });
+      return response.data?.updateProjectLicense;
+    },
+    [mutation],
+  );
 
   return { invoke, loading, error };
 };
@@ -1124,34 +1224,43 @@ export const useAdminInstanceSettingsQuery = () => {
 
 export const useUpdateInstanceLicenseMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateInstanceLicense);
-  const invoke = async (license: string) => {
-    const response = await mutation({ variables: { license } });
-    return response.data?.updateInstanceLicense;
-  };
+  const invoke = useCallback(
+    async (license: string) => {
+      const response = await mutation({ variables: { license } });
+      return response.data?.updateInstanceLicense;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateInstanceGeneralSettingsMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateInstanceGeneralSettings);
-  const invoke = async (
-    name?: string,
-    contactEmail?: string,
-    allowProjectLevelSubscriptionManagement?: boolean,
-  ) => {
-    const response = await mutation({
-      variables: { name, contactEmail, allowProjectLevelSubscriptionManagement },
-    });
-    return response.data?.updateInstanceGeneralSettings;
-  };
+  const invoke = useCallback(
+    async (
+      name?: string,
+      contactEmail?: string,
+      allowProjectLevelSubscriptionManagement?: boolean,
+    ) => {
+      const response = await mutation({
+        variables: { name, contactEmail, allowProjectLevelSubscriptionManagement },
+      });
+      return response.data?.updateInstanceGeneralSettings;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateInstanceAuthenticationSettingsMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateInstanceAuthenticationSettings);
-  const invoke = async (allowUserRegistration: boolean) => {
-    const response = await mutation({ variables: { allowUserRegistration } });
-    return response.data?.updateInstanceAuthenticationSettings;
-  };
+  const invoke = useCallback(
+    async (allowUserRegistration: boolean) => {
+      const response = await mutation({ variables: { allowUserRegistration } });
+      return response.data?.updateInstanceAuthenticationSettings;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -1170,28 +1279,37 @@ export const useAdminUsersQuery = (
 
 export const useAdminCreateUserMutation = () => {
   const [mutation, { loading, error }] = useMutation(adminCreateUser);
-  const invoke = async (name: string, email: string, password: string) => {
-    const response = await mutation({ variables: { name, email, password } });
-    return response.data?.adminCreateUser;
-  };
+  const invoke = useCallback(
+    async (name: string, email: string, password: string) => {
+      const response = await mutation({ variables: { name, email, password } });
+      return response.data?.adminCreateUser;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateUserSystemAdminMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateUserSystemAdmin);
-  const invoke = async (userId: string, isSystemAdmin: boolean) => {
-    const response = await mutation({ variables: { userId, isSystemAdmin } });
-    return response.data?.updateUserSystemAdmin;
-  };
+  const invoke = useCallback(
+    async (userId: string, isSystemAdmin: boolean) => {
+      const response = await mutation({ variables: { userId, isSystemAdmin } });
+      return response.data?.updateUserSystemAdmin;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateUserDisabledMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateUserDisabled);
-  const invoke = async (userId: string, disabled: boolean) => {
-    const response = await mutation({ variables: { userId, disabled } });
-    return response.data?.updateUserDisabled;
-  };
+  const invoke = useCallback(
+    async (userId: string, disabled: boolean) => {
+      const response = await mutation({ variables: { userId, disabled } });
+      return response.data?.updateUserDisabled;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -1209,19 +1327,25 @@ export const useAdminProjectsQuery = (
 
 export const useAdminCreateProjectMutation = () => {
   const [mutation, { loading, error }] = useMutation(adminCreateProject);
-  const invoke = async (name: string, ownerUserId: string) => {
-    const response = await mutation({ variables: { name, ownerUserId } });
-    return response.data?.adminCreateProject;
-  };
+  const invoke = useCallback(
+    async (name: string, ownerUserId: string) => {
+      const response = await mutation({ variables: { name, ownerUserId } });
+      return response.data?.adminCreateProject;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateProjectUsesInstanceLicenseMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateProjectUsesInstanceLicense);
-  const invoke = async (projectId: string, enabled: boolean) => {
-    const response = await mutation({ variables: { projectId, enabled } });
-    return response.data?.updateProjectUsesInstanceLicense;
-  };
+  const invoke = useCallback(
+    async (projectId: string, enabled: boolean) => {
+      const response = await mutation({ variables: { projectId, enabled } });
+      return response.data?.updateProjectUsesInstanceLicense;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -1235,37 +1359,49 @@ export const useAdminProjectMembersQuery = (projectId: string) => {
 
 export const useAdminAddProjectMemberMutation = () => {
   const [mutation, { loading, error }] = useMutation(adminAddProjectMember);
-  const invoke = async (projectId: string, userId: string, role: string) => {
-    const response = await mutation({ variables: { projectId, userId, role } });
-    return response.data?.adminAddProjectMember;
-  };
+  const invoke = useCallback(
+    async (projectId: string, userId: string, role: string) => {
+      const response = await mutation({ variables: { projectId, userId, role } });
+      return response.data?.adminAddProjectMember;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useAdminChangeProjectMemberRoleMutation = () => {
   const [mutation, { loading, error }] = useMutation(adminChangeProjectMemberRole);
-  const invoke = async (projectId: string, userId: string, role: string) => {
-    const response = await mutation({ variables: { projectId, userId, role } });
-    return response.data?.adminChangeProjectMemberRole;
-  };
+  const invoke = useCallback(
+    async (projectId: string, userId: string, role: string) => {
+      const response = await mutation({ variables: { projectId, userId, role } });
+      return response.data?.adminChangeProjectMemberRole;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useAdminTransferProjectOwnershipMutation = () => {
   const [mutation, { loading, error }] = useMutation(adminTransferProjectOwnership);
-  const invoke = async (projectId: string, userId: string) => {
-    const response = await mutation({ variables: { projectId, userId } });
-    return response.data?.adminTransferProjectOwnership;
-  };
+  const invoke = useCallback(
+    async (projectId: string, userId: string) => {
+      const response = await mutation({ variables: { projectId, userId } });
+      return response.data?.adminTransferProjectOwnership;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useAdminRemoveProjectMemberMutation = () => {
   const [mutation, { loading, error }] = useMutation(adminRemoveProjectMember);
-  const invoke = async (projectId: string, userId: string) => {
-    const response = await mutation({ variables: { projectId, userId } });
-    return response.data?.adminRemoveProjectMember;
-  };
+  const invoke = useCallback(
+    async (projectId: string, userId: string) => {
+      const response = await mutation({ variables: { projectId, userId } });
+      return response.data?.adminRemoveProjectMember;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -1275,10 +1411,13 @@ export const useAdminRemoveProjectMemberMutation = () => {
 
 export const useUpdateInstanceRequire2FAMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateInstanceRequire2FA);
-  const invoke = async (value: boolean) => {
-    const response = await mutation({ variables: { value } });
-    return response.data?.updateInstanceRequire2FA;
-  };
+  const invoke = useCallback(
+    async (value: boolean) => {
+      const response = await mutation({ variables: { value } });
+      return response.data?.updateInstanceRequire2FA;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
