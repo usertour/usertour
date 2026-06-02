@@ -1,0 +1,59 @@
+import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
+import { Input } from '@usertour/ui';
+import { LauncherDataType } from '@usertour/types';
+import {
+  LauncherContentType,
+  IconPicker,
+} from '@/pages/contents/components/builder/core/components';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
+
+export const LauncherType = () => {
+  const { updateData: updateLocalData, data: localData } = useLauncherEditor();
+  const { zIndex } = useBuilderConfig();
+  const sidebarZIndex = zIndex + EXTENSION_SIDEBAR_MAIN;
+
+  if (!localData) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center">
+        <h1 className="text-sm">Appearance</h1>
+      </div>
+
+      <LauncherContentType
+        type={localData.type}
+        zIndex={sidebarZIndex}
+        onChange={(value) => {
+          updateLocalData({ type: value });
+        }}
+      />
+
+      {localData.type === LauncherDataType.ICON && (
+        <IconPicker
+          type={localData.iconType}
+          iconSource={localData.iconSource}
+          iconUrl={localData.iconUrl}
+          zIndex={sidebarZIndex}
+          onChange={(updates) => {
+            updateLocalData(updates);
+          }}
+        />
+      )}
+
+      {localData.type === LauncherDataType.BUTTON && (
+        <Input
+          value={localData.buttonText ?? ''}
+          placeholder="Button text"
+          onChange={(e) => {
+            updateLocalData({ buttonText: e.target.value || undefined });
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+LauncherType.displayName = 'LauncherType';

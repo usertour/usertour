@@ -8,7 +8,7 @@ import {
   type BuilderStore,
   createBuilderStore,
 } from '@/pages/contents/components/builder/core/builder-store';
-import { BuilderLeaveGuard } from '@/pages/contents/components/builder/guards/builder-leave-guard';
+import { BuilderLeaveGuard } from '@/pages/contents/components/builder/core/guards/builder-leave-guard';
 import type {
   BuilderProviderContextValue,
   BuilderProviderProps,
