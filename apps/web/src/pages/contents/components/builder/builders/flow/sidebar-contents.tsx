@@ -281,10 +281,9 @@ export const SidebarContents = () => {
         removeStep(index);
         return;
       }
-      const step = currentVersion.steps[index];
       const mode: BuilderMode =
         action === 'trigger' ? BuilderMode.FLOW_STEP_TRIGGER : BuilderMode.FLOW_STEP_DETAIL;
-      enterStepSubMode(step, index, mode);
+      enterStepSubMode(index, mode);
     },
     [currentVersion?.steps, removeStep, enterStepSubMode],
   );

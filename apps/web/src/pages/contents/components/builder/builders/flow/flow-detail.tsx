@@ -32,6 +32,7 @@ import {
   useProjectId,
 } from '../../core';
 import { useFlowEditor } from './use-flow-editor';
+import { useSeedStepFromRoute } from './use-seed-step-from-route';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useCurrentTheme } from '../../hooks/use-current-theme';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
@@ -243,7 +244,6 @@ const FlowBuilderDetailFooter = () => {
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const contentRef = useBuilderContentRef();
   const { currentIndex, currentStep, setIsShowError, exitToFlow } = useFlowEditor();
-  const [backupStepData] = useState(currentStep);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { invoke: addContentStep } = useAddContentStepMutation();
   const { invoke: updateContentStep } = useUpdateContentStepMutation();
@@ -251,7 +251,7 @@ const FlowBuilderDetailFooter = () => {
   const actionsGate = useActionsSaveGate();
 
   const handleSave = useCallback(async () => {
-    if (!currentStep || !backupStepData) {
+    if (!currentStep) {
       return;
     }
     if (currentStep.type !== StepContentType.HIDDEN && hasMissingRequiredData(currentStep.data)) {
@@ -332,7 +332,7 @@ const FlowBuilderDetailFooter = () => {
     }
     setIsLoading(false);
     exitToFlow();
-  }, [currentStep, currentIndex, backupStepData, contentRef, actionsGate, exitToFlow]);
+  }, [currentStep, currentIndex, contentRef, actionsGate, exitToFlow]);
 
   return (
     <CardFooter className="flex-none p-5">
@@ -432,6 +432,7 @@ const FlowBuilderDetailEmbed = () => {
 };
 
 export const FlowBuilderDetail = () => {
+  useSeedStepFromRoute();
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex } = useBuilderConfig();
   const position = useBuilderStore((state) => state.position);

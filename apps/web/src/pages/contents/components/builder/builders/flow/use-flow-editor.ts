@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { arrayMove } from '@dnd-kit/sortable';
 import {
   defaultStep,
@@ -42,8 +43,8 @@ export const useFlowEditor = () => {
   // docs/conventions/builder-context-migration.md
   const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((s) => s.currentVersion);
-  const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);
   const isLoading = useIsBusy();
+  const navigate = useNavigate();
 
   const { toast } = useToast();
   const { invoke: addContentStep } = useAddContentStepMutation();
@@ -156,43 +157,27 @@ export const useFlowEditor = () => {
 
   // ── Sub-mode navigation ─────────────────────────────────────
 
+  // URL-driven: navigate to the sub-view route; the target route component
+  // seeds its edit buffer from the route param via useSeedStepFromRoute.
+  // Relative paths — enter/create are called from the index (overview) route,
+  // exit from a depth-1 step/trigger route, so `..` returns to the overview.
+
   const enterStepSubMode = useCallback(
-    (step: Step, index: number, mode: BuilderMode) => {
-      const cloned = JSON.parse(
-        JSON.stringify({
-          ...step,
-          setting: { ...defaultStep.setting, ...step.setting },
-        }),
-      );
-      setCurrentStep(cloned);
-      setCurrentIndex(index);
-      setCurrentMode({ mode });
+    (index: number, mode: BuilderMode) => {
+      navigate(mode === BuilderMode.FLOW_STEP_TRIGGER ? `trigger/${index}` : `step/${index}`);
     },
-    [setCurrentStep, setCurrentIndex, setCurrentMode],
+    [navigate],
   );
 
   const exitToFlow = useCallback(() => {
-    setCurrentMode({ mode: BuilderMode.FLOW });
-  }, [setCurrentMode]);
+    navigate('..');
+  }, [navigate]);
 
   const startCreateStep = useCallback(
     (type: string) => {
-      if (!currentVersion) {
-        return;
-      }
-      const index = currentVersion.steps?.length ?? 0;
-      setCurrentStep({
-        ...defaultStep,
-        setting: { ...defaultStep.setting },
-        type,
-        name: 'Untitled',
-        data: getEmptyDataForType(),
-        sequence: index,
-      });
-      setCurrentIndex(index);
-      setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
+      navigate(`step/new/${type}`);
     },
-    [currentVersion, setCurrentStep, setCurrentIndex, setCurrentMode],
+    [navigate],
   );
 
   return {

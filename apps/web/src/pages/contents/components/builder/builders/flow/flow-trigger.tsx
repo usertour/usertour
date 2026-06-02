@@ -26,6 +26,7 @@ import { ContentTrigger } from '../../components/content-trigger';
 import { useBuilderConfig, useBuilderMethods, useBuilderStore, useProjectId } from '../../core';
 import { TriggerProvider, useTriggerContext } from './trigger-context';
 import { useFlowEditor } from './use-flow-editor';
+import { useSeedStepFromRoute } from './use-seed-step-from-route';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../../components/sidebar/sidebar-mini';
 import { useListAttributesQuery } from '@usertour/hooks';
@@ -247,6 +248,7 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
 };
 
 export const FlowBuilderTrigger = () => {
+  useSeedStepFromRoute();
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex } = useBuilderConfig();
   const position = useBuilderStore((state) => state.position);
