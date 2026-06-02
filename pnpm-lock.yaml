@@ -611,9 +611,6 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.23.0
         version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.5.1))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.5.1))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour/builder':
-        specifier: workspace:^
-        version: link:../../packages/builder
       '@usertour/business-components':
         specifier: workspace:^
         version: link:../../packages/business-components
