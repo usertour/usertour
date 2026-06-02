@@ -92,6 +92,7 @@ import {
   updateInstanceRequire2FA,
   getTheme,
   listLocalizations,
+  queryOembedInfo,
 } from '@usertour/gql';
 
 import type {
@@ -684,6 +685,18 @@ export const useGetContentVersionLazyQuery = () => {
     async (versionId: string) => {
       const response = await query({ variables: { versionId } });
       return response.data?.getContentVersion;
+    },
+    [query],
+  );
+  return { invoke, loading, error };
+};
+
+export const useQueryOembedInfoLazyQuery = () => {
+  const [query, { loading, error }] = useLazyQuery(queryOembedInfo);
+  const invoke = useCallback(
+    async (url: string) => {
+      const response = await query({ variables: { url } });
+      return response.data?.queryOembedInfo;
     },
     [query],
   );

@@ -1,6 +1,4 @@
-import { useLazyQuery } from '@apollo/client';
 import { EXTENSION_CONTENT_MODAL } from '@usertour/constants';
-import { queryOembedInfo } from '@usertour/gql';
 import {
   Popper,
   PopperClose,
@@ -16,7 +14,6 @@ import { loadGoogleFontCss } from '../utils/loader';
 import {
   Attribute,
   Content,
-  ContentOmbedInfo,
   ContentVersion,
   ProgressBarPosition,
   ProgressBarType,
@@ -25,6 +22,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
+import { useOembedInfo } from '../hooks/use-oembed-info';
 import { useBuilderConfig } from '../core';
 
 export interface ContentModalProps {
@@ -62,7 +60,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     } = props;
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
-    const [queryOembed] = useLazyQuery(queryOembedInfo);
+    const getOembedInfo = useOembedInfo();
     const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings, { type: 'modal' });
     const { shouldShowMadeWith = true } = useBuilderConfig();
 
@@ -73,15 +71,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
 
     const handleCustomUploadRequest = (file: File): Promise<string> => {
       return upload(file);
-    };
-
-    const getOembedInfo = async (url: string): Promise<ContentOmbedInfo> => {
-      const resp = { html: '', width: 0, height: 0 };
-      const ret = await queryOembed({ variables: { url } });
-      if (ret?.data?.queryOembedInfo) {
-        return ret?.data?.queryOembedInfo;
-      }
-      return resp;
     };
 
     useEffect(() => {
