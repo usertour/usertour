@@ -32,6 +32,18 @@ export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
     autoSaveValidatorRef.current = fn;
   }, []);
 
+  // saveContent's identity is NOT stable: it closes over Apollo mutation
+  // `invoke` fns the mutation hooks re-create every render (no useCallback),
+  // so useSaveContent's useCallback never memoizes. Auto-save must fire on
+  // CONTENT changes, not on saveContent's identity — listing it in the effect
+  // deps re-mounts the effect every render, and while dirty (currentVersion !=
+  // backupVersion) each re-mount kicks off a fresh save whose
+  // transitionSaveState({ saving, saveId++ }) drives another render, compounding
+  // into the infinite loop BuilderProvider's methodsRef comment warns about.
+  // Hold it in a ref and call the latest at fire time instead.
+  const saveContentRef = useRef(saveContent);
+  saveContentRef.current = saveContent;
+
   const currentVersion = useStore(store, (s) => s.currentVersion);
   const backupVersion = useStore(store, (s) => s.backupVersion);
   useEffect(() => {
@@ -48,9 +60,9 @@ export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
       if (validator && !validator(currentVersion)) {
         return;
       }
-      void saveContent();
+      void saveContentRef.current();
     }
-  }, [currentVersion, backupVersion, store, saveContent]);
+  }, [currentVersion, backupVersion, store]);
 
   return { setAutoSaveValidator };
 };
