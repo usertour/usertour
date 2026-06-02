@@ -123,6 +123,30 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
 
   const contentListLoading = flowsLoading || checklistsLoading;
 
+  // Build lookup maps for content names
+  const contentMap = useMemo(() => {
+    const map = new Map<string, { name: string; type: 'flow' | 'checklist' }>();
+    for (const c of flowContents) {
+      map.set(c.id, { name: c.name || 'Untitled flow', type: 'flow' });
+    }
+    for (const c of checklistContents) {
+      map.set(c.id, { name: c.name || 'Untitled checklist', type: 'checklist' });
+    }
+    return map;
+  }, [flowContents, checklistContents]);
+
+  const handleFilter = useCallback(
+    (value: string, search: string) => {
+      const allContents = [...flowContents, ...checklistContents];
+      const item = allContents.find((c) => c.id === value);
+      if (item?.name?.toLowerCase().includes(search.toLowerCase())) {
+        return 1;
+      }
+      return 0;
+    },
+    [flowContents, checklistContents],
+  );
+
   if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.CONTENT_LIST) {
     return null;
   }
@@ -233,34 +257,10 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
     setCurrentBlock((prev) => (prev ? { ...prev, onlyShowBlockConditions: value } : null));
   };
 
-  // Build lookup maps for content names
-  const contentMap = useMemo(() => {
-    const map = new Map<string, { name: string; type: 'flow' | 'checklist' }>();
-    for (const c of flowContents) {
-      map.set(c.id, { name: c.name || 'Untitled flow', type: 'flow' });
-    }
-    for (const c of checklistContents) {
-      map.set(c.id, { name: c.name || 'Untitled checklist', type: 'checklist' });
-    }
-    return map;
-  }, [flowContents, checklistContents]);
-
   // Filter out already-selected items
   const selectedIds = new Set(currentBlock.contentItems.map((item) => item.contentId));
   const availableFlows = flowContents.filter((c) => !selectedIds.has(c.id));
   const availableChecklists = checklistContents.filter((c) => !selectedIds.has(c.id));
-
-  const handleFilter = useCallback(
-    (value: string, search: string) => {
-      const allContents = [...flowContents, ...checklistContents];
-      const item = allContents.find((c) => c.id === value);
-      if (item?.name?.toLowerCase().includes(search.toLowerCase())) {
-        return 1;
-      }
-      return 0;
-    },
-    [flowContents, checklistContents],
-  );
 
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">

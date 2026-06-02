@@ -179,14 +179,6 @@ export const ResourceCenterBlocks = () => {
     reorderBlocks,
   } = useResourceCenterEditor();
 
-  if (!localData) {
-    return null;
-  }
-
-  // Get current tab's blocks
-  const currentTab = localData.tabs.find((t) => t.id === currentTabId);
-  const blocks = currentTab?.blocks ?? [];
-
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -194,6 +186,14 @@ export const ResourceCenterBlocks = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  if (!localData) {
+    return null;
+  }
+
+  // Get current tab's blocks
+  const currentTab = localData.tabs.find((t) => t.id === currentTabId);
+  const blocks = currentTab?.blocks ?? [];
 
   const handleEditBlock = (block: ResourceCenterBlock) => {
     setCurrentBlock(block);

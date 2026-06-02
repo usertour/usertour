@@ -54,10 +54,6 @@ export interface LauncherSettingsProps {
 export const LauncherSettings = ({ data: initialValue, onChange }: LauncherSettingsProps) => {
   const [data, setData] = useState<LauncherTooltipSettings>(initialValue);
 
-  if (!initialValue) {
-    return <div role="alert">Invalid settings data provided</div>;
-  }
-
   const update = useCallback<UpdateFunction>(
     (fn) => {
       try {
@@ -72,6 +68,10 @@ export const LauncherSettings = ({ data: initialValue, onChange }: LauncherSetti
     },
     [onChange],
   );
+
+  if (!initialValue) {
+    return <div role="alert">Invalid settings data provided</div>;
+  }
 
   return (
     <div className="space-y-3" aria-label="Launcher settings">

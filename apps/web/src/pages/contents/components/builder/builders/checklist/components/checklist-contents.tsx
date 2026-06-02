@@ -163,10 +163,6 @@ export const ChecklistContents = () => {
     removeItem,
   } = useChecklistEditor();
 
-  if (!localData) {
-    return null;
-  }
-
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -174,6 +170,10 @@ export const ChecklistContents = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  if (!localData) {
+    return null;
+  }
 
   const handleEditItem = (item: ChecklistItemType) => {
     setCurrentItem(item);
