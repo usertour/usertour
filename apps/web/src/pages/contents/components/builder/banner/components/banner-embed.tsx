@@ -55,11 +55,6 @@ export const BannerEmbed = () => {
     [localData, updateLocalData],
   );
 
-  const handleCustomUploadRequest = useCallback(
-    (file: File): Promise<string> => upload(file),
-    [upload],
-  );
-
   const data = useMemo(
     () => ({
       ...DEFAULT_BANNER_DATA,
@@ -100,7 +95,7 @@ export const BannerEmbed = () => {
     <BannerPreview previewMode ref={setWrapperEl}>
       <ContentEditor
         zIndex={zIndex + EXTENSION_CONTENT_POPPER}
-        customUploadRequest={handleCustomUploadRequest}
+        customUploadRequest={upload}
         initialValue={contents}
         onValueChange={handleContentChange}
         projectId={projectId}

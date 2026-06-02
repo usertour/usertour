@@ -1,20 +1,3 @@
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { RiDraggable, RiSettings3Line } from '@usertour/icons';
 import {
   AlertDialog,
@@ -35,8 +18,9 @@ import {
 import { Delete2Icon } from '@usertour/icons';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
-import { forwardRef, useState } from 'react';
+import { forwardRef } from 'react';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
+import { SortableList } from '@/pages/contents/components/builder/core/components/sortable-list';
 import {
   BLOCK_TYPE_LABELS,
   getResourceCenterBlockTypeIcon,
@@ -145,29 +129,6 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
   },
 );
 
-const SortableBlock = ({ id, onClick, block }: any) => {
-  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
-    id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0 : 1,
-  };
-
-  return (
-    <BlockContent
-      ref={setNodeRef}
-      block={block}
-      style={style}
-      onClick={onClick}
-      listeners={listeners}
-      attributes={attributes}
-    />
-  );
-};
-
 export const ResourceCenterBlocks = () => {
   const {
     data: localData,
@@ -176,14 +137,6 @@ export const ResourceCenterBlocks = () => {
     removeBlock,
     reorderBlocks,
   } = useResourceCenterEditor();
-
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
 
   if (!localData) {
     return null;
@@ -205,41 +158,27 @@ export const ResourceCenterBlocks = () => {
     }
   };
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (active && over && active.id !== over?.id) {
-      const from = blocks.findIndex((block) => block.id === active.id);
-      const to = blocks.findIndex((block) => block.id === over.id);
-      if (from !== -1 && to !== -1) {
-        reorderBlocks(from, to);
-      }
-      setActiveId(null);
-    }
-  };
-
-  const activeBlock = blocks.find((block) => block.id === activeId);
-
   return (
     <>
       <div className="flex justify-between items-center space-x-1">
         <h1 className="text-sm">{currentTab?.name ? `"${currentTab.name}" blocks` : 'Blocks'}</h1>
       </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
-          {blocks.map((block) => (
-            <SortableBlock id={block.id} onClick={handleOnClick} key={block.id} block={block} />
-          ))}
-        </SortableContext>
-        <DragOverlay>{activeBlock ? <BlockContent block={activeBlock} /> : null}</DragOverlay>
-      </DndContext>
+      <SortableList
+        items={blocks}
+        getId={(block) => block.id}
+        onReorder={reorderBlocks}
+        renderRow={(block, sortable) => (
+          <BlockContent
+            block={block}
+            onClick={handleOnClick}
+            ref={sortable.setNodeRef}
+            style={sortable.style}
+            listeners={sortable.listeners}
+            attributes={sortable.attributes}
+          />
+        )}
+        renderOverlay={(block) => <BlockContent block={block} />}
+      />
     </>
   );
 };

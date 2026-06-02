@@ -69,9 +69,6 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
       setData(value);
       onChange(value);
     };
-    const handleCustomUploadRequest = (file: File): Promise<string> => {
-      return upload(file);
-    };
 
     useEffect(() => {
       if (themeSetting?.font?.fontFamily) {
@@ -142,7 +139,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
               )}
               <ContentEditor
                 zIndex={zIndex + EXTENSION_CONTENT_POPPER}
-                customUploadRequest={handleCustomUploadRequest}
+                customUploadRequest={upload}
                 initialValue={data}
                 attributes={attributeList}
                 enabledElementTypes={enabledElementTypes}

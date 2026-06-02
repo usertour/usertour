@@ -1,6 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useThemeList } from '@/hooks/use-theme-list';
 import { useChecklistPreviewAnimation } from '@usertour/hooks';
 import {
   ChecklistContainer,
@@ -15,24 +14,19 @@ import {
   PopperMadeWith,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
-import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
+import { ChecklistInitialDisplay, ContentEditorElementType } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  useBuilderConfig,
-  useBuilderStore,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
+import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
 import { useAws } from '@usertour/hooks';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 
 export const ChecklistEmbed = () => {
   const { data: localData, currentItem, updateData: updateLocalData } = useChecklistEditor();
   const { upload } = useAws();
-  const [theme, setTheme] = useState<Theme | undefined>();
-  const { themeList } = useThemeList();
+  const theme = useCurrentTheme({ fallbackToDefault: true });
   const { shouldShowMadeWith = true } = useBuilderConfig();
-  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const projectId = useProjectId();
   const [expanded, setExpanded] = useState(
     localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
@@ -47,23 +41,6 @@ export const ChecklistEmbed = () => {
     setExpanded(localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED);
   }, [localData?.initialDisplay]);
 
-  useEffect(() => {
-    if (!themeList) {
-      return;
-    }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      if (currentVersion?.themeId) {
-        theme = themeList.find((item) => item.id === currentVersion.themeId);
-      } else {
-        theme = themeList.find((item) => item.isDefault);
-      }
-      if (theme) {
-        setTheme(theme);
-      }
-    }
-  }, [themeList, currentVersion]);
-
   const handleContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
       if (localData && !isEqual(value, localData.content)) {
@@ -71,11 +48,6 @@ export const ChecklistEmbed = () => {
       }
     },
     [localData, updateLocalData],
-  );
-
-  const handleCustomUploadRequest = useCallback(
-    (file: File): Promise<string> => upload(file),
-    [upload],
   );
 
   // Compute items with completed and animation state using useMemo
@@ -120,7 +92,7 @@ export const ChecklistEmbed = () => {
               <ChecklistPopperContentBody>
                 <ContentEditor
                   zIndex={EXTENSION_CONTENT_POPPER}
-                  customUploadRequest={handleCustomUploadRequest}
+                  customUploadRequest={upload}
                   initialValue={localData.content}
                   onValueChange={handleContentChange}
                   projectId={projectId}

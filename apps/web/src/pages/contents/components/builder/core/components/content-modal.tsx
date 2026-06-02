@@ -69,10 +69,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       onChange(value);
     };
 
-    const handleCustomUploadRequest = (file: File): Promise<string> => {
-      return upload(file);
-    };
-
     useEffect(() => {
       if (themeSetting?.font?.fontFamily) {
         loadGoogleFontCss(themeSetting.font.fontFamily, document);
@@ -121,7 +117,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
               <ContentEditor
                 zIndex={zIndex + EXTENSION_CONTENT_MODAL}
                 enabledElementTypes={enabledElementTypes}
-                customUploadRequest={handleCustomUploadRequest}
+                customUploadRequest={upload}
                 initialValue={data}
                 projectId={projectId}
                 attributes={attributeList}

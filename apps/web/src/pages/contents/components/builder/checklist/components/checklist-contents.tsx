@@ -1,21 +1,4 @@
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { arrayMove } from '@dnd-kit/sortable';
 import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
 import {
   AlertDialog,
@@ -35,8 +18,9 @@ import {
 } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
 import { ChecklistItemType } from '@usertour/types';
-import { forwardRef, useState } from 'react';
+import { forwardRef } from 'react';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
+import { SortableList } from '@/pages/contents/components/builder/core/components/sortable-list';
 // Add interface for component props
 interface ChecklistContentProps {
   onClick?: (action: 'edit' | 'delete', item: ChecklistItemType) => void;
@@ -130,29 +114,6 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>(
   },
 );
 
-const SortableItem = ({ id, onClick, item }: any) => {
-  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
-    id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0 : 1,
-  };
-
-  return (
-    <ChecklistContent
-      ref={setNodeRef}
-      item={item}
-      style={style}
-      onClick={onClick}
-      listeners={listeners}
-      attributes={attributes}
-    />
-  );
-};
-
 export const ChecklistContents = () => {
   const {
     data: localData,
@@ -160,14 +121,6 @@ export const ChecklistContents = () => {
     gotoItem,
     removeItem,
   } = useChecklistEditor();
-
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
 
   if (!localData) {
     return null;
@@ -185,40 +138,29 @@ export const ChecklistContents = () => {
     }
   };
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (active && over && active.id !== over?.id) {
-      const from = localData.items.findIndex((item) => item.id === active.id);
-      const to = localData.items.findIndex((item) => item.id === over.id);
-      const newList = arrayMove(localData.items, from, to);
-      updateLocalData({ items: newList });
-      setActiveId(null);
-    }
-  };
-
-  const activeItem = localData.items.find((item) => item.id === activeId);
-
   return (
     <>
       <div className="flex justify-between items-center space-x-1	">
         <h1 className="text-sm">Items</h1>
       </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={localData.items} strategy={verticalListSortingStrategy}>
-          {localData.items.map((item) => (
-            <SortableItem id={item.id} onClick={handleOnClick} key={item.id} item={item} />
-          ))}
-        </SortableContext>
-        <DragOverlay>{activeItem ? <ChecklistContent item={activeItem} /> : null}</DragOverlay>
-      </DndContext>
+      <SortableList
+        items={localData.items}
+        getId={(item) => item.id}
+        onReorder={(fromIndex, toIndex) =>
+          updateLocalData({ items: arrayMove(localData.items, fromIndex, toIndex) })
+        }
+        renderRow={(item, sortable) => (
+          <ChecklistContent
+            item={item}
+            onClick={handleOnClick}
+            ref={sortable.setNodeRef}
+            style={sortable.style}
+            listeners={sortable.listeners}
+            attributes={sortable.attributes}
+          />
+        )}
+        renderOverlay={(item) => <ChecklistContent item={item} />}
+      />
     </>
   );
 };

@@ -1,9 +1,8 @@
-import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
-import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
 import { useAws } from '@usertour/hooks';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { LauncherContentMain } from '@/pages/contents/components/builder/launcher/components/launcher-content';
@@ -15,10 +14,9 @@ const centerClasses =
 
 export const LauncherBuilderEmbed = () => {
   const triggerRef = useRef<any>();
-  const [theme, setTheme] = useState<Theme | undefined>();
   const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const { themeList } = useThemeList();
+  const theme = useCurrentTheme({ fallbackToDefault: true });
   const {
     data: localData,
     updateDataTooltip: updateLocalDataTooltip,
@@ -26,20 +24,6 @@ export const LauncherBuilderEmbed = () => {
     launcherTooltip,
   } = useLauncherEditor();
   const { upload } = useAws();
-
-  useEffect(() => {
-    if (!themeList?.length) return;
-
-    const selectedTheme = currentVersion?.themeId
-      ? themeList.find((item) => item.id === currentVersion.themeId)
-      : themeList.find((item) => item.isDefault);
-
-    if (selectedTheme) {
-      setTheme(selectedTheme);
-    }
-  }, [themeList, currentVersion]);
-
-  const handleCustomUploadRequest = useCallback((file: File) => upload(file), [upload]);
 
   const handleUpdateTooltipContent = useCallback(
     (content: ContentEditorRoot[]) => {
@@ -70,7 +54,7 @@ export const LauncherBuilderEmbed = () => {
         theme={theme}
         triggerRef={triggerRef}
         zIndex={zIndex}
-        onCustomUploadRequest={handleCustomUploadRequest}
+        onCustomUploadRequest={upload}
         data={mergedData}
         onValueChange={handleUpdateTooltipContent}
       />

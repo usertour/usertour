@@ -1,6 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useThemeList } from '@/hooks/use-theme-list';
 import {
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -21,16 +20,15 @@ import {
   ResourceCenterContentListBlock,
   ResourceCenterRichTextBlock,
   ResourceCenterSubPageBlock,
-  Theme,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   useBuilderConfig,
-  useBuilderStore,
   useEnvironmentId,
   useProjectId,
 } from '@/pages/contents/components/builder/core';
+import { useCurrentTheme } from '@/pages/contents/components/builder/core/hooks/use-current-theme';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useAws } from '@usertour/hooks';
 
@@ -45,11 +43,6 @@ const ResourceCenterEmbedContent = ({
   const { upload } = useAws();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
-
-  const handleCustomUploadRequest = useCallback(
-    (file: File): Promise<string> => upload(file),
-    [upload],
-  );
 
   const enabledElementTypes = [
     ContentEditorElementType.IMAGE,
@@ -73,7 +66,7 @@ const ResourceCenterEmbedContent = ({
     return (
       <ContentEditor
         zIndex={EXTENSION_CONTENT_POPPER}
-        customUploadRequest={handleCustomUploadRequest}
+        customUploadRequest={upload}
         initialValue={block.content}
         onValueChange={(value: ContentEditorRoot[]) => {
           if (!isEqual(value, block!.content)) {
@@ -85,7 +78,7 @@ const ResourceCenterEmbedContent = ({
         enabledElementTypes={enabledElementTypes}
       />
     );
-  }, [currentPage, localData, handleCustomUploadRequest, updateBlock, projectId, attributeList]);
+  }, [currentPage, localData, upload, updateBlock, projectId, attributeList]);
 
   return (
     <>
@@ -105,11 +98,9 @@ const ResourceCenterEmbedContent = ({
 export const ResourceCenterEmbed = () => {
   const { data: localData, updateBlock } = useResourceCenterEditor();
   const { upload } = useAws();
-  const [theme, setTheme] = useState<Theme | undefined>();
+  const theme = useCurrentTheme({ fallbackToDefault: true });
   const [expanded, setExpanded] = useState(true);
-  const { themeList } = useThemeList();
   const { shouldShowMadeWith = true } = useBuilderConfig();
-  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const projectId = useProjectId();
   const environmentId = useEnvironmentId();
   const { attributeList } = useAttributeList();
@@ -167,28 +158,6 @@ export const ResourceCenterEmbed = () => {
       }));
   }, [activeContentListBlockId, localData, contentNameMap]);
 
-  useEffect(() => {
-    if (!themeList) {
-      return;
-    }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      if (currentVersion?.themeId) {
-        theme = themeList.find((item) => item.id === currentVersion.themeId);
-      } else {
-        theme = themeList.find((item) => item.isDefault);
-      }
-      if (theme) {
-        setTheme(theme);
-      }
-    }
-  }, [themeList, currentVersion]);
-
-  const handleCustomUploadRequest = useCallback(
-    (file: File): Promise<string> => upload(file),
-    [upload],
-  );
-
   const enabledElementTypes = [
     ContentEditorElementType.IMAGE,
     ContentEditorElementType.EMBED,
@@ -206,7 +175,7 @@ export const ResourceCenterEmbed = () => {
           slots[block.id] = (
             <ContentEditor
               zIndex={EXTENSION_CONTENT_POPPER}
-              customUploadRequest={handleCustomUploadRequest}
+              customUploadRequest={upload}
               initialValue={richTextBlock.content}
               onValueChange={(value: ContentEditorRoot[]) => {
                 if (!isEqual(value, richTextBlock.content)) {
@@ -222,7 +191,7 @@ export const ResourceCenterEmbed = () => {
       }
     }
     return slots;
-  }, [localData, handleCustomUploadRequest, updateBlock, projectId, attributeList]);
+  }, [localData, upload, updateBlock, projectId, attributeList]);
 
   if (!theme || !localData) {
     return null;
