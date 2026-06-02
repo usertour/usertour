@@ -43,41 +43,25 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   useUndoShortcuts({ store });
   useBeforeunloadGuard({ store });
 
-  // Ref-stable wrappers for every imperative method exposed via
-  // useBuilderMethods. Each underlying useCallback's deps include
-  // Apollo hook return refs that are not ref-stable across renders —
-  // so the useCallbacks themselves don't memoize, and any consumer
-  // that lists one of them in a useEffect / useMemo dep array would
-  // re-fire every render. With state changes (e.g. step delete
-  // making currentVersion != backupVersion), the re-fire compounds
-  // into an infinite render loop. Wrap each method in a useRef +
-  // useMemo-of-`[]` thunk so the exposed identity is pinned at first
-  // render while still dispatching to the latest closure on every call.
-  const methodsRef = useRef({
-    fetchContentAndVersion,
-    saveContent,
-    setAutoSaveValidator,
-  });
-  methodsRef.current = {
-    fetchContentAndVersion,
-    saveContent,
-    setAutoSaveValidator,
-  };
-  const stableMethods = useMemo<BuilderProviderContextValue['methods']>(
-    () => ({
-      fetchContentAndVersion: (cid, vid) => methodsRef.current.fetchContentAndVersion(cid, vid),
-      saveContent: () => methodsRef.current.saveContent(),
-      setAutoSaveValidator: (fn) => methodsRef.current.setAutoSaveValidator(fn),
-    }),
-    [],
+  // The three imperative methods are each individually ref-stable now: every
+  // one is a useCallback whose deps are all stable — the Apollo
+  // mutation/lazy-query `invoke`s they close over are themselves useCallback'd
+  // in gql.ts, `store` is per-mount, `toast` is a stable useCallback. So we
+  // memo the methods object directly on their identities. (This used to be a
+  // useRef + useMemo-of-`[]` thunk that pinned the identity to paper over
+  // unstable invokes — which once compounded into an infinite render loop; the
+  // root cause is fixed, so that workaround is gone.)
+  const methods = useMemo<BuilderProviderContextValue['methods']>(
+    () => ({ fetchContentAndVersion, saveContent, setAutoSaveValidator }),
+    [fetchContentAndVersion, saveContent, setAutoSaveValidator],
   );
 
-  // Provider value is memoized on stableMethods + config so its
+  // Provider value is memoized on methods + config so its
   // identity is pinned for the Provider mount lifetime.
   const providerValue = useMemo<BuilderProviderContextValue>(
     () => ({
       store,
-      methods: stableMethods,
+      methods,
       config: {
         onSaved,
         shouldShowMadeWith,
@@ -89,16 +73,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       },
       contentRef,
     }),
-    [
-      store,
-      stableMethods,
-      onSaved,
-      shouldShowMadeWith,
-      environmentId,
-      projectId,
-      contentId,
-      versionId,
-    ],
+    [store, methods, onSaved, shouldShowMadeWith, environmentId, projectId, contentId, versionId],
   );
 
   return (
