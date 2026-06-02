@@ -7,7 +7,7 @@ import { LauncherBuilder } from './builders/launcher';
 import { ResourceCenterBuilder } from './builders/resource-center';
 import { WebBuilderLoading } from './components/web-builder-loading';
 import { useListsLoading } from './hooks/use-lists-loading';
-import { useStepUrlSync } from './hooks/use-step-url-sync';
+import { useStepUrlParam, useStepUrlSync } from './hooks/use-step-url';
 import { useSyncCurrentTheme } from './hooks/use-sync-current-theme';
 
 // Which component renders for each builder mode. Several sub-modes of the
@@ -39,29 +39,19 @@ export interface WebBuilderProps {
   environmentId: string;
   versionId: string;
   projectId: string;
-  // Accepted for parity with the v1 builder's shared call site in apps/web;
-  // web-only v2 has no SDK-preview path that consumes it.
-  usertourjsUrl?: string;
   onSaved: () => Promise<void>;
-  isLoading?: boolean;
-  initialStepIndex?: number;
   shouldShowMadeWith?: boolean;
-  onStepIndexChange?: (stepIndex: number | undefined) => void;
 }
 
-interface WebBuilderContentProps {
-  initialStepIndex?: number;
-  onStepIndexChange?: (stepIndex: number | undefined) => void;
-}
-
-// The builder, inside BuilderProvider: drives init, observes the shared
-// lists' loading, syncs the current theme + the ?step URL, gates on a
-// single `ready` signal, then routes to the active mode's component.
-function WebBuilderContent(props: WebBuilderContentProps) {
-  const { initialStepIndex, onStepIndexChange } = props;
+// The builder, inside BuilderProvider: drives init (seeded by the `?step`
+// deep-link), observes the shared lists' loading, mirrors the active step
+// back to `?step`, syncs the theme, gates on a single `ready` signal, then
+// routes to the active mode's component.
+function WebBuilderContent() {
+  const initialStepIndex = useStepUrlParam();
   const { ready } = useBuilderInit({ initialStepIndex });
   const listsLoading = useListsLoading();
-  useStepUrlSync(ready, onStepIndexChange);
+  useStepUrlSync(ready);
   useSyncCurrentTheme();
   const currentMode = useBuilderStore((state) => state.currentMode);
 
@@ -73,32 +63,14 @@ function WebBuilderContent(props: WebBuilderContentProps) {
   return Active ? <Active /> : null;
 }
 
-export const WebBuilder = (props: WebBuilderProps) => {
-  const {
-    onSaved,
-    shouldShowMadeWith,
-    environmentId,
-    projectId,
-    contentId,
-    versionId,
-    initialStepIndex,
-    onStepIndexChange,
-  } = props;
-  return (
-    <BuilderProvider
-      onSaved={onSaved}
-      shouldShowMadeWith={shouldShowMadeWith}
-      environmentId={environmentId}
-      projectId={projectId}
-      contentId={contentId}
-      versionId={versionId}
-    >
-      <WebBuilderContent
-        initialStepIndex={initialStepIndex}
-        onStepIndexChange={onStepIndexChange}
-      />
-    </BuilderProvider>
-  );
-};
+// WebBuilder is a thin wrapper: its props are exactly BuilderProvider's
+// config, so they forward wholesale. (If a prop that ISN'T provider config
+// is ever added here, switch back to explicit forwarding — JSX spread
+// bypasses excess-property checks and would leak it into the Provider.)
+export const WebBuilder = (props: WebBuilderProps) => (
+  <BuilderProvider {...props}>
+    <WebBuilderContent />
+  </BuilderProvider>
+);
 
 WebBuilder.displayName = 'WebBuilder';

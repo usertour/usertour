@@ -19,7 +19,7 @@ interface ContentDetailBuilderProps {
   initialStepIndex?: number;
 }
 export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
-  const { contentId, environmentId, contentType, initialStepIndex } = props;
+  const { contentId, versionId, projectId, environmentId, contentType, initialStepIndex } = props;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   // Dev/QA toggle for the V2 builder. V2 is a fork of V1 plus an
@@ -86,10 +86,24 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
     return <ContentLoading message={t('common.loading')} />;
   }
 
-  const BuilderImpl = useV2 ? WebBuilderNext : WebBuilder;
+  // V1 and V2 have diverged: V2 owns its `?step` deep-link internally and is
+  // web-only, so it takes a minimal prop set. V1 keeps the host-driven
+  // initialStepIndex / onStepIndexChange + usertourjsUrl contract.
+  if (useV2) {
+    return (
+      <WebBuilderNext
+        contentId={contentId}
+        versionId={versionId}
+        projectId={projectId}
+        environmentId={environmentId}
+        onSaved={handleOnSaved}
+        shouldShowMadeWith={shouldShowMadeWith}
+      />
+    );
+  }
 
   return (
-    <BuilderImpl
+    <WebBuilder
       {...props}
       initialStepIndex={initialStepIndex}
       onStepIndexChange={handleStepIndexChange}
