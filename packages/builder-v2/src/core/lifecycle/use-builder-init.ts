@@ -2,28 +2,31 @@ import { defaultStep } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { BuilderMode, deriveInitialMode } from '../builder-mode';
+import { useBuilderConfig } from '../access/use-builder-config';
 import { useBuilderMethods } from '../access/use-builder-methods';
 import { useBuilderStore } from '../access/use-builder-store';
 
 export interface BuilderInitParams {
-  contentId: string;
-  versionId: string;
   initialStepIndex?: number;
 }
 
 // The whole builder load lifecycle, in one place. Replaces the v1
 // `initContent(message: any)` kitchen-sink + the mount effect +
-// `isInitializing` flag. Keyed on (contentId, versionId): a change
-// re-hydrates (no remount-only reliance). Hydration stays controlled
-// one-way (server → store draft via fetchContentAndVersion) — the draft
-// model is deliberate; this hook never binds the cache.
+// `isInitializing` flag. contentId / versionId come from config (the
+// Provider's identity); the effect is keyed on them, so a change
+// re-hydrates — defensive, since in the route-mounted web app they're
+// stable per mount. Hydration stays controlled one-way (server → store
+// draft via fetchContentAndVersion); the draft model is deliberate, this
+// hook never binds the cache.
 //
 // Invariants: I1 hydrate only here + on save re-baseline; I2 re-run on
 // id change; I3 clearHistory only on initial load (not on save's
 // fetchContentAndVersion); I4 initial mode via deriveInitialMode; I5
 // initialStepIndex opens the step; I6 single `ready` gate.
 export const useBuilderInit = (params: BuilderInitParams): { ready: boolean } => {
-  const { contentId, versionId, initialStepIndex } = params;
+  const { initialStepIndex } = params;
+  // contentId / versionId are immutable config — the Provider's identity.
+  const { contentId, versionId } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
   // Store setters are stable refs — no subscription churn.
   const setCurrentMode = useBuilderStore((s) => s.setCurrentMode);

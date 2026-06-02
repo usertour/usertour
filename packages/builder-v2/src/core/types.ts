@@ -19,19 +19,23 @@ export interface BuilderProviderMethods {
   setAutoSaveValidator: (fn: ((version: ContentVersion) => boolean) | null) => void;
 }
 
-// Static config passed to BuilderProvider as props. Never changes
-// after Provider mount; exposed via useBuilderConfig.
+// The builder's full identity + static options, passed to BuilderProvider
+// as props and exposed via useBuilderConfig. Never changes after mount.
 //
-// environmentId / projectId are the workspace identity. They're fixed
-// props (not async-seeded into the draft store), so they live here as
-// immutable config and the data hooks read them via
-// useEnvironmentId / useProjectId.
+// environmentId / projectId are the workspace; contentId / versionId are
+// what's being edited. All are fixed props (not async-seeded into the draft
+// store): env/project are read tree-wide via useEnvironmentId/useProjectId,
+// content/version are consumed by useBuilderInit to hydrate the draft. The
+// Provider therefore knows its complete "editing X@Y in workspace Z"
+// identity in one place.
 export interface BuilderProviderConfig {
   onSaved: () => Promise<void>;
   shouldShowMadeWith: boolean;
   zIndex: number;
   environmentId: string;
   projectId: string;
+  contentId: string;
+  versionId: string;
 }
 
 // Carries the per-mount Zustand store + the imperative methods +
@@ -53,4 +57,6 @@ export interface BuilderProviderProps {
   shouldShowMadeWith?: boolean;
   environmentId: string;
   projectId: string;
+  contentId: string;
+  versionId: string;
 }

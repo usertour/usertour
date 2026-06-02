@@ -14,7 +14,15 @@ import type { BuilderProviderContextValue, BuilderProviderProps } from './types'
 export const BuilderProviderContext = createContext<BuilderProviderContextValue | null>(null);
 
 export const BuilderProvider = (props: BuilderProviderProps) => {
-  const { children, onSaved, shouldShowMadeWith = true, environmentId, projectId } = props;
+  const {
+    children,
+    onSaved,
+    shouldShowMadeWith = true,
+    environmentId,
+    projectId,
+    contentId,
+    versionId,
+  } = props;
 
   // One store per mount — the `useRef + if (!current)` idiom is the
   // standard Zustand-with-Provider pattern (calling createBuilderStore
@@ -76,10 +84,21 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         zIndex: 0,
         environmentId,
         projectId,
+        contentId,
+        versionId,
       },
       contentRef,
     }),
-    [store, stableMethods, onSaved, shouldShowMadeWith, environmentId, projectId],
+    [
+      store,
+      stableMethods,
+      onSaved,
+      shouldShowMadeWith,
+      environmentId,
+      projectId,
+      contentId,
+      versionId,
+    ],
   );
 
   return (

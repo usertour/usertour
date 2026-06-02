@@ -50,8 +50,6 @@ export interface WebBuilderProps {
 }
 
 interface WebBuilderContentProps {
-  contentId: string;
-  versionId: string;
   initialStepIndex?: number;
   onStepIndexChange?: (stepIndex: number | undefined) => void;
 }
@@ -60,8 +58,8 @@ interface WebBuilderContentProps {
 // lists' loading, syncs the current theme + the ?step URL, gates on a
 // single `ready` signal, then routes to the active mode's component.
 function WebBuilderContent(props: WebBuilderContentProps) {
-  const { contentId, versionId, initialStepIndex, onStepIndexChange } = props;
-  const { ready } = useBuilderInit({ contentId, versionId, initialStepIndex });
+  const { initialStepIndex, onStepIndexChange } = props;
+  const { ready } = useBuilderInit({ initialStepIndex });
   const listsLoading = useListsLoading();
   useStepUrlSync(ready, onStepIndexChange);
   useSyncCurrentTheme();
@@ -92,10 +90,10 @@ export const WebBuilder = (props: WebBuilderProps) => {
       shouldShowMadeWith={shouldShowMadeWith}
       environmentId={environmentId}
       projectId={projectId}
+      contentId={contentId}
+      versionId={versionId}
     >
       <WebBuilderContent
-        contentId={contentId}
-        versionId={versionId}
         initialStepIndex={initialStepIndex}
         onStepIndexChange={onStepIndexChange}
       />
