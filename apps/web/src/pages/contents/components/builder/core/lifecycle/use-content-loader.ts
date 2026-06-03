@@ -17,9 +17,10 @@ export interface UseContentLoaderReturn {
 // `editedVersion` inline (data/config/themeId/steps), so there's no
 // separate getContentVersion round-trip. Writes currentContent /
 // currentVersion / backupVersion into the store; currentVersion goes
-// through setCurrentVersionFromServer so save round-trips don't pollute
-// the undo stack. Called by useBuilderInit (initial controlled hydrate)
-// and useSaveContent (post-save re-baseline).
+// through setCurrentVersionFromServer so the load doesn't pollute the
+// undo stack. Returns true on success / false if nothing loaded (the
+// store is left untouched). Called by useBuilderInit on initial hydrate;
+// post-save re-baselining lives in useSaveContent (off the save response).
 //
 // `versionId` is the editable version the builder edits — always the
 // content's editedVersionId — so the inline `editedVersion` is exactly
@@ -31,15 +32,15 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
   const fetchContentAndVersion = useCallback<BuilderProviderMethods['fetchContentAndVersion']>(
     async (contentId, versionId) => {
       if (!contentId || !versionId) {
-        return null;
+        return false;
       }
       const content = (await getContent(contentId)) as Content | null;
       if (!content) {
-        return null;
+        return false;
       }
       const version = content.editedVersion;
       if (!version) {
-        return null;
+        return false;
       }
       const state = store.getState();
       state.setCurrentContent(content);
@@ -49,7 +50,7 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
       // patch-capturing public setter so the load doesn't enter undo history.
       state.setCurrentVersionFromServer(structuredClone(version) as ContentVersion);
       state.setBackupVersion(structuredClone(version) as ContentVersion);
-      return { content, version: version as ContentVersion };
+      return true;
     },
     [getContent, store],
   );

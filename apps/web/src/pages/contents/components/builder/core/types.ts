@@ -1,4 +1,4 @@
-import type { Content, ContentVersion } from '@usertour/types';
+import type { ContentVersion } from '@usertour/types';
 import type { ReactNode } from 'react';
 import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 
@@ -11,11 +11,14 @@ import type { BuilderStore } from '@/pages/contents/components/builder/core/buil
 // `setAutoSaveValidator` accepts null to clear a previously
 // registered validator (per-type editor unmount); see use-auto-save.
 export interface BuilderProviderMethods {
-  saveContent: () => Promise<void>;
-  fetchContentAndVersion: (
-    contentId: string,
-    versionId: string,
-  ) => Promise<{ content: Content; version: ContentVersion } | null>;
+  // Resolves true when saved (or nothing to save), false when the save failed —
+  // the leave guard uses this to decide whether it's safe to navigate away.
+  saveContent: () => Promise<boolean>;
+  // Hydrates the store (currentContent / currentVersion / backupVersion) from a
+  // single getContent fetch. Resolves true on success, false when the content
+  // or its editable version couldn't be loaded — the store is left untouched on
+  // failure and useBuilderInit gates its history-clear on the result.
+  fetchContentAndVersion: (contentId: string, versionId: string) => Promise<boolean>;
   setAutoSaveValidator: (fn: ((version: ContentVersion) => boolean) | null) => void;
 }
 

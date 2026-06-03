@@ -64,12 +64,6 @@ export interface BuilderState {
   backupVersion: ContentVersion | undefined;
   isShowError: boolean;
   position: string;
-  // True only while a non-FSM mutation (currently the theme change in
-  // sidebar-theme) is in flight; folded into `useIsBusy` + the
-  // beforeunload guard. The initial-content load is no longer tracked
-  // here — that gate moved to `ready` in useBuilderInit — so this
-  // starts `false`.
-  isLoading: boolean;
   saveState: SaveState;
   history: HistoryStack;
   // Per-type sub-mode UI buffer (Launcher target/tooltip, Checklist item,
@@ -99,7 +93,6 @@ export interface BuilderStateSetters {
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   setPosition: React.Dispatch<React.SetStateAction<string>>;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Private setters — used by Provider internals or read off the raw
@@ -165,7 +158,6 @@ const initialState: BuilderState = {
   backupVersion: undefined,
   isShowError: false,
   position: 'left',
-  isLoading: false,
   saveState: { status: 'idle' },
   history: EMPTY_HISTORY,
   typeEditorUIState: undefined,
@@ -207,7 +199,6 @@ export const createBuilderStore = () =>
     },
     setIsShowError: makeSetter('isShowError', set, get),
     setPosition: makeSetter('position', set, get),
-    setIsLoading: makeSetter('isLoading', set, get),
     setBackupVersion: (value) => set({ backupVersion: value }),
     setCurrentVersionFromServer: (value) => set({ currentVersion: value }),
     setTypeEditorUIState: makeSetter('typeEditorUIState', set, get),

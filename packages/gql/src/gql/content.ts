@@ -1,5 +1,12 @@
 import { gql } from '@apollo/client';
 
+// Cache contract: editedVersion (and getContentVersion) share the Version:id
+// cache entry, and Steps normalize by id across the detail + builder views.
+// Because this document selects editedVersion.steps, the server's editedVersion
+// resolver MUST include steps — otherwise GraphQL returns steps: null and wipes
+// the list from every view on that Version (this regressed the detail step list
+// once). Keep any relation selected here in sync with what its resolver returns;
+// see content.resolver.ts editedVersion ResolveField for the server half.
 export const getContent = gql`
   query getContent($contentId: String!) {
     getContent(contentId: $contentId) {

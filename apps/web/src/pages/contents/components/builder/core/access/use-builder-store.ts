@@ -14,13 +14,9 @@ export const useBuilderStore = <T>(selector: (state: BuilderStoreState) => T): T
   return useStore(ctx.store, selector);
 };
 
-// Save FSM accessor — for components that want richer save-status UI
-// (saved-Xs-ago label, error retry button, etc.) than the overloaded
-// boolean `isLoading` exposes.
+// Save FSM accessor — the save status (idle / dirty / saving / saved / error).
 export const useSaveState = () => useBuilderStore((s) => s.saveState);
 
-// Busy = initial-content load OR a save in flight. The canonical
-// "disable the form / show the footer spinner" predicate, folding the
-// two states that sidebar pages + form bindings used to merge inline.
-export const useIsBusy = () =>
-  useBuilderStore((s) => s.isLoading || s.saveState.status === 'saving');
+// Busy = a save in flight. The canonical "disable the form / show the footer
+// spinner" predicate.
+export const useIsBusy = () => useBuilderStore((s) => s.saveState.status === 'saving');

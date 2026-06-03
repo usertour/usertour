@@ -28,14 +28,14 @@ export const useBuilderInit = (): { ready: boolean } => {
     setReady(false);
 
     (async () => {
-      const result = await fetchContentAndVersion(contentId, versionId);
+      const loaded = await fetchContentAndVersion(contentId, versionId);
       if (cancelled) {
         return;
       }
       // I3: the freshly-fetched version is the undo origin. On fetch failure
       // (e.g. soft-deleted) currentContent stays undefined and the dispatcher
       // renders nothing — just unblock.
-      if (result) {
+      if (loaded) {
         clearHistory();
       }
       setReady(true);

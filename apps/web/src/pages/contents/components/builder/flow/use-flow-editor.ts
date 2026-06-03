@@ -188,8 +188,7 @@ export const useFlowEditor = () => {
     // Step-array operations
     removeStep,
     reorderSteps,
-    // Apollo step mutations
-    createStep,
+    // New-step creation (inserts into the draft; persisted by auto-save)
     createNewStep,
     // Sub-mode navigation
     enterStepSubMode,

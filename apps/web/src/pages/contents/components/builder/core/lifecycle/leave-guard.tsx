@@ -50,8 +50,11 @@ export const BuilderLeaveGuard = () => {
     <LeaveConfirmDialog
       open={blocker.state === 'blocked'}
       onSaveAndLeave={async () => {
-        await saveContent();
-        blocker.proceed?.();
+        // Only leave if the save actually succeeded — otherwise stay put (the
+        // error toast is already shown) so we don't silently drop the edits.
+        if (await saveContent()) {
+          blocker.proceed?.();
+        }
       }}
       onDiscardAndLeave={() => blocker.proceed?.()}
       onStay={() => blocker.reset?.()}
