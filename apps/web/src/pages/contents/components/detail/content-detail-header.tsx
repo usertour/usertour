@@ -2,7 +2,7 @@ import { EditableTitle, Button, useToast } from '@usertour/ui';
 import { MoreButton } from '@/components/section-breadcrumb-header';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
-import { useContentBuilder } from '@/hooks/useContentBuilder';
+import { useContentBuilder } from '@/hooks/use-content-builder';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentPublishState } from '@/hooks/use-content-publish-state';
 import { useContentVersion } from '@/hooks/use-content-version';

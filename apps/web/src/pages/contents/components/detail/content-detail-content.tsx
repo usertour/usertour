@@ -1,6 +1,6 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useThemeList } from '@/hooks/use-theme-list';
-import { useContentBuilder } from '@/hooks/useContentBuilder';
+import { useContentBuilder } from '@/hooks/use-content-builder';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';

@@ -7,7 +7,7 @@ import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import { isVersionPublished } from '@/utils/content';
+import { resolveEditableVersionId } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
   const { contentId, setIsSaving } = useContentDetailUI();
@@ -24,19 +24,12 @@ export const useContentVersionUpdate = () => {
   const ensureEditableVersionId = useCallback(
     async (configOverride?: ContentConfigObject): Promise<string> => {
       if (!version || !content) throw new Error('Missing version or content');
-
-      if (!isVersionPublished(content, version.id)) {
-        return version.id;
-      }
-
-      const result = await createContentVersion({
-        versionId: version.id,
-        config: configOverride ?? version.config,
-      });
-
-      const newVersionId = result?.id;
-      if (!newVersionId) throw new Error('Failed to create new version');
-      return newVersionId;
+      return resolveEditableVersionId(
+        content,
+        version.id,
+        createContentVersion,
+        configOverride ?? version.config,
+      );
     },
     [version, content, createContentVersion],
   );

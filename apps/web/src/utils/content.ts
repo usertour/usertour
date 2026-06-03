@@ -49,3 +49,29 @@ export const isVersionPublished = (content: Content, versionId: string): boolean
     ),
   );
 };
+
+/**
+ * Resolve the editable version id for a content: if `versionId` is live in any
+ * environment, fork it via the passed `createVersion` mutation and return the
+ * new draft's id; otherwise return `versionId` unchanged. Throws when the fork
+ * fails — callers own error presentation (toast vs. propagate). `config` is
+ * forwarded to the fork; omit it to keep the source version's config.
+ */
+export const resolveEditableVersionId = async (
+  content: Content,
+  versionId: string,
+  createVersion: (data: {
+    versionId: string;
+    config?: unknown;
+  }) => Promise<{ id?: string } | null | undefined>,
+  config?: unknown,
+): Promise<string> => {
+  if (!isVersionPublished(content, versionId)) {
+    return versionId;
+  }
+  const created = await createVersion({ versionId, config });
+  if (!created?.id) {
+    throw new Error('Failed to create a new version');
+  }
+  return created.id;
+};
