@@ -34,19 +34,17 @@ export const useContentVersionUpdate = () => {
     [version, content, createContentVersion],
   );
 
-  // Write a partial payload (data / theme / scheduledAt) to the editable
-  // version, shared by the single-field saves below: ensureEditableVersionId
-  // forks first if the current version is published, then we write the payload.
-  // The normalized cache updates Version:id from the mutation response, so only
-  // a fork refetches content (details inside). The config (autostart-rules) save
-  // uses processVersion instead — it sets config during the fork and skips the
-  // redundant update.
+  // Write a partial payload to the editable version (the data save below):
+  // ensureEditableVersionId forks first if the current version is published,
+  // then we write the payload. The normalized cache updates Version:id from the
+  // mutation response, so only a fork refetches content (details inside). The
+  // config (autostart-rules) save uses processVersion instead — it sets config
+  // during the fork and skips the redundant update.
   const updateEditableVersion = useCallback(
     async (payload: {
       themeId?: string;
       data?: unknown;
       config?: unknown;
-      scheduledAt?: Date | null;
     }) => {
       if (!version || !content) return;
       try {
@@ -88,10 +86,6 @@ export const useContentVersionUpdate = () => {
       updateEditableVersion({ themeId: version?.themeId, data: newData, config: version?.config }),
     [updateEditableVersion, version?.themeId, version?.config],
   );
-
-  const debouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
-    saveVersionData(newData);
-  }, 800);
 
   const processVersion = useCallback(
     async (cfg: ContentConfigObject) => {
@@ -162,29 +156,8 @@ export const useContentVersionUpdate = () => {
     updateVersion(cfg);
   }, 500);
 
-  /**
-   * Update themeId with published-fork safety.
-   */
-  const saveVersionTheme = useCallback(
-    (themeId: string) => updateEditableVersion({ themeId }),
-    [updateEditableVersion],
-  );
-
-  /**
-   * Update scheduledAt with published-fork safety.
-   */
-  const saveVersionScheduledAt = useCallback(
-    (scheduledAt: Date | null) => updateEditableVersion({ scheduledAt }),
-    [updateEditableVersion],
-  );
-
   return {
-    updateVersion,
     debouncedUpdateVersion,
-    ensureEditableVersionId,
     saveVersionData,
-    debouncedSaveVersionData,
-    saveVersionTheme,
-    saveVersionScheduledAt,
   };
 };
