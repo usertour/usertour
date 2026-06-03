@@ -10,11 +10,6 @@ import { useAppContext } from '@/contexts/app-context';
 // the cache slot directly without a Provider hop — matches the v0.8.4
 // fix that made "create attribute from Bind to user attribute" stop
 // blanking the WebBuilder.
-//
-// Note: `packages/contexts/.../attribute-list-context.tsx` is a
-// separate Context used by `packages/builder` / `packages/business-components`.
-// This wrapper replaces only the apps/web one; v0.8.6 will retire the
-// packages-side Context alongside the builder refactor.
 export const useAttributeList = () => {
   const { project } = useAppContext();
   const { attributes, loading, refetch } = useListAttributesQuery(

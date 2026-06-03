@@ -100,8 +100,7 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
 // attribute / theme lists are all hook-based now (`useEnvironmentList`,
 // `useSubscription`, `useEventList`, `useAttributeList`, `useThemeList`)
 // — they dedupe via Apollo's shared cache without needing a Provider
-// at this layer. `packages/contexts/.../{attribute,theme}-list-context`
-// still exists for `packages/builder` consumers; v0.8.6 retires those.
+// at this layer.
 export const AdminProvidersOutlet = () => {
   const { project, userInfo } = useAppContext();
   useUserTracking(userInfo);
