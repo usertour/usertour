@@ -64,9 +64,6 @@ import {
   DeleteIntegrationObjectMapping,
   GetSalesforceObjectFields,
   getContent,
-  addContentSteps,
-  addContentStep,
-  updateContentStep,
   getUserInfo,
   createContentVersion,
   deleteBizUser,
@@ -732,24 +729,6 @@ export const useUpsertIntegrationObjectMappingMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useAddContentStepsMutation = () => {
-  const [mutation, { loading, error }] = useMutation(addContentSteps);
-  const invoke = useCallback(
-    async (variables: {
-      contentId: string;
-      versionId: string;
-      themeId: string;
-      steps: any[];
-      data?: any;
-    }) => {
-      const response = await mutation({ variables });
-      return response.data?.addContentSteps;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
 export const useUpdateIntegrationObjectMappingMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateIntegrationObjectMapping);
   const invoke = useCallback(
@@ -768,36 +747,12 @@ export const useUpdateIntegrationObjectMappingMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useAddContentStepMutation = () => {
-  const [mutation, { loading, error }] = useMutation(addContentStep);
-  const invoke = useCallback(
-    async (data: { [key: string]: any; versionId: string }) => {
-      const response = await mutation({ variables: { data } });
-      return response.data?.addContentStep;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
 export const useDeleteIntegrationObjectMappingMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { id } });
       return !!response.data?.deleteIntegrationObjectMapping;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useUpdateContentStepMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateContentStep);
-  const invoke = useCallback(
-    async (stepId: string, data: { [key: string]: any }) => {
-      const response = await mutation({ variables: { stepId, data } });
-      return response.data?.updateContentStep;
     },
     [mutation],
   );

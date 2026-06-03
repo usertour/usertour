@@ -13,19 +13,16 @@ import { VersionIdArgs } from './args/version-id.args';
 import { ContentService } from './content.service';
 import { ContentOrder } from './dto/content-order.input';
 import { ContentQuery } from './dto/content-query.input';
-import { ContentStepsInput } from './dto/content-steps.input';
 import {
   ContentDuplicateInput,
   ContentIdInput,
   ContentUpdateInput,
 } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
-import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionIdInput, VersionUpdateLocalizationInput } from './dto/version.input';
 import { ContentConnection } from './models/content-connection.model';
 import { Content } from './models/content.model';
-import { Step } from './models/step.model';
 import { VersionConnection } from './models/version-connection.model';
 import { VersionOnLocalization } from './models/version-on-localization.model';
 import { Version } from './models/version.model';
@@ -127,24 +124,6 @@ export class ContentResolver {
       before,
       after,
     });
-  }
-
-  @Mutation(() => Version)
-  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async addContentSteps(@Args('data') contentStepsInput: ContentStepsInput) {
-    return await this.contentService.addContentSteps(contentStepsInput);
-  }
-
-  @Mutation(() => Step)
-  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async addContentStep(@Args('data') step: CreateStepInput) {
-    return await this.contentService.addContentStep(step);
-  }
-
-  @Mutation(() => Step)
-  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async updateContentStep(@Args('stepId') stepId: string, @Args('data') step: UpdateStepInput) {
-    return await this.contentService.updateContentStep(stepId, step);
   }
 
   @Query(() => [VersionOnLocalization])

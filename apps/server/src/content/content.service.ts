@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { ContentStepsInput } from './dto/content-steps.input';
 import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
-import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
@@ -82,126 +80,6 @@ export class ContentService {
       await this.cache.invalidate(envIds.flatMap((envId) => this.cache.envContentKeys(envId)));
     }
     return updated;
-  }
-
-  async addContentSteps(input: ContentStepsInput) {
-    const { contentId, versionId, steps, themeId, data: versionData } = input;
-    // Editable-only: matches addContentStep / updateContentStep /
-    // updateStepsSequence / updateContentVersion. The previous inline check
-    // duplicated the rule and was easy to drift out of sync.
-    await this.contentVersionIsEditable(versionId);
-    // Caller passes contentId explicitly — guard rail (versionId must belong
-    // to this content) since contentVersionIsEditable doesn't see contentId.
-    const content = await this.getContent(contentId);
-    if (!content || content.editedVersionId !== versionId) {
-      throw new ParamsError();
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const versionSteps = await tx.step.findMany({ where: { versionId } });
-        const deleteStepIds = versionSteps
-          .filter((vstep) => !steps.find((pstep) => pstep.id === vstep.id))
-          .map((s) => s.id);
-        //delete steps
-        await tx.step.deleteMany({ where: { id: { in: deleteStepIds } } });
-        //up sequence
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        //update or create step
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { ...step, versionId },
-            });
-          } else {
-            await tx.step.create({ data: { ...step, versionId } });
-          }
-        }
-        //update version — themeId always; data only when the caller sent it
-        // (Prisma ignores undefined fields). config (autostart/hide rules) is
-        // the detail page's domain, not the builder's.
-        await tx.version.update({
-          where: { id: versionId },
-          data: { themeId, data: versionData },
-        });
-        // Return the updated version with its steps so the resolver hands the
-        // fresh state straight back — the client re-baselines from this
-        // instead of issuing a follow-up getContent.
-        return await tx.version.findUnique({
-          where: { id: versionId },
-          include: { steps: { orderBy: { sequence: 'asc' } } },
-        });
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
-  async addContentStep(data: CreateStepInput) {
-    const versionId = data.versionId;
-    // Editable-only: must match content.editedVersionId AND not be currently
-    // published. Aligns with addContentSteps / updateStepsSequence /
-    // updateContentVersion (the previous guard let historical published
-    // versions through, breaking the published-immutability contract).
-    await this.contentVersionIsEditable(versionId);
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const versionSteps = await tx.step.findMany({
-          where: { versionId, sequence: { gte: data.sequence } },
-          orderBy: { sequence: 'asc' },
-        });
-        for (const step of versionSteps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        for (const step of versionSteps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 1 },
-            });
-          }
-        }
-
-        // const maxSeq = await tx.step.aggregate({
-        //   where: { versionId },
-        //   _max: {
-        //     sequence: true,
-        //   },
-        // });
-        return await tx.step.create({
-          data: { ...data, versionId },
-        });
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
-  async updateContentStep(stepId: string, data: UpdateStepInput) {
-    const version = await this.prisma.step.findUnique({ where: { id: stepId } }).version();
-    if (!version) {
-      throw new ParamsError();
-    }
-    // Editable-only: see addContentStep.
-    await this.contentVersionIsEditable(version.id);
-    return await this.prisma.step.update({
-      where: { id: stepId },
-      data,
-    });
   }
 
   async getContentByStepId(stepId: string) {
