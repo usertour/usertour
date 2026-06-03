@@ -5,11 +5,11 @@ import { BuilderProviderContext } from '@/pages/contents/components/builder/core
 // Imperative methods exposed by BuilderProvider — saveContent /
 // fetchContentAndVersion / setAutoSaveValidator.
 //
-// Mount-stable: the Provider pins method identity via methodsRef +
-// useMemo([]) on mount, so the returned object is the same reference
-// for the entire Provider lifetime. Reading this hook costs zero
-// subscriptions — consumers re-render only when their parent does,
-// not when store state changes.
+// Mount-stable: the Provider memoizes the methods object on its three
+// stable method identities, so the returned object keeps one reference
+// for the Provider lifetime. Reading this hook costs zero subscriptions
+// — consumers re-render only when their parent does, not when store
+// state changes.
 export const useBuilderMethods = (): BuilderProviderContextValue['methods'] => {
   const ctx = useContext(BuilderProviderContext);
   if (!ctx) {

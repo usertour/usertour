@@ -5,14 +5,13 @@ import { enablePatches, produceWithPatches, applyPatches, setAutoFreeze, type Pa
 // immer's patch generation must be opted into globally. Cheap module-
 // init side effect; idempotent across multiple imports.
 enablePatches();
-// Disable autoFreeze: V1 consumers mutate parts of currentVersion
-// in place (legacy spread-then-mutate patterns, third-party libs
-// like dnd-kit that take direct refs to array entries). With
-// autoFreeze on, immer's frozen `next` objects break those code
-// paths — observed as a setRef → state-update → re-render infinite
-// loop after step delete (dnd-kit refs on the now-frozen steps
-// array re-triggering on every render). Patches still work
-// correctly without freezing.
+// Disable autoFreeze: some code paths mutate parts of currentVersion
+// in place — spread-then-mutate patterns and third-party libs like
+// dnd-kit that take direct refs to array entries. With autoFreeze on,
+// immer's frozen `next` objects break those paths — observed as a
+// setRef → state-update → re-render infinite loop after step delete
+// (dnd-kit refs on the now-frozen steps array re-triggering on every
+// render). Patches still work correctly without freezing.
 setAutoFreeze(false);
 
 // Per-mount Zustand store for the builder's coordinated state.
@@ -25,16 +24,15 @@ setAutoFreeze(false);
 // consumers read them via `useBuilderMethods()`.
 
 // Save FSM — discriminated union tracking the auto-save lifecycle.
-// V1 used a single boolean `isLoading` overloaded with two semantics
-// (loading initial content vs saving in flight) plus no in-flight
-// tracking, which gave three race classes: edit-during-save (stale
-// snapshot overwrites new edit on response), multiple concurrent
-// saves (no guard), and unmounted-during-save warnings. PR γ
-// separates "saving" out of isLoading and adds an explicit FSM with
-// per-save identity check (older responses are ignored when a newer
-// save has started). HTTP-level abort isn't attempted — server
-// writes are idempotent, so letting older requests complete and
-// discarding their responses is the correct semantic.
+// An explicit FSM, not a boolean. A single `isLoading` overloaded with
+// two semantics (loading initial content vs saving in flight) and no
+// in-flight tracking gives three race classes: edit-during-save (stale
+// snapshot overwrites new edit on response), multiple concurrent saves
+// (no guard), and unmounted-during-save warnings. This FSM separates
+// "saving" out of isLoading and adds a per-save identity check (older
+// responses are ignored when a newer save has started). HTTP-level abort
+// isn't attempted — server writes are idempotent, so letting older
+// requests complete and discarding their responses is the correct semantic.
 export type SaveState =
   | { status: 'idle' }
   | { status: 'dirty' }
@@ -127,8 +125,9 @@ export interface BuilderStatePrivateSetters {
   setTypeEditorUIState: React.Dispatch<React.SetStateAction<unknown>>;
 }
 
-// Undo/redo actions on `currentVersion`. Reading the stacks
-// (canUndo / canRedo) is via selectors on `history`.
+// Undo/redo actions on `currentVersion`. The history stacks drive these
+// internally; there's no canUndo/canRedo selector surface yet (undo/redo
+// is keyboard-only — no toolbar buttons read the stacks).
 export interface BuilderHistoryActions {
   undo: () => void;
   redo: () => void;

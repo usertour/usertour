@@ -12,7 +12,7 @@ import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core
 // operations (add/remove/reorder) instead of partial merge, plus a
 // dedicated `currentStep` store buffer for sub-mode editing. Those
 // requirements don't fit useTypeEditor's contract, so Flow has its
-// own `useFlowEditor` hook at builders/flow/use-flow-editor.ts. The two
+// own `useFlowEditor` hook at flow/use-flow-editor.ts. The two
 // hooks share the Provider's save FSM (both write via
 // `setCurrentVersion`) but diverge on data shape and mutation pattern.
 //

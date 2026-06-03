@@ -47,25 +47,16 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   const { setAutoSaveValidator } = useAutoSave({ store, saveContent });
   useUndoShortcuts({ store });
 
-  // The three imperative methods are each individually ref-stable now: every
-  // one is a useCallback whose deps are all stable — the Apollo
-  // mutation/lazy-query `invoke`s they close over are themselves useCallback'd
-  // in gql.ts, `store` is per-mount, `toast` is a stable useCallback. So we
-  // memo the methods object directly on their identities. (This used to be a
-  // useRef + useMemo-of-`[]` thunk that pinned the identity to paper over
-  // unstable invokes — which once compounded into an infinite render loop; the
-  // root cause is fixed, so that workaround is gone.)
-  const methods = useMemo<BuilderProviderContextValue['methods']>(
-    () => ({ fetchContentAndVersion, saveContent, setAutoSaveValidator }),
-    [fetchContentAndVersion, saveContent, setAutoSaveValidator],
-  );
-
-  // Provider value is memoized on methods + config so its
-  // identity is pinned for the Provider mount lifetime.
+  // Provider value is memoized so its identity is pinned for the Provider
+  // mount lifetime. The three imperative methods are each individually
+  // ref-stable — each a useCallback over stable deps (the Apollo invokes they
+  // close over are useCallback'd in gql.ts, `store` is per-mount, `toast` is
+  // stable) — so listing them directly in the deps is enough; the methods
+  // object is inlined rather than memoized separately.
   const providerValue = useMemo<BuilderProviderContextValue>(
     () => ({
       store,
-      methods,
+      methods: { fetchContentAndVersion, saveContent, setAutoSaveValidator },
       config: {
         onSaved,
         shouldShowMadeWith,
@@ -77,7 +68,18 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       },
       contentRef,
     }),
-    [store, methods, onSaved, shouldShowMadeWith, environmentId, projectId, contentId, versionId],
+    [
+      store,
+      fetchContentAndVersion,
+      saveContent,
+      setAutoSaveValidator,
+      onSaved,
+      shouldShowMadeWith,
+      environmentId,
+      projectId,
+      contentId,
+      versionId,
+    ],
   );
 
   return (
