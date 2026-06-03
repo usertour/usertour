@@ -291,8 +291,11 @@ const FlowBuilderDetailFooter = () => {
         return prev;
       }
       const steps = prev.steps ?? [];
-      const nextSteps = step.id
-        ? steps.map((existing) => (existing.id === step.id ? step : existing))
+      // Locate by cvid (front-end id, always present) not server id — a
+      // not-yet-saved new step has a cvid but no id.
+      const exists = steps.some((existing) => existing.cvid === step.cvid);
+      const nextSteps = exists
+        ? steps.map((existing) => (existing.cvid === step.cvid ? step : existing))
         : [...steps, step];
       return { ...prev, steps: nextSteps };
     });

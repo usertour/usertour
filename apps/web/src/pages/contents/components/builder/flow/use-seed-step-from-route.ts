@@ -1,6 +1,6 @@
 import { useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { defaultStep } from '@usertour/helpers';
+import { cuid, defaultStep } from '@usertour/helpers';
 import type { Step } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
@@ -24,6 +24,9 @@ export const useSeedStepFromRoute = () => {
     if (type) {
       setCurrentStep({
         ...defaultStep,
+        // Front-end-generated cvid: the new step's stable id for the whole-
+        // version upsert, in hand before any server round-trip.
+        cvid: cuid(),
         setting: { ...defaultStep.setting },
         type,
         name: 'Untitled',

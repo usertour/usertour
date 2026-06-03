@@ -1,20 +1,9 @@
 import { useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { arrayMove } from '@dnd-kit/sortable';
-import {
-  defaultStep,
-  duplicateStep,
-  generateUniqueCopyName,
-  getErrorMessage,
-} from '@usertour/helpers';
-import { useAddContentStepMutation } from '@usertour/hooks';
-import { useToast } from '@usertour/ui';
+import { cuid, defaultStep, duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import { type ContentVersion, type Step } from '@usertour/types';
-import {
-  useBuilderMethods,
-  useBuilderStore,
-  useIsBusy,
-} from '@/pages/contents/components/builder/core';
+import { useBuilderStore, useIsBusy } from '@/pages/contents/components/builder/core';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
@@ -25,9 +14,8 @@ import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/d
 // pattern are structurally different:
 // - Data lives in currentVersion.steps[] (a top-level sibling array),
 //   not currentVersion.data (a JSON blob)
-// - Mutations are list operations (add / remove / reorder, plus the
-//   Apollo addContentStep mutation for individual step creation),
-//   not partial-merge updates
+// - Mutations are list operations (add / remove / reorder) on the draft,
+//   persisted by auto-save — not partial-merge updates
 // - Sub-mode editing needs a currentStep local buffer that's shared
 //   across multiple components, so it lives in the Zustand store as
 //   private setters instead of useState
@@ -45,15 +33,9 @@ import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/d
 // Writers stay here.
 
 export const useFlowEditor = () => {
-  // Cross-type Provider bits — focused-hook split per
-  // docs/conventions/builder-context-migration.md
-  const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((s) => s.currentVersion);
   const isLoading = useIsBusy();
   const navigate = useNavigate();
-
-  const { toast } = useToast();
-  const { invoke: addContentStep } = useAddContentStepMutation();
 
   // Flow store fields — direct store access. The setters are on the
   // private surface (BuilderStatePrivateSetters); they only flow out
@@ -87,8 +69,8 @@ export const useFlowEditor = () => {
     [setCurrentStep],
   );
 
-  // ── Step-array mutators (write to currentVersion.steps → FSM
-  //    dispatcher routes to addContentSteps mutation) ──────────
+  // ── Step-array mutators (write to currentVersion.steps; auto-save
+  //    persists the whole version via updateContentVersion) ──────────
 
   const removeStep = useCallback(
     (index: number) => {
@@ -116,26 +98,27 @@ export const useFlowEditor = () => {
     [setCurrentVersion],
   );
 
-  // ── Apollo addContentStep mutation (Flow-only) ──────────────
+  // ── New-step creation: insert into the draft; auto-save persists it ──
+  // No server round-trip — the step carries a front-end cvid (the server's
+  // upsert key), so a "go to new step" action can reference it immediately;
+  // the server assigns the primary id on the next save.
 
   const createStep = useCallback(
-    async (cv: ContentVersion, step: Step) => {
-      try {
-        const createdStep = await addContentStep({ ...step, versionId: cv.id });
-        if (createdStep) {
-          await fetchContentAndVersion(cv.contentId, cv.id);
-          return createdStep as Step;
+    // Async to keep the createStep prop contract down the editor tree, though
+    // it no longer awaits the server.
+    async (step: Step): Promise<Step> => {
+      setCurrentVersion((prev) => {
+        if (!prev) {
+          return prev;
         }
-        return undefined;
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-        return undefined;
-      }
+        const next = [...(prev.steps ?? [])];
+        const at = step.sequence ?? next.length;
+        next.splice(at, 0, step);
+        return { ...prev, steps: next.map((existing, i) => ({ ...existing, sequence: i })) };
+      });
+      return step;
     },
-    [addContentStep, fetchContentAndVersion, toast],
+    [setCurrentVersion],
   );
 
   const createNewStep = useCallback(
@@ -147,21 +130,22 @@ export const useFlowEditor = () => {
         const duplicated = duplicateStep(stepToDuplicate);
         step = {
           ...duplicated,
-          cvid: undefined,
+          cvid: cuid(),
           name: generateUniqueCopyName(stepToDuplicate.name, existingStepNames),
           sequence,
         } as Step;
       } else {
         step = {
           ...defaultStep,
+          cvid: cuid(),
           type: finalStepType,
           name: 'Untitled',
           data: getEmptyDataForType(),
           sequence,
           setting: { ...defaultStep.setting },
-        };
+        } as Step;
       }
-      return await createStep(cv, step);
+      return createStep(step);
     },
     [createStep],
   );

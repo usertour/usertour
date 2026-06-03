@@ -267,8 +267,13 @@ export class ContentResolver {
   @ResolveField('editedVersion', () => Version, { nullable: true })
   editedVersion(@Parent() content: Content) {
     if (!content.editedVersionId) return null;
+    // include steps: the getContent document requests editedVersion.steps, and
+    // editedVersion shares the Version:id cache entry with getContentVersion —
+    // returning it without steps normalizes Version.steps to null and wipes the
+    // step list from detail's view.
     return this.prisma.version.findUnique({
       where: { id: content.editedVersionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
   }
 }

@@ -323,9 +323,70 @@ export class ContentService {
     if (!(await this.contentVersionIsEditable(versionId))) {
       return;
     }
-    return await this.prisma.version.update({
-      where: { id: versionId },
-      data: content,
+    const { steps, ...versionFields } = content;
+
+    // No steps in the payload → scalar-only update (detail's path:
+    // themeId / config / data / scheduledAt). Still return steps via include:
+    // the shared document requests `steps`, so omitting them here makes Apollo
+    // normalize Version.steps to null and wipe the step list from the cache.
+    if (!steps) {
+      return await this.prisma.version.update({
+        where: { id: versionId },
+        data: versionFields,
+        include: { steps: { orderBy: { sequence: 'asc' } } },
+      });
+    }
+
+    // Contract: when steps are sent (the builder's whole-version save) each one
+    // must carry a front-end cvid — it's the upsert key.
+    if (steps.some((step) => !step.cvid)) {
+      throw new ParamsError();
+    }
+
+    // Whole-version save: write the scalar fields AND upsert the entire step
+    // list by cvid, in one transaction; return the full version so the client
+    // re-baselines from the response (no follow-up fetch).
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.version.update({ where: { id: versionId }, data: versionFields });
+
+      const existing = await tx.step.findMany({ where: { versionId } });
+      const incomingCvids = new Set(steps.map((step) => step.cvid));
+
+      // Delete steps dropped from the list.
+      const deleteIds = existing
+        .filter((step) => !incomingCvids.has(step.cvid))
+        .map((step) => step.id);
+      if (deleteIds.length > 0) {
+        await tx.step.deleteMany({ where: { id: { in: deleteIds } } });
+      }
+
+      // sequence is unique per version (@@unique([versionId, sequence])), so
+      // park surviving rows out of range before reassigning — otherwise an
+      // in-loop sequence write collides with a not-yet-moved row.
+      for (const step of existing) {
+        if (incomingCvids.has(step.cvid)) {
+          await tx.step.update({
+            where: { versionId_cvid: { versionId, cvid: step.cvid } },
+            data: { sequence: { increment: 10000 } },
+          });
+        }
+      }
+
+      // Upsert by cvid: matching cvid → update; new cvid → create with the
+      // front-end cvid + a server-generated primary id. Final sequence = index.
+      for (let index = 0; index < steps.length; index++) {
+        const { id, cvid, ...rest } = steps[index];
+        await tx.step.upsert({
+          where: { versionId_cvid: { versionId, cvid: cvid as string } },
+          create: { ...rest, cvid, versionId, sequence: index },
+          update: { ...rest, sequence: index },
+        });
+      }
+
+      return await tx.version.findUnique({
+        where: { id: versionId },
+        include: { steps: { orderBy: { sequence: 'asc' } } },
+      });
     });
   }
 

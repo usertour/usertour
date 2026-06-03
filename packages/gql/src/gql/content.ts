@@ -351,7 +351,23 @@ export const updateContentVersion = gql`
       config
       data
       scheduledAt
+      createdAt
       updatedAt
+      steps {
+        id
+        name
+        type
+        cvid
+        sequence
+        data
+        trigger
+        themeId
+        screenshot
+        target
+        setting
+        createdAt
+        updatedAt
+      }
     }
   }
 `;

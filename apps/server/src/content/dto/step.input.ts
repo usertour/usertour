@@ -16,6 +16,12 @@ export class StepInput {
   @IsNotEmpty()
   id?: string;
 
+  // Front-end-generated logical id (cuid). What triggers/actions reference, and
+  // the upsert key for the whole-version save. Distinct from the DB primary key
+  // `id` (server-generated). Required when steps are sent via updateContentVersion.
+  @Field({ nullable: true })
+  cvid?: string;
+
   @Field({ nullable: true })
   @IsNotEmpty()
   sequence?: number;

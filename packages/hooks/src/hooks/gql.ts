@@ -475,6 +475,9 @@ export const useUpdateContentVersionMutation = () => {
         config?: unknown;
         themeId?: string;
         scheduledAt?: Date | null;
+        // Builder's whole-version save: the full step list, each carrying its
+        // front-end cvid. Server upserts by cvid. detail omits this.
+        steps?: unknown[];
       },
     ) => {
       const response = await mutation({ variables: { versionId, content } });

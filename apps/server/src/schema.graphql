@@ -1141,6 +1141,7 @@ type StepAnalytics {
 }
 
 input StepInput {
+  cvid: String
   data: JSON
   id: String
   name: String
@@ -1416,6 +1417,7 @@ input VersionInput {
   config: JSON
   data: JSON
   scheduledAt: DateTime
+  steps: [StepInput!]
   themeId: String
 }
 

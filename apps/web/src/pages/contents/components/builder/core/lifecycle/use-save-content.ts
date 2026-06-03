@@ -1,5 +1,5 @@
 import { getErrorMessage, isEqual } from '@usertour/helpers';
-import { useAddContentStepsMutation } from '@usertour/hooks';
+import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
 import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
@@ -16,20 +16,21 @@ export interface UseSaveContentReturn {
 
 // Save FSM driver. One round-trip per save:
 //
-//   addContentSteps persists the WHOLE version — steps + themeId + data —
-//   and returns the full updated version. We re-baseline directly from that
-//   response: no second mutation, no follow-up fetch. The server
-//   diffs the steps array (create / update / delete / reorder), so the draft's
-//   steps (including not-yet-saved new ones) round-trip in a single call.
+//   updateContentVersion persists the WHOLE version — themeId + data + the full
+//   step list — and returns the updated version. We re-baseline directly from
+//   that response: no second mutation, no follow-up fetch. Steps are upserted
+//   server-side by cvid (front-end-generated), so create / update / delete /
+//   reorder all ride one call; a new step carries a cvid but no id, and the
+//   server assigns the primary id which the re-baseline carries back.
 //
 // In-flight identity — a monotonic saveCounterRef tracks the latest dispatched
 // save. Older responses are ignored once a newer save has started; the server
-// is idempotent on the (versionId, payload) tuple, so we let older requests
-// resolve and discard their responses rather than aborting at the HTTP level.
+// is idempotent on cvid, so we let older requests resolve and discard their
+// responses rather than aborting at the HTTP level.
 export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn => {
   const { store } = args;
   const { toast } = useToast();
-  const { invoke: saveVersion } = useAddContentStepsMutation();
+  const { invoke: updateVersion } = useUpdateContentVersionMutation();
 
   // Monotonic counter for in-flight save identity. Per-Provider-mount.
   const saveCounterRef = useRef(0);
@@ -47,23 +48,23 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
     const saveId = ++saveCounterRef.current;
     store.getState().transitionSaveState({ status: 'saving', saveId });
 
+    // Keep cvid (the server's upsert key) and id; strip only the server-managed
+    // timestamps. A new step has a cvid but no id — the server creates it.
     const steps = currentVersion.steps
-      ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
+      ? currentVersion.steps.map(({ updatedAt, createdAt, ...step }, index) => ({
           ...step,
           sequence: index,
         }))
       : [];
 
     try {
-      const saved = await saveVersion({
-        contentId: currentVersion.contentId,
-        versionId: currentVersion.id,
+      const saved = await updateVersion(currentVersion.id, {
         themeId: currentVersion.themeId,
-        steps,
         data: currentVersion.data,
+        steps,
       });
-      // A newer save started while this one was in flight — discard ours;
-      // the newer save drives the final saveState transition.
+      // A newer save started while this one was in flight — discard ours; the
+      // newer save drives the final saveState transition.
       if (saveId !== saveCounterRef.current) {
         return;
       }
@@ -99,7 +100,7 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
         title: getErrorMessage(error),
       });
     }
-  }, [saveVersion, store, toast]);
+  }, [updateVersion, store, toast]);
 
   return { saveContent };
 };

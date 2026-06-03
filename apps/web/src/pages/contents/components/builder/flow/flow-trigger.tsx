@@ -218,7 +218,7 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
         return;
       }
     }
-    const { trigger, id: stepId } = currentStep;
+    const { trigger, cvid } = currentStep;
     setCurrentVersion((prev) => {
       if (!prev) {
         return prev;
@@ -227,7 +227,7 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
       return {
         ...prev,
         steps: steps.map((existing) =>
-          existing.id === stepId ? { ...existing, trigger } : existing,
+          existing.cvid === cvid ? { ...existing, trigger } : existing,
         ),
       };
     });
