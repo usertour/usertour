@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { arrayMove } from '@dnd-kit/sortable';
 import {
   defaultStep,
@@ -36,11 +36,13 @@ import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/d
 // through setCurrentVersion), the undo/redo stack, the leave guard,
 // the auto-save validator gate.
 //
-// Read-side store fields (currentStep / currentIndex / isShowError)
-// stay on the public store surface because cross-type hooks read them
-// — use-current-theme inherits step.themeId, use-content-position
-// reads step.setting.position, and use-seed-step-from-route seeds
-// currentStep from the `step/:index` route param. Writers stay here.
+// Read-side store fields (currentStep / isShowError) stay on the public
+// store surface because cross-type hooks read them — use-current-theme
+// inherits step.themeId, use-content-position reads step.setting.position,
+// and use-seed-step-from-route seeds currentStep from the `step/:index`
+// route param. currentIndex is NOT a store field: it's derived from the
+// route param below (the store field was a redundant mirror of the URL).
+// Writers stay here.
 
 export const useFlowEditor = () => {
   // Cross-type Provider bits — focused-hook split per
@@ -57,14 +59,19 @@ export const useFlowEditor = () => {
   // private surface (BuilderStatePrivateSetters); they only flow out
   // through this hook, not the public store surface.
   const currentStep = useBuilderStore((s) => s.currentStep);
-  const currentIndex = useBuilderStore((s) => s.currentIndex);
   const isShowError = useBuilderStore((s) => s.isShowError);
   const setCurrentStep = useBuilderStore((s) => s.setCurrentStep);
-  const setCurrentIndex = useBuilderStore((s) => s.setCurrentIndex);
   const setIsShowError = useBuilderStore((s) => s.setIsShowError);
   const setCurrentVersion = useBuilderStore((s) => s.setCurrentVersion);
 
   const steps = currentVersion?.steps ?? [];
+
+  // currentIndex follows the URL, not the store: the step/trigger routes
+  // carry it as `:index`; the new-step route (`step/new/:type`) implies
+  // steps.length. Deriving it here removes the seed-write / read-back round
+  // trip the old store field needed.
+  const { index, type } = useParams();
+  const currentIndex = type ? steps.length : Number.parseInt(index ?? '0', 10);
 
   // ── Local-buffer mutators (currentStep) ─────────────────────
 
@@ -192,7 +199,6 @@ export const useFlowEditor = () => {
     isShowError,
     // Direct setters (Flow-only writes)
     setCurrentStep,
-    setCurrentIndex,
     setIsShowError,
     updateCurrentStep,
     // Step-array operations

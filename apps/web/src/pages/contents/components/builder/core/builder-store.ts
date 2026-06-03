@@ -61,7 +61,6 @@ const EMPTY_HISTORY: HistoryStack = { past: [], future: [] };
 
 export interface BuilderState {
   currentStep: Step | null;
-  currentIndex: number;
   currentContent: Content | undefined;
   currentVersion: ContentVersion | undefined;
   backupVersion: ContentVersion | undefined;
@@ -93,11 +92,12 @@ export interface BuilderState {
 // `fetchContentAndVersion`, so it has a private setter (below) and no
 // public one.
 //
-// Flow-specific cursors (`currentStep`, `currentIndex`, `isShowError`)
-// are read by cross-type hooks (use-current-theme, use-content-position,
+// Flow-specific cursors (`currentStep`, `isShowError`) are read by
+// cross-type hooks (use-current-theme, use-content-position,
 // use-actions-save-gate) but only written from Flow code. Their setters
 // live in the private group below; Flow writes go through
 // `useFlowEditor()` which reads them off `useBuilderStore` directly.
+// (currentIndex is NOT here — useFlowEditor derives it from the route.)
 export interface BuilderStateSetters {
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
@@ -115,7 +115,6 @@ export interface BuilderStatePrivateSetters {
   setBackupVersion: (value: ContentVersion | undefined) => void;
   // Flow-only buffers — writers live in useFlowEditor.
   setCurrentStep: React.Dispatch<React.SetStateAction<Step | null>>;
-  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
   setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   // Save FSM transition. Provider's saveContent is the only writer;
   // consumers read via `useSaveState()`.
@@ -164,7 +163,6 @@ const makeSetter = <K extends keyof BuilderState>(
 
 const initialState: BuilderState = {
   currentStep: null,
-  currentIndex: 0,
   currentContent: undefined,
   currentVersion: undefined,
   backupVersion: undefined,
@@ -181,7 +179,6 @@ export const createBuilderStore = () =>
   createStore<BuilderStoreState>((set, get) => ({
     ...initialState,
     setCurrentStep: makeSetter('currentStep', set, get),
-    setCurrentIndex: makeSetter('currentIndex', set, get),
     setCurrentContent: makeSetter('currentContent', set, get),
     // Public setCurrentVersion captures patches via immer and pushes
     // them onto the undo stack. setCurrentVersionFromServer (private,

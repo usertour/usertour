@@ -1,6 +1,5 @@
 import { createContext, useMemo, useRef } from 'react';
 import { useAutoSave } from '@/pages/contents/components/builder/core/lifecycle/use-auto-save';
-import { useBeforeunloadGuard } from '@/pages/contents/components/builder/core/lifecycle/use-beforeunload-guard';
 import { useContentLoader } from '@/pages/contents/components/builder/core/lifecycle/use-content-loader';
 import { useSaveContent } from '@/pages/contents/components/builder/core/lifecycle/use-save-content';
 import { useUndoShortcuts } from '@/pages/contents/components/builder/core/lifecycle/use-undo-shortcuts';
@@ -8,7 +7,7 @@ import {
   type BuilderStore,
   createBuilderStore,
 } from '@/pages/contents/components/builder/core/builder-store';
-import { BuilderLeaveGuard } from '@/pages/contents/components/builder/guards/builder-leave-guard';
+import { BuilderLeaveGuard } from '@/pages/contents/components/builder/core/lifecycle/leave-guard';
 import type {
   BuilderProviderContextValue,
   BuilderProviderProps,
@@ -47,7 +46,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   const { saveContent } = useSaveContent({ store, fetchContentAndVersion });
   const { setAutoSaveValidator } = useAutoSave({ store, saveContent });
   useUndoShortcuts({ store });
-  useBeforeunloadGuard({ store });
 
   // The three imperative methods are each individually ref-stable now: every
   // one is a useCallback whose deps are all stable — the Apollo

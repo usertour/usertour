@@ -5,7 +5,7 @@ import type { Step } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
-// Seeds the Flow edit buffer (currentStep + currentIndex) from the route,
+// Seeds the Flow edit buffer (currentStep) from the route,
 // replacing the old "clone on enter-click" path so navigation, deep-links and
 // refresh all land on the right step:
 //   step/:index    → clone currentVersion.steps[index]
@@ -18,7 +18,6 @@ export const useSeedStepFromRoute = () => {
   const { index, type } = useParams();
   const currentVersion = useBuilderStore((s) => s.currentVersion);
   const setCurrentStep = useBuilderStore((s) => s.setCurrentStep);
-  const setCurrentIndex = useBuilderStore((s) => s.setCurrentIndex);
 
   useLayoutEffect(() => {
     const steps = currentVersion?.steps ?? [];
@@ -31,7 +30,6 @@ export const useSeedStepFromRoute = () => {
         data: getEmptyDataForType(),
         sequence: steps.length,
       } as Step);
-      setCurrentIndex(steps.length);
       return;
     }
     if (index === undefined) {
@@ -47,7 +45,6 @@ export const useSeedStepFromRoute = () => {
         JSON.stringify({ ...step, setting: { ...defaultStep.setting, ...step.setting } }),
       ) as Step,
     );
-    setCurrentIndex(stepIndex);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, type]);
 };

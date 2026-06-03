@@ -1,47 +1,32 @@
-import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { validateActions } from '@usertour/editor';
-import { useToast } from '@usertour/ui';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
+import { useSaveGate } from '@/pages/contents/components/builder/hooks/use-save-gate';
 
-// Mirrors useConditionsSaveGate. Returns a guard the consumer calls right
-// before its save action; runs validateActions over each provided list
-// (skipping empties), toasts and returns false if any action is incomplete,
-// otherwise returns true. Lives next to the conditions gate so a single
-// consumer can run both before committing (e.g., resource-center block,
-// checklist item, trigger).
-export function useActionsSaveGate() {
-  const { t } = useTranslation();
-  const { toast } = useToast();
+// Mirrors useConditionsSaveGate (shares useSaveGate): runs validateActions
+// over each provided action list (skipping empties), toasts and returns false
+// if any action is incomplete, otherwise true. Lives next to the conditions
+// gate so a single consumer can run both before committing (e.g.,
+// resource-center block, checklist item, trigger).
+export const useActionsSaveGate = () => {
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const currentStep = useBuilderStore((state) => state.currentStep);
 
-  return useCallback(
-    (...lists: (RulesCondition[] | undefined)[]): boolean => {
-      const failures = lists.flatMap((actions) =>
-        actions && actions.length > 0
-          ? validateActions(actions, {
-              attributes: attributeList ?? undefined,
-              contents: contents ?? undefined,
-              currentVersion: currentVersion ?? undefined,
-              currentStep: currentStep ?? undefined,
-            })
-          : [],
-      );
-      if (failures.length === 0) {
-        return true;
-      }
-      toast({
-        variant: 'destructive',
-        title: t('actions.errors.incompleteSaveBlocked'),
-      });
-      return false;
-    },
-    [attributeList, contents, currentVersion, currentStep, toast, t],
+  const validate = useCallback(
+    (list: RulesCondition[]) =>
+      validateActions(list, {
+        attributes: attributeList ?? undefined,
+        contents: contents ?? undefined,
+        currentVersion: currentVersion ?? undefined,
+        currentStep: currentStep ?? undefined,
+      }),
+    [attributeList, contents, currentVersion, currentStep],
   );
-}
+
+  return useSaveGate(validate, 'actions.errors.incompleteSaveBlocked');
+};
