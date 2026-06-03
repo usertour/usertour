@@ -10,32 +10,24 @@ import {
   SelectTrigger,
   SelectValue,
   QuestionTooltip,
-  useToast,
 } from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 
-import { useUpdateContentVersionMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
 import {
   useBuilderConfig,
-  useBuilderMethods,
   useBuilderStore,
   useProjectId,
 } from '@/pages/contents/components/builder/core';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
-  const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
-  const { toast } = useToast();
   const { zIndex } = useBuilderConfig();
-  const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const projectId = useProjectId();
-  const setIsLoading = useBuilderStore((state) => state.setIsLoading);
 
   useEffect(() => {
     if (currentVersion && !currentVersion.themeId && themeList) {
@@ -46,29 +38,10 @@ export const SidebarTheme = () => {
     }
   }, [currentVersion, themeList]);
 
-  const handleThemeChange = async (value: string) => {
-    if (!currentVersion) {
-      return;
-    }
-    try {
-      const updated = await updateContentVersion(currentVersion.id, { themeId: value });
-      setIsLoading(true);
-      if (updated && currentVersion.contentId) {
-        await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
-      } else {
-        return toast({
-          variant: 'destructive',
-          title: 'Failed to save theme!',
-        });
-      }
-      setIsLoading(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-      setIsLoading(false);
-    }
+  const handleThemeChange = (value: string) => {
+    // Write themeId into the draft; the auto-save FSM persists it (themeId is
+    // part of the version payload). No standalone mutation, no re-fetch.
+    setCurrentVersion((prev) => (prev ? { ...prev, themeId: value } : prev));
   };
 
   const handleEditTheme = useCallback(() => {

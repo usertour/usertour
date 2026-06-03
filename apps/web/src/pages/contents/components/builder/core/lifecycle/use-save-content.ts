@@ -1,5 +1,5 @@
 import { getErrorMessage, isEqual } from '@usertour/helpers';
-import { useAddContentStepsMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
+import { useAddContentStepsMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
 import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
@@ -8,33 +8,30 @@ import { debug } from '@/utils/logger';
 
 export interface UseSaveContentArgs {
   store: BuilderStore;
-  fetchContentAndVersion: BuilderProviderMethods['fetchContentAndVersion'];
 }
 
 export interface UseSaveContentReturn {
   saveContent: BuilderProviderMethods['saveContent'];
 }
 
-// Save FSM driver. Two responsibilities:
+// Save FSM driver. One round-trip per save:
 //
-//   1. Dispatcher — pick which mutation(s) to fire based on what's
-//      dirty: `addContentSteps` writes steps + themeId, `updateContentVersion`
-//      writes the per-type data blob. Per-type editors drop their own
-//      save loops and route through this FSM via setCurrentVersion.
+//   addContentSteps persists the WHOLE version — steps + themeId + data —
+//   and returns the full updated version. We re-baseline directly from that
+//   response: no second mutation, no follow-up fetch. The server
+//   diffs the steps array (create / update / delete / reorder), so the draft's
+//   steps (including not-yet-saved new ones) round-trip in a single call.
 //
-//   2. In-flight identity — a monotonic counter (saveCounterRef)
-//      tracks the latest dispatched save. Older responses are ignored
-//      when a newer save has started; the server is idempotent on the
-//      (versionId, payload) tuple so we let older requests resolve and
-//      discard their responses rather than aborting at the HTTP level.
+// In-flight identity — a monotonic saveCounterRef tracks the latest dispatched
+// save. Older responses are ignored once a newer save has started; the server
+// is idempotent on the (versionId, payload) tuple, so we let older requests
+// resolve and discard their responses rather than aborting at the HTTP level.
 export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn => {
-  const { store, fetchContentAndVersion } = args;
+  const { store } = args;
   const { toast } = useToast();
-  const { invoke: addContentSteps } = useAddContentStepsMutation();
-  const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
+  const { invoke: saveVersion } = useAddContentStepsMutation();
 
-  // Monotonic counter for in-flight save identity. Per-Provider-mount
-  // (useRef preserves across renders).
+  // Monotonic counter for in-flight save identity. Per-Provider-mount.
   const saveCounterRef = useRef(0);
 
   const saveContent = useCallback<BuilderProviderMethods['saveContent']>(async () => {
@@ -47,63 +44,43 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       return;
     }
 
-    const stepsDirty =
-      !isEqual(currentVersion.steps, backupVersion.steps) ||
-      currentVersion.themeId !== backupVersion.themeId;
-    const dataDirty = !isEqual(currentVersion.data, backupVersion.data);
-    if (!stepsDirty && !dataDirty) {
-      return;
-    }
-
     const saveId = ++saveCounterRef.current;
     store.getState().transitionSaveState({ status: 'saving', saveId });
 
-    const pending: Array<Promise<unknown>> = [];
-    if (stepsDirty) {
-      const steps = currentVersion.steps
-        ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
-            ...step,
-            sequence: index,
-          }))
-        : [];
-      pending.push(
-        addContentSteps({
-          contentId: currentVersion.contentId,
-          versionId: currentVersion.id,
-          themeId: currentVersion.themeId,
-          steps,
-        }),
-      );
-    }
-    if (dataDirty) {
-      pending.push(updateContentVersion(currentVersion.id, { data: currentVersion.data }));
-    }
+    const steps = currentVersion.steps
+      ? currentVersion.steps.map(({ updatedAt, createdAt, cvid, ...step }, index) => ({
+          ...step,
+          sequence: index,
+        }))
+      : [];
 
     try {
-      const responses = await Promise.all(pending);
-      // Identity check: a newer save has started while this one was in
-      // flight — discard our response. The newer save will drive the
-      // final saveState transition.
+      const saved = await saveVersion({
+        contentId: currentVersion.contentId,
+        versionId: currentVersion.id,
+        themeId: currentVersion.themeId,
+        steps,
+        data: currentVersion.data,
+      });
+      // A newer save started while this one was in flight — discard ours;
+      // the newer save drives the final saveState transition.
       if (saveId !== saveCounterRef.current) {
         return;
       }
-      // Treat the save as successful if every dispatched mutation
-      // resolved truthy (addContentSteps + updateContentVersion both
-      // return data objects on success; nullish means the wrapper hook
-      // swallowed an error without throwing).
-      const allOk = responses.every((r) => Boolean(r));
-      if (allOk) {
-        await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
-        if (saveId === saveCounterRef.current) {
-          store.getState().transitionSaveState({ status: 'saved', savedAt: Date.now() });
-        }
+      if (saved) {
+        // Re-baseline straight from the mutation response: currentVersion
+        // (draft) and backupVersion (dirty baseline) both become the server's
+        // latest. setCurrentVersionFromServer bypasses undo-history capture so
+        // the save round-trip doesn't pollute the undo stack; two independent
+        // clones keep draft and baseline from sharing references.
+        const state = store.getState();
+        state.setCurrentVersionFromServer(structuredClone(saved));
+        state.setBackupVersion(structuredClone(saved));
+        state.transitionSaveState({ status: 'saved', savedAt: Date.now() });
       } else {
-        // A dispatched mutation resolved nullish — the wrapper hook
-        // swallowed a server "no data" response without throwing, so the
-        // catch below never runs. Surface it as an error here, otherwise
-        // saveState is stuck at 'saving' forever and the leave guard +
-        // footer spinners wedge with no feedback. (The line-87 identity
-        // guard already returned for superseded saves, so we're current.)
+        // Nullish response — the wrapper hook swallowed a "no data" server
+        // reply without throwing, so the catch below never runs. Surface it
+        // here, otherwise saveState wedges at 'saving' forever.
         const err = new Error('Save failed: the server returned no data.');
         store.getState().transitionSaveState({ status: 'error', error: err });
         toast({
@@ -122,7 +99,7 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
         title: getErrorMessage(error),
       });
     }
-  }, [addContentSteps, updateContentVersion, fetchContentAndVersion, store, toast]);
+  }, [saveVersion, store, toast]);
 
   return { saveContent };
 };

@@ -25,8 +25,28 @@ export const getContent = gql`
       editedVersion {
         id
         sequence
+        contentId
+        themeId
+        config
+        data
+        scheduledAt
         createdAt
         updatedAt
+        steps {
+          id
+          name
+          type
+          cvid
+          sequence
+          data
+          trigger
+          themeId
+          screenshot
+          target
+          setting
+          createdAt
+          updatedAt
+        }
       }
       steps {
         id
@@ -103,6 +123,7 @@ export const addContentSteps = gql`
     $versionId: String!
     $themeId: String!
     $steps: [StepInput!]!
+    $data: JSON
   ) {
     addContentSteps(
       data: {
@@ -110,9 +131,33 @@ export const addContentSteps = gql`
         versionId: $versionId
         themeId: $themeId
         steps: $steps
+        data: $data
       }
     ) {
-      success
+      id
+      sequence
+      contentId
+      themeId
+      config
+      data
+      scheduledAt
+      createdAt
+      updatedAt
+      steps {
+        id
+        name
+        type
+        cvid
+        sequence
+        data
+        trigger
+        themeId
+        screenshot
+        target
+        setting
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
@@ -138,7 +183,19 @@ export const addContentStep = gql`
 export const updateContentStep = gql`
   mutation updateContentStep($stepId: String!, $data: UpdateStepInput!) {
     updateContentStep(stepId: $stepId, data: $data) {
-      success
+      id
+      name
+      type
+      cvid
+      sequence
+      data
+      trigger
+      themeId
+      screenshot
+      target
+      setting
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -365,20 +422,6 @@ export const listContentVersions = gql`
         hasNextPage
         hasPreviousPage
       }
-    }
-  }
-`;
-
-export const addContentVersionSteps = gql`
-  mutation addContentSteps(
-    $contentId: String!
-    $versionId: String!
-    $steps: [StepInput!]!
-  ) {
-    addContentSteps(
-      data: { contentId: $contentId, versionId: $versionId, steps: $steps }
-    ) {
-      success
     }
   }
 `;

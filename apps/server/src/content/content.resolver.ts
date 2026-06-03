@@ -129,11 +129,10 @@ export class ContentResolver {
     });
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async addContentSteps(@Args('data') contentStepsInput: ContentStepsInput) {
-    await this.contentService.addContentSteps(contentStepsInput);
-    return { success: true };
+    return await this.contentService.addContentSteps(contentStepsInput);
   }
 
   @Mutation(() => Step)
@@ -142,11 +141,10 @@ export class ContentResolver {
     return await this.contentService.addContentStep(step);
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => Step)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async updateContentStep(@Args('stepId') stepId: string, @Args('data') step: UpdateStepInput) {
-    await this.contentService.updateContentStep(stepId, step);
-    return { success: true };
+    return await this.contentService.updateContentStep(stepId, step);
   }
 
   @Query(() => [VersionOnLocalization])

@@ -448,6 +448,7 @@ input ContentQuery {
 
 input ContentStepsInput {
   contentId: String!
+  data: JSON
   steps: [StepInput!]!
   themeId: String!
   versionId: String!
@@ -810,7 +811,7 @@ type Mutation {
   acceptInvite(data: AcceptInviteInput!): Auth!
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
-  addContentSteps(data: ContentStepsInput!): Common!
+  addContentSteps(data: ContentStepsInput!): Version!
   adminAddProjectMember(projectId: String!, role: String!, userId: String!): Boolean!
   adminChangeProjectMemberRole(projectId: String!, role: String!, userId: String!): Boolean!
   adminCreateProject(name: String!, ownerUserId: String!): Project!
@@ -877,7 +878,7 @@ type Mutation {
   unpublishedContentVersion(data: ContentIdInput!): Common!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
   updateContent(data: ContentUpdateInput!): Content!
-  updateContentStep(data: UpdateStepInput!, stepId: String!): Common!
+  updateContentStep(data: UpdateStepInput!, stepId: String!): Step!
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!

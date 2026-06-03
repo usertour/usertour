@@ -85,7 +85,7 @@ export class ContentService {
   }
 
   async addContentSteps(input: ContentStepsInput) {
-    const { contentId, versionId, steps, themeId } = input;
+    const { contentId, versionId, steps, themeId, data: versionData } = input;
     // Editable-only: matches addContentStep / updateContentStep /
     // updateStepsSequence / updateContentVersion. The previous inline check
     // duplicated the rule and was easy to drift out of sync.
@@ -125,10 +125,19 @@ export class ContentService {
             await tx.step.create({ data: { ...step, versionId } });
           }
         }
-        //update version
+        //update version — themeId always; data only when the caller sent it
+        // (Prisma ignores undefined fields). config (autostart/hide rules) is
+        // the detail page's domain, not the builder's.
         await tx.version.update({
           where: { id: versionId },
-          data: { themeId },
+          data: { themeId, data: versionData },
+        });
+        // Return the updated version with its steps so the resolver hands the
+        // fresh state straight back — the client re-baselines from this
+        // instead of issuing a follow-up getContent.
+        return await tx.version.findUnique({
+          where: { id: versionId },
+          include: { steps: { orderBy: { sequence: 'asc' } } },
         });
       });
     } catch (_) {

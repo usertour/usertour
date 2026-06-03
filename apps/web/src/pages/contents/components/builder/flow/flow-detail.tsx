@@ -11,7 +11,6 @@ import {
   OutlineInput,
   ScrollArea,
   Separator,
-  useToast,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_POPPER, EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
 import {
@@ -22,12 +21,11 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { ChangeEvent, Ref, useCallback, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, Ref, useCallback, useMemo, useRef } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
 import {
   useBuilderConfig,
   useBuilderContentRef,
-  useBuilderMethods,
   useBuilderStore,
   useProjectId,
 } from '@/pages/contents/components/builder/core';
@@ -52,11 +50,10 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
-import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
-import { PlusIcon, SpinnerIcon } from '@usertour/icons';
+import { hasMissingRequiredData } from '@usertour/helpers';
+import { PlusIcon } from '@usertour/icons';
 import { ContentType } from '@/pages/contents/components/builder/components/content-type';
 import { FlowPlacement } from '@/pages/contents/components/builder/flow/components/flow-placement';
-import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour/hooks';
 import { ContentBubble } from '@/pages/contents/components/builder/components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {
@@ -246,17 +243,17 @@ const FlowBuilderDetailBody = () => {
 };
 
 const FlowBuilderDetailFooter = () => {
-  const { fetchContentAndVersion } = useBuilderMethods();
-  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const contentRef = useBuilderContentRef();
-  const { currentIndex, currentStep, setIsShowError, exitToFlow } = useFlowEditor();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { invoke: addContentStep } = useAddContentStepMutation();
-  const { invoke: updateContentStep } = useUpdateContentStepMutation();
-  const { toast } = useToast();
+  const { currentStep, setIsShowError, exitToFlow } = useFlowEditor();
+  const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const actionsGate = useActionsSaveGate();
 
-  const handleSave = useCallback(async () => {
+  // Commit the edited step into the currentVersion draft, then return to the
+  // flow overview. Persistence is the auto-save FSM's job (it writes the whole
+  // version via addContentSteps and re-baselines from the response) — no
+  // per-step mutation, no re-fetch. A step without an id is appended; the
+  // server creates it on the next save and the re-baseline carries its id back.
+  const handleSave = useCallback(() => {
     if (!currentStep) {
       return;
     }
@@ -271,79 +268,40 @@ const FlowBuilderDetailFooter = () => {
       setIsShowError(true);
       return;
     }
-    // Validate every action list across the step before save: target
+    // Validate every action list across the step before commit: target
     // placement ("When target element is clicked") + each element's
-    // data.actions (button, multi-choice, NPS, scale, star-rating). v1 left
-    // these unvalidated, so incomplete actions silently shipped and failed
-    // at runtime — block here so the chip's red state actually gates save.
+    // data.actions (button, multi-choice, NPS, scale, star-rating) — block
+    // here so the chip's red state actually gates the save.
     const stepActionLists = collectStepActions(currentStep);
     if (!actionsGate(...stepActionLists)) {
       return;
     }
-    try {
-      let height = 0;
-      if (contentRef.current) {
-        const rect = contentRef.current?.getBoundingClientRect();
-        height = rect.height;
-      }
-      setIsLoading(true);
-      // const screenshot =
-      //   currentStep.type == "tooltip"
-      //     ? await uploadScreenshot(currentStep, backupStepData)
-      //     : { mini: "", full: "" };
-      const step = {
-        ...currentStep,
-        screenshot: { mini: '', full: '' },
-        setting: { ...currentStep.setting, height },
-      };
-      if (!step.id) {
-        if (!currentVersion?.id) {
-          return toast({
-            variant: 'destructive',
-            title: 'Failed to create step!',
-          });
-        }
-        const createdStep = await addContentStep({ ...step, versionId: currentVersion.id });
-        if (createdStep && currentVersion?.contentId) {
-          await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
-        } else {
-          return toast({
-            variant: 'destructive',
-            title: 'Failed to create step!',
-          });
-        }
-      } else {
-        const { id, createdAt, updatedAt, cvid, themeId, ...restUpdates } = step;
-        // Convert undefined themeId to null so it can be properly sent to the backend
-        // GraphQL will ignore undefined values, so we need to explicitly set null
-        const updates = {
-          ...restUpdates,
-          themeId: themeId === undefined ? null : themeId,
-        };
-        const updatedStep = await updateContentStep(step.id, updates);
-        if (updatedStep && currentVersion?.contentId) {
-          await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
-        } else {
-          return toast({
-            variant: 'destructive',
-            title: 'Failed to create step!',
-          });
-        }
-      }
-    } catch (error) {
-      return toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
+
+    let height = 0;
+    if (contentRef.current) {
+      height = contentRef.current.getBoundingClientRect().height;
     }
-    setIsLoading(false);
+    const step = {
+      ...currentStep,
+      screenshot: { mini: '', full: '' },
+      setting: { ...currentStep.setting, height },
+    };
+    setCurrentVersion((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const steps = prev.steps ?? [];
+      const nextSteps = step.id
+        ? steps.map((existing) => (existing.id === step.id ? step : existing))
+        : [...steps, step];
+      return { ...prev, steps: nextSteps };
+    });
     exitToFlow();
-  }, [currentStep, currentIndex, contentRef, actionsGate, exitToFlow]);
+  }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow]);
 
   return (
     <CardFooter className="flex-none p-5">
-      <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
-        {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+      <Button className="w-full h-10" onClick={handleSave}>
         Save
       </Button>
     </CardFooter>

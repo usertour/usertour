@@ -43,7 +43,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   // Compose the Provider's behaviours. Each hook owns one concern and
   // returns whatever the next hook (or the public surface) needs.
   const { fetchContentAndVersion } = useContentLoader({ store });
-  const { saveContent } = useSaveContent({ store, fetchContentAndVersion });
+  const { saveContent } = useSaveContent({ store });
   const { setAutoSaveValidator } = useAutoSave({ store, saveContent });
   useUndoShortcuts({ store });
 

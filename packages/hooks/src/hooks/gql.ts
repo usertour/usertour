@@ -64,7 +64,6 @@ import {
   DeleteIntegrationObjectMapping,
   GetSalesforceObjectFields,
   getContent,
-  getContentVersion,
   addContentSteps,
   addContentStep,
   updateContentStep,
@@ -679,18 +678,6 @@ export const useDisconnectIntegrationMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useGetContentVersionLazyQuery = () => {
-  const [query, { loading, error }] = useLazyQuery(getContentVersion);
-  const invoke = useCallback(
-    async (versionId: string) => {
-      const response = await query({ variables: { versionId } });
-      return response.data?.getContentVersion;
-    },
-    [query],
-  );
-  return { invoke, loading, error };
-};
-
 export const useQueryOembedInfoLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(queryOembedInfo);
   const invoke = useCallback(
@@ -750,6 +737,7 @@ export const useAddContentStepsMutation = () => {
       versionId: string;
       themeId: string;
       steps: any[];
+      data?: any;
     }) => {
       const response = await mutation({ variables });
       return response.data?.addContentSteps;

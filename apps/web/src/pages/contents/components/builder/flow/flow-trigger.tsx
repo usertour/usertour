@@ -9,21 +9,19 @@ import {
   CardHeader,
   CardTitle,
   ScrollArea,
-  useToast,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { SpinnerIcon } from '@usertour/icons';
-import { getErrorMessage, hasError } from '@usertour/helpers';
+import { hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { ContentTrigger } from '@/pages/contents/components/builder/components/content-trigger';
 import {
   useBuilderConfig,
-  useBuilderMethods,
   useBuilderStore,
   useProjectId,
 } from '@/pages/contents/components/builder/core';
@@ -35,7 +33,7 @@ import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow
 import { useSeedStepFromRoute } from '@/pages/contents/components/builder/flow/use-seed-step-from-route';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
 import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
-import { useListAttributesQuery, useUpdateContentStepMutation } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
@@ -185,16 +183,15 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
 
 const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   const { attributes } = props;
-  const { fetchContentAndVersion } = useBuilderMethods();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const { currentStep, exitToFlow } = useFlowEditor();
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { invoke: updateContentStep } = useUpdateContentStepMutation();
-  const { toast } = useToast();
   const { setShowError } = useTriggerContext();
 
-  const handleSave = useCallback(async () => {
+  // Commit the edited trigger into the currentVersion draft, then return to
+  // the flow overview. Auto-save (FSM) persists it — no per-step mutation,
+  // no re-fetch.
+  const handleSave = useCallback(() => {
     setShowError(false);
     if (!currentStep || !currentStep.id || !currentStep.trigger || !attributes) {
       return;
@@ -221,27 +218,25 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
         return;
       }
     }
-    setIsLoading(true);
-    try {
-      const trigger = currentStep?.trigger || [];
-      const updated = await updateContentStep(currentStep.id, { trigger });
-      if (updated && currentVersion?.contentId) {
-        await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);
+    const { trigger, id: stepId } = currentStep;
+    setCurrentVersion((prev) => {
+      if (!prev) {
+        return prev;
       }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-    }
-    setIsLoading(false);
+      const steps = prev.steps ?? [];
+      return {
+        ...prev,
+        steps: steps.map((existing) =>
+          existing.id === stepId ? { ...existing, trigger } : existing,
+        ),
+      };
+    });
     exitToFlow();
-  }, [currentStep, attributes, exitToFlow]);
+  }, [currentStep, attributes, currentVersion, setShowError, setCurrentVersion, exitToFlow]);
 
   return (
     <CardFooter className="flex-none p-5">
-      <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
-        {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+      <Button className="w-full h-10" onClick={handleSave}>
         Save
       </Button>
     </CardFooter>
