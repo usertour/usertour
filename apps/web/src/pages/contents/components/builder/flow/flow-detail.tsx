@@ -96,7 +96,7 @@ const FlowBuilderDetailHeader = () => {
 
 const FlowBuilderDetailBody = () => {
   const { zIndex } = useBuilderConfig();
-  const currentTheme = useBuilderStore((state) => state.currentTheme);
+  const currentVersion = useBuilderStore((state) => state.currentVersion);
   const projectId = useProjectId();
   const { currentStep, updateCurrentStep } = useFlowEditor();
   const { themeList } = useThemeList();
@@ -111,12 +111,15 @@ const FlowBuilderDetailBody = () => {
   }, [currentStep?.type, effectiveTheme?.settings]);
 
   const handleEditTheme = useCallback(() => {
-    if (!currentStep || !currentTheme) {
-      return false;
+    // The theme to edit is the step's explicit override, else the version's
+    // theme. No explicit themeId → nothing to edit (don't fall back to default).
+    const themeId = currentStep?.themeId || currentVersion?.themeId;
+    if (!themeId) {
+      return;
     }
-    const url = `/project/${projectId}/settings/theme/${currentStep.themeId || currentTheme.id}`;
+    const url = `/project/${projectId}/settings/theme/${themeId}`;
     window.open(url, '_blank');
-  }, [currentStep, currentTheme]);
+  }, [currentStep?.themeId, currentVersion?.themeId, projectId]);
 
   const handleAlignmentChange = (value: ContentAlignmentData) => {
     updateCurrentStep((pre) => ({

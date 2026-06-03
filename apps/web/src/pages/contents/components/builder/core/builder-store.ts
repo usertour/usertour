@@ -1,4 +1,4 @@
-import type { Content, ContentVersion, Step, Theme } from '@usertour/types';
+import type { Content, ContentVersion, Step } from '@usertour/types';
 import { createStore } from 'zustand/vanilla';
 import { enablePatches, produceWithPatches, applyPatches, setAutoFreeze, type Patch } from 'immer';
 
@@ -64,7 +64,6 @@ export interface BuilderState {
   currentContent: Content | undefined;
   currentVersion: ContentVersion | undefined;
   backupVersion: ContentVersion | undefined;
-  currentTheme: Theme | undefined;
   isShowError: boolean;
   position: string;
   // True only while a non-FSM mutation (currently the theme change in
@@ -101,7 +100,6 @@ export interface BuilderState {
 export interface BuilderStateSetters {
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
-  setCurrentTheme: React.Dispatch<React.SetStateAction<Theme | undefined>>;
   setPosition: React.Dispatch<React.SetStateAction<string>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -166,7 +164,6 @@ const initialState: BuilderState = {
   currentContent: undefined,
   currentVersion: undefined,
   backupVersion: undefined,
-  currentTheme: undefined,
   isShowError: false,
   position: 'left',
   isLoading: false,
@@ -209,7 +206,6 @@ export const createBuilderStore = () =>
         },
       });
     },
-    setCurrentTheme: makeSetter('currentTheme', set, get),
     setIsShowError: makeSetter('isShowError', set, get),
     setPosition: makeSetter('position', set, get),
     setIsLoading: makeSetter('isLoading', set, get),

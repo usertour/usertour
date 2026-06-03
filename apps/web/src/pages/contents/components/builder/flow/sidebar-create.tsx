@@ -5,7 +5,8 @@ import { StepContentType, ContentEditorRoot } from '@usertour/types';
 import { PopperPreview } from '@/pages/contents/components/builder/components/preview';
 import { getDefaultDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import { useMemo } from 'react';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderConfig } from '@/pages/contents/components/builder/core';
+import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 
 interface ContentTypeConfig {
@@ -49,7 +50,9 @@ const CONTENT_TYPE_CONFIGS: Omit<ContentTypeConfig, 'data'>[] = [
 
 export const SidebarCreate = ({ container }: SidebarCreateProps) => {
   const { zIndex } = useBuilderConfig();
-  const currentTheme = useBuilderStore((state) => state.currentTheme);
+  // version-level theme (overview has no current step). useCurrentTheme falls
+  // back to currentVersion.themeId when there's no step override.
+  const currentTheme = useCurrentTheme();
   const { startCreateStep } = useFlowEditor();
 
   // Memoize content list to avoid recalculating on every render
