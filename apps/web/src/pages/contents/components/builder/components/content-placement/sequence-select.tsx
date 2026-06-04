@@ -1,13 +1,13 @@
 import {
-  CompactDropdownMenu,
-  CompactDropdownMenuContent,
-  CompactDropdownMenuItem,
-  CompactDropdownMenuTrigger,
-  CompactPopoverTrigger,
   Label,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   QuestionTooltip,
 } from '@usertour/ui';
-import { RiArrowDownSLine } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 
 interface SequenceSelectProps {
@@ -25,7 +25,6 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
     value: `${num}st`,
     label: t(`contentBuilder.shared.selectElement.${num}`),
   }));
-  const current = options.find((option) => option.value === value) ?? options[0];
 
   return (
     <div className="flex flex-col space-y-2">
@@ -33,25 +32,20 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
         <Label>{t('contentBuilder.shared.ifMultipleMatches')}</Label>
         <QuestionTooltip>{t('contentBuilder.shared.ifMultipleMatchesTooltip')}</QuestionTooltip>
       </div>
-      <CompactDropdownMenu>
-        <CompactDropdownMenuTrigger asChild>
-          <CompactPopoverTrigger className="justify-between">
-            <span className="truncate">{current.label}</span>
-            <RiArrowDownSLine className="ml-2 size-4 shrink-0 opacity-50" />
-          </CompactPopoverTrigger>
-        </CompactDropdownMenuTrigger>
-        <CompactDropdownMenuContent
-          align="start"
-          style={{ zIndex }}
-          className="w-[var(--radix-dropdown-menu-trigger-width)]"
-        >
-          {options.map((option) => (
-            <CompactDropdownMenuItem key={option.value} onSelect={() => onChange(option.value)}>
-              {option.label}
-            </CompactDropdownMenuItem>
-          ))}
-        </CompactDropdownMenuContent>
-      </CompactDropdownMenu>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger variant="compact">
+          <SelectValue placeholder={t('contentBuilder.shared.selectSequencePlaceholder')} />
+        </SelectTrigger>
+        <SelectContent style={{ zIndex }}>
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
     </div>
   );
 };
