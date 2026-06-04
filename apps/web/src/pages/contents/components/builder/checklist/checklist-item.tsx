@@ -225,7 +225,7 @@ export const ChecklistItem = () => {
   // independent draft (edits never mutate currentVersion until save). The
   // `ready` gate above WebBuilderContent guarantees data is loaded here.
   useLayoutEffect(() => {
-    const item = data?.items?.find((it) => it.id === itemId);
+    const item = data.items.find((it) => it.id === itemId);
     setCurrentItem(item ? (JSON.parse(JSON.stringify(item)) as ChecklistItemType) : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);

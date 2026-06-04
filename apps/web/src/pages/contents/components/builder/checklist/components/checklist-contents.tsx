@@ -122,10 +122,6 @@ export const ChecklistContents = () => {
     removeItem,
   } = useChecklistEditor();
 
-  if (!localData) {
-    return null;
-  }
-
   const handleEditItem = (item: ChecklistItemType) => {
     gotoItem(item.id);
   };

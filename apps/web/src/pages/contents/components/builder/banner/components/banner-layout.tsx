@@ -37,16 +37,12 @@ export const BannerLayout = () => {
     (side: keyof BannerOuterMargin, value: string) => {
       const parsed = value === '' ? 0 : Number.parseInt(value, 10);
       if (Number.isNaN(parsed)) return;
-      const current = localData?.outerMargin ?? defaultMargin;
+      const current = localData.outerMargin ?? defaultMargin;
       const next: BannerOuterMargin = { ...current, [side]: parsed };
       updateLocalData({ outerMargin: next });
     },
-    [localData?.outerMargin, updateLocalData],
+    [localData.outerMargin, updateLocalData],
   );
-
-  if (!localData) {
-    return null;
-  }
 
   const margin = localData.outerMargin ?? defaultMargin;
 

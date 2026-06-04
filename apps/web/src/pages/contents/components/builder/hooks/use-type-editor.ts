@@ -16,8 +16,12 @@ import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core
 // hooks share the Provider's save FSM (both write via
 // `setCurrentVersion`) but diverge on data shape and mutation pattern.
 //
-// data       — current per-type data, normalized; undefined until
-//              currentVersion has loaded.
+// data       — current per-type data, normalized. Always defined: normalize
+//              falls back to defaultData, so even before currentVersion loads
+//              (or when its data blob is empty) callers get a usable default
+//              rather than undefined. Type dispatch only mounts a type's views
+//              once currentContent is set (see WebBuilderContent), so in
+//              practice this is the loaded version's data.
 // updateData — mutates `currentVersion.data` via setCurrentVersion,
 //              which (a) pushes patches onto the undo stack and
 //              (b) trips the FSM dispatcher to fire
@@ -37,7 +41,7 @@ import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core
 //              buttons / form-disable bindings rely on.
 
 export interface UseTypeEditorReturn<TData, TUIState> {
-  data: TData | undefined;
+  data: TData;
   updateData: (updates: Partial<TData>) => void;
   uiState: TUIState;
   setUIState: Dispatch<SetStateAction<TUIState>>;
@@ -61,7 +65,9 @@ export const useTypeEditor = <TData, TUIState = undefined>(
 
   const normalizeData = (value: TData | undefined): TData =>
     config.normalize ? config.normalize(value) : ((value ?? config.defaultData) as TData);
-  const data = rawData !== undefined ? normalizeData(rawData) : undefined;
+  // Always normalize — normalize/defaultData guarantee a non-undefined result,
+  // so callers never see undefined and don't each have to narrow it.
+  const data = normalizeData(rawData);
 
   // updateData spreads NORMALIZED prev data (not raw) so the first
   // edit also commits any default-merging done by normalize. V1's

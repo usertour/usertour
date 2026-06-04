@@ -101,7 +101,7 @@ export const LauncherTarget = () => {
   // (before paint) because the body gates on `launcherTarget` — seeding
   // post-paint would flash a blank frame.
   useLayoutEffect(() => {
-    setLauncherTarget(data?.target);
+    setLauncherTarget(data.target);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (

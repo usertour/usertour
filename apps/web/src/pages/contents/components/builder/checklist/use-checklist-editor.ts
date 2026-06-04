@@ -15,7 +15,7 @@ import { checklistTypeConfig } from '@/pages/contents/components/builder/checkli
 // mount, not here.
 
 export interface UseChecklistEditorReturn {
-  data: ChecklistData | undefined;
+  data: ChecklistData;
   updateData: (updates: Partial<ChecklistData>) => void;
   currentItem: ChecklistItemType | null;
   setCurrentItem: React.Dispatch<React.SetStateAction<ChecklistItemType | null>>;
@@ -32,7 +32,7 @@ export const useChecklistEditor = (): UseChecklistEditorReturn => {
   const navigate = useNavigate();
 
   const data = editor.data;
-  const items = data?.items ?? [];
+  const items = data.items;
   const currentItem = editor.uiState;
   const setCurrentItem = editor.setUIState;
 

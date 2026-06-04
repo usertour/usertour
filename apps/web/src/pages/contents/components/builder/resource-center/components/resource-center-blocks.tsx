@@ -138,10 +138,6 @@ export const ResourceCenterBlocks = () => {
     reorderBlocks,
   } = useResourceCenterEditor();
 
-  if (!localData) {
-    return null;
-  }
-
   // Get current tab's blocks
   const currentTab = localData.tabs.find((t) => t.id === currentTabId);
   const blocks = currentTab?.blocks ?? [];

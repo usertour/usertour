@@ -202,10 +202,6 @@ export const ResourceCenterTabs = () => {
     }),
   );
 
-  if (!localData) {
-    return null;
-  }
-
   const tabs = localData.tabs;
 
   const handleOnClick = (action: 'select' | 'edit' | 'delete', tab: ResourceCenterTab) => {

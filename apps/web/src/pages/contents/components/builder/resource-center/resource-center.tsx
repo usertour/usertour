@@ -38,7 +38,7 @@ const RedirectToFirstTab = () => {
 const ResourceCenterBlockEditor = () => {
   const { tabId, blockId } = useParams();
   const { data, setCurrentBlock } = useResourceCenterEditor();
-  const block = data?.tabs.find((t) => t.id === tabId)?.blocks.find((b) => b.id === blockId);
+  const block = data.tabs.find((t) => t.id === tabId)?.blocks.find((b) => b.id === blockId);
   // Seed the editable currentBlock buffer (deep-clone, independent of the
   // model) on route change. dispatch is on the MODEL block's type — immediate
   // and correct even before the buffer seeds; each editor body gates on

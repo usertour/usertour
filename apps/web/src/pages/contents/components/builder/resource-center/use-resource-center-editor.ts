@@ -52,7 +52,7 @@ const updateTabBlocks = (
 });
 
 export interface UseResourceCenterEditorReturn {
-  data: ResourceCenterData | undefined;
+  data: ResourceCenterData;
   updateData: (updates: Partial<ResourceCenterData>) => void;
   // Active tab — sourced from the route (tab/:tabId), null outside the tab
   // routes (e.g. the preview embed beside <Routes>).
@@ -142,23 +142,19 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
   }, [uiState.currentBlock?.id, uiState.editingTab?.id]);
 
   const updateData = editor.updateData;
-  const currentTab = data?.tabs.find((tab) => tab.id === currentTabId) ?? null;
+  const currentTab = data.tabs.find((tab) => tab.id === currentTabId) ?? null;
 
   // Array transforms for tabs (top-level) and the current tab's blocks
   // (nested via updateTabBlocks). Per-op side effects — validation, view
   // exit — stay in the wrappers below.
   const tabList = useListField<ResourceCenterTab>({
-    items: data?.tabs ?? [],
-    setItems: (next) => {
-      if (data) {
-        updateData({ tabs: next });
-      }
-    },
+    items: data.tabs,
+    setItems: (next) => updateData({ tabs: next }),
   });
   const blockList = useListField<ResourceCenterBlock>({
     items: currentTab?.blocks ?? [],
     setItems: (next) => {
-      if (data && currentTabId) {
+      if (currentTabId) {
         updateData(updateTabBlocks(data, currentTabId, () => next));
       }
     },
@@ -172,9 +168,6 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
   // the embed's active page belonged to a non-selected tab.
   const updateBlock = useCallback(
     (id: string, updates: Partial<ResourceCenterBlock>) => {
-      if (!data) {
-        return;
-      }
       updateData({
         tabs: data.tabs.map((tab) => ({
           ...tab,
@@ -220,19 +213,13 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
 
   const addTab = useCallback(
     (tab: ResourceCenterTab) => {
-      if (!data) {
-        return;
-      }
       tabList.add(tab);
     },
-    [data, tabList.add],
+    [tabList.add],
   );
 
   const removeTab = useCallback(
     (id: string) => {
-      if (!data) {
-        return;
-      }
       const newTabs = data.tabs.filter((tab) => tab.id !== id);
       updateData({ tabs: newTabs });
       // Removing the active (route) tab — move to the first remaining tab.
@@ -245,7 +232,7 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
 
   const saveEditingTab = useCallback(() => {
     const editingTab = uiState.editingTab;
-    if (!editingTab || !data) {
+    if (!editingTab) {
       return;
     }
     if (editingTab.name.trim() === '') {
@@ -274,7 +261,7 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
 
   const saveCurrentBlock = useCallback(() => {
     const currentBlock = uiState.currentBlock;
-    if (!currentBlock || !currentTabId || !data) {
+    if (!currentBlock || !currentTabId) {
       return;
     }
     if (!isBlockValid(currentBlock)) {

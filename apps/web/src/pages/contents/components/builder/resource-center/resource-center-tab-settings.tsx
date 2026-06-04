@@ -134,7 +134,7 @@ export const ResourceCenterTabSettings = () => {
   // Seed the editingTab draft from the :tabId route param on mount — covers
   // nav, deep-link and refresh. Shallow clone (settings edits name + icon only).
   useLayoutEffect(() => {
-    const tab = data?.tabs.find((t) => t.id === tabId);
+    const tab = data.tabs.find((t) => t.id === tabId);
     setEditingTab(tab ? { ...tab } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabId]);

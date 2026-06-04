@@ -137,10 +137,6 @@ const ResourceCenterCoreBody = () => {
   } = useResourceCenterEditor();
   const { zIndex } = useBuilderConfig();
 
-  if (!localData) {
-    return null;
-  }
-
   const currentTab = localData.tabs.find((t) => t.id === currentTabId);
 
   const handleAddBlock = (type: ResourceCenterBlockType) => {

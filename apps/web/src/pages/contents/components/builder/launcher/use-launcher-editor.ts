@@ -21,7 +21,7 @@ import {
 // mount (see LauncherTarget / LauncherTooltip), not here.
 
 export interface UseLauncherEditorReturn {
-  data: LauncherData | undefined;
+  data: LauncherData;
   updateData: (updates: Partial<LauncherData>) => void;
   updateDataTooltip: (updates: Partial<LauncherData['tooltip']>) => void;
   updateDataBehavior: (updates: Partial<LauncherData['behavior']>) => void;
@@ -86,9 +86,6 @@ export const useLauncherEditor = (): UseLauncherEditorReturn => {
 
   const updateDataTooltip = useCallback(
     (updates: Partial<LauncherData['tooltip']>) => {
-      if (!data) {
-        return;
-      }
       editor.updateData({ tooltip: { ...data.tooltip, ...updates } });
     },
     [editor.updateData, data],
@@ -96,9 +93,6 @@ export const useLauncherEditor = (): UseLauncherEditorReturn => {
 
   const updateDataBehavior = useCallback(
     (updates: Partial<LauncherData['behavior']>) => {
-      if (!data) {
-        return;
-      }
       editor.updateData({ behavior: { ...data.behavior, ...updates } });
     },
     [editor.updateData, data],
@@ -106,9 +100,6 @@ export const useLauncherEditor = (): UseLauncherEditorReturn => {
 
   const updateDataTarget = useCallback(
     (updates: Partial<LauncherData['target']>) => {
-      if (!data) {
-        return;
-      }
       editor.updateData({ target: { ...data.target, ...updates } });
     },
     [editor.updateData, data],

@@ -49,7 +49,7 @@ export const BannerEmbedPlacementSelect = () => {
 
   const handleTargetChange = useCallback(
     (value: Partial<ElementSelectorPropsData>) => {
-      const nextContainer = { ...localData?.containerElement, ...value };
+      const nextContainer = { ...localData.containerElement, ...value };
       let nextType = nextContainer.type;
 
       if (!nextType) {
@@ -64,12 +64,8 @@ export const BannerEmbedPlacementSelect = () => {
         containerElement: nextType ? { ...nextContainer, type: nextType } : nextContainer,
       });
     },
-    [localData?.containerElement, updateLocalData],
+    [localData.containerElement, updateLocalData],
   );
-
-  if (!localData) {
-    return null;
-  }
 
   const requiresElement = BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT.includes(
     localData.embedPlacement,

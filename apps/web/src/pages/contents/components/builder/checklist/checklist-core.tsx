@@ -45,10 +45,6 @@ const ChecklistCoreBody = () => {
   const { data: localData, addItem, updateData: updateLocalData } = useChecklistEditor();
   const { zIndex } = useBuilderConfig();
 
-  if (!localData) {
-    return null;
-  }
-
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full">

@@ -48,7 +48,7 @@ export const BannerEmbed = () => {
 
   const handleContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
-      if (localData && !isEqual(value, localData.contents)) {
+      if (!isEqual(value, localData.contents)) {
         updateLocalData({ contents: value });
       }
     },
@@ -59,17 +59,17 @@ export const BannerEmbed = () => {
     () => ({
       ...DEFAULT_BANNER_DATA,
       ...localData,
-      zIndex: localData?.zIndex ?? 10000 + EXTENSION_CONTENT_POPPER,
+      zIndex: localData.zIndex ?? 10000 + EXTENSION_CONTENT_POPPER,
     }),
     [localData],
   );
 
   const contents = useMemo(
-    () => localData?.contents ?? DEFAULT_BANNER_CONTENTS,
-    [localData?.contents],
+    () => localData.contents ?? DEFAULT_BANNER_CONTENTS,
+    [localData.contents],
   );
 
-  if (!theme || !localData) {
+  if (!theme) {
     return null;
   }
 

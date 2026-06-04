@@ -39,10 +39,6 @@ const SETTINGS_ITEMS: readonly {
 export const BannerSettings = () => {
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
-  if (!localData) {
-    return null;
-  }
-
   return (
     <div className="space-y-3">
       <h1 className="text-sm">Settings</h1>

@@ -23,28 +23,26 @@ export const LauncherBuilderEmbed = () => {
 
   // The target / tooltip sub-views edit drafts in UI state; overlay them on the
   // saved data so the preview reflects in-flight edits.
-  const previewData = useMemo(() => {
-    if (!data) {
-      return null;
-    }
-    return {
+  const previewData = useMemo(
+    () => ({
       ...data,
       ...(launcherTarget ? { target: launcherTarget } : {}),
       ...(launcherTooltip ? { tooltip: launcherTooltip } : {}),
-    };
-  }, [data, launcherTarget, launcherTooltip]);
+    }),
+    [data, launcherTarget, launcherTooltip],
+  );
 
   const handleTooltipContentChange = useCallback(
     (content: ContentEditorRoot[]) => {
       // The editor can fire without a real change; skip no-op writes.
-      if (!isEqual(content, data?.tooltip.content)) {
+      if (!isEqual(content, data.tooltip.content)) {
         updateDataTooltip({ content });
       }
     },
-    [updateDataTooltip, data?.tooltip.content],
+    [updateDataTooltip, data.tooltip.content],
   );
 
-  if (!previewData || !theme || !currentVersion) {
+  if (!theme || !currentVersion) {
     return null;
   }
 

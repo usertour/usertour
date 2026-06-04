@@ -7,10 +7,6 @@ export const LauncherZIndex = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();
   const { t } = useTranslation();
 
-  if (!localData) {
-    return null;
-  }
-
   return (
     <FieldSection title={t('contentBuilder.launcher.zIndex')}>
       <Input

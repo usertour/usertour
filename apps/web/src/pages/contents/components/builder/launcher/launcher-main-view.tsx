@@ -38,8 +38,8 @@ export const LauncherMainView = () => {
   const handleSave = useSidebarSave({
     canSave: () =>
       !(
-        localData?.behavior?.actionType === LauncherActionType.PERFORM_ACTION &&
-        !actionsGate(localData?.behavior?.actions)
+        localData.behavior.actionType === LauncherActionType.PERFORM_ACTION &&
+        !actionsGate(localData.behavior.actions)
       ),
   });
   return (

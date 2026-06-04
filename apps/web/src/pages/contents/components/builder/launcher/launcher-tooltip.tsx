@@ -118,7 +118,7 @@ export const LauncherTooltip = () => {
   const { data, setLauncherTooltip } = useLauncherEditor();
   // Seed the tooltip draft from currentVersion on mount — see LauncherTarget.
   useLayoutEffect(() => {
-    setLauncherTooltip(data?.tooltip);
+    setLauncherTooltip(data.tooltip);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (

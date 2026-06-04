@@ -111,15 +111,8 @@ export const LauncherBehavior = () => {
   );
 
   const handleSwitchToTooltip = useCallback(() => {
-    if (!localData?.tooltip) {
-      return;
-    }
     gotoLauncherTooltip();
-  }, [localData?.tooltip, gotoLauncherTooltip]);
-
-  if (!localData) {
-    return null;
-  }
+  }, [gotoLauncherTooltip]);
 
   return (
     <FieldSection title={t('contentBuilder.launcher.behavior')}>

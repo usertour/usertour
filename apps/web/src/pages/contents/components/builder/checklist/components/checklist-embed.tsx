@@ -29,7 +29,7 @@ export const ChecklistEmbed = () => {
   const { shouldShowMadeWith = true } = useBuilderConfig();
   const projectId = useProjectId();
   const [expanded, setExpanded] = useState(
-    localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
+    localData.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );
   const { attributeList } = useAttributeList();
 
@@ -38,12 +38,12 @@ export const ChecklistEmbed = () => {
     useChecklistPreviewAnimation(expanded);
 
   useEffect(() => {
-    setExpanded(localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED);
-  }, [localData?.initialDisplay]);
+    setExpanded(localData.initialDisplay === ChecklistInitialDisplay.EXPANDED);
+  }, [localData.initialDisplay]);
 
   const handleContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
-      if (localData && !isEqual(value, localData.content)) {
+      if (!isEqual(value, localData.content)) {
         updateLocalData({ content: value });
       }
     },
@@ -52,7 +52,6 @@ export const ChecklistEmbed = () => {
 
   // Compute items with completed and animation state using useMemo
   const items = useMemo(() => {
-    if (!localData) return [];
     return localData.items.map((item) => {
       const newItem = item.id === currentItem?.id ? currentItem : item;
       return {
@@ -64,7 +63,7 @@ export const ChecklistEmbed = () => {
     });
   }, [localData, currentItem, completedItemIds, animatedItemIds]);
 
-  if (!theme || !localData) {
+  if (!theme) {
     return null;
   }
 

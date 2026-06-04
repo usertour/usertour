@@ -14,10 +14,6 @@ export const LauncherType = () => {
   const { t } = useTranslation();
   const sidebarZIndex = zIndex + EXTENSION_SIDEBAR_MAIN;
 
-  if (!localData) {
-    return null;
-  }
-
   return (
     <FieldSection title={t('contentBuilder.launcher.appearance')}>
       <LauncherContentType

@@ -52,8 +52,7 @@ const ResourceCenterEmbedContent = ({
 
   // Build subPageEditSlot for the currently active sub-page
   const subPageEditSlot = useMemo(() => {
-    if (!currentPage || currentPage.type !== ResourceCenterBlockType.SUB_PAGE || !localData)
-      return undefined;
+    if (!currentPage || currentPage.type !== ResourceCenterBlockType.SUB_PAGE) return undefined;
     // Find the block across all tabs
     let block: ResourceCenterSubPageBlock | undefined;
     for (const tab of localData.tabs) {
@@ -166,7 +165,6 @@ export const ResourceCenterEmbed = () => {
 
   // Build messageEditSlots: one ContentEditor per MESSAGE block across all tabs
   const messageEditSlots = useMemo(() => {
-    if (!localData) return {};
     const slots: Record<string, React.ReactNode> = {};
     for (const tab of localData.tabs) {
       for (const block of tab.blocks) {
@@ -193,7 +191,7 @@ export const ResourceCenterEmbed = () => {
     return slots;
   }, [localData, upload, updateBlock, projectId, attributeList]);
 
-  if (!theme || !localData) {
+  if (!theme) {
     return null;
   }
 

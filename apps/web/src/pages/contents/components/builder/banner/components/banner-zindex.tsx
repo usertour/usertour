@@ -5,10 +5,6 @@ import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-
 export const BannerZIndex = () => {
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
 
-  if (!localData) {
-    return null;
-  }
-
   return (
     <div className="space-y-3">
       <div className="flex items-center">
