@@ -1662,6 +1662,52 @@ const translations = {
       default: 'Default',
       cancel: 'Cancel',
     },
+    shared: {
+      width: 'Width',
+      widthTooltip: {
+        modal: 'The width in pixels of the modal. Leave empty to use the theme default.',
+        tooltip: 'The width in pixels of the tooltip. Leave empty to use the theme default.',
+        checklist: 'The width in pixels of the checklist. Leave empty to use the theme default.',
+        bubble: 'The width in pixels of the bubble. Leave empty to use the theme default.',
+      },
+      widthPlaceholder: 'Default: {{value}}',
+      widthCannotBeZero: 'Width cannot be 0',
+      alignment: 'Alignment',
+      alignmentTooltip:
+        "Customize which side of the target element the tooltip should appear on. By default, tooltips are placed on the optimal side depending on the target's position and your user's screen size.",
+      auto: 'Auto',
+      fixed: 'Fixed',
+      distanceFromElement: 'The distance in pixels from the element',
+      offsetFromAlignment: 'An offset in pixels from the alignment',
+      autoPosition: 'Automatically choose the optimal position',
+      alwaysShowFrom: 'Always show from {{side}}-{{align}}',
+      sides: {
+        bottom: 'bottom',
+        top: 'top',
+        left: 'left',
+        right: 'right',
+      },
+      aligns: {
+        start: 'start',
+        center: 'center',
+        end: 'end',
+      },
+      placement: 'Placement',
+      placementTooltip: 'Controls which corner the {{name}} should be placed at.',
+      horizontalOffset: 'The horizontal offset',
+      horizontalOffsetTooltip:
+        'How far in pixels from the horizontal edge of the browser window the {{name}} should be positioned.',
+      verticalOffset: 'The vertical offset',
+      verticalOffsetTooltip:
+        'How far in pixels from the vertical edge of the browser window the {{name}} should be positioned.',
+      position: {
+        leftTop: 'Left Top',
+        rightTop: 'Right Top',
+        center: 'Center',
+        leftBottom: 'Left Bottom',
+        rightBottom: 'Right Bottom',
+      },
+    },
     launcher: {
       appearance: 'Appearance',
       buttonText: 'Button text',

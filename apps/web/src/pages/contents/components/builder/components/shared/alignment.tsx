@@ -1,5 +1,6 @@
 import { cn } from '@usertour/tailwind';
 import { createContext, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const circleHoveredClassName =
   "bg-primary before:content-[''] before:border before:border-indigo-900 before:cursor-pointer before:h-2 before:w-2 before:rounded-[50%] before:border-solid before:scale-100 items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] scale-[1.6] hover:bg-primary hover:scale-[1.6]";
@@ -22,60 +23,20 @@ const ALIGNMENTS = {
 type Position = (typeof POSITIONS)[keyof typeof POSITIONS];
 type Alignment = (typeof ALIGNMENTS)[keyof typeof ALIGNMENTS];
 
-interface PositionConfig {
-  className: string;
-  text: string;
-}
-
-const positionMapping: Record<string, PositionConfig> = {
-  'bottom-start': {
-    className: 'border-b-slate-400 left-[12px] bottom-full',
-    text: 'Always show from bottom-start',
-  },
-  'bottom-center': {
-    className: 'border-b-slate-400 left-[calc(50%_-_6px)] bottom-full',
-    text: 'Always show from bottom-center',
-  },
-  'bottom-end': {
-    className: 'border-b-slate-400 right-[12px]  bottom-full',
-    text: 'Always show from bottom-end',
-  },
-  'right-start': {
-    className: 'border-r-slate-400 top-[12px]  right-full',
-    text: 'Always show from right-start',
-  },
-  'right-center': {
-    className: 'border-r-slate-400 top-[calc(50%_-_6px)]  right-full',
-    text: 'Always show from right-center',
-  },
-  'right-end': {
-    className: 'border-r-slate-400 bottom-[12px]  right-full',
-    text: 'Always show from right-end',
-  },
-  'left-start': {
-    className: 'border-l-slate-400 top-[12px]  left-full',
-    text: 'Always show from left-start',
-  },
-  'left-center': {
-    className: 'border-l-slate-400 top-[calc(50%_-_6px)]  left-full',
-    text: 'Always show from left-center',
-  },
-  'left-end': {
-    className: 'border-l-slate-400 bottom-[12px]  left-full',
-    text: 'Always show from left-end',
-  },
-  'top-start': {
-    className: 'border-t-slate-400 left-[12px]  top-full',
-    text: 'Always show from top-start',
-  },
-  'top-center': {
-    className: 'border-t-slate-400 left-[calc(50%_-_6px)]  top-full',
-    text: 'Always show from top-center',
-  },
-  'top-end': {
-    className: 'border-t-slate-400 right-[12px]  top-full',
-    text: 'Always show from top-end',
-  },
+// Tailwind classes that position the preview arrow for each side/align combo.
+const arrowClassByPosition: Record<string, string> = {
+  'bottom-start': 'border-b-slate-400 left-[12px] bottom-full',
+  'bottom-center': 'border-b-slate-400 left-[calc(50%_-_6px)] bottom-full',
+  'bottom-end': 'border-b-slate-400 right-[12px] bottom-full',
+  'right-start': 'border-r-slate-400 top-[12px] right-full',
+  'right-center': 'border-r-slate-400 top-[calc(50%_-_6px)] right-full',
+  'right-end': 'border-r-slate-400 bottom-[12px] right-full',
+  'left-start': 'border-l-slate-400 top-[12px] left-full',
+  'left-center': 'border-l-slate-400 top-[calc(50%_-_6px)] left-full',
+  'left-end': 'border-l-slate-400 bottom-[12px] left-full',
+  'top-start': 'border-t-slate-400 left-[12px] top-full',
+  'top-center': 'border-t-slate-400 left-[calc(50%_-_6px)] top-full',
+  'top-end': 'border-t-slate-400 right-[12px] top-full',
 };
 
 interface AlignmentProps {
@@ -106,7 +67,8 @@ interface CircleProps {
   onClick: (side: Position, align: Alignment) => void;
 }
 
-const Circle = ({ side, align, onClick }: CircleProps) => {
+const Circle = (props: CircleProps) => {
+  const { side, align, onClick } = props;
   const { type, currentAlign, currentSide } = useContext(AlignmentContext);
   // Active state is derived on render from context — no local state / effect.
   const isActive = type === 'fixed' && currentAlign === align && currentSide === side;
@@ -116,12 +78,10 @@ const Circle = ({ side, align, onClick }: CircleProps) => {
 
 // Controlled: the active side/align and the arrow preview are derived straight
 // from props on every render — no local mirror of side/align, no effects.
-export const Alignment = ({
-  onAlignmentChange,
-  type,
-  align = ALIGNMENTS.CENTER,
-  side = POSITIONS.BOTTOM,
-}: AlignmentProps) => {
+export const Alignment = (props: AlignmentProps) => {
+  const { onAlignmentChange, type, align = ALIGNMENTS.CENTER, side = POSITIONS.BOTTOM } = props;
+  const { t } = useTranslation();
+
   const handleAlignmentChange = (nextSide: Position, nextAlign: Alignment) => {
     if (type !== 'fixed') {
       return;
@@ -132,11 +92,13 @@ export const Alignment = ({
   let text = '';
   let arrowCls = '';
   if (type === 'auto') {
-    text = 'Automatically choose the optimal position';
+    text = t('contentBuilder.shared.autoPosition');
   } else if (type === 'fixed') {
-    const config = positionMapping[`${side}-${align}`];
-    arrowCls = config.className;
-    text = config.text;
+    arrowCls = arrowClassByPosition[`${side}-${align}`];
+    text = t('contentBuilder.shared.alwaysShowFrom', {
+      side: t(`contentBuilder.shared.sides.${side}`),
+      align: t(`contentBuilder.shared.aligns.${align}`),
+    });
   }
 
   const value = { currentSide: side, currentAlign: align, type };
@@ -144,7 +106,7 @@ export const Alignment = ({
   return (
     <AlignmentContext.Provider value={value}>
       <div className="flex flex-col bg-background-700 p-3.5 rounded-lg">
-        <div className="items-center flex justify-between px-9 py-0;">
+        <div className="items-center flex justify-between px-9 py-0">
           <Circle
             side={POSITIONS.BOTTOM}
             align={ALIGNMENTS.START}

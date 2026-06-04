@@ -1,6 +1,6 @@
 import { Input } from '@usertour/ui';
 import { RiAddLine, RiSubtractLine } from '@usertour/icons';
-import { useState, useEffect, memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 export interface InputNumberProps {
@@ -13,11 +13,8 @@ export interface InputNumberProps {
   allowNegative?: boolean;
 }
 
-// The local string buffer is intentional: it lets the field hold intermediate
-// input (a lone "-", an empty string) that isn't yet a valid number, and the
-// effect keeps it in sync when `defaultNumber` changes from the outside.
 const stepButtonClass =
-  'w-6 h-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-background-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600';
+  'inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-40';
 
 export const InputNumber = memo((props: InputNumberProps) => {
   const {
@@ -27,30 +24,35 @@ export const InputNumber = memo((props: InputNumberProps) => {
     allowEmpty = false,
     allowNegative = false,
   } = props;
-  const [inputValue, setInputValue] = useState<string>(
+
+  // The local string buffer holds intermediate input (a lone "-", an empty
+  // string) that isn't yet a valid number. When `defaultNumber` changes from
+  // the outside we resync the buffer during render — the React-recommended
+  // alternative to a sync effect, so there's no mirrored-state-via-useEffect.
+  const [inputValue, setInputValue] = useState(
     defaultNumber !== undefined ? String(defaultNumber) : '',
   );
-
-  // Sync with external defaultNumber changes
-  useEffect(() => {
+  const [prevDefault, setPrevDefault] = useState(defaultNumber);
+  if (defaultNumber !== prevDefault) {
+    setPrevDefault(defaultNumber);
     setInputValue(defaultNumber !== undefined ? String(defaultNumber) : '');
-  }, [defaultNumber]);
+  }
 
   const handleIncrement = useCallback(() => {
-    const currentNum = inputValue === '' ? 0 : Number(inputValue);
-    const newValue = currentNum + 1;
-    setInputValue(String(newValue));
-    onValueChange(newValue);
+    const current = inputValue === '' ? 0 : Number(inputValue);
+    const next = current + 1;
+    setInputValue(String(next));
+    onValueChange(next);
   }, [inputValue, onValueChange]);
 
   const handleDecrement = useCallback(() => {
-    const currentNum = inputValue === '' ? 0 : Number(inputValue);
-    const newValue = currentNum - 1;
-    if (!allowNegative && newValue < 0) {
+    const current = inputValue === '' ? 0 : Number(inputValue);
+    const next = current - 1;
+    if (!allowNegative && next < 0) {
       return;
     }
-    setInputValue(String(newValue));
-    onValueChange(newValue);
+    setInputValue(String(next));
+    onValueChange(next);
   }, [inputValue, onValueChange, allowNegative]);
 
   const handleOnChange = useCallback(
@@ -80,25 +82,23 @@ export const InputNumber = memo((props: InputNumberProps) => {
   );
 
   return (
-    <div className="px-3 py-1 rounded-lg bg-background-700">
-      <div className="w-full flex justify-between items-center gap-x-5">
-        <div className="grow">
-          <Input
-            className="px-0 h-8 w-full rounded-md border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-transparent"
-            type="text"
-            onChange={handleOnChange}
-            value={inputValue}
-            placeholder={placeholder}
-          />
-        </div>
-        <div className="flex justify-end items-center gap-x-1.5">
-          <button type="button" className={stepButtonClass} onClick={handleDecrement}>
-            <RiSubtractLine className="w-3.5 h-3.5 flex-shrink-0" />
-          </button>
-          <button type="button" className={stepButtonClass} onClick={handleIncrement}>
-            <RiAddLine className="w-3.5 h-3.5 flex-shrink-0" />
-          </button>
-        </div>
+    <div className="relative">
+      <Input
+        variant="compact-muted"
+        type="text"
+        inputMode="numeric"
+        className="pe-14"
+        value={inputValue}
+        placeholder={placeholder}
+        onChange={handleOnChange}
+      />
+      <div className="absolute inset-y-0 end-1 flex items-center gap-0.5">
+        <button type="button" className={stepButtonClass} onClick={handleDecrement}>
+          <RiSubtractLine className="h-3.5 w-3.5 flex-shrink-0" />
+        </button>
+        <button type="button" className={stepButtonClass} onClick={handleIncrement}>
+          <RiAddLine className="h-3.5 w-3.5 flex-shrink-0" />
+        </button>
       </div>
     </div>
   );

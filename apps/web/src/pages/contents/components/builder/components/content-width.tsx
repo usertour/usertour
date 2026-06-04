@@ -1,5 +1,7 @@
-import { memo, useCallback, useState, useEffect, ChangeEvent } from 'react';
+import { memo, useCallback, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { Input, QuestionTooltip } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 export interface ContentWidthProps {
   width: number | undefined;
@@ -8,21 +10,17 @@ export interface ContentWidthProps {
   type: 'modal' | 'tooltip' | 'checklist' | 'bubble';
 }
 
-const tooltipContent = {
-  modal: 'The width in pixels of the modal. Leave empty to use the theme default.',
-  tooltip: 'The width in pixels of the tooltip. Leave empty to use the theme default.',
-  checklist: 'The width in pixels of the checklist. Leave empty to use the theme default.',
-  bubble: 'The width in pixels of the bubble. Leave empty to use the theme default.',
-} as const;
-
 export const ContentWidth = memo((props: ContentWidthProps) => {
   const { type, width, defaultWidth, onChange } = props;
-  const [inputValue, setInputValue] = useState<string>(width !== undefined ? String(width) : '');
+  const { t } = useTranslation();
 
-  // Sync with external width changes
-  useEffect(() => {
+  // Resync the local string buffer from `width` during render (no sync effect).
+  const [inputValue, setInputValue] = useState(width !== undefined ? String(width) : '');
+  const [prevWidth, setPrevWidth] = useState(width);
+  if (width !== prevWidth) {
+    setPrevWidth(width);
     setInputValue(width !== undefined ? String(width) : '');
-  }, [width]);
+  }
 
   const handleOnChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -47,27 +45,32 @@ export const ContentWidth = memo((props: ContentWidthProps) => {
     [onChange],
   );
 
-  const placeholder = `Default: ${defaultWidth}`;
   const hasError = width === 0;
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-start items-center space-x-1">
-        <h1 className="text-sm">Width</h1>
-        <QuestionTooltip>{tooltipContent[type]}</QuestionTooltip>
+      <div className="flex items-center justify-start space-x-1">
+        <h1 className="text-sm">{t('contentBuilder.shared.width')}</h1>
+        <QuestionTooltip>{t(`contentBuilder.shared.widthTooltip.${type}`)}</QuestionTooltip>
       </div>
       <div className="relative">
         <Input
+          variant="compact-muted"
           type="text"
+          inputMode="numeric"
+          className="pe-9"
           value={inputValue}
+          placeholder={t('contentBuilder.shared.widthPlaceholder', { value: defaultWidth })}
           onChange={handleOnChange}
-          placeholder={placeholder}
-          className="h-10 w-full rounded-lg border-0 bg-background-700 px-4 pe-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pe-4">
-          <span className="text-muted-foreground">px</span>
-        </div>
-        {hasError && <p className="text-xs text-destructive mt-1">Width cannot be 0</p>}
+        <span className="absolute inset-y-0 end-0 flex items-center pe-3 text-muted-foreground text-sm pointer-events-none">
+          px
+        </span>
+        {hasError && (
+          <p className="mt-1 text-xs text-destructive">
+            {t('contentBuilder.shared.widthCannotBeZero')}
+          </p>
+        )}
       </div>
     </div>
   );

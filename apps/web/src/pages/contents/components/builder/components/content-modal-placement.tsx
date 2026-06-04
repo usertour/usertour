@@ -2,15 +2,17 @@ import { Button, Label, QuestionTooltip } from '@usertour/ui';
 import { ModalPosition } from '@usertour/types';
 import { ContentModalPlacementData } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { InputNumber } from '@/pages/contents/components/builder/components/shared/input';
 
-const PlacementButton = (props: {
+interface PlacementButtonProps {
   position: ModalPosition;
   currentPosition: ModalPosition;
   text: string;
   onPositionChange: (position: ModalPosition) => void;
-}) => {
+}
+
+const PlacementButton = (props: PlacementButtonProps) => {
   const { text, position, onPositionChange, currentPosition } = props;
   return (
     <Button
@@ -33,44 +35,43 @@ export interface ContentModalPlacementProps {
   name?: string;
 }
 
+// Controlled: renders straight from `data` and writes every edit back through
+// `onChange` — the parent step data is the single source of truth (no local
+// copy, so external changes flow through immediately).
 export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
-  const { data: initialValue, onChange, name = 'modal' } = props;
-  const [data, setData] = useState<ContentModalPlacementData>(initialValue);
+  const { data, onChange, name = 'modal' } = props;
+  const { t } = useTranslation();
 
-  const update = (fn: (pre: ContentModalPlacementData) => ContentModalPlacementData) => {
-    setData((pre) => {
-      const v = fn(pre);
-      onChange(v);
-      return v;
-    });
+  const update = (patch: Partial<ContentModalPlacementData>) => {
+    onChange({ ...data, ...patch });
   };
 
   const handleCurrentPositionChange = (position: ModalPosition) => {
-    update((pre) => ({ ...pre, position }));
+    update({ position });
   };
   const handleOffsetXChange = (value: number | undefined) => {
-    update((pre) => ({ ...pre, positionOffsetX: value ?? 0 }));
+    update({ positionOffsetX: value ?? 0 });
   };
   const handleOffsetYChange = (value: number | undefined) => {
-    update((pre) => ({ ...pre, positionOffsetY: value ?? 0 }));
+    update({ positionOffsetY: value ?? 0 });
   };
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-start items-center space-x-1	">
-        <h1 className="text-sm">Placement</h1>
-        <QuestionTooltip>Controls which corner the {name} should be placed at.</QuestionTooltip>
+      <div className="flex items-center justify-start space-x-1">
+        <h1 className="text-sm">{t('contentBuilder.shared.placement')}</h1>
+        <QuestionTooltip>{t('contentBuilder.shared.placementTooltip', { name })}</QuestionTooltip>
       </div>
       <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
         <div className="flex justify-between">
           <PlacementButton
-            text="Left Top"
+            text={t('contentBuilder.shared.position.leftTop')}
             position={ModalPosition.LeftTop}
             currentPosition={data.position}
             onPositionChange={handleCurrentPositionChange}
           />
           <PlacementButton
-            text="Right Top"
+            text={t('contentBuilder.shared.position.rightTop')}
             position={ModalPosition.RightTop}
             currentPosition={data.position}
             onPositionChange={handleCurrentPositionChange}
@@ -78,7 +79,7 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
         </div>
         <div className="flex justify-center">
           <PlacementButton
-            text="Center"
+            text={t('contentBuilder.shared.position.center')}
             position={ModalPosition.Center}
             currentPosition={data.position}
             onPositionChange={handleCurrentPositionChange}
@@ -86,13 +87,13 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
         </div>
         <div className="flex justify-between">
           <PlacementButton
-            text="Left Bottom"
+            text={t('contentBuilder.shared.position.leftBottom')}
             position={ModalPosition.LeftBottom}
             currentPosition={data.position}
             onPositionChange={handleCurrentPositionChange}
           />
           <PlacementButton
-            text="Right Bottom"
+            text={t('contentBuilder.shared.position.rightBottom')}
             position={ModalPosition.RightBottom}
             currentPosition={data.position}
             onPositionChange={handleCurrentPositionChange}
@@ -103,10 +104,9 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
         <>
           <div className="flex flex-col space-y-2">
             <div className="flex space-x-1 justify-start items-center">
-              <Label htmlFor="button-distance-element">The horizontal offset</Label>
+              <Label htmlFor="modal-offset-x">{t('contentBuilder.shared.horizontalOffset')}</Label>
               <QuestionTooltip>
-                How far in pixels from the horizontal edge of the browser window the {name} should
-                be positioned.
+                {t('contentBuilder.shared.horizontalOffsetTooltip', { name })}
               </QuestionTooltip>
             </div>
             <InputNumber
@@ -116,10 +116,9 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
           </div>
           <div className="flex flex-col space-y-2">
             <div className="flex space-x-1 justify-start items-center">
-              <Label htmlFor="button-distance-element">The vertical offset</Label>
+              <Label htmlFor="modal-offset-y">{t('contentBuilder.shared.verticalOffset')}</Label>
               <QuestionTooltip>
-                How far in pixels from the vertical edge of the browser window the {name} should be
-                positioned.
+                {t('contentBuilder.shared.verticalOffsetTooltip', { name })}
               </QuestionTooltip>
             </div>
             <InputNumber
@@ -132,4 +131,5 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
     </div>
   );
 };
+
 ContentModalPlacement.displayName = 'ContentModalPlacement';
