@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
 import { AppModule } from '@/app.module';
+import { configureApp } from '@/configure-app';
 
 /**
  * Boots the full application for an HTTP e2e spec. Connects to whatever
@@ -12,6 +13,7 @@ import { AppModule } from '@/app.module';
 export async function createTestApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication();
+  configureApp(app);
   await app.init();
   return app;
 }

@@ -54,6 +54,7 @@ export class OpenAPIContentSessionsController {
   @ApiOperation({ summary: 'Delete a content session' })
   @ApiParam({ name: 'id', description: 'Content Session ID' })
   @ApiResponse({ status: 200, description: 'Content session deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Content session not found' })
   async deleteContentSession(@Param('id') id: string, @EnvironmentId() environmentId: string) {
     return this.openAPIContentSessionsService.deleteContentSession(id, environmentId);
   }

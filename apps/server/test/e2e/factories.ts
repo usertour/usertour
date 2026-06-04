@@ -293,6 +293,35 @@ export async function buildBizCompany(
 }
 
 /**
+ * Join row linking a BizUser to a BizCompany (a "company membership"). `data`
+ * is a non-optional JsonB column (defaults to `{}`). The caller is responsible
+ * for ensuring the bizUser and bizCompany live in the SAME environment — the
+ * membership lookup joins on both externalIds within one environment, so a
+ * cross-env pair would be unreachable.
+ */
+export async function buildBizUserOnCompany(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.BizUserOnCompanyUncheckedCreateInput> = {},
+) {
+  if (!overrides.bizUserId) {
+    const bizUser = await buildBizUser(prisma);
+    overrides.bizUserId = bizUser.id;
+  }
+  if (!overrides.bizCompanyId) {
+    const bizCompany = await buildBizCompany(prisma);
+    overrides.bizCompanyId = bizCompany.id;
+  }
+  return prisma.bizUserOnCompany.create({
+    data: {
+      data: {},
+      ...overrides,
+      bizUserId: overrides.bizUserId,
+      bizCompanyId: overrides.bizCompanyId,
+    },
+  });
+}
+
+/**
  * Session FKs span three parents (bizUser, content, version). If only
  * `versionId` is provided we derive `contentId` from it — the two must agree
  * or the session is orphaned.
