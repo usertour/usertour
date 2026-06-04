@@ -189,6 +189,16 @@ describe('OpenAPI /v1/content-sessions (e2e)', () => {
   });
 
   describe('delete contract', () => {
+    it('returns 404 deleting an unknown session', async () => {
+      const res = await openapi(app, {
+        method: 'delete',
+        path: '/v1/content-sessions/does-not-exist',
+        token: fxA.apiKey,
+      });
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('E1005');
+    });
+
     it('deletes a session, then it is gone', async () => {
       const del = await openapi(app, {
         method: 'delete',
@@ -265,14 +275,14 @@ describe('OpenAPI /v1/content-sessions (e2e)', () => {
       expect(res.body.error.code).toBe('E1005');
     });
 
-    it("delete with another environment's key does not remove the row", async () => {
-      // Note: the delete endpoint reports deleted:true unconditionally, but the
-      // underlying delete is environment-scoped, so the foreign row must survive.
-      await openapi(app, {
+    it("cannot delete another environment's session — 404, and the row survives", async () => {
+      const res = await openapi(app, {
         method: 'delete',
         path: `/v1/content-sessions/${foreignSessionId}`,
         token: fxA.apiKey,
       });
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('E1005');
 
       const survivor = await prisma.bizSession.findUnique({ where: { id: foreignSessionId } });
       expect(survivor).not.toBeNull();
