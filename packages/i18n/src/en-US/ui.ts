@@ -1707,6 +1707,24 @@ const translations = {
         leftBottom: 'Left Bottom',
         rightBottom: 'Right Bottom',
       },
+      elementText: 'Element text',
+      elementTextTooltip: 'Usertour will select an element containing the text you write here.',
+      cssSelector: 'CSS selector',
+      cssSelectorTooltip:
+        'Advanced feature: if possible, we recommend selecting elements using text. If an element does not have text, or the text is very generic, you can select it using a CSS selector instead. If both text and CSS selector are filled in, Usertour will select an element matching both.',
+      cssSelectorRequired: 'CSS selector is required',
+      ifMultipleMatches: 'If multiple matches',
+      ifMultipleMatchesTooltip:
+        'If multiple elements match your criteria, you can tell Usertour which of the elements to select. Elements are sorted first by vertical position and second by horizontal position. I.e. an element higher up on the page and more towards the left takes precedence.',
+      selectSequencePlaceholder: 'Select a sequence',
+      selectElement: {
+        '1': 'select 1st element',
+        '2': 'select 2nd element',
+        '3': 'select 3rd element',
+        '4': 'select 4th element',
+        '5': 'select 5th element',
+      },
+      whenTargetClicked: 'When target element is clicked',
     },
     flow: {
       triggers: 'Triggers',

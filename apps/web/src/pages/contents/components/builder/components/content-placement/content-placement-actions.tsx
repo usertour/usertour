@@ -32,7 +32,7 @@ export const ContentPlacementActions = ({
 
   return (
     <div className="flex flex-col space-y-2">
-      <Label>When target element is clicked</Label>
+      <Label>{t('contentBuilder.shared.whenTargetClicked')}</Label>
       <Actions
         baseZIndex={zIndex + EXTENSION_SELECT}
         currentStep={currentStep}

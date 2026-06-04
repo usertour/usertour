@@ -1605,6 +1605,24 @@ const translations = {
         leftBottom: '左下',
         rightBottom: '右下',
       },
+      elementText: '元素文本',
+      elementTextTooltip: 'Usertour 会选中包含你在此输入文本的元素。',
+      cssSelector: 'CSS 选择器',
+      cssSelectorTooltip:
+        '高级功能：如果可以，我们建议用文本来选中元素。如果元素没有文本，或文本过于通用，可以改用 CSS 选择器。如果文本和 CSS 选择器都填写了，Usertour 会选中同时匹配两者的元素。',
+      cssSelectorRequired: 'CSS 选择器不能为空',
+      ifMultipleMatches: '若匹配到多个元素',
+      ifMultipleMatchesTooltip:
+        '如果有多个元素符合你的条件，你可以告诉 Usertour 选中其中哪一个。元素先按垂直位置、再按水平位置排序，即越靠上、越靠左的元素优先。',
+      selectSequencePlaceholder: '选择序号',
+      selectElement: {
+        '1': '选中第 1 个元素',
+        '2': '选中第 2 个元素',
+        '3': '选中第 3 个元素',
+        '4': '选中第 4 个元素',
+        '5': '选中第 5 个元素',
+      },
+      whenTargetClicked: '点击目标元素时',
     },
     flow: {
       triggers: '触发器',

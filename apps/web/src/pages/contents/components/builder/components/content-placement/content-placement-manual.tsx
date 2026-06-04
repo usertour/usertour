@@ -1,6 +1,7 @@
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
 import { ChangeEvent, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ContentError,
   ContentErrorAnchor,
@@ -11,6 +12,7 @@ import { SequenceSelect } from '@/pages/contents/components/builder/components/c
 
 export const ContentPlacementManual = () => {
   const { target, onTargetChange, zIndex, isShowError } = useContentPlacement();
+  const { t } = useTranslation();
 
   const handleContentChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -36,33 +38,25 @@ export const ContentPlacementManual = () => {
   return (
     <ContentError open={isShowError && !target?.customSelector}>
       <div className="flex flex-col space-y-2">
-        {/* <h1 className="text-sm">{subTitle}</h1> */}
         <div className="flex flex-col space-y-2">
           <div className="flex justify-start items-center space-x-1">
-            <Label htmlFor="element-text">Element text</Label>
-            <QuestionTooltip>
-              Usertour will select an element containing the text you write here.
-            </QuestionTooltip>
+            <Label htmlFor="element-text">{t('contentBuilder.shared.elementText')}</Label>
+            <QuestionTooltip>{t('contentBuilder.shared.elementTextTooltip')}</QuestionTooltip>
           </div>
           <Input
-            className="bg-background"
+            variant="compact"
             id="element-text"
             value={target?.content ?? ''}
             onChange={handleContentChange}
           />
-          <div className="flex justify-start items-center space-x-1	">
-            <Label htmlFor="css-selector">CSS selector</Label>
-            <QuestionTooltip>
-              Advanced feature: If possible, we recommend selecting elements using text. lf an
-              element does not have text, or the text is very generic, you can select it using a CSS
-              selector instead. lf both text and CSS selector is filled in, Usertour will select an
-              element matching both.
-            </QuestionTooltip>
+          <div className="flex justify-start items-center space-x-1">
+            <Label htmlFor="css-selector">{t('contentBuilder.shared.cssSelector')}</Label>
+            <QuestionTooltip>{t('contentBuilder.shared.cssSelectorTooltip')}</QuestionTooltip>
           </div>
 
           <ContentErrorAnchor>
             <Input
-              className="bg-background"
+              variant="compact"
               id="css-selector"
               value={target?.customSelector ?? ''}
               onChange={handleSelectorChange}
@@ -77,7 +71,7 @@ export const ContentPlacementManual = () => {
         </div>
       </div>
       <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-        CSS selector is required
+        {t('contentBuilder.shared.cssSelectorRequired')}
       </ContentErrorContent>
     </ContentError>
   );
