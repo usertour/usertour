@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -16,7 +15,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { Actions, PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import {
@@ -46,9 +45,10 @@ import {
 
 const BlockActionHeader = () => {
   const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
+  const { t } = useTranslation();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row space-x-1 text-base items-center">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base">
         <Button
           variant="link"
           size="icon"
@@ -58,9 +58,9 @@ const BlockActionHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
-        <span className="truncate">Action block</span>
+        <span className="truncate">{t('contentBuilder.resourceCenter.actionBlock')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -120,7 +120,7 @@ const BlockActionBody = () => {
         <div className="flex-col space-y-3 p-4">
           {/* Icon */}
           <div className="flex flex-col space-y-2">
-            <Label>Icon</Label>
+            <Label>{t('contentBuilder.resourceCenter.icon')}</Label>
             <IconPicker
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
@@ -134,7 +134,7 @@ const BlockActionBody = () => {
           {/* Name */}
           <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
             <div className="flex flex-col space-y-2">
-              <Label>Name</Label>
+              <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
                   zIndex={zIndex + EXTENSION_SELECT}
@@ -149,13 +149,13 @@ const BlockActionBody = () => {
               </ContentErrorAnchor>
             </div>
             <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-              Name is required
+              {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
 
           {/* When block is clicked */}
           <div className="flex flex-col space-y-2">
-            <Label>When block is clicked</Label>
+            <Label>{t('contentBuilder.resourceCenter.whenClicked')}</Label>
             <Actions
               baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={undefined}
@@ -178,7 +178,7 @@ const BlockActionBody = () => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="only-show-block" className="font-normal">
-                Only show block if...
+                {t('contentBuilder.resourceCenter.onlyShowBlock')}
               </Label>
               <Switch
                 id="only-show-block"
@@ -209,6 +209,7 @@ const BlockActionBody = () => {
 
 const BlockActionFooter = () => {
   const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
+  const { t } = useTranslation();
   const conditionsGate = useConditionsSaveGate();
   const actionsGate = useActionsSaveGate();
   const handleSave = () => {
@@ -228,7 +229,7 @@ const BlockActionFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );

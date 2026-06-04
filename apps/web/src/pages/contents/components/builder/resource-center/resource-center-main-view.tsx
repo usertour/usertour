@@ -220,9 +220,11 @@ const ResourceCenterMainViewBody = () => {
                           >
                             <Icon width={16} height={16} className="shrink-0 text-foreground" />
                             <span className="min-w-0 leading-none">
-                              <span className="text-xs font-medium text-foreground">{label}</span>
+                              <span className="text-xs font-medium text-foreground">
+                                {t(label)}
+                              </span>
                               <span className="ml-1 text-xs text-muted-foreground">
-                                {description}
+                                {t(description)}
                               </span>
                             </span>
                           </DropdownMenuItem>

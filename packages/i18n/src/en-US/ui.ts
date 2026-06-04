@@ -1809,6 +1809,27 @@ const translations = {
         'After deletion, it will not be possible to access or recover the data through any means. Please confirm.',
       tabDeleteDescription:
         'This will delete the tab and all its blocks. This action cannot be undone.',
+      blockType: {
+        action: { label: 'Action', description: 'Link, start flow, or custom code' },
+        richText: { label: 'Rich Text', description: 'Add text, images, and more' },
+        divider: { label: 'Divider line', description: 'A visual separator between blocks' },
+        subPage: { label: 'Sub-page', description: 'A separate page with its own content' },
+        contentList: {
+          label: 'List of flows/checklists',
+          description: 'Start content on demand',
+        },
+        liveChat: { label: 'Live chat', description: 'Connect to your live chat provider' },
+      },
+      onlyShowBlock: 'Only show block if...',
+      nameRequired: 'Name is required',
+      dividerBlock: 'Divider block',
+      dividerInfo: 'Add a divider line to separate blocks in your resource center.',
+      richTextBlock: 'Rich text block',
+      richTextInfo: 'Edit rich text content by clicking on the content area in the preview.',
+      subPageBlock: 'Sub-page block',
+      subPageInfo: 'Sub-page content can be edited in the preview panel.',
+      actionBlock: 'Action block',
+      whenClicked: 'When block is clicked',
     },
   },
   conditions: {

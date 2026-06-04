@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -14,7 +13,7 @@ import {
 import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { RulesCondition } from '@usertour/types';
@@ -24,10 +23,10 @@ import { useResourceCenterEditor } from '@/pages/contents/components/builder/res
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
 import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
 
 const BlockDividerHeader = () => {
   const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
+  const { t } = useTranslation();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row items-center space-x-1 text-base">
@@ -40,9 +39,9 @@ const BlockDividerHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
-        <span className="truncate">Divider block</span>
+        <span className="truncate">{t('contentBuilder.resourceCenter.dividerBlock')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -76,16 +75,16 @@ const BlockDividerBody = () => {
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <InfoCircledIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+            <RiInformationLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
             <p className="text-sm text-blue-800">
-              Add a divider line to separate blocks in your resource center.
+              {t('contentBuilder.resourceCenter.dividerInfo')}
             </p>
           </div>
 
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="only-show-block" className="font-normal">
-                Only show block if...
+                {t('contentBuilder.resourceCenter.onlyShowBlock')}
               </Label>
               <Switch
                 id="only-show-block"
@@ -116,6 +115,7 @@ const BlockDividerBody = () => {
 
 const BlockDividerFooter = () => {
   const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
+  const { t } = useTranslation();
   const gate = useConditionsSaveGate();
   const handleSave = () => {
     if (!gate(currentBlock?.onlyShowBlockConditions)) return;
@@ -125,7 +125,7 @@ const BlockDividerFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );

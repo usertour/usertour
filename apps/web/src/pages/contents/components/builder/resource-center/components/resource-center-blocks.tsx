@@ -81,7 +81,7 @@ const DeleteDialog = (props: DeleteDialogProps) => {
 const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>((props, ref) => {
   const { onClick, listeners, attributes, block, style } = props;
   const { t } = useTranslation();
-  const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
+  const typeLabel = t(BLOCK_TYPE_LABELS[block.type]);
   const BlockTypeIcon = getResourceCenterBlockTypeIcon(block.type);
   const nameText =
     block.type === ResourceCenterBlockType.ACTION ||

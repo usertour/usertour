@@ -11,6 +11,8 @@ import { ResourceCenterBlockType } from '@usertour/types';
 
 type IconComponent = ElementType<{ className?: string; width?: number; height?: number }>;
 
+// `label` / `description` are i18n keys (under contentBuilder.resourceCenter.blockType.*);
+// callers resolve them with t().
 export type BlockTypeOption = {
   key: string;
   value?: ResourceCenterBlockType;
@@ -21,55 +23,56 @@ export type BlockTypeOption = {
 };
 
 export const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
-  [ResourceCenterBlockType.ACTION]: 'Action',
-  [ResourceCenterBlockType.RICH_TEXT]: 'Rich Text',
-  [ResourceCenterBlockType.DIVIDER]: 'Divider line',
-  [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
-  [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',
-  [ResourceCenterBlockType.LIVE_CHAT]: 'Live chat',
+  [ResourceCenterBlockType.ACTION]: 'contentBuilder.resourceCenter.blockType.action.label',
+  [ResourceCenterBlockType.RICH_TEXT]: 'contentBuilder.resourceCenter.blockType.richText.label',
+  [ResourceCenterBlockType.DIVIDER]: 'contentBuilder.resourceCenter.blockType.divider.label',
+  [ResourceCenterBlockType.SUB_PAGE]: 'contentBuilder.resourceCenter.blockType.subPage.label',
+  [ResourceCenterBlockType.CONTENT_LIST]:
+    'contentBuilder.resourceCenter.blockType.contentList.label',
+  [ResourceCenterBlockType.LIVE_CHAT]: 'contentBuilder.resourceCenter.blockType.liveChat.label',
 };
 
 export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
   {
     key: ResourceCenterBlockType.ACTION,
     value: ResourceCenterBlockType.ACTION,
-    label: 'Action',
-    description: 'Link, start flow, or custom code',
+    label: 'contentBuilder.resourceCenter.blockType.action.label',
+    description: 'contentBuilder.resourceCenter.blockType.action.description',
     icon: RiArrowRightCircleFill,
   },
   {
     key: ResourceCenterBlockType.RICH_TEXT,
     value: ResourceCenterBlockType.RICH_TEXT,
-    label: 'Rich Text',
-    description: 'Add text, images, and more',
+    label: 'contentBuilder.resourceCenter.blockType.richText.label',
+    description: 'contentBuilder.resourceCenter.blockType.richText.description',
     icon: RiFileTextFill,
   },
   {
     key: ResourceCenterBlockType.SUB_PAGE,
     value: ResourceCenterBlockType.SUB_PAGE,
-    label: 'Sub-page',
-    description: 'A separate page with its own content',
+    label: 'contentBuilder.resourceCenter.blockType.subPage.label',
+    description: 'contentBuilder.resourceCenter.blockType.subPage.description',
     icon: RiPagesFill,
   },
   {
     key: ResourceCenterBlockType.CONTENT_LIST,
     value: ResourceCenterBlockType.CONTENT_LIST,
-    label: 'List of flows/checklists',
-    description: 'Start content on demand',
+    label: 'contentBuilder.resourceCenter.blockType.contentList.label',
+    description: 'contentBuilder.resourceCenter.blockType.contentList.description',
     icon: RiListCheck3,
   },
   {
     key: ResourceCenterBlockType.LIVE_CHAT,
     value: ResourceCenterBlockType.LIVE_CHAT,
-    label: 'Live chat',
-    description: 'Connect to your live chat provider',
+    label: 'contentBuilder.resourceCenter.blockType.liveChat.label',
+    description: 'contentBuilder.resourceCenter.blockType.liveChat.description',
     icon: RiMessage3Fill,
   },
   {
     key: ResourceCenterBlockType.DIVIDER,
     value: ResourceCenterBlockType.DIVIDER,
-    label: 'Divider line',
-    description: 'A visual separator between blocks',
+    label: 'contentBuilder.resourceCenter.blockType.divider.label',
+    description: 'contentBuilder.resourceCenter.blockType.divider.description',
     icon: RiSeparator,
   },
 ];

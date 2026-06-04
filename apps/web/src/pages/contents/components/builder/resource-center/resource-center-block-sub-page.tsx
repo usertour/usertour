@@ -1,7 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -14,7 +12,7 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
@@ -40,9 +38,10 @@ import {
 
 const BlockSubPageHeader = () => {
   const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
+  const { t } = useTranslation();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row space-x-1 text-base items-center">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base">
         <Button
           variant="link"
           size="icon"
@@ -52,9 +51,9 @@ const BlockSubPageHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
-        <span className="truncate">Sub-page block</span>
+        <span className="truncate">{t('contentBuilder.resourceCenter.subPageBlock')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -108,15 +107,15 @@ const BlockSubPageBody = () => {
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <InfoCircledIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+            <RiInformationLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
             <p className="text-sm text-blue-800">
-              Sub-page content can be edited in the preview panel.
+              {t('contentBuilder.resourceCenter.subPageInfo')}
             </p>
           </div>
 
           {/* Icon */}
           <div className="flex flex-col space-y-2">
-            <Label>Icon</Label>
+            <Label>{t('contentBuilder.resourceCenter.icon')}</Label>
             <IconPicker
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
@@ -130,7 +129,7 @@ const BlockSubPageBody = () => {
           {/* Name */}
           <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
             <div className="flex flex-col space-y-2">
-              <Label>Name</Label>
+              <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
                   zIndex={zIndex + EXTENSION_SELECT}
@@ -145,7 +144,7 @@ const BlockSubPageBody = () => {
               </ContentErrorAnchor>
             </div>
             <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-              Name is required
+              {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
 
@@ -153,7 +152,7 @@ const BlockSubPageBody = () => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="only-show-block" className="font-normal">
-                Only show block if...
+                {t('contentBuilder.resourceCenter.onlyShowBlock')}
               </Label>
               <Switch
                 id="only-show-block"
@@ -184,6 +183,7 @@ const BlockSubPageBody = () => {
 
 const BlockSubPageFooter = () => {
   const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
+  const { t } = useTranslation();
   const gate = useConditionsSaveGate();
   const handleSave = () => {
     if (!gate(currentBlock?.onlyShowBlockConditions)) return;
@@ -193,7 +193,7 @@ const BlockSubPageFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );
