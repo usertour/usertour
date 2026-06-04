@@ -80,9 +80,8 @@ describe('WebSocketMessageValidationPipe', () => {
 
     it('should accept payload within size limit', async () => {
       const payload = {
-        eventName: 'test-event',
-        sessionId: 'session-123',
-        eventData: { key: 'value' },
+        name: 'test-event',
+        attributes: { key: 'value' },
       };
 
       const result = await pipe.transform({
@@ -292,13 +291,12 @@ describe('WebSocketMessageValidationPipe', () => {
   });
 
   describe('TrackEvent payload validation', () => {
-    it('should reject missing eventData', async () => {
+    it('should reject missing name', async () => {
       await expect(
         pipe.transform({
           kind: ClientMessageKind.TRACK_EVENT,
           payload: {
-            eventName: 'click',
-            sessionId: 'session-123',
+            attributes: { key: 'value' },
           },
         }),
       ).rejects.toThrow(WsException);
@@ -308,9 +306,8 @@ describe('WebSocketMessageValidationPipe', () => {
       const result = await pipe.transform({
         kind: ClientMessageKind.TRACK_EVENT,
         payload: {
-          eventName: 'button_click',
-          sessionId: 'session-123',
-          eventData: { buttonId: 'submit' },
+          name: 'button_click',
+          attributes: { buttonId: 'submit' },
         },
       });
 

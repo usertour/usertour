@@ -13,6 +13,7 @@ describe('OpenAPIEventDefinitionsService', () => {
     projectId: 'project-1',
     name: 'Test Environment',
     token: 'test-token',
+    isPrimary: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

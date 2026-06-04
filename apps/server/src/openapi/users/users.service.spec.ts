@@ -17,6 +17,7 @@ describe('OpenAPIUsersService', () => {
     projectId: 'project1',
     name: 'Test Environment',
     token: 'test-token',
+    isPrimary: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

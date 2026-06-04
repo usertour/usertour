@@ -1,4 +1,4 @@
-import { Logger as NestLogger, ValidationPipe } from '@nestjs/common';
+import { Logger as NestLogger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -9,6 +9,7 @@ import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
+import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
 import { startTracer } from './tracer';
@@ -53,13 +54,8 @@ async function bootstrap() {
     console.error('Unhandled Rejection:', err);
   });
 
-  // Validation
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  // Validation (shared with the e2e bootstrap via configureApp)
+  configureApp(app);
 
   // trust proxy
   app.set('trust proxy', true);

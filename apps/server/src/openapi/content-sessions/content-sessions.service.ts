@@ -151,7 +151,16 @@ export class OpenAPIContentSessionsService {
   }
 
   async deleteContentSession(id: string, environmentId: string) {
-    await this.analyticsService.deleteContentSessionWithRelations(id, environmentId);
+    const deleted = await this.analyticsService.deleteContentSessionWithRelations(
+      id,
+      environmentId,
+    );
+    // deleteContentSessionWithRelations is environment-scoped and returns null
+    // when nothing matched. Surface that as 404 (consistent with get/end), rather
+    // than reporting deleted:true for a session that was never touched.
+    if (!deleted) {
+      throw new ContentSessionNotFoundError();
+    }
 
     return {
       id,
