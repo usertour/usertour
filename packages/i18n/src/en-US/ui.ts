@@ -1784,6 +1784,32 @@ const translations = {
       deleteConfirmDescription:
         'After deletion, it will not be possible to access or recover the data through any means. Please confirm.',
     },
+    resourceCenter: {
+      headerText: 'Header text',
+      headerTextPlaceholder: 'Resource Center',
+      launcherButtonText: 'Launcher button text',
+      none: 'None',
+      addBlock: 'Add block',
+      blocks: 'Blocks',
+      blocksOf: '"{{name}}" blocks',
+      tabs: 'Tabs',
+      tabsTooltip:
+        'If a tab contains only one navigable block (such as Sub-page or List of flows/checklists), its detail view will be displayed directly without requiring a click.',
+      addTab: 'Add tab',
+      untitledTab: 'Untitled tab',
+      tabSettings: 'Tab settings',
+      name: 'Name',
+      tabNamePlaceholder: 'Tab name',
+      icon: 'Icon',
+      tabNameRequired: 'Tab name is required',
+      edit: 'Edit',
+      delete: 'Delete',
+      deleteConfirmTitle: 'Are you absolutely sure?',
+      deleteConfirmDescription:
+        'After deletion, it will not be possible to access or recover the data through any means. Please confirm.',
+      tabDeleteDescription:
+        'This will delete the tab and all its blocks. This action cannot be undone.',
+    },
   },
   conditions: {
     actions: {

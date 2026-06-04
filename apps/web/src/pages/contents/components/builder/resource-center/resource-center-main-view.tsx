@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { RiAddCircleLine } from '@usertour/icons';
 import {
   CardContent,
   DropdownMenu,
@@ -20,6 +20,7 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
+import { useTranslation } from 'react-i18next';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
@@ -128,7 +129,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
   }
 };
 
-const ResourceCenterCoreBody = () => {
+const ResourceCenterMainViewBody = () => {
   const {
     data: localData,
     addBlock,
@@ -136,8 +137,9 @@ const ResourceCenterCoreBody = () => {
     currentTabId,
   } = useResourceCenterEditor();
   const { zIndex } = useBuilderConfig();
+  const { t } = useTranslation();
 
-  const currentTab = localData.tabs.find((t) => t.id === currentTabId);
+  const currentTab = localData.tabs.find((tab) => tab.id === currentTabId);
 
   const handleAddBlock = (type: ResourceCenterBlockType) => {
     const block = createBlock(type);
@@ -155,32 +157,34 @@ const ResourceCenterCoreBody = () => {
           {/* Header Text */}
           <div className="flex flex-col space-y-2">
             <div className={labelStyles}>
-              <Label htmlFor="header-text">Header text</Label>
+              <Label htmlFor="header-text">{t('contentBuilder.resourceCenter.headerText')}</Label>
             </div>
             <Input
-              className="bg-background-900"
+              variant="compact-muted"
               id="header-text"
               value={localData.headerText}
               onChange={(e) => {
                 updateLocalData({ headerText: e.target.value });
               }}
-              placeholder="Resource Center"
+              placeholder={t('contentBuilder.resourceCenter.headerTextPlaceholder')}
             />
           </div>
 
           {/* Launcher Button Text */}
           <div className="flex flex-col space-y-2">
             <div className={labelStyles}>
-              <Label htmlFor="launcher-button-text">Launcher button text</Label>
+              <Label htmlFor="launcher-button-text">
+                {t('contentBuilder.resourceCenter.launcherButtonText')}
+              </Label>
             </div>
             <Input
-              className="bg-background-900"
+              variant="compact-muted"
               id="launcher-button-text"
               value={localData.buttonText}
               onChange={(e) => {
                 updateLocalData({ buttonText: e.target.value });
               }}
-              placeholder="None"
+              placeholder={t('contentBuilder.resourceCenter.none')}
             />
           </div>
 
@@ -195,8 +199,8 @@ const ResourceCenterCoreBody = () => {
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button className="w-full" variant="secondary">
-                      <PlusCircledIcon className="mr-2" />
-                      Add block
+                      <RiAddCircleLine className="mr-2 size-4" />
+                      {t('contentBuilder.resourceCenter.addBlock')}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
@@ -236,13 +240,13 @@ const ResourceCenterCoreBody = () => {
   );
 };
 
-export const ResourceCenterCore = () => {
+export const ResourceCenterMainView = () => {
   const handleSave = useSidebarSave();
   return (
     <BuilderSidebarLayout onSave={handleSave}>
-      <ResourceCenterCoreBody />
+      <ResourceCenterMainViewBody />
     </BuilderSidebarLayout>
   );
 };
 
-ResourceCenterCore.displayName = 'ResourceCenterCore';
+ResourceCenterMainView.displayName = 'ResourceCenterMainView';

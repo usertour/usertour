@@ -7,7 +7,7 @@ import {
 } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useAutoSidebarPosition } from '@/pages/contents/components/builder/hooks/use-auto-sidebar-position';
-import { ResourceCenterCore } from '@/pages/contents/components/builder/resource-center/resource-center-core';
+import { ResourceCenterMainView } from '@/pages/contents/components/builder/resource-center/resource-center-main-view';
 import { ResourceCenterBlockRichText } from '@/pages/contents/components/builder/resource-center/resource-center-block-rich-text';
 import { ResourceCenterBlockDivider } from '@/pages/contents/components/builder/resource-center/resource-center-block-divider';
 import { ResourceCenterBlockAction } from '@/pages/contents/components/builder/resource-center/resource-center-block-action';
@@ -76,7 +76,7 @@ export const ResourceCenterBuilder = () => {
     <>
       <Routes>
         <Route index element={<RedirectToFirstTab />} />
-        <Route path="tab/:tabId" element={<ResourceCenterCore />} />
+        <Route path="tab/:tabId" element={<ResourceCenterMainView />} />
         <Route path="tab/:tabId/settings" element={<ResourceCenterTabSettings />} />
         <Route path="tab/:tabId/block/:blockId" element={<ResourceCenterBlockEditor />} />
       </Routes>

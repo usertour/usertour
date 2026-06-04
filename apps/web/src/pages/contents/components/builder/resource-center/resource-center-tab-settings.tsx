@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -12,10 +11,11 @@ import {
   ScrollArea,
 } from '@usertour/ui';
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
 import { useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
@@ -28,6 +28,7 @@ import {
 
 const TabSettingsHeader = () => {
   const { setEditingTab, exitTabSettings } = useResourceCenterEditor();
+  const { t } = useTranslation();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -40,9 +41,9 @@ const TabSettingsHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
-        <span className="truncate">Tab settings</span>
+        <span className="truncate">{t('contentBuilder.resourceCenter.tabSettings')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -51,6 +52,7 @@ const TabSettingsHeader = () => {
 const TabSettingsBody = () => {
   const { editingTab, setEditingTab, isShowError } = useResourceCenterEditor();
   const { zIndex } = useBuilderConfig();
+  const { t } = useTranslation();
 
   if (!editingTab) {
     return null;
@@ -83,25 +85,25 @@ const TabSettingsBody = () => {
           {/* Name */}
           <ContentError open={isShowError && editingTab.name.trim() === ''}>
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="tab-name">Name</Label>
+              <Label htmlFor="tab-name">{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <Input
+                  variant="compact-muted"
                   id="tab-name"
-                  className="bg-background-900"
                   value={editingTab.name}
-                  placeholder="Tab name"
+                  placeholder={t('contentBuilder.resourceCenter.tabNamePlaceholder')}
                   onChange={handleNameChange}
                 />
               </ContentErrorAnchor>
             </div>
             <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-              Tab name is required
+              {t('contentBuilder.resourceCenter.tabNameRequired')}
             </ContentErrorContent>
           </ContentError>
 
           {/* Icon */}
           <div className="flex flex-col space-y-2">
-            <Label>Icon</Label>
+            <Label>{t('contentBuilder.resourceCenter.icon')}</Label>
             <IconPicker
               type={editingTab.iconType}
               iconSource={editingTab.iconSource}
@@ -118,11 +120,12 @@ const TabSettingsBody = () => {
 
 const TabSettingsFooter = () => {
   const { saveEditingTab, isLoading } = useResourceCenterEditor();
+  const { t } = useTranslation();
   return (
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={saveEditingTab}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );
@@ -134,7 +137,7 @@ export const ResourceCenterTabSettings = () => {
   // Seed the editingTab draft from the :tabId route param on mount — covers
   // nav, deep-link and refresh. Shallow clone (settings edits name + icon only).
   useLayoutEffect(() => {
-    const tab = data.tabs.find((t) => t.id === tabId);
+    const tab = data.tabs.find((item) => item.id === tabId);
     setEditingTab(tab ? { ...tab } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabId]);
