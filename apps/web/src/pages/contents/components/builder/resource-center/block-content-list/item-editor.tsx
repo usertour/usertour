@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -12,6 +11,7 @@ import {
   Switch,
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
+import { RiArrowLeftSLine } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
@@ -43,16 +43,19 @@ export interface ItemEditorHeaderProps {
   onBack: () => void;
 }
 
-export const ItemEditorHeader = ({ itemName, onBack }: ItemEditorHeaderProps) => (
-  <CardHeader className="flex-none p-4 space-y-2">
-    <CardTitle className="flex flex-row space-x-1 text-base items-center">
-      <Button variant="link" size="icon" onClick={onBack} className="text-foreground w-6 h-8">
-        <ChevronLeftIcon className="h-6 w-6" />
-      </Button>
-      <span className="truncate">{itemName}</span>
-    </CardTitle>
-  </CardHeader>
-);
+export const ItemEditorHeader = (props: ItemEditorHeaderProps) => {
+  const { itemName, onBack } = props;
+  return (
+    <CardHeader className="flex-none p-4 space-y-2">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base">
+        <Button variant="link" size="icon" onClick={onBack} className="text-foreground w-6 h-8">
+          <RiArrowLeftSLine className="h-6 w-6" />
+        </Button>
+        <span className="truncate">{itemName}</span>
+      </CardTitle>
+    </CardHeader>
+  );
+};
 
 ItemEditorHeader.displayName = 'ItemEditorHeader';
 
@@ -60,7 +63,8 @@ export interface ItemEditorBodyProps {
   itemIndex: number;
 }
 
-export const ItemEditorBody = ({ itemIndex }: ItemEditorBodyProps) => {
+export const ItemEditorBody = (props: ItemEditorBodyProps) => {
+  const { itemIndex } = props;
   const { currentBlock, setCurrentBlock } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { zIndex } = useBuilderConfig();
@@ -122,12 +126,9 @@ export const ItemEditorBody = ({ itemIndex }: ItemEditorBodyProps) => {
           {/* Custom icon for this item */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Custom icon for this item</Label>
+              <Label>{t('contentBuilder.resourceCenter.customItemIcon')}</Label>
               <QuestionTooltip>
-                <p>
-                  Override the default icon for this item. Select "Default" to use the block
-                  default.
-                </p>
+                <p>{t('contentBuilder.resourceCenter.customItemIconTooltip')}</p>
               </QuestionTooltip>
             </div>
             <IconPicker
@@ -144,11 +145,9 @@ export const ItemEditorBody = ({ itemIndex }: ItemEditorBodyProps) => {
           {/* Navigate to URL */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Navigate to URL when clicked</Label>
+              <Label>{t('contentBuilder.resourceCenter.navigateUrl')}</Label>
               <QuestionTooltip>
-                <p>
-                  Navigate the user to this URL when the item is clicked. Supports user attributes.
-                </p>
+                <p>{t('contentBuilder.resourceCenter.navigateUrlTooltip')}</p>
               </QuestionTooltip>
             </div>
             <PopperEditorMini
@@ -167,7 +166,7 @@ export const ItemEditorBody = ({ itemIndex }: ItemEditorBodyProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="only-show-item" className="font-normal">
-                Only list item if...
+                {t('contentBuilder.resourceCenter.onlyListItem')}
               </Label>
               <Switch
                 id="only-show-item"

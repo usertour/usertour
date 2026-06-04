@@ -1719,6 +1719,73 @@ const translations = {
       subPageInfo: '子页面内容可在预览面板中编辑。',
       actionBlock: '操作区块',
       whenClicked: '点击区块时',
+      contentListBlock: '流程/清单列表',
+      defaultFlowIcon: '流程默认图标',
+      defaultFlowIconTooltip: '流程项默认显示的图标，可在单项中覆盖。',
+      defaultChecklistIcon: '清单默认图标',
+      defaultChecklistIconTooltip: '清单项默认显示的图标，可在单项中覆盖。',
+      contentLabel: '内容',
+      contentTooltip: '仅可添加流程和清单。点击某一项可编辑其设置。',
+      remove: '移除',
+      add: '添加',
+      searchContentPlaceholder: '搜索流程/清单…',
+      noItemsFound: '未找到任何项。',
+      flowsHeading: '流程',
+      checklistsHeading: '清单',
+      untitledFlow: '未命名流程',
+      untitledChecklist: '未命名清单',
+      removeAllContent: '移除全部流程/清单',
+      showSearchField: '显示搜索框',
+      customItemIcon: '该项的自定义图标',
+      customItemIconTooltip: '覆盖该项的默认图标。选择「默认」则沿用区块默认图标。',
+      navigateUrl: '点击时跳转到 URL',
+      navigateUrlTooltip: '点击该项时将用户跳转到此 URL，支持用户属性。',
+      onlyListItem: '仅在满足条件时列出该项…',
+      done: '完成',
+      liveChat: {
+        block: '在线客服区块',
+        provider: '在线客服服务商',
+        selectProvider: '选择服务商',
+        customCode: '自定义 JavaScript 代码',
+        customCodeHint: '用户点击该区块时将执行此 JavaScript 代码。',
+        customCodeRequired: '自定义 JavaScript 代码不能为空',
+        descriptions: {
+          crisp:
+            'Crisp 的默认启动按钮会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 Crisp 聊天窗口；用户关闭聊天后资源中心会重新出现。',
+          freshchat:
+            'Freshchat 的默认聊天按钮会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 Freshchat；用户关闭聊天后资源中心会重新出现。',
+          helpScout:
+            'Help Scout Beacon 的默认启动按钮会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 Help Scout Beacon；用户关闭 Beacon 后资源中心会重新出现。',
+          hubspot:
+            'HubSpot 的默认聊天挂件会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 HubSpot 聊天挂件；用户关闭聊天后资源中心会重新出现。',
+          intercom:
+            'Intercom 的默认 Messenger 启动按钮会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 Intercom Messenger；用户关闭 Messenger 后资源中心会重新出现。',
+          zendeskClassic:
+            'Zendesk Classic 的默认启动按钮会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 Zendesk Classic 挂件；用户关闭挂件后资源中心会重新出现。',
+          zendeskMessenger:
+            'Zendesk Messenger 的默认启动按钮会被自动隐藏。当用户点击该区块时，资源中心会关闭并打开 Zendesk Messenger；用户关闭 Messenger 后资源中心会重新出现。',
+          custom:
+            '当用户点击该区块时，将执行下方的自定义 JavaScript 代码。可用它来打开你的在线客服。',
+        },
+        notes: {
+          zendeskMessenger:
+            '你还需要手动停用内置的 Web Widget 启动按钮。前往 <strong>Settings → Channels → Messaging → Your messenger → Style</strong>，将 <strong>Shape</strong> 设置为 <strong>Custom launcher</strong>。可能需要几分钟才会生效。',
+        },
+        flashWarnings: {
+          crisp:
+            '如果 Crisp 在 Usertour 之前加载，其启动按钮可能会在屏幕上短暂闪现。要避免这种情况，请在 Crisp 安装代码片段后紧接着添加以下内容：',
+          freshchat:
+            '<strong>重要：</strong>Freshchat 默认会显示其聊天按钮。你需要在 Freshchat 安装代码片段中通过设置 <code>hideChatButton: true</code> 来停用它：',
+          helpScout:
+            '如果 Help Scout 在 Usertour 之前加载，其启动按钮可能会在屏幕上短暂闪现。要避免这种情况，请在你的 Help Scout 账号中前往 <strong>Settings → Beacons → Your beacon</strong>，将 <strong>Button style</strong> 设置为 <strong>Hidden</strong>。',
+          hubspot:
+            '如果 HubSpot 在 Usertour 之前加载，其聊天挂件可能会在屏幕上短暂闪现。要避免这种情况，请在你的页面中添加以下内容：',
+          intercom:
+            '如果 Intercom 在 Usertour 之前加载，其启动按钮可能会在屏幕上短暂闪现。要避免这种情况，请在你的 Intercom 代码片段中添加以下内容：',
+          zendeskClassic:
+            '如果 Zendesk Classic 在 Usertour 之前加载，其启动按钮可能会在屏幕上短暂闪现。要避免这种情况，请在你的 Zendesk 嵌入代码后紧接着添加以下内容：',
+        },
+      },
     },
   },
   conditions: {

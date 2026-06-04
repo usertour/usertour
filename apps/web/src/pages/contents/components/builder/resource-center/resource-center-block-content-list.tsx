@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -33,6 +32,7 @@ import {
   CloseIcon,
   FlowIcon,
   PlusIcon,
+  RiArrowLeftSLine,
   RiSettings3Line,
   SpinnerIcon,
 } from '@usertour/icons';
@@ -77,9 +77,10 @@ import {
 
 const BlockContentListHeader = () => {
   const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
+  const { t } = useTranslation();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row space-x-1 text-base items-center">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base">
         <Button
           variant="link"
           size="icon"
@@ -89,19 +90,20 @@ const BlockContentListHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
-        <span className="truncate">List of flows/checklists</span>
+        <span className="truncate">{t('contentBuilder.resourceCenter.contentListBlock')}</span>
       </CardTitle>
     </CardHeader>
   );
 };
 
-interface BlockContentListBodyProps {
+export interface BlockContentListBodyProps {
   onEditItem: (index: number) => void;
 }
 
-const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
+const BlockContentListBody = (props: BlockContentListBodyProps) => {
+  const { onEditItem } = props;
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { zIndex } = useBuilderConfig();
@@ -126,19 +128,25 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
   // Build lookup maps for content names
   const contentMap = useMemo(() => {
     const map = new Map<string, { name: string; type: 'flow' | 'checklist' }>();
-    for (const c of flowContents) {
-      map.set(c.id, { name: c.name || 'Untitled flow', type: 'flow' });
+    for (const flow of flowContents) {
+      map.set(flow.id, {
+        name: flow.name || t('contentBuilder.resourceCenter.untitledFlow'),
+        type: 'flow',
+      });
     }
-    for (const c of checklistContents) {
-      map.set(c.id, { name: c.name || 'Untitled checklist', type: 'checklist' });
+    for (const checklist of checklistContents) {
+      map.set(checklist.id, {
+        name: checklist.name || t('contentBuilder.resourceCenter.untitledChecklist'),
+        type: 'checklist',
+      });
     }
     return map;
-  }, [flowContents, checklistContents]);
+  }, [flowContents, checklistContents, t]);
 
   const handleFilter = useCallback(
     (value: string, search: string) => {
       const allContents = [...flowContents, ...checklistContents];
-      const item = allContents.find((c) => c.id === value);
+      const item = allContents.find((content) => content.id === value);
       if (item?.name?.toLowerCase().includes(search.toLowerCase())) {
         return 1;
       }
@@ -259,8 +267,10 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
 
   // Filter out already-selected items
   const selectedIds = new Set(currentBlock.contentItems.map((item) => item.contentId));
-  const availableFlows = flowContents.filter((c) => !selectedIds.has(c.id));
-  const availableChecklists = checklistContents.filter((c) => !selectedIds.has(c.id));
+  const availableFlows = flowContents.filter((flow) => !selectedIds.has(flow.id));
+  const availableChecklists = checklistContents.filter(
+    (checklist) => !selectedIds.has(checklist.id),
+  );
 
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
@@ -268,7 +278,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
         <div className="flex-col space-y-3 p-4">
           {/* Block icon */}
           <div className="flex flex-col space-y-2">
-            <Label>Icon</Label>
+            <Label>{t('contentBuilder.resourceCenter.icon')}</Label>
             <IconPicker
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
@@ -282,7 +292,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
           {/* Name */}
           <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
             <div className="flex flex-col space-y-2">
-              <Label>Name</Label>
+              <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
                   zIndex={zIndex + EXTENSION_SELECT}
@@ -297,16 +307,16 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
               </ContentErrorAnchor>
             </div>
             <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-              Name is required
+              {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
 
           {/* Default icon for flows */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Default icon for flows</Label>
+              <Label>{t('contentBuilder.resourceCenter.defaultFlowIcon')}</Label>
               <QuestionTooltip>
-                <p>Icon shown for flow items unless overridden per item.</p>
+                <p>{t('contentBuilder.resourceCenter.defaultFlowIconTooltip')}</p>
               </QuestionTooltip>
             </div>
             <IconPicker
@@ -322,9 +332,9 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
           {/* Default icon for checklists */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Default icon for checklists</Label>
+              <Label>{t('contentBuilder.resourceCenter.defaultChecklistIcon')}</Label>
               <QuestionTooltip>
-                <p>Icon shown for checklist items unless overridden per item.</p>
+                <p>{t('contentBuilder.resourceCenter.defaultChecklistIconTooltip')}</p>
               </QuestionTooltip>
             </div>
             <IconPicker
@@ -341,9 +351,9 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <Label>Content</Label>
+                <Label>{t('contentBuilder.resourceCenter.contentLabel')}</Label>
                 <QuestionTooltip>
-                  <p>Only flows and checklists can be added. Click an item to edit its settings.</p>
+                  <p>{t('contentBuilder.resourceCenter.contentTooltip')}</p>
                 </QuestionTooltip>
               </div>
             </div>
@@ -380,7 +390,9 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
                                 <RiSettings3Line size={16} />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Edit</TooltipContent>
+                            <TooltipContent>
+                              {t('contentBuilder.resourceCenter.edit')}
+                            </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                         <TooltipProvider>
@@ -394,7 +406,9 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
                                 <CloseIcon width={16} height={16} />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Remove</TooltipContent>
+                            <TooltipContent>
+                              {t('contentBuilder.resourceCenter.remove')}
+                            </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
@@ -410,7 +424,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
                   onClick={() => setAddOpen(true)}
                 >
                   <PlusIcon width={16} height={16} />
-                  Add
+                  {t('contentBuilder.resourceCenter.add')}
                 </div>
               </PopoverTrigger>
               <PopoverContent
@@ -418,41 +432,46 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
                 style={{ zIndex: zIndex + EXTENSION_SELECT }}
               >
                 <Command filter={handleFilter}>
-                  <CommandInput placeholder="Search flow/checklist..." />
-                  <CommandEmpty>No items found.</CommandEmpty>
+                  <CommandInput
+                    placeholder={t('contentBuilder.resourceCenter.searchContentPlaceholder')}
+                  />
+                  <CommandEmpty>{t('contentBuilder.resourceCenter.noItemsFound')}</CommandEmpty>
                   <CommandList>
                     <ScrollArea className="h-72">
                       {availableFlows.length > 0 && (
-                        <CommandGroup heading="Flows">
-                          {availableFlows.map((item) => (
+                        <CommandGroup heading={t('contentBuilder.resourceCenter.flowsHeading')}>
+                          {availableFlows.map((flow) => (
                             <CommandItem
-                              key={item.id}
-                              value={item.id}
-                              onSelect={() => handleAddContent(item.id, 'flow')}
+                              key={flow.id}
+                              value={flow.id}
+                              onSelect={() => handleAddContent(flow.id, 'flow')}
                             >
                               <FlowIcon width={16} height={16} className="mr-2 flex-shrink-0" />
-                              <span className="truncate" title={item.name}>
-                                {item.name || 'Untitled flow'}
+                              <span className="truncate" title={flow.name}>
+                                {flow.name || t('contentBuilder.resourceCenter.untitledFlow')}
                               </span>
                             </CommandItem>
                           ))}
                         </CommandGroup>
                       )}
                       {availableChecklists.length > 0 && (
-                        <CommandGroup heading="Checklists">
-                          {availableChecklists.map((item) => (
+                        <CommandGroup
+                          heading={t('contentBuilder.resourceCenter.checklistsHeading')}
+                        >
+                          {availableChecklists.map((checklist) => (
                             <CommandItem
-                              key={item.id}
-                              value={item.id}
-                              onSelect={() => handleAddContent(item.id, 'checklist')}
+                              key={checklist.id}
+                              value={checklist.id}
+                              onSelect={() => handleAddContent(checklist.id, 'checklist')}
                             >
                               <ChecklistIcon
                                 width={16}
                                 height={16}
                                 className="mr-2 flex-shrink-0"
                               />
-                              <span className="truncate" title={item.name}>
-                                {item.name || 'Untitled checklist'}
+                              <span className="truncate" title={checklist.name}>
+                                {checklist.name ||
+                                  t('contentBuilder.resourceCenter.untitledChecklist')}
                               </span>
                             </CommandItem>
                           ))}
@@ -470,7 +489,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
                 className="h-8 text-destructive items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer"
                 onClick={handleRemoveAll}
               >
-                × Remove all flows/checklists
+                {t('contentBuilder.resourceCenter.removeAllContent')}
               </div>
             )}
           </div>
@@ -479,7 +498,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="show-search-field" className="font-normal">
-                Show search field
+                {t('contentBuilder.resourceCenter.showSearchField')}
               </Label>
               <Switch
                 id="show-search-field"
@@ -494,7 +513,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="only-show-block" className="font-normal">
-                Only show block if...
+                {t('contentBuilder.resourceCenter.onlyShowBlock')}
               </Label>
               <Switch
                 id="only-show-block"
@@ -525,6 +544,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
 
 const BlockContentListFooter = () => {
   const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterEditor();
+  const { t } = useTranslation();
   const gate = useConditionsSaveGate();
   const handleSave = () => {
     if (!gate(currentBlock?.onlyShowBlockConditions)) return;
@@ -534,7 +554,7 @@ const BlockContentListFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );
@@ -548,6 +568,7 @@ export const ResourceCenterBlockContentList = () => {
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const { currentBlock } = useResourceCenterEditor();
   const environmentId = useEnvironmentId();
+  const { t } = useTranslation();
 
   const { contents: flowContents } = useContentListQuery({
     query: {
@@ -575,8 +596,13 @@ export const ResourceCenterBlockContentList = () => {
     if (!item) return '';
     const allContents = [...flowContents, ...checklistContents];
     const content = allContents.find((c) => c.id === item.contentId);
-    return content?.name || (item.contentType === 'flow' ? 'Untitled flow' : 'Untitled checklist');
-  }, [editingItemIndex, currentBlock, flowContents, checklistContents]);
+    return (
+      content?.name ||
+      (item.contentType === 'flow'
+        ? t('contentBuilder.resourceCenter.untitledFlow')
+        : t('contentBuilder.resourceCenter.untitledChecklist'))
+    );
+  }, [editingItemIndex, currentBlock, flowContents, checklistContents, t]);
 
   if (editingItemIndex !== null) {
     return (
@@ -585,7 +611,7 @@ export const ResourceCenterBlockContentList = () => {
         <ItemEditorBody itemIndex={editingItemIndex} />
         <CardFooter className="flex-none p-5">
           <Button className="w-full h-10" onClick={() => setEditingItemIndex(null)}>
-            Done
+            {t('contentBuilder.resourceCenter.done')}
           </Button>
         </CardFooter>
       </SidebarContainer>

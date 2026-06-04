@@ -1830,6 +1830,75 @@ const translations = {
       subPageInfo: 'Sub-page content can be edited in the preview panel.',
       actionBlock: 'Action block',
       whenClicked: 'When block is clicked',
+      contentListBlock: 'List of flows/checklists',
+      defaultFlowIcon: 'Default icon for flows',
+      defaultFlowIconTooltip: 'Icon shown for flow items unless overridden per item.',
+      defaultChecklistIcon: 'Default icon for checklists',
+      defaultChecklistIconTooltip: 'Icon shown for checklist items unless overridden per item.',
+      contentLabel: 'Content',
+      contentTooltip: 'Only flows and checklists can be added. Click an item to edit its settings.',
+      remove: 'Remove',
+      add: 'Add',
+      searchContentPlaceholder: 'Search flow/checklist...',
+      noItemsFound: 'No items found.',
+      flowsHeading: 'Flows',
+      checklistsHeading: 'Checklists',
+      untitledFlow: 'Untitled flow',
+      untitledChecklist: 'Untitled checklist',
+      removeAllContent: 'Remove all flows/checklists',
+      showSearchField: 'Show search field',
+      customItemIcon: 'Custom icon for this item',
+      customItemIconTooltip:
+        'Override the default icon for this item. Select "Default" to use the block default.',
+      navigateUrl: 'Navigate to URL when clicked',
+      navigateUrlTooltip:
+        'Navigate the user to this URL when the item is clicked. Supports user attributes.',
+      onlyListItem: 'Only list item if...',
+      done: 'Done',
+      liveChat: {
+        block: 'Live chat block',
+        provider: 'Live chat provider',
+        selectProvider: 'Select a provider',
+        customCode: 'Custom JavaScript code',
+        customCodeHint: 'This JavaScript code will be executed when the user clicks the block.',
+        customCodeRequired: 'Custom JavaScript code is required',
+        descriptions: {
+          crisp:
+            "Crisp's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and the Crisp chat window will open. The resource center will reappear once the user closes the chat.",
+          freshchat:
+            "Freshchat's default chat button will be hidden automatically. When the user clicks this block, the resource center will close and Freshchat will open. The resource center will reappear once the user closes the chat.",
+          helpScout:
+            "Help Scout Beacon's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and Help Scout Beacon will open. The resource center will reappear once the user closes the Beacon.",
+          hubspot:
+            "HubSpot's default chat widget will be hidden automatically. When the user clicks this block, the resource center will close and the HubSpot chat widget will open. The resource center will reappear once the user closes the chat.",
+          intercom:
+            "Intercom's default Messenger launcher will be hidden automatically. When the user clicks this block, the resource center will close and Intercom Messenger will open. The resource center will reappear once the user closes the Messenger.",
+          zendeskClassic:
+            "Zendesk Classic's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and the Zendesk Classic widget will open. The resource center will reappear once the user closes the widget.",
+          zendeskMessenger:
+            "Zendesk Messenger's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and Zendesk Messenger will open. The resource center will reappear once the user closes the Messenger.",
+          custom:
+            'When the user clicks this block, the custom JavaScript code below will be executed. Use it to open your live chat messenger.',
+        },
+        notes: {
+          zendeskMessenger:
+            'You also need to disable the built-in Web Widget launcher manually. Go to <strong>Settings → Channels → Messaging → Your messenger → Style</strong> and set <strong>Shape</strong> to <strong>Custom launcher</strong>. It may take a few minutes to take effect.',
+        },
+        flashWarnings: {
+          crisp:
+            'The Crisp launcher may briefly flash on screen if Crisp loads before Usertour. To prevent this, add the following right after your Crisp installation snippet:',
+          freshchat:
+            '<strong>Important:</strong> Freshchat shows its chat button by default. You need to disable it in your Freshchat installation snippet by setting <code>hideChatButton: true</code>:',
+          helpScout:
+            'The Help Scout launcher may briefly flash on screen if Help Scout loads before Usertour. To prevent this, set <strong>Button style</strong> to <strong>Hidden</strong> in your Help Scout account under <strong>Settings → Beacons → Your beacon</strong>.',
+          hubspot:
+            'The HubSpot chat widget may briefly flash on screen if HubSpot loads before Usertour. To prevent this, add the following to your page:',
+          intercom:
+            'The Intercom launcher may briefly flash on screen if Intercom loads before Usertour. To prevent this, add the following to your Intercom snippet:',
+          zendeskClassic:
+            'The Zendesk Classic launcher may briefly flash on screen if it loads before Usertour. To prevent this, add the following right after your Zendesk embed code:',
+        },
+      },
     },
   },
   conditions: {
