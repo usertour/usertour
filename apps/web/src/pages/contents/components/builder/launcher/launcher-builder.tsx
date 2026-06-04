@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { useBuilderMethods, useBuilderStore } from '@/pages/contents/components/builder/core';
 import { LauncherBuilderEmbed } from '@/pages/contents/components/builder/launcher/components/launcher-embed';
-import { LauncherCore } from '@/pages/contents/components/builder/launcher/launcher-core';
+import { LauncherMainView } from '@/pages/contents/components/builder/launcher/launcher-main-view';
 import { LauncherTarget } from '@/pages/contents/components/builder/launcher/launcher-target';
 import { LauncherTooltip } from '@/pages/contents/components/builder/launcher/launcher-tooltip';
 
@@ -59,7 +59,7 @@ export const LauncherBuilder = () => {
   return (
     <>
       <Routes>
-        <Route index element={<LauncherCore />} />
+        <Route index element={<LauncherMainView />} />
         <Route path="target" element={<LauncherTarget />} />
         <Route path="tooltip" element={<LauncherTooltip />} />
       </Routes>

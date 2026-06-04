@@ -1,10 +1,10 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { LauncherData } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
 import { ContentWidth } from '@/pages/contents/components/builder/components/content-width';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
@@ -16,6 +16,7 @@ import { useCallback, useLayoutEffect } from 'react';
 
 const LauncherTooltipHeader = () => {
   const { backToLauncher, setLauncherTooltip } = useLauncherEditor();
+  const { t } = useTranslation();
 
   const handleBackToLauncher = () => {
     backToLauncher();
@@ -31,9 +32,9 @@ const LauncherTooltipHeader = () => {
           onClick={handleBackToLauncher}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6 " />
+          <RiArrowLeftSLine className="h-6 w-6 " />
         </Button>
-        <span className=" truncate ...">Tooltip settings</span>
+        <span className=" truncate ...">{t('contentBuilder.launcher.tooltipSettings')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -63,22 +64,22 @@ const LauncherTooltipBody = () => {
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           <LauncherPosition
-            type={launcherTooltip?.reference}
+            type={launcherTooltip.reference}
             onChange={(value) => updateLauncherTooltip({ reference: value })}
             zIndex={zIndex + EXTENSION_SIDEBAR_MAIN}
           />
           <ContentWidth
             type="tooltip"
-            width={launcherTooltip?.width}
+            width={launcherTooltip.width}
             defaultWidth={300}
             onChange={(value) => updateLauncherTooltip({ width: value })}
           />
           <ContentAlignment
-            initialValue={launcherTooltip?.alignment}
+            initialValue={launcherTooltip.alignment}
             onChange={(value) => updateLauncherTooltip({ alignment: value })}
           />
           <LauncherSettings
-            data={launcherTooltip?.settings}
+            data={launcherTooltip.settings}
             onChange={(value) => updateLauncherTooltip({ settings: value })}
           />
         </div>
@@ -95,6 +96,7 @@ const LauncherTooltipFooter = () => {
     backToLauncher,
     setLauncherTooltip,
   } = useLauncherEditor();
+  const { t } = useTranslation();
 
   const saveTooltip = useCallback(() => {
     updateLocalData({ tooltip: launcherTooltip });
@@ -106,7 +108,7 @@ const LauncherTooltipFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={saveTooltip}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );

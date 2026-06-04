@@ -1,5 +1,5 @@
 import { cn } from '@usertour/tailwind';
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 
 const circleHoveredClassName =
   "bg-primary before:content-[''] before:border before:border-indigo-900 before:cursor-pointer before:h-2 before:w-2 before:rounded-[50%] before:border-solid before:scale-100 items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] scale-[1.6] hover:bg-primary hover:scale-[1.6]";
@@ -107,58 +107,39 @@ interface CircleProps {
 }
 
 const Circle = ({ side, align, onClick }: CircleProps) => {
-  const [className, setClassName] = useState('');
   const { type, currentAlign, currentSide } = useContext(AlignmentContext);
-
-  useEffect(() => {
-    const isActive = type === 'fixed' && currentAlign === align && currentSide === side;
-    setClassName(cn('sdk-alignment', isActive ? circleHoveredClassName : circleClassName));
-  }, [type, currentAlign, currentSide, align, side]);
-
+  // Active state is derived on render from context — no local state / effect.
+  const isActive = type === 'fixed' && currentAlign === align && currentSide === side;
+  const className = cn('sdk-alignment', isActive ? circleHoveredClassName : circleClassName);
   return <div className={className} onClick={() => onClick(side, align)} />;
 };
 
+// Controlled: the active side/align and the arrow preview are derived straight
+// from props on every render — no local mirror of side/align, no effects.
 export const Alignment = ({
   onAlignmentChange,
   type,
   align = ALIGNMENTS.CENTER,
   side = POSITIONS.BOTTOM,
 }: AlignmentProps) => {
-  const [arrowCls, setArrowCls] = useState('');
-  const [text, setText] = useState('');
-  const [currentSide, setCurrentSide] = useState<Position>(side);
-  const [currentAlign, setCurrentAlign] = useState<Alignment>(align);
-
-  useEffect(() => {
-    if (type === 'auto') {
-      setText('Automatically choose the optimal position');
+  const handleAlignmentChange = (nextSide: Position, nextAlign: Alignment) => {
+    if (type !== 'fixed') {
       return;
     }
-
-    if (type === 'fixed') {
-      const key = `${currentSide}-${currentAlign}`;
-      const config = positionMapping[key];
-      setArrowCls(config.className);
-      setText(config.text);
-    }
-  }, [type, currentSide, currentAlign]);
-
-  const handleAlignmentChange = useCallback(
-    (side: Position, align: Alignment) => {
-      if (type !== 'fixed') return;
-
-      setCurrentSide(side);
-      setCurrentAlign(align);
-      onAlignmentChange?.(side, align);
-    },
-    [type, onAlignmentChange],
-  );
-
-  const value = {
-    currentSide,
-    currentAlign,
-    type,
+    onAlignmentChange?.(nextSide, nextAlign);
   };
+
+  let text = '';
+  let arrowCls = '';
+  if (type === 'auto') {
+    text = 'Automatically choose the optimal position';
+  } else if (type === 'fixed') {
+    const config = positionMapping[`${side}-${align}`];
+    arrowCls = config.className;
+    text = config.text;
+  }
+
+  const value = { currentSide: side, currentAlign: align, type };
 
   return (
     <AlignmentContext.Provider value={value}>

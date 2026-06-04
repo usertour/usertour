@@ -12,7 +12,7 @@ import { LauncherTargetPreview } from '@/pages/contents/components/builder/launc
 import { LauncherType } from '@/pages/contents/components/builder/launcher/components/launcher-type';
 import { LauncherZIndex } from '@/pages/contents/components/builder/launcher/components/launcher-zindex';
 
-const LauncherCoreBody = () => {
+const LauncherMainViewBody = () => {
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full ">
@@ -28,7 +28,7 @@ const LauncherCoreBody = () => {
   );
 };
 
-export const LauncherCore = () => {
+export const LauncherMainView = () => {
   const { data: localData } = useLauncherEditor();
   const actionsGate = useActionsSaveGate();
   // Block the explicit Save on incomplete behavior actions when the
@@ -44,9 +44,9 @@ export const LauncherCore = () => {
   });
   return (
     <BuilderSidebarLayout onSave={handleSave}>
-      <LauncherCoreBody />
+      <LauncherMainViewBody />
     </BuilderSidebarLayout>
   );
 };
 
-LauncherCore.displayName = 'LauncherCore';
+LauncherMainView.displayName = 'LauncherMainView';

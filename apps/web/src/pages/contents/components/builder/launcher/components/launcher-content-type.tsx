@@ -1,6 +1,7 @@
 import { LauncherIcon, RiEyeOffFill, RiInformationFill, RiSquareFill } from '@usertour/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 
 interface LauncherTypeProps {
   type: LauncherDataType;
@@ -9,6 +10,8 @@ interface LauncherTypeProps {
 }
 
 export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProps) => {
+  const { t } = useTranslation();
+
   const getIcon = (dataType: LauncherDataType) => {
     const iconProps = { width: 16, height: 16 };
     switch (dataType) {
@@ -23,28 +26,17 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
     }
   };
 
-  const getDescription = (dataType: LauncherDataType) => {
-    switch (dataType) {
-      case LauncherDataType.BEACON:
-        return 'Shows a pulsing beacon. Great for drawing attention to new features.';
-      case LauncherDataType.ICON:
-        return 'Shows a simple icon. Great for explanation tooltips.';
-      case LauncherDataType.BUTTON:
-        return 'Shows a button with custom text. Great for call-to-action prompts.';
-      case LauncherDataType.HIDDEN:
-        return 'Hides the launcher. Only shows when triggered.';
-      default:
-        return '';
-    }
-  };
+  const getLabel = (dataType: LauncherDataType) => t(`contentBuilder.launcher.type.${dataType}`);
+  const getDescription = (dataType: LauncherDataType) =>
+    t(`contentBuilder.launcher.type.${dataType}Description`);
 
   return (
     <Select value={type} onValueChange={onChange}>
-      <SelectTrigger className="justify-start flex h-8">
+      <SelectTrigger variant="compact-muted" className="flex justify-start">
         {getIcon(type)}
         <div className="grow text-left ml-2">
           <SelectValue placeholder="" asChild>
-            <div className="capitalize">{type}</div>
+            <div>{getLabel(type)}</div>
           </SelectValue>
         </div>
       </SelectTrigger>
@@ -55,7 +47,7 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
             <div className="flex flex-col">
               <div className="flex flex-row space-x-1 items-center">
                 {getIcon(value)}
-                <span className="text-xs font-bold capitalize">{value}</span>
+                <span className="text-xs font-bold">{getLabel(value)}</span>
               </div>
               <div className="max-w-60 text-xs text-muted-foreground">{getDescription(value)}</div>
             </div>

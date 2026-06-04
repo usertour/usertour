@@ -1556,6 +1556,58 @@ const translations = {
       resourceCenterLauncher: '资源中心启动器',
     },
   },
+  contentBuilder: {
+    common: {
+      save: '保存',
+      default: '默认',
+    },
+    launcher: {
+      appearance: '外观',
+      buttonText: '按钮文本',
+      zIndex: '层级 (Z-Index)',
+      target: '目标',
+      targetSetting: '目标设置',
+      targetSettings: '目标设置',
+      tooltipSettings: '提示框设置',
+      behavior: '行为',
+      settings: '设置',
+      placement: '位置',
+      placementSubtitle: '在此元素上显示启动器',
+      dismissAfterFirstActivation: '首次激活后关闭',
+      type: {
+        beacon: '信标',
+        icon: '图标',
+        button: '按钮',
+        hidden: '隐藏',
+        beaconDescription: '显示一个脉冲信标。适合吸引用户关注新功能。',
+        iconDescription: '显示一个简单图标。适合用于解释性提示。',
+        buttonDescription: '显示一个带自定义文本的按钮。适合行动号召提示。',
+        hiddenDescription: '隐藏启动器，仅在触发时显示。',
+      },
+      reference: {
+        label: '参照元素',
+        targetElement: '目标元素',
+        launcher: '启动器',
+      },
+      behaviorEditor: {
+        when: '当',
+        thenLabel: '则',
+        is: '是',
+        showTooltip: '显示提示框',
+        performAction: '执行操作',
+        tooltipSetting: '提示框设置',
+        triggerElement: {
+          launcher: '启动器',
+          targetElement: '目标元素',
+          targetOrLauncher: '启动器或目标',
+        },
+        triggerEvent: {
+          hovered: '悬停',
+          clicked: '点击',
+        },
+      },
+    },
+  },
   conditions: {
     actions: {
       addCondition: '添加条件',

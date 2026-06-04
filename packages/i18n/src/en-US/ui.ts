@@ -1656,6 +1656,58 @@ const translations = {
       resourceCenterLauncher: 'Resource center launcher',
     },
   },
+  contentBuilder: {
+    common: {
+      save: 'Save',
+      default: 'Default',
+    },
+    launcher: {
+      appearance: 'Appearance',
+      buttonText: 'Button text',
+      zIndex: 'Z-Index',
+      target: 'Target',
+      targetSetting: 'Target setting',
+      targetSettings: 'Target settings',
+      tooltipSettings: 'Tooltip settings',
+      behavior: 'Behavior',
+      settings: 'Settings',
+      placement: 'Placement',
+      placementSubtitle: 'Show launcher on this element',
+      dismissAfterFirstActivation: 'Dismiss after first activation',
+      type: {
+        beacon: 'Beacon',
+        icon: 'Icon',
+        button: 'Button',
+        hidden: 'Hidden',
+        beaconDescription: 'Shows a pulsing beacon. Great for drawing attention to new features.',
+        iconDescription: 'Shows a simple icon. Great for explanation tooltips.',
+        buttonDescription: 'Shows a button with custom text. Great for call-to-action prompts.',
+        hiddenDescription: 'Hides the launcher. Only shows when triggered.',
+      },
+      reference: {
+        label: 'Reference',
+        targetElement: 'Target element',
+        launcher: 'Launcher',
+      },
+      behaviorEditor: {
+        when: 'When',
+        thenLabel: 'Then',
+        is: 'is',
+        showTooltip: 'Show tooltip',
+        performAction: 'Perform action',
+        tooltipSetting: 'Tooltip setting',
+        triggerElement: {
+          launcher: 'Launcher',
+          targetElement: 'Target element',
+          targetOrLauncher: 'Launcher or Target',
+        },
+        triggerEvent: {
+          hovered: 'hovered',
+          clicked: 'clicked',
+        },
+      },
+    },
+  },
   conditions: {
     actions: {
       addCondition: 'Add condition',

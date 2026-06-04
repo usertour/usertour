@@ -1,1 +1,1 @@
-export { LauncherBuilder } from '@/pages/contents/components/builder/launcher/launcher';
+export { LauncherBuilder } from '@/pages/contents/components/builder/launcher/launcher-builder';

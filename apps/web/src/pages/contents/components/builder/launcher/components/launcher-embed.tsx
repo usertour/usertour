@@ -7,56 +7,59 @@ import { useAws } from '@usertour/hooks';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { LauncherContentMain } from '@/pages/contents/components/builder/launcher/components/launcher-content';
 import { PlusIcon } from '@usertour/icons';
-import { cn } from '@usertour/tailwind';
 
-const centerClasses =
-  'w-auto h-6 left-[50%] top-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%]';
+// A fixed, centered stand-in for the target element on the preview canvas — the
+// tooltip and launcher anchor to it. Positioning lives on the wrapper div, so
+// it doesn't depend on how the icon forwards className.
+const previewTargetAnchorClass = 'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2';
 
 export const LauncherBuilderEmbed = () => {
-  const triggerRef = useRef<any>();
+  const targetAnchorRef = useRef<HTMLDivElement>(null);
   const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const theme = useCurrentTheme({ fallbackToDefault: true });
-  const {
-    data: localData,
-    updateDataTooltip: updateLocalDataTooltip,
-    launcherTarget,
-    launcherTooltip,
-  } = useLauncherEditor();
+  const { data, updateDataTooltip, launcherTarget, launcherTooltip } = useLauncherEditor();
   const { upload } = useAws();
 
-  const handleUpdateTooltipContent = useCallback(
+  // The target / tooltip sub-views edit drafts in UI state; overlay them on the
+  // saved data so the preview reflects in-flight edits.
+  const previewData = useMemo(() => {
+    if (!data) {
+      return null;
+    }
+    return {
+      ...data,
+      ...(launcherTarget ? { target: launcherTarget } : {}),
+      ...(launcherTooltip ? { tooltip: launcherTooltip } : {}),
+    };
+  }, [data, launcherTarget, launcherTooltip]);
+
+  const handleTooltipContentChange = useCallback(
     (content: ContentEditorRoot[]) => {
-      if (!isEqual(content, localData?.tooltip.content)) {
-        updateLocalDataTooltip({ content });
+      // The editor can fire without a real change; skip no-op writes.
+      if (!isEqual(content, data?.tooltip.content)) {
+        updateDataTooltip({ content });
       }
     },
-    [updateLocalDataTooltip, localData?.tooltip.content],
+    [updateDataTooltip, data?.tooltip.content],
   );
 
-  // Memoize merged data
-  const mergedData = useMemo(() => {
-    if (!localData) return null;
-
-    return {
-      ...localData,
-      ...(launcherTarget && { target: launcherTarget }),
-      ...(launcherTooltip && { tooltip: launcherTooltip }),
-    };
-  }, [localData, launcherTarget, launcherTooltip]);
-
-  if (!mergedData || !theme || !currentVersion) return null;
+  if (!previewData || !theme || !currentVersion) {
+    return null;
+  }
 
   return (
     <>
-      <PlusIcon width={24} height={24} ref={triggerRef} className={cn('fixed', centerClasses)} />
+      <div ref={targetAnchorRef} aria-hidden className={previewTargetAnchorClass}>
+        <PlusIcon width={24} height={24} />
+      </div>
       <LauncherContentMain
         theme={theme}
-        triggerRef={triggerRef}
+        triggerRef={targetAnchorRef}
         zIndex={zIndex}
         onCustomUploadRequest={upload}
-        data={mergedData}
-        onValueChange={handleUpdateTooltipContent}
+        data={previewData}
+        onValueChange={handleTooltipContentChange}
       />
     </>
   );

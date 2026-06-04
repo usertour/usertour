@@ -1,7 +1,10 @@
-import { CubeIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
+import { RiBox3Line } from '@usertour/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { LauncherPositionType } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
+import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+
 interface LauncherPositionProps {
   type?: LauncherPositionType;
   onChange: (value: LauncherPositionType) => void;
@@ -10,37 +13,28 @@ interface LauncherPositionProps {
 
 export const LauncherPosition = (props: LauncherPositionProps) => {
   const { onChange, zIndex, type = LauncherPositionType.TARGET } = props;
-
-  const handleTypeChange = (value: LauncherPositionType) => {
-    onChange(value);
-  };
+  const { t } = useTranslation();
 
   return (
-    <div className="space-y-3 ">
-      <div className="flex justify-between items-center space-x-1	">
-        <div className="flex flex-row justify-between items-center space-x-1 ">
-          <h1 className="text-sm">Reference</h1>
-        </div>
-      </div>
-      <Select defaultValue={type} onValueChange={handleTypeChange} value={type}>
-        <SelectTrigger className="justify-start flex h-8">
-          <CubeIcon className="flex-none mr-2" />
+    <FieldSection title={t('contentBuilder.launcher.reference.label')}>
+      <Select value={type} onValueChange={(value) => onChange(value as LauncherPositionType)}>
+        <SelectTrigger variant="compact-muted" className="flex justify-start">
+          <RiBox3Line className="flex-none mr-2 h-4 w-4" />
           <div className="grow text-left">
-            <SelectValue placeholder="" asChild>
-              <div className="capitalize">{type}</div>
-            </SelectValue>
+            <SelectValue />
           </div>
         </SelectTrigger>
         <SelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
           <SelectItem value={LauncherPositionType.TARGET} className="cursor-pointer">
-            Target element
+            {t('contentBuilder.launcher.reference.targetElement')}
           </SelectItem>
           <SelectItem value={LauncherPositionType.LAUNCHER} className="cursor-pointer">
-            Launcher
+            {t('contentBuilder.launcher.reference.launcher')}
           </SelectItem>
         </SelectContent>
       </Select>
-    </div>
+    </FieldSection>
   );
 };
+
 LauncherPosition.displayName = 'LauncherPosition';

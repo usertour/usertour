@@ -1,13 +1,17 @@
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { Input } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
-import { LauncherContentType, IconPicker } from '@/pages/contents/components/builder/components';
+import { useTranslation } from 'react-i18next';
+import { IconPicker } from '@/pages/contents/components/builder/components';
+import { LauncherContentType } from '@/pages/contents/components/builder/launcher/components/launcher-content-type';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
+import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
 export const LauncherType = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();
   const { zIndex } = useBuilderConfig();
+  const { t } = useTranslation();
   const sidebarZIndex = zIndex + EXTENSION_SIDEBAR_MAIN;
 
   if (!localData) {
@@ -15,11 +19,7 @@ export const LauncherType = () => {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center">
-        <h1 className="text-sm">Appearance</h1>
-      </div>
-
+    <FieldSection title={t('contentBuilder.launcher.appearance')}>
       <LauncherContentType
         type={localData.type}
         zIndex={sidebarZIndex}
@@ -42,14 +42,15 @@ export const LauncherType = () => {
 
       {localData.type === LauncherDataType.BUTTON && (
         <Input
+          variant="compact-muted"
           value={localData.buttonText ?? ''}
-          placeholder="Button text"
-          onChange={(e) => {
-            updateLocalData({ buttonText: e.target.value || undefined });
+          placeholder={t('contentBuilder.launcher.buttonText')}
+          onChange={(event) => {
+            updateLocalData({ buttonText: event.target.value || undefined });
           }}
         />
       )}
-    </div>
+    </FieldSection>
   );
 };
 

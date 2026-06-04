@@ -1,28 +1,33 @@
 import { Input } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
+import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
 export const LauncherZIndex = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();
+  const { t } = useTranslation();
 
   if (!localData) {
     return null;
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center">
-        <h1 className="text-sm">Z-Index</h1>
-      </div>
-
+    <FieldSection title={t('contentBuilder.launcher.zIndex')}>
       <Input
-        value={localData.zIndex}
-        placeholder={!localData.zIndex ? 'Default' : undefined}
-        onChange={(e) => {
-          const value = Number.parseInt(e.target.value);
+        variant="compact-muted"
+        type="number"
+        min={0}
+        value={localData.zIndex ?? ''}
+        placeholder={t('contentBuilder.common.default')}
+        onChange={(event) => {
+          const parsed = Number.parseInt(event.target.value, 10);
+          // Clamp to >= 0 (no negative z-index); 0 is treated as unset (falls
+          // back to the default).
+          const value = Number.isNaN(parsed) ? undefined : Math.max(0, parsed);
           updateLocalData({ zIndex: value || undefined });
         }}
       />
-    </div>
+    </FieldSection>
   );
 };
 

@@ -1,4 +1,5 @@
 import { Input } from '@usertour/ui';
+import { RiAddLine, RiSubtractLine } from '@usertour/icons';
 import { useState, useEffect, memo, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 
@@ -7,10 +8,25 @@ export interface InputNumberProps {
   onValueChange: (num: number | undefined) => void;
   placeholder?: string;
   allowEmpty?: boolean;
+  // Allow negative values. Off by default — only genuinely signed fields
+  // (e.g. alignment offsets) opt in; widths / positions stay >= 0.
+  allowNegative?: boolean;
 }
 
+// The local string buffer is intentional: it lets the field hold intermediate
+// input (a lone "-", an empty string) that isn't yet a valid number, and the
+// effect keeps it in sync when `defaultNumber` changes from the outside.
+const stepButtonClass =
+  'w-6 h-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-background-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600';
+
 export const InputNumber = memo((props: InputNumberProps) => {
-  const { defaultNumber, onValueChange, placeholder = '', allowEmpty = false } = props;
+  const {
+    defaultNumber,
+    onValueChange,
+    placeholder = '',
+    allowEmpty = false,
+    allowNegative = false,
+  } = props;
   const [inputValue, setInputValue] = useState<string>(
     defaultNumber !== undefined ? String(defaultNumber) : '',
   );
@@ -30,9 +46,12 @@ export const InputNumber = memo((props: InputNumberProps) => {
   const handleDecrement = useCallback(() => {
     const currentNum = inputValue === '' ? 0 : Number(inputValue);
     const newValue = currentNum - 1;
+    if (!allowNegative && newValue < 0) {
+      return;
+    }
     setInputValue(String(newValue));
     onValueChange(newValue);
-  }, [inputValue, onValueChange]);
+  }, [inputValue, onValueChange, allowNegative]);
 
   const handleOnChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -47,8 +66,9 @@ export const InputNumber = memo((props: InputNumberProps) => {
         return;
       }
 
-      // Only allow numeric input
-      if (/^-?\d*$/.test(value)) {
+      // Only allow numeric input (optionally signed)
+      const pattern = allowNegative ? /^-?\d*$/ : /^\d*$/;
+      if (pattern.test(value)) {
         setInputValue(value);
         const numValue = Number(value);
         if (!Number.isNaN(numValue)) {
@@ -56,7 +76,7 @@ export const InputNumber = memo((props: InputNumberProps) => {
         }
       }
     },
-    [allowEmpty, onValueChange],
+    [allowEmpty, allowNegative, onValueChange],
   );
 
   return (
@@ -72,46 +92,11 @@ export const InputNumber = memo((props: InputNumberProps) => {
           />
         </div>
         <div className="flex justify-end items-center gap-x-1.5">
-          <button
-            type="button"
-            className="w-6 h-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-background-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-            onClick={handleDecrement}
-          >
-            <svg
-              className="flex-shrink-0 w-3.5 h-3.5"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-            </svg>
+          <button type="button" className={stepButtonClass} onClick={handleDecrement}>
+            <RiSubtractLine className="w-3.5 h-3.5 flex-shrink-0" />
           </button>
-          <button
-            type="button"
-            className="w-6 h-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-md border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-background-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-            onClick={handleIncrement}
-          >
-            <svg
-              className="flex-shrink-0 w-3.5 h-3.5"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-              <path d="M12 5v14" />
-            </svg>
+          <button type="button" className={stepButtonClass} onClick={handleIncrement}>
+            <RiAddLine className="w-3.5 h-3.5 flex-shrink-0" />
           </button>
         </div>
       </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
@@ -11,6 +11,7 @@ import { useCallback, useLayoutEffect } from 'react';
 
 const LauncherTargetHeader = () => {
   const { backToLauncher, setLauncherTarget } = useLauncherEditor();
+  const { t } = useTranslation();
 
   const handleBackToLauncher = () => {
     backToLauncher();
@@ -26,9 +27,9 @@ const LauncherTargetHeader = () => {
           onClick={handleBackToLauncher}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
-        <span className="truncate">Target settings</span>
+        <span className="truncate">{t('contentBuilder.launcher.targetSettings')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -73,6 +74,7 @@ const LauncherTargetFooter = () => {
     updateData: updateLocalData,
     setLauncherTarget,
   } = useLauncherEditor();
+  const { t } = useTranslation();
 
   const handleSave = useCallback(() => {
     if (launcherTarget) {
@@ -86,7 +88,7 @@ const LauncherTargetFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );
@@ -97,8 +99,7 @@ export const LauncherTarget = () => {
   // Seed the target draft from currentVersion when the sub-view mounts, so
   // nav, deep-link and refresh all land on a populated panel. Layout effect
   // (before paint) because the body gates on `launcherTarget` — seeding
-  // post-paint would flash a blank frame. The `ready` gate above
-  // WebBuilderContent guarantees currentVersion is loaded here.
+  // post-paint would flash a blank frame.
   useLayoutEffect(() => {
     setLauncherTarget(data?.target);
     // eslint-disable-next-line react-hooks/exhaustive-deps
