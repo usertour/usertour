@@ -19,9 +19,9 @@ import { useState } from 'react';
 import { useEvent } from 'react-use';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
-import { ContentPublishForm } from '../shared/content-publish-form';
-import { getContentTypeMeta } from '../shared/content-type-meta';
+import { ContentEditDropdownMenu } from '../../shared/content-edit-dropmenu';
+import { ContentPublishForm } from '../../shared/content-publish-form';
+import { getContentTypeMeta } from '../../shared/content-type-meta';
 import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
 
 const TABS = [

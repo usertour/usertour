@@ -1,15 +1,15 @@
 import { AnalyticsUIProvider } from '@/contexts/analytics-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { ContentDataType } from '@usertour/types';
-import { AnalyticsDays } from '../analytics/analytics-days';
-import { AnalyticsHeader } from '../analytics/analytics-header';
-import { AnalyticsSessions } from '../analytics/analytics-sessions';
-import { AnalyticsSteps } from '../analytics/analytics-steps';
-import { AnalyticsTasks } from '../analytics/analytics-tasks';
-import { AnalyticsViews } from '../analytics/analytics-views';
-import { AnalyticsQuestion } from '../analytics/analytics-question';
-import { AnalyticsTrackerUsers } from '../analytics/analytics-tracker-users';
-import { AnalyticsBlocks } from '../analytics/analytics-blocks';
+import { AnalyticsDays } from './analytics-days';
+import { AnalyticsHeader } from './analytics-header';
+import { AnalyticsSessions } from './analytics-sessions';
+import { AnalyticsSteps } from './analytics-steps';
+import { AnalyticsTasks } from './analytics-tasks';
+import { AnalyticsViews } from './analytics-views';
+import { AnalyticsQuestion } from './analytics-question';
+import { AnalyticsTrackerUsers } from './analytics-tracker-users';
+import { AnalyticsBlocks } from './analytics-blocks';
 
 export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const { contentId } = props;

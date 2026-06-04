@@ -9,14 +9,14 @@ import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentTypeName } from '@usertour/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ContentDetailAnalytics } from '../version/content-detail-analytics';
-import { ContentDetailVersion } from '../version/content-detail-version';
-import { ContentLocalizationList } from '../version/content-localization-list';
-import { ContentDetailContent } from './content-detail-content';
-import { ContentDetailHeader } from './content-detail-header';
-import { ContentDetailNotFound } from './content-detail-not-found';
-import { ContentDetailSettings } from './content-detail-settings';
-import { ContentDetailTrackerEditor } from './content-detail-tracker-editor';
+import { ContentDetailAnalytics } from './tabs/analytics/content-detail-analytics';
+import { ContentDetailVersion } from './tabs/versions/content-detail-version';
+import { ContentLocalizationList } from './tabs/localization/content-localization-list';
+import { ContentDetailContent } from './tabs/overview/content-detail-content';
+import { ContentDetailHeader } from './components/content-detail-header';
+import { ContentDetailNotFound } from './components/content-detail-not-found';
+import { ContentDetailSettings } from './tabs/overview/content-detail-settings';
+import { ContentDetailTrackerEditor } from './tabs/overview/content-detail-tracker-editor';
 
 export interface ContentDetailViewProps {
   contentId: string;

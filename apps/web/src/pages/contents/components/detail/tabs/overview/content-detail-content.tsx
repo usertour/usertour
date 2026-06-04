@@ -35,14 +35,14 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { ContentEditForm } from '../shared/content-edit-form';
+import { ContentEditForm } from '../../../shared/content-edit-form';
 import {
   BannerPreviewContent,
   ChecklistPreview,
   FlowPreview,
   LauncherPreview,
   ResourceCenterPreview,
-} from '../shared/content-preview';
+} from '../../../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { cn } from '@usertour/tailwind';
 
