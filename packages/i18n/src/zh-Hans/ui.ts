@@ -1606,6 +1606,51 @@ const translations = {
         rightBottom: '右下',
       },
     },
+    flow: {
+      triggers: '触发器',
+      addTrigger: '添加触发器',
+      edit: '编辑',
+      delete: '删除',
+      trigger_one: '{{count}} 个触发器',
+      trigger_other: '{{count}} 个触发器',
+      addTriggerTooltip: '添加触发器',
+      deleteConfirmTitle: '确定要删除吗？',
+      deleteConfirmDescription: '删除后将无法通过任何方式访问或恢复该数据，请确认。',
+      stepNotReachable:
+        '该步骤无法从起始步骤到达。请添加一个跳转到此步骤的按钮或触发器，或将其删除。',
+      create: '创建',
+      stepTypeTitle: '步骤类型',
+      stepType: {
+        bubble: '气泡',
+        tooltip: '提示框',
+        modal: '模态框',
+        hidden: '隐藏',
+        bubbleDescription:
+          '出现在应用角落的非侵入式消息。适合不打断用户体验的轻量引导，搭配 beacon 效果更佳。',
+        tooltipDescription: '锚定在你所选元素上的提示框。适合需要用户点击特定元素的步骤。',
+        modalDescription: '出现在屏幕中央的模态对话框，会用半透明遮罩覆盖你的应用。',
+        hiddenDescription:
+          '该步骤不显示任何 Usertour 界面。请使用触发器等待用户执行某个操作后再进入下一步。',
+      },
+      hiddenWarningTitle: '谨慎使用隐藏步骤',
+      hiddenWarning1:
+        '隐藏步骤必须包含一个最终会命中的触发器，用于将用户引导到非隐藏步骤、启动另一个流程，或关闭当前流程。',
+      hiddenWarning2: '否则用户可能会一直卡在隐藏步骤上，进而阻塞其它内容的展示。',
+      hiddenWarning3: '在可能的情况下，尽量避免使用隐藏步骤。',
+      settings: '设置',
+      explicitCompletionStep: '显式完成步骤',
+      explicitCompletionStepHint:
+        '启用后，你可以手动将任意步骤标记为完成步骤；禁用时，最后一个步骤会被自动视为完成步骤。',
+      skippable: '可跳过',
+      addBackdrop: '添加遮罩',
+      addBackdropTooltipHint:
+        '在你的应用上方添加一层半透明遮罩，仅露出提示框和目标元素。可用它强制用户与目标元素交互。',
+      addBackdropModalHint: '在你的应用上方添加一层半透明遮罩，仅露出模态框。',
+      blockTargetClicks: '阻止点击提示框目标元素',
+      placement: '位置',
+      aboutPlacement: '关于定位',
+      showTooltipOnElement: '在此元素上显示提示框',
+    },
     launcher: {
       appearance: '外观',
       buttonText: '按钮文本',

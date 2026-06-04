@@ -17,7 +17,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { DragHandleDots2Icon, ExclamationTriangleIcon, GearIcon } from '@radix-ui/react-icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,11 +38,15 @@ import {
   EventIcon2,
   EyeNoneIcon,
   ModelIcon,
+  RiAlertLine,
+  RiDraggable,
   RiMessageFill,
+  RiSettings3Line,
   TooltipIcon,
 } from '@usertour/icons';
 import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
@@ -80,6 +83,7 @@ const SidebarContent = memo(
       { index, step, onClick, listeners = {}, attributes = {}, isReachable = true, ...props },
       ref,
     ) => {
+      const { t } = useTranslation();
       const handleEdit = useCallback(() => {
         onClick?.('edit', index);
       }, [onClick, index]);
@@ -101,7 +105,7 @@ const SidebarContent = memo(
         >
           <div className="flex items-center justify-between ">
             <div className="grow inline-flex items-center text-sm ">
-              <DragHandleDots2Icon {...listeners} className="cursor-move" />
+              <RiDraggable {...listeners} className="cursor-move" size={16} />
               {step.type === StepContentType.TOOLTIP && (
                 <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5" />
               )}
@@ -119,10 +123,10 @@ const SidebarContent = memo(
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="p-1 h-fit" onClick={handleEdit}>
-                      <GearIcon className="h-4 w-4" />
+                      <RiSettings3Line size={16} />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Edit</TooltipContent>
+                  <TooltipContent>{t('contentBuilder.flow.edit')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <TooltipProvider>
@@ -139,8 +143,8 @@ const SidebarContent = memo(
                   </TooltipTrigger>
                   <TooltipContent>
                     {step.trigger && step.trigger.length > 0
-                      ? `${step.trigger.length} ${step.trigger.length === 1 ? 'Trigger' : 'Triggers'}`
-                      : 'Add Trigger'}
+                      ? t('contentBuilder.flow.trigger', { count: step.trigger.length })
+                      : t('contentBuilder.flow.addTriggerTooltip')}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -158,22 +162,23 @@ const SidebarContent = memo(
                       </AlertDialogTrigger>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Delete</p>
+                      <p>{t('contentBuilder.flow.delete')}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {t('contentBuilder.flow.deleteConfirmTitle')}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      After deletion, it will not be possible to access or recover the data through
-                      any means. Please confirm.
+                      {t('contentBuilder.flow.deleteConfirmDescription')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('contentBuilder.common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDelete} variant={'destructive'}>
-                      Delete
+                      {t('contentBuilder.flow.delete')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -183,12 +188,9 @@ const SidebarContent = memo(
           {!isReachable && (
             <div className="flex items-stretch items-center text-warning space-x-1">
               <div className="flex-none self-start pt-1">
-                <ExclamationTriangleIcon className="h-3 w-3" />
+                <RiAlertLine className="h-3 w-3" />
               </div>
-              <span className="text-xs grow ">
-                Step is not reachable from the start step. Add a button, trigger that links to this
-                step, or delete it.
-              </span>
+              <span className="text-xs grow ">{t('contentBuilder.flow.stepNotReachable')}</span>
             </div>
           )}
         </div>

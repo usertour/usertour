@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Card,
@@ -51,7 +50,8 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
 import { hasMissingRequiredData } from '@usertour/helpers';
-import { PlusIcon } from '@usertour/icons';
+import { PlusIcon, RiArrowLeftSLine } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 import { ContentType } from '@/pages/contents/components/builder/components/content-type';
 import { FlowPlacement } from '@/pages/contents/components/builder/flow/components/flow-placement';
 import { ContentBubble } from '@/pages/contents/components/builder/components/content-bubble';
@@ -77,7 +77,7 @@ const FlowBuilderDetailHeader = () => {
           onClick={exitToFlow}
           className="mr-2 text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6 " />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
         <div className="grow text-base leading-8">
           <OutlineInput
@@ -247,6 +247,7 @@ const FlowBuilderDetailFooter = () => {
   const { currentStep, setIsShowError, exitToFlow } = useFlowEditor();
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const actionsGate = useActionsSaveGate();
+  const { t } = useTranslation();
 
   // Commit the edited step into the currentVersion draft, then return to the
   // flow overview. Persistence is the auto-save FSM's job (it writes the whole
@@ -305,7 +306,7 @@ const FlowBuilderDetailFooter = () => {
   return (
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" onClick={handleSave}>
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );

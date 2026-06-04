@@ -1,5 +1,6 @@
-import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/ui';
+import { RiExternalLinkLine } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { getAuthToken } from '@usertour/helpers';
@@ -14,6 +15,7 @@ import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/b
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 
 export const FlowPlacement = () => {
+  const { t } = useTranslation();
   const { zIndex } = useBuilderConfig();
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
@@ -53,14 +55,14 @@ export const FlowPlacement = () => {
       buildUrl={currentContent?.buildUrl}
       onScreenChange={handleScreenChange}
       token={getAuthToken()}
-      subTitle="Show tooltip on this element"
+      subTitle={t('contentBuilder.flow.showTooltipOnElement')}
     >
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <h1 className="text-sm">Placement </h1>
+          <h1 className="text-sm">{t('contentBuilder.flow.placement')}</h1>
           <Button variant="link" onClick={handleAboutPlacement} className="p-0 h-full">
-            About placement
-            <OpenInNewWindowIcon className="ml-1" />
+            {t('contentBuilder.flow.aboutPlacement')}
+            <RiExternalLinkLine className="ml-1 h-4 w-4" />
           </Button>
         </div>
         <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">

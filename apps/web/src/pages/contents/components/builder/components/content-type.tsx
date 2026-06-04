@@ -1,4 +1,3 @@
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import {
   Alert,
@@ -10,8 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
-import { EyeNoneIcon, ModelIcon, RiMessageFill, TooltipIcon } from '@usertour/icons';
+import { EyeNoneIcon, ModelIcon, RiAlertLine, RiMessageFill, TooltipIcon } from '@usertour/icons';
 import { StepContentType } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 
 interface ContentTypeProps {
   type: string;
@@ -19,15 +19,26 @@ interface ContentTypeProps {
   zIndex: number;
 }
 
-export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
+const STEP_TYPE_LABEL_KEY: Record<string, string> = {
+  [StepContentType.BUBBLE]: 'contentBuilder.flow.stepType.bubble',
+  [StepContentType.TOOLTIP]: 'contentBuilder.flow.stepType.tooltip',
+  [StepContentType.MODAL]: 'contentBuilder.flow.stepType.modal',
+  [StepContentType.HIDDEN]: 'contentBuilder.flow.stepType.hidden',
+};
+
+export const ContentType = (props: ContentTypeProps) => {
+  const { onChange, zIndex, type } = props;
+  const { t } = useTranslation();
+  const labelKey = STEP_TYPE_LABEL_KEY[type];
+
   return (
     <div className="space-y-3">
       <div className="flex items-center">
-        <h1 className="text-sm">Step type</h1>
+        <h1 className="text-sm">{t('contentBuilder.flow.stepTypeTitle')}</h1>
       </div>
 
       <Select value={type} onValueChange={onChange}>
-        <SelectTrigger className="h-8 justify-start">
+        <SelectTrigger variant="compact-muted" className="justify-start">
           {type === StepContentType.TOOLTIP && (
             <TooltipIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />
           )}
@@ -39,9 +50,7 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
 
           <div className="grow text-left">
             <SelectValue asChild>
-              <div className="capitalize">
-                {type === StepContentType.BUBBLE ? 'Speech Bubble' : type}
-              </div>
+              <div>{labelKey ? t(labelKey) : type}</div>
             </SelectValue>
           </div>
         </SelectTrigger>
@@ -51,11 +60,10 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <RiMessageFill size={16} />
-                <span className="text-xs">Speech Bubble</span>
+                <span className="text-xs">{t('contentBuilder.flow.stepType.bubble')}</span>
               </div>
               <p className="text-xs max-w-60 text-muted-foreground">
-                A non-intrusive message positioned at the corner of your app. Perfect for subtle
-                guidance that doesn't interrupt the user experience. Works great with beacons.
+                {t('contentBuilder.flow.stepType.bubbleDescription')}
               </p>
             </div>
           </SelectItem>
@@ -63,11 +71,10 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <TooltipIcon width={16} height={16} className="mt-0.5" />
-                <span className="text-xs">Tooltip</span>
+                <span className="text-xs">{t('contentBuilder.flow.stepType.tooltip')}</span>
               </div>
               <p className="text-xs max-w-60 text-muted-foreground">
-                A tooltip anchored to an element you select. Well-suited for steps that request
-                users to click a specific element.
+                {t('contentBuilder.flow.stepType.tooltipDescription')}
               </p>
             </div>
           </SelectItem>
@@ -75,11 +82,10 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <ModelIcon width={16} height={16} className="mt-0.5" />
-                <span className="text-xs">Modal</span>
+                <span className="text-xs">{t('contentBuilder.flow.stepType.modal')}</span>
               </div>
               <p className="text-xs max-w-60 text-muted-foreground">
-                A modal dialog appearing in the center of the screen. A semi-transparent backdrop
-                will cover your app.
+                {t('contentBuilder.flow.stepType.modalDescription')}
               </p>
             </div>
           </SelectItem>
@@ -87,11 +93,10 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <EyeNoneIcon width={16} height={16} />
-                <span className="text-xs">Hidden</span>
+                <span className="text-xs">{t('contentBuilder.flow.stepType.hidden')}</span>
               </div>
               <p className="text-xs max-w-60 text-muted-foreground">
-                No Usertour UI is displayed at this step. Use triggers that wait for the user to
-                perform an action before proceeding to the next step.
+                {t('contentBuilder.flow.stepType.hiddenDescription')}
               </p>
             </div>
           </SelectItem>
@@ -99,18 +104,12 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
 
         {type === StepContentType.HIDDEN && (
           <Alert variant="warning">
-            <ExclamationTriangleIcon className="h-4 w-4" />
-            <AlertTitle>Take caution with hidden steps</AlertTitle>
+            <RiAlertLine className="h-4 w-4" />
+            <AlertTitle>{t('contentBuilder.flow.hiddenWarningTitle')}</AlertTitle>
             <AlertDescription className="flex flex-col gap-2">
-              <span>
-                Hidden steps MUST include a trigger that eventually matches and either directs the
-                user to a non-hidden step, initiates another flow, or dismisses the current flow.
-              </span>
-              <span>
-                Without such a trigger, the user could be stuck on a hidden step indefinitely,
-                potentially blocking other content from being displayed.
-              </span>
-              <span>Whenever possible, avoid using hidden steps altogether.</span>
+              <span>{t('contentBuilder.flow.hiddenWarning1')}</span>
+              <span>{t('contentBuilder.flow.hiddenWarning2')}</span>
+              <span>{t('contentBuilder.flow.hiddenWarning3')}</span>
             </AlertDescription>
           </Alert>
         )}

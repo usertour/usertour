@@ -1,5 +1,5 @@
 import { Label, Switch, QuestionTooltip } from '@usertour/ui';
-import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type ContentSettingsData = {
   enabledBackdrop: boolean;
@@ -14,92 +14,71 @@ export interface ContentSettingsProps {
   onChange: (value: ContentSettingsData) => void;
 }
 
+// Controlled: renders straight from `data` and writes every toggle back through
+// `onChange` — the parent step data is the single source of truth (no local
+// copy, so external changes flow through immediately).
 export const ContentSettings = (props: ContentSettingsProps) => {
-  const { data: initialValue, onChange, type } = props;
-  const [data, setData] = useState<ContentSettingsData>(initialValue);
+  const { data, onChange, type } = props;
+  const { t } = useTranslation();
 
-  const update = (fn: (pre: ContentSettingsData) => ContentSettingsData) => {
-    setData((pre) => {
-      const v = fn(pre);
-      onChange(v);
-      return v;
-    });
-  };
-
-  const handleBackdrop = (checked: boolean) => {
-    update((pre) => ({ ...pre, enabledBackdrop: checked }));
-  };
-  const handleSkippable = (checked: boolean) => {
-    update((pre) => ({ ...pre, skippable: checked }));
-  };
-
-  const handleBlockTarget = (checked: boolean) => {
-    update((pre) => ({ ...pre, enabledBlockTarget: checked }));
-  };
-
-  const handleExplicitCompletionStep = (checked: boolean) => {
-    update((pre) => ({ ...pre, explicitCompletionStep: checked }));
+  const update = (patch: Partial<ContentSettingsData>) => {
+    onChange({ ...data, ...patch });
   };
 
   return (
     <div className="space-y-3">
-      <h1 className="text-sm">Settings</h1>
-      <div className="flex flex-col  bg-background-700 p-3.5 rounded-lg space-y-2">
+      <h1 className="text-sm">{t('contentBuilder.flow.settings')}</h1>
+      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-2">
         <div className="flex items-center justify-between space-x-2">
           <Label htmlFor="explicit-completion-step" className="flex flex-row space-x-1">
-            <span className="font-normal">Explicit completion step</span>
-            <QuestionTooltip>
-              When enabled, you can manually mark any step as the completion step. When disabled,
-              the last step will automatically be treated as the completion step.
-            </QuestionTooltip>
+            <span className="font-normal">{t('contentBuilder.flow.explicitCompletionStep')}</span>
+            <QuestionTooltip>{t('contentBuilder.flow.explicitCompletionStepHint')}</QuestionTooltip>
           </Label>
           <Switch
             id="explicit-completion-step"
             className="data-[state=unchecked]:bg-input"
             checked={data.explicitCompletionStep ?? false}
-            onCheckedChange={handleExplicitCompletionStep}
+            onCheckedChange={(checked) => update({ explicitCompletionStep: checked })}
           />
         </div>
         <div className="flex items-center justify-between space-x-2">
           <Label htmlFor="skippable" className="flex flex-col space-y-1">
-            <span className="font-normal">skippable</span>
+            <span className="font-normal">{t('contentBuilder.flow.skippable')}</span>
           </Label>
           <Switch
             id="skippable"
             className="data-[state=unchecked]:bg-input"
             checked={data.skippable}
-            onCheckedChange={handleSkippable}
+            onCheckedChange={(checked) => update({ skippable: checked })}
           />
         </div>
         <div className="flex items-center justify-between space-x-2">
           <div className="flex space-x-2 grow">
             <Label htmlFor="enable-backdrop" className="flex space-y-1">
-              <span className="font-normal">Add backdrop</span>
+              <span className="font-normal">{t('contentBuilder.flow.addBackdrop')}</span>
             </Label>
             <QuestionTooltip>
-              {type === 'tooltip' &&
-                'Adds a semi-transparent layer on top of your app, which only reveals the tooltip and the target element. Use this to force users to interact with the target element.'}
-              {type === 'modal' &&
-                'Adds a semi-transparent layer on top of your app, which only reveals the modal.'}
+              {type === 'tooltip' && t('contentBuilder.flow.addBackdropTooltipHint')}
+              {type === 'modal' && t('contentBuilder.flow.addBackdropModalHint')}
             </QuestionTooltip>
           </div>
           <Switch
             id="enable-backdrop"
             className="data-[state=unchecked]:bg-input"
             checked={data.enabledBackdrop}
-            onCheckedChange={handleBackdrop}
+            onCheckedChange={(checked) => update({ enabledBackdrop: checked })}
           />
         </div>
         {data.enabledBackdrop && type === 'tooltip' && (
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="enable-block-target" className="flex flex-col space-y-1">
-              <span className="font-normal">Block tooltip target clicks</span>
+              <span className="font-normal">{t('contentBuilder.flow.blockTargetClicks')}</span>
             </Label>
             <Switch
               id="enable-block-target"
               className="data-[state=unchecked]:bg-input"
               checked={data.enabledBlockTarget}
-              onCheckedChange={handleBlockTarget}
+              onCheckedChange={(checked) => update({ enabledBlockTarget: checked })}
             />
           </div>
         )}

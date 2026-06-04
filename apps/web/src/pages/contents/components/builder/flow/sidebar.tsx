@@ -36,7 +36,7 @@ export const BuilderSideBar = () => {
       <SidebarMini container={sidbarRef} />
       <Card className="h-full flex flex-col bg-background-800">
         <CardHeader className="flex-none p-4 space-y-3">
-          <CardTitle className="flex h-8	">
+          <CardTitle className="flex h-8">
             <SidebarHeader title={currentContent?.name ?? ''} />
           </CardTitle>
         </CardHeader>

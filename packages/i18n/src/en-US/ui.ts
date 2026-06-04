@@ -1708,6 +1708,56 @@ const translations = {
         rightBottom: 'Right Bottom',
       },
     },
+    flow: {
+      triggers: 'Triggers',
+      addTrigger: 'Add trigger',
+      edit: 'Edit',
+      delete: 'Delete',
+      trigger_one: '{{count}} Trigger',
+      trigger_other: '{{count}} Triggers',
+      addTriggerTooltip: 'Add Trigger',
+      deleteConfirmTitle: 'Are you absolutely sure?',
+      deleteConfirmDescription:
+        'After deletion, it will not be possible to access or recover the data through any means. Please confirm.',
+      stepNotReachable:
+        'Step is not reachable from the start step. Add a button, trigger that links to this step, or delete it.',
+      create: 'Create',
+      stepTypeTitle: 'Step type',
+      stepType: {
+        bubble: 'Speech Bubble',
+        tooltip: 'Tooltip',
+        modal: 'Modal',
+        hidden: 'Hidden',
+        bubbleDescription:
+          "A non-intrusive message positioned at the corner of your app. Perfect for subtle guidance that doesn't interrupt the user experience. Works great with beacons.",
+        tooltipDescription:
+          'A tooltip anchored to an element you select. Well-suited for steps that request users to click a specific element.',
+        modalDescription:
+          'A modal dialog appearing in the center of the screen. A semi-transparent backdrop will cover your app.',
+        hiddenDescription:
+          'No Usertour UI is displayed at this step. Use triggers that wait for the user to perform an action before proceeding to the next step.',
+      },
+      hiddenWarningTitle: 'Take caution with hidden steps',
+      hiddenWarning1:
+        'Hidden steps MUST include a trigger that eventually matches and either directs the user to a non-hidden step, initiates another flow, or dismisses the current flow.',
+      hiddenWarning2:
+        'Without such a trigger, the user could be stuck on a hidden step indefinitely, potentially blocking other content from being displayed.',
+      hiddenWarning3: 'Whenever possible, avoid using hidden steps altogether.',
+      settings: 'Settings',
+      explicitCompletionStep: 'Explicit completion step',
+      explicitCompletionStepHint:
+        'When enabled, you can manually mark any step as the completion step. When disabled, the last step will automatically be treated as the completion step.',
+      skippable: 'Skippable',
+      addBackdrop: 'Add backdrop',
+      addBackdropTooltipHint:
+        'Adds a semi-transparent layer on top of your app, which only reveals the tooltip and the target element. Use this to force users to interact with the target element.',
+      addBackdropModalHint:
+        'Adds a semi-transparent layer on top of your app, which only reveals the modal.',
+      blockTargetClicks: 'Block tooltip target clicks',
+      placement: 'Placement',
+      aboutPlacement: 'About placement',
+      showTooltipOnElement: 'Show tooltip on this element',
+    },
     launcher: {
       appearance: 'Appearance',
       buttonText: 'Button text',

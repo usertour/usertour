@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Card,
@@ -12,7 +11,8 @@ import {
 } from '@usertour/ui';
 import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiAddCircleLine, RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 import { hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
@@ -49,10 +49,10 @@ const FlowBuilderTriggerHeader = () => {
           onClick={exitToFlow}
           className="mr-2 text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6 " />
+          <RiArrowLeftSLine className="h-6 w-6" />
         </Button>
         <div className="grow text-base leading-8 truncate ...">
-          {currentIndex + 1}、{currentStep?.name}
+          {currentIndex + 1}. {currentStep?.name}
         </div>
       </div>
     </CardHeader>
@@ -69,6 +69,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
   const { contents } = useContentList();
   const { showError, setShowError } = useTriggerContext();
   const { token } = useToken();
+  const { t } = useTranslation();
   const emptyTrigger = { conditions: [], actions: [] };
 
   useEffect(() => {
@@ -135,7 +136,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full ">
         <div className="flex-col space-y-3 p-4">
-          <h1 className="text-sm">Triggers</h1>
+          <h1 className="text-sm">{t('contentBuilder.flow.triggers')}</h1>
           {loading && (
             <div className="flex justify-center items-center h-full">
               <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -172,8 +173,8 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
               />
             ))}
           <Button className="w-full" variant="secondary" onClick={handleOnClick}>
-            <PlusCircledIcon className="mr-2" />
-            Add trigger
+            <RiAddCircleLine className="mr-2 size-4" />
+            {t('contentBuilder.flow.addTrigger')}
           </Button>
         </div>
       </ScrollArea>
@@ -187,6 +188,7 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const { currentStep, exitToFlow } = useFlowEditor();
   const { setShowError } = useTriggerContext();
+  const { t } = useTranslation();
 
   // Commit the edited trigger into the currentVersion draft, then return to
   // the flow overview. Auto-save (FSM) persists it — no per-step mutation,
@@ -237,7 +239,7 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   return (
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" onClick={handleSave}>
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );
