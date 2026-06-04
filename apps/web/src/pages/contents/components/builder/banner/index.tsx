@@ -1,1 +1,1 @@
-export { BannerBuilder } from '@/pages/contents/components/builder/banner/banner';
+export { BannerBuilder } from '@/pages/contents/components/builder/banner/banner-builder';

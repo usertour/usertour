@@ -20,7 +20,7 @@ export const LauncherSettings = (props: LauncherSettingsProps) => {
             {t('contentBuilder.launcher.dismissAfterFirstActivation')}
           </Label>
           <Switch
-            variant="muted"
+            className="data-[state=unchecked]:bg-input"
             id="dismiss-after-first-activation"
             checked={data.dismissAfterFirstActivation}
             onCheckedChange={(checked) =>

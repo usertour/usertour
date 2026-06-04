@@ -6,7 +6,6 @@ import { useCallback } from 'react';
 
 import { EXTENSION_SELECT } from '@usertour/constants';
 import {
-  QuestionTooltip,
   Select,
   SelectContent,
   SelectGroup,
@@ -15,37 +14,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
+import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
-const EMBED_PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; label: string }[] = [
-  { value: BannerEmbedPlacement.TOP_OF_PAGE, label: 'Top of page' },
-  { value: BannerEmbedPlacement.BOTTOM_OF_PAGE, label: 'Bottom of page' },
-  { value: BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT, label: 'Top of container element' },
-  {
-    value: BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT,
-    label: 'Bottom of container element',
-  },
-  {
-    value: BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT,
-    label: 'Immediately before element',
-  },
-  {
-    value: BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT,
-    label: 'Immediately after element',
-  },
+const PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; i18n: string }[] = [
+  { value: BannerEmbedPlacement.TOP_OF_PAGE, i18n: 'topOfPage' },
+  { value: BannerEmbedPlacement.BOTTOM_OF_PAGE, i18n: 'bottomOfPage' },
+  { value: BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT, i18n: 'topOfContainer' },
+  { value: BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT, i18n: 'bottomOfContainer' },
+  { value: BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT, i18n: 'beforeElement' },
+  { value: BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT, i18n: 'afterElement' },
 ];
-
-const labelStyles = 'flex justify-start items-center space-x-1';
 
 export const BannerEmbedPlacementSelect = () => {
   const { zIndex } = useBuilderConfig();
   const isShowError = useBuilderStore((state) => state.isShowError);
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
+  const { t } = useTranslation();
 
   const handleTargetChange = useCallback(
     (value: Partial<ElementSelectorPropsData>) => {
@@ -72,29 +63,25 @@ export const BannerEmbedPlacementSelect = () => {
   );
 
   return (
-    <div className="space-y-3">
-      <div className={labelStyles}>
-        <span className="text-sm">Embed placement</span>
-        <QuestionTooltip>
-          Choose where to display the banner: at the top or bottom of the page, or relative to a
-          specific element (inside, before, or after).
-        </QuestionTooltip>
-      </div>
+    <FieldSection
+      title={t('contentBuilder.banner.embedPlacement')}
+      tooltip={t('contentBuilder.banner.embedPlacementTooltip')}
+    >
       <Select
         value={localData.embedPlacement}
         onValueChange={(value) =>
           updateLocalData({ embedPlacement: value as BannerEmbedPlacement })
         }
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Select placement" />
+        <SelectTrigger variant="compact-muted">
+          <SelectValue placeholder={t('contentBuilder.banner.selectPlacement')} />
         </SelectTrigger>
         <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
           <SelectContent>
             <SelectGroup>
-              {EMBED_PLACEMENT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+              {PLACEMENT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                  {t(`contentBuilder.banner.placement.${opt.i18n}`)}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -108,14 +95,14 @@ export const BannerEmbedPlacementSelect = () => {
           target={localData.containerElement}
           onTargetChange={handleTargetChange}
           buildUrl={currentContent?.buildUrl}
-          subTitle="Container element for banner"
+          subTitle={t('contentBuilder.banner.containerElementSubtitle')}
         >
           <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
             <ContentPlacementManual />
           </div>
         </ContentPlacementProvider>
       )}
-    </div>
+    </FieldSection>
   );
 };
 

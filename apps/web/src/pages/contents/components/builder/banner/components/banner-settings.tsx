@@ -1,8 +1,10 @@
 'use client';
 
 import { Label, QuestionTooltip, Switch } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
+import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
 const SETTINGS_ITEMS: readonly {
   key:
@@ -10,56 +12,43 @@ const SETTINGS_ITEMS: readonly {
     | 'stickToTopOfViewport'
     | 'allowUsersToDismissEmbed'
     | 'animateWhenEmbedAppears';
-  label: string;
-  tooltip: string;
+  i18n: 'overlay' | 'stickToTop' | 'allowDismiss' | 'animate';
 }[] = [
-  {
-    key: 'overlayEmbedOverAppContent',
-    label: 'Overlay over content',
-    tooltip:
-      'Controls whether the banner floats above page content or takes up space and pushes it down.',
-  },
-  {
-    key: 'stickToTopOfViewport',
-    label: 'Stick to top',
-    tooltip: 'Makes the banner stay visible at the top while scrolling instead of scrolling away.',
-  },
-  {
-    key: 'allowUsersToDismissEmbed',
-    label: 'Allow dismiss',
-    tooltip: 'Adds an X button so users can permanently dismiss the banner.',
-  },
-  {
-    key: 'animateWhenEmbedAppears',
-    label: 'Animate on appear',
-    tooltip: 'Slides the banner in with an animation instead of appearing instantly.',
-  },
+  { key: 'overlayEmbedOverAppContent', i18n: 'overlay' },
+  { key: 'stickToTopOfViewport', i18n: 'stickToTop' },
+  { key: 'allowUsersToDismissEmbed', i18n: 'allowDismiss' },
+  { key: 'animateWhenEmbedAppears', i18n: 'animate' },
 ];
 
 export const BannerSettings = () => {
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
+  const { t } = useTranslation();
 
   return (
-    <div className="space-y-3">
-      <h1 className="text-sm">Settings</h1>
+    <FieldSection title={t('contentBuilder.banner.settings')}>
       <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-2">
-        {SETTINGS_ITEMS.map((item) => (
-          <div key={item.key} className="flex items-center justify-between space-x-2">
-            <Label htmlFor={item.key} className="flex flex-row space-x-1 font-normal">
-              <span>{item.label}</span>
-              <QuestionTooltip>{item.tooltip}</QuestionTooltip>
-            </Label>
-            <Switch
-              id={item.key}
-              className="data-[state=unchecked]:bg-input"
-              checked={localData[item.key]}
-              onCheckedChange={(checked) => updateLocalData({ [item.key]: checked })}
-              aria-label={item.label}
-            />
-          </div>
-        ))}
+        {SETTINGS_ITEMS.map((item) => {
+          const label = t(`contentBuilder.banner.settingsItems.${item.i18n}`);
+          return (
+            <div key={item.key} className="flex items-center justify-between space-x-2">
+              <Label htmlFor={item.key} className="flex flex-row space-x-1 font-normal">
+                <span>{label}</span>
+                <QuestionTooltip>
+                  {t(`contentBuilder.banner.settingsItems.${item.i18n}Tooltip`)}
+                </QuestionTooltip>
+              </Label>
+              <Switch
+                className="data-[state=unchecked]:bg-input"
+                id={item.key}
+                checked={localData[item.key]}
+                onCheckedChange={(checked) => updateLocalData({ [item.key]: checked })}
+                aria-label={label}
+              />
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </FieldSection>
   );
 };
 

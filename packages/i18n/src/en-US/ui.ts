@@ -1707,6 +1707,52 @@ const translations = {
         },
       },
     },
+    banner: {
+      embedPlacement: 'Embed placement',
+      embedPlacementTooltip:
+        'Choose where to display the banner: at the top or bottom of the page, or relative to a specific element (inside, before, or after).',
+      selectPlacement: 'Select placement',
+      containerElementSubtitle: 'Container element for banner',
+      placement: {
+        topOfPage: 'Top of page',
+        bottomOfPage: 'Bottom of page',
+        topOfContainer: 'Top of container element',
+        bottomOfContainer: 'Bottom of container element',
+        beforeElement: 'Immediately before element',
+        afterElement: 'Immediately after element',
+      },
+      zIndex: 'Z-Index',
+      layout: 'Layout',
+      maxEmbedWidth: 'Max. embed width',
+      maxEmbedWidthTooltip:
+        'Maximum width of the embed container in pixels. Leave empty for no limit.',
+      maxContentWidth: 'Max. content width',
+      maxContentWidthTooltip:
+        'Maximum width of the banner content in pixels. Leave empty for no limit.',
+      borderRadius: 'Border radius',
+      borderRadiusTooltip: 'Corner radius in pixels. Leave empty for default.',
+      outerMargin: 'Outer margin',
+      outerMarginTooltip: 'Margin around the banner (top, right, bottom, left) in pixels.',
+      none: 'None',
+      marginTop: 'Top',
+      marginBottom: 'Bottom',
+      marginLeft: 'Left',
+      marginRight: 'Right',
+      settings: 'Settings',
+      settingsItems: {
+        overlay: 'Overlay over content',
+        overlayTooltip:
+          'Controls whether the banner floats above page content or takes up space and pushes it down.',
+        stickToTop: 'Stick to top',
+        stickToTopTooltip:
+          'Makes the banner stay visible at the top while scrolling instead of scrolling away.',
+        allowDismiss: 'Allow dismiss',
+        allowDismissTooltip: 'Adds an X button so users can permanently dismiss the banner.',
+        animate: 'Animate on appear',
+        animateTooltip: 'Slides the banner in with an animation instead of appearing instantly.',
+      },
+      targetElement: 'Target Element',
+    },
   },
   conditions: {
     actions: {

@@ -1,25 +1,27 @@
 import { Input } from '@usertour/ui';
-
+import { useTranslation } from 'react-i18next';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
+import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
 export const BannerZIndex = () => {
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
+  const { t } = useTranslation();
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center">
-        <h1 className="text-sm">Z-Index</h1>
-      </div>
-
+    <FieldSection title={t('contentBuilder.banner.zIndex')}>
       <Input
+        variant="compact-muted"
+        type="number"
+        min={0}
         value={localData.zIndex ?? ''}
-        placeholder={localData.zIndex == null ? 'Default' : undefined}
+        placeholder={t('contentBuilder.common.default')}
         onChange={(e) => {
-          const value = Number.parseInt(e.target.value, 10);
-          updateLocalData({ zIndex: Number.isNaN(value) ? undefined : value });
+          const parsed = Number.parseInt(e.target.value, 10);
+          // Reject negative z-index; clamp to >= 0.
+          updateLocalData({ zIndex: Number.isNaN(parsed) ? undefined : Math.max(0, parsed) });
         }}
       />
-    </div>
+    </FieldSection>
   );
 };
 
