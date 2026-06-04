@@ -15,6 +15,7 @@ describe('OpenAPICompaniesService', () => {
     projectId: 'project-1',
     name: 'Test Environment',
     token: 'test-token',
+    isPrimary: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -40,12 +41,14 @@ describe('OpenAPICompaniesService', () => {
     bizUsers: [],
     bizCompaniesOnSegment: [],
     BizSession: [],
+    BizEvent: [],
     _count: {
       environment: 1,
       bizUsersOnCompany: 0,
       bizUsers: 0,
       bizCompaniesOnSegment: 0,
       BizSession: 0,
+      BizEvent: 0,
     },
   } as unknown as Prisma.BizCompanyGetPayload<{
     include: {
@@ -55,6 +58,7 @@ describe('OpenAPICompaniesService', () => {
       bizUsers: true;
       bizCompaniesOnSegment: true;
       BizSession: true;
+      BizEvent: true;
     };
   }>;
 
