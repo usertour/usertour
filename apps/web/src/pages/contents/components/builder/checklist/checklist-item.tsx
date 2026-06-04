@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import {
   Button,
   CardContent,
@@ -15,7 +14,7 @@ import {
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
 import { Actions } from '@usertour/editor';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
@@ -41,6 +40,7 @@ import { SidebarContainer } from '@/pages/contents/components/builder/components
 
 const ChecklistItemHeader = () => {
   const { backToChecklist, setCurrentItem } = useChecklistEditor();
+  const { t } = useTranslation();
   return (
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row space-x-1 text-base items-center">
@@ -53,9 +53,9 @@ const ChecklistItemHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <ChevronLeftIcon className="h-6 w-6 " />
+          <RiArrowLeftSLine className="h-6 w-6 " />
         </Button>
-        <span className=" truncate ...">Checklist Item</span>
+        <span className="truncate">{t('contentBuilder.checklist.item')}</span>
       </CardTitle>
     </CardHeader>
   );
@@ -73,6 +73,7 @@ const ChecklistItemBody = () => {
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
+
   const handleInputChange =
     (field: keyof ChecklistItemType) => (e: React.ChangeEvent<HTMLInputElement> | boolean) => {
       setCurrentItem((prev) =>
@@ -103,29 +104,29 @@ const ChecklistItemBody = () => {
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           <div className="flex flex-col space-y-2">
-            <Label htmlFor={`${formPrefix}-name`}>Name</Label>
+            <Label htmlFor={`${formPrefix}-name`}>{t('contentBuilder.checklist.itemName')}</Label>
             <Input
+              variant="compact-muted"
               id={`${formPrefix}-name`}
-              className="bg-background-900"
               value={currentItem?.name}
-              placeholder="None"
+              placeholder={t('contentBuilder.checklist.none')}
               onChange={handleInputChange('name')}
             />
           </div>
           <div className="flex flex-col space-y-2">
-            <div className="flex justify-start items-center space-x-1	">
-              <Label htmlFor={`${formPrefix}-description`}>Optional text below task name</Label>
-            </div>
+            <Label htmlFor={`${formPrefix}-description`}>
+              {t('contentBuilder.checklist.itemDescription')}
+            </Label>
             <Input
+              variant="compact-muted"
               id={`${formPrefix}-description`}
-              className="bg-background-900"
               value={currentItem?.description}
-              placeholder="None"
+              placeholder={t('contentBuilder.checklist.none')}
               onChange={handleInputChange('description')}
             />
           </div>
           <div className="flex flex-col space-y-2">
-            <Label>When task is clicked</Label>
+            <Label>{t('contentBuilder.checklist.whenClicked')}</Label>
             <Actions
               baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={undefined}
@@ -145,7 +146,7 @@ const ChecklistItemBody = () => {
             />
           </div>
           <div className="flex flex-col space-y-2">
-            <Label>Mark completed</Label>
+            <Label>{t('contentBuilder.checklist.markCompleted')}</Label>
             <Conditions
               onChange={handleRulesChange('completeConditions')}
               conditions={currentItem?.completeConditions ?? []}
@@ -161,11 +162,11 @@ const ChecklistItemBody = () => {
           </div>
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor={'dddd'} className="font-normal">
-                Only show task
+              <Label htmlFor="checklist-item-only-show-task" className="font-normal">
+                {t('contentBuilder.checklist.onlyShowTask')}
               </Label>
               <Switch
-                id={'dddd'}
+                id="checklist-item-only-show-task"
                 className="data-[state=unchecked]:bg-input"
                 checked={currentItem?.onlyShowTask}
                 onCheckedChange={handleInputChange('onlyShowTask')}
@@ -193,6 +194,7 @@ const ChecklistItemBody = () => {
 
 const ChecklistItemFooter = () => {
   const { saveCurrentItem, currentItem, isLoading } = useChecklistEditor();
+  const { t } = useTranslation();
   const conditionsGate = useConditionsSaveGate();
   const actionsGate = useActionsSaveGate();
   const handleSave = () => {
@@ -211,7 +213,7 @@ const ChecklistItemFooter = () => {
     <CardFooter className="flex-none p-5">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        Save
+        {t('contentBuilder.common.save')}
       </Button>
     </CardFooter>
   );
@@ -222,8 +224,7 @@ export const ChecklistItem = () => {
   const { data, setCurrentItem } = useChecklistEditor();
   // Seed the currentItem draft from the :itemId route param when the sub-view
   // mounts — covers nav, deep-link and refresh. Clone so the buffer is an
-  // independent draft (edits never mutate currentVersion until save). The
-  // `ready` gate above WebBuilderContent guarantees data is loaded here.
+  // independent draft (edits never mutate currentVersion until save).
   useLayoutEffect(() => {
     const item = data.items.find((it) => it.id === itemId);
     setCurrentItem(item ? (JSON.parse(JSON.stringify(item)) as ChecklistItemType) : null);
