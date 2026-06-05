@@ -20,7 +20,7 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { ChangeEvent, Ref, useCallback, useMemo, useRef } from 'react';
+import { ChangeEvent, Ref, useCallback, useMemo, useRef, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
 import {
   useBuilderConfig,
@@ -44,19 +44,26 @@ import {
 } from '@/pages/contents/components/builder/components/content-settings';
 import { ContentTheme } from '@/pages/contents/components/builder/components/content-theme';
 import { ContentWidth } from '@/pages/contents/components/builder/components/content-width';
-import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
+import { SidebarControls } from '@/pages/contents/components/builder/flow/sidebar-controls';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { ContentEditorRoot } from '@usertour/editor';
 import { hasMissingRequiredData } from '@usertour/helpers';
-import { PlusIcon, RiArrowLeftSLine } from '@usertour/icons';
+import { PlusIcon, RiArrowLeftSLine, RiMenuFoldLine, RiMenuUnfoldLine } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { ContentType } from '@/pages/contents/components/builder/components/content-type';
 import { FlowPlacement } from '@/pages/contents/components/builder/flow/components/flow-placement';
 import { ContentBubble } from '@/pages/contents/components/builder/components/content-bubble';
 
-const FlowBuilderDetailHeader = () => {
+interface FlowBuilderDetailHeaderProps {
+  isLeft: boolean;
+  onSwitchSide: () => void;
+  onCollapse: () => void;
+}
+
+const FlowBuilderDetailHeader = (props: FlowBuilderDetailHeaderProps) => {
+  const { isLeft, onSwitchSide, onCollapse } = props;
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { currentStep, updateCurrentStep, exitToFlow } = useFlowEditor();
 
@@ -68,18 +75,23 @@ const FlowBuilderDetailHeader = () => {
   };
 
   return (
-    <CardHeader className="flex-none p-5 space-y-2">
-      <CardTitle className="text-base truncate ...">{currentContent?.name}</CardTitle>
-      <div className="flex">
+    <CardHeader className="flex-none space-y-2 border-b border-border/50 px-5 py-4">
+      <div className="flex items-center gap-2">
+        <CardTitle className="grow truncate text-sm font-semibold">
+          {currentContent?.name}
+        </CardTitle>
+        <SidebarControls isLeft={isLeft} onSwitchSide={onSwitchSide} onCollapse={onCollapse} />
+      </div>
+      <div className="flex items-center">
         <Button
-          variant="link"
+          variant="ghost"
           size="icon"
           onClick={exitToFlow}
-          className="mr-2 text-foreground w-6 h-8"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
         >
-          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
+          <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
-        <div className="grow text-base leading-8">
+        <div className="grow leading-8">
           <OutlineInput
             value={currentStep?.name}
             className="h-8 focus-visible:ring-0"
@@ -168,15 +180,11 @@ const FlowBuilderDetailBody = () => {
   }
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full ">
         <div className="flex-col space-y-6 p-4">
           <>
-            <ContentType
-              type={currentStep.type}
-              zIndex={zIndex}
-              onChange={handleContentTypeChange}
-            />
+            <ContentType type={currentStep.type} onChange={handleContentTypeChange} />
             {currentStep.type !== StepContentType.HIDDEN && (
               <>
                 <ContentTheme
@@ -304,7 +312,7 @@ const FlowBuilderDetailFooter = () => {
   }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow]);
 
   return (
-    <CardFooter className="flex-none p-5">
+    <CardFooter className="flex-none border-t border-border/50 p-4">
       <Button className="w-full h-10" onClick={handleSave}>
         {t('contentBuilder.common.save')}
       </Button>
@@ -404,6 +412,10 @@ export const FlowBuilderDetail = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex } = useBuilderConfig();
   const position = useBuilderStore((state) => state.position);
+  const setPosition = useBuilderStore((state) => state.setPosition);
+  const [collapsed, setCollapsed] = useState(false);
+  const { t } = useTranslation();
+  const isLeft = position === 'left';
 
   // Auto-adjust sidebar position when content position overlaps
   useAutoSidebarPosition();
@@ -411,17 +423,42 @@ export const FlowBuilderDetail = () => {
   return (
     <>
       <div
-        className={cn('w-80 h-screen p-2 fixed top-0', position === 'left' ? 'left-0' : 'right-0')}
-        style={{ zIndex: zIndex + EXTENSION_CONTENT_SIDEBAR }}
         ref={ref}
+        style={{ zIndex: zIndex + EXTENSION_CONTENT_SIDEBAR }}
+        className={cn(
+          'fixed top-[18px] bottom-[18px] w-[312px] transition-transform duration-300 ease-in-out',
+          isLeft ? 'left-[18px]' : 'right-[18px]',
+          collapsed && (isLeft ? '-translate-x-[420px]' : 'translate-x-[420px]'),
+        )}
       >
-        <SidebarMini container={ref} />
-        <Card className="h-full flex flex-col bg-background-800">
-          <FlowBuilderDetailHeader />
+        <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background-900 shadow-[0_18px_50px_rgba(15,23,42,0.14)]">
+          <FlowBuilderDetailHeader
+            isLeft={isLeft}
+            onSwitchSide={() => setPosition(isLeft ? 'right' : 'left')}
+            onCollapse={() => setCollapsed(true)}
+          />
           <FlowBuilderDetailBody />
           <FlowBuilderDetailFooter />
         </Card>
       </div>
+      {collapsed && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          style={{ zIndex: zIndex + EXTENSION_CONTENT_SIDEBAR }}
+          title={t('contentBuilder.common.expandPanel')}
+          className={cn(
+            'fixed top-[22px] grid size-9 place-items-center rounded-xl border border-border bg-background-900 text-muted-foreground shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:bg-muted hover:text-foreground',
+            isLeft ? 'left-[18px]' : 'right-[18px]',
+          )}
+        >
+          {isLeft ? (
+            <RiMenuUnfoldLine className="h-[18px] w-[18px]" />
+          ) : (
+            <RiMenuFoldLine className="h-[18px] w-[18px]" />
+          )}
+        </button>
+      )}
       <FlowBuilderDetailEmbed />
     </>
   );

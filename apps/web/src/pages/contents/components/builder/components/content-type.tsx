@@ -1,94 +1,81 @@
-import { EXTENSION_SELECT } from '@usertour/constants';
+import { Alert, AlertDescription, AlertTitle } from '@usertour/ui';
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  CompactSelectContent,
-  CompactSelectItem,
-  CompactSelectRoot,
-  CompactSelectTrigger,
-  CompactSelectValue,
-} from '@usertour/ui';
-import { EyeNoneIcon, ModelIcon, RiAlertLine, RiMessageLine, TooltipIcon } from '@usertour/icons';
+  RiAlertLine,
+  RiChat2Line,
+  RiEyeOffLine,
+  RiMessage2Line,
+  RiWindow2Line,
+} from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { StepContentType } from '@usertour/types';
+import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ContentTypeProps {
   type: string;
   onChange: (value: string) => void;
-  zIndex: number;
 }
 
-const STEP_TYPE_LABEL_KEY: Record<string, string> = {
-  [StepContentType.BUBBLE]: 'contentBuilder.flow.stepType.bubble',
-  [StepContentType.TOOLTIP]: 'contentBuilder.flow.stepType.tooltip',
-  [StepContentType.MODAL]: 'contentBuilder.flow.stepType.modal',
-  [StepContentType.HIDDEN]: 'contentBuilder.flow.stepType.hidden',
-};
-
-const getStepTypeIcon = (stepType: string) => {
-  switch (stepType) {
-    case StepContentType.TOOLTIP:
-      return <TooltipIcon width={16} height={16} className="opacity-70" />;
-    case StepContentType.MODAL:
-      return <ModelIcon width={16} height={16} className="opacity-70" />;
-    case StepContentType.BUBBLE:
-      return <RiMessageLine size={16} className="opacity-70" />;
-    case StepContentType.HIDDEN:
-      return <EyeNoneIcon width={16} height={16} className="opacity-70" />;
-    default:
-      return null;
-  }
-};
+// 2×2 grid of step types. Order matches the design: Modal, Tooltip, Speech
+// Bubble, Hidden.
+const STEP_TYPES: {
+  value: StepContentType;
+  Icon: ComponentType<{ className?: string }>;
+  labelKey: string;
+}[] = [
+  {
+    value: StepContentType.MODAL,
+    Icon: RiWindow2Line,
+    labelKey: 'contentBuilder.flow.stepType.modal',
+  },
+  {
+    value: StepContentType.TOOLTIP,
+    Icon: RiChat2Line,
+    labelKey: 'contentBuilder.flow.stepType.tooltip',
+  },
+  {
+    value: StepContentType.BUBBLE,
+    Icon: RiMessage2Line,
+    labelKey: 'contentBuilder.flow.stepType.bubble',
+  },
+  {
+    value: StepContentType.HIDDEN,
+    Icon: RiEyeOffLine,
+    labelKey: 'contentBuilder.flow.stepType.hidden',
+  },
+];
 
 export const ContentType = (props: ContentTypeProps) => {
-  const { onChange, zIndex, type } = props;
+  const { onChange, type } = props;
   const { t } = useTranslation();
-
-  const renderOption = (stepType: StepContentType) => (
-    <CompactSelectItem
-      key={stepType}
-      value={stepType}
-      label={t(STEP_TYPE_LABEL_KEY[stepType])}
-      className="items-start gap-2.5 py-2"
-    >
-      <span className="mt-0.5 flex shrink-0 items-center">{getStepTypeIcon(stepType)}</span>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-sm font-medium leading-none">{t(STEP_TYPE_LABEL_KEY[stepType])}</span>
-        <p className="text-xs leading-snug text-muted-foreground">
-          {t(`contentBuilder.flow.stepType.${stepType}Description`)}
-        </p>
-      </div>
-    </CompactSelectItem>
-  );
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center">
-        <h1 className="text-sm">{t('contentBuilder.flow.stepTypeTitle')}</h1>
-      </div>
+      <h1 className="text-sm">{t('contentBuilder.flow.stepTypeTitle')}</h1>
 
-      <CompactSelectRoot
-        value={type}
-        onValueChange={(value) => onChange(value as string)}
-        modal={false}
-      >
-        <CompactSelectTrigger>
-          <span className="flex shrink-0 items-center">{getStepTypeIcon(type)}</span>
-          <CompactSelectValue className="min-w-0 flex-1 truncate text-left">
-            {(value) => {
-              const key = STEP_TYPE_LABEL_KEY[value as string];
-              return key ? t(key) : (value as string);
-            }}
-          </CompactSelectValue>
-        </CompactSelectTrigger>
-        <CompactSelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-          {renderOption(StepContentType.BUBBLE)}
-          {renderOption(StepContentType.TOOLTIP)}
-          {renderOption(StepContentType.MODAL)}
-          {renderOption(StepContentType.HIDDEN)}
-        </CompactSelectContent>
-      </CompactSelectRoot>
+      <div className="grid grid-cols-2 gap-2">
+        {STEP_TYPES.map(({ value, Icon, labelKey }) => {
+          const active = type === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onChange(value)}
+              className={cn(
+                'flex flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-[13px] font-medium transition-colors',
+                active
+                  ? 'border-primary bg-accent/50 text-primary ring-2 ring-primary/10'
+                  : 'border-border bg-slate-50 text-slate-600 hover:border-slate-300',
+              )}
+            >
+              <Icon
+                className={cn('h-5 w-5', active ? 'text-primary' : 'text-slate-500 opacity-70')}
+              />
+              <span>{t(labelKey)}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {type === StepContentType.HIDDEN && (
         <Alert variant="warning">

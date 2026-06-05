@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { RiMenuFoldLine, RiMenuUnfoldLine } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useBuilderConfig,
@@ -26,7 +26,6 @@ export const BuilderSideBar = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const isLoading = useIsBusy();
-  const sidbarRef = useRef<HTMLDivElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useTranslation();
 
@@ -36,7 +35,6 @@ export const BuilderSideBar = () => {
   return (
     <>
       <div
-        ref={sidbarRef}
         style={{ zIndex: zIndex + EXTENSION_SIDEBAR_MAIN }}
         className={cn(
           'fixed top-[18px] bottom-[18px] w-[312px] transition-transform duration-300 ease-in-out',
@@ -64,7 +62,7 @@ export const BuilderSideBar = () => {
                     <SidebarContents />
                   </div>
                 )}
-                <SidebarCreate container={sidbarRef} />
+                <SidebarCreate />
               </div>
             </ScrollArea>
           </CardContent>

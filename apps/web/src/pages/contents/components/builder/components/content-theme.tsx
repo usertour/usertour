@@ -52,7 +52,7 @@ export const ContentTheme = (props: ContentThemeProps) => {
         value={themeId}
         onChange={handleThemeChange}
         placeholder={t('contentBuilder.shared.theme.sameAsFlow')}
-        className="w-full"
+        className="w-full bg-slate-50 shadow-none hover:bg-slate-100"
         contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
       />
     </div>
