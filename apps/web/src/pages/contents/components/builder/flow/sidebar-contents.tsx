@@ -105,15 +105,19 @@ const SidebarContent = memo(
         >
           <div className="flex items-center justify-between ">
             <div className="grow inline-flex items-center text-sm ">
-              <RiDraggable {...listeners} className="cursor-move" size={16} />
+              <RiDraggable {...listeners} className="cursor-move opacity-70" size={16} />
               {step.type === StepContentType.TOOLTIP && (
-                <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5" />
+                <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5 opacity-70" />
               )}
               {step.type === StepContentType.MODAL && (
-                <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5" />
+                <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5 opacity-70" />
               )}
-              {step.type === StepContentType.HIDDEN && <EyeNoneIcon className="w-4 h-4 mx-0.5" />}
-              {step.type === StepContentType.BUBBLE && <RiMessageLine className="w-4 h-4 mx-0.5" />}
+              {step.type === StepContentType.HIDDEN && (
+                <EyeNoneIcon className="w-4 h-4 mx-0.5 opacity-70" />
+              )}
+              {step.type === StepContentType.BUBBLE && (
+                <RiMessageLine className="w-4 h-4 mx-0.5 opacity-70" />
+              )}
               <span className="w-36 truncate ...">
                 {index + 1}. {step.name}
               </span>
@@ -123,7 +127,7 @@ const SidebarContent = memo(
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="p-1 h-fit" onClick={handleEdit}>
-                      <RiSettings3Line size={16} />
+                      <RiSettings3Line size={16} className="opacity-70" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{t('contentBuilder.flow.edit')}</TooltipContent>
@@ -138,7 +142,7 @@ const SidebarContent = memo(
                       className="p-1 h-fit"
                       onClick={handleEditTrigger}
                     >
-                      <EventIcon2 className="h-4 w-4" />
+                      <EventIcon2 className="h-4 w-4 opacity-70" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -155,7 +159,7 @@ const SidebarContent = memo(
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="p-1 h-fit">
                           <Delete2Icon
-                            className="h-4 w-4 text-foreground"
+                            className="h-4 w-4 text-foreground opacity-70"
                             // onClick={handleDelete}
                           />
                         </Button>

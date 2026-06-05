@@ -77,7 +77,7 @@ const FlowBuilderDetailHeader = () => {
           onClick={exitToFlow}
           className="mr-2 text-foreground w-6 h-8"
         >
-          <RiArrowLeftSLine className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
         </Button>
         <div className="grow text-base leading-8">
           <OutlineInput

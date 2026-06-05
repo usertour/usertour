@@ -62,7 +62,7 @@ export const FlowPlacement = () => {
           <h1 className="text-sm">{t('contentBuilder.flow.placement')}</h1>
           <Button variant="link" onClick={handleAboutPlacement} className="p-0 h-full">
             {t('contentBuilder.flow.aboutPlacement')}
-            <RiExternalLinkLine className="ml-1 h-4 w-4" />
+            <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
           </Button>
         </div>
         <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">

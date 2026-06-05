@@ -68,7 +68,7 @@ const ChecklistMainViewBody = () => {
             variant="secondary"
             onClick={() => addItem({ ...defaultItem, id: uuidV4() })}
           >
-            <RiAddCircleLine className="mr-2 size-4" />
+            <RiAddCircleLine className="mr-2 size-4 opacity-70" />
             {t('contentBuilder.checklist.addItem')}
           </Button>
 

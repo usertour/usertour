@@ -90,7 +90,7 @@ const BlockContentListHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <RiArrowLeftSLine className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
         </Button>
         <span className="truncate">{t('contentBuilder.resourceCenter.contentListBlock')}</span>
       </CardTitle>
@@ -387,7 +387,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                                 className="w-6 h-6 p-1 rounded cursor-pointer"
                                 onClick={() => onEditItem(index)}
                               >
-                                <RiSettings3Line size={16} />
+                                <RiSettings3Line size={16} className="opacity-70" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -403,7 +403,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                                 className="w-6 h-6 p-1 rounded cursor-pointer"
                                 onClick={() => handleRemoveContent(item.contentId)}
                               >
-                                <CloseIcon width={16} height={16} />
+                                <CloseIcon width={16} height={16} className="opacity-70" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -423,7 +423,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                   className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer"
                   onClick={() => setAddOpen(true)}
                 >
-                  <PlusIcon width={16} height={16} />
+                  <PlusIcon width={16} height={16} className="opacity-70" />
                   {t('contentBuilder.resourceCenter.add')}
                 </div>
               </PopoverTrigger>
@@ -446,7 +446,11 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                               value={flow.id}
                               onSelect={() => handleAddContent(flow.id, 'flow')}
                             >
-                              <FlowIcon width={16} height={16} className="mr-2 flex-shrink-0" />
+                              <FlowIcon
+                                width={16}
+                                height={16}
+                                className="mr-2 flex-shrink-0 opacity-70"
+                              />
                               <span className="truncate" title={flow.name}>
                                 {flow.name || t('contentBuilder.resourceCenter.untitledFlow')}
                               </span>
@@ -467,7 +471,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                               <ChecklistIcon
                                 width={16}
                                 height={16}
-                                className="mr-2 flex-shrink-0"
+                                className="mr-2 flex-shrink-0 opacity-70"
                               />
                               <span className="truncate" title={checklist.name}>
                                 {checklist.name ||

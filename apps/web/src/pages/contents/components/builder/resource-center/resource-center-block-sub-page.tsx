@@ -51,7 +51,7 @@ const BlockSubPageHeader = () => {
           }}
           className="text-foreground w-6 h-8"
         >
-          <RiArrowLeftSLine className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
         </Button>
         <span className="truncate">{t('contentBuilder.resourceCenter.subPageBlock')}</span>
       </CardTitle>

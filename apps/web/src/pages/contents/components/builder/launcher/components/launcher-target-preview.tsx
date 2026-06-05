@@ -17,7 +17,7 @@ export const LauncherTargetPreview = () => {
           <ElementIcon className="h-4 w-4" />
           <span className="text-sm">{t('contentBuilder.launcher.targetSetting')}</span>
         </div>
-        <RiSettings3Line className="h-4 w-4" />
+        <RiSettings3Line className="h-4 w-4 opacity-70" />
       </div>
     </FieldSection>
   );

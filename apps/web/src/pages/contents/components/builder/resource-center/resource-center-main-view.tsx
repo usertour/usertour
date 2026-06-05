@@ -199,7 +199,7 @@ const ResourceCenterMainViewBody = () => {
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button className="w-full" variant="secondary">
-                      <RiAddCircleLine className="mr-2 size-4" />
+                      <RiAddCircleLine className="mr-2 size-4 opacity-70" />
                       {t('contentBuilder.resourceCenter.addBlock')}
                     </Button>
                   </DropdownMenuTrigger>
@@ -218,7 +218,11 @@ const ResourceCenterMainViewBody = () => {
                             className="cursor-pointer min-w-[220px] gap-2 py-1.5 text-xs"
                             onSelect={() => value && handleAddBlock(value)}
                           >
-                            <Icon width={16} height={16} className="shrink-0 text-foreground" />
+                            <Icon
+                              width={16}
+                              height={16}
+                              className="shrink-0 text-foreground opacity-70"
+                            />
                             <span className="min-w-0 leading-none">
                               <span className="text-xs font-medium text-foreground">
                                 {t(label)}

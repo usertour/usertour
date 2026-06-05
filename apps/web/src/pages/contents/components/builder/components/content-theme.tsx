@@ -43,12 +43,12 @@ export const ContentTheme = (props: ContentThemeProps) => {
 
         <Button variant="link" onClick={onEdited} className="p-0 h-full">
           Edit this theme
-          <RiExternalLinkLine className="ml-1 h-4 w-4" />
+          <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
         </Button>
       </div>
 
       <CompactSelect
-        icon={<RiPaletteLine />}
+        icon={<RiPaletteLine className="opacity-70" />}
         options={themeOptions.map(({ id, name }) => ({ value: id, label: name }))}
         value={themeId}
         onChange={handleThemeChange}

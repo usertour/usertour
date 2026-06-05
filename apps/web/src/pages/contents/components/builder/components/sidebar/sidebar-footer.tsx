@@ -25,7 +25,7 @@ export const SidebarFooter = ({ onSave, isLoading = false }: SidebarFooterProps)
         )}
       </div>
       <Button className="grow w-full h-10" onClick={onSave} disabled={isLoading}>
-        <RiLogoutBoxLine className="mr-2 h-4 w-4" />
+        <RiLogoutBoxLine className="mr-2 h-4 w-4 opacity-70" />
         Save preferences
       </Button>
     </>

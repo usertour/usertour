@@ -1643,12 +1643,10 @@ const translations = {
         tooltip: '提示框',
         modal: '模态框',
         hidden: '隐藏',
-        bubbleDescription:
-          '出现在应用角落的非侵入式消息。适合不打断用户体验的轻量引导，搭配 beacon 效果更佳。',
-        tooltipDescription: '锚定在你所选元素上的提示框。适合需要用户点击特定元素的步骤。',
-        modalDescription: '出现在屏幕中央的模态对话框，会用半透明遮罩覆盖你的应用。',
-        hiddenDescription:
-          '该步骤不显示任何 Usertour 界面。请使用触发器等待用户执行某个操作后再进入下一步。',
+        bubbleDescription: '出现在应用角落的非侵入式消息，搭配 beacon 效果好。',
+        tooltipDescription: '锚定在你所选元素上的提示框。',
+        modalDescription: '屏幕居中的对话框，带半透明遮罩覆盖应用。',
+        hiddenDescription: '该步骤不显示界面，用触发器进入下一步。',
       },
       hiddenWarningTitle: '谨慎使用隐藏步骤',
       hiddenWarning1:

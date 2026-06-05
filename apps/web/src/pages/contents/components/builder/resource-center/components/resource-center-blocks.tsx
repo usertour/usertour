@@ -100,9 +100,13 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>((props, ref) 
     >
       <div className="flex items-center justify-between">
         <div className="grow inline-flex items-center text-sm">
-          <RiDraggable size={16} className="shrink-0 cursor-move -mr-0.5" {...listeners} />
+          <RiDraggable
+            size={16}
+            className="shrink-0 cursor-move -mr-0.5 opacity-70"
+            {...listeners}
+          />
           {BlockTypeIcon ? (
-            <BlockTypeIcon width={16} height={16} className="h-4 w-4 shrink-0 mr-1" />
+            <BlockTypeIcon width={16} height={16} className="h-4 w-4 shrink-0 mr-1 opacity-70" />
           ) : null}
           <span className="w-36 truncate" title={label}>
             {label}
@@ -119,7 +123,7 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>((props, ref) 
                   className="p-1 h-fit"
                   onClick={() => onClick?.('edit', block)}
                 >
-                  <RiSettings3Line size={16} />
+                  <RiSettings3Line size={16} className="opacity-70" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('contentBuilder.resourceCenter.edit')}</TooltipContent>
@@ -128,7 +132,7 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>((props, ref) 
 
           <DeleteDialog onDelete={() => onClick?.('delete', block)}>
             <Button variant="ghost" size="sm" className="p-1 h-fit">
-              <Delete2Icon className="h-4 w-4 text-foreground" />
+              <Delete2Icon className="h-4 w-4 text-foreground opacity-70" />
             </Button>
           </DeleteDialog>
         </div>

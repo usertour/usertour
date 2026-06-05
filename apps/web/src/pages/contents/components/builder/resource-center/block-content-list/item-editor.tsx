@@ -49,7 +49,7 @@ export const ItemEditorHeader = (props: ItemEditorHeaderProps) => {
     <CardHeader className="flex-none p-4 space-y-2">
       <CardTitle className="flex flex-row items-center space-x-1 text-base">
         <Button variant="link" size="icon" onClick={onBack} className="text-foreground w-6 h-8">
-          <RiArrowLeftSLine className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
         </Button>
         <span className="truncate">{itemName}</span>
       </CardTitle>

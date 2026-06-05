@@ -79,14 +79,14 @@ export const SidebarMini = (props: SideBarMiniProps) => {
           <DoubleArrowRightIcon
             width={20}
             height={20}
-            className="cursor-pointer"
+            className="cursor-pointer opacity-70"
             onClick={handleHideSideBar}
           />
         )}
         {position === 'left' && !isMini && (
           <DoubleArrowLeftIcon
             width={20}
-            className="cursor-pointer"
+            className="cursor-pointer opacity-70"
             height={20}
             onClick={handleHideSideBar}
           />
@@ -94,7 +94,7 @@ export const SidebarMini = (props: SideBarMiniProps) => {
         {position === 'right' && isMini && (
           <DoubleArrowLeftIcon
             width={20}
-            className="cursor-pointer"
+            className="cursor-pointer opacity-70"
             height={20}
             onClick={handleHideSideBar}
           />
@@ -103,7 +103,7 @@ export const SidebarMini = (props: SideBarMiniProps) => {
           <DoubleArrowRightIcon
             width={20}
             height={20}
-            className="cursor-pointer"
+            className="cursor-pointer opacity-70"
             onClick={handleHideSideBar}
           />
         )}

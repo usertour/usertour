@@ -74,7 +74,7 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
     <Popover>
       <PopoverTrigger asChild>
         <Button className="w-full h-10" variant="secondary">
-          <RiAddCircleLine className="mr-2 size-4" />
+          <RiAddCircleLine className="mr-2 size-4 opacity-70" />
           {t('contentBuilder.flow.create')}
         </Button>
       </PopoverTrigger>

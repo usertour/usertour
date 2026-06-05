@@ -41,7 +41,7 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
             <div className="flex-1 min-w-0 flex items-center justify-center gap-4 min-h-[88px] w-full md:w-auto">
               <div className="flex-shrink-0">
                 <div className="w-14 h-14 flex items-center justify-center rounded-md bg-muted">
-                  <RiUpload2Line className="text-muted-foreground/70" size={20} />
+                  <RiUpload2Line className="text-muted-foreground/70 opacity-70" size={20} />
                 </div>
               </div>
 

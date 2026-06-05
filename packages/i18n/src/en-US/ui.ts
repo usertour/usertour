@@ -1747,13 +1747,10 @@ const translations = {
         modal: 'Modal',
         hidden: 'Hidden',
         bubbleDescription:
-          "A non-intrusive message positioned at the corner of your app. Perfect for subtle guidance that doesn't interrupt the user experience. Works great with beacons.",
-        tooltipDescription:
-          'A tooltip anchored to an element you select. Well-suited for steps that request users to click a specific element.',
-        modalDescription:
-          'A modal dialog appearing in the center of the screen. A semi-transparent backdrop will cover your app.',
-        hiddenDescription:
-          'No Usertour UI is displayed at this step. Use triggers that wait for the user to perform an action before proceeding to the next step.',
+          'A non-intrusive message in the corner of your app — pairs well with beacons.',
+        tooltipDescription: 'A tooltip anchored to an element you select.',
+        modalDescription: 'A centered dialog with a semi-transparent backdrop over your app.',
+        hiddenDescription: 'No UI at this step — use triggers to advance to the next one.',
       },
       hiddenWarningTitle: 'Take caution with hidden steps',
       hiddenWarning1:

@@ -112,7 +112,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
         <div className="grow inline-flex items-center text-sm">
           <RiDraggable
             size={16}
-            className="shrink-0 cursor-move -mr-0.5"
+            className="shrink-0 cursor-move -mr-0.5 opacity-70"
             {...listeners}
             onClick={(e) => e.stopPropagation()}
           />
@@ -132,7 +132,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
                   className="p-1 h-fit"
                   onClick={() => onClick?.('edit', tab)}
                 >
-                  <RiSettings3Line size={16} />
+                  <RiSettings3Line size={16} className="opacity-70" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('contentBuilder.resourceCenter.edit')}</TooltipContent>
@@ -142,7 +142,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
           {canDelete && (
             <DeleteTabDialog onDelete={() => onClick?.('delete', tab)}>
               <Button variant="ghost" size="sm" className="p-1 h-fit">
-                <Delete2Icon className="h-4 w-4 text-foreground" />
+                <Delete2Icon className="h-4 w-4 text-foreground opacity-70" />
               </Button>
             </DeleteTabDialog>
           )}
@@ -275,7 +275,7 @@ export const ResourceCenterTabs = () => {
         </DragOverlay>
       </DndContext>
       <Button className="w-full" variant="secondary" onClick={handleAddTab}>
-        <RiAddCircleLine className="mr-2 size-4" />
+        <RiAddCircleLine className="mr-2 size-4 opacity-70" />
         {t('contentBuilder.resourceCenter.addTab')}
       </Button>
     </FieldSection>

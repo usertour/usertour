@@ -48,7 +48,7 @@ const TriggerDropdown = (props: TriggerDropdownProps) => {
       <DropdownMenuTrigger asChild>
         <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
           <span>{selected?.label ?? value}</span>
-          <RiArrowDownSLine size={16} />
+          <RiArrowDownSLine size={16} className="opacity-70" />
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" style={{ zIndex: zIndex + EXTENSION_SELECT }}>
@@ -155,12 +155,12 @@ export const LauncherBehavior = () => {
               onClick={handleSwitchToTooltip}
             >
               <div className="flex flex-row space-x-1 items-center">
-                <TooltipIcon className="h-4 w-4 mt-1" />
+                <TooltipIcon className="h-4 w-4 mt-1 opacity-70" />
                 <span className="text-sm">
                   {t('contentBuilder.launcher.behaviorEditor.tooltipSetting')}
                 </span>
               </div>
-              <RiSettings3Line className="h-4 w-4" />
+              <RiSettings3Line className="h-4 w-4 opacity-70" />
             </div>
           </TabsContent>
           <TabsContent

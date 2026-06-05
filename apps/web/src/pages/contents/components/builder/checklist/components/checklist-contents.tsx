@@ -84,7 +84,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
     >
       <div className="flex items-center justify-between">
         <div className="grow inline-flex items-center text-sm gap-2">
-          <RiDraggable className="cursor-move size-4" {...listeners} />
+          <RiDraggable className="cursor-move size-4 opacity-70" {...listeners} />
           <span className="w-36 truncate" title={item.name}>
             {item.name}
           </span>
@@ -100,7 +100,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
                   className="p-1 h-fit"
                   onClick={() => onClick?.('edit', item)}
                 >
-                  <RiSettings3Line className="h-4 w-4" />
+                  <RiSettings3Line className="h-4 w-4 opacity-70" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('contentBuilder.checklist.edit')}</TooltipContent>
@@ -109,7 +109,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
 
           <DeleteDialog onDelete={() => onClick?.('delete', item)}>
             <Button variant="ghost" size="sm" className="p-1 h-fit">
-              <Delete2Icon className="h-4 w-4 text-foreground" />
+              <Delete2Icon className="h-4 w-4 text-foreground opacity-70" />
             </Button>
           </DeleteDialog>
         </div>

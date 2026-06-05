@@ -55,12 +55,12 @@ export const SidebarTheme = () => {
 
         <Button variant="link" onClick={handleEditTheme} className="p-0 h-full	text-sm	">
           Edit this theme
-          <RiExternalLinkLine className="ml-1 h-4 w-4" />
+          <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
         </Button>
       </div>
       {currentVersion && (
         <CompactSelect
-          icon={<RiPaletteLine />}
+          icon={<RiPaletteLine className="opacity-70" />}
           options={(themeList ?? []).map((theme: Theme) => ({
             value: theme.id,
             label: theme.name,

@@ -3,11 +3,11 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  CompactSelectContent,
+  CompactSelectItem,
+  CompactSelectRoot,
+  CompactSelectTrigger,
+  CompactSelectValue,
 } from '@usertour/ui';
 import { EyeNoneIcon, ModelIcon, RiAlertLine, RiMessageLine, TooltipIcon } from '@usertour/icons';
 import { StepContentType } from '@usertour/types';
@@ -26,10 +26,41 @@ const STEP_TYPE_LABEL_KEY: Record<string, string> = {
   [StepContentType.HIDDEN]: 'contentBuilder.flow.stepType.hidden',
 };
 
+const getStepTypeIcon = (stepType: string) => {
+  switch (stepType) {
+    case StepContentType.TOOLTIP:
+      return <TooltipIcon width={16} height={16} className="opacity-70" />;
+    case StepContentType.MODAL:
+      return <ModelIcon width={16} height={16} className="opacity-70" />;
+    case StepContentType.BUBBLE:
+      return <RiMessageLine size={16} className="opacity-70" />;
+    case StepContentType.HIDDEN:
+      return <EyeNoneIcon width={16} height={16} className="opacity-70" />;
+    default:
+      return null;
+  }
+};
+
 export const ContentType = (props: ContentTypeProps) => {
   const { onChange, zIndex, type } = props;
   const { t } = useTranslation();
-  const labelKey = STEP_TYPE_LABEL_KEY[type];
+
+  const renderOption = (stepType: StepContentType) => (
+    <CompactSelectItem
+      key={stepType}
+      value={stepType}
+      label={t(STEP_TYPE_LABEL_KEY[stepType])}
+      className="items-start gap-2.5 py-2"
+    >
+      <span className="mt-0.5 flex shrink-0 items-center">{getStepTypeIcon(stepType)}</span>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-sm font-medium leading-none">{t(STEP_TYPE_LABEL_KEY[stepType])}</span>
+        <p className="text-xs leading-snug text-muted-foreground">
+          {t(`contentBuilder.flow.stepType.${stepType}Description`)}
+        </p>
+      </div>
+    </CompactSelectItem>
+  );
 
   return (
     <div className="space-y-3">
@@ -37,83 +68,39 @@ export const ContentType = (props: ContentTypeProps) => {
         <h1 className="text-sm">{t('contentBuilder.flow.stepTypeTitle')}</h1>
       </div>
 
-      <Select value={type} onValueChange={onChange}>
-        <SelectTrigger variant="compact-muted" className="justify-start">
-          {type === StepContentType.TOOLTIP && (
-            <TooltipIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />
-          )}
-          {type === StepContentType.MODAL && (
-            <ModelIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />
-          )}
-          {type === StepContentType.BUBBLE && <RiMessageLine className="w-4 h-4 mr-2 flex-none" />}
-          {type === StepContentType.HIDDEN && <EyeNoneIcon className="w-4 h-4 mr-2 flex-none" />}
+      <CompactSelectRoot
+        value={type}
+        onValueChange={(value) => onChange(value as string)}
+        modal={false}
+      >
+        <CompactSelectTrigger>
+          <span className="flex shrink-0 items-center">{getStepTypeIcon(type)}</span>
+          <CompactSelectValue className="min-w-0 flex-1 truncate text-left">
+            {(value) => {
+              const key = STEP_TYPE_LABEL_KEY[value as string];
+              return key ? t(key) : (value as string);
+            }}
+          </CompactSelectValue>
+        </CompactSelectTrigger>
+        <CompactSelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+          {renderOption(StepContentType.BUBBLE)}
+          {renderOption(StepContentType.TOOLTIP)}
+          {renderOption(StepContentType.MODAL)}
+          {renderOption(StepContentType.HIDDEN)}
+        </CompactSelectContent>
+      </CompactSelectRoot>
 
-          <div className="grow text-left">
-            <SelectValue asChild>
-              <div>{labelKey ? t(labelKey) : type}</div>
-            </SelectValue>
-          </div>
-        </SelectTrigger>
-
-        <SelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-          <SelectItem value={StepContentType.BUBBLE}>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1">
-                <RiMessageLine size={16} />
-                <span className="text-xs">{t('contentBuilder.flow.stepType.bubble')}</span>
-              </div>
-              <p className="text-xs max-w-60 text-muted-foreground">
-                {t('contentBuilder.flow.stepType.bubbleDescription')}
-              </p>
-            </div>
-          </SelectItem>
-          <SelectItem value={StepContentType.TOOLTIP}>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1">
-                <TooltipIcon width={16} height={16} className="mt-0.5" />
-                <span className="text-xs">{t('contentBuilder.flow.stepType.tooltip')}</span>
-              </div>
-              <p className="text-xs max-w-60 text-muted-foreground">
-                {t('contentBuilder.flow.stepType.tooltipDescription')}
-              </p>
-            </div>
-          </SelectItem>
-          <SelectItem value={StepContentType.MODAL}>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1">
-                <ModelIcon width={16} height={16} className="mt-0.5" />
-                <span className="text-xs">{t('contentBuilder.flow.stepType.modal')}</span>
-              </div>
-              <p className="text-xs max-w-60 text-muted-foreground">
-                {t('contentBuilder.flow.stepType.modalDescription')}
-              </p>
-            </div>
-          </SelectItem>
-          <SelectItem value={StepContentType.HIDDEN}>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1">
-                <EyeNoneIcon width={16} height={16} />
-                <span className="text-xs">{t('contentBuilder.flow.stepType.hidden')}</span>
-              </div>
-              <p className="text-xs max-w-60 text-muted-foreground">
-                {t('contentBuilder.flow.stepType.hiddenDescription')}
-              </p>
-            </div>
-          </SelectItem>
-        </SelectContent>
-
-        {type === StepContentType.HIDDEN && (
-          <Alert variant="warning">
-            <RiAlertLine className="h-4 w-4" />
-            <AlertTitle>{t('contentBuilder.flow.hiddenWarningTitle')}</AlertTitle>
-            <AlertDescription className="flex flex-col gap-2">
-              <span>{t('contentBuilder.flow.hiddenWarning1')}</span>
-              <span>{t('contentBuilder.flow.hiddenWarning2')}</span>
-              <span>{t('contentBuilder.flow.hiddenWarning3')}</span>
-            </AlertDescription>
-          </Alert>
-        )}
-      </Select>
+      {type === StepContentType.HIDDEN && (
+        <Alert variant="warning">
+          <RiAlertLine className="h-4 w-4" />
+          <AlertTitle>{t('contentBuilder.flow.hiddenWarningTitle')}</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <span>{t('contentBuilder.flow.hiddenWarning1')}</span>
+            <span>{t('contentBuilder.flow.hiddenWarning2')}</span>
+            <span>{t('contentBuilder.flow.hiddenWarning3')}</span>
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };

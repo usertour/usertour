@@ -49,7 +49,7 @@ const FlowBuilderTriggerHeader = () => {
           onClick={exitToFlow}
           className="mr-2 text-foreground w-6 h-8"
         >
-          <RiArrowLeftSLine className="h-6 w-6" />
+          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
         </Button>
         <div className="grow text-base leading-8 truncate ...">
           {currentIndex + 1}. {currentStep?.name}
@@ -173,7 +173,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
               />
             ))}
           <Button className="w-full" variant="secondary" onClick={handleOnClick}>
-            <RiAddCircleLine className="mr-2 size-4" />
+            <RiAddCircleLine className="mr-2 size-4 opacity-70" />
             {t('contentBuilder.flow.addTrigger')}
           </Button>
         </div>
