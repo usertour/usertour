@@ -1,5 +1,5 @@
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { SelectPopover } from '@usertour/ui';
+import { CompactSelect } from '@usertour/ui';
 import { LauncherPositionType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
@@ -17,20 +17,20 @@ export const LauncherPosition = (props: LauncherPositionProps) => {
   const options = [
     {
       value: LauncherPositionType.TARGET,
-      name: t('contentBuilder.launcher.reference.targetElement'),
+      label: t('contentBuilder.launcher.reference.targetElement'),
     },
     {
       value: LauncherPositionType.LAUNCHER,
-      name: t('contentBuilder.launcher.reference.launcher'),
+      label: t('contentBuilder.launcher.reference.launcher'),
     },
   ];
 
   return (
     <FieldSection title={t('contentBuilder.launcher.reference.label')}>
-      <SelectPopover
+      <CompactSelect
         options={options}
         value={type}
-        onValueChange={(value) => onChange(value as LauncherPositionType)}
+        onChange={(value) => onChange(value as LauncherPositionType)}
         className="w-full"
         contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
       />

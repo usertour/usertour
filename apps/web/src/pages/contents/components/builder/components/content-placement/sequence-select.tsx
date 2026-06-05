@@ -1,4 +1,4 @@
-import { Label, QuestionTooltip, SelectPopover } from '@usertour/ui';
+import { CompactSelect, Label, QuestionTooltip } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 interface SequenceSelectProps {
@@ -14,7 +14,7 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
   // is resolved (with correct ordinals) through i18n.
   const options = [1, 2, 3, 4, 5].map((num) => ({
     value: `${num}st`,
-    name: t(`contentBuilder.shared.selectElement.${num}`),
+    label: t(`contentBuilder.shared.selectElement.${num}`),
   }));
 
   return (
@@ -23,10 +23,10 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
         <Label>{t('contentBuilder.shared.ifMultipleMatches')}</Label>
         <QuestionTooltip>{t('contentBuilder.shared.ifMultipleMatchesTooltip')}</QuestionTooltip>
       </div>
-      <SelectPopover
+      <CompactSelect
         options={options}
         value={value}
-        onValueChange={onChange}
+        onChange={onChange}
         placeholder={t('contentBuilder.shared.selectSequencePlaceholder')}
         className="w-full"
         contentStyle={{ zIndex }}

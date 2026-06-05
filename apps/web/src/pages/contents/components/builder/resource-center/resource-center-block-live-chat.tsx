@@ -6,8 +6,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CompactSelect,
   ScrollArea,
-  SelectPopover,
   Switch,
   Label,
 } from '@usertour/ui';
@@ -228,13 +228,13 @@ const BlockLiveChatBody = () => {
           {/* Live chat provider */}
           <div className="flex flex-col space-y-2">
             <Label>{t(`${I18N_PREFIX}.provider`)}</Label>
-            <SelectPopover
+            <CompactSelect
               options={LIVE_CHAT_PROVIDER_OPTIONS.map((option) => ({
                 value: option.value,
-                name: option.label,
+                label: option.label,
               }))}
               value={currentBlock.liveChatProvider}
-              onValueChange={handleProviderChange}
+              onChange={handleProviderChange}
               placeholder={t(`${I18N_PREFIX}.selectProvider`)}
               className="w-full"
               contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}

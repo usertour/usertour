@@ -70,15 +70,10 @@ export const SelectPopover = (props: SelectPopoverProps) => {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn(
-            'h-7.5 flex-1 justify-between rounded-lg px-3 text-sm font-normal',
-            className,
-          )}
+          className={cn('flex-1 justify-between', className)}
           disabled={disabled}
         >
-          <span className="truncate">
-            {selectedOption?.display || selectedOption?.name || placeholder}
-          </span>
+          {selectedOption?.display || selectedOption?.name || placeholder}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

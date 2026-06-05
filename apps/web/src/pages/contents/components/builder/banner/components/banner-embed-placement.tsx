@@ -5,7 +5,7 @@ import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
 
 import { EXTENSION_SELECT } from '@usertour/constants';
-import { SelectPopover } from '@usertour/ui';
+import { CompactSelect } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
@@ -59,15 +59,13 @@ export const BannerEmbedPlacementSelect = () => {
       title={t('contentBuilder.banner.embedPlacement')}
       tooltip={t('contentBuilder.banner.embedPlacementTooltip')}
     >
-      <SelectPopover
+      <CompactSelect
         options={PLACEMENT_OPTIONS.map((opt) => ({
           value: opt.value,
-          name: t(`contentBuilder.banner.placement.${opt.i18n}`),
+          label: t(`contentBuilder.banner.placement.${opt.i18n}`),
         }))}
         value={localData.embedPlacement}
-        onValueChange={(value) =>
-          updateLocalData({ embedPlacement: value as BannerEmbedPlacement })
-        }
+        onChange={(value) => updateLocalData({ embedPlacement: value as BannerEmbedPlacement })}
         placeholder={t('contentBuilder.banner.selectPlacement')}
         className="w-full"
         contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}

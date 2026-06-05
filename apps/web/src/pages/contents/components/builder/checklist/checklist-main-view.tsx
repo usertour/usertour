@@ -6,8 +6,8 @@ import {
   Input,
   Label,
   QuestionTooltip,
+  CompactSelect,
   ScrollArea,
-  SelectPopover,
   Switch,
 } from '@usertour/ui';
 import { RiAddCircleLine } from '@usertour/icons';
@@ -76,19 +76,19 @@ const ChecklistMainViewBody = () => {
             <Label htmlFor="initial-display">{t('contentBuilder.checklist.initialDisplay')}</Label>
             <QuestionTooltip>{t('contentBuilder.checklist.initialDisplayTooltip')}</QuestionTooltip>
           </div>
-          <SelectPopover
+          <CompactSelect
             options={[
               {
                 value: ChecklistInitialDisplay.EXPANDED,
-                name: t('contentBuilder.checklist.expandedChecklist'),
+                label: t('contentBuilder.checklist.expandedChecklist'),
               },
               {
                 value: ChecklistInitialDisplay.BUTTON,
-                name: t('contentBuilder.checklist.launcherButton'),
+                label: t('contentBuilder.checklist.launcherButton'),
               },
             ]}
             value={localData.initialDisplay}
-            onValueChange={(value) =>
+            onChange={(value) =>
               updateLocalData({ initialDisplay: value as ChecklistInitialDisplay })
             }
             placeholder={t('contentBuilder.checklist.selectOption')}
@@ -101,19 +101,19 @@ const ChecklistMainViewBody = () => {
               {t('contentBuilder.checklist.completionOrder')}
             </Label>
           </div>
-          <SelectPopover
+          <CompactSelect
             options={[
               {
                 value: ChecklistCompletionOrder.ANY,
-                name: t('contentBuilder.checklist.anyOrder'),
+                label: t('contentBuilder.checklist.anyOrder'),
               },
               {
                 value: ChecklistCompletionOrder.ORDERED,
-                name: t('contentBuilder.checklist.inOrder'),
+                label: t('contentBuilder.checklist.inOrder'),
               },
             ]}
             value={localData.completionOrder}
-            onValueChange={(value) =>
+            onChange={(value) =>
               updateLocalData({ completionOrder: value as ChecklistCompletionOrder })
             }
             placeholder={t('contentBuilder.checklist.selectOption')}
