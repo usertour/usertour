@@ -1,6 +1,5 @@
-import { ExitIcon } from '@radix-ui/react-icons';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
-import { CheckedIcon, SpinnerIcon } from '@usertour/icons';
+import { CheckedIcon, RiLogoutBoxLine, SpinnerIcon } from '@usertour/icons';
 
 export interface SidebarFooterProps {
   onSave: () => Promise<void>;
@@ -26,7 +25,7 @@ export const SidebarFooter = ({ onSave, isLoading = false }: SidebarFooterProps)
         )}
       </div>
       <Button className="grow w-full h-10" onClick={onSave} disabled={isLoading}>
-        <ExitIcon className="mr-2" />
+        <RiLogoutBoxLine className="mr-2 h-4 w-4" />
         Save preferences
       </Button>
     </>

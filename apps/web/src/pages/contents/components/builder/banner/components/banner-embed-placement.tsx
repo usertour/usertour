@@ -5,15 +5,7 @@ import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
 
 import { EXTENSION_SELECT } from '@usertour/constants';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour/ui';
+import { SelectPopover } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
@@ -67,27 +59,19 @@ export const BannerEmbedPlacementSelect = () => {
       title={t('contentBuilder.banner.embedPlacement')}
       tooltip={t('contentBuilder.banner.embedPlacementTooltip')}
     >
-      <Select
+      <SelectPopover
+        options={PLACEMENT_OPTIONS.map((opt) => ({
+          value: opt.value,
+          name: t(`contentBuilder.banner.placement.${opt.i18n}`),
+        }))}
         value={localData.embedPlacement}
         onValueChange={(value) =>
           updateLocalData({ embedPlacement: value as BannerEmbedPlacement })
         }
-      >
-        <SelectTrigger variant="compact-muted">
-          <SelectValue placeholder={t('contentBuilder.banner.selectPlacement')} />
-        </SelectTrigger>
-        <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-          <SelectContent>
-            <SelectGroup>
-              {PLACEMENT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className="text-sm">
-                  {t(`contentBuilder.banner.placement.${opt.i18n}`)}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </SelectPortal>
-      </Select>
+        placeholder={t('contentBuilder.banner.selectPlacement')}
+        className="w-full"
+        contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+      />
       {requiresElement && (
         <ContentPlacementProvider
           isShowError={isShowError}

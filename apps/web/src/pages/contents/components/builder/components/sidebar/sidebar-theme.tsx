@@ -1,16 +1,7 @@
 'use client';
 
-import { CubeIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import {
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-  QuestionTooltip,
-} from '@usertour/ui';
+import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
+import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
@@ -64,32 +55,22 @@ export const SidebarTheme = () => {
 
         <Button variant="link" onClick={handleEditTheme} className="p-0 h-full	text-sm	">
           Edit this theme
-          <OpenInNewWindowIcon className="ml-1" />
+          <RiExternalLinkLine className="ml-1 h-4 w-4" />
         </Button>
       </div>
       {currentVersion && (
-        <Select
-          defaultValue={currentVersion.themeId}
-          onValueChange={handleThemeChange}
+        <CompactSelect
+          icon={<RiPaletteLine />}
+          options={(themeList ?? []).map((theme: Theme) => ({
+            value: theme.id,
+            label: theme.name,
+          }))}
           value={currentVersion.themeId}
-        >
-          <SelectTrigger className="justify-start flex h-8 text-xs	">
-            <CubeIcon className="flex-none mr-2" />
-            <div className="grow text-left">
-              <SelectValue placeholder="Select" />
-            </div>
-          </SelectTrigger>
-
-          <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-            <SelectContent>
-              {themeList?.map((theme: Theme) => (
-                <SelectItem value={theme.id} key={theme.id} className="text-xs">
-                  {theme.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </SelectPortal>
-        </Select>
+          onChange={handleThemeChange}
+          placeholder="Select"
+          className="w-full"
+          contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+        />
       )}
     </>
   );

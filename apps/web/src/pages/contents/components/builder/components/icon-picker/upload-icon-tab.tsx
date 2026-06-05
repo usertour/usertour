@@ -1,7 +1,7 @@
 import React from 'react';
 import Upload from 'rc-upload';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
-import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
+import { RiDeleteBinLine, RiUpload2Line, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
 import { ACCEPT_FILE_TYPES } from '@/pages/contents/components/builder/components/icon-picker/constants';
 import { IconPreview } from '@/pages/contents/components/builder/components/icon-picker/icon-preview';
@@ -41,7 +41,7 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
             <div className="flex-1 min-w-0 flex items-center justify-center gap-4 min-h-[88px] w-full md:w-auto">
               <div className="flex-shrink-0">
                 <div className="w-14 h-14 flex items-center justify-center rounded-md bg-muted">
-                  <RiUpload2Fill className="text-muted-foreground/70" size={20} />
+                  <RiUpload2Line className="text-muted-foreground/70" size={20} />
                 </div>
               </div>
 
@@ -95,7 +95,7 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
                     size="icon"
                     onClick={() => onRemove?.()}
                   >
-                    <RiDeleteBinFill className="text-destructive w-4 h-4" />
+                    <RiDeleteBinLine className="text-destructive w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">Remove icon</TooltipContent>

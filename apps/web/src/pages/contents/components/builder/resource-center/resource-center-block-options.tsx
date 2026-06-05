@@ -1,10 +1,10 @@
 import type { ElementType } from 'react';
 import {
-  RiArrowRightCircleFill,
-  RiFileTextFill,
+  RiArrowRightCircleLine,
+  RiFileTextLine,
   RiListCheck3,
-  RiMessage3Fill,
-  RiPagesFill,
+  RiMessage3Line,
+  RiPagesLine,
   RiSeparator,
 } from '@usertour/icons';
 import { ResourceCenterBlockType } from '@usertour/types';
@@ -38,21 +38,21 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     value: ResourceCenterBlockType.ACTION,
     label: 'contentBuilder.resourceCenter.blockType.action.label',
     description: 'contentBuilder.resourceCenter.blockType.action.description',
-    icon: RiArrowRightCircleFill,
+    icon: RiArrowRightCircleLine,
   },
   {
     key: ResourceCenterBlockType.RICH_TEXT,
     value: ResourceCenterBlockType.RICH_TEXT,
     label: 'contentBuilder.resourceCenter.blockType.richText.label',
     description: 'contentBuilder.resourceCenter.blockType.richText.description',
-    icon: RiFileTextFill,
+    icon: RiFileTextLine,
   },
   {
     key: ResourceCenterBlockType.SUB_PAGE,
     value: ResourceCenterBlockType.SUB_PAGE,
     label: 'contentBuilder.resourceCenter.blockType.subPage.label',
     description: 'contentBuilder.resourceCenter.blockType.subPage.description',
-    icon: RiPagesFill,
+    icon: RiPagesLine,
   },
   {
     key: ResourceCenterBlockType.CONTENT_LIST,
@@ -66,7 +66,7 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     value: ResourceCenterBlockType.LIVE_CHAT,
     label: 'contentBuilder.resourceCenter.blockType.liveChat.label',
     description: 'contentBuilder.resourceCenter.blockType.liveChat.description',
-    icon: RiMessage3Fill,
+    icon: RiMessage3Line,
   },
   {
     key: ResourceCenterBlockType.DIVIDER,

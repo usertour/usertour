@@ -1,13 +1,4 @@
-import {
-  Label,
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  QuestionTooltip,
-} from '@usertour/ui';
+import { Label, QuestionTooltip, SelectPopover } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 interface SequenceSelectProps {
@@ -23,7 +14,7 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
   // is resolved (with correct ordinals) through i18n.
   const options = [1, 2, 3, 4, 5].map((num) => ({
     value: `${num}st`,
-    label: t(`contentBuilder.shared.selectElement.${num}`),
+    name: t(`contentBuilder.shared.selectElement.${num}`),
   }));
 
   return (
@@ -32,20 +23,14 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
         <Label>{t('contentBuilder.shared.ifMultipleMatches')}</Label>
         <QuestionTooltip>{t('contentBuilder.shared.ifMultipleMatchesTooltip')}</QuestionTooltip>
       </div>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger variant="compact">
-          <SelectValue placeholder={t('contentBuilder.shared.selectSequencePlaceholder')} />
-        </SelectTrigger>
-        <SelectContent style={{ zIndex }}>
-          <SelectGroup>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <SelectPopover
+        options={options}
+        value={value}
+        onValueChange={onChange}
+        placeholder={t('contentBuilder.shared.selectSequencePlaceholder')}
+        className="w-full"
+        contentStyle={{ zIndex }}
+      />
     </div>
   );
 };

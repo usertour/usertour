@@ -1,4 +1,4 @@
-import { LauncherIcon, RiEyeOffFill, RiInformationFill, RiSquareFill } from '@usertour/icons';
+import { LauncherIcon, RiEyeOffLine, RiInformationLine, RiSquareLine } from '@usertour/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
@@ -18,11 +18,11 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
       case LauncherDataType.BEACON:
         return <LauncherIcon {...iconProps} />;
       case LauncherDataType.ICON:
-        return <RiInformationFill size={16} className="text-current" />;
+        return <RiInformationLine size={16} className="text-current" />;
       case LauncherDataType.BUTTON:
-        return <RiSquareFill size={16} className="text-current" />;
+        return <RiSquareLine size={16} className="text-current" />;
       case LauncherDataType.HIDDEN:
-        return <RiEyeOffFill size={16} className="text-current" />;
+        return <RiEyeOffLine size={16} className="text-current" />;
     }
   };
 

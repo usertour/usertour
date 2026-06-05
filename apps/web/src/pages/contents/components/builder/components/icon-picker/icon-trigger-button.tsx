@@ -1,5 +1,5 @@
 import React from 'react';
-import { CaretSortIcon } from '@radix-ui/react-icons';
+import { RiExpandUpDownLine } from '@usertour/icons';
 import { Button } from '@usertour/ui';
 import { LauncherIconSource } from '@usertour/types';
 import { getActiveIcon } from '@/pages/contents/components/builder/components/icon-picker/utils';
@@ -35,7 +35,7 @@ export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTrigger
         <div className="grow text-left ml-2">
           <span className="capitalize">{activeText}</span>
         </div>
-        <CaretSortIcon className="h-4 w-4 opacity-50 ml-auto shrink-0" />
+        <RiExpandUpDownLine className="h-4 w-4 opacity-50 ml-auto shrink-0" />
       </Button>
     );
   },

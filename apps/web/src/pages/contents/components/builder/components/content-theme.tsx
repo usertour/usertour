@@ -1,13 +1,5 @@
-import { CubeIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import {
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  QuestionTooltip,
-} from '@usertour/ui';
+import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
+import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { Theme } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
@@ -51,25 +43,19 @@ export const ContentTheme = (props: ContentThemeProps) => {
 
         <Button variant="link" onClick={onEdited} className="p-0 h-full">
           Edit this theme
-          <OpenInNewWindowIcon className="ml-1" />
+          <RiExternalLinkLine className="ml-1 h-4 w-4" />
         </Button>
       </div>
 
-      <Select value={themeId} onValueChange={handleThemeChange}>
-        <SelectTrigger className="justify-start flex h-8">
-          <CubeIcon className="flex-none mr-2" />
-          <div className="grow text-left">
-            <SelectValue placeholder="Same as flow theme" />
-          </div>
-        </SelectTrigger>
-        <SelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-          {themeOptions.map(({ id, name }) => (
-            <SelectItem value={id} key={id}>
-              {name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CompactSelect
+        icon={<RiPaletteLine />}
+        options={themeOptions.map(({ id, name }) => ({ value: id, label: name }))}
+        value={themeId}
+        onChange={handleThemeChange}
+        placeholder="Same as flow theme"
+        className="w-full"
+        contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+      />
     </div>
   );
 };

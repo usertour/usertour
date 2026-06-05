@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
-import { EyeNoneIcon, ModelIcon, RiAlertLine, RiMessageFill, TooltipIcon } from '@usertour/icons';
+import { EyeNoneIcon, ModelIcon, RiAlertLine, RiMessageLine, TooltipIcon } from '@usertour/icons';
 import { StepContentType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 
@@ -45,7 +45,7 @@ export const ContentType = (props: ContentTypeProps) => {
           {type === StepContentType.MODAL && (
             <ModelIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />
           )}
-          {type === StepContentType.BUBBLE && <RiMessageFill className="w-4 h-4 mr-2 flex-none" />}
+          {type === StepContentType.BUBBLE && <RiMessageLine className="w-4 h-4 mr-2 flex-none" />}
           {type === StepContentType.HIDDEN && <EyeNoneIcon className="w-4 h-4 mr-2 flex-none" />}
 
           <div className="grow text-left">
@@ -59,7 +59,7 @@ export const ContentType = (props: ContentTypeProps) => {
           <SelectItem value={StepContentType.BUBBLE}>
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
-                <RiMessageFill size={16} />
+                <RiMessageLine size={16} />
                 <span className="text-xs">{t('contentBuilder.flow.stepType.bubble')}</span>
               </div>
               <p className="text-xs max-w-60 text-muted-foreground">

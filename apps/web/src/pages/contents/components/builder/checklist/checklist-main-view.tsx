@@ -7,13 +7,7 @@ import {
   Label,
   QuestionTooltip,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
+  SelectPopover,
   Switch,
 } from '@usertour/ui';
 import { RiAddCircleLine } from '@usertour/icons';
@@ -82,56 +76,50 @@ const ChecklistMainViewBody = () => {
             <Label htmlFor="initial-display">{t('contentBuilder.checklist.initialDisplay')}</Label>
             <QuestionTooltip>{t('contentBuilder.checklist.initialDisplayTooltip')}</QuestionTooltip>
           </div>
-          <Select
+          <SelectPopover
+            options={[
+              {
+                value: ChecklistInitialDisplay.EXPANDED,
+                name: t('contentBuilder.checklist.expandedChecklist'),
+              },
+              {
+                value: ChecklistInitialDisplay.BUTTON,
+                name: t('contentBuilder.checklist.launcherButton'),
+              },
+            ]}
+            value={localData.initialDisplay}
             onValueChange={(value) =>
               updateLocalData({ initialDisplay: value as ChecklistInitialDisplay })
             }
-            defaultValue={localData.initialDisplay}
-          >
-            <SelectTrigger variant="compact-muted">
-              <SelectValue placeholder={t('contentBuilder.checklist.selectOption')} />
-            </SelectTrigger>
-            <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value={ChecklistInitialDisplay.EXPANDED}>
-                    {t('contentBuilder.checklist.expandedChecklist')}
-                  </SelectItem>
-                  <SelectItem value={ChecklistInitialDisplay.BUTTON}>
-                    {t('contentBuilder.checklist.launcherButton')}
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </SelectPortal>
-          </Select>
+            placeholder={t('contentBuilder.checklist.selectOption')}
+            className="w-full"
+            contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+          />
 
           <div className={labelStyles}>
             <Label htmlFor="completion-order">
               {t('contentBuilder.checklist.completionOrder')}
             </Label>
           </div>
-          <Select
+          <SelectPopover
+            options={[
+              {
+                value: ChecklistCompletionOrder.ANY,
+                name: t('contentBuilder.checklist.anyOrder'),
+              },
+              {
+                value: ChecklistCompletionOrder.ORDERED,
+                name: t('contentBuilder.checklist.inOrder'),
+              },
+            ]}
+            value={localData.completionOrder}
             onValueChange={(value) =>
               updateLocalData({ completionOrder: value as ChecklistCompletionOrder })
             }
-            defaultValue={localData.completionOrder}
-          >
-            <SelectTrigger variant="compact-muted">
-              <SelectValue placeholder={t('contentBuilder.checklist.selectOption')} />
-            </SelectTrigger>
-            <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value={ChecklistCompletionOrder.ANY}>
-                    {t('contentBuilder.checklist.anyOrder')}
-                  </SelectItem>
-                  <SelectItem value={ChecklistCompletionOrder.ORDERED}>
-                    {t('contentBuilder.checklist.inOrder')}
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </SelectPortal>
-          </Select>
+            placeholder={t('contentBuilder.checklist.selectOption')}
+            className="w-full"
+            contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+          />
 
           <div className={flexBetween}>
             <div className={labelStyles}>

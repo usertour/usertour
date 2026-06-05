@@ -40,7 +40,7 @@ import {
   ModelIcon,
   RiAlertLine,
   RiDraggable,
-  RiMessageFill,
+  RiMessageLine,
   RiSettings3Line,
   TooltipIcon,
 } from '@usertour/icons';
@@ -113,7 +113,7 @@ const SidebarContent = memo(
                 <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5" />
               )}
               {step.type === StepContentType.HIDDEN && <EyeNoneIcon className="w-4 h-4 mx-0.5" />}
-              {step.type === StepContentType.BUBBLE && <RiMessageFill className="w-4 h-4 mx-0.5" />}
+              {step.type === StepContentType.BUBBLE && <RiMessageLine className="w-4 h-4 mx-0.5" />}
               <span className="w-36 truncate ...">
                 {index + 1}. {step.name}
               </span>
