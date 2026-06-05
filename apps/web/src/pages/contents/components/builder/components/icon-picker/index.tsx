@@ -11,6 +11,7 @@ import {
 } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { LauncherIconSource } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { TAB_VALUES } from '@/pages/contents/components/builder/components/icon-picker/constants';
 import { getActiveText } from '@/pages/contents/components/builder/components/icon-picker/utils';
 import { useIconTab } from '@/pages/contents/components/builder/components/icon-picker/hooks/use-icon-tab';
@@ -30,6 +31,7 @@ export const IconPicker = ({
   onChange,
 }: IconPickerProps) => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const hasBothExtraTabs = showNoIcon && showInherit;
   const popoverWidthClassName = hasBothExtraTabs ? 'w-80' : 'w-72';
 
@@ -140,24 +142,36 @@ export const IconPicker = ({
             <Tabs value={activeTab} onValueChange={handleTabValueChange}>
               <UnderlineTabsList>
                 {showInherit && (
-                  <UnderlineTabsTrigger value="inherit">Default</UnderlineTabsTrigger>
+                  <UnderlineTabsTrigger value="inherit">
+                    {t('contentBuilder.iconPicker.tabDefault')}
+                  </UnderlineTabsTrigger>
                 )}
-                <UnderlineTabsTrigger value="builtin">Built-in</UnderlineTabsTrigger>
-                <UnderlineTabsTrigger value="upload">Upload</UnderlineTabsTrigger>
-                <UnderlineTabsTrigger value="url">URL</UnderlineTabsTrigger>
-                {showNoIcon && <UnderlineTabsTrigger value="none">None</UnderlineTabsTrigger>}
+                <UnderlineTabsTrigger value="builtin">
+                  {t('contentBuilder.iconPicker.tabBuiltin')}
+                </UnderlineTabsTrigger>
+                <UnderlineTabsTrigger value="upload">
+                  {t('contentBuilder.iconPicker.tabUpload')}
+                </UnderlineTabsTrigger>
+                <UnderlineTabsTrigger value="url">
+                  {t('contentBuilder.iconPicker.tabUrl')}
+                </UnderlineTabsTrigger>
+                {showNoIcon && (
+                  <UnderlineTabsTrigger value="none">
+                    {t('contentBuilder.iconPicker.tabNone')}
+                  </UnderlineTabsTrigger>
+                )}
               </UnderlineTabsList>
               {showInherit && (
                 <UnderlineTabsContent value="inherit">
                   <div className="py-4 text-center text-sm text-muted-foreground">
-                    Uses the list's default icon for this content type.
+                    {t('contentBuilder.iconPicker.inheritDescription')}
                   </div>
                 </UnderlineTabsContent>
               )}
               {showNoIcon && (
                 <UnderlineTabsContent value="none">
                   <div className="py-4 text-center text-sm text-muted-foreground">
-                    No icon will be displayed for this item.
+                    {t('contentBuilder.iconPicker.noneDescription')}
                   </div>
                 </UnderlineTabsContent>
               )}

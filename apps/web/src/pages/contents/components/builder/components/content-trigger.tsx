@@ -152,7 +152,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               disabled={false}
               t={t}
             />
-            <Label>Action to perform when triggered</Label>
+            <Label>{t('contentBuilder.flow.actionWhenTriggered')}</Label>
             <Actions
               baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={currentStep}
@@ -187,8 +187,8 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
           size={'sm'}
           onClick={onDelete}
         >
-          <Delete2Icon className="text-destructive mr-1 size-3.5	" />
-          Delete trigger
+          <Delete2Icon className="text-destructive mr-1 size-3.5" />
+          {t('contentBuilder.flow.deleteTrigger')}
         </Button>
       </div>
     </>

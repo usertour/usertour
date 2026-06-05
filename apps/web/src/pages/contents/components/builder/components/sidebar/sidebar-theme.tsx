@@ -6,6 +6,7 @@ import { EXTENSION_SELECT } from '@usertour/constants';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   useBuilderConfig,
@@ -16,6 +17,7 @@ import {
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
   const { zIndex } = useBuilderConfig();
+  const { t } = useTranslation();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const projectId = useProjectId();
@@ -47,14 +49,12 @@ export const SidebarTheme = () => {
     <>
       <div className="flex justify-between items-center space-x-1	">
         <div className="flex flex-row justify-between items-center space-x-1 ">
-          <h1 className="text-sm">Theme</h1>
-          <QuestionTooltip>
-            This is the flow theme that will be used by default in every step
-          </QuestionTooltip>
+          <h1 className="text-sm">{t('contentBuilder.shared.theme.label')}</h1>
+          <QuestionTooltip>{t('contentBuilder.shared.theme.flowTooltip')}</QuestionTooltip>
         </div>
 
         <Button variant="link" onClick={handleEditTheme} className="p-0 h-full	text-sm	">
-          Edit this theme
+          {t('contentBuilder.shared.theme.edit')}
           <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
         </Button>
       </div>
@@ -67,7 +67,7 @@ export const SidebarTheme = () => {
           }))}
           value={currentVersion.themeId}
           onChange={handleThemeChange}
-          placeholder="Select"
+          placeholder={t('contentBuilder.shared.theme.selectPlaceholder')}
           className="w-full"
           contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
         />

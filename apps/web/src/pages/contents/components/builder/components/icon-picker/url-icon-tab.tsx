@@ -3,9 +3,11 @@ import { Button, Input } from '@usertour/ui';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useIconUrl } from '@/pages/contents/components/builder/components/icon-picker/hooks/use-icon-url';
 import type { UrlIconTabProps } from '@/pages/contents/components/builder/components/icon-picker/types';
+import { useTranslation } from 'react-i18next';
 
 export const UrlIconTab = React.memo<UrlIconTabProps>(
   ({ iconUrl, iconSource, onUrlSubmit, isUploading }) => {
+    const { t } = useTranslation();
     const { urlInput, setUrlInput, handleUrlSubmit, isValid } = useIconUrl({
       iconUrl,
       iconSource,
@@ -17,7 +19,7 @@ export const UrlIconTab = React.memo<UrlIconTabProps>(
         <div className="flex gap-x-2">
           <Input
             id="icon-url"
-            placeholder="Enter icon URL"
+            placeholder={t('contentBuilder.iconPicker.urlPlaceholder')}
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             className="bg-background flex-1"
@@ -36,7 +38,7 @@ export const UrlIconTab = React.memo<UrlIconTabProps>(
             disabled={isUploading || !isValid}
           >
             <ArrowRightIcon className="mr-1" />
-            Load
+            {t('contentBuilder.iconPicker.load')}
           </Button>
         </div>
       </div>

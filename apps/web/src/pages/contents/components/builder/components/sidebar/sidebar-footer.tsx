@@ -1,5 +1,6 @@
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { CheckedIcon, RiLogoutBoxLine, SpinnerIcon } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 
 export interface SidebarFooterProps {
   onSave: () => Promise<void>;
@@ -7,6 +8,7 @@ export interface SidebarFooterProps {
 }
 
 export const SidebarFooter = ({ onSave, isLoading = false }: SidebarFooterProps) => {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex-none relative mr-8 ml-4">
@@ -18,7 +20,7 @@ export const SidebarFooter = ({ onSave, isLoading = false }: SidebarFooterProps)
                 <CheckedIcon className="text-green-500" width={20} height={20} />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Saved</p>
+                <p>{t('contentBuilder.common.saved')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -26,7 +28,7 @@ export const SidebarFooter = ({ onSave, isLoading = false }: SidebarFooterProps)
       </div>
       <Button className="grow w-full h-10" onClick={onSave} disabled={isLoading}>
         <RiLogoutBoxLine className="mr-2 h-4 w-4 opacity-70" />
-        Save preferences
+        {t('contentBuilder.common.savePreferences')}
       </Button>
     </>
   );

@@ -7,20 +7,24 @@ import { ACCEPT_FILE_TYPES } from '@/pages/contents/components/builder/component
 import { IconPreview } from '@/pages/contents/components/builder/components/icon-picker/icon-preview';
 import { useIconUpload } from '@/pages/contents/components/builder/components/icon-picker/hooks/use-icon-upload';
 import type { UploadIconTabProps } from '@/pages/contents/components/builder/components/icon-picker/types';
+import { useTranslation } from 'react-i18next';
 
 export const UploadIconTab = React.memo<UploadIconTabProps>(
   ({ iconUrl, iconSource, onUploadSuccess, onRemove }) => {
     const { handleUpload, isUploading } = useIconUpload({
       onUploadSuccess,
     });
+    const { t } = useTranslation();
     const showPreview = iconSource === LauncherIconSource.UPLOAD && iconUrl;
 
     return (
       <div className="w-full min-w-0 bg-background rounded-lg shadow-sm p-4">
         <div className="mb-3">
-          <h4 className="text-sm font-medium text-foreground">Upload an icon</h4>
+          <h4 className="text-sm font-medium text-foreground">
+            {t('contentBuilder.iconPicker.uploadTitle')}
+          </h4>
           <p className="text-xs text-muted-foreground">
-            SVG preferred. Max 1MB. Drag & drop or click to choose a file.
+            {t('contentBuilder.iconPicker.uploadHint')}
           </p>
         </div>
 
@@ -50,10 +54,10 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
                   {isUploading ? (
                     <span className="inline-flex items-center">
                       <SpinnerIcon className="mr-2 animate-spin" />
-                      Uploading
+                      {t('contentBuilder.iconPicker.uploading')}
                     </span>
                   ) : (
-                    'Choose file'
+                    t('contentBuilder.iconPicker.chooseFile')
                   )}
                 </Button>
               </div>
@@ -64,10 +68,10 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
                 {isUploading ? (
                   <span className="inline-flex items-center justify-center w-full">
                     <SpinnerIcon className="mr-2 animate-spin" />
-                    Uploading
+                    {t('contentBuilder.iconPicker.uploading')}
                   </span>
                 ) : (
-                  'Choose file'
+                  t('contentBuilder.iconPicker.chooseFile')
                 )}
               </Button>
             </div>
@@ -78,10 +82,16 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
           <div className="mt-4 flex items-center justify-between gap-3 min-w-0">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="relative w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-muted/70 flex items-center justify-center">
-                <IconPreview iconUrl={iconUrl} alt="Uploaded icon" size="small" />
+                <IconPreview
+                  iconUrl={iconUrl}
+                  alt={t('contentBuilder.iconPicker.uploadedIcon')}
+                  size="small"
+                />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground truncate">Uploaded icon</div>
+                <div className="text-sm font-medium text-foreground truncate">
+                  {t('contentBuilder.iconPicker.uploadedIcon')}
+                </div>
                 <div className="text-xs text-muted-foreground truncate break-all">{iconUrl}</div>
               </div>
             </div>
@@ -98,7 +108,9 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
                     <RiDeleteBinLine className="text-destructive w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">Remove icon</TooltipContent>
+                <TooltipContent className="max-w-xs">
+                  {t('contentBuilder.iconPicker.removeIcon')}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

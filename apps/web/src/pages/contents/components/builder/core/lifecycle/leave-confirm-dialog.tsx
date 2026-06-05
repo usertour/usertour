@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
   Button,
 } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 // Three-way leave confirmation. Mounted by BuilderLeaveGuard when
 // useBlocker has caught an attempted SPA navigation away from the
@@ -33,21 +34,24 @@ export interface LeaveConfirmDialogProps {
 
 export const LeaveConfirmDialog = (props: LeaveConfirmDialogProps) => {
   const { open, onSaveAndLeave, onDiscardAndLeave, onStay } = props;
+  const { t } = useTranslation();
   return (
     <AlertDialog open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+          <AlertDialogTitle>{t('contentBuilder.common.unsavedTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            You have unsaved edits. Save them, discard them, or stay on this page?
+            {t('contentBuilder.common.unsavedDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onStay}>Stay</AlertDialogCancel>
+          <AlertDialogCancel onClick={onStay}>{t('contentBuilder.common.stay')}</AlertDialogCancel>
           <Button variant="outline" onClick={onDiscardAndLeave}>
-            Discard
+            {t('contentBuilder.common.discard')}
           </Button>
-          <AlertDialogAction onClick={onSaveAndLeave}>Save &amp; Leave</AlertDialogAction>
+          <AlertDialogAction onClick={onSaveAndLeave}>
+            {t('contentBuilder.common.saveAndLeave')}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

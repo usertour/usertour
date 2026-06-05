@@ -3,6 +3,7 @@ import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { EXTENSION_SELECT } from '@usertour/constants';
 import { Theme } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ContentThemeProps {
   themeList: Theme[] | null;
@@ -14,11 +15,12 @@ interface ContentThemeProps {
 
 export const ContentTheme = (props: ContentThemeProps) => {
   const { themeId: initialValue, themeList, onChange, onEdited, zIndex } = props;
+  const { t } = useTranslation();
 
   const themeOptions = useMemo(() => {
-    const defaultOption = [{ id: 'same', name: 'Same as flow theme' }];
+    const defaultOption = [{ id: 'same', name: t('contentBuilder.shared.theme.sameAsFlow') }];
     return themeList ? [...defaultOption, ...themeList] : defaultOption;
-  }, [themeList]);
+  }, [themeList, t]);
 
   const [themeId, setThemeId] = useState(initialValue ?? 'same');
 
@@ -34,15 +36,12 @@ export const ContentTheme = (props: ContentThemeProps) => {
     <div className="space-y-3">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1">
-          <h1 className="text-sm">Theme</h1>
-          <QuestionTooltip>
-            If this step has special requirements, you can use a different theme than the rest of
-            the flow uses. You can design your themes under Settings - Themes.
-          </QuestionTooltip>
+          <h1 className="text-sm">{t('contentBuilder.shared.theme.label')}</h1>
+          <QuestionTooltip>{t('contentBuilder.shared.theme.stepTooltip')}</QuestionTooltip>
         </div>
 
         <Button variant="link" onClick={onEdited} className="p-0 h-full">
-          Edit this theme
+          {t('contentBuilder.shared.theme.edit')}
           <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
         </Button>
       </div>
@@ -52,7 +51,7 @@ export const ContentTheme = (props: ContentThemeProps) => {
         options={themeOptions.map(({ id, name }) => ({ value: id, label: name }))}
         value={themeId}
         onChange={handleThemeChange}
-        placeholder="Same as flow theme"
+        placeholder={t('contentBuilder.shared.theme.sameAsFlow')}
         className="w-full"
         contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
       />

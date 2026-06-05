@@ -5,9 +5,11 @@ import { LauncherIconSource } from '@usertour/types';
 import { getActiveIcon } from '@/pages/contents/components/builder/components/icon-picker/utils';
 import { IconPreview } from '@/pages/contents/components/builder/components/icon-picker/icon-preview';
 import type { IconTriggerButtonProps } from '@/pages/contents/components/builder/components/icon-picker/types';
+import { useTranslation } from 'react-i18next';
 
 export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTriggerButtonProps>(
   ({ iconSource, iconUrl, iconType, activeText, ...props }, ref) => {
+    const { t } = useTranslation();
     const ActiveIcon = getActiveIcon(iconType);
 
     const renderIcon = () => {
@@ -16,7 +18,13 @@ export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTrigger
       }
       if (iconSource === LauncherIconSource.UPLOAD || iconSource === LauncherIconSource.URL) {
         if (iconUrl) {
-          return <IconPreview iconUrl={iconUrl} alt="Custom icon" size="small" />;
+          return (
+            <IconPreview
+              iconUrl={iconUrl}
+              alt={t('contentBuilder.iconPicker.customIcon')}
+              size="small"
+            />
+          );
         }
         return ActiveIcon ? <ActiveIcon size={16} /> : null;
       }

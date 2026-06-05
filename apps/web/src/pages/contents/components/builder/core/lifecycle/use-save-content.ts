@@ -2,6 +2,7 @@ import { getErrorMessage, isEqual } from '@usertour/helpers';
 import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
 import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
 import { debug } from '@/utils/logger';
@@ -38,6 +39,7 @@ export interface UseSaveContentReturn {
 export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn => {
   const { store } = args;
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { invoke: updateVersion } = useUpdateContentVersionMutation();
 
   // Monotonic counter for in-flight save identity. Per-Provider-mount.
@@ -97,7 +99,7 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       store.getState().transitionSaveState({ status: 'error', error: err });
       toast({
         variant: 'destructive',
-        title: 'Save failed',
+        title: t('contentBuilder.common.saveFailed'),
       });
       return false;
     } catch (error) {
@@ -112,7 +114,7 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       });
       return false;
     }
-  }, [updateVersion, store, toast]);
+  }, [updateVersion, store, toast, t]);
 
   return { saveContent };
 };
