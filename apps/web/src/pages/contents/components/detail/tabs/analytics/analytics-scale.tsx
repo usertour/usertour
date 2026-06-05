@@ -24,6 +24,7 @@ import { useUpdateContentMutation } from '@usertour/hooks';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { ContentEditorElementType } from '@usertour/editor';
 import { QuestionStarRating } from '@/components/question';
+import { useTranslation } from 'react-i18next';
 
 interface AnalyticsScaleProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -68,6 +69,7 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
   const [selectedDay, setSelectedDay] = useState<AverageByDay | null>(null);
   const { invoke: updateContent } = useUpdateContentMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const lowRange = question.data.lowRange ?? 0;
   const highRange = question.data.highRange ?? 10;
 
@@ -75,7 +77,7 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
 
   const averageChartConfig = {
     average: {
-      label: 'Average',
+      label: t('contents.analytics.scale.average'),
       color: 'hsl(var(--primary))',
     },
   };
@@ -124,19 +126,19 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
       });
 
       if (response) {
-        toast({ title: 'Rolling window updated' });
+        toast({ title: t('contents.analytics.rollingWindow.updated') });
         onRollingWindowChange(true);
       } else {
         toast({
           variant: 'destructive',
-          title: 'Failed to update rolling window',
+          title: t('contents.analytics.rollingWindow.updateFailed'),
         });
         onRollingWindowChange(false);
       }
     } catch (_) {
       toast({
         variant: 'destructive',
-        title: 'Failed to update rolling window',
+        title: t('contents.analytics.rollingWindow.updateFailed'),
       });
       onRollingWindowChange(false);
     }
@@ -159,7 +161,9 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
           {/* Current NPS Score */}
           <div className="flex flex-col items-center justify-center ">
             <div className="text-6xl font-bold text-primary">{average}</div>
-            <div className="text-sm text-muted-foreground ml-2">Current Average</div>
+            <div className="text-sm text-muted-foreground ml-2">
+              {t('contents.analytics.scale.currentAverage')}
+            </div>
           </div>
 
           {/* NPS Trend Chart */}
@@ -188,7 +192,9 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
                 content={
                   <ChartTooltipContent
                     formatter={(value) => (
-                      <div className="flex items-center justify-between gap-2">{value} Average</div>
+                      <div className="flex items-center justify-between gap-2">
+                        {t('contents.analytics.scale.valueAverage', { value })}
+                      </div>
                     )}
                   />
                 }
@@ -210,10 +216,16 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
               <span>{endDate}</span>
             </div>
             <div className="flex flex-row gap-2 items-center justify-center">
-              <span>{totalResponses}</span> <span className="text-muted-foreground">responses</span>
+              <span>{totalResponses}</span>{' '}
+              <span className="text-muted-foreground">
+                {t('contents.analytics.scale.responses')}
+              </span>
             </div>
             <div className="flex flex-row gap-2 items-center justify-center">
-              <span>{rate}%</span> <span className="text-muted-foreground">response rate</span>
+              <span>{rate}%</span>{' '}
+              <span className="text-muted-foreground">
+                {t('contents.analytics.scale.responseRate')}
+              </span>
             </div>
           </div>
           {/* <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} /> */}

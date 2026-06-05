@@ -31,6 +31,7 @@ import { DownloadIcon } from 'lucide-react';
 import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface TrackerUserNode {
   id: string;
@@ -104,6 +105,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
   const { content } = useContentDetail(contentId);
   const client = useApolloClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [pageSize, setPageSize] = useState(10);
   const [pageIndex, setPageIndex] = useState(0);
@@ -150,8 +152,8 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     try {
       setIsExporting(true);
       toast({
-        title: 'Starting export...',
-        description: 'Preparing tracker user data for CSV.',
+        title: t('contents.analytics.export.startingTitle'),
+        description: t('contents.analytics.export.startingTrackerDescription'),
       });
 
       const allUsers: TrackerUserNode[] = [];
@@ -186,14 +188,14 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       }
 
       const headers = [
-        'User: ID',
-        'User: Name',
-        'User: Email',
-        'Company: ID',
-        'Company: Name',
-        'First tracked (UTC)',
-        'Last tracked at (UTC)',
-        'Events',
+        t('contents.analytics.trackerUsers.csv.userId'),
+        t('contents.analytics.trackerUsers.csv.userName'),
+        t('contents.analytics.trackerUsers.csv.userEmail'),
+        t('contents.analytics.trackerUsers.csv.companyId'),
+        t('contents.analytics.trackerUsers.csv.companyName'),
+        t('contents.analytics.trackerUsers.csv.firstTrackedUtc'),
+        t('contents.analytics.trackerUsers.csv.lastTrackedUtc'),
+        t('contents.analytics.trackerUsers.csv.events'),
       ];
 
       const rows = allUsers.map((user) => [
@@ -229,14 +231,16 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       URL.revokeObjectURL(url);
 
       toast({
-        title: 'Export completed',
-        description: `Successfully exported ${allUsers.length} users.`,
+        title: t('contents.analytics.export.completedTitle'),
+        description: t('contents.analytics.export.completedUsersDescription', {
+          count: allUsers.length,
+        }),
       });
     } catch (error) {
       console.error('Tracker CSV export failed:', error);
       toast({
-        title: 'Export failed',
-        description: 'An error occurred while exporting tracker users.',
+        title: t('contents.analytics.export.failedTitle'),
+        description: t('contents.analytics.export.failedTrackerDescription'),
         variant: 'destructive',
       });
     } finally {
@@ -251,6 +255,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     exportQuery,
     isExporting,
     toast,
+    t,
   ]);
 
   // Reset to first page when date range or page size changes
@@ -287,11 +292,8 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       <CardHeader>
         <CardTitle className="space-between flex flex-row items-center">
           <div className="grow flex items-center gap-1">
-            Users
-            <QuestionTooltip>
-              Users who triggered this tracker event in the selected date range. "First tracked" and
-              "Last tracked" are their earliest and latest events; "Events" is the total count.
-            </QuestionTooltip>
+            {t('contents.analytics.trackerUsers.title')}
+            <QuestionTooltip>{t('contents.analytics.trackerUsers.tooltip')}</QuestionTooltip>
           </div>
           <Button
             variant="ghost"
@@ -300,7 +302,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
             disabled={isExporting || !environment?.id || !dateRange?.from || !dateRange?.to}
           >
             <DownloadIcon className="mr-1 w-4 h-4" />
-            {isExporting ? 'Exporting...' : 'Export to CSV'}
+            {isExporting
+              ? t('contents.analytics.export.exporting')
+              : t('contents.analytics.trackerUsers.exportToCsv')}
           </Button>
         </CardTitle>
       </CardHeader>
@@ -309,8 +313,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
           <ListSkeleton length={pageSize} />
         ) : users.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">
-            Tracker event data will appear here once the tracker is published and events are being
-            tracked.
+            {t('contents.analytics.trackerUsers.empty')}
           </div>
         ) : (
           <div className="space-y-4">
@@ -318,10 +321,14 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-2/5">User</TableHead>
-                    <TableHead>First tracked</TableHead>
-                    <TableHead>Last tracked</TableHead>
-                    <TableHead className="text-right">Events</TableHead>
+                    <TableHead className="w-2/5">
+                      {t('contents.analytics.trackerUsers.user')}
+                    </TableHead>
+                    <TableHead>{t('contents.analytics.trackerUsers.firstTracked')}</TableHead>
+                    <TableHead>{t('contents.analytics.trackerUsers.lastTracked')}</TableHead>
+                    <TableHead className="text-right">
+                      {t('contents.analytics.trackerUsers.events')}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -351,7 +358,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                                 </Link>
                                 {companyName && bizCompany?.id && (
                                   <span className="text-muted-foreground text-xs">
-                                    from{' '}
+                                    {t('contents.analytics.trackerUsers.from')}{' '}
                                     <Link
                                       to={`/env/${environment?.id}/company/${bizCompany.id}`}
                                       className="hover:text-primary hover:underline underline-offset-4"
@@ -391,11 +398,13 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
             {/* Pagination */}
             <div className="flex items-center justify-between px-2">
               <div className="flex-1 text-sm text-muted-foreground">
-                {totalCount} user{totalCount !== 1 ? 's' : ''} in total.
+                {t('contents.analytics.trackerUsers.totalCount', { count: totalCount })}
               </div>
               <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
-                  <p className="text-sm font-medium">Rows per page</p>
+                  <p className="text-sm font-medium">
+                    {t('contents.analytics.trackerUsers.rowsPerPage')}
+                  </p>
                   <Select
                     value={`${pageSize}`}
                     onValueChange={(value) => setPageSize(Number(value))}
@@ -413,7 +422,10 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                   </Select>
                 </div>
                 <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                  Page {pageIndex + 1} of {pageCount}
+                  {t('contents.analytics.trackerUsers.pageOf', {
+                    current: pageIndex + 1,
+                    total: pageCount,
+                  })}
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
@@ -422,7 +434,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                     onClick={goPrev}
                     disabled={pageIndex === 0}
                   >
-                    <span className="sr-only">Go to previous page</span>
+                    <span className="sr-only">
+                      {t('contents.analytics.trackerUsers.goToPreviousPage')}
+                    </span>
                     <ChevronLeftIcon className="h-4 w-4" />
                   </Button>
                   <Button
@@ -431,7 +445,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                     onClick={goNext}
                     disabled={!pageInfo?.hasNextPage}
                   >
-                    <span className="sr-only">Go to next page</span>
+                    <span className="sr-only">
+                      {t('contents.analytics.trackerUsers.goToNextPage')}
+                    </span>
                     <ChevronRightIcon className="h-4 w-4" />
                   </Button>
                 </div>

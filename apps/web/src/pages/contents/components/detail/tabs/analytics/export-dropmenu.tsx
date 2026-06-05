@@ -15,6 +15,7 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
 import { buildExportPayload } from './export-csv.utils';
+import { useTranslation } from 'react-i18next';
 
 type ExportDropdownMenuProps = {
   children: ReactNode;
@@ -26,6 +27,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { dateRange, contentId, timezone } = useAnalyticsUI();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { content } = useContentDetail(contentId);
   const { attributeList } = useAttributeList();
   const { environment } = useAppContext();
@@ -62,8 +64,8 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
     try {
       setIsExporting(true);
       toast({
-        title: 'Starting export...',
-        description: 'Please wait while we prepare your data.',
+        title: t('contents.analytics.export.startingTitle'),
+        description: t('contents.analytics.export.startingDescription'),
       });
 
       const pageSize = 100;
@@ -114,14 +116,16 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       URL.revokeObjectURL(url);
 
       toast({
-        title: 'Export completed',
-        description: `Successfully exported ${allSessions.length} sessions.`,
+        title: t('contents.analytics.export.completedTitle'),
+        description: t('contents.analytics.export.completedSessionsDescription', {
+          count: allSessions.length,
+        }),
       });
     } catch (error) {
       console.error('Export failed:', error);
       toast({
-        title: 'Export failed',
-        description: 'An error occurred while exporting the data. Please try again.',
+        title: t('contents.analytics.export.failedTitle'),
+        description: t('contents.analytics.export.failedSessionsDescription'),
         variant: 'destructive',
       });
     } finally {
@@ -141,7 +145,9 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           disabled={isExporting}
         >
           <User className="mr-1 w-4 h-4" />
-          {isExporting ? 'Exporting...' : 'Standard user attributes'}
+          {isExporting
+            ? t('contents.analytics.export.exporting')
+            : t('contents.analytics.export.standardUserAttributes')}
         </DropdownMenuItem>
         <DropdownMenuItem
           className={`cursor-pointer ${isExporting ? 'opacity-50' : ''}`}
@@ -149,7 +155,9 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           disabled={isExporting}
         >
           <UserCog className="mr-1 w-4 h-4" />
-          {isExporting ? 'Exporting...' : 'All user attributes'}
+          {isExporting
+            ? t('contents.analytics.export.exporting')
+            : t('contents.analytics.export.allUserAttributes')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

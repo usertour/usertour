@@ -41,6 +41,7 @@ import { SessionActionDropdownMenu } from '@/components/sessions/session-action-
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { ContentDataType } from '@usertour/types';
 import { InboxIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const columnWidthClass: Record<string, string> = {
   bizUserId: 'w-[38%] min-w-[220px]',
@@ -78,6 +79,7 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
   const { refetch: refetchAnalytics } = useContentAnalytics();
   const { environment } = useAppContext();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // All ~20 rows in this table belong to the same content / version, so
   // these three reads are row-shared. Issuing them once here (instead
@@ -90,8 +92,8 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
   const { eventList } = useEventList();
   const { version } = useContentVersion(content?.editedVersionId);
   const columns = useMemo(
-    () => buildColumns({ content, version, eventList }),
-    [content, version, eventList],
+    () => buildColumns({ content, version, eventList }, t),
+    [content, version, eventList, t],
   );
 
   const table = useReactTable({
@@ -199,7 +201,9 @@ export const BizSessionsDataTable = (props: BizSessionsDataTableProps) => {
                 <TableCell colSpan={columns.length + 1} className="h-40 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <InboxIcon className="h-8 w-8 opacity-60" />
-                    <span className="text-sm">No sessions in this range.</span>
+                    <span className="text-sm">
+                      {t('contents.analytics.sessionsTable.noSessions')}
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>

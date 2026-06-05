@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from '@usertour/ui';
 import { Link } from 'react-router-dom';
+import type { TFunction } from 'i18next';
 
 // Per-row content / version / event data is identical across all 20
 // rows in the table — they're all sessions for the same content. The
@@ -171,29 +172,43 @@ const UserCell = (props: { row: Row<BizSession> }) => {
   );
 };
 
-export const buildColumns = (ctx: ColumnContext): ColumnDef<BizSession>[] => [
+export const buildColumns = (ctx: ColumnContext, t: TFunction): ColumnDef<BizSession>[] => [
   {
     accessorKey: 'bizUserId',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('contents.analytics.sessionsTable.user')} />
+    ),
     cell: ({ row }) => <UserCell row={row} />,
     enableSorting: false,
     enableHiding: true,
   },
   {
     id: 'status',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('contents.analytics.sessionsTable.status')} />
+    ),
     cell: ({ row }) => <StatusCell row={row} ctx={ctx} />,
     enableSorting: false,
   },
   {
     accessorKey: 'progress',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Progress" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t('contents.analytics.sessionsTable.progress')}
+      />
+    ),
     cell: ({ row }) => <ProgressCell row={row} ctx={ctx} />,
     enableSorting: false,
   },
   {
     accessorKey: 'createdAt',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Last activity" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t('contents.analytics.sessionsTable.lastActivity')}
+      />
+    ),
     cell: ({ row }) => <LastActivityCell row={row} />,
     enableSorting: false,
   },

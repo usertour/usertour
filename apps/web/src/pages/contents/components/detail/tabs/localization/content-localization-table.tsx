@@ -15,6 +15,7 @@ import { useUpdateVersionLocationDataMutation } from '@usertour/hooks';
 import { VersionOnLocalization } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 interface ContentLocalizationTableProps {
@@ -23,6 +24,7 @@ interface ContentLocalizationTableProps {
 
 export const ContentLocalizationTable = (props: ContentLocalizationTableProps) => {
   const { versionId } = props;
+  const { t } = useTranslation();
   const { contentLocalizationList, loading, refetch } = useContentLocalizations(versionId);
   const { localizationList } = useLocalizationList();
   const { invoke: updateVersionLocation } = useUpdateVersionLocationDataMutation();
@@ -42,13 +44,13 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
         await refetch();
         toast({
           variant: 'success',
-          title: 'The changes have been applied successfully.',
+          title: t('contents.localization.toast.applySuccess'),
         });
       }
     } catch (_) {
       toast({
         variant: 'destructive',
-        title: 'The changes have been applied failed.',
+        title: t('contents.localization.toast.applyFailure'),
       });
     }
   };
@@ -63,9 +65,9 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-2/4">Locale</TableHead>
-          <TableHead className="w-1/4">Status</TableHead>
-          <TableHead className="w-1/4">UpdatedAt</TableHead>
+          <TableHead className="w-2/4">{t('contents.localization.taskTable.locale')}</TableHead>
+          <TableHead className="w-1/4">{t('contents.localization.taskTable.status')}</TableHead>
+          <TableHead className="w-1/4">{t('contents.localization.taskTable.updatedAt')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -86,7 +88,9 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
                       ?.name
                   }
                 </Link>
-                <span className="ml-2 text-destructive">13 missing</span>
+                <span className="ml-2 text-destructive">
+                  {t('contents.localization.taskTable.missingCount', { count: 13 })}
+                </span>
               </TableCell>
               <TableCell>
                 <Switch
@@ -103,7 +107,9 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
           ))
         ) : (
           <TableRow>
-            <TableCell className="h-24 text-center">No results.</TableCell>
+            <TableCell className="h-24 text-center">
+              {t('contents.localization.taskTable.noResults')}
+            </TableCell>
           </TableRow>
         )}
       </TableBody>

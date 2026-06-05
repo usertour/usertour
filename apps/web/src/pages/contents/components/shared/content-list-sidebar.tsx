@@ -7,6 +7,7 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { FileEditLineIcon, BaseStationLineIcon } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 interface ContentListSidebarProps {
@@ -14,6 +15,7 @@ interface ContentListSidebarProps {
 }
 
 export function ContentListSidebar({ title }: ContentListSidebarProps) {
+  const { t } = useTranslation();
   // `published` is single-sourced from the URL. The list hook reads
   // the same URL param to build its query, so the highlighted item
   // and the fetched data can't diverge.
@@ -35,14 +37,16 @@ export function ContentListSidebar({ title }: ContentListSidebarProps) {
         <h2 className="min-w-0 truncate text-xl font-semibold">{title}</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
-        <AdminSidebarBodyTitleTemplate>Status</AdminSidebarBodyTitleTemplate>
+        <AdminSidebarBodyTitleTemplate>
+          {t('contents.shared.sidebar.status')}
+        </AdminSidebarBodyTitleTemplate>
         <AdminSidebarBodyItemTemplate
           onClick={handleStatusChange(false)}
           variant={!isPublished ? 'secondary' : 'ghost'}
           className={getItemClassName(!isPublished)}
         >
           <FileEditLineIcon className="w-4 h-4 mr-1" />
-          Draft
+          {t('contents.shared.sidebar.draft')}
         </AdminSidebarBodyItemTemplate>
         <AdminSidebarBodyItemTemplate
           onClick={handleStatusChange(true)}
@@ -50,7 +54,7 @@ export function ContentListSidebar({ title }: ContentListSidebarProps) {
           className={getItemClassName(isPublished)}
         >
           <BaseStationLineIcon className="w-4 h-4 mr-1" />
-          Published
+          {t('contents.shared.sidebar.published')}
         </AdminSidebarBodyItemTemplate>
       </AdminSidebarBodyTemplate>
       <AdminSidebarFooter />

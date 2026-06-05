@@ -21,6 +21,7 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { AnalyticsScale } from './analytics-scale';
 import { useAppContext } from '@/contexts/app-context';
 import { AnalyticsQuestionSkeleton } from './analytics-skeleton';
+import { useTranslation } from 'react-i18next';
 
 interface AnalyticsMultipleChoiceProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -29,6 +30,7 @@ interface AnalyticsMultipleChoiceProps {
 
 export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => {
   const { questionAnalytics, totalViews } = props;
+  const { t } = useTranslation();
 
   const totalResponses = questionAnalytics.totalResponse ?? 0;
   const responseRate = totalViews > 0 ? Math.round((totalResponses / totalViews) * 100) : 0;
@@ -67,7 +69,7 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
     ...(otherCount > 0
       ? [
           {
-            answer: 'Other',
+            answer: t('contents.analytics.multipleChoice.other'),
             count: otherCount,
             percentage: otherPercentage,
           },
@@ -80,27 +82,43 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
       <Card>
         <CardHeader>
           <CardTitle className="space-between flex flex-row  items-center">
-            <div className="grow	">{questionAnalytics.question.data.name} - Multiple choice</div>
+            <div className="grow	">
+              {t('contents.analytics.multipleChoice.title', {
+                name: questionAnalytics.question.data.name,
+              })}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-row items-center justify-center w-full py-2">
             <div className="flex flex-row w-fit gap-16">
               <div>
-                {totalResponses} <span className="text-sm text-muted-foreground">responses</span>
+                {totalResponses}{' '}
+                <span className="text-sm text-muted-foreground">
+                  {t('contents.analytics.multipleChoice.responses')}
+                </span>
               </div>
               <div>
-                {responseRate}% <span className="text-sm text-muted-foreground">response rate</span>
+                {responseRate}%{' '}
+                <span className="text-sm text-muted-foreground">
+                  {t('contents.analytics.multipleChoice.responseRate')}
+                </span>
               </div>
             </div>
           </div>
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-72">Answer</TableHead>
-                <TableHead className="w-28 text-right">Responses</TableHead>
+                <TableHead className="w-72">
+                  {t('contents.analytics.multipleChoice.answer')}
+                </TableHead>
+                <TableHead className="w-28 text-right">
+                  {t('contents.analytics.multipleChoice.responsesHeader')}
+                </TableHead>
                 <TableHead className="w-6" />
-                <TableHead className="w-28 text-right">Share</TableHead>
+                <TableHead className="w-28 text-right">
+                  {t('contents.analytics.multipleChoice.share')}
+                </TableHead>
                 <TableHead className="w-6" />
                 <TableHead />
               </TableRow>
@@ -127,7 +145,7 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    No results.
+                    {t('contents.analytics.common.noResults')}
                   </TableCell>
                 </TableRow>
               )}

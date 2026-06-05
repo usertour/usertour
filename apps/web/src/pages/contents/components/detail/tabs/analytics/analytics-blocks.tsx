@@ -1,6 +1,7 @@
 import { useContentAnalytics } from '@/hooks/use-content-analytics';
 import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsViewsByBlock } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 
 type TabGroup = {
@@ -45,6 +46,7 @@ const getRankDotClass = (rank: number, isIdle: boolean) => {
 
 export const AnalyticsBlocks = () => {
   const { analyticsData, loading } = useContentAnalytics();
+  const { t } = useTranslation();
 
   if (loading) {
     return <AnalyticsTasksSkeleton />;
@@ -58,12 +60,8 @@ export const AnalyticsBlocks = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-1">
-          Clicks by block
-          <QuestionTooltip>
-            Clicks grouped by tab and block within this resource center. "% of tab" is the block's
-            share of its tab's total clicks; "Clickers / clicks" shows unique users who clicked
-            versus total click events.
-          </QuestionTooltip>
+          {t('contents.analytics.blocks.title')}
+          <QuestionTooltip>{t('contents.analytics.blocks.tooltip')}</QuestionTooltip>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -74,14 +72,18 @@ export const AnalyticsBlocks = () => {
                 <div className="flex items-baseline justify-between border-b pb-2 mb-2">
                   <span className="font-semibold text-sm">{group.tabName}</span>
                   <span className="text-xs text-muted-foreground">
-                    {group.totalClicks} total {group.totalClicks === 1 ? 'click' : 'clicks'}
+                    {t('contents.analytics.blocks.totalClicks', { count: group.totalClicks })}
                   </span>
                 </div>
                 <div className="grid grid-cols-[auto_1fr_auto_auto] items-center text-[11px] text-muted-foreground px-2 pb-1">
                   <span className="w-2 mr-3" />
-                  <span>Block</span>
-                  <span className="text-right min-w-[56px]">% of tab</span>
-                  <span className="text-right min-w-[96px]">Clickers / clicks</span>
+                  <span>{t('contents.analytics.blocks.block')}</span>
+                  <span className="text-right min-w-[56px]">
+                    {t('contents.analytics.blocks.percentOfTab')}
+                  </span>
+                  <span className="text-right min-w-[96px]">
+                    {t('contents.analytics.blocks.clickersClicks')}
+                  </span>
                 </div>
                 <div>
                   {group.blocks.map((block, idx) => {
@@ -119,7 +121,7 @@ export const AnalyticsBlocks = () => {
           </div>
         ) : (
           <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
-            No clicks yet.
+            {t('contents.analytics.blocks.noClicks')}
           </div>
         )}
       </CardContent>

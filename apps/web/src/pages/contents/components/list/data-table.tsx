@@ -8,6 +8,7 @@ import { CircleIcon, SpinnerIcon } from '@usertour/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { useNavigate } from 'react-router-dom';
 import { AutoScaledPreviewContainer, Button, Skeleton } from '@usertour/ui';
@@ -31,6 +32,7 @@ const ContentPreviewFooter = ({
   refetch: () => Promise<unknown>;
 }) => {
   const { isViewOnly, environment } = useAppContext();
+  const { t } = useTranslation();
 
   const isPublished = content?.contentOnEnvironments?.find(
     (item) => item.published && item.environment.id === environment?.id,
@@ -61,25 +63,28 @@ const ContentPreviewFooter = ({
         </ContentEditDropdownMenu>
       </div>
       <div className="grow flex flex-row text-sm items-center space-x-1 text-xs">
-        <span>Status:</span>
+        <span>{t('contents.listView.card.statusLabel')}</span>
         <div className="flex flex-row space-x-1 items-center ">
           {isPublished && (
             <>
               <CircleIcon className="w-3 h-3 text-success" />
-              <span>Published</span>
+              <span>{t('contents.listView.card.published')}</span>
             </>
           )}
           {!isPublished && (
             <>
               <CircleIcon className="w-3 h-3 text-slate-300" />
-              <span>Unpublished</span>
+              <span>{t('contents.listView.card.unpublished')}</span>
             </>
           )}
         </div>
       </div>
       <div className="flex-none flex flex-row justify-end items-center">
         <span className="text-xs text-muted-foreground">
-          Created at {content?.createdAt && formatDistanceToNow(new Date(content?.createdAt))} ago
+          {content?.createdAt &&
+            t('contents.listView.card.createdAt', {
+              time: formatDistanceToNow(new Date(content?.createdAt)),
+            })}
         </span>
       </div>
     </div>
@@ -268,6 +273,7 @@ interface DataTableProps {
 export function DataTable(props: DataTableProps) {
   const { contents, contentType, hasNextPage, loading, loadingMore, fetchNextPage, refetch } =
     props;
+  const { t } = useTranslation();
   // ScrollArea's Viewport, published by ContentList via ScrollRootProvider —
   // becomes the IntersectionObserver root so the sentinel triggers against
   // the actual scrolling element rather than the window viewport.
@@ -306,7 +312,7 @@ export function DataTable(props: DataTableProps) {
           {loadingMore ? (
             <span className="flex items-center gap-2 text-sm">
               <SpinnerIcon className="h-4 w-4 animate-spin" />
-              Loading…
+              {t('contents.listView.loadingMore')}
             </span>
           ) : (
             <span className="h-px w-full" aria-hidden />

@@ -8,6 +8,7 @@ import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 import { buildConfig } from '@usertour/helpers';
 import { Event, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardContent,
@@ -39,6 +40,7 @@ const TrackerEventSelector = ({
   onEventSelect,
   disabled = false,
 }: TrackerEventSelectorProps) => {
+  const { t } = useTranslation();
   const { eventList, refetch } = useEventList();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,7 +115,7 @@ const TrackerEventSelector = ({
       <div className="relative">
         <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Find or create an event..."
+          placeholder={t('contents.overview.tracker.eventSearchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-8"
@@ -124,7 +126,9 @@ const TrackerEventSelector = ({
         <div className="max-h-48 overflow-y-auto">
           {filteredEvents.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              {events.length === 0 ? 'No events defined yet.' : 'No matching events found.'}
+              {events.length === 0
+                ? t('contents.overview.tracker.noEventsDefined')
+                : t('contents.overview.tracker.noMatchingEvents')}
             </div>
           ) : (
             filteredEvents.map((event) => (
@@ -154,7 +158,7 @@ const TrackerEventSelector = ({
             className="w-full px-3 py-2 text-left text-sm border-t hover:bg-accent hover:text-accent-foreground flex items-center gap-2 cursor-pointer"
             onClick={() => setOpenCreateDialog(true)}
           >
-            <span className="font-medium">+ Create new event</span>
+            <span className="font-medium">{t('contents.overview.tracker.createNewEvent')}</span>
           </button>
         )}
       </div>
@@ -172,6 +176,7 @@ const TrackerEventSelector = ({
 // ============================================================================
 
 export const ContentDetailTrackerEditor = () => {
+  const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
@@ -224,10 +229,9 @@ export const ContentDetailTrackerEditor = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-1">
-              <span>When this happens</span>
+              <span>{t('contents.overview.tracker.whenThisHappens')}</span>
               <QuestionTooltip contentClassName="max-w-sm">
-                This event is tracked once the condition is satisfied. For example, when a button in
-                your app is clicked.
+                {t('contents.overview.tracker.whenThisHappensTooltip')}
               </QuestionTooltip>
             </CardTitle>
           </CardHeader>
@@ -236,7 +240,7 @@ export const ContentDetailTrackerEditor = () => {
               defaultConditions={config.autoStartRules}
               defaultEnabled={config.enabledAutoStartRules}
               setting={config.autoStartRulesSetting}
-              name="Trigger conditions"
+              name={t('contents.overview.tracker.triggerConditions')}
               showEnabledSwitch={false}
               onDataChange={handleAutoStartRulesDataChange}
               content={content}
@@ -256,12 +260,7 @@ export const ContentDetailTrackerEditor = () => {
                 'time',
                 'group',
               ]}
-              featureTooltip={
-                <>
-                  Define the conditions that must be met for the tracker to fire. When these
-                  conditions become true, the selected event will be tracked.
-                </>
-              }
+              featureTooltip={t('contents.overview.tracker.triggerConditionsTooltip')}
             />
           </CardContent>
         </Card>
@@ -272,11 +271,9 @@ export const ContentDetailTrackerEditor = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-1">
-              <span>Then track this event</span>
+              <span>{t('contents.overview.tracker.thenTrackThisEvent')}</span>
               <QuestionTooltip contentClassName="max-w-sm">
-                Select the event name to track. You can reuse this event in other flows and
-                checklists, and it will be sent to analytics providers connected in Settings
-                Integrations.
+                {t('contents.overview.tracker.thenTrackThisEventTooltip')}
               </QuestionTooltip>
             </CardTitle>
           </CardHeader>

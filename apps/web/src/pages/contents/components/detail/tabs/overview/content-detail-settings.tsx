@@ -3,6 +3,8 @@ import { Card } from '@usertour/ui';
 import { buildConfig } from '@usertour/helpers';
 import { ContentDataType, RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import {
   ContentDetailAutoStartRules,
   ContentDetailAutoStartRulesType,
@@ -12,57 +14,46 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
-const getContentTypeLabel = (contentType: ContentDataType): string => {
-  if (contentType === ContentDataType.RESOURCE_CENTER) return 'resource center';
+const getContentTypeLabel = (contentType: ContentDataType, t: TFunction): string => {
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return t('contents.overview.contentTypeLabel.resourceCenter');
+  }
   return contentType;
 };
 
-const getAutoStartRulesName = (contentType: ContentDataType) => {
+const getAutoStartRulesName = (contentType: ContentDataType, t: TFunction) => {
   if (contentType === ContentDataType.BANNER) {
-    return 'Show banner if...';
+    return t('contents.overview.autoStart.showBannerIf');
   }
   if (contentType === ContentDataType.LAUNCHER) {
-    return 'Show launcher if...';
+    return t('contents.overview.autoStart.showLauncherIf');
   }
-  return `Auto-start ${getContentTypeLabel(contentType)} if...`;
+  return t('contents.overview.autoStart.autoStartIf', {
+    label: getContentTypeLabel(contentType, t),
+  });
 };
 
 const SHOW_ONLY_CONTENT_TYPES = [ContentDataType.LAUNCHER, ContentDataType.BANNER];
 
-const AutoStartTooltips = (contentType: ContentDataType) => {
+const AutoStartTooltips = (contentType: ContentDataType, t: TFunction) => {
   if (SHOW_ONLY_CONTENT_TYPES.includes(contentType)) {
-    const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
-    return (
-      <>
-        Only users who match these conditions will see the {contentLabel}. For example, show it only
-        to new users, or set the current page rule to /* to show it everywhere. <br />
-      </>
-    );
+    const contentLabel =
+      contentType === ContentDataType.BANNER
+        ? t('contents.overview.contentTypeLabel.banner')
+        : t('contents.overview.contentTypeLabel.launcher');
+    return <>{t('contents.overview.autoStart.tooltipShowOnly', { label: contentLabel })}</>;
   }
-  const label = getContentTypeLabel(contentType);
-  return (
-    <>
-      As soon as a user matches these conditions, the {label} starts automatically. For example,
-      start a {label} for every new user. <br />
-      <br />
-      Note: once the {label} is already running, these conditions no longer matter. Even if the user
-      stops matching them, the {label} stays open until it's dismissed.
-    </>
-  );
+  const label = getContentTypeLabel(contentType, t);
+  return <>{t('contents.overview.autoStart.tooltipAutoStart', { label })}</>;
 };
 
-const HideRulesTooltips = (contentType: ContentDataType) => {
-  const label = getContentTypeLabel(contentType);
-  return (
-    <>
-      Temporarily hide the {label} while these conditions are true. Once they're no longer true, it
-      can show up again. <br />
-      For example, hide the {label} on certain pages.
-    </>
-  );
+const HideRulesTooltips = (contentType: ContentDataType, t: TFunction) => {
+  const label = getContentTypeLabel(contentType, t);
+  return <>{t('contents.overview.hideRules.tooltip', { label })}</>;
 };
 
 export const ContentDetailSettings = () => {
+  const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
@@ -133,7 +124,7 @@ export const ContentDetailSettings = () => {
           defaultConditions={config.autoStartRules}
           defaultEnabled={config.enabledAutoStartRules}
           setting={config.autoStartRulesSetting}
-          name={getAutoStartRulesName(contentType)}
+          name={getAutoStartRulesName(contentType, t)}
           onDataChange={handleAutoStartRulesDataChange}
           content={content}
           type={ContentDetailAutoStartRulesType.START_RULES}
@@ -143,7 +134,7 @@ export const ContentDetailSettings = () => {
           showWait={showAdvancedOptions}
           showPriority={showAdvancedOptions || isResourceCenter}
           disabled={isViewOnly}
-          featureTooltip={AutoStartTooltips(contentType)}
+          featureTooltip={AutoStartTooltips(contentType, t)}
         />
       </Card>
 
@@ -153,7 +144,9 @@ export const ContentDetailSettings = () => {
             defaultConditions={config.hideRules}
             defaultEnabled={config.enabledHideRules}
             setting={config.hideRulesSetting}
-            name={`Temporarily hide ${getContentTypeLabel(contentType)} if...`}
+            name={t('contents.overview.hideRules.name', {
+              label: getContentTypeLabel(contentType, t),
+            })}
             onDataChange={handleHideRulesDataChange}
             content={content}
             type={ContentDetailAutoStartRulesType.HIDE_RULES}
@@ -162,7 +155,7 @@ export const ContentDetailSettings = () => {
             showIfCompleted={false}
             showPriority={false}
             disabled={isViewOnly}
-            featureTooltip={HideRulesTooltips(contentType)}
+            featureTooltip={HideRulesTooltips(contentType, t)}
           />
         </Card>
       )}

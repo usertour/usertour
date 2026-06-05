@@ -121,6 +121,7 @@ const StatItem = ({
   variant?: 'primary' | 'destructive';
   isPercentage?: boolean;
 }) => {
+  const { t } = useTranslation();
   const colorClass = variant === 'primary' ? 'text-primary' : 'text-destructive';
 
   return (
@@ -135,7 +136,8 @@ const StatItem = ({
           {label}
         </span>
         <span className="text-sm leading-tight whitespace-nowrap">
-          {isPercentage ? `${totalValue}%` : <FormattedNumber value={totalValue} />} in total
+          {isPercentage ? `${totalValue}%` : <FormattedNumber value={totalValue} />}{' '}
+          {t('contents.analytics.tooltipMissing.inTotal')}
         </span>
       </div>
     </div>
@@ -150,6 +152,7 @@ const StatsSummary = ({
   stepAnalytics: StepAnalytics | null;
   customSelector: string;
 }) => {
+  const { t } = useTranslation();
   const uniqueViews = stepAnalytics?.uniqueViews ?? 0;
   const totalViews = stepAnalytics?.totalViews ?? 0;
   const uniqueTooltipTargetMissingCount = stepAnalytics?.uniqueTooltipTargetMissingCount ?? 0;
@@ -167,17 +170,21 @@ const StatsSummary = ({
         {customSelector}
       </div>
       <div className="flex-1 flex items-center justify-evenly">
-        <StatItem mainValue={uniqueViews} totalValue={totalViews} label="Unique views" />
+        <StatItem
+          mainValue={uniqueViews}
+          totalValue={totalViews}
+          label={t('contents.analytics.tooltipMissing.uniqueViews')}
+        />
         <StatItem
           mainValue={uniqueTooltipTargetMissingCount}
           totalValue={tooltipTargetMissingCount}
-          label="Times not found"
+          label={t('contents.analytics.tooltipMissing.timesNotFound')}
           variant="destructive"
         />
         <StatItem
           mainValue={uniqueFailureRate}
           totalValue={totalFailureRate}
-          label="Failure rate"
+          label={t('contents.analytics.tooltipMissing.failureRate')}
           variant="destructive"
           isPercentage
         />
@@ -242,13 +249,16 @@ const LoadingSpinner = ({ size = 'lg' }: { size?: 'sm' | 'lg' }) => (
 );
 
 // Empty state component
-const EmptyState = () => (
-  <TableRow>
-    <TableCell colSpan={3} className="h-24 text-center">
-      No results.
-    </TableCell>
-  </TableRow>
-);
+const EmptyState = () => {
+  const { t } = useTranslation();
+  return (
+    <TableRow>
+      <TableCell colSpan={3} className="h-24 text-center">
+        {t('contents.analytics.common.noResults')}
+      </TableCell>
+    </TableRow>
+  );
+};
 
 export const TooltipTargetMissingDialog = ({
   stepData,
@@ -385,7 +395,10 @@ export const TooltipTargetMissingDialog = ({
       >
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>
-            Tooltip targets not found - Step {stepData.stepIndex + 1}. {stepData.name}
+            {t('contents.analytics.tooltipMissing.dialogTitle', {
+              step: stepData.stepIndex + 1,
+              name: stepData.name,
+            })}
           </DialogTitle>
         </DialogHeader>
 
@@ -414,9 +427,15 @@ export const TooltipTargetMissingDialog = ({
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
-                    <TableHead className="w-1/3">User</TableHead>
-                    <TableHead className="w-1/2">URL</TableHead>
-                    <TableHead className="w-1/6">Time</TableHead>
+                    <TableHead className="w-1/3">
+                      {t('contents.analytics.tooltipMissing.user')}
+                    </TableHead>
+                    <TableHead className="w-1/2">
+                      {t('contents.analytics.tooltipMissing.url')}
+                    </TableHead>
+                    <TableHead className="w-1/6">
+                      {t('contents.analytics.tooltipMissing.time')}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

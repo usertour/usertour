@@ -33,6 +33,7 @@ import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
 import { ChangeEvent, ReactNode, useState } from 'react';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface ContentLocalizationTemplateProps {
@@ -106,6 +107,7 @@ interface ContentLocalizationImageProps {
 
 const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
+  const { t } = useTranslation();
   const { upload } = useAws();
   const [imageUrl, setImageUrl] = useState<string>('');
   const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
@@ -123,7 +125,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
   };
   return (
     <Popover>
-      <ContentLocalizationTemplateContainer name={'Image'}>
+      <ContentLocalizationTemplateContainer name={t('contents.localization.element.image')}>
         <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
           <img src={element.url} className="max-w-64 max-h-64	" />
         </ContentLocalizationTemplateB1>
@@ -144,13 +146,13 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
               >
                 <LocalizationButton>
                   <ImageEditIcon className="mx-1 fill-primary" />
-                  Upload image
+                  {t('contents.localization.image.uploadImage')}
                 </LocalizationButton>
               </Upload>
               <PopoverTrigger asChild>
                 <LocalizationButton>
                   <KeyboardIcon className="mx-1 fill-primary" />
-                  Enter url
+                  {t('contents.localization.image.enterUrl')}
                 </LocalizationButton>
               </PopoverTrigger>
               <PopoverContent
@@ -161,7 +163,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
               >
                 <div className="flex flex-row space-x-2">
                   <Input
-                    placeholder="Enter url"
+                    placeholder={t('contents.localization.image.enterUrl')}
                     value={remoteImageUrl}
                     onChange={(e) => {
                       setRemoteImageUrl(e.target.value);
@@ -177,7 +179,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
                     }}
                   >
                     <ArrowRightIcon className="mr-1 " />
-                    Load
+                    {t('contents.localization.image.load')}
                   </Button>
                 </div>
               </PopoverContent>
@@ -187,7 +189,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
                 }}
               >
                 <ResetIcon className="mx-1 fill-primary" />
-                Use original
+                {t('contents.localization.image.useOriginal')}
               </LocalizationButton>
             </div>
           </div>
@@ -206,6 +208,7 @@ interface ContentLocalizationEmbedProps {
 }
 const ContentLocalizationEmbed = (props: ContentLocalizationEmbedProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
+  const { t } = useTranslation();
   const [embedUrl, setEmbedUrl] = useState<string>('');
 
   const handleEmbedUrlChange = (url: string) => {
@@ -213,7 +216,7 @@ const ContentLocalizationEmbed = (props: ContentLocalizationEmbedProps) => {
     onChange({ ...element, url });
   };
   return (
-    <ContentLocalizationTemplateContainer name={'Video'}>
+    <ContentLocalizationTemplateContainer name={t('contents.localization.element.video')}>
       <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
         <div>{element.url}</div>
       </ContentLocalizationTemplateB1>
@@ -237,13 +240,14 @@ interface ContentLocalizationButtonProps {
 }
 const ContentLocalizationButton = (props: ContentLocalizationButtonProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
+  const { t } = useTranslation();
   const [text, setText] = useState<string>('');
   const handleTextChange = (txt: string) => {
     setText(txt);
     onChange({ ...element, data: { ...element.data, text: txt } });
   };
   return (
-    <ContentLocalizationTemplateContainer name={'Button'}>
+    <ContentLocalizationTemplateContainer name={t('contents.localization.element.button')}>
       <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
         <div className="pl-3">{element.data.text}</div>
       </ContentLocalizationTemplateB1>
@@ -288,6 +292,7 @@ interface ContentLocalizationRichTextProps {
 }
 const ContentLocalizationText = (props: ContentLocalizationRichTextProps) => {
   const { defaultLocate, currentLocalization, element, onChange } = props;
+  const { t } = useTranslation();
 
   const data = element.data;
   const clone = JSON.parse(JSON.stringify(data));
@@ -310,7 +315,7 @@ const ContentLocalizationText = (props: ContentLocalizationRichTextProps) => {
           <>
             <Separator />
             <div className="flex flex-row">
-              <div className="w-40 flex-none">Content</div>
+              <div className="w-40 flex-none">{t('contents.localization.element.content')}</div>
               <div className="flex flex-row space-x-1 grow ">
                 <div className="flex-none flex flex-col">
                   <div className="w-40 bg-secondary rounded-sm p-2">{defaultLocate.name}</div>
@@ -478,6 +483,7 @@ interface ContentLocalizationDetailMainProps {
 
 const ContentLocalizationDetailMain = (props: ContentLocalizationDetailMainProps) => {
   const { locateCode } = props;
+  const { t } = useTranslation();
   const navigator = useNavigate();
   const location = useLocation();
   const { contentId } = useContentDetailUI();
@@ -509,8 +515,12 @@ const ContentLocalizationDetailMain = (props: ContentLocalizationDetailMainProps
             }}
           />
           <h3 className="text-lg font-medium">{localization.name}</h3>
-          {!contentLocalization.enabled && <Badge variant={'destructive'}>Disabled</Badge>}
-          {contentLocalization.enabled && <Badge variant={'success'}>Enabled</Badge>}
+          {!contentLocalization.enabled && (
+            <Badge variant={'destructive'}>{t('contents.localization.status.disabled')}</Badge>
+          )}
+          {contentLocalization.enabled && (
+            <Badge variant={'success'}>{t('contents.localization.status.enabled')}</Badge>
+          )}
         </div>
         {version?.steps?.map((step, index) => {
           return (

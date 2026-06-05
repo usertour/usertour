@@ -14,9 +14,11 @@ import {
 import { AnalyticsViewsByTask } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 import { calculateRate } from '@/utils/analytics';
+import { useTranslation } from 'react-i18next';
 
 export const AnalyticsTasks = () => {
   const { analyticsData, loading } = useContentAnalytics();
+  const { t } = useTranslation();
 
   if (loading) {
     return <AnalyticsTasksSkeleton />;
@@ -26,19 +28,25 @@ export const AnalyticsTasks = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-row items-center justify-between">
-          <div className="grow">Task breakdown</div>
+          <div className="grow">{t('contents.analytics.tasks.title')}</div>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Table className="table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-72">Task</TableHead>
-              <TableHead className="text-right w-32">Unique views</TableHead>
-              <TableHead className="text-right w-32">Completion rate</TableHead>
+              <TableHead className="w-72">{t('contents.analytics.tasks.task')}</TableHead>
+              <TableHead className="text-right w-32">
+                {t('contents.analytics.tasks.uniqueViews')}
+              </TableHead>
+              <TableHead className="text-right w-32">
+                {t('contents.analytics.tasks.completionRate')}
+              </TableHead>
               <TableHead className="w-6" />
               <TableHead />
-              <TableHead className="text-right w-32">Click rate</TableHead>
+              <TableHead className="text-right w-32">
+                {t('contents.analytics.tasks.clickRate')}
+              </TableHead>
               <TableHead className="w-6" />
               <TableHead />
             </TableRow>
@@ -90,7 +98,7 @@ export const AnalyticsTasks = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
-                  No results.
+                  {t('contents.analytics.common.noResults')}
                 </TableCell>
               </TableRow>
             )}

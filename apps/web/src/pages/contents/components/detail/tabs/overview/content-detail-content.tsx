@@ -35,6 +35,7 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContentEditForm } from '../../../shared/content-edit-form';
 import {
   BannerPreviewContent,
@@ -157,6 +158,7 @@ const ContentPreviewCard = ({
   leftContent,
   warning,
 }: ContentPreviewCardProps) => {
+  const { t } = useTranslation();
   return (
     <>
       <GoogleFontCss settings={themeSettings} />
@@ -177,7 +179,7 @@ const ContentPreviewCard = ({
                   <EditIcon className="w-4 h-4 cursor-pointer" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Edit</TooltipContent>
+              <TooltipContent>{t('contents.overview.previewCard.edit')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -189,7 +191,9 @@ const ContentPreviewCard = ({
 
           {updatedAt && (
             <div className="text-xs absolute right-0 bottom-0 text-muted-foreground">
-              Last edited {format(new Date(updatedAt), 'PPpp')}
+              {t('contents.overview.previewCard.lastEdited', {
+                date: format(new Date(updatedAt), 'PPpp'),
+              })}
             </div>
           )}
         </div>
@@ -206,6 +210,7 @@ const ContentDetailContentStep = ({
   onEdit,
   disabled,
 }: ContentDetailContentStepProps) => {
+  const { t } = useTranslation();
   const currentTheme = useThemeHandler(currentVersion, currentStep.themeId);
   const { height, setContentRect, setScale } = useScaledPreview();
 
@@ -240,17 +245,31 @@ const ContentDetailContentStep = ({
       {!isHiddenStep && (
         <>
           <ContentBadge>
-            Width:{' '}
-            {currentStep.setting.width !== undefined ? `${currentStep.setting.width}px` : 'Auto'}
+            {t('contents.overview.step.width', {
+              value:
+                currentStep.setting.width !== undefined
+                  ? `${currentStep.setting.width}px`
+                  : t('contents.overview.step.auto'),
+            })}
           </ContentBadge>
-          <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
-          <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
           <ContentBadge>
-            {!currentStep.setting.skippable && 'Not skippable'}
-            {currentStep.setting.skippable && 'Skippable'}
+            {t('contents.overview.step.height', {
+              value: `${Math.floor(currentStep.setting.height)}px`,
+            })}
           </ContentBadge>
-          {currentStep.setting.enabledBackdrop && <ContentBadge>Backdrop enabled</ContentBadge>}
-          {!currentStep.setting.enabledBackdrop && <ContentBadge>Backdrop disabled</ContentBadge>}
+          <ContentBadge>
+            {t('contents.overview.step.theme', { name: currentTheme.name ?? '' })}
+          </ContentBadge>
+          <ContentBadge>
+            {!currentStep.setting.skippable && t('contents.overview.step.notSkippable')}
+            {currentStep.setting.skippable && t('contents.overview.step.skippable')}
+          </ContentBadge>
+          {currentStep.setting.enabledBackdrop && (
+            <ContentBadge>{t('contents.overview.step.backdropEnabled')}</ContentBadge>
+          )}
+          {!currentStep.setting.enabledBackdrop && (
+            <ContentBadge>{t('contents.overview.step.backdropDisabled')}</ContentBadge>
+          )}
         </>
       )}
     </>
@@ -259,10 +278,7 @@ const ContentDetailContentStep = ({
   const warning = !stepIsReachable(currentVersion.steps as Step[], currentStep) ? (
     <div className="text-xs flex flex-row items-center text-warning space-x-1 pt-2">
       <ExclamationTriangleIcon className="h-3 w-3" />
-      <span>
-        This step is not reachable from the start step. Add a button or trigger that links to this
-        step, or delete it in the builder.
-      </span>
+      <span>{t('contents.overview.step.unreachableWarning')}</span>
     </div>
   ) : undefined;
 
@@ -296,6 +312,7 @@ const LauncherContentPreview = ({
   onEdit,
   disabled,
 }: LauncherContentPreviewProps) => {
+  const { t } = useTranslation();
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as LauncherData;
 
@@ -311,18 +328,29 @@ const LauncherContentPreview = ({
     <>
       <ContentBadge>{data.type}</ContentBadge>
       <ContentBadge>
-        Target element:{' '}
-        {data.target.element?.customSelector ? data.target.element.customSelector : 'Not set'}
+        {t('contents.overview.launcher.targetElement', {
+          value: data.target.element?.customSelector
+            ? data.target.element.customSelector
+            : t('contents.overview.launcher.notSet'),
+        })}
       </ContentBadge>
-      <ContentBadge>Target alignment: {data.target.alignment.alignType}</ContentBadge>
-      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.launcher.targetAlignment', {
+          value: data.target.alignment.alignType,
+        })}
+      </ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.launcher.theme', { name: currentTheme.name ?? '' })}
+      </ContentBadge>
       {data.type === LauncherDataType.ICON && data.iconType && (
-        <ContentBadge>Icon type: {data.iconType}</ContentBadge>
+        <ContentBadge>
+          {t('contents.overview.launcher.iconType', { value: data.iconType })}
+        </ContentBadge>
       )}
       <ContentBadge>
         {data.behavior.actionType === LauncherActionType.PERFORM_ACTION
-          ? 'Perform action'
-          : 'Show tooltip'}
+          ? t('contents.overview.launcher.performAction')
+          : t('contents.overview.launcher.showTooltip')}
       </ContentBadge>
     </>
   );
@@ -354,6 +382,7 @@ const ChecklistContentPreview = ({
   onEdit,
   disabled,
 }: ChecklistContentPreviewProps) => {
+  const { t } = useTranslation();
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as ChecklistData;
   const { height, setContentRect, setScale } = useScaledPreview();
@@ -374,20 +403,34 @@ const ChecklistContentPreview = ({
 
   const badges = (
     <>
-      <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
       <ContentBadge>
-        Initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'Button'}
-        {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'Expanded'}
+        {t('contents.overview.checklist.launcherButtonText', { value: data.buttonText ?? '' })}
       </ContentBadge>
-      <ContentBadge>Task completion order: {data.completionOrder}</ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.checklist.initialDisplay', {
+          value:
+            data.initialDisplay === ChecklistInitialDisplay.BUTTON
+              ? t('contents.overview.checklist.initialDisplayButton')
+              : data.initialDisplay === ChecklistInitialDisplay.EXPANDED
+                ? t('contents.overview.checklist.initialDisplayExpanded')
+                : '',
+        })}
+      </ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.checklist.completionOrder', { value: data.completionOrder })}
+      </ContentBadge>
       {data.preventDismissChecklist && (
-        <ContentBadge>Prevent users from dismissing checklist</ContentBadge>
+        <ContentBadge>{t('contents.overview.checklist.preventDismiss')}</ContentBadge>
       )}
       {!data.preventDismissChecklist && (
-        <ContentBadge>Allow users to dismiss checklist</ContentBadge>
+        <ContentBadge>{t('contents.overview.checklist.allowDismiss')}</ContentBadge>
       )}
-      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
-      <ContentBadge>Items: {data.items.length}</ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.checklist.theme', { name: currentTheme.name ?? '' })}
+      </ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.checklist.items', { count: data.items.length })}
+      </ContentBadge>
     </>
   );
 
@@ -417,6 +460,7 @@ const BannerContentPreview = ({
   onEdit,
   disabled,
 }: BannerContentPreviewProps) => {
+  const { t } = useTranslation();
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as BannerData;
   const { height, setContentRect, setScale } = useScaledPreview();
@@ -445,46 +489,61 @@ const BannerContentPreview = ({
     data.embedPlacement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT ||
     data.embedPlacement === BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT;
   const placementLabelMap: Record<BannerEmbedPlacement, string> = {
-    [BannerEmbedPlacement.TOP_OF_PAGE]: 'Top of page',
-    [BannerEmbedPlacement.BOTTOM_OF_PAGE]: 'Bottom of page',
-    [BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT]: 'Top of container element',
-    [BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT]: 'Bottom of container element',
-    [BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT]: 'Immediately before element',
-    [BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT]: 'Immediately after element',
+    [BannerEmbedPlacement.TOP_OF_PAGE]: t('contents.overview.banner.placement.topOfPage'),
+    [BannerEmbedPlacement.BOTTOM_OF_PAGE]: t('contents.overview.banner.placement.bottomOfPage'),
+    [BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT]: t(
+      'contents.overview.banner.placement.topOfContainerElement',
+    ),
+    [BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT]: t(
+      'contents.overview.banner.placement.bottomOfContainerElement',
+    ),
+    [BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT]: t(
+      'contents.overview.banner.placement.immediatelyBeforeElement',
+    ),
+    [BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT]: t(
+      'contents.overview.banner.placement.immediatelyAfterElement',
+    ),
   };
   const bannerBadgeTextClassName = 'max-w-64';
 
   const badges = (
     <>
       <ContentBadge textClassName={bannerBadgeTextClassName}>
-        Show banner at {placementLabelMap[data.embedPlacement] ?? data.embedPlacement}
+        {t('contents.overview.banner.showBannerAt', {
+          placement: placementLabelMap[data.embedPlacement] ?? data.embedPlacement,
+        })}
       </ContentBadge>
       {placementRequiresElement && (
         <ContentBadge textClassName={bannerBadgeTextClassName}>
-          Target element:{' '}
-          {data.containerElement?.customSelector ? data.containerElement.customSelector : 'Not set'}
+          {t('contents.overview.banner.targetElement', {
+            value: data.containerElement?.customSelector
+              ? data.containerElement.customSelector
+              : t('contents.overview.banner.notSet'),
+          })}
         </ContentBadge>
       )}
       {data.stickToTopOfViewport && (
         <ContentBadge textClassName={bannerBadgeTextClassName}>
-          Stick to top of viewport
+          {t('contents.overview.banner.stickToTopOfViewport')}
         </ContentBadge>
       )}
       <ContentBadge textClassName={bannerBadgeTextClassName}>
         {data.allowUsersToDismissEmbed
-          ? 'Allow users to dismiss banner'
-          : 'Prevent users from dismissing banner'}
+          ? t('contents.overview.banner.allowDismiss')
+          : t('contents.overview.banner.preventDismiss')}
       </ContentBadge>
       <ContentBadge textClassName={bannerBadgeTextClassName}>
-        {data.animateWhenEmbedAppears ? 'Animate when banner appears' : 'No enter animation'}
+        {data.animateWhenEmbedAppears
+          ? t('contents.overview.banner.animateOnAppear')
+          : t('contents.overview.banner.noEnterAnimation')}
       </ContentBadge>
       {data.overlayEmbedOverAppContent && (
         <ContentBadge textClassName={bannerBadgeTextClassName}>
-          Overlay over app content
+          {t('contents.overview.banner.overlayOverAppContent')}
         </ContentBadge>
       )}
       <ContentBadge textClassName={bannerBadgeTextClassName}>
-        Theme: {currentTheme.name ?? ''}
+        {t('contents.overview.banner.theme', { name: currentTheme.name ?? '' })}
       </ContentBadge>
     </>
   );
@@ -515,6 +574,7 @@ const ResourceCenterContentPreview = ({
   onEdit,
   disabled,
 }: ResourceCenterContentPreviewProps) => {
+  const { t } = useTranslation();
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as ResourceCenterData;
   const { height, setContentRect, setScale } = useScaledPreview();
@@ -535,10 +595,18 @@ const ResourceCenterContentPreview = ({
 
   const badges = (
     <>
-      <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
-      <ContentBadge>Header text: {data.headerText ?? ''}</ContentBadge>
-      <ContentBadge>Tabs: {data.tabs?.length ?? 0}</ContentBadge>
-      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.resourceCenter.launcherButtonText', { value: data.buttonText ?? '' })}
+      </ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.resourceCenter.headerText', { value: data.headerText ?? '' })}
+      </ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.resourceCenter.tabs', { count: data.tabs?.length ?? 0 })}
+      </ContentBadge>
+      <ContentBadge>
+        {t('contents.overview.resourceCenter.theme', { name: currentTheme.name ?? '' })}
+      </ContentBadge>
     </>
   );
 

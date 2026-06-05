@@ -25,15 +25,11 @@ import { addDays, differenceInCalendarDays, format, startOfMonth, startOfWeek } 
 import { useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { AnalyticsDaysSkeleton } from './analytics-skeleton';
 
 type Granularity = 'daily' | 'weekly' | 'monthly';
-
-const GRANULARITY_LABEL: Record<Granularity, string> = {
-  daily: 'Daily',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-};
 
 const availableGranularities = (rangeDays: number): Granularity[] => {
   if (rangeDays <= 14) return ['daily'];
@@ -56,36 +52,54 @@ const COLOR_VIEWS_SOFT = 'hsl(217 91% 74%)';
 const COLOR_ENGAGEMENT = 'hsl(142 71% 45%)';
 const COLOR_ENGAGEMENT_SOFT = 'hsl(142 60% 58%)';
 
-const generateViewChartConfig = (contentType: ContentDataType): ChartConfig => {
+const generateViewChartConfig = (contentType: ContentDataType, t: TFunction): ChartConfig => {
   if (contentType === ContentDataType.TRACKER) {
     return {
-      uniqueViews: { label: 'Unique events', color: COLOR_VIEWS },
-      totalViews: { label: 'Events', color: COLOR_VIEWS_SOFT },
+      uniqueViews: { label: t('contents.analytics.chart.uniqueEvents'), color: COLOR_VIEWS },
+      totalViews: { label: t('contents.analytics.chart.events'), color: COLOR_VIEWS_SOFT },
     };
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return {
-      uniqueViews: { label: 'Unique views', color: COLOR_VIEWS },
-      uniqueCompletions: { label: 'Activations', color: COLOR_ENGAGEMENT },
+      uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
+      uniqueCompletions: {
+        label: t('contents.analytics.chart.activations'),
+        color: COLOR_ENGAGEMENT,
+      },
     };
   }
   if (contentType === ContentDataType.BANNER) {
     return {
-      uniqueViews: { label: 'Unique views', color: COLOR_VIEWS },
-      uniqueCompletions: { label: 'Dismissals', color: COLOR_ENGAGEMENT },
+      uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
+      uniqueCompletions: {
+        label: t('contents.analytics.chart.dismissals'),
+        color: COLOR_ENGAGEMENT,
+      },
     };
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return {
-      uniqueViews: { label: 'Unique user interactions', color: COLOR_VIEWS },
-      uniqueCompletions: { label: 'Unique clickers', color: COLOR_ENGAGEMENT },
+      uniqueViews: {
+        label: t('contents.analytics.chart.uniqueUserInteractions'),
+        color: COLOR_VIEWS,
+      },
+      uniqueCompletions: {
+        label: t('contents.analytics.chart.uniqueClickers'),
+        color: COLOR_ENGAGEMENT,
+      },
     };
   }
   return {
-    uniqueViews: { label: 'Unique views', color: COLOR_VIEWS },
-    uniqueCompletions: { label: 'Unique completions', color: COLOR_ENGAGEMENT },
-    totalViews: { label: 'Total views', color: COLOR_VIEWS_SOFT },
-    totalCompletions: { label: 'Total completions', color: COLOR_ENGAGEMENT_SOFT },
+    uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
+    uniqueCompletions: {
+      label: t('contents.analytics.chart.uniqueCompletions'),
+      color: COLOR_ENGAGEMENT,
+    },
+    totalViews: { label: t('contents.analytics.chart.totalViews'), color: COLOR_VIEWS_SOFT },
+    totalCompletions: {
+      label: t('contents.analytics.chart.totalCompletions'),
+      color: COLOR_ENGAGEMENT_SOFT,
+    },
   };
 };
 
@@ -98,12 +112,11 @@ type BucketData = {
   uniqueCompletions: number;
 };
 
-const formatDateRange = (range: DateRange | undefined): string | null => {
+const formatDateRange = (range: DateRange | undefined, t: TFunction): string | null => {
   if (!range?.from || !range?.to) return null;
   const days = differenceInCalendarDays(new Date(range.to), new Date(range.from)) + 1;
-  return `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d')} · ${days} ${
-    days === 1 ? 'day' : 'days'
-  }`;
+  const dayLabel = t('contents.analytics.performance.dayCount', { count: days });
+  return `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d')} · ${dayLabel}`;
 };
 
 const formatBucketLabel = (date: Date, granularity: Granularity): string => {
@@ -188,18 +201,28 @@ const ViewChart = ({
   </ChartContainer>
 );
 
-const EmptyState = () => (
-  <div className="flex h-96 items-center justify-center text-sm text-muted-foreground">
-    No data in this range
-  </div>
-);
+const EmptyState = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex h-96 items-center justify-center text-sm text-muted-foreground">
+      {t('contents.analytics.performance.noData')}
+    </div>
+  );
+};
 
 export const AnalyticsDays = () => {
   const { dateRange } = useAnalyticsUI();
   const { analyticsData, loading } = useContentAnalytics();
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
+  const { t } = useTranslation();
   const contentType = content?.type;
+
+  const granularityLabel: Record<Granularity, string> = {
+    daily: t('contents.analytics.performance.granularity.daily'),
+    weekly: t('contents.analytics.performance.granularity.weekly'),
+    monthly: t('contents.analytics.performance.granularity.monthly'),
+  };
 
   const rangeDays = useMemo(() => {
     if (!dateRange?.from || !dateRange?.to) return 0;
@@ -284,23 +307,24 @@ export const AnalyticsDays = () => {
     contentType !== ContentDataType.TRACKER &&
     contentType !== ContentDataType.RESOURCE_CENTER;
 
-  const dateLabel = formatDateRange(dateRange);
+  const dateLabel = formatDateRange(dateRange, t);
 
   const rateSummary =
     !showRate || !hasData ? null : avgUniqueRate === null ? (
-      'No completions in range'
+      t('contents.analytics.performance.noCompletions')
     ) : contentType === ContentDataType.LAUNCHER ? (
       <>
-        Avg activation rate{' '}
+        {t('contents.analytics.performance.avgActivationRate')}{' '}
         <span className="font-medium text-foreground tabular-nums">{avgUniqueRate}%</span>
       </>
     ) : (
       <>
-        Avg unique rate{' '}
+        {t('contents.analytics.performance.avgUniqueRate')}{' '}
         <span className="font-medium text-foreground tabular-nums">{avgUniqueRate}%</span>
         {avgTotalRate !== null && (
           <>
-            {' · '}Avg total rate{' '}
+            {' · '}
+            {t('contents.analytics.performance.avgTotalRate')}{' '}
             <span className="font-medium text-foreground tabular-nums">{avgTotalRate}%</span>
           </>
         )}
@@ -312,7 +336,7 @@ export const AnalyticsDays = () => {
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1.5">
-            <CardTitle>Performance</CardTitle>
+            <CardTitle>{t('contents.analytics.performance.title')}</CardTitle>
             {dateLabel && <CardDescription>{dateLabel}</CardDescription>}
             {rateSummary && <div className="text-xs text-muted-foreground">{rateSummary}</div>}
           </div>
@@ -324,7 +348,7 @@ export const AnalyticsDays = () => {
               <SelectContent>
                 {granularityOptions.map((opt) => (
                   <SelectItem key={opt} value={opt}>
-                    {GRANULARITY_LABEL[opt]}
+                    {granularityLabel[opt]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -334,7 +358,7 @@ export const AnalyticsDays = () => {
       </CardHeader>
       <CardContent>
         {hasData ? (
-          <ViewChart chartConfig={generateViewChartConfig(contentType)} chartData={chartData} />
+          <ViewChart chartConfig={generateViewChartConfig(contentType, t)} chartData={chartData} />
         ) : (
           <EmptyState />
         )}

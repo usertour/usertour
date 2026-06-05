@@ -18,6 +18,7 @@ import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useUpdateContentMutation } from '@usertour/hooks';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
+import { useTranslation } from 'react-i18next';
 
 interface AnalyticsNPSProps {
   questionAnalytics: ContentQuestionAnalytics;
@@ -45,9 +46,10 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const [selectedDay, setSelectedDay] = useState<NPSByDay | null>(null);
   const { invoke: updateContent } = useUpdateContentMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const npsChartConfig = {
     nps: {
-      label: 'NPS Score',
+      label: t('contents.analytics.nps.npsScore'),
       color: 'hsl(var(--primary))',
     },
   };
@@ -90,19 +92,19 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
       });
 
       if (response) {
-        toast({ title: 'Rolling window updated' });
+        toast({ title: t('contents.analytics.rollingWindow.updated') });
         onRollingWindowChange(true);
       } else {
         toast({
           variant: 'destructive',
-          title: 'Failed to update rolling window',
+          title: t('contents.analytics.rollingWindow.updateFailed'),
         });
         onRollingWindowChange(false);
       }
     } catch (_) {
       toast({
         variant: 'destructive',
-        title: 'Failed to update rolling window',
+        title: t('contents.analytics.rollingWindow.updateFailed'),
       });
       onRollingWindowChange(false);
     }
@@ -112,7 +114,9 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
     <Card>
       <CardHeader>
         <CardTitle className="space-between flex flex-row items-center">
-          <div className="grow">{question.data.name} - Net Promoter Score</div>
+          <div className="grow">
+            {t('contents.analytics.nps.title', { name: question.data.name })}
+          </div>
           <RollingWindowDialog
             key={question.type}
             currentValue={rollingWindow.nps}
@@ -125,7 +129,9 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
           {/* Current NPS Score */}
           <div className="flex flex-col items-center justify-center ">
             <div className="text-6xl font-bold text-primary">{npsScore}</div>
-            <div className="text-sm text-muted-foreground ml-2">Current NPS</div>
+            <div className="text-sm text-muted-foreground ml-2">
+              {t('contents.analytics.nps.currentNps')}
+            </div>
           </div>
 
           {/* NPS Trend Chart */}
@@ -150,7 +156,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
                   <ChartTooltipContent
                     formatter={(value) => (
                       <div className="flex items-center justify-between gap-2">
-                        <span>NPS Score</span>
+                        <span>{t('contents.analytics.nps.npsScore')}</span>
                         <span className="font-medium">{value}</span>
                       </div>
                     )}
@@ -174,10 +180,14 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
               <span>{endDate}</span>
             </div>
             <div className="flex flex-row gap-2 items-center justify-center">
-              <span>{totalResponses}</span> <span className="text-muted-foreground">responses</span>
+              <span>{totalResponses}</span>{' '}
+              <span className="text-muted-foreground">{t('contents.analytics.nps.responses')}</span>
             </div>
             <div className="flex flex-row gap-2 items-center justify-center">
-              <span>{rate}%</span> <span className="text-muted-foreground">response rate</span>
+              <span>{rate}%</span>{' '}
+              <span className="text-muted-foreground">
+                {t('contents.analytics.nps.responseRate')}
+              </span>
             </div>
           </div>
           {/* <NPSGauge score={selectedData?.nps ?? npsAnalysis?.npsScore ?? 0} /> */}
@@ -215,6 +225,7 @@ interface NPSDistributionProps {
 }
 
 export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributionProps) => {
+  const { t } = useTranslation();
   if (!npsByDay) return null;
   const distribution = npsByDay.distribution;
   const detractorsPercentage = npsByDay.metrics.detractors.percentage ?? 0;
@@ -226,7 +237,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
         {/* Detractors Section - 7 columns */}
         <div className="col-span-7 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
-            <div className="text-sm font-medium">Detractors</div>
+            <div className="text-sm font-medium">{t('contents.analytics.nps.detractors')}</div>
             <Badge variant="secondary">{detractorsPercentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
@@ -258,7 +269,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
         {/* Passives Section - 2 columns */}
         <div className="col-span-2 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
-            <div className="text-sm font-medium">Passives</div>
+            <div className="text-sm font-medium">{t('contents.analytics.nps.passives')}</div>
             <Badge variant="secondary">{passivesPercentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
@@ -290,7 +301,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
         {/* Promoters Section - 2 columns */}
         <div className="col-span-2 flex flex-col">
           <div className="text-center border-b mb-4 pb-2">
-            <div className="text-sm font-medium">Promoters</div>
+            <div className="text-sm font-medium">{t('contents.analytics.nps.promoters')}</div>
             <Badge variant="secondary">{promotersPercentage}%</Badge>
           </div>
           <div className="flex items-end gap-2">
@@ -334,6 +345,7 @@ interface NPSGaugeProps {
 }
 
 export const NPSGauge = ({ score }: NPSGaugeProps) => {
+  const { t } = useTranslation();
   // Fixed dimensions
   const CHART_WIDTH = 300;
   const CHART_HEIGHT = 150;
@@ -371,7 +383,7 @@ export const NPSGauge = ({ score }: NPSGaugeProps) => {
       {/* Score display */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-center">
         <div className="text-2xl font-bold">{score}</div>
-        <div className="text-sm text-gray-500">NPS</div>
+        <div className="text-sm text-gray-500">{t('contents.analytics.nps.npsLabel')}</div>
       </div>
 
       {/* Scale labels */}

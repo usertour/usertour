@@ -10,12 +10,14 @@ import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';
 import { DownloadIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
 
 export const AnalyticsSessions = () => {
   const { contentId, dateRange, timezone } = useAnalyticsUI();
   const { environment } = useAppContext();
+  const { t } = useTranslation();
 
   // `useCursorPagination` watches this object's identity to know when
   // to reset pagination back to page 1 — any field change (date
@@ -57,16 +59,13 @@ export const AnalyticsSessions = () => {
         <CardHeader>
           <CardTitle className="space-between flex flex-row  items-center">
             <div className="grow flex items-center gap-1">
-              Sessions
-              <QuestionTooltip>
-                Each user's engagement session with this content, showing when it started and its
-                current state.
-              </QuestionTooltip>
+              {t('contents.analytics.sessions.title')}
+              <QuestionTooltip>{t('contents.analytics.sessions.tooltip')}</QuestionTooltip>
             </div>
             <ExportDropdownMenu totalCount={totalCount}>
               <Button variant="ghost" className="h-8 text-primary hover:text-primary">
                 <DownloadIcon className="mr-1 w-4 h-4" />
-                Export to CSV
+                {t('contents.analytics.sessions.exportToCsv')}
               </Button>
             </ExportDropdownMenu>
           </CardTitle>

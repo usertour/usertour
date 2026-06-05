@@ -7,19 +7,21 @@ import { SpinnerIcon } from '@usertour/icons';
 import { Content, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { VersionRow, VersionRowChip } from './version-row';
 
 type VersionGroup = { key: string; label: string; versions: ContentVersion[] };
 
-const groupVersionsByDay = (versions: ContentVersion[]): VersionGroup[] => {
+const groupVersionsByDay = (versions: ContentVersion[], t: TFunction): VersionGroup[] => {
   const groups = new Map<string, VersionGroup>();
   for (const version of versions) {
     const date = new Date(version.createdAt ?? Date.now());
     const key = format(date, 'yyyy-MM-dd');
     let label: string;
-    if (isToday(date)) label = 'Today';
-    else if (isYesterday(date)) label = 'Yesterday';
+    if (isToday(date)) label = t('contents.versions.group.today');
+    else if (isYesterday(date)) label = t('contents.versions.group.yesterday');
     else label = format(date, 'PP');
 
     const existing = groups.get(key);
@@ -57,6 +59,7 @@ const buildAllChipsMap = (content: Content | null): Map<string, VersionRowChip[]
 };
 
 export const VersionHistoryList = () => {
+  const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { versionList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
@@ -80,7 +83,7 @@ export const VersionHistoryList = () => {
 
   const chipsMap = useMemo(() => buildAllChipsMap(content), [content]);
 
-  const groupedHistory = useMemo(() => groupVersionsByDay(versionList), [versionList]);
+  const groupedHistory = useMemo(() => groupVersionsByDay(versionList, t), [versionList, t]);
 
   // First-load gating only — once any versions are in cache, a
   // background refetch shouldn't collapse the list to a skeleton.
@@ -88,11 +91,8 @@ export const VersionHistoryList = () => {
     return (
       <Card className="flex flex-col p-4 space-y-4 w-full">
         <h3 className="text-lg font-medium flex items-center gap-1">
-          Version history
-          <QuestionTooltip>
-            A timeline of every version, including your current draft and anything currently live.
-            Restore or review past versions from here.
-          </QuestionTooltip>
+          {t('contents.versions.title')}
+          <QuestionTooltip>{t('contents.versions.tooltip')}</QuestionTooltip>
         </h3>
         <Separator />
         <ListSkeleton length={6} />
@@ -104,21 +104,20 @@ export const VersionHistoryList = () => {
     <Card className="flex flex-col p-4 space-y-4 w-full">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium flex items-center gap-1">
-          Version history
-          <QuestionTooltip>
-            A timeline of every version, including your current draft and anything currently live.
-            Restore or review past versions from here.
-          </QuestionTooltip>
+          {t('contents.versions.title')}
+          <QuestionTooltip>{t('contents.versions.tooltip')}</QuestionTooltip>
         </h3>
         {totalCount > 0 && (
-          <span className="text-sm text-muted-foreground">{totalCount} versions</span>
+          <span className="text-sm text-muted-foreground">
+            {t('contents.versions.countLabel', { count: totalCount })}
+          </span>
         )}
       </div>
       <Separator />
 
       {versionList.length === 0 && !hasNextPage ? (
         <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-          No versions yet.
+          {t('contents.versions.empty')}
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -166,7 +165,9 @@ export const VersionHistoryList = () => {
       <div ref={sentryRef} className="flex h-10 items-center justify-center">
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
         {!hasNextPage && versionList.length > 0 && (
-          <span className="text-xs text-muted-foreground">End of history</span>
+          <span className="text-xs text-muted-foreground">
+            {t('contents.versions.endOfHistory')}
+          </span>
         )}
       </div>
     </Card>

@@ -18,6 +18,7 @@ import {
 import { AnalyticsViewsByStep, StepContentType } from '@usertour/types';
 import { useState } from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { GoalStepBadge } from '@/components/goal-step-badge';
 import { calculateRate, calculateUniqueFailureRate } from '@/utils/analytics';
@@ -27,6 +28,7 @@ import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-
 
 export const AnalyticsSteps = () => {
   const { analyticsData, loading } = useContentAnalytics();
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<AnalyticsViewsByStep | null>(null);
 
@@ -54,17 +56,21 @@ export const AnalyticsSteps = () => {
       <Card>
         <CardHeader>
           <CardTitle className="space-between flex flex-row items-center">
-            <div className="grow">Step funnel</div>
+            <div className="grow">{t('contents.analytics.steps.title')}</div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-72">Step</TableHead>
-                <TableHead className="w-28 text-right">Unique views</TableHead>
+                <TableHead className="w-72">{t('contents.analytics.steps.step')}</TableHead>
+                <TableHead className="w-28 text-right">
+                  {t('contents.analytics.steps.uniqueViews')}
+                </TableHead>
                 <TableHead className="w-6" />
-                <TableHead className="w-28 text-right">View rate</TableHead>
+                <TableHead className="w-28 text-right">
+                  {t('contents.analytics.steps.viewRate')}
+                </TableHead>
                 <TableHead className="w-6" />
                 <TableHead />
                 <TableHead className="w-28 text-right">
@@ -76,7 +82,7 @@ export const AnalyticsSteps = () => {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Tooltip target not found</p>
+                        <p>{t('contents.analytics.steps.tooltipTargetNotFound')}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -135,7 +141,7 @@ export const AnalyticsSteps = () => {
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Click to view tooltip targets not found</p>
+                                  <p>{t('contents.analytics.steps.clickToViewTargetsNotFound')}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -149,7 +155,7 @@ export const AnalyticsSteps = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
-                    No results.
+                    {t('contents.analytics.common.noResults')}
                   </TableCell>
                 </TableRow>
               )}

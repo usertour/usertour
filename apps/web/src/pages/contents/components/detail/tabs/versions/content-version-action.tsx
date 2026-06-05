@@ -12,6 +12,7 @@ import {
 import { PlaneIcon } from '@usertour/icons';
 import { ContentVersion } from '@usertour/types';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentRestoreForm } from '../../../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
@@ -23,6 +24,7 @@ type ContentVersionActionProps = {
 };
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
+  const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
   // No `refetch` destructure: the publish / restore mutations declare
   // `refetchQueries: ['getContent', ...]`, so Apollo refreshes the
@@ -60,7 +62,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
             className="cursor-pointer"
           >
             <PlaneIcon className="w-6" width={16} height={16} />
-            Publish...
+            {t('contents.versions.action.publish')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -71,7 +73,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
             className="cursor-pointer"
           >
             <ResetIcon className="w-6" width={16} height={16} />
-            Restore...
+            {t('contents.versions.action.restore')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

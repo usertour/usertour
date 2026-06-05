@@ -2,6 +2,7 @@ import { Badge, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from 
 import { cn } from '@usertour/tailwind';
 import { ContentVersion } from '@usertour/types';
 import { format, formatDistanceToNowStrict } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { ContentVersionAction } from './content-version-action';
 
 export type VersionRowChip =
@@ -20,17 +21,17 @@ const chipClass: Record<VersionRowChip['kind'], string> = {
   live: 'bg-success/15 text-success hover:bg-success/15',
 };
 
-const chipLabel = (chip: VersionRowChip): string => {
-  if (chip.kind === 'draft') return 'Current draft';
-  return `Live in ${chip.environmentName}`;
-};
-
 export const VersionRow = ({
   version,
   chips = [],
   showCreatedLabel = false,
   createdDisplay = 'relative',
 }: VersionRowProps) => {
+  const { t } = useTranslation();
+  const chipLabel = (chip: VersionRowChip): string => {
+    if (chip.kind === 'draft') return t('contents.versions.chip.currentDraft');
+    return t('contents.versions.chip.live', { environment: chip.environmentName });
+  };
   const createdAt = new Date(version.createdAt ?? Date.now());
   const updatedAt = new Date(version.updatedAt ?? version.createdAt ?? Date.now());
   const hasChips = chips.length > 0;
@@ -50,7 +51,7 @@ export const VersionRow = ({
   const timeCell =
     createdDisplay === 'absolute' ? (
       <span className="text-sm text-muted-foreground truncate tabular-nums">
-        {showLabel ? 'Created ' : ''}
+        {showLabel ? `${t('contents.versions.createdLabel')} ` : ''}
         {createdText}
       </span>
     ) : (
@@ -63,7 +64,7 @@ export const VersionRow = ({
                 createdDisplay === 'timeOnly' && 'tabular-nums',
               )}
             >
-              {showLabel ? 'Created ' : ''}
+              {showLabel ? `${t('contents.versions.createdLabel')} ` : ''}
               {createdText}
             </span>
           </TooltipTrigger>
@@ -89,7 +90,9 @@ export const VersionRow = ({
             <span key={`${chip.kind}-${idx}`} className="inline-flex items-center gap-1.5">
               {badge}
               <span className="text-xs text-muted-foreground">
-                edited {formatDistanceToNowStrict(updatedAt, { addSuffix: true })}
+                {t('contents.versions.editedRelative', {
+                  time: formatDistanceToNowStrict(updatedAt, { addSuffix: true }),
+                })}
               </span>
             </span>
           );
@@ -104,7 +107,9 @@ export const VersionRow = ({
                   <span className="cursor-default">{badge}</span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Published {formatDistanceToNowStrict(publishedAt, { addSuffix: true })}
+                  {t('contents.versions.publishedRelative', {
+                    time: formatDistanceToNowStrict(publishedAt, { addSuffix: true }),
+                  })}
                   <div className="text-xs opacity-70">{format(publishedAt, 'PPpp')}</div>
                 </TooltipContent>
               </Tooltip>

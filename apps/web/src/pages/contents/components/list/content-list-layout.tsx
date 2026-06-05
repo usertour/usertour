@@ -8,6 +8,7 @@ import { useContentCount } from '@usertour/hooks';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 interface ContentListLayoutProps {
@@ -65,6 +66,7 @@ export const ContentListLayout = memo(
   }: ContentListLayoutProps) => {
     const [open, setOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
+    const { t } = useTranslation();
     const { isViewOnly, environment } = useAppContext();
     const { contents, hasNextPage, loadingMore, fetchNextPage, refetch, loading } = useContentList(
       environment?.id,
@@ -129,16 +131,21 @@ export const ContentListLayout = memo(
       }
     }, [contentLength, isPublishedView, refetchDraftCount, refetchPublishedCount]);
 
-    const displayTitle = `${isPublishedView ? 'Published' : 'Draft'} ${title.toLowerCase()}`;
+    const lowerTitle = title.toLowerCase();
+    const displayTitle = isPublishedView
+      ? t('contents.listView.displayTitle.published', { title: lowerTitle })
+      : t('contents.listView.displayTitle.draft', { title: lowerTitle });
 
     // Default filtered empty messages based on title
-    const actualFilteredEmptyTitle = filteredEmptyTitle ?? `No published ${title.toLowerCase()}`;
+    const actualFilteredEmptyTitle =
+      filteredEmptyTitle ?? t('contents.listView.filteredEmpty.title', { title: lowerTitle });
     const actualFilteredEmptyDescription =
-      filteredEmptyDescription ?? 'Content exists but none are published yet.';
+      filteredEmptyDescription ?? t('contents.listView.filteredEmpty.description');
     const actualFilteredEmptyDraftTitle =
-      filteredEmptyDraftTitle ?? `No draft ${title.toLowerCase()}`;
+      filteredEmptyDraftTitle ??
+      t('contents.listView.filteredEmptyDraft.title', { title: lowerTitle });
     const actualFilteredEmptyDraftDescription =
-      filteredEmptyDraftDescription ?? 'Content exists but no drafts are available.';
+      filteredEmptyDraftDescription ?? t('contents.listView.filteredEmptyDraft.description');
 
     // Render main content based on state using switch
     const handleGoToPublished = useCallback(() => {
@@ -166,7 +173,7 @@ export const ContentListLayout = memo(
               description={actualFilteredEmptyDescription}
             >
               <Button onClick={handleGoToDraft} variant="outline">
-                Go to Draft
+                {t('contents.listView.goToDraft')}
                 <ArrowRightIcon className="ml-2 h-4 w-4" />
               </Button>
             </EmptyPlaceholder>
@@ -178,7 +185,7 @@ export const ContentListLayout = memo(
               description={actualFilteredEmptyDraftDescription}
             >
               <Button onClick={handleGoToPublished} variant="outline">
-                Go to Published
+                {t('contents.listView.goToPublished')}
                 <ArrowRightIcon className="ml-2 h-4 w-4" />
               </Button>
             </EmptyPlaceholder>
@@ -197,6 +204,7 @@ export const ContentListLayout = memo(
           );
       }
     }, [
+      t,
       contentState,
       emptyTitle,
       emptyDescription,

@@ -4,6 +4,7 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour/icons';
 import { AnalyticsData, ContentDataType } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { AnalyticsViewsSkeleton } from './analytics-skeleton';
 
 interface AnalyticsViewsProps {
@@ -51,161 +52,171 @@ interface AnalyticsViewsGridProps {
   };
 }
 
-const AnalyticsViewsGrid = ({
-  analyticsData,
-  tooltips,
-  titles = {
-    uniqueViews: 'Unique views',
-    uniqueCompletionRate: 'Unique completion rate',
-    totalViews: 'Total views',
-    totalCompletionRate: 'Total completion rate',
-  },
-}: AnalyticsViewsGridProps) => (
-  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-    <AnalyticsCard
-      title={titles.uniqueViews}
-      tooltip={tooltips.uniqueViews}
-      value={analyticsData?.uniqueViews || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title={titles.uniqueCompletionRate}
-      tooltip={tooltips.uniqueCompletionRate}
-      value={calculateCompletionRate(
-        analyticsData?.uniqueCompletions || 0,
-        analyticsData?.uniqueViews || 0,
-      )}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title={titles.totalViews}
-      tooltip={tooltips.totalViews}
-      value={analyticsData?.totalViews || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title={titles.totalCompletionRate}
-      tooltip={tooltips.totalCompletionRate}
-      value={calculateCompletionRate(
-        analyticsData?.totalCompletions || 0,
-        analyticsData?.totalViews || 0,
-      )}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-  </div>
-);
+const AnalyticsViewsGrid = ({ analyticsData, tooltips, titles }: AnalyticsViewsGridProps) => {
+  const { t } = useTranslation();
+  const resolvedTitles = titles ?? {
+    uniqueViews: t('contents.analytics.views.uniqueViews'),
+    uniqueCompletionRate: t('contents.analytics.views.uniqueCompletionRate'),
+    totalViews: t('contents.analytics.views.totalViews'),
+    totalCompletionRate: t('contents.analytics.views.totalCompletionRate'),
+  };
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <AnalyticsCard
+        title={resolvedTitles.uniqueViews}
+        tooltip={tooltips.uniqueViews}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={resolvedTitles.uniqueCompletionRate}
+        tooltip={tooltips.uniqueCompletionRate}
+        value={calculateCompletionRate(
+          analyticsData?.uniqueCompletions || 0,
+          analyticsData?.uniqueViews || 0,
+        )}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={resolvedTitles.totalViews}
+        tooltip={tooltips.totalViews}
+        value={analyticsData?.totalViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={resolvedTitles.totalCompletionRate}
+        tooltip={tooltips.totalCompletionRate}
+        value={calculateCompletionRate(
+          analyticsData?.totalCompletions || 0,
+          analyticsData?.totalViews || 0,
+        )}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
 
-const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <div className="grid gap-4 md:grid-cols-2">
-    <AnalyticsCard
-      title="Unique views"
-      tooltip="Unique users who saw the launcher."
-      value={analyticsData?.uniqueViews || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title="Activation rate"
-      tooltip="Percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it)."
-      value={calculateCompletionRate(
-        analyticsData?.uniqueCompletions || 0,
-        analyticsData?.uniqueViews || 0,
-      )}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-  </div>
-);
+const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <AnalyticsCard
+        title={t('contents.analytics.views.uniqueViews')}
+        tooltip={t('contents.analytics.views.launcher.uniqueViewsTooltip')}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.launcher.activationRate')}
+        tooltip={t('contents.analytics.views.launcher.activationRateTooltip')}
+        value={calculateCompletionRate(
+          analyticsData?.uniqueCompletions || 0,
+          analyticsData?.uniqueViews || 0,
+        )}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
 
-const BannerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <div className="grid gap-4 md:grid-cols-2">
-    <AnalyticsCard
-      title="Unique views"
-      tooltip="Unique users who saw the banner."
-      value={analyticsData?.uniqueViews || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title="Dismissals"
-      tooltip="Unique users who dismissed the banner."
-      value={analyticsData?.uniqueCompletions || 0}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-  </div>
-);
+const BannerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <AnalyticsCard
+        title={t('contents.analytics.views.uniqueViews')}
+        tooltip={t('contents.analytics.views.banner.uniqueViewsTooltip')}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.banner.dismissals')}
+        tooltip={t('contents.analytics.views.banner.dismissalsTooltip')}
+        value={analyticsData?.uniqueCompletions || 0}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
 
-const FlowAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <AnalyticsViewsGrid
-    analyticsData={analyticsData}
-    tooltips={{
-      uniqueViews:
-        'Unique views indicate the total number of unique users who have seen the flow, while total views may be higher if some users have viewed it multiple times.',
-      uniqueCompletionRate:
-        'Completion rate shows the percentage of unique users who completed the flow after seeing it.',
-      totalViews:
-        'Total views indicate the total number of visits to the flow, with each visit counted separately, even if a user views it multiple times.',
-      totalCompletionRate:
-        'Completion rate shows the percentage of visits where the flow was seen and completed.',
-    }}
-  />
-);
+const FlowAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <AnalyticsViewsGrid
+      analyticsData={analyticsData}
+      tooltips={{
+        uniqueViews: t('contents.analytics.views.flow.uniqueViewsTooltip'),
+        uniqueCompletionRate: t('contents.analytics.views.flow.uniqueCompletionRateTooltip'),
+        totalViews: t('contents.analytics.views.flow.totalViewsTooltip'),
+        totalCompletionRate: t('contents.analytics.views.flow.totalCompletionRateTooltip'),
+      }}
+    />
+  );
+};
 
-const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <AnalyticsViewsGrid
-    analyticsData={analyticsData}
-    tooltips={{
-      uniqueViews:
-        'Unique views indicate the total number of unique users who have seen the checklist, while total views may be higher if some users have viewed it multiple times.',
-      uniqueCompletionRate:
-        'Completion rate shows the percentage of unique users who completed the checklist after seeing it.',
-      totalViews:
-        'Total views indicate the total number of visits to the checklist, with each visit counted separately, even if a user views it multiple times.',
-      totalCompletionRate:
-        'Completion rate shows the percentage of visits where the checklist was seen and completed.',
-    }}
-  />
-);
+const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <AnalyticsViewsGrid
+      analyticsData={analyticsData}
+      tooltips={{
+        uniqueViews: t('contents.analytics.views.checklist.uniqueViewsTooltip'),
+        uniqueCompletionRate: t('contents.analytics.views.checklist.uniqueCompletionRateTooltip'),
+        totalViews: t('contents.analytics.views.checklist.totalViewsTooltip'),
+        totalCompletionRate: t('contents.analytics.views.checklist.totalCompletionRateTooltip'),
+      }}
+    />
+  );
+};
 
-const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <div className="grid gap-4 md:grid-cols-3">
-    <AnalyticsCard
-      title="Unique user interactions"
-      tooltip="Unique users who opened the resource center."
-      value={analyticsData?.uniqueViews || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title="Unique clickers"
-      tooltip="Unique users who clicked a block in the resource center."
-      value={analyticsData?.uniqueCompletions || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title="Click-through rate"
-      tooltip="Percentage of users who opened the resource center and clicked a block."
-      value={calculateCompletionRate(
-        analyticsData?.uniqueCompletions || 0,
-        analyticsData?.uniqueViews || 0,
-      )}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-  </div>
-);
+const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <AnalyticsCard
+        title={t('contents.analytics.views.resourceCenter.uniqueUserInteractions')}
+        tooltip={t('contents.analytics.views.resourceCenter.uniqueUserInteractionsTooltip')}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.resourceCenter.uniqueClickers')}
+        tooltip={t('contents.analytics.views.resourceCenter.uniqueClickersTooltip')}
+        value={analyticsData?.uniqueCompletions || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.resourceCenter.clickThroughRate')}
+        tooltip={t('contents.analytics.views.resourceCenter.clickThroughRateTooltip')}
+        value={calculateCompletionRate(
+          analyticsData?.uniqueCompletions || 0,
+          analyticsData?.uniqueViews || 0,
+        )}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
 
-const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <div className="grid gap-4 md:grid-cols-2">
-    <AnalyticsCard
-      title="Unique events"
-      tooltip="Unique users who triggered this tracker event."
-      value={analyticsData?.uniqueViews || 0}
-      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
-      title="Events"
-      tooltip="Total number of tracker events fired."
-      value={analyticsData?.totalViews || 0}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-  </div>
-);
+const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <AnalyticsCard
+        title={t('contents.analytics.views.tracker.uniqueEvents')}
+        tooltip={t('contents.analytics.views.tracker.uniqueEventsTooltip')}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.tracker.events')}
+        tooltip={t('contents.analytics.views.tracker.eventsTooltip')}
+        value={analyticsData?.totalViews || 0}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
 
 export const AnalyticsViews = () => {
   const { analyticsData, loading } = useContentAnalytics();

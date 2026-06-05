@@ -9,6 +9,7 @@ import {
 } from '@usertour/ui';
 import { SettingsIcon } from '@usertour/icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface RollingWindowDialogProps {
   currentValue: number;
@@ -18,6 +19,7 @@ interface RollingWindowDialogProps {
 export const RollingWindowDialog = ({ currentValue, onUpdate }: RollingWindowDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [tempValue, setTempValue] = useState(currentValue);
+  const { t } = useTranslation();
 
   const handleConfirm = async () => {
     await onUpdate(tempValue);
@@ -33,7 +35,9 @@ export const RollingWindowDialog = ({ currentValue, onUpdate }: RollingWindowDia
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <button type="button" className="flex flex-row items-center gap-1 cursor-pointer">
-          <span className="text-sm text-muted-foreground">{currentValue}-day rolling window</span>
+          <span className="text-sm text-muted-foreground">
+            {t('contents.analytics.rollingWindow.label', { count: currentValue })}
+          </span>
           <SettingsIcon className="w-4 h-4 text-muted-foreground" />
         </button>
       </DialogTrigger>
@@ -43,12 +47,10 @@ export const RollingWindowDialog = ({ currentValue, onUpdate }: RollingWindowDia
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2 items-center">
                 <label className="text-sm font-medium" htmlFor="rolling-window">
-                  Rolling window size (days)
+                  {t('contents.analytics.rollingWindow.sizeLabel')}
                 </label>
                 <QuestionTooltip>
-                  The NPS is computed using a rolling window approach, meaning the score for each
-                  day is derived from all responses collected within the preceding x days, where x
-                  is the number you specify here
+                  {t('contents.analytics.rollingWindow.sizeTooltip')}
                 </QuestionTooltip>
               </div>
               <Input
@@ -58,7 +60,7 @@ export const RollingWindowDialog = ({ currentValue, onUpdate }: RollingWindowDia
                 onChange={(e) => setTempValue(Number(e.target.value))}
                 min="1"
                 max="365"
-                placeholder="Enter days (1-365)"
+                placeholder={t('contents.analytics.rollingWindow.placeholder')}
               />
             </div>
           </div>
@@ -66,9 +68,9 @@ export const RollingWindowDialog = ({ currentValue, onUpdate }: RollingWindowDia
         <DialogFooter>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleCancel}>
-              Cancel
+              {t('contents.analytics.rollingWindow.cancel')}
             </Button>
-            <Button onClick={handleConfirm}>Update</Button>
+            <Button onClick={handleConfirm}>{t('contents.analytics.rollingWindow.update')}</Button>
           </div>
         </DialogFooter>
       </DialogContent>
