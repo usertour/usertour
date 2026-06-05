@@ -1046,6 +1046,48 @@ const translations = {
     },
     list: {
       newButton: '新建{{type}}',
+      flows: {
+        title: '流程',
+        text: '带提示框和弹窗的分步流程。适合:产品引导、使用指南和公告。',
+        link: '在《创建你的第一个流程》指南中了解更多',
+        emptyTitle: '还没有流程',
+        emptyDescription: '你还没有添加任何流程。在下方添加一个。',
+      },
+      checklists: {
+        title: '清单',
+        text: '清单能让用户获得成就感、鼓励他们更多地使用你的产品,并通过清晰的步骤逐步引导他们。',
+        link: '在《清单》指南中了解更多',
+        emptyTitle: '还没有清单',
+        emptyDescription: '你还没有添加任何清单。在下方添加一个。',
+      },
+      launchers: {
+        title: '启动器',
+        text: '启动器很适合:用热点高亮关键功能、用提示框展示实用小贴士。',
+        link: '在《启动器》指南中了解更多',
+        emptyTitle: '还没有启动器',
+        emptyDescription: '你还没有添加任何启动器。在下方添加一个。',
+      },
+      banners: {
+        title: '横幅',
+        text: '横幅很适合需要醒目展示给用户的公告、促销和重要消息。',
+        link: '在《横幅》指南中了解更多',
+        emptyTitle: '还没有横幅',
+        emptyDescription: '你还没有添加任何横幅。在下方添加一个。',
+      },
+      trackers: {
+        title: '事件追踪器',
+        text: '事件追踪器可在满足条件时追踪业务事件。',
+        link: '在《事件追踪器》指南中了解更多',
+        emptyTitle: '还没有事件追踪器',
+        emptyDescription: '你还没有添加任何事件追踪器。在下方添加一个。',
+      },
+      resourceCenters: {
+        title: '资源中心',
+        text: '资源中心为用户提供一个集中的入口,只需一个启动器按钮即可访问帮助、指南、清单等内容。',
+        link: '在《资源中心》指南中了解更多',
+        emptyTitle: '还没有资源中心',
+        emptyDescription: '你还没有添加任何资源中心。在下方添加一个。',
+      },
     },
     detail: {
       actionsMenu: '内容操作',

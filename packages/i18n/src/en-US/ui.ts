@@ -1122,6 +1122,48 @@ const translations = {
       // ContentCreateForm dialog. Same `New {{type}}` shape as the
       // dialog title but a separate key so the surfaces can diverge.
       newButton: 'New {{type}}',
+      flows: {
+        title: 'Flows',
+        text: 'Step-by-step flows with tooltips and pop-up modals. Perfect for: product tours, user guides, and announcements.',
+        link: 'Read more in our Creating your first flow guide',
+        emptyTitle: 'No flows added',
+        emptyDescription: 'You have not added any flows. Add one below.',
+      },
+      checklists: {
+        title: 'Checklists',
+        text: 'A checklist helps users feel accomplished, encourages them to engage more with your product, and guides them step-by-step through clear actions.',
+        link: 'Read more in our Checklists guide',
+        emptyTitle: 'No checklists added',
+        emptyDescription: 'You have not added any checklists. Add one below.',
+      },
+      launchers: {
+        title: 'Launchers',
+        text: 'Launchers work well for: Highlighting key features with hotspots, Showing helpful tips with tooltips.',
+        link: 'Read more in our Launchers guide',
+        emptyTitle: 'No launchers added',
+        emptyDescription: 'You have not added any launchers. Add one below.',
+      },
+      banners: {
+        title: 'Banners',
+        text: 'Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users.',
+        link: 'Read more in our Banners guide',
+        emptyTitle: 'No banners added',
+        emptyDescription: 'You have not added any banners. Add one below.',
+      },
+      trackers: {
+        title: 'Event trackers',
+        text: 'Event trackers let you track business events when conditions are met.',
+        link: 'Read more in our Event trackers guide',
+        emptyTitle: 'No event trackers added',
+        emptyDescription: 'You have not added any event trackers. Add one below.',
+      },
+      resourceCenters: {
+        title: 'Resource Centers',
+        text: 'A Resource Center provides a centralized hub for users to access help, guides, checklists, and more — all from a single launcher button.',
+        link: 'Read more in our Resource Center guide',
+        emptyTitle: 'No resource centers added',
+        emptyDescription: 'You have not added any resource centers. Add one below.',
+      },
     },
     detail: {
       actionsMenu: 'Content actions',
