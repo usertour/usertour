@@ -27,30 +27,48 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour/ui';
+import { cn } from '@usertour/tailwind';
 import {
   Delete2Icon,
   EventIcon2,
-  EyeNoneIcon,
-  ModelIcon,
   RiAlertLine,
+  RiChat2Line,
   RiDraggable,
-  RiMessageLine,
+  RiEyeOffLine,
+  RiMessage2Line,
   RiSettings3Line,
-  TooltipIcon,
+  RiWindow2Line,
 } from '@usertour/icons';
 import { Step, StepContentType } from '@usertour/types';
+import type { ComponentType } from 'react';
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { stepIsReachable } from '@/pages/contents/components/builder/utils/content-validate';
+
+// Per step-type: the row glyph + the i18n key for its short type label
+// (shown on the right of the row, hidden on hover to make room for actions).
+const STEP_TYPE_META: Partial<
+  Record<StepContentType, { Icon: ComponentType<{ className?: string }>; labelKey: string }>
+> = {
+  [StepContentType.TOOLTIP]: {
+    Icon: RiChat2Line,
+    labelKey: 'contentBuilder.flow.stepType.tooltip',
+  },
+  [StepContentType.MODAL]: { Icon: RiWindow2Line, labelKey: 'contentBuilder.flow.stepType.modal' },
+  [StepContentType.HIDDEN]: { Icon: RiEyeOffLine, labelKey: 'contentBuilder.flow.stepType.hidden' },
+  [StepContentType.BUBBLE]: {
+    Icon: RiMessage2Line,
+    labelKey: 'contentBuilder.flow.stepType.bubble',
+  },
+};
 
 // Get stable unique identifier for a step
 const getStepId = (step: Step, index: number): string => {
@@ -65,6 +83,7 @@ interface SidebarContentProps {
   listeners?: SyntheticListenerMap;
   attributes?: DraggableAttributes;
   isReachable?: boolean;
+  selected?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -75,15 +94,29 @@ interface SortableItemProps {
   step: Step;
   onClick: (action: string, index: number) => void;
   isReachable: boolean;
+  selected: boolean;
 }
 
 const SidebarContent = memo(
   forwardRef<HTMLDivElement, SidebarContentProps>(
     (
-      { index, step, onClick, listeners = {}, attributes = {}, isReachable = true, ...props },
+      {
+        index,
+        step,
+        onClick,
+        listeners = {},
+        attributes = {},
+        isReachable = true,
+        selected = false,
+        ...props
+      },
       ref,
     ) => {
       const { t } = useTranslation();
+      const handleSelect = useCallback(() => {
+        onClick?.('select', index);
+      }, [onClick, index]);
+
       const handleEdit = useCallback(() => {
         onClick?.('edit', index);
       }, [onClick, index]);
@@ -96,80 +129,111 @@ const SidebarContent = memo(
         onClick?.('delete', index);
       }, [onClick, index]);
 
+      const meta =
+        STEP_TYPE_META[step.type as StepContentType] ?? STEP_TYPE_META[StepContentType.MODAL];
+      const TypeIcon = meta?.Icon ?? RiWindow2Line;
+      const triggerCount = step.trigger?.length ?? 0;
+
       return (
         <div
           ref={ref}
           {...attributes}
           {...props}
-          className="bg-background-700 p-2.5 rounded-lg py-3.5 flex flex-col"
+          onClick={handleSelect}
+          className={cn(
+            'group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors',
+            selected ? 'border-[#d7d9ff] bg-accent/50' : 'hover:bg-slate-100',
+          )}
         >
-          <div className="flex items-center justify-between ">
-            <div className="grow inline-flex items-center text-sm ">
-              <RiDraggable {...listeners} className="cursor-move opacity-70" size={16} />
-              {step.type === StepContentType.TOOLTIP && (
-                <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5 opacity-70" />
+          <div className="flex min-h-6 items-center gap-2">
+            <RiDraggable
+              {...listeners}
+              onClick={(event) => event.stopPropagation()}
+              className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
+            />
+            <span
+              className={cn(
+                'grid size-[22px] shrink-0 place-items-center rounded-md text-[11px] font-semibold',
+                selected ? 'bg-primary text-primary-foreground' : 'bg-slate-200 text-slate-600',
               )}
-              {step.type === StepContentType.MODAL && (
-                <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5 opacity-70" />
+            >
+              {index + 1}
+            </span>
+            <TypeIcon
+              className={cn(
+                'h-4 w-4 shrink-0',
+                selected ? 'text-primary' : 'text-slate-500 opacity-70',
               )}
-              {step.type === StepContentType.HIDDEN && (
-                <EyeNoneIcon className="w-4 h-4 mx-0.5 opacity-70" />
-              )}
-              {step.type === StepContentType.BUBBLE && (
-                <RiMessageLine className="w-4 h-4 mx-0.5 opacity-70" />
-              )}
-              <span className="w-36 truncate ...">
-                {index + 1}. {step.name}
-              </span>
-            </div>
-            <div className="flex-none">
+            />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+              {step.name}
+            </span>
+            {!isReachable && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" className="p-1 h-fit" onClick={handleEdit}>
-                      <RiSettings3Line size={16} className="opacity-70" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('contentBuilder.flow.edit')}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-1 h-fit"
-                      onClick={handleEditTrigger}
+                    <span
+                      onClick={(event) => event.stopPropagation()}
+                      className="flex shrink-0 cursor-help items-center text-warning"
                     >
-                      <EventIcon2 className="h-4 w-4 opacity-70" />
-                    </Button>
+                      <RiAlertLine className="h-4 w-4" />
+                    </span>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    {step.trigger && step.trigger.length > 0
-                      ? t('contentBuilder.flow.trigger', { count: step.trigger.length })
-                      : t('contentBuilder.flow.addTriggerTooltip')}
+                  <TooltipContent className="max-w-[220px]">
+                    {t('contentBuilder.flow.stepNotReachable')}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            )}
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleEditTrigger();
+                }}
+                title={
+                  triggerCount > 0
+                    ? t('contentBuilder.flow.trigger', { count: triggerCount })
+                    : t('contentBuilder.flow.addTriggerTooltip')
+                }
+                className={cn(
+                  'relative size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground',
+                  triggerCount > 0 ? 'grid' : 'hidden group-hover:grid',
+                )}
+              >
+                <EventIcon2 className="h-4 w-4 opacity-70" />
+                {triggerCount > 0 && (
+                  <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-amber-500 px-0.5 text-[9px] font-semibold leading-none text-white">
+                    {triggerCount}
+                  </span>
+                )}
+              </button>
+              <span className="text-[10.5px] text-slate-400 group-hover:hidden">
+                {meta ? t(meta.labelKey) : null}
+              </span>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleEdit();
+                }}
+                title={t('contentBuilder.flow.edit')}
+                className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground group-hover:grid"
+              >
+                <RiSettings3Line className="h-4 w-4 opacity-70" />
+              </button>
               <AlertDialog>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-1 h-fit">
-                          <Delete2Icon
-                            className="h-4 w-4 text-foreground opacity-70"
-                            // onClick={handleDelete}
-                          />
-                        </Button>
-                      </AlertDialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('contentBuilder.flow.delete')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(event) => event.stopPropagation()}
+                    title={t('contentBuilder.flow.delete')}
+                    className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+                  >
+                    <Delete2Icon className="h-4 w-4 opacity-70" />
+                  </button>
+                </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
@@ -189,14 +253,6 @@ const SidebarContent = memo(
               </AlertDialog>
             </div>
           </div>
-          {!isReachable && (
-            <div className="flex items-stretch items-center text-warning space-x-1">
-              <div className="flex-none self-start pt-1">
-                <RiAlertLine className="h-3 w-3" />
-              </div>
-              <span className="text-xs grow ">{t('contentBuilder.flow.stepNotReachable')}</span>
-            </div>
-          )}
         </div>
       );
     },
@@ -204,39 +260,45 @@ const SidebarContent = memo(
 );
 SidebarContent.displayName = 'SidebarContent';
 
-const SortableItem = memo(({ id, index, step, onClick, isReachable }: SortableItemProps) => {
-  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
-    id,
-  });
+const SortableItem = memo(
+  ({ id, index, step, onClick, isReachable, selected }: SortableItemProps) => {
+    const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
+      id,
+    });
 
-  const style = useMemo(
-    () => ({
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0 : 1,
-    }),
-    [transform, transition, isDragging],
-  );
+    const style = useMemo(
+      () => ({
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0 : 1,
+      }),
+      [transform, transition, isDragging],
+    );
 
-  return (
-    <SidebarContent
-      ref={setNodeRef}
-      style={style}
-      isReachable={isReachable}
-      index={index}
-      onClick={onClick}
-      step={step}
-      listeners={listeners}
-      attributes={attributes}
-    />
-  );
-});
+    return (
+      <SidebarContent
+        ref={setNodeRef}
+        style={style}
+        isReachable={isReachable}
+        selected={selected}
+        index={index}
+        onClick={onClick}
+        step={step}
+        listeners={listeners}
+        attributes={attributes}
+      />
+    );
+  },
+);
 SortableItem.displayName = 'SortableItem';
 
 export const SidebarContents = () => {
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { removeStep, reorderSteps, enterStepSubMode } = useFlowEditor();
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Local highlight cursor for the overview list (the canvas is a separate
+  // persistent layer; selection here is a sidebar-only affordance).
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -281,6 +343,10 @@ export const SidebarContents = () => {
   const handleOnClick = useCallback(
     (action: string, index: number) => {
       if (!currentVersion?.steps) {
+        return;
+      }
+      if (action === 'select') {
+        setSelectedIndex(index);
         return;
       }
       if (action === 'delete') {
@@ -336,6 +402,7 @@ export const SidebarContents = () => {
               id={id}
               index={index}
               isReachable={isReachable}
+              selected={index === selectedIndex}
               step={step}
               onClick={handleOnClick}
             />
@@ -346,6 +413,7 @@ export const SidebarContents = () => {
             <SidebarContent
               index={activeStep.index}
               isReachable={activeStep.isReachable}
+              selected={activeStep.index === selectedIndex}
               step={activeStep.step}
             />
           ) : null}

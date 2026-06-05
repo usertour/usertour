@@ -2031,6 +2031,9 @@ const translations = {
       discard: '放弃',
       saveAndLeave: '保存并离开',
       saveFailed: '保存失败',
+      switchSide: '切换到另一侧',
+      collapsePanel: '收起面板',
+      expandPanel: '展开面板',
     },
     iconPicker: {
       tabDefault: '默认',
@@ -2133,7 +2136,7 @@ const translations = {
       deleteConfirmDescription: '删除后将无法通过任何方式访问或恢复该数据，请确认。',
       stepNotReachable:
         '该步骤无法从起始步骤到达。请添加一个跳转到此步骤的按钮或触发器，或将其删除。',
-      create: '创建',
+      addStep: '添加步骤',
       stepTypeTitle: '步骤类型',
       stepType: {
         bubble: '气泡',

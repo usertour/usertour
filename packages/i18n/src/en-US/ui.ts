@@ -2153,6 +2153,9 @@ const translations = {
       discard: 'Discard',
       saveAndLeave: 'Save & Leave',
       saveFailed: 'Save failed',
+      switchSide: 'Switch side',
+      collapsePanel: 'Collapse panel',
+      expandPanel: 'Expand panel',
     },
     iconPicker: {
       tabDefault: 'Default',
@@ -2258,7 +2261,7 @@ const translations = {
         'After deletion, it will not be possible to access or recover the data through any means. Please confirm.',
       stepNotReachable:
         'Step is not reachable from the start step. Add a button, trigger that links to this step, or delete it.',
-      create: 'Create',
+      addStep: 'Add step',
       stepTypeTitle: 'Step type',
       stepType: {
         bubble: 'Speech Bubble',
