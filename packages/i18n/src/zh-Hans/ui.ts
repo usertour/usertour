@@ -2091,9 +2091,13 @@ const translations = {
       verticalOffsetTooltip: '{{name}}距离浏览器窗口垂直边缘的像素距离。',
       position: {
         leftTop: '左上',
+        centerTop: '上中',
         rightTop: '右上',
+        leftCenter: '左中',
         center: '居中',
+        rightCenter: '右中',
         leftBottom: '左下',
+        centerBottom: '下中',
         rightBottom: '右下',
       },
       elementText: '元素文本',

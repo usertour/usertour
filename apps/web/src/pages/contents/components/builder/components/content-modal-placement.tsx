@@ -1,35 +1,28 @@
-import { Button, Label, QuestionTooltip } from '@usertour/ui';
-import { ModalPosition } from '@usertour/types';
-import { ContentModalPlacementData } from '@usertour/types';
+import { Label, QuestionTooltip } from '@usertour/ui';
+import { ContentModalPlacementData, ModalPosition } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { useTranslation } from 'react-i18next';
 import { InputNumber } from '@/pages/contents/components/builder/components/shared/input';
 
-interface PlacementButtonProps {
-  position: ModalPosition;
-  currentPosition: ModalPosition;
-  text: string;
-  onPositionChange: (position: ModalPosition) => void;
-}
+// 3×3 spatial picker — the cell's location in the grid is the modal's position
+// on screen (top row / middle row / bottom row).
+const POSITION_GRID: ModalPosition[] = [
+  ModalPosition.LeftTop,
+  ModalPosition.CenterTop,
+  ModalPosition.RightTop,
+  ModalPosition.LeftCenter,
+  ModalPosition.Center,
+  ModalPosition.RightCenter,
+  ModalPosition.LeftBottom,
+  ModalPosition.CenterBottom,
+  ModalPosition.RightBottom,
+];
 
-const PlacementButton = (props: PlacementButtonProps) => {
-  const { text, position, onPositionChange, currentPosition } = props;
-  return (
-    <Button
-      className={cn(
-        'h-8 w-24 p-0.5 text-xs',
-        currentPosition === position
-          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-          : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
-      )}
-      onClick={() => {
-        onPositionChange(position);
-      }}
-    >
-      {text}
-    </Button>
-  );
-};
+// Per-cell marker alignment, derived from the cell's row / column in the grid —
+// the marker sits where the modal would appear on screen, so each cell reads as
+// a mini screen preview.
+const CELL_ROW_ALIGN = ['items-start', 'items-center', 'items-end'];
+const CELL_COL_ALIGN = ['justify-start', 'justify-center', 'justify-end'];
 
 export interface ContentModalPlacementProps {
   data: ContentModalPlacementData;
@@ -48,9 +41,6 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
     onChange({ ...data, ...patch });
   };
 
-  const handleCurrentPositionChange = (position: ModalPosition) => {
-    update({ position });
-  };
   const handleOffsetXChange = (value: number | undefined) => {
     update({ positionOffsetX: value ?? 0 });
   };
@@ -64,43 +54,33 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
         <h1 className="text-sm">{t('contentBuilder.shared.placement')}</h1>
         <QuestionTooltip>{t('contentBuilder.shared.placementTooltip', { name })}</QuestionTooltip>
       </div>
-      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-3">
-        <div className="flex justify-between">
-          <PlacementButton
-            text={t('contentBuilder.shared.position.leftTop')}
-            position={ModalPosition.LeftTop}
-            currentPosition={data.position}
-            onPositionChange={handleCurrentPositionChange}
-          />
-          <PlacementButton
-            text={t('contentBuilder.shared.position.rightTop')}
-            position={ModalPosition.RightTop}
-            currentPosition={data.position}
-            onPositionChange={handleCurrentPositionChange}
-          />
-        </div>
-        <div className="flex justify-center">
-          <PlacementButton
-            text={t('contentBuilder.shared.position.center')}
-            position={ModalPosition.Center}
-            currentPosition={data.position}
-            onPositionChange={handleCurrentPositionChange}
-          />
-        </div>
-        <div className="flex justify-between">
-          <PlacementButton
-            text={t('contentBuilder.shared.position.leftBottom')}
-            position={ModalPosition.LeftBottom}
-            currentPosition={data.position}
-            onPositionChange={handleCurrentPositionChange}
-          />
-          <PlacementButton
-            text={t('contentBuilder.shared.position.rightBottom')}
-            position={ModalPosition.RightBottom}
-            currentPosition={data.position}
-            onPositionChange={handleCurrentPositionChange}
-          />
-        </div>
+      <div className="grid grid-cols-3 gap-2">
+        {POSITION_GRID.map((position, index) => {
+          const label = t(`contentBuilder.shared.position.${position}`);
+          const active = data.position === position;
+          const align = `${CELL_ROW_ALIGN[Math.floor(index / 3)]} ${CELL_COL_ALIGN[index % 3]}`;
+          return (
+            <button
+              key={position}
+              type="button"
+              aria-label={label}
+              aria-pressed={active}
+              title={label}
+              onClick={() => update({ position })}
+              className={cn(
+                'flex h-8 w-full rounded-md border p-1 transition-colors',
+                align,
+                active
+                  ? 'border-primary bg-accent/50'
+                  : 'border-border bg-slate-50 hover:border-slate-300 hover:bg-slate-100',
+              )}
+            >
+              <span
+                className={cn('h-1.5 w-3 rounded-[2px]', active ? 'bg-primary' : 'bg-slate-300')}
+              />
+            </button>
+          );
+        })}
       </div>
       {data.position !== ModalPosition.Center && (
         <>

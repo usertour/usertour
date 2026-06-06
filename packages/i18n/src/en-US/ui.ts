@@ -2215,9 +2215,13 @@ const translations = {
         'How far in pixels from the vertical edge of the browser window the {{name}} should be positioned.',
       position: {
         leftTop: 'Left Top',
+        centerTop: 'Center Top',
         rightTop: 'Right Top',
+        leftCenter: 'Left Center',
         center: 'Center',
+        rightCenter: 'Right Center',
         leftBottom: 'Left Bottom',
+        centerBottom: 'Center Bottom',
         rightBottom: 'Right Bottom',
       },
       elementText: 'Element text',
