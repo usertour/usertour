@@ -1,19 +1,32 @@
 import { Route, Routes } from 'react-router-dom';
 import { BuilderSideBar } from '@/pages/contents/components/builder/flow/sidebar';
-import { FlowBuilderDetail } from '@/pages/contents/components/builder/flow/flow-detail';
+import {
+  FlowBuilderDetail,
+  FlowBuilderDetailEmbed,
+} from '@/pages/contents/components/builder/flow/flow-detail';
 import { FlowBuilderTrigger } from '@/pages/contents/components/builder/flow/flow-trigger';
+import { FlowSidebarLayout } from '@/pages/contents/components/builder/flow/sidebar-layout';
 
-// The Flow builder — a descendant `<Routes>` under the builder route's `/*`
-// routing its sub-views. The URL is the source of truth for which sub-view is
-// open; each route component seeds its edit buffer from the route param via
-// useSeedStepFromRoute. Relative paths so they resolve under the builder base.
+// The Flow builder. FlowSidebarLayout is a persistent layout route that holds
+// the floating panel chrome (and animates its width); the matched sub-view
+// renders into its <Outlet/>, so navigation swaps only the inner content. The
+// canvas preview is a separate, route-driven layer outside the panel (step
+// views only). The URL is the source of truth.
 export const FlowBuilder = () => (
-  <Routes>
-    <Route index element={<BuilderSideBar />} />
-    <Route path="step/new/:type" element={<FlowBuilderDetail />} />
-    <Route path="step/:index" element={<FlowBuilderDetail />} />
-    <Route path="trigger/:index" element={<FlowBuilderTrigger />} />
-  </Routes>
+  <>
+    <Routes>
+      <Route element={<FlowSidebarLayout />}>
+        <Route index element={<BuilderSideBar />} />
+        <Route path="step/new/:type" element={<FlowBuilderDetail />} />
+        <Route path="step/:index" element={<FlowBuilderDetail />} />
+        <Route path="trigger/:index" element={<FlowBuilderTrigger />} />
+      </Route>
+    </Routes>
+    <Routes>
+      <Route path="step/new/:type" element={<FlowBuilderDetailEmbed />} />
+      <Route path="step/:index" element={<FlowBuilderDetailEmbed />} />
+    </Routes>
+  </>
 );
 
 FlowBuilder.displayName = 'FlowBuilder';

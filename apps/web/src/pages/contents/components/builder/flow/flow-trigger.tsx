@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  ScrollArea,
-} from '@usertour/ui';
-import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
+import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiAddCircleLine, RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
@@ -17,8 +8,7 @@ import { hasError } from '@usertour/helpers';
 import { validateActions } from '@usertour/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
-import { cn } from '@usertour/tailwind';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { ContentTrigger } from '@/pages/contents/components/builder/components/content-trigger';
 import {
   useBuilderConfig,
@@ -32,7 +22,6 @@ import {
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { useSeedStepFromRoute } from '@/pages/contents/components/builder/flow/use-seed-step-from-route';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
-import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
 import { useListAttributesQuery } from '@usertour/hooks';
 
 const FlowBuilderTriggerHeader = () => {
@@ -40,18 +29,18 @@ const FlowBuilderTriggerHeader = () => {
   const { currentStep, currentIndex, exitToFlow } = useFlowEditor();
 
   return (
-    <CardHeader className="flex-none p-5 space-y-2">
-      <CardTitle className="text-base truncate ...">{currentContent?.name}</CardTitle>
-      <div className="flex">
+    <CardHeader className="flex-none space-y-2 border-b border-border/50 px-5 py-4">
+      <CardTitle className="truncate pr-16 text-sm font-semibold">{currentContent?.name}</CardTitle>
+      <div className="flex items-center">
         <Button
-          variant="link"
+          variant="ghost"
           size="icon"
           onClick={exitToFlow}
-          className="mr-2 text-foreground w-6 h-8"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
         >
-          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
+          <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
-        <div className="grow text-base leading-8 truncate ...">
+        <div className="grow truncate text-sm font-medium leading-8">
           {currentIndex + 1}. {currentStep?.name}
         </div>
       </div>
@@ -133,7 +122,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
   };
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full ">
         <div className="flex-col space-y-3 p-4">
           <h1 className="text-sm">{t('contentBuilder.flow.triggers')}</h1>
@@ -172,7 +161,11 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
                 }}
               />
             ))}
-          <Button className="w-full" variant="secondary" onClick={handleOnClick}>
+          <Button
+            variant="ghost"
+            onClick={handleOnClick}
+            className="h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
+          >
             <RiAddCircleLine className="mr-2 size-4 opacity-70" />
             {t('contentBuilder.flow.addTrigger')}
           </Button>
@@ -237,7 +230,7 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   }, [currentStep, attributes, currentVersion, setShowError, setCurrentVersion, exitToFlow]);
 
   return (
-    <CardFooter className="flex-none p-5">
+    <CardFooter className="flex-none border-t border-border/50 p-4">
       <Button className="w-full h-10" onClick={handleSave}>
         {t('contentBuilder.common.save')}
       </Button>
@@ -245,35 +238,20 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   );
 };
 
+// Trigger-editing content. The floating panel chrome is provided by the
+// persistent shell (in the flow router); this is just what goes inside it.
 export const FlowBuilderTrigger = () => {
   useSeedStepFromRoute();
-  const ref = useRef<HTMLDivElement>(null);
-  const { zIndex } = useBuilderConfig();
-  const position = useBuilderStore((state) => state.position);
   const projectId = useProjectId();
 
   const { attributes, loading } = useListAttributesQuery(projectId, AttributeBizTypes.Nil);
 
   return (
-    <>
-      <TriggerProvider>
-        <div
-          className={cn(
-            'w-96 h-screen p-2 fixed top-0',
-            position === 'left' ? 'left-0' : 'right-0',
-          )}
-          style={{ zIndex: zIndex + EXTENSION_CONTENT_SIDEBAR }}
-          ref={ref}
-        >
-          <SidebarMini container={ref} containerWidth={374} />
-          <Card className="h-full flex flex-col bg-background-800">
-            <FlowBuilderTriggerHeader />
-            <FlowBuilderTriggerBody attributes={attributes} loading={loading} />
-            <FlowBuilderTriggerFooter attributes={attributes} />
-          </Card>
-        </div>
-      </TriggerProvider>
-    </>
+    <TriggerProvider>
+      <FlowBuilderTriggerHeader />
+      <FlowBuilderTriggerBody attributes={attributes} loading={loading} />
+      <FlowBuilderTriggerFooter attributes={attributes} />
+    </TriggerProvider>
   );
 };
 
