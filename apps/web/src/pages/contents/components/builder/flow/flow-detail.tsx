@@ -7,7 +7,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  OutlineInput,
+  EditableTitle,
   ScrollArea,
   Separator,
 } from '@usertour/ui';
@@ -20,7 +20,7 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { ChangeEvent, Ref, useCallback, useMemo, useRef, useState } from 'react';
+import { Ref, useCallback, useMemo, useRef, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
 import {
   useBuilderConfig,
@@ -67,10 +67,10 @@ const FlowBuilderDetailHeader = (props: FlowBuilderDetailHeaderProps) => {
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { currentStep, updateCurrentStep, exitToFlow } = useFlowEditor();
 
-  const handleStepNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleStepRename = async (name: string) => {
     updateCurrentStep((pre) => ({
       ...pre,
-      name: e.target.value,
+      name,
     }));
   };
 
@@ -91,13 +91,11 @@ const FlowBuilderDetailHeader = (props: FlowBuilderDetailHeaderProps) => {
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
-        <div className="grow leading-8">
-          <OutlineInput
-            value={currentStep?.name}
-            className="h-8 focus-visible:ring-0"
-            onChange={handleStepNameChange}
-          />
-        </div>
+        <EditableTitle
+          value={currentStep?.name ?? ''}
+          onRename={handleStepRename}
+          className="min-w-0 flex-1 text-base font-semibold"
+        />
       </div>
     </CardHeader>
   );
