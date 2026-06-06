@@ -19,7 +19,7 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { Ref, useCallback, useMemo, useRef } from 'react';
+import { Ref, useCallback, useMemo, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
 import {
   useBuilderContentRef,
@@ -310,7 +310,13 @@ export const FlowBuilderDetailEmbed = () => {
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
   const theme = useCurrentTheme({ fallbackToDefault: true });
-  const triggerRef = useRef<SVGSVGElement>(null);
+  // Anchor the tooltip preview via a callback ref + state so mounting the
+  // stand-in triggers a re-render: ContentPopper returns null while
+  // triggerRef.current is null, and a plain useRef wouldn't re-render once it
+  // populates — leaving the tooltip blank after a step-type switch until some
+  // later unrelated render.
+  const [triggerEl, setTriggerEl] = useState<SVGSVGElement | null>(null);
+  const triggerRef = useMemo(() => ({ current: triggerEl }), [triggerEl]);
 
   const handleContentChange = (value: ContentEditorRoot[]) => {
     updateCurrentStep((pre) => ({ ...pre, data: value }));
@@ -326,7 +332,12 @@ export const FlowBuilderDetailEmbed = () => {
   if (currentStep.type === StepContentType.TOOLTIP) {
     return (
       <>
-        <PlusIcon width={24} height={24} ref={triggerRef} className={cn('fixed', centerClasses)} />
+        <PlusIcon
+          width={24}
+          height={24}
+          ref={setTriggerEl}
+          className={cn('fixed', centerClasses)}
+        />
         <ContentPopper
           ref={contentRef as Ref<HTMLDivElement> | undefined}
           theme={theme}
