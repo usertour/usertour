@@ -1,5 +1,5 @@
 import { useLayoutEffect } from 'react';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams, useSearchParams } from 'react-router-dom';
 import {
   type ResourceCenterBlock,
   ResourceCenterBlockType,
@@ -17,6 +17,7 @@ import { ResourceCenterBlockLiveChat } from '@/pages/contents/components/builder
 import { ResourceCenterTabSettings } from '@/pages/contents/components/builder/resource-center/resource-center-tab-settings';
 import { ResourceCenterEmbed } from '@/pages/contents/components/builder/resource-center/components/resource-center-embed';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
+import { createDefaultBlock } from '@/pages/contents/components/builder/resource-center/create-default-block';
 
 // index → redirect to the first tab. The RC always opens on a tab; tab/:tabId
 // is the source of truth for the active tab (replacing uiState.currentTabId).
@@ -37,18 +38,39 @@ const RedirectToFirstTab = () => {
 // already has the buffer; the block editors gate on currentBlock.
 const ResourceCenterBlockEditor = () => {
   const { tabId, blockId } = useParams();
+  const [searchParams] = useSearchParams();
   const { data, setCurrentBlock } = useResourceCenterEditor();
-  const block = data.tabs.find((t) => t.id === tabId)?.blocks.find((b) => b.id === blockId);
-  // Seed the editable currentBlock buffer (deep-clone, independent of the
-  // model) on route change. dispatch is on the MODEL block's type — immediate
-  // and correct even before the buffer seeds; each editor body gates on
-  // currentBlock.type, so the pre-seed frame renders nothing, never a stale block.
+  // block/:blockId → edit an existing block; block/new?type= → a fresh draft
+  // that only lands in the tab on save.
+  const newType = searchParams.get('type') as ResourceCenterBlockType | null;
+  const existingBlock = blockId
+    ? data.tabs.find((t) => t.id === tabId)?.blocks.find((b) => b.id === blockId)
+    : undefined;
+  // Seed the editable currentBlock buffer on route change: a deep clone for
+  // edit (independent of the model), a fresh default for new. Dispatch (below)
+  // is on the resolved type, so the pre-seed frame renders the right editor.
   useLayoutEffect(() => {
-    setCurrentBlock(block ? (JSON.parse(JSON.stringify(block)) as ResourceCenterBlock) : null);
+    if (blockId) {
+      setCurrentBlock(
+        existingBlock ? (JSON.parse(JSON.stringify(existingBlock)) as ResourceCenterBlock) : null,
+      );
+    } else if (newType) {
+      setCurrentBlock(createDefaultBlock(newType));
+    } else {
+      setCurrentBlock(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabId, blockId]);
+  }, [tabId, blockId, newType]);
 
-  switch (block?.type) {
+  // The block id in the URL points at a block that no longer exists (just
+  // deleted, or a stale deep-link / refresh) — bounce back to the tab instead
+  // of rendering a blank editor.
+  if (blockId && !existingBlock) {
+    return <Navigate to="../.." relative="path" replace />;
+  }
+
+  const dispatchType = blockId ? existingBlock?.type : (newType ?? undefined);
+  switch (dispatchType) {
     case ResourceCenterBlockType.RICH_TEXT:
       return <ResourceCenterBlockRichText />;
     case ResourceCenterBlockType.DIVIDER:
@@ -78,6 +100,7 @@ export const ResourceCenterBuilder = () => {
         <Route index element={<RedirectToFirstTab />} />
         <Route path="tab/:tabId" element={<ResourceCenterMainView />} />
         <Route path="tab/:tabId/settings" element={<ResourceCenterTabSettings />} />
+        <Route path="tab/:tabId/block/new" element={<ResourceCenterBlockEditor />} />
         <Route path="tab/:tabId/block/:blockId" element={<ResourceCenterBlockEditor />} />
       </Routes>
       <ResourceCenterEmbed />

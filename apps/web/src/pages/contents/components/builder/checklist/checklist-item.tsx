@@ -26,7 +26,7 @@ import {
   RulesType,
 } from '@usertour/types';
 import { useId, useLayoutEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import {
@@ -223,6 +223,7 @@ const ChecklistItemFooter = () => {
 export const ChecklistItem = () => {
   const { itemId } = useParams();
   const { data, setCurrentItem } = useChecklistEditor();
+  const existing = itemId ? data.items.find((it) => it.id === itemId) : undefined;
   // Seed the currentItem draft from the route when the sub-view mounts (covers
   // nav, deep-link and refresh):
   //   item/new       → a fresh default draft (lands in the array only on save)
@@ -234,10 +235,14 @@ export const ChecklistItem = () => {
       setCurrentItem({ ...defaultChecklistItem, id: uuidV4() } as ChecklistItemType);
       return;
     }
-    const item = data.items.find((it) => it.id === itemId);
-    setCurrentItem(item ? (JSON.parse(JSON.stringify(item)) as ChecklistItemType) : null);
+    setCurrentItem(existing ? (JSON.parse(JSON.stringify(existing)) as ChecklistItemType) : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);
+  // Deleted / stale item id — bounce back to the checklist instead of a blank
+  // editor.
+  if (itemId && !existing) {
+    return <Navigate to=".." replace />;
+  }
   return (
     <FloatingSidebarPanel width={320}>
       <ChecklistItemHeader />

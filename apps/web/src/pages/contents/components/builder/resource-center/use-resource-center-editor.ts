@@ -66,7 +66,7 @@ export interface UseResourceCenterEditorReturn {
   setEditingTab: React.Dispatch<React.SetStateAction<ResourceCenterTab | null>>;
   saveEditingTab: () => void;
   // Block ops (scoped to the route :tabId, except updateBlock — see below)
-  addBlock: (block: ResourceCenterBlock) => void;
+  startCreateBlock: (type: ResourceCenterBlockType) => void;
   removeBlock: (id: string) => void;
   updateBlock: (id: string, updates: Partial<ResourceCenterBlock>) => void;
   reorderBlocks: (startIndex: number, endIndex: number) => void;
@@ -196,6 +196,14 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     },
     [navigate],
   );
+  // Add block → open the new-block sub-view (block/new?type=). The block only
+  // lands in the tab on save, mirroring flow's "Add step → step/new → save".
+  const startCreateBlock = useCallback(
+    (type: ResourceCenterBlockType) => {
+      navigate(`block/new?type=${type}`, { relative: 'path' });
+    },
+    [navigate],
+  );
   const gotoTabSettings = useCallback(
     (id: string) => {
       navigate(`../${id}/settings`, { relative: 'path' });
@@ -269,9 +277,13 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
       return;
     }
     setIsShowError(false);
+    // Update in place if the block id already exists in the tab, otherwise
+    // append — the new-block sub-view only commits here on save.
     updateData(
       updateTabBlocks(data, currentTabId, (blocks) =>
-        blocks.map((block) => (block.id === currentBlock.id ? currentBlock : block)),
+        blocks.some((block) => block.id === currentBlock.id)
+          ? blocks.map((block) => (block.id === currentBlock.id ? currentBlock : block))
+          : [...blocks, currentBlock],
       ),
     );
     exitBlock();
@@ -288,7 +300,7 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     editingTab: uiState.editingTab,
     setEditingTab,
     saveEditingTab,
-    addBlock: blockList.add,
+    startCreateBlock,
     removeBlock: blockList.removeById,
     updateBlock,
     reorderBlocks: blockList.reorder,
