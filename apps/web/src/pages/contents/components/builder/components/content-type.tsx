@@ -62,15 +62,13 @@ export const ContentType = (props: ContentTypeProps) => {
               type="button"
               onClick={() => onChange(value)}
               className={cn(
-                'flex flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-[13px] font-medium transition-colors',
+                'flex flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-sm font-medium transition-colors',
                 active
                   ? 'border-primary bg-accent/50 text-primary ring-2 ring-primary/10'
                   : 'border-border bg-slate-50 text-slate-600 hover:border-slate-300',
               )}
             >
-              <Icon
-                className={cn('h-5 w-5', active ? 'text-primary' : 'text-slate-500 opacity-70')}
-              />
+              <Icon className={cn('h-5 w-5', active ? 'text-primary' : 'text-slate-400')} />
               <span>{t(labelKey)}</span>
             </button>
           );

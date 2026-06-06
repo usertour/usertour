@@ -142,7 +142,7 @@ const SidebarContent = memo(
           onClick={handleSelect}
           className={cn(
             'group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors',
-            selected ? 'border-[#d7d9ff] bg-accent/50' : 'hover:bg-slate-100',
+            selected ? 'border-primary/30 bg-accent/50' : 'hover:bg-slate-100',
           )}
         >
           <div className="flex min-h-6 items-center gap-2">
@@ -160,10 +160,7 @@ const SidebarContent = memo(
               {index + 1}
             </span>
             <TypeIcon
-              className={cn(
-                'h-4 w-4 shrink-0',
-                selected ? 'text-primary' : 'text-slate-500 opacity-70',
-              )}
+              className={cn('h-4 w-4 shrink-0', selected ? 'text-primary' : 'text-slate-400')}
             />
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
               {step.name}
@@ -204,12 +201,12 @@ const SidebarContent = memo(
               >
                 <EventIcon2 className="h-4 w-4 opacity-70" />
                 {triggerCount > 0 && (
-                  <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-amber-500 px-0.5 text-[9px] font-semibold leading-none text-white">
+                  <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-white">
                     {triggerCount}
                   </span>
                 )}
               </button>
-              <span className="text-[10.5px] text-slate-400 group-hover:hidden">
+              <span className="text-[11px] text-slate-400 group-hover:hidden">
                 {meta ? t(meta.labelKey) : null}
               </span>
               <button

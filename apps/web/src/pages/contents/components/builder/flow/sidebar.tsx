@@ -38,7 +38,7 @@ export const BuilderSideBar = () => {
           </div>
         </ScrollArea>
       </CardContent>
-      <CardFooter className="flex-none border-t border-border/50 px-4 py-3.5">
+      <CardFooter className="flex-none border-t border-border/50 p-4">
         <SidebarFooter onSave={handleSave} isLoading={isLoading} />
       </CardFooter>
     </>
