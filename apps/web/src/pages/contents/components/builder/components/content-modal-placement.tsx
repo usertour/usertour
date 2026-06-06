@@ -17,8 +17,10 @@ const PlacementButton = (props: PlacementButtonProps) => {
   return (
     <Button
       className={cn(
-        'h-8 w-24 p-0.5 text-xs bg-background-400',
-        currentPosition === position ? 'bg-primary' : '',
+        'h-8 w-24 p-0.5 text-xs',
+        currentPosition === position
+          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+          : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
       )}
       onClick={() => {
         onPositionChange(position);
@@ -62,7 +64,7 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
         <h1 className="text-sm">{t('contentBuilder.shared.placement')}</h1>
         <QuestionTooltip>{t('contentBuilder.shared.placementTooltip', { name })}</QuestionTooltip>
       </div>
-      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
+      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-3">
         <div className="flex justify-between">
           <PlacementButton
             text={t('contentBuilder.shared.position.leftTop')}

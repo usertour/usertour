@@ -28,7 +28,7 @@ export const ContentSettings = (props: ContentSettingsProps) => {
   return (
     <div className="space-y-3">
       <h1 className="text-sm">{t('contentBuilder.flow.settings')}</h1>
-      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-2">
+      <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between space-x-2">
           <Label htmlFor="explicit-completion-step" className="flex flex-row space-x-1">
             <span className="font-normal">{t('contentBuilder.flow.explicitCompletionStep')}</span>

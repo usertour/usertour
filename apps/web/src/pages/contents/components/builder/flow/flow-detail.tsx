@@ -194,7 +194,7 @@ const FlowBuilderDetailBody = () => {
                   themeId={currentStep.themeId}
                   onChange={handleThemeChange}
                 />
-                <Separator />
+                <Separator className="bg-border/50" />
                 <ContentWidth
                   type={currentStep.type as 'tooltip' | 'modal' | 'bubble'}
                   width={currentStep.setting.width}
@@ -230,7 +230,7 @@ const FlowBuilderDetailBody = () => {
             )}
             {currentStep.type !== StepContentType.HIDDEN && (
               <>
-                <Separator />
+                <Separator className="bg-border/50" />
                 <ContentSettings
                   data={{
                     enabledBackdrop: currentStep.setting.enabledBackdrop,

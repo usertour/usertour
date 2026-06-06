@@ -133,7 +133,7 @@ export const Alignment = (props: AlignmentProps) => {
             />
             <Circle side={POSITIONS.RIGHT} align={ALIGNMENTS.END} onClick={handleAlignmentChange} />
           </div>
-          <div className="items-center bg-background-400 rounded flex grow h-20 justify-center relative w-full m-3 px-3 py-6">
+          <div className="items-center bg-slate-200 rounded flex grow h-20 justify-center relative w-full m-3 px-3 py-6">
             <p className="text-sm">{text}</p>
             <div
               className={cn('absolute border-transparent border-solid border-[6px]', arrowCls)}
