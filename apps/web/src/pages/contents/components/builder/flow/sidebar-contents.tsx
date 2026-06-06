@@ -182,73 +182,92 @@ const SidebarContent = memo(
                 </Tooltip>
               </TooltipProvider>
             )}
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleEditTrigger();
-                }}
-                title={
-                  triggerCount > 0
-                    ? t('contentBuilder.flow.trigger', { count: triggerCount })
-                    : t('contentBuilder.flow.addTriggerTooltip')
-                }
-                className={cn(
-                  'relative size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground',
-                  triggerCount > 0 ? 'grid' : 'hidden group-hover:grid',
-                )}
-              >
-                <EventIcon2 className="h-4 w-4 opacity-70" />
-                {triggerCount > 0 && (
-                  <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-white">
-                    {triggerCount}
-                  </span>
-                )}
-              </button>
-              <span className="text-[11px] text-slate-400 group-hover:hidden">
-                {meta ? t(meta.labelKey) : null}
-              </span>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleEdit();
-                }}
-                title={t('contentBuilder.flow.edit')}
-                className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground group-hover:grid"
-              >
-                <RiSettings3Line className="h-4 w-4 opacity-70" />
-              </button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={(event) => event.stopPropagation()}
-                    title={t('contentBuilder.flow.delete')}
-                    className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
-                  >
-                    <Delete2Icon className="h-4 w-4 opacity-70" />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {t('contentBuilder.flow.deleteConfirmTitle')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('contentBuilder.flow.deleteConfirmDescription')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('contentBuilder.common.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} variant={'destructive'}>
-                      {t('contentBuilder.flow.delete')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            <TooltipProvider>
+              <div className="flex shrink-0 items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleEditTrigger();
+                      }}
+                      className={cn(
+                        'relative size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground',
+                        triggerCount > 0 ? 'grid' : 'hidden group-hover:grid',
+                      )}
+                    >
+                      <EventIcon2 className="h-4 w-4 opacity-70" />
+                      {triggerCount > 0 && (
+                        <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-white">
+                          {triggerCount}
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[240px]">
+                    <p className="font-medium">
+                      {triggerCount > 0
+                        ? t('contentBuilder.flow.editTriggersTooltip', { total: triggerCount })
+                        : t('contentBuilder.flow.addTriggerTooltip')}
+                    </p>
+                    <p className="mt-0.5 text-background/70">
+                      {t('contentBuilder.flow.triggerTooltipDescription')}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-[11px] text-slate-400 group-hover:hidden">
+                  {meta ? t(meta.labelKey) : null}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleEdit();
+                      }}
+                      className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground group-hover:grid"
+                    >
+                      <RiSettings3Line className="h-4 w-4 opacity-70" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('contentBuilder.flow.editStepTooltip')}</TooltipContent>
+                </Tooltip>
+                <AlertDialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={(event) => event.stopPropagation()}
+                          className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+                        >
+                          <Delete2Icon className="h-4 w-4 opacity-70" />
+                        </button>
+                      </AlertDialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('contentBuilder.flow.deleteStepTooltip')}</TooltipContent>
+                  </Tooltip>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {t('contentBuilder.flow.deleteConfirmTitle')}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('contentBuilder.flow.deleteConfirmDescription')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('contentBuilder.common.cancel')}</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} variant={'destructive'}>
+                        {t('contentBuilder.flow.delete')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </TooltipProvider>
           </div>
         </div>
       );

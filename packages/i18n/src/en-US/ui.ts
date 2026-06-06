@@ -2259,7 +2259,12 @@ const translations = {
       delete: 'Delete',
       trigger_one: '{{count}} Trigger',
       trigger_other: '{{count}} Triggers',
-      addTriggerTooltip: 'Add Trigger',
+      addTriggerTooltip: 'Add a trigger',
+      editTriggersTooltip: 'Edit triggers ({{total}})',
+      triggerTooltipDescription:
+        'Automatically runs an action when its conditions are met — e.g. go to a step, start a flow, or dismiss.',
+      editStepTooltip: 'Edit step settings',
+      deleteStepTooltip: 'Delete step',
       deleteConfirmTitle: 'Are you absolutely sure?',
       deleteConfirmDescription:
         'After deletion, it will not be possible to access or recover the data through any means. Please confirm.',
