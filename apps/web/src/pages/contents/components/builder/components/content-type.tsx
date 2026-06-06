@@ -1,4 +1,3 @@
-import { Alert, AlertDescription, AlertTitle } from '@usertour/ui';
 import {
   RiAlertLine,
   RiChat2Line,
@@ -76,15 +75,19 @@ export const ContentType = (props: ContentTypeProps) => {
       </div>
 
       {type === StepContentType.HIDDEN && (
-        <Alert variant="warning">
-          <RiAlertLine className="h-4 w-4" />
-          <AlertTitle>{t('contentBuilder.flow.hiddenWarningTitle')}</AlertTitle>
-          <AlertDescription className="flex flex-col gap-2">
-            <span>{t('contentBuilder.flow.hiddenWarning1')}</span>
-            <span>{t('contentBuilder.flow.hiddenWarning2')}</span>
-            <span>{t('contentBuilder.flow.hiddenWarning3')}</span>
-          </AlertDescription>
-        </Alert>
+        <div className="space-y-2.5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-2">
+            <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <p className="text-sm font-semibold text-amber-900">
+              {t('contentBuilder.flow.hiddenWarningTitle')}
+            </p>
+          </div>
+          <div className="space-y-2 text-xs leading-relaxed text-amber-800">
+            <p>{t('contentBuilder.flow.hiddenWarning1')}</p>
+            <p>{t('contentBuilder.flow.hiddenWarning2')}</p>
+            <p>{t('contentBuilder.flow.hiddenWarning3')}</p>
+          </div>
+        </div>
       )}
     </div>
   );
