@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Popper,
   PopperClose,
@@ -133,7 +133,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                 />
               )}
               <ContentEditor
-                zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+                zIndex={BUILDER_Z.canvas}
                 customUploadRequest={upload}
                 initialValue={data}
                 attributes={attributeList}

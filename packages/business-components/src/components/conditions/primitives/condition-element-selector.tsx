@@ -1,5 +1,4 @@
 import { Button, Input, QuestionTooltip } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { type ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { useConditionsT } from '../conditions-context';
@@ -130,7 +129,3 @@ function Field({ label, tooltip, children }: FieldProps) {
     </div>
   );
 }
-
-// Re-export the constant so callers don't have to import directly when they
-// only need the selector's z-index context.
-export { EXTENSION_CONTENT_RULES };

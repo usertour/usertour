@@ -11,12 +11,11 @@ import {
   ContentPlacementProvider,
 } from '@/pages/contents/components/builder/components/content-placement';
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 
 export const FlowPlacement = () => {
   const { t } = useTranslation();
-  const { zIndex } = useBuilderConfig();
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { isShowError, currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
@@ -48,7 +47,6 @@ export const FlowPlacement = () => {
   return (
     <ContentPlacementProvider
       isShowError={isShowError}
-      zIndex={zIndex}
       target={currentStep?.target}
       screenshot={currentStep?.screenshot}
       onTargetChange={handleTargetChange}

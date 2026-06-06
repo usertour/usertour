@@ -1,4 +1,4 @@
-import { EXTENSION_SELECT } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { Label } from '@usertour/ui';
 import { Actions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, Step } from '@usertour/types';
@@ -22,7 +22,7 @@ export const ContentPlacementActions = ({
   contents,
   createStep,
 }: ContentPlacementActionsProps) => {
-  const { target, zIndex, onTargetChange } = useContentPlacement();
+  const { target, onTargetChange } = useContentPlacement();
   const { t } = useTranslation();
 
   // Render custom children if provided
@@ -34,7 +34,7 @@ export const ContentPlacementActions = ({
     <div className="flex flex-col space-y-2">
       <Label>{t('contentBuilder.shared.whenTargetClicked')}</Label>
       <Actions
-        baseZIndex={zIndex + EXTENSION_SELECT}
+        baseZIndex={BUILDER_Z.popover}
         currentStep={currentStep}
         currentVersion={currentVersion}
         conditions={target?.actions || []}

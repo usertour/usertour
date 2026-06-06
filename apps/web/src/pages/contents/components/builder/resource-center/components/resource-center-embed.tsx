@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import {
   ResourceCenterRoot,
@@ -86,7 +86,7 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
     }
     return (
       <ContentEditor
-        zIndex={EXTENSION_CONTENT_POPPER}
+        zIndex={BUILDER_Z.canvas}
         customUploadRequest={upload}
         initialValue={block.content}
         onValueChange={(value: ContentEditorRoot[]) => {
@@ -188,7 +188,7 @@ export const ResourceCenterEmbed = () => {
           const richTextBlock = block as ResourceCenterRichTextBlock;
           slots[block.id] = (
             <ContentEditor
-              zIndex={EXTENSION_CONTENT_POPPER}
+              zIndex={BUILDER_Z.canvas}
               customUploadRequest={upload}
               initialValue={richTextBlock.content}
               onValueChange={(value: ContentEditorRoot[]) => {

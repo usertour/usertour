@@ -1,6 +1,6 @@
 import { Button, Input, Label, QuestionTooltip, SelectPopover } from '@usertour/ui';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
-import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 
 export interface ElementSelectorProps {
@@ -120,7 +120,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
               onValueChange={handleSequenceValueChange}
               placeholder="Select a option"
               className="w-full"
-              contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+              contentStyle={{ zIndex: BUILDER_Z.rules }}
             />
           </div>
         </div>

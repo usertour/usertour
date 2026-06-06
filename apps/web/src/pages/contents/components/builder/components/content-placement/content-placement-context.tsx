@@ -4,7 +4,6 @@ import { createContext, useContext } from 'react';
 export interface ContentPlacementContextValue {
   target: ElementSelectorPropsData | undefined;
   onTargetChange: (value: Partial<ElementSelectorPropsData>) => void;
-  zIndex: number;
   isShowError?: boolean;
   screenshot?: StepScreenshot;
   buildUrl?: string;

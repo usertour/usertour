@@ -1,12 +1,16 @@
-export const EXTENSION_SIDEBAR_MAIN = 11000;
-export const EXTENSION_SIDEBAR_POPPER = 11001;
-export const EXTENSION_CONTENT_SIDEBAR = 11000;
-export const EXTENSION_SELECT = 11001;
-export const EXTENSION_CONTENT_RULES_DIALOG = 11002;
-export const EXTENSION_CONTENT_RULES = 11003;
-export const EXTENSION_PREVIEW_DIALOG = 11100;
-export const EXTENSION_CONTENT_POPPER = 10900;
-export const EXTENSION_CONTENT_MODAL = 10900;
+// Builder authoring z-index layers, low → high. They sit well above the admin
+// app so editing overlays stack correctly relative to each other. The base is
+// fixed (no per-instance offset): the builder is a full-screen takeover, so use
+// these directly. The production widget has its own scale (WidgetZIndex).
+export const BUILDER_Z = {
+  canvas: 10900, // preview widget on the canvas
+  panel: 11000, // floating sidebar / inspector panels
+  popover: 11001, // selects / popovers opened from a panel
+  rulesDialog: 11002, // rules sub-dialog
+  rules: 11003, // condition / action rule editors
+  previewDialog: 11100, // top-level preview dialog
+} as const;
+
 export const EDITOR_OVERLAY = 10901;
 export const EDITOR_SELECT = 10902;
 export const EDITOR_SIDEBAR = 10903;

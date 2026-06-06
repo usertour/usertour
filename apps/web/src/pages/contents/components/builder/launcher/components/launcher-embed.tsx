@@ -1,7 +1,8 @@
 import { ContentEditorRoot } from '@usertour/editor';
+import { BUILDER_Z } from '@usertour/constants';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useAws } from '@usertour/hooks';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
@@ -15,7 +16,6 @@ const previewTargetAnchorClass = 'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -
 
 export const LauncherBuilderEmbed = () => {
   const targetAnchorRef = useRef<HTMLDivElement>(null);
-  const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const theme = useCurrentTheme({ fallbackToDefault: true });
   const { data, updateDataTooltip, launcherTarget, launcherTooltip } = useLauncherEditor();
@@ -54,7 +54,7 @@ export const LauncherBuilderEmbed = () => {
       <LauncherContentMain
         theme={theme}
         triggerRef={targetAnchorRef}
-        zIndex={zIndex}
+        zIndex={BUILDER_Z.canvas}
         onCustomUploadRequest={upload}
         data={previewData}
         onValueChange={handleTooltipContentChange}

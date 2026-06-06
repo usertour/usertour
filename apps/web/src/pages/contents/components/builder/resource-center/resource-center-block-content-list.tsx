@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -25,7 +26,6 @@ import {
   TooltipTrigger,
   Switch,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import {
   ChecklistIcon,
@@ -50,11 +50,7 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  useBuilderConfig,
-  useEnvironmentId,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
@@ -106,7 +102,6 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
   const { onEditItem } = props;
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { zIndex } = useBuilderConfig();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
@@ -283,7 +278,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
               iconUrl={currentBlock.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               onChange={handleIconChange}
             />
@@ -295,7 +290,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  zIndex={zIndex + EXTENSION_SELECT}
+                  zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [
                       { type: 'paragraph', children: [{ text: '' }] },
@@ -306,7 +301,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                 />
               </ContentErrorAnchor>
             </div>
-            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+            <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
               {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
@@ -323,7 +318,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
               type={currentBlock.flowIconType}
               iconSource={currentBlock.flowIconSource}
               iconUrl={currentBlock.flowIconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               onChange={handleFlowIconChange}
             />
@@ -341,7 +336,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
               type={currentBlock.checklistIconType}
               iconSource={currentBlock.checklistIconSource}
               iconUrl={currentBlock.checklistIconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               onChange={handleChecklistIconChange}
             />
@@ -427,10 +422,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                   {t('contentBuilder.resourceCenter.add')}
                 </div>
               </PopoverTrigger>
-              <PopoverContent
-                className="w-[280px] p-0"
-                style={{ zIndex: zIndex + EXTENSION_SELECT }}
-              >
+              <PopoverContent className="w-[280px] p-0" style={{ zIndex: BUILDER_Z.popover }}>
                 <Command filter={handleFilter}>
                   <CommandInput
                     placeholder={t('contentBuilder.resourceCenter.searchContentPlaceholder')}
@@ -535,7 +527,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

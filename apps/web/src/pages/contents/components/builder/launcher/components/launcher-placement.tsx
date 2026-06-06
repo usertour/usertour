@@ -3,12 +3,11 @@ import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
 export const LauncherPlacement = () => {
-  const { zIndex } = useBuilderConfig();
   const isShowError = useBuilderStore((state) => state.isShowError);
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { setLauncherTarget, launcherTarget } = useLauncherEditor();
@@ -32,7 +31,6 @@ export const LauncherPlacement = () => {
   return (
     <ContentPlacementProvider
       isShowError={isShowError}
-      zIndex={zIndex}
       target={launcherTarget?.element}
       screenshot={launcherTarget?.screenshot}
       onTargetChange={handleTargetChange}

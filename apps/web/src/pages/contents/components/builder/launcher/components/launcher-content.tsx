@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import {
   PopperMadeWith,
   LauncherContainer,
@@ -52,7 +52,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
               <LauncherPopperContent>
                 <ContentEditor
                   attributes={attributeList || []}
-                  zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+                  zIndex={BUILDER_Z.canvas}
                   customUploadRequest={onCustomUploadRequest}
                   actionItems={[
                     ContentActionsItemType.LAUNCHER_DISMIS,

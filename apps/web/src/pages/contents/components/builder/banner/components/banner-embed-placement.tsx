@@ -1,16 +1,15 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, BannerEmbedPlacement } from '@usertour/types';
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
-
-import { EXTENSION_SELECT } from '@usertour/constants';
 import { CompactSelect } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
 import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
@@ -24,7 +23,6 @@ const PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; i18n: string }[] = [
 ];
 
 export const BannerEmbedPlacementSelect = () => {
-  const { zIndex } = useBuilderConfig();
   const isShowError = useBuilderStore((state) => state.isShowError);
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
@@ -68,12 +66,11 @@ export const BannerEmbedPlacementSelect = () => {
         onChange={(value) => updateLocalData({ embedPlacement: value as BannerEmbedPlacement })}
         placeholder={t('contentBuilder.banner.selectPlacement')}
         className="w-full"
-        contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+        contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
       {requiresElement && (
         <ContentPlacementProvider
           isShowError={isShowError}
-          zIndex={zIndex}
           target={localData.containerElement}
           onTargetChange={handleTargetChange}
           buildUrl={currentContent?.buildUrl}

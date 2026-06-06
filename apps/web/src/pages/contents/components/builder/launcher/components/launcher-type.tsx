@@ -1,18 +1,16 @@
-import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { Input } from '@usertour/ui';
 import { LauncherDataType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { IconPicker } from '@/pages/contents/components/builder/components';
 import { LauncherContentType } from '@/pages/contents/components/builder/launcher/components/launcher-content-type';
-import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
 export const LauncherType = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();
-  const { zIndex } = useBuilderConfig();
   const { t } = useTranslation();
-  const sidebarZIndex = zIndex + EXTENSION_SIDEBAR_MAIN;
+  const sidebarZIndex = BUILDER_Z.panel;
 
   return (
     <FieldSection title={t('contentBuilder.launcher.appearance')}>

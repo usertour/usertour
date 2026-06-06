@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
@@ -113,7 +113,7 @@ export const BannerEmbed = () => {
 
   // localData is already normalized; overlay only the preview-only zIndex.
   const data = useMemo(
-    () => ({ ...localData, zIndex: localData.zIndex ?? 10000 + EXTENSION_CONTENT_POPPER }),
+    () => ({ ...localData, zIndex: localData.zIndex ?? 10000 + BUILDER_Z.canvas }),
     [localData],
   );
 
@@ -129,7 +129,7 @@ export const BannerEmbed = () => {
   const banner = (
     <BannerPreview previewMode ref={setWrapperEl}>
       <ContentEditor
-        zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+        zIndex={BUILDER_Z.canvas}
         customUploadRequest={upload}
         initialValue={localData.contents}
         onValueChange={handleContentChange}

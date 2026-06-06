@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useChecklistPreviewAnimation } from '@usertour/hooks';
 import {
@@ -90,7 +90,7 @@ export const ChecklistEmbed = () => {
               <ChecklistDropdown />
               <ChecklistPopperContentBody>
                 <ContentEditor
-                  zIndex={EXTENSION_CONTENT_POPPER}
+                  zIndex={BUILDER_Z.canvas}
                   customUploadRequest={upload}
                   initialValue={localData.content}
                   onValueChange={handleContentChange}

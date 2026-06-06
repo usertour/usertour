@@ -1,6 +1,6 @@
 import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
+import { BUILDER_Z } from '@usertour/constants';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
-import { EXTENSION_SELECT } from '@usertour/constants';
 import { Theme } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,11 +10,10 @@ interface ContentThemeProps {
   themeId?: string;
   onChange: (themeId: string | undefined) => void;
   onEdited: () => void;
-  zIndex: number;
 }
 
 export const ContentTheme = (props: ContentThemeProps) => {
-  const { themeId: initialValue, themeList, onChange, onEdited, zIndex } = props;
+  const { themeId: initialValue, themeList, onChange, onEdited } = props;
   const { t } = useTranslation();
 
   const themeOptions = useMemo(() => {
@@ -53,7 +52,7 @@ export const ContentTheme = (props: ContentThemeProps) => {
         onChange={handleThemeChange}
         placeholder={t('contentBuilder.shared.theme.sameAsFlow')}
         className="w-full bg-slate-50 shadow-none hover:bg-slate-100"
-        contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+        contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
     </div>
   );

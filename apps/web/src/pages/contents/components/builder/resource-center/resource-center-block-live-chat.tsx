@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -11,7 +12,6 @@ import {
   Switch,
   Label,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { RiAlertLine, RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini, CodeEditor } from '@usertour/editor';
@@ -26,11 +26,7 @@ import {
   RulesCondition,
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
-import {
-  useBuilderConfig,
-  useEnvironmentId,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
@@ -132,7 +128,6 @@ const BlockLiveChatHeader = () => {
 const BlockLiveChatBody = () => {
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { zIndex } = useBuilderConfig();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
@@ -197,7 +192,7 @@ const BlockLiveChatBody = () => {
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
               iconUrl={currentBlock.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               onChange={handleIconChange}
             />
@@ -209,7 +204,7 @@ const BlockLiveChatBody = () => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  zIndex={zIndex + EXTENSION_SELECT}
+                  zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [
                       { type: 'paragraph', children: [{ text: '' }] },
@@ -220,7 +215,7 @@ const BlockLiveChatBody = () => {
                 />
               </ContentErrorAnchor>
             </div>
-            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+            <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
               {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
@@ -237,7 +232,7 @@ const BlockLiveChatBody = () => {
               onChange={handleProviderChange}
               placeholder={t(`${I18N_PREFIX}.selectProvider`)}
               className="w-full"
-              contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+              contentStyle={{ zIndex: BUILDER_Z.popover }}
             />
           </div>
 
@@ -299,7 +294,7 @@ const BlockLiveChatBody = () => {
                   {t(`${I18N_PREFIX}.customCodeHint`)}
                 </p>
               </div>
-              <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
                 {t(`${I18N_PREFIX}.customCodeRequired`)}
               </ContentErrorContent>
             </ContentError>
@@ -327,7 +322,7 @@ const BlockLiveChatBody = () => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

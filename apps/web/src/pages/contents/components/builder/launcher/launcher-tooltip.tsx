@@ -1,13 +1,10 @@
 'use client';
-
 import { Button, CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
-import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { LauncherData } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { ContentAlignment } from '@/pages/contents/components/builder/components/content-alignment';
 import { ContentWidth } from '@/pages/contents/components/builder/components/content-width';
-import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 import { LauncherPosition } from '@/pages/contents/components/builder/launcher/components/launcher-position';
@@ -42,7 +39,6 @@ const LauncherTooltipHeader = () => {
 
 const LauncherTooltipBody = () => {
   const { launcherTooltip, setLauncherTooltip } = useLauncherEditor();
-  const { zIndex } = useBuilderConfig();
 
   const updateLauncherTooltip = (updates: Partial<LauncherData['tooltip']>) => {
     setLauncherTooltip((prev) => {
@@ -66,7 +62,6 @@ const LauncherTooltipBody = () => {
           <LauncherPosition
             type={launcherTooltip.reference}
             onChange={(value) => updateLauncherTooltip({ reference: value })}
-            zIndex={zIndex + EXTENSION_SIDEBAR_MAIN}
           />
           <ContentWidth
             type="tooltip"

@@ -1,22 +1,21 @@
 import { SidebarMini } from '@/pages/contents/components/builder/components/sidebar/sidebar-mini';
+import { BUILDER_Z } from '@usertour/constants';
 
 import { Card } from '@usertour/ui';
-import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { useRef } from 'react';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 
 interface SidebarContainerProps {
   children: React.ReactNode;
   className?: string;
 }
 export const SidebarContainer = ({ children, className }: SidebarContainerProps) => {
-  const { zIndex } = useBuilderConfig();
   const position = useBuilderStore((state) => state.position);
   const sidbarRef = useRef<HTMLDivElement | null>(null);
   return (
     <div
-      style={{ zIndex: zIndex + EXTENSION_SIDEBAR_MAIN }}
+      style={{ zIndex: BUILDER_Z.panel }}
       className={cn(
         'w-80 h-screen p-2 fixed top-0',
         position === 'left' ? 'left-0' : 'right-0',

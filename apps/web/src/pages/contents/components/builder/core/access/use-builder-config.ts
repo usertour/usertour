@@ -3,7 +3,7 @@ import type { BuilderProviderContextValue } from '@/pages/contents/components/bu
 import { BuilderProviderContext } from '@/pages/contents/components/builder/core/builder-provider';
 
 // Static config passed to BuilderProvider as props — onSaved /
-// shouldShowMadeWith / zIndex / environmentId / projectId. Never
+// shouldShowMadeWith / environmentId / projectId. Never
 // changes after Provider mount.
 //
 // Mount-stable: reading this hook costs zero subscriptions —

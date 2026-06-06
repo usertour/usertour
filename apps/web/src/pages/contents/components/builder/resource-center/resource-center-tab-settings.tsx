@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -10,13 +11,11 @@ import {
   Label,
   ScrollArea,
 } from '@usertour/ui';
-import { EXTENSION_SELECT } from '@usertour/constants';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
 import { useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
 import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
@@ -51,7 +50,6 @@ const TabSettingsHeader = () => {
 
 const TabSettingsBody = () => {
   const { editingTab, setEditingTab, isShowError } = useResourceCenterEditor();
-  const { zIndex } = useBuilderConfig();
   const { t } = useTranslation();
 
   if (!editingTab) {
@@ -96,7 +94,7 @@ const TabSettingsBody = () => {
                 />
               </ContentErrorAnchor>
             </div>
-            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+            <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
               {t('contentBuilder.resourceCenter.tabNameRequired')}
             </ContentErrorContent>
           </ContentError>
@@ -108,7 +106,7 @@ const TabSettingsBody = () => {
               type={editingTab.iconType}
               iconSource={editingTab.iconSource}
               iconUrl={editingTab.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               onChange={handleIconChange}
             />
           </div>

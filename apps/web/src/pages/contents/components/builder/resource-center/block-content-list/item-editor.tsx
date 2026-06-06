@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -10,7 +11,6 @@ import {
   ScrollArea,
   Switch,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { RiArrowLeftSLine } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
@@ -24,11 +24,7 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import {
-  useBuilderConfig,
-  useEnvironmentId,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
@@ -67,7 +63,6 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
   const { itemIndex } = props;
   const { currentBlock, setCurrentBlock } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { zIndex } = useBuilderConfig();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
@@ -135,7 +130,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
               type={item.iconType ?? ''}
               iconSource={item.iconSource ?? LauncherIconSource.INHERIT}
               iconUrl={item.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               showInherit={true}
               onChange={handleIconChange}
@@ -151,7 +146,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
               </QuestionTooltip>
             </div>
             <PopperEditorMini
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               initialValue={
                 (item.navigateUrl as Descendant[]) ?? [
                   { type: 'paragraph', children: [{ text: '' }] },
@@ -184,7 +179,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

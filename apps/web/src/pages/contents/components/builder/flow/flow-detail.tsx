@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -10,7 +11,6 @@ import {
   ScrollArea,
   Separator,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
 import {
   Align,
   ContentAlignmentData,
@@ -22,7 +22,6 @@ import { cn } from '@usertour/tailwind';
 import { Ref, useCallback, useMemo, useRef } from 'react';
 import { getThemeWidthByStepType } from '@usertour/widget';
 import {
-  useBuilderConfig,
   useBuilderContentRef,
   useBuilderStore,
   useProjectId,
@@ -88,7 +87,6 @@ const FlowBuilderDetailHeader = () => {
 };
 
 const FlowBuilderDetailBody = () => {
-  const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const projectId = useProjectId();
   const { currentStep, updateCurrentStep } = useFlowEditor();
@@ -174,7 +172,6 @@ const FlowBuilderDetailBody = () => {
                 <ContentTheme
                   themeList={themeList}
                   onEdited={handleEditTheme}
-                  zIndex={zIndex}
                   themeId={currentStep.themeId}
                   onChange={handleThemeChange}
                 />
@@ -305,7 +302,6 @@ const FlowBuilderDetailFooter = () => {
 };
 
 export const FlowBuilderDetailEmbed = () => {
-  const { zIndex } = useBuilderConfig();
   const contentRef = useBuilderContentRef();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const currentContent = useBuilderStore((state) => state.currentContent);
@@ -339,7 +335,7 @@ export const FlowBuilderDetailEmbed = () => {
           currentContent={currentContent}
           contents={contents}
           triggerRef={triggerRef}
-          zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+          zIndex={BUILDER_Z.canvas}
           projectId={projectId}
           currentStep={currentStep}
           currentVersion={currentVersion}
@@ -358,7 +354,7 @@ export const FlowBuilderDetailEmbed = () => {
         attributeList={attributeList}
         projectId={projectId}
         contents={contents}
-        zIndex={zIndex}
+        zIndex={BUILDER_Z.canvas}
         currentIndex={currentIndex}
         currentStep={currentStep}
         currentVersion={currentVersion}
@@ -377,7 +373,7 @@ export const FlowBuilderDetailEmbed = () => {
         attributeList={attributeList}
         projectId={projectId}
         contents={contents}
-        zIndex={zIndex}
+        zIndex={BUILDER_Z.canvas}
         currentIndex={currentIndex}
         currentStep={currentStep}
         currentVersion={currentVersion}

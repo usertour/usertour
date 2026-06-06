@@ -60,7 +60,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       config: {
         onSaved,
         shouldShowMadeWith,
-        zIndex: 0,
         environmentId,
         projectId,
         contentId,

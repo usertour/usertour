@@ -1,4 +1,4 @@
-import { EXTENSION_SELECT } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
 import { ChangeEvent, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { useContentPlacement } from '@/pages/contents/components/builder/compone
 import { SequenceSelect } from '@/pages/contents/components/builder/components/content-placement/sequence-select';
 
 export const ContentPlacementManual = () => {
-  const { target, onTargetChange, zIndex, isShowError } = useContentPlacement();
+  const { target, onTargetChange, isShowError } = useContentPlacement();
   const { t } = useTranslation();
 
   const handleContentChange = useCallback(
@@ -66,11 +66,11 @@ export const ContentPlacementManual = () => {
           <SequenceSelect
             value={target?.sequence}
             onChange={handleSequenceChange}
-            zIndex={zIndex + EXTENSION_SELECT}
+            zIndex={BUILDER_Z.popover}
           />
         </div>
       </div>
-      <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+      <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
         {t('contentBuilder.shared.cssSelectorRequired')}
       </ContentErrorContent>
     </ContentError>

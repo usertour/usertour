@@ -34,7 +34,6 @@ export interface BuilderProviderMethods {
 export interface BuilderProviderConfig {
   onSaved: () => Promise<void>;
   shouldShowMadeWith: boolean;
-  zIndex: number;
   environmentId: string;
   projectId: string;
   contentId: string;

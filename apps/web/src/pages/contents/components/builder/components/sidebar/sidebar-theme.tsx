@@ -1,22 +1,17 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
-import { EXTENSION_SELECT } from '@usertour/constants';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  useBuilderConfig,
-  useBuilderStore,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useBuilderStore, useProjectId } from '@/pages/contents/components/builder/core';
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
-  const { zIndex } = useBuilderConfig();
   const { t } = useTranslation();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
@@ -69,7 +64,7 @@ export const SidebarTheme = () => {
           onChange={handleThemeChange}
           placeholder={t('contentBuilder.shared.theme.selectPlaceholder')}
           className="w-full bg-slate-50 shadow-none hover:bg-slate-100"
-          contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+          contentStyle={{ zIndex: BUILDER_Z.popover }}
         />
       )}
     </>

@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import { RiAddCircleLine } from '@usertour/icons';
 import {
   CardContent,
@@ -12,7 +13,6 @@ import {
   ScrollArea,
   Button,
 } from '@usertour/ui';
-import { EXTENSION_SELECT } from '@usertour/constants';
 import {
   ContentEditorRoot,
   LauncherIconSource,
@@ -21,7 +21,6 @@ import {
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
@@ -136,7 +135,6 @@ const ResourceCenterMainViewBody = () => {
     updateData: updateLocalData,
     currentTabId,
   } = useResourceCenterEditor();
-  const { zIndex } = useBuilderConfig();
   const { t } = useTranslation();
 
   const currentTab = localData.tabs.find((tab) => tab.id === currentTabId);
@@ -207,7 +205,7 @@ const ResourceCenterMainViewBody = () => {
                     align="start"
                     sideOffset={6}
                     className="min-w-[280px]"
-                    style={{ zIndex: zIndex + EXTENSION_SELECT }}
+                    style={{ zIndex: BUILDER_Z.popover }}
                   >
                     {BLOCK_TYPE_OPTIONS.map(
                       ({ key, value, label, description, icon: Icon, disabled }) => {

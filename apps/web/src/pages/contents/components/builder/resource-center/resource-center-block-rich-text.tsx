@@ -10,7 +10,7 @@ import {
   ScrollArea,
   Switch,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
@@ -102,7 +102,7 @@ const BlockRichTextBody = () => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

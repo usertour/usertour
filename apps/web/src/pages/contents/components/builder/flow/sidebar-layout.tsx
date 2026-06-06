@@ -1,7 +1,7 @@
 'use client';
 
 import { Card } from '@usertour/ui';
-import { EXTENSION_CONTENT_SIDEBAR } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { RiMenuFoldLine, RiMenuUnfoldLine } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { useState } from 'react';
@@ -29,7 +29,7 @@ export const FlowSidebarLayout = () => {
   return (
     <>
       <div
-        style={{ zIndex: EXTENSION_CONTENT_SIDEBAR, width }}
+        style={{ zIndex: BUILDER_Z.panel, width }}
         className={cn(
           'fixed top-[18px] bottom-[18px] transition-all duration-300 ease-in-out',
           isLeft ? 'left-[18px]' : 'right-[18px]',
@@ -51,7 +51,7 @@ export const FlowSidebarLayout = () => {
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          style={{ zIndex: EXTENSION_CONTENT_SIDEBAR }}
+          style={{ zIndex: BUILDER_Z.panel }}
           title={t('contentBuilder.common.expandPanel')}
           className={cn(
             'fixed top-[22px] grid size-9 place-items-center rounded-xl border border-border bg-background-900 text-muted-foreground shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:bg-muted hover:text-foreground',

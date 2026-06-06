@@ -1,4 +1,4 @@
-import { EXTENSION_SELECT } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { CompactSelect } from '@usertour/ui';
 import { LauncherPositionType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
@@ -7,11 +7,10 @@ import { FieldSection } from '@/pages/contents/components/builder/shared/fields'
 interface LauncherPositionProps {
   type?: LauncherPositionType;
   onChange: (value: LauncherPositionType) => void;
-  zIndex: number;
 }
 
 export const LauncherPosition = (props: LauncherPositionProps) => {
-  const { onChange, zIndex, type = LauncherPositionType.TARGET } = props;
+  const { onChange, type = LauncherPositionType.TARGET } = props;
   const { t } = useTranslation();
 
   const options = [
@@ -32,7 +31,7 @@ export const LauncherPosition = (props: LauncherPositionProps) => {
         value={type}
         onChange={(value) => onChange(value as LauncherPositionType)}
         className="w-full"
-        contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+        contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
     </FieldSection>
   );

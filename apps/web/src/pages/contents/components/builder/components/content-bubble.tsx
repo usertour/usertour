@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_MODAL } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Popper,
   PopperBubblePortal,
@@ -127,7 +127,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
                 />
               )}
               <ContentEditor
-                zIndex={zIndex + EXTENSION_CONTENT_MODAL}
+                zIndex={BUILDER_Z.canvas}
                 enabledElementTypes={enabledElementTypes}
                 customUploadRequest={upload}
                 initialValue={data}

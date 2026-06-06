@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -10,7 +11,6 @@ import {
   Switch,
   Label,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
@@ -20,11 +20,7 @@ import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import {
-  useBuilderConfig,
-  useEnvironmentId,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
@@ -62,7 +58,6 @@ const BlockSubPageHeader = () => {
 const BlockSubPageBody = () => {
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
-  const { zIndex } = useBuilderConfig();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
@@ -120,7 +115,7 @@ const BlockSubPageBody = () => {
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
               iconUrl={currentBlock.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               onChange={handleIconChange}
             />
@@ -132,7 +127,7 @@ const BlockSubPageBody = () => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  zIndex={zIndex + EXTENSION_SELECT}
+                  zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [
                       { type: 'paragraph', children: [{ text: '' }] },
@@ -143,7 +138,7 @@ const BlockSubPageBody = () => {
                 />
               </ContentErrorAnchor>
             </div>
-            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+            <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
               {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
@@ -170,7 +165,7 @@ const BlockSubPageBody = () => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

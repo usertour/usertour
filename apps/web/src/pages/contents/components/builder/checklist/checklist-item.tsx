@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -11,7 +12,6 @@ import {
   ScrollArea,
   Switch,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
@@ -27,11 +27,7 @@ import {
 import { useId, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  useBuilderConfig,
-  useEnvironmentId,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
@@ -65,7 +61,6 @@ const ChecklistItemBody = () => {
   const { currentItem, setCurrentItem } = useChecklistEditor();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { zIndex } = useBuilderConfig();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const formPrefix = useId();
@@ -128,7 +123,7 @@ const ChecklistItemBody = () => {
           <div className="flex flex-col space-y-2">
             <Label>{t('contentBuilder.checklist.whenClicked')}</Label>
             <Actions
-              baseZIndex={zIndex + EXTENSION_SELECT}
+              baseZIndex={BUILDER_Z.popover}
               currentStep={undefined}
               filterItems={[
                 ContentActionsItemType.CHECKLIST_DISMIS,
@@ -156,7 +151,7 @@ const ChecklistItemBody = () => {
               segments={segmentList}
               events={eventList}
               token={token}
-              baseZIndex={EXTENSION_CONTENT_RULES}
+              baseZIndex={BUILDER_Z.rules}
               t={t}
             />
           </div>
@@ -181,7 +176,7 @@ const ChecklistItemBody = () => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -10,7 +11,6 @@ import {
   Switch,
   Label,
 } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { Actions, PopperEditorMini } from '@usertour/editor';
@@ -26,11 +26,7 @@ import {
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import {
-  useBuilderConfig,
-  useEnvironmentId,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
@@ -70,7 +66,6 @@ const BlockActionBody = () => {
   const { currentBlock, setCurrentBlock, isShowError } = useResourceCenterEditor();
   const { attributeList } = useAttributeList();
   const { contents } = useContentList();
-  const { zIndex } = useBuilderConfig();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
@@ -125,7 +120,7 @@ const BlockActionBody = () => {
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
               iconUrl={currentBlock.iconUrl}
-              zIndex={zIndex + EXTENSION_SELECT}
+              zIndex={BUILDER_Z.popover}
               showNoIcon={true}
               onChange={handleIconChange}
             />
@@ -137,7 +132,7 @@ const BlockActionBody = () => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  zIndex={zIndex + EXTENSION_SELECT}
+                  zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [
                       { type: 'paragraph', children: [{ text: '' }] },
@@ -148,7 +143,7 @@ const BlockActionBody = () => {
                 />
               </ContentErrorAnchor>
             </div>
-            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+            <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
               {t('contentBuilder.resourceCenter.nameRequired')}
             </ContentErrorContent>
           </ContentError>
@@ -157,7 +152,7 @@ const BlockActionBody = () => {
           <div className="flex flex-col space-y-2">
             <Label>{t('contentBuilder.resourceCenter.whenClicked')}</Label>
             <Actions
-              baseZIndex={zIndex + EXTENSION_SELECT}
+              baseZIndex={BUILDER_Z.popover}
               currentStep={undefined}
               filterItems={[
                 ContentActionsItemType.FLOW_START,
@@ -196,7 +191,7 @@ const BlockActionBody = () => {
                 segments={segmentList}
                 events={eventList}
                 token={token}
-                baseZIndex={EXTENSION_CONTENT_RULES}
+                baseZIndex={BUILDER_Z.rules}
                 t={t}
               />
             )}

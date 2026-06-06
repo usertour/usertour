@@ -1,5 +1,6 @@
 'use client';
 
+import { BUILDER_Z } from '@usertour/constants';
 import {
   Button,
   CardContent,
@@ -11,11 +12,9 @@ import {
   Switch,
 } from '@usertour/ui';
 import { RiAddCircleLine } from '@usertour/icons';
-import { EXTENSION_SELECT } from '@usertour/constants';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
-import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
@@ -37,7 +36,6 @@ const defaultItem = {
 
 const ChecklistMainViewBody = () => {
   const { data: localData, addItem, updateData: updateLocalData } = useChecklistEditor();
-  const { zIndex } = useBuilderConfig();
   const { t } = useTranslation();
 
   return (
@@ -93,7 +91,7 @@ const ChecklistMainViewBody = () => {
             }
             placeholder={t('contentBuilder.checklist.selectOption')}
             className="w-full"
-            contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+            contentStyle={{ zIndex: BUILDER_Z.popover }}
           />
 
           <div className={labelStyles}>
@@ -118,7 +116,7 @@ const ChecklistMainViewBody = () => {
             }
             placeholder={t('contentBuilder.checklist.selectOption')}
             className="w-full"
-            contentStyle={{ zIndex: zIndex + EXTENSION_SELECT }}
+            contentStyle={{ zIndex: BUILDER_Z.popover }}
           />
 
           <div className={flexBetween}>

@@ -1,5 +1,5 @@
 import { Button, Label } from '@usertour/ui';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { Delete2Icon } from '@usertour/icons';
 import {
   ConditionWait,
@@ -23,7 +23,6 @@ interface ContentTriggerProps {
   attributeList: Attribute[] | undefined;
   currentVersion: ContentVersion | undefined;
   currentContent: Content | undefined;
-  zIndex: number;
   contents: Content[];
   currentStep: Step;
   token: string;
@@ -42,7 +41,6 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
     actions,
     attributeList,
     currentVersion,
-    zIndex,
     contents,
     conditions,
     token,
@@ -143,7 +141,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
                 (item) => item !== 'segment' && item !== 'content' && item !== 'event',
               )}
               onElementChange={onRulesConditionElementChange}
-              baseZIndex={EXTENSION_CONTENT_RULES}
+              baseZIndex={BUILDER_Z.rules}
               t={t}
             />
             <ConditionWait
@@ -154,7 +152,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
             />
             <Label>{t('contentBuilder.flow.actionWhenTriggered')}</Label>
             <Actions
-              baseZIndex={zIndex + EXTENSION_SELECT}
+              baseZIndex={BUILDER_Z.popover}
               currentStep={currentStep}
               currentVersion={currentVersion}
               conditions={localActions}
@@ -168,7 +166,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
           </ContentErrorAnchor>
           <ContentErrorContent
             style={{
-              zIndex: EXTENSION_CONTENT_RULES,
+              zIndex: BUILDER_Z.rules,
             }}
           >
             {conditions.length === 0 && t('actions.errors.trigger.emptyConditions')}

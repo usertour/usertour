@@ -1,4 +1,4 @@
-import { EXTENSION_SELECT } from '@usertour/constants';
+import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import {
@@ -24,7 +24,7 @@ import {
   RulesCondition,
 } from '@usertour/types';
 import { useCallback } from 'react';
-import { useBuilderConfig, useBuilderStore } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
@@ -37,11 +37,10 @@ interface TriggerDropdownProps {
   value: string;
   options: TriggerOption[];
   onChange: (value: string) => void;
-  zIndex: number;
 }
 
 const TriggerDropdown = (props: TriggerDropdownProps) => {
-  const { value, options, onChange, zIndex } = props;
+  const { value, options, onChange } = props;
   const selected = options.find((option) => option.value === value);
   return (
     <DropdownMenu>
@@ -51,7 +50,7 @@ const TriggerDropdown = (props: TriggerDropdownProps) => {
           <RiArrowDownSLine size={16} className="opacity-70" />
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+      <DropdownMenuContent align="start" style={{ zIndex: BUILDER_Z.popover }}>
         <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
           {options.map((option) => (
             <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -65,7 +64,6 @@ const TriggerDropdown = (props: TriggerDropdownProps) => {
 };
 
 export const LauncherBehavior = () => {
-  const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { contents } = useContentList();
   const { attributeList } = useAttributeList();
@@ -123,14 +121,12 @@ export const LauncherBehavior = () => {
             value={localData.behavior.triggerElement}
             options={triggerElementOptions}
             onChange={handleStateChange('triggerElement')}
-            zIndex={zIndex}
           />
           <span className="text-sm">{t('contentBuilder.launcher.behaviorEditor.is')}</span>
           <TriggerDropdown
             value={localData.behavior.triggerEvent}
             options={triggerEventOptions}
             onChange={handleStateChange('triggerEvent')}
-            zIndex={zIndex}
           />
         </div>
         <div className="text-sm">{t('contentBuilder.launcher.behaviorEditor.thenLabel')}</div>
@@ -168,7 +164,7 @@ export const LauncherBehavior = () => {
             className="bg-background p-2 rounded-lg"
           >
             <Actions
-              baseZIndex={zIndex + EXTENSION_SELECT}
+              baseZIndex={BUILDER_Z.popover}
               currentStep={undefined}
               currentVersion={currentVersion}
               onChange={handleStateChange('actions')}

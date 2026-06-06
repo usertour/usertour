@@ -10,11 +10,7 @@ import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { useCallback, useEffect } from 'react';
 import { ContentTrigger } from '@/pages/contents/components/builder/components/content-trigger';
-import {
-  useBuilderConfig,
-  useBuilderStore,
-  useProjectId,
-} from '@/pages/contents/components/builder/core';
+import { useBuilderStore, useProjectId } from '@/pages/contents/components/builder/core';
 import {
   TriggerProvider,
   useTriggerContext,
@@ -50,7 +46,6 @@ const FlowBuilderTriggerHeader = () => {
 
 const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boolean }) => {
   const { attributes, loading } = props;
-  const { zIndex } = useBuilderConfig();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { currentStep, updateCurrentStep, createNewStep } = useFlowEditor();
@@ -147,7 +142,6 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
                 onDelete={() => {
                   handleOnDelete(index);
                 }}
-                zIndex={zIndex}
                 currentVersion={currentVersion}
                 createStep={createNewStep}
                 currentStep={currentStep}
