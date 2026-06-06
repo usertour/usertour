@@ -13,8 +13,9 @@ import {
 } from '@usertour/ui';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
+import { uuidV4 } from '@usertour/helpers';
 import { useLayoutEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { FloatingSidebarPanel } from '@/pages/contents/components/builder/components/sidebar';
@@ -132,14 +133,31 @@ const TabSettingsFooter = () => {
 
 export const ResourceCenterTabSettings = () => {
   const { tabId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isNew = searchParams.get('new') === '1';
   const { data, setEditingTab } = useResourceCenterEditor();
-  // Seed the editingTab draft from the :tabId route param on mount — covers
-  // nav, deep-link and refresh. Shallow clone (settings edits name + icon only).
+  const existing = data.tabs.find((item) => item.id === tabId);
+  // Seed the editingTab draft on mount (covers nav, deep-link and refresh):
+  //   ?new=1   → a fresh default tab (lands + switches to it on save)
+  //   tab/:id  → a shallow clone of the existing tab (settings edits name + icon)
   useLayoutEffect(() => {
-    const tab = data.tabs.find((item) => item.id === tabId);
-    setEditingTab(tab ? { ...tab } : null);
+    if (isNew) {
+      setEditingTab({
+        id: uuidV4(),
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: 'home-line',
+        blocks: [],
+      });
+      return;
+    }
+    setEditingTab(existing ? { ...existing } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabId]);
+  }, [tabId, isNew]);
+  // Stale tab id (deleted / bad deep-link) — bounce back instead of a blank page.
+  if (!isNew && !existing) {
+    return <Navigate to=".." relative="path" replace />;
+  }
   return (
     <FloatingSidebarPanel width={320}>
       <TabSettingsHeader />

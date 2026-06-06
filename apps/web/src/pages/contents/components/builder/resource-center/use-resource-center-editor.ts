@@ -58,7 +58,7 @@ export interface UseResourceCenterEditorReturn {
   // routes (e.g. the preview embed beside <Routes>).
   currentTabId: string | null;
   // Tab ops
-  addTab: (tab: ResourceCenterTab) => void;
+  startCreateTab: () => void;
   removeTab: (tabId: string) => void;
   updateTab: (tabId: string, updates: Partial<ResourceCenterTab>) => void;
   reorderTabs: (startIndex: number, endIndex: number) => void;
@@ -210,6 +210,11 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     },
     [navigate],
   );
+  // Add tab → open tab settings for a fresh draft (?new=1). The tab only lands
+  // (and we switch to it) on save, mirroring the other types' Add → save flow.
+  const startCreateTab = useCallback(() => {
+    navigate('settings?new=1', { relative: 'path' });
+  }, [navigate]);
   const exitBlock = useCallback(() => {
     navigate('../..', { relative: 'path' });
   }, [navigate]);
@@ -218,13 +223,6 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
   }, [navigate]);
 
   // ── Tab operations ─────────────────────────────────────────────────
-
-  const addTab = useCallback(
-    (tab: ResourceCenterTab) => {
-      tabList.add(tab);
-    },
-    [tabList.add],
-  );
 
   const removeTab = useCallback(
     (id: string) => {
@@ -248,22 +246,39 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
       return;
     }
     setIsShowError(false);
-    updateData({
-      tabs: data.tabs.map((tab) =>
-        tab.id === editingTab.id
-          ? {
-              ...tab,
-              name: editingTab.name,
-              iconSource: editingTab.iconSource,
-              iconType: editingTab.iconType,
-              iconUrl: editingTab.iconUrl,
-            }
-          : tab,
-      ),
-    });
+    const exists = data.tabs.some((tab) => tab.id === editingTab.id);
+    if (exists) {
+      updateData({
+        tabs: data.tabs.map((tab) =>
+          tab.id === editingTab.id
+            ? {
+                ...tab,
+                name: editingTab.name,
+                iconSource: editingTab.iconSource,
+                iconType: editingTab.iconType,
+                iconUrl: editingTab.iconUrl,
+              }
+            : tab,
+        ),
+      });
+      setEditingTab(null);
+      exitTabSettings();
+      return;
+    }
+    // New tab — append and switch to it (a tab is top-level navigation, so the
+    // post-save destination is the new tab, not "back to a list").
+    updateData({ tabs: [...data.tabs, editingTab] });
     setEditingTab(null);
-    exitTabSettings();
-  }, [uiState.editingTab, data, updateData, setEditingTab, setIsShowError, exitTabSettings]);
+    navigate(`../../${editingTab.id}`, { relative: 'path' });
+  }, [
+    uiState.editingTab,
+    data,
+    updateData,
+    setEditingTab,
+    setIsShowError,
+    exitTabSettings,
+    navigate,
+  ]);
 
   // ── Block operations (scoped to the route :tabId via blockList above) ──
 
@@ -293,7 +308,7 @@ export const useResourceCenterEditor = (): UseResourceCenterEditorReturn => {
     data,
     updateData,
     currentTabId,
-    addTab,
+    startCreateTab,
     removeTab,
     updateTab: tabList.updateById,
     reorderTabs: tabList.reorder,

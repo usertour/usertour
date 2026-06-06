@@ -36,8 +36,7 @@ import {
   TooltipTrigger,
 } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
+import { ResourceCenterTab } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
@@ -210,7 +209,7 @@ export const ResourceCenterTabs = () => {
   const {
     data: localData,
     currentTabId,
-    addTab,
+    startCreateTab,
     removeTab,
     reorderTabs,
     gotoTab,
@@ -236,18 +235,6 @@ export const ResourceCenterTabs = () => {
     } else if (action === 'delete') {
       removeTab(tab.id);
     }
-  };
-
-  const handleAddTab = () => {
-    const tab: ResourceCenterTab = {
-      id: uuidV4(),
-      name: '',
-      iconSource: LauncherIconSource.BUILTIN,
-      iconType: 'home-line',
-      blocks: [],
-    };
-    addTab(tab);
-    gotoTabSettings(tab.id);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -297,7 +284,7 @@ export const ResourceCenterTabs = () => {
       </DndContext>
       <Button
         variant="ghost"
-        onClick={handleAddTab}
+        onClick={startCreateTab}
         className="mt-2 h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
       >
         <RiAddCircleLine className="mr-2 size-4 opacity-70" />
