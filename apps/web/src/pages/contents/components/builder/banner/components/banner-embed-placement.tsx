@@ -65,7 +65,7 @@ export const BannerEmbedPlacementSelect = () => {
         value={localData.embedPlacement}
         onChange={(value) => updateLocalData({ embedPlacement: value as BannerEmbedPlacement })}
         placeholder={t('contentBuilder.banner.selectPlacement')}
-        className="w-full"
+        className="w-full bg-slate-50 shadow-none"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
       {requiresElement && (

@@ -48,7 +48,7 @@ export const SidebarTheme = () => {
           <QuestionTooltip>{t('contentBuilder.shared.theme.flowTooltip')}</QuestionTooltip>
         </div>
 
-        <Button variant="link" onClick={handleEditTheme} className="p-0 h-full	text-sm	">
+        <Button variant="link" onClick={handleEditTheme} className="p-0 h-full text-sm">
           {t('contentBuilder.shared.theme.edit')}
           <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
         </Button>

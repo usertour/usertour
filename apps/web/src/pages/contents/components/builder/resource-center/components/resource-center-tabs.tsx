@@ -104,7 +104,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
       {...attributes}
       style={style}
       className={`p-2.5 rounded-lg flex flex-col cursor-pointer ${
-        isActive ? 'bg-primary/10 ring-1 ring-primary' : 'bg-background-700'
+        isActive ? 'bg-primary/10 ring-1 ring-primary' : 'bg-slate-50'
       }`}
       onClick={() => onClick?.('select', tab)}
     >

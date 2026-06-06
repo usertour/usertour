@@ -14,7 +14,7 @@ export const LauncherSettings = (props: LauncherSettingsProps) => {
 
   return (
     <FieldSection title={t('contentBuilder.launcher.settings')}>
-      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-2">
+      <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-2">
         <div className="flex items-center justify-between space-x-2">
           <Label htmlFor="dismiss-after-first-activation" className="font-normal">
             {t('contentBuilder.launcher.dismissAfterFirstActivation')}

@@ -39,7 +39,7 @@ const ChecklistMainViewBody = () => {
   const { t } = useTranslation();
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           <SidebarTheme />
@@ -52,6 +52,7 @@ const ChecklistMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
+              className="bg-slate-50 shadow-none"
               id="launcher-button-text"
               value={localData.buttonText}
               onChange={(e) => updateLocalData({ buttonText: e.target.value })}
@@ -90,7 +91,7 @@ const ChecklistMainViewBody = () => {
               updateLocalData({ initialDisplay: value as ChecklistInitialDisplay })
             }
             placeholder={t('contentBuilder.checklist.selectOption')}
-            className="w-full"
+            className="w-full bg-slate-50 shadow-none"
             contentStyle={{ zIndex: BUILDER_Z.popover }}
           />
 
@@ -115,7 +116,7 @@ const ChecklistMainViewBody = () => {
               updateLocalData({ completionOrder: value as ChecklistCompletionOrder })
             }
             placeholder={t('contentBuilder.checklist.selectOption')}
-            className="w-full"
+            className="w-full bg-slate-50 shadow-none"
             contentStyle={{ zIndex: BUILDER_Z.popover }}
           />
 

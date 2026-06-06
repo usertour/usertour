@@ -96,7 +96,7 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>((props, ref) 
       ref={ref}
       {...attributes}
       style={style}
-      className="bg-background-700 p-2.5 rounded-lg flex flex-col"
+      className="bg-slate-50 p-2.5 rounded-lg flex flex-col"
     >
       <div className="flex items-center justify-between">
         <div className="grow inline-flex items-center text-sm">

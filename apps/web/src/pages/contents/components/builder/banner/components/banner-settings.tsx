@@ -26,7 +26,7 @@ export const BannerSettings = () => {
 
   return (
     <FieldSection title={t('contentBuilder.banner.settings')}>
-      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-2">
+      <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-2">
         {SETTINGS_ITEMS.map((item) => {
           const label = t(`contentBuilder.banner.settingsItems.${item.i18n}`);
           return (

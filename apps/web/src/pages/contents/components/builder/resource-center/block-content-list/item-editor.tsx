@@ -42,10 +42,15 @@ export interface ItemEditorHeaderProps {
 export const ItemEditorHeader = (props: ItemEditorHeaderProps) => {
   const { itemName, onBack } = props;
   return (
-    <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row items-center space-x-1 text-base">
-        <Button variant="link" size="icon" onClick={onBack} className="text-foreground w-6 h-8">
-          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
+    <CardHeader className="flex-none border-b border-border/50 px-5 py-4">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base font-semibold">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+        >
+          <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
         <span className="truncate">{itemName}</span>
       </CardTitle>
@@ -115,7 +120,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
   };
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           {/* Custom icon for this item */}

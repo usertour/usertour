@@ -31,7 +31,7 @@ import { useResourceCenterEditor } from '@/pages/contents/components/builder/res
 import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
-import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { FloatingSidebarPanel } from '@/pages/contents/components/builder/components/sidebar';
 import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 import {
   ContentError,
@@ -43,18 +43,18 @@ const BlockActionHeader = () => {
   const { setCurrentBlock, exitBlock } = useResourceCenterEditor();
   const { t } = useTranslation();
   return (
-    <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row items-center space-x-1 text-base">
+    <CardHeader className="flex-none border-b border-border/50 px-5 py-4">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base font-semibold pr-16">
         <Button
-          variant="link"
+          variant="ghost"
           size="icon"
           onClick={() => {
             setCurrentBlock(null);
             exitBlock();
           }}
-          className="text-foreground w-6 h-8"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
         >
-          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
+          <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
         <span className="truncate">{t('contentBuilder.resourceCenter.actionBlock')}</span>
       </CardTitle>
@@ -110,7 +110,7 @@ const BlockActionBody = () => {
   };
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           {/* Icon */}
@@ -221,7 +221,7 @@ const BlockActionFooter = () => {
     saveCurrentBlock();
   };
   return (
-    <CardFooter className="flex-none p-5">
+    <CardFooter className="flex-none border-t border-border/50 p-4">
       <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         {t('contentBuilder.common.save')}
@@ -232,11 +232,11 @@ const BlockActionFooter = () => {
 
 export const ResourceCenterBlockAction = () => {
   return (
-    <SidebarContainer>
+    <FloatingSidebarPanel width={320}>
       <BlockActionHeader />
       <BlockActionBody />
       <BlockActionFooter />
-    </SidebarContainer>
+    </FloatingSidebarPanel>
   );
 };
 

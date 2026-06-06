@@ -64,6 +64,10 @@ export interface BuilderState {
   backupVersion: ContentVersion | undefined;
   isShowError: boolean;
   position: string;
+  // Panel folded off-screen (a floating button re-opens it). Shared in the
+  // store so the fold survives sub-view navigation and stays consistent
+  // across content types.
+  collapsed: boolean;
   saveState: SaveState;
   history: HistoryStack;
   // Per-type sub-mode UI buffer (Launcher target/tooltip, Checklist item,
@@ -93,6 +97,7 @@ export interface BuilderStateSetters {
   setCurrentContent: React.Dispatch<React.SetStateAction<Content | undefined>>;
   setCurrentVersion: React.Dispatch<React.SetStateAction<ContentVersion | undefined>>;
   setPosition: React.Dispatch<React.SetStateAction<string>>;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Private setters — used by Provider internals or read off the raw
@@ -158,6 +163,7 @@ const initialState: BuilderState = {
   backupVersion: undefined,
   isShowError: false,
   position: 'left',
+  collapsed: false,
   saveState: { status: 'idle' },
   history: EMPTY_HISTORY,
   typeEditorUIState: undefined,
@@ -199,6 +205,7 @@ export const createBuilderStore = () =>
     },
     setIsShowError: makeSetter('isShowError', set, get),
     setPosition: makeSetter('position', set, get),
+    setCollapsed: makeSetter('collapsed', set, get),
     setBackupVersion: (value) => set({ backupVersion: value }),
     setCurrentVersionFromServer: (value) => set({ currentVersion: value }),
     setTypeEditorUIState: makeSetter('typeEditorUIState', set, get),

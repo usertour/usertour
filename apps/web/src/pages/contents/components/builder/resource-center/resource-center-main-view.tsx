@@ -147,7 +147,7 @@ const ResourceCenterMainViewBody = () => {
   };
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           <SidebarTheme />
@@ -159,6 +159,7 @@ const ResourceCenterMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
+              className="bg-slate-50 shadow-none"
               id="header-text"
               value={localData.headerText}
               onChange={(e) => {
@@ -177,6 +178,7 @@ const ResourceCenterMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
+              className="bg-slate-50 shadow-none"
               id="launcher-button-text"
               value={localData.buttonText}
               onChange={(e) => {

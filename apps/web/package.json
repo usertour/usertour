@@ -44,7 +44,6 @@
     "@usertour/types": "workspace:^",
     "@usertour/ui": "workspace:^",
     "@usertour/widget": "workspace:^",
-    "animejs": "^3.2.1",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
@@ -88,7 +87,6 @@
   },
   "devDependencies": {
     "@medusajs/ui-preset": "^1.0.2",
-    "@types/animejs": "^3.1.12",
     "@types/crypto-js": "^4.2.2",
     "@types/is-hotkey": "^0.1.7",
     "@types/jest": "29.4.0",

@@ -17,7 +17,7 @@ import { useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { SidebarContainer } from '@/pages/contents/components/builder/components/sidebar';
+import { FloatingSidebarPanel } from '@/pages/contents/components/builder/components/sidebar';
 import { IconPicker } from '@/pages/contents/components/builder/components/icon-picker';
 import {
   ContentError,
@@ -29,18 +29,18 @@ const TabSettingsHeader = () => {
   const { setEditingTab, exitTabSettings } = useResourceCenterEditor();
   const { t } = useTranslation();
   return (
-    <CardHeader className="flex-none p-4 space-y-2">
-      <CardTitle className="flex flex-row space-x-1 text-base items-center">
+    <CardHeader className="flex-none border-b border-border/50 px-5 py-4">
+      <CardTitle className="flex flex-row space-x-1 text-base font-semibold items-center pr-16">
         <Button
-          variant="link"
+          variant="ghost"
           size="icon"
           onClick={() => {
             setEditingTab(null);
             exitTabSettings();
           }}
-          className="text-foreground w-6 h-8"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
         >
-          <RiArrowLeftSLine className="h-6 w-6 opacity-70" />
+          <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
         <span className="truncate">{t('contentBuilder.resourceCenter.tabSettings')}</span>
       </CardTitle>
@@ -77,7 +77,7 @@ const TabSettingsBody = () => {
   };
 
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           {/* Name */}
@@ -87,6 +87,7 @@ const TabSettingsBody = () => {
               <ContentErrorAnchor>
                 <Input
                   variant="compact-muted"
+                  className="bg-slate-50 shadow-none"
                   id="tab-name"
                   value={editingTab.name}
                   placeholder={t('contentBuilder.resourceCenter.tabNamePlaceholder')}
@@ -120,7 +121,7 @@ const TabSettingsFooter = () => {
   const { saveEditingTab, isLoading } = useResourceCenterEditor();
   const { t } = useTranslation();
   return (
-    <CardFooter className="flex-none p-5">
+    <CardFooter className="flex-none border-t border-border/50 p-4">
       <Button className="w-full h-10" disabled={isLoading} onClick={saveEditingTab}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         {t('contentBuilder.common.save')}
@@ -140,11 +141,11 @@ export const ResourceCenterTabSettings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabId]);
   return (
-    <SidebarContainer>
+    <FloatingSidebarPanel width={320}>
       <TabSettingsHeader />
       <TabSettingsBody />
       <TabSettingsFooter />
-    </SidebarContainer>
+    </FloatingSidebarPanel>
   );
 };
 

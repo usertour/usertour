@@ -13,7 +13,7 @@ import { BannerZIndex } from '@/pages/contents/components/builder/banner/compone
 
 const BannerBuilderBody = () => {
   return (
-    <CardContent className="bg-background-900 grow p-0 overflow-hidden">
+    <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full ">
         <div className="flex flex-col space-y-3 p-4">
           <SidebarTheme />
