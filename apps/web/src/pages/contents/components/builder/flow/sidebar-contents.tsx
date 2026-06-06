@@ -205,7 +205,7 @@ const SidebarContent = memo(
                       )}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[240px]">
+                  <TooltipContent className="max-w-[240px]" disableCloseAnimation>
                     <p className="font-medium">
                       {triggerCount > 0
                         ? t('contentBuilder.flow.editTriggersTooltip', { total: triggerCount })
@@ -232,7 +232,9 @@ const SidebarContent = memo(
                       <RiSettings3Line className="h-4 w-4 opacity-70" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>{t('contentBuilder.flow.editStepTooltip')}</TooltipContent>
+                  <TooltipContent disableCloseAnimation>
+                    {t('contentBuilder.flow.editStepTooltip')}
+                  </TooltipContent>
                 </Tooltip>
                 <AlertDialog>
                   <Tooltip>
@@ -247,7 +249,9 @@ const SidebarContent = memo(
                         </button>
                       </AlertDialogTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>{t('contentBuilder.flow.deleteStepTooltip')}</TooltipContent>
+                    <TooltipContent disableCloseAnimation>
+                      {t('contentBuilder.flow.deleteStepTooltip')}
+                    </TooltipContent>
                   </Tooltip>
                   <AlertDialogContent>
                     <AlertDialogHeader>
