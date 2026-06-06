@@ -2257,8 +2257,6 @@ const translations = {
       addTrigger: 'Add trigger',
       edit: 'Edit',
       delete: 'Delete',
-      trigger_one: '{{count}} Trigger',
-      trigger_other: '{{count}} Triggers',
       addTriggerTooltip: 'Add a trigger',
       editTriggersTooltip: 'Edit triggers ({{total}})',
       triggerTooltipDescription:

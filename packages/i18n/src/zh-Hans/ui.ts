@@ -2133,8 +2133,6 @@ const translations = {
       addTrigger: '添加触发器',
       edit: '编辑',
       delete: '删除',
-      trigger_one: '{{count}} 个触发器',
-      trigger_other: '{{count}} 个触发器',
       addTriggerTooltip: '添加触发器',
       editTriggersTooltip: '编辑触发器({{total}})',
       triggerTooltipDescription: '满足条件时自动执行动作 —— 例如跳转步骤、启动其他流程或关闭。',
