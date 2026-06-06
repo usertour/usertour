@@ -1,5 +1,4 @@
 import { ContentEditorRoot } from '@usertour/editor';
-import { BUILDER_Z } from '@usertour/constants';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
@@ -46,6 +45,8 @@ export const LauncherBuilderEmbed = () => {
     return null;
   }
 
+  // zIndex 0 = page base layer so the editor's action / element popovers float
+  // above the preview widget.
   return (
     <>
       <div ref={targetAnchorRef} aria-hidden className={previewTargetAnchorClass}>
@@ -54,7 +55,7 @@ export const LauncherBuilderEmbed = () => {
       <LauncherContentMain
         theme={theme}
         triggerRef={targetAnchorRef}
-        zIndex={BUILDER_Z.canvas}
+        zIndex={0}
         onCustomUploadRequest={upload}
         data={previewData}
         onValueChange={handleTooltipContentChange}

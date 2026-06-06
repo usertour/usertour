@@ -347,6 +347,9 @@ export const FlowBuilderDetailEmbed = () => {
   }
 
   if (currentStep.type === StepContentType.MODAL) {
+    // zIndex 0 = page base layer: the editor's element / action popovers (EDITOR_*)
+    // must float above the modal, so its Popper sits below them — unlike the
+    // tooltip popper, which uses BUILDER_Z.canvas.
     return (
       <ContentModal
         theme={theme}
@@ -354,7 +357,7 @@ export const FlowBuilderDetailEmbed = () => {
         attributeList={attributeList}
         projectId={projectId}
         contents={contents}
-        zIndex={BUILDER_Z.canvas}
+        zIndex={0}
         currentIndex={currentIndex}
         currentStep={currentStep}
         currentVersion={currentVersion}
@@ -366,6 +369,7 @@ export const FlowBuilderDetailEmbed = () => {
   }
 
   if (currentStep.type === StepContentType.BUBBLE) {
+    // zIndex 0 — page base layer, see the ContentModal note above.
     return (
       <ContentBubble
         theme={theme}
@@ -373,7 +377,7 @@ export const FlowBuilderDetailEmbed = () => {
         attributeList={attributeList}
         projectId={projectId}
         contents={contents}
-        zIndex={BUILDER_Z.canvas}
+        zIndex={0}
         currentIndex={currentIndex}
         currentStep={currentStep}
         currentVersion={currentVersion}
