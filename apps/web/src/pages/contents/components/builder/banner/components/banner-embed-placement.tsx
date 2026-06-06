@@ -79,7 +79,7 @@ export const BannerEmbedPlacementSelect = () => {
           buildUrl={currentContent?.buildUrl}
           subTitle={t('contentBuilder.banner.containerElementSubtitle')}
         >
-          <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
+          <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-6 mt-2">
             <ContentPlacementManual />
           </div>
         </ContentPlacementProvider>

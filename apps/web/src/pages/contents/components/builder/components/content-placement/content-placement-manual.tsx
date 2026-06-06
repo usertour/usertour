@@ -46,7 +46,6 @@ export const ContentPlacementManual = () => {
           <Input
             variant="compact"
             id="element-text"
-            className="bg-slate-50 shadow-none"
             value={target?.content ?? ''}
             onChange={handleContentChange}
           />
@@ -59,7 +58,6 @@ export const ContentPlacementManual = () => {
             <Input
               variant="compact"
               id="css-selector"
-              className="bg-slate-50 shadow-none"
               value={target?.customSelector ?? ''}
               onChange={handleSelectorChange}
             />

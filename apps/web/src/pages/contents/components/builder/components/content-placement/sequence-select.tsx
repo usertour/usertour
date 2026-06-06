@@ -28,7 +28,7 @@ export const SequenceSelect = (props: SequenceSelectProps) => {
         value={value}
         onChange={onChange}
         placeholder={t('contentBuilder.shared.selectSequencePlaceholder')}
-        className="w-full bg-slate-50 shadow-none hover:bg-slate-100"
+        className="w-full"
         contentStyle={{ zIndex }}
       />
     </div>

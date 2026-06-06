@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 const circleHoveredClassName =
   "bg-primary before:content-[''] before:border before:border-indigo-900 before:cursor-pointer before:h-2 before:w-2 before:rounded-[50%] before:border-solid before:scale-100 items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] scale-[1.6] hover:bg-primary hover:scale-[1.6]";
 const circleClassName =
-  'items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] bg-background-400 hover:bg-primary hover:scale-[1.6]';
+  'items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] bg-slate-300 hover:bg-primary hover:scale-[1.6]';
 
 const POSITIONS = {
   BOTTOM: 'bottom',
@@ -105,7 +105,7 @@ export const Alignment = (props: AlignmentProps) => {
 
   return (
     <AlignmentContext.Provider value={value}>
-      <div className="flex flex-col bg-background-700 p-3.5 rounded-lg">
+      <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg">
         <div className="items-center flex justify-between px-9 py-0">
           <Circle
             side={POSITIONS.BOTTOM}

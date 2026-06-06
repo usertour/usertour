@@ -65,7 +65,7 @@ export const FlowPlacement = () => {
             <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
           </Button>
         </div>
-        <div className="flex flex-col space-y-3">
+        <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-6 mt-2">
           <ContentPlacementManual />
           <ContentPlacementActions
             createStep={createNewStep}
