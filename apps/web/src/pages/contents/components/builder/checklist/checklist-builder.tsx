@@ -16,6 +16,7 @@ export const ChecklistBuilder = () => {
     <>
       <Routes>
         <Route index element={<ChecklistMainView />} />
+        <Route path="item/new" element={<ChecklistItem />} />
         <Route path="item/:itemId" element={<ChecklistItem />} />
       </Routes>
       <ChecklistEmbed />

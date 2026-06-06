@@ -1,6 +1,7 @@
 'use client';
 
 import { BUILDER_Z } from '@usertour/constants';
+import { uuidV4 } from '@usertour/helpers';
 import {
   Button,
   CardContent,
@@ -28,7 +29,10 @@ import { useId, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
-import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
+import {
+  defaultChecklistItem,
+  useChecklistEditor,
+} from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '@/pages/contents/components/builder/hooks/use-conditions-save-gate';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
@@ -219,10 +223,17 @@ const ChecklistItemFooter = () => {
 export const ChecklistItem = () => {
   const { itemId } = useParams();
   const { data, setCurrentItem } = useChecklistEditor();
-  // Seed the currentItem draft from the :itemId route param when the sub-view
-  // mounts — covers nav, deep-link and refresh. Clone so the buffer is an
-  // independent draft (edits never mutate currentVersion until save).
+  // Seed the currentItem draft from the route when the sub-view mounts (covers
+  // nav, deep-link and refresh):
+  //   item/new       → a fresh default draft (lands in the array only on save)
+  //   item/:itemId   → a clone of the existing item
+  // Clone so the buffer is independent — edits never mutate currentVersion
+  // until save.
   useLayoutEffect(() => {
+    if (!itemId) {
+      setCurrentItem({ ...defaultChecklistItem, id: uuidV4() } as ChecklistItemType);
+      return;
+    }
     const item = data.items.find((it) => it.id === itemId);
     setCurrentItem(item ? (JSON.parse(JSON.stringify(item)) as ChecklistItemType) : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps

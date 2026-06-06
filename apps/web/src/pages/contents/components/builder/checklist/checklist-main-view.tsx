@@ -13,7 +13,6 @@ import {
 } from '@usertour/ui';
 import { RiAddCircleLine } from '@usertour/icons';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
@@ -24,18 +23,8 @@ import { ChecklistContents } from '@/pages/contents/components/builder/checklist
 const flexBetween = 'flex items-center justify-between space-x-2';
 const labelStyles = 'flex justify-start items-center space-x-1';
 
-const defaultItem = {
-  name: 'New Item',
-  description: 'New Item Description',
-  clickedActions: [],
-  isCompleted: false,
-  completeConditions: [],
-  onlyShowTask: false,
-  onlyShowTaskConditions: [],
-};
-
 const ChecklistMainViewBody = () => {
-  const { data: localData, addItem, updateData: updateLocalData } = useChecklistEditor();
+  const { data: localData, startCreateItem, updateData: updateLocalData } = useChecklistEditor();
   const { t } = useTranslation();
 
   return (
@@ -63,9 +52,9 @@ const ChecklistMainViewBody = () => {
           <ChecklistContents />
 
           <Button
-            className="w-full"
-            variant="secondary"
-            onClick={() => addItem({ ...defaultItem, id: uuidV4() })}
+            variant="ghost"
+            onClick={startCreateItem}
+            className="h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
           >
             <RiAddCircleLine className="mr-2 size-4 opacity-70" />
             {t('contentBuilder.checklist.addItem')}

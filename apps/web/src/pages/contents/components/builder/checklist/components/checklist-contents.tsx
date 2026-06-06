@@ -9,13 +9,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour/ui';
-import { Delete2Icon, RiDraggable, RiSettings3Line } from '@usertour/icons';
+import { Delete2Icon, RiDraggable } from '@usertour/icons';
 import { ChecklistItemType } from '@usertour/types';
 import { forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,8 +25,11 @@ import {
 } from '@/pages/contents/components/builder/components/sortable-list';
 import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
 
+type RowAction = 'edit' | 'delete';
+
 interface ChecklistContentProps {
-  onClick?: (action: 'edit' | 'delete', item: ChecklistItemType) => void;
+  index: number;
+  onClick?: (action: RowAction, item: ChecklistItemType) => void;
   listeners?: SortableRowProps['listeners'];
   attributes?: SortableRowProps['attributes'];
   item: ChecklistItemType;
@@ -49,7 +51,7 @@ const DeleteDialog = (props: DeleteDialogProps) => {
           <TooltipTrigger asChild>
             <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent disableCloseAnimation>
             <p>{t('contentBuilder.checklist.delete')}</p>
           </TooltipContent>
         </Tooltip>
@@ -72,45 +74,46 @@ const DeleteDialog = (props: DeleteDialogProps) => {
   );
 };
 
+// A checklist item row, styled like a flow step row: a transparent row that
+// tints on hover, an ordinal badge, a drag handle, and a delete revealed on
+// hover. Clicking the row opens the item editor — checklist is a single widget
+// (no per-item preview), so flow's row-select highlight has no purpose here and
+// the row click goes straight to edit (which also makes a gear button
+// redundant).
 const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((props, ref) => {
-  const { onClick, listeners, attributes, item, style } = props;
-  const { t } = useTranslation();
+  const { onClick, listeners, attributes, item, style, index } = props;
   return (
     <div
       ref={ref}
       {...attributes}
       style={style}
-      className="bg-slate-50 p-2.5 rounded-lg flex flex-col"
+      onClick={() => onClick?.('edit', item)}
+      className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-slate-100"
     >
-      <div className="flex items-center justify-between">
-        <div className="grow inline-flex items-center text-sm gap-2">
-          <RiDraggable className="cursor-move size-4 opacity-70" {...listeners} />
-          <span className="w-36 truncate" title={item.name}>
-            {item.name}
-          </span>
-        </div>
-
-        <div className="flex-none flex gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 h-fit"
-                  onClick={() => onClick?.('edit', item)}
-                >
-                  <RiSettings3Line className="h-4 w-4 opacity-70" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('contentBuilder.checklist.edit')}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
+      <div className="flex min-h-6 items-center gap-2">
+        <RiDraggable
+          {...listeners}
+          onClick={(event) => event.stopPropagation()}
+          className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
+        />
+        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-slate-200 text-[11px] font-semibold text-slate-600">
+          {index + 1}
+        </span>
+        <span
+          className="min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+          title={item.name}
+        >
+          {item.name}
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
           <DeleteDialog onDelete={() => onClick?.('delete', item)}>
-            <Button variant="ghost" size="sm" className="p-1 h-fit">
-              <Delete2Icon className="h-4 w-4 text-foreground opacity-70" />
-            </Button>
+            <button
+              type="button"
+              onClick={(event) => event.stopPropagation()}
+              className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+            >
+              <Delete2Icon className="h-4 w-4 opacity-70" />
+            </button>
           </DeleteDialog>
         </div>
       </div>
@@ -128,7 +131,7 @@ export const ChecklistContents = () => {
   } = useChecklistEditor();
   const { t } = useTranslation();
 
-  const handleOnClick = (action: 'edit' | 'delete', item: ChecklistItemType) => {
+  const handleOnClick = (action: RowAction, item: ChecklistItemType) => {
     if (action === 'edit') {
       gotoItem(item.id);
     } else if (action === 'delete') {
@@ -138,24 +141,32 @@ export const ChecklistContents = () => {
 
   return (
     <FieldSection title={t('contentBuilder.checklist.items')}>
-      <SortableList
-        items={localData.items}
-        getId={(item) => item.id}
-        onReorder={(fromIndex, toIndex) =>
-          updateLocalData({ items: arrayMove(localData.items, fromIndex, toIndex) })
-        }
-        renderRow={(item, sortable) => (
-          <ChecklistContent
-            item={item}
-            onClick={handleOnClick}
-            ref={sortable.setNodeRef}
-            style={sortable.style}
-            listeners={sortable.listeners}
-            attributes={sortable.attributes}
-          />
-        )}
-        renderOverlay={(item) => <ChecklistContent item={item} />}
-      />
+      <div className="flex flex-col gap-0.5">
+        <SortableList
+          items={localData.items}
+          getId={(item) => item.id}
+          onReorder={(fromIndex, toIndex) =>
+            updateLocalData({ items: arrayMove(localData.items, fromIndex, toIndex) })
+          }
+          renderRow={(item, sortable) => (
+            <ChecklistContent
+              index={localData.items.findIndex((it) => it.id === item.id)}
+              item={item}
+              onClick={handleOnClick}
+              ref={sortable.setNodeRef}
+              style={sortable.style}
+              listeners={sortable.listeners}
+              attributes={sortable.attributes}
+            />
+          )}
+          renderOverlay={(item) => (
+            <ChecklistContent
+              index={localData.items.findIndex((it) => it.id === item.id)}
+              item={item}
+            />
+          )}
+        />
+      </div>
     </FieldSection>
   );
 };

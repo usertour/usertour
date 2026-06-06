@@ -5,23 +5,33 @@ import { useTypeEditor } from '@/pages/contents/components/builder/hooks/use-typ
 import { useListField } from '@/pages/contents/components/builder/hooks/use-list-field';
 import { checklistTypeConfig } from '@/pages/contents/components/builder/checklist/checklist-config';
 
-// Checklist-flavoured editor. Wraps useTypeEditor and adds the imperative
-// item-array helpers (addItem / removeItem) and the saveCurrentItem flow that
-// commits the UI-state currentItem buffer back into the items array. Each
-// helper delegates to updateData so all writes go through the FSM dispatcher
-// uniformly. Sub-view navigation helpers (gotoItem / backToChecklist) move the
-// descendant router — the URL owns which item is open, and the currentItem
-// draft is seeded from currentVersion by the :itemId param on ChecklistItem's
-// mount, not here.
+// Default draft for a NEW checklist item. The id is assigned when the new-item
+// sub-view seeds it (see ChecklistItem). description is intentionally empty — a
+// placeholder hints it; we don't prefill throwaway copy (matches flow, which
+// only seeds a neutral 'Untitled' name and no body content).
+export const defaultChecklistItem = {
+  name: 'New Item',
+  description: '',
+  clickedActions: [],
+  isCompleted: false,
+  completeConditions: [],
+  onlyShowTask: false,
+  onlyShowTaskConditions: [],
+};
 
+// Checklist-flavoured editor. Wraps useTypeEditor and adds the item helpers and
+// the saveCurrentItem flow that commits the currentItem buffer back into the
+// items array. Navigation mirrors flow: startCreateItem opens the new-item
+// sub-view (a draft that only lands on save), gotoItem opens an existing one;
+// the currentItem draft is seeded from the route on ChecklistItem's mount.
 export interface UseChecklistEditorReturn {
   data: ChecklistData;
   updateData: (updates: Partial<ChecklistData>) => void;
   currentItem: ChecklistItemType | null;
   setCurrentItem: React.Dispatch<React.SetStateAction<ChecklistItemType | null>>;
-  addItem: (item: ChecklistItemType) => void;
   removeItem: (id: string) => void;
   saveCurrentItem: () => void;
+  startCreateItem: () => void;
   gotoItem: (id: string) => void;
   backToChecklist: () => void;
   isLoading: boolean;
@@ -41,9 +51,6 @@ export const useChecklistEditor = (): UseChecklistEditorReturn => {
     setItems: (next) => editor.updateData({ items: next }),
   });
 
-  // Sub-view navigation — the descendant router owns which item is open. The
-  // currentItem draft is seeded from currentVersion on ChecklistItem's mount,
-  // so these only move the URL.
   const backToChecklist = useCallback(() => {
     navigate('..');
   }, [navigate]);
@@ -55,12 +62,23 @@ export const useChecklistEditor = (): UseChecklistEditorReturn => {
     [navigate],
   );
 
+  // Add item → open the new-item sub-view (a draft). The item only lands in the
+  // array on save, mirroring flow's "Add step → step/new → save commits".
+  const startCreateItem = useCallback(() => {
+    navigate('item/new');
+  }, [navigate]);
+
+  // Commit the currentItem draft: update in place if its id already exists,
+  // otherwise append (the new-item case).
   const saveCurrentItem = useCallback(() => {
     if (!currentItem) {
       return;
     }
+    const exists = items.some((item) => item.id === currentItem.id);
     editor.updateData({
-      items: items.map((item) => (item.id === currentItem.id ? currentItem : item)),
+      items: exists
+        ? items.map((item) => (item.id === currentItem.id ? currentItem : item))
+        : [...items, currentItem],
     });
     // Exit the per-item edit sub-view back to the main checklist view.
     navigate('..');
@@ -71,9 +89,9 @@ export const useChecklistEditor = (): UseChecklistEditorReturn => {
     updateData: editor.updateData,
     currentItem,
     setCurrentItem,
-    addItem: itemList.add,
     removeItem: itemList.removeById,
     saveCurrentItem,
+    startCreateItem,
     gotoItem,
     backToChecklist,
     isLoading: editor.isLoading,
