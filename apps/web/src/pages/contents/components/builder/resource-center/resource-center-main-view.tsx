@@ -198,7 +198,10 @@ const ResourceCenterMainViewBody = () => {
               <div>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button className="w-full" variant="secondary">
+                    <Button
+                      variant="ghost"
+                      className="h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
+                    >
                       <RiAddCircleLine className="mr-2 size-4 opacity-70" />
                       {t('contentBuilder.resourceCenter.addBlock')}
                     </Button>

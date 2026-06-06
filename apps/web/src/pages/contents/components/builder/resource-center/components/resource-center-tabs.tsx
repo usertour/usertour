@@ -35,6 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour/ui';
+import { cn } from '@usertour/tailwind';
 import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';
@@ -69,7 +70,7 @@ const DeleteTabDialog = (props: DeleteTabDialogProps) => {
           <TooltipTrigger asChild>
             <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent disableCloseAnimation>
             <p>{t('contentBuilder.resourceCenter.delete')}</p>
           </TooltipContent>
         </Tooltip>
@@ -94,6 +95,11 @@ const DeleteTabDialog = (props: DeleteTabDialogProps) => {
   );
 };
 
+// A tab row, styled and behaving like a flow step row: a transparent row that
+// tints on hover and highlights when selected, a drag handle, the tab icon, and
+// edit/delete revealed on hover. Clicking the row SELECTS the tab (switches
+// which tab's blocks show — a real toggle, unlike checklist), the gear opens
+// the tab's settings.
 const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
   const { tab, isActive, canDelete, onClick, listeners, attributes, style } = props;
   const { t } = useTranslation();
@@ -103,47 +109,60 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
       ref={ref}
       {...attributes}
       style={style}
-      className={`p-2.5 rounded-lg flex flex-col cursor-pointer ${
-        isActive ? 'bg-primary/10 ring-1 ring-primary' : 'bg-slate-50'
-      }`}
       onClick={() => onClick?.('select', tab)}
+      className={cn(
+        'group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors',
+        isActive ? 'border-primary/30 bg-accent/50' : 'hover:bg-slate-100',
+      )}
     >
-      <div className="flex items-center justify-between">
-        <div className="grow inline-flex items-center text-sm">
-          <RiDraggable
+      <div className="flex min-h-6 items-center gap-2">
+        <RiDraggable
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
+        />
+        {Icon ? (
+          <Icon
             size={16}
-            className="shrink-0 cursor-move -mr-0.5 opacity-70"
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
+            className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-slate-400')}
           />
-          {Icon ? <Icon size={16} className="h-4 w-4 shrink-0 mr-1" /> : null}
-          <span className="w-36 truncate" title={tab.name}>
-            {tab.name || t('contentBuilder.resourceCenter.untitledTab')}
-          </span>
-        </div>
-
-        <div className="flex-none flex gap-1" onClick={(e) => e.stopPropagation()}>
+        ) : null}
+        <span
+          className="min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+          title={tab.name}
+        >
+          {tab.name || t('contentBuilder.resourceCenter.untitledTab')}
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 h-fit"
-                  onClick={() => onClick?.('edit', tab)}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick?.('edit', tab);
+                  }}
+                  className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground group-hover:grid"
                 >
-                  <RiSettings3Line size={16} className="opacity-70" />
-                </Button>
+                  <RiSettings3Line className="h-4 w-4 opacity-70" />
+                </button>
               </TooltipTrigger>
-              <TooltipContent>{t('contentBuilder.resourceCenter.edit')}</TooltipContent>
+              <TooltipContent disableCloseAnimation>
+                {t('contentBuilder.resourceCenter.edit')}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           {canDelete && (
             <DeleteTabDialog onDelete={() => onClick?.('delete', tab)}>
-              <Button variant="ghost" size="sm" className="p-1 h-fit">
-                <Delete2Icon className="h-4 w-4 text-foreground opacity-70" />
-              </Button>
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+              >
+                <Delete2Icon className="h-4 w-4 opacity-70" />
+              </button>
             </DeleteTabDialog>
           )}
         </div>
@@ -260,21 +279,27 @@ export const ResourceCenterTabs = () => {
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={tabs} strategy={verticalListSortingStrategy}>
-          {tabs.map((tab) => (
-            <SortableTab
-              key={tab.id}
-              tab={tab}
-              isActive={tab.id === currentTabId}
-              canDelete={tabs.length > 1}
-              onClick={handleOnClick}
-            />
-          ))}
+          <div className="flex flex-col gap-0.5">
+            {tabs.map((tab) => (
+              <SortableTab
+                key={tab.id}
+                tab={tab}
+                isActive={tab.id === currentTabId}
+                canDelete={tabs.length > 1}
+                onClick={handleOnClick}
+              />
+            ))}
+          </div>
         </SortableContext>
         <DragOverlay>
           {activeTab ? <TabContent tab={activeTab} isActive={false} canDelete={false} /> : null}
         </DragOverlay>
       </DndContext>
-      <Button className="w-full" variant="secondary" onClick={handleAddTab}>
+      <Button
+        variant="ghost"
+        onClick={handleAddTab}
+        className="mt-2 h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
+      >
         <RiAddCircleLine className="mr-2 size-4 opacity-70" />
         {t('contentBuilder.resourceCenter.addTab')}
       </Button>
