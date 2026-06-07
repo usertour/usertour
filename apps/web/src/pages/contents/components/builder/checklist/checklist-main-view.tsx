@@ -1,16 +1,7 @@
 'use client';
 
 import { BUILDER_Z } from '@usertour/constants';
-import {
-  Button,
-  CardContent,
-  Input,
-  Label,
-  QuestionTooltip,
-  CompactSelect,
-  ScrollArea,
-  Switch,
-} from '@usertour/ui';
+import { Button, CardContent, Input, Label, ScrollArea } from '@usertour/ui';
 import { RiAddCircleLine } from '@usertour/icons';
 import { ChecklistCompletionOrder, ChecklistInitialDisplay } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
@@ -19,8 +10,12 @@ import { useChecklistEditor } from '@/pages/contents/components/builder/checklis
 import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
 import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 import { ChecklistContents } from '@/pages/contents/components/builder/checklist/components/checklist-contents';
+import {
+  BooleanField,
+  SelectField,
+  SettingsCard,
+} from '@/pages/contents/components/builder/shared/fields';
 
-const flexBetween = 'flex items-center justify-between space-x-2';
 const labelStyles = 'flex justify-start items-center space-x-1';
 
 const ChecklistMainViewBody = () => {
@@ -60,86 +55,59 @@ const ChecklistMainViewBody = () => {
             {t('contentBuilder.checklist.addItem')}
           </Button>
 
-          <div className={labelStyles}>
-            <Label htmlFor="initial-display">{t('contentBuilder.checklist.initialDisplay')}</Label>
-            <QuestionTooltip>{t('contentBuilder.checklist.initialDisplayTooltip')}</QuestionTooltip>
-          </div>
-          <CompactSelect
-            options={[
-              {
-                value: ChecklistInitialDisplay.EXPANDED,
-                label: t('contentBuilder.checklist.expandedChecklist'),
-              },
-              {
-                value: ChecklistInitialDisplay.BUTTON,
-                label: t('contentBuilder.checklist.launcherButton'),
-              },
-            ]}
-            value={localData.initialDisplay}
-            onChange={(value) =>
-              updateLocalData({ initialDisplay: value as ChecklistInitialDisplay })
-            }
-            placeholder={t('contentBuilder.checklist.selectOption')}
-            className="w-full bg-slate-50 shadow-none"
-            contentStyle={{ zIndex: BUILDER_Z.popover }}
-          />
-
-          <div className={labelStyles}>
-            <Label htmlFor="completion-order">
-              {t('contentBuilder.checklist.completionOrder')}
-            </Label>
-          </div>
-          <CompactSelect
-            options={[
-              {
-                value: ChecklistCompletionOrder.ANY,
-                label: t('contentBuilder.checklist.anyOrder'),
-              },
-              {
-                value: ChecklistCompletionOrder.ORDERED,
-                label: t('contentBuilder.checklist.inOrder'),
-              },
-            ]}
-            value={localData.completionOrder}
-            onChange={(value) =>
-              updateLocalData({ completionOrder: value as ChecklistCompletionOrder })
-            }
-            placeholder={t('contentBuilder.checklist.selectOption')}
-            className="w-full bg-slate-50 shadow-none"
-            contentStyle={{ zIndex: BUILDER_Z.popover }}
-          />
-
-          <div className={flexBetween}>
-            <div className={labelStyles}>
-              <Label htmlFor="prevent-dismiss-checklist" className="font-normal">
-                {t('contentBuilder.checklist.preventDismissal')}
-              </Label>
-              <QuestionTooltip>
-                {t('contentBuilder.checklist.preventDismissalTooltip')}
-              </QuestionTooltip>
-            </div>
-            <Switch
-              id="prevent-dismiss-checklist"
-              className="data-[state=unchecked]:bg-input"
+          <SettingsCard title={t('contentBuilder.checklist.settings')}>
+            <SelectField
+              label={t('contentBuilder.checklist.initialDisplay')}
+              tooltip={t('contentBuilder.checklist.initialDisplayTooltip')}
+              value={localData.initialDisplay}
+              onChange={(value) =>
+                updateLocalData({ initialDisplay: value as ChecklistInitialDisplay })
+              }
+              options={[
+                {
+                  value: ChecklistInitialDisplay.EXPANDED,
+                  label: t('contentBuilder.checklist.expandedChecklist'),
+                },
+                {
+                  value: ChecklistInitialDisplay.BUTTON,
+                  label: t('contentBuilder.checklist.launcherButton'),
+                },
+              ]}
+              placeholder={t('contentBuilder.checklist.selectOption')}
+              zIndex={BUILDER_Z.popover}
+            />
+            <SelectField
+              label={t('contentBuilder.checklist.completionOrder')}
+              value={localData.completionOrder}
+              onChange={(value) =>
+                updateLocalData({ completionOrder: value as ChecklistCompletionOrder })
+              }
+              options={[
+                {
+                  value: ChecklistCompletionOrder.ANY,
+                  label: t('contentBuilder.checklist.anyOrder'),
+                },
+                {
+                  value: ChecklistCompletionOrder.ORDERED,
+                  label: t('contentBuilder.checklist.inOrder'),
+                },
+              ]}
+              placeholder={t('contentBuilder.checklist.selectOption')}
+              zIndex={BUILDER_Z.popover}
+            />
+            <BooleanField
+              label={t('contentBuilder.checklist.preventDismissal')}
+              tooltip={t('contentBuilder.checklist.preventDismissalTooltip')}
               checked={localData.preventDismissChecklist}
-              onCheckedChange={(value) => updateLocalData({ preventDismissChecklist: value })}
+              onChange={(value) => updateLocalData({ preventDismissChecklist: value })}
             />
-          </div>
-
-          <div className={flexBetween}>
-            <div className={labelStyles}>
-              <Label htmlFor="auto-dismiss-checklist" className="font-normal">
-                {t('contentBuilder.checklist.autoDismiss')}
-              </Label>
-              <QuestionTooltip>{t('contentBuilder.checklist.autoDismissTooltip')}</QuestionTooltip>
-            </div>
-            <Switch
-              id="auto-dismiss-checklist"
-              className="data-[state=unchecked]:bg-input"
+            <BooleanField
+              label={t('contentBuilder.checklist.autoDismiss')}
+              tooltip={t('contentBuilder.checklist.autoDismissTooltip')}
               checked={localData.autoDismissChecklist}
-              onCheckedChange={(value) => updateLocalData({ autoDismissChecklist: value })}
+              onChange={(value) => updateLocalData({ autoDismissChecklist: value })}
             />
-          </div>
+          </SettingsCard>
         </div>
       </ScrollArea>
     </CardContent>

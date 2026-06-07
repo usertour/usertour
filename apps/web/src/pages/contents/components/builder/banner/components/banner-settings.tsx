@@ -1,10 +1,9 @@
 'use client';
 
-import { Label, QuestionTooltip, Switch } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { BooleanField, SettingsCard } from '@/pages/contents/components/builder/shared/fields';
 
 const SETTINGS_ITEMS: readonly {
   key:
@@ -25,30 +24,17 @@ export const BannerSettings = () => {
   const { t } = useTranslation();
 
   return (
-    <FieldSection title={t('contentBuilder.banner.settings')}>
-      <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-2">
-        {SETTINGS_ITEMS.map((item) => {
-          const label = t(`contentBuilder.banner.settingsItems.${item.i18n}`);
-          return (
-            <div key={item.key} className="flex items-center justify-between space-x-2">
-              <Label htmlFor={item.key} className="flex flex-row space-x-1 font-normal">
-                <span>{label}</span>
-                <QuestionTooltip>
-                  {t(`contentBuilder.banner.settingsItems.${item.i18n}Tooltip`)}
-                </QuestionTooltip>
-              </Label>
-              <Switch
-                className="data-[state=unchecked]:bg-input"
-                id={item.key}
-                checked={localData[item.key]}
-                onCheckedChange={(checked) => updateLocalData({ [item.key]: checked })}
-                aria-label={label}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </FieldSection>
+    <SettingsCard title={t('contentBuilder.banner.settings')}>
+      {SETTINGS_ITEMS.map((item) => (
+        <BooleanField
+          key={item.key}
+          label={t(`contentBuilder.banner.settingsItems.${item.i18n}`)}
+          tooltip={t(`contentBuilder.banner.settingsItems.${item.i18n}Tooltip`)}
+          checked={localData[item.key]}
+          onChange={(checked) => updateLocalData({ [item.key]: checked })}
+        />
+      ))}
+    </SettingsCard>
   );
 };
 

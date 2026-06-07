@@ -2396,6 +2396,7 @@ const translations = {
       targetElement: 'Target Element',
     },
     checklist: {
+      settings: 'Settings',
       launcherButtonText: 'Launcher button text',
       none: 'None',
       addItem: 'Add item',

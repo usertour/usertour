@@ -2263,6 +2263,7 @@ const translations = {
       targetElement: '目标元素',
     },
     checklist: {
+      settings: '设置',
       launcherButtonText: '启动器按钮文本',
       none: '无',
       addItem: '添加任务',
