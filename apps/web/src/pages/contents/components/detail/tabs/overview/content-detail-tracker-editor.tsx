@@ -73,7 +73,7 @@ const TrackerEventSelector = ({
   if (selectedEvent) {
     return (
       <div className="space-y-3">
-        <div className="border rounded-lg p-4 bg-white">
+        <div className="border rounded-lg p-4 bg-card">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-3">
               <div className="mt-0.5 flex-none rounded-md bg-primary/10 p-2">

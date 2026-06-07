@@ -38,7 +38,7 @@ interface Props {
 // joined by a 1px divider, so the close belongs visually to its condition
 // instead of floating beside it.
 const CHIP_OUTER =
-  'group/condition inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-background text-sm shadow-sm transition-colors hover:border-input';
+  'group/condition inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-card text-sm shadow-sm transition-colors hover:border-input';
 
 // Red ring around the chip when validation failed on close — gives a static
 // visual cue that complements the popping error tooltip so the row stays

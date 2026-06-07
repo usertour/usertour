@@ -56,7 +56,7 @@ export const ContentDetailAddButtonSkeleton = () => {
 // Skeleton for settings rules section
 export const ContentDetailSettingsRuleSkeleton = () => {
   return (
-    <div className="bg-white rounded-lg border p-6 space-y-4">
+    <div className="bg-card rounded-lg border p-6 space-y-4">
       {/* Header */}
       <div className="space-y-2">
         <Skeleton className="h-5 w-48" />

@@ -689,7 +689,7 @@ export const ContentDetailContent = () => {
         {showAddButton && (
           <Button
             onClick={() => openBuilder(content, contentType)}
-            className="py-8 rounded-lg bg-white cursor-pointer w-auto h-auto hover:bg-white shadow"
+            className="py-8 rounded-lg bg-card cursor-pointer w-auto h-auto hover:bg-card shadow"
             disabled={isViewOnly}
           >
             <AddIcon width={40} height={40} className="text-primary" />
