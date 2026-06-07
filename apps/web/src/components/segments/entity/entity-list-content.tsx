@@ -83,7 +83,7 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
                       <EditIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-slate-700">
+                  <TooltipContent className="max-w-xs">
                     <p>{t(config.i18n.editSegmentNameTooltip)}</p>
                   </TooltipContent>
                 </Tooltip>

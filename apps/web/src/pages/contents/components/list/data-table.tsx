@@ -73,7 +73,7 @@ const ContentPreviewFooter = ({
           )}
           {!isPublished && (
             <>
-              <CircleIcon className="w-3 h-3 text-slate-300" />
+              <CircleIcon className="w-3 h-3 text-muted-foreground/50" />
               <span>{t('contents.listView.card.unpublished')}</span>
             </>
           )}

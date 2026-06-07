@@ -22,7 +22,7 @@ const IconButton = React.memo<IconButtonProps>(({ icon: Icon, text, isSelected, 
         <Icon size={16} />
       </Button>
     </TooltipTrigger>
-    <TooltipContent className="max-w-xs bg-foreground">{text}</TooltipContent>
+    <TooltipContent className="max-w-xs">{text}</TooltipContent>
   </Tooltip>
 ));
 IconButton.displayName = 'IconButton';

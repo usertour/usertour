@@ -9,6 +9,8 @@
     --info-foreground: 210 40% 98%;
     --surface: 210 40% 98%;
     --surface-raised: 0 0% 100%;
+    --canvas: 220 60% 99%;
+    --canvas-dot: 216 30% 90%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -66,6 +68,8 @@
 
     --surface: 217.2 33.3% 17.1%;
     --surface-raised: 215.3 25% 26.7%;
+    --canvas: 222 47% 9%;
+    --canvas-dot: 217 20% 22%;
 
     --muted: 215.3 25% 26.7%;
     --muted-foreground: 240 5% 64.9%;
@@ -120,5 +124,16 @@
 
   body {
     @apply text-foreground;
+  }
+}
+
+@layer components {
+  /* Admin canvas backdrop: a dotted grid behind the builder. Colors come from
+     tokens so it follows light/dark; the radial-gradient lives here instead of
+     a long arbitrary className. */
+  .bg-dot-grid {
+    background-color: hsl(var(--canvas));
+    background-image: radial-gradient(hsl(var(--canvas-dot)) 1.1px, transparent 1.1px);
+    background-size: 24px 24px;
   }
 }

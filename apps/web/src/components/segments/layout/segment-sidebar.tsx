@@ -75,7 +75,7 @@ export function SegmentSidebar({
                   </Button>
                 </TooltipTrigger>
                 {createTooltip && (
-                  <TooltipContent className="max-w-xs bg-slate-700">
+                  <TooltipContent className="max-w-xs">
                     <p>{createTooltip}</p>
                   </TooltipContent>
                 )}

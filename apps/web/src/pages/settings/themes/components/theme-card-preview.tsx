@@ -42,7 +42,7 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
         ref={containerRef}
         onClick={handleOnClick}
       >
-        <div className="bg-slate-50 dark:bg-gray-800 rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-surface rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-border">
           <div className="flex flex-row grow space-x-2">
             <span className="text-base font-medium text-gray-900 dark:text-white max-w-40	truncate ...">
               {theme.name}
