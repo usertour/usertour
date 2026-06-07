@@ -215,9 +215,9 @@ describe('GraphQL analytics (e2e)', () => {
         variables: { contentId, startDate, endDate, timezone, environmentId },
       });
       const result = gqlData(res).queryContentQuestionAnalytics;
-      // The seeded step carries no question, so the per-step loop yields []. The
-      // contract is "an array of question analytics" — assert that shape.
-      expect(Array.isArray(result)).toBe(true);
+      // The seeded step carries no question, so the per-step loop yields exactly
+      // an empty array — assert that deterministically (not just "is an array").
+      expect(result).toEqual([]);
     });
 
     it('errors for an unknown content (Content-scoped guard cannot resolve scope)', async () => {

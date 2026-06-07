@@ -177,6 +177,7 @@ describe('GraphQL users (e2e)', () => {
       const membership = await prisma.userOnProject.findFirst({
         where: { userId: user.id, projectId: project.id },
       });
+      expect(membership).not.toBeNull();
       expect(membership).toMatchObject({ role: 'OWNER', actived: true });
     });
 

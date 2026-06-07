@@ -874,7 +874,7 @@ describe('GraphQL content (e2e)', () => {
         token,
         query: `query ($query: ContentQuery, $orderBy: ContentOrder, $first: Int) {
           queryContent(query: $query, orderBy: $orderBy, first: $first) {
-            edges { node { id } }
+            edges { node { id createdAt } }
           }
         }`,
         variables: {
@@ -883,8 +883,16 @@ describe('GraphQL content (e2e)', () => {
           first: 5,
         },
       });
-      // Just assert it resolves without error and returns a connection.
-      expect(gqlData(res).queryContent.edges).toEqual(expect.any(Array));
+      // This describe block created several contents, so there are >= 2 here.
+      // Assert the ordering is actually descending (catches an ignored orderBy —
+      // natural insertion order would be ascending).
+      const times = gqlData(res).queryContent.edges.map((e: { node: { createdAt: string } }) =>
+        new Date(e.node.createdAt).getTime(),
+      );
+      expect(times.length).toBeGreaterThanOrEqual(2);
+      for (let i = 0; i < times.length - 1; i++) {
+        expect(times[i]).toBeGreaterThanOrEqual(times[i + 1]);
+      }
     });
   });
 
