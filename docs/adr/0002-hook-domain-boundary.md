@@ -15,7 +15,7 @@ Two pressures showed up during the v0.7.8 auth + router refactor:
 At the same time, the repo has three other plausible homes for shared code that this decision must distinguish from:
 
 - `packages/components/ui` (`@usertour/ui`) — composition UI primitives, **explicitly "no business knowledge"** (per the index.ts header comment), free to depend from any consumer
-- `packages/business-components` — cross-app business UI (Conditions, SelectorDialog, GoogleFontCss) shared between web, builder, and future extensions
+- `packages/business-components` — cross-app business UI (Conditions, GoogleFontCss, settings-domain components) shared between web, builder, and future extensions
 - `apps/web/src/pages/<feature>/components/` — feature-scoped UI and hooks for a single React app
 
 Without a written rule, the same three new helpers could also be filed in any of these. Each placement carries different runtime, dependency, and reuse consequences that are not obvious until something breaks.
@@ -78,7 +78,7 @@ The three new helpers were drafted alongside the auth hook wrappers. Filing them
 
 ### Alt-D: Put them in `@usertour/business-components`
 
-`business-components` already hosts cross-app business UI (Conditions, SelectorDialog, GoogleFontCss). Filing the auth helpers there fits the "business + cross-app" label.
+`business-components` already hosts cross-app business UI (Conditions, GoogleFontCss, settings-domain components). Filing the auth helpers there fits the "business + cross-app" label.
 
 - **Costs:** auth has exactly one consumer — `apps/web`. The builder app, the extension, and the SDK do not have a login flow on their own. `business-components` is for things consumed by 2+ apps; placing single-consumer code there pollutes the package's semantic and degrades it into a dumping ground.
 - **Rejected because:** the "cross-app" claim is the package's purpose. Filing single-app code there breaks that purpose and makes the package useless as a signal.
