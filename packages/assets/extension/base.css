@@ -2,9 +2,6 @@
   :root {
     --background: #ffffff;
     --foreground: #09090b;
-    --background-400: #94a3b8;
-    --background-700: #334155;
-    --background-800: #1d283a;
     --background-900: #0f1729;
 
     --muted: #f4f4f5;
@@ -49,9 +46,6 @@
   .dark {
     --background: #09090b;
     --foreground: #fafafa;
-    --background-400: #94a3b8;
-    --background-700: #334155;
-    --background-800: #1d283a;
     --background-900: #0f1729;
 
     --muted: #27272a;
