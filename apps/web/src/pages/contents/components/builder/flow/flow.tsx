@@ -18,13 +18,13 @@ export const FlowBuilder = () => (
       <Route element={<FlowSidebarLayout />}>
         <Route index element={<BuilderSideBar />} />
         <Route path="step/new/:type" element={<FlowBuilderDetail />} />
-        <Route path="step/:index" element={<FlowBuilderDetail />} />
-        <Route path="trigger/:index" element={<FlowBuilderTrigger />} />
+        <Route path="step/:stepId" element={<FlowBuilderDetail />} />
+        <Route path="trigger/:stepId" element={<FlowBuilderTrigger />} />
       </Route>
     </Routes>
     <Routes>
       <Route path="step/new/:type" element={<FlowBuilderDetailEmbed />} />
-      <Route path="step/:index" element={<FlowBuilderDetailEmbed />} />
+      <Route path="step/:stepId" element={<FlowBuilderDetailEmbed />} />
     </Routes>
   </>
 );

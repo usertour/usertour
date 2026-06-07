@@ -27,6 +27,7 @@ import {
   useProjectId,
 } from '@/pages/contents/components/builder/core';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
+import { getStepId } from '@/utils/content';
 import { useSeedStepFromRoute } from '@/pages/contents/components/builder/flow/use-seed-step-from-route';
 import { useActionsSaveGate } from '@/pages/contents/components/builder/hooks/use-actions-save-gate';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
@@ -329,6 +330,14 @@ export const FlowBuilderDetailEmbed = () => {
     return <></>;
   }
 
+  // The preview widgets seed their editor state from currentStep once
+  // (uncontrolled: useState(currentStep.data) + initialValue). Returning to the
+  // overview leaves the previous step in the store, so a remounted Embed's first
+  // frame still carries the stale step — the editor inits from it before the
+  // route seed swaps in the real step. Key the widget by the step's stable id so
+  // it remounts (and re-initializes) once currentStep becomes the clicked step.
+  const stepKey = getStepId(currentStep, currentIndex);
+
   if (currentStep.type === StepContentType.TOOLTIP) {
     return (
       <>
@@ -339,6 +348,7 @@ export const FlowBuilderDetailEmbed = () => {
           className={cn('fixed', centerClasses)}
         />
         <ContentPopper
+          key={stepKey}
           ref={contentRef as Ref<HTMLDivElement> | undefined}
           theme={theme}
           currentIndex={currentIndex}
@@ -363,6 +373,7 @@ export const FlowBuilderDetailEmbed = () => {
     // tooltip popper, which uses BUILDER_Z.canvas.
     return (
       <ContentModal
+        key={stepKey}
         theme={theme}
         ref={contentRef as Ref<HTMLDivElement> | undefined}
         attributeList={attributeList}
@@ -383,6 +394,7 @@ export const FlowBuilderDetailEmbed = () => {
     // zIndex 0 — page base layer, see the ContentModal note above.
     return (
       <ContentBubble
+        key={stepKey}
         theme={theme}
         ref={contentRef as Ref<HTMLDivElement> | undefined}
         attributeList={attributeList}

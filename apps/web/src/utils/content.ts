@@ -1,4 +1,4 @@
-import { Content, ContentDataType, ContentVersion, Environment } from '@usertour/types';
+import { Content, ContentDataType, ContentVersion, Environment, Step } from '@usertour/types';
 
 /**
  * Convert content list type (plural) to ContentDataType enum
@@ -74,4 +74,15 @@ export const resolveEditableVersionId = async (
     throw new Error('Failed to create a new version');
   }
   return created.id;
+};
+
+/**
+ * Stable identity for a flow step — the `step/:stepId` route param shared by the
+ * flow builder (navigation, sortable list, preview key) and content detail's
+ * deep-link into a step, so both agree on what "this step" is. Prefer the server
+ * id, fall back to the front-end cvid (present before the first save); the index
+ * suffix only guards a step that carries neither and never navigates.
+ */
+export const getStepId = (step: Step, index: number): string => {
+  return step.id ?? step.cvid ?? `step-${index}`;
 };

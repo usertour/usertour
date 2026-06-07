@@ -3,19 +3,20 @@ import { useParams } from 'react-router-dom';
 import { cuid, defaultStep } from '@usertour/helpers';
 import type { Step } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import { getStepId } from '@/utils/content';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // Seeds the Flow edit buffer (currentStep) from the route,
 // replacing the old "clone on enter-click" path so navigation, deep-links and
 // refresh all land on the right step:
-//   step/:index    → clone currentVersion.steps[index]
+//   step/:stepId   → clone the step whose stable id matches
 //   step/new/:type → a fresh, id-less step (the save creates it server-side)
 // Runs in a layout effect (before paint) keyed on the route param ONLY — not
 // on currentVersion — so a later save re-baseline doesn't clobber in-progress
 // buffer edits. The `ready` gate above WebBuilderContent guarantees
 // currentVersion is loaded by the time a step route mounts.
 export const useSeedStepFromRoute = () => {
-  const { index, type } = useParams();
+  const { stepId, type } = useParams();
   const currentVersion = useBuilderStore((s) => s.currentVersion);
   const setCurrentStep = useBuilderStore((s) => s.setCurrentStep);
 
@@ -35,11 +36,10 @@ export const useSeedStepFromRoute = () => {
       } as Step);
       return;
     }
-    if (index === undefined) {
+    if (stepId === undefined) {
       return;
     }
-    const stepIndex = Number.parseInt(index, 10);
-    const step = steps[stepIndex];
+    const step = steps.find((candidate, i) => getStepId(candidate, i) === stepId);
     if (!step) {
       return;
     }
@@ -49,5 +49,5 @@ export const useSeedStepFromRoute = () => {
       ) as Step,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, type]);
+  }, [stepId, type]);
 };

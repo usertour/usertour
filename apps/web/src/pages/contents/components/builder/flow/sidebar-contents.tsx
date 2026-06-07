@@ -41,7 +41,6 @@ import {
   RiDraggable,
   RiEyeOffLine,
   RiMessage2Line,
-  RiSettings3Line,
   RiWindow2Line,
 } from '@usertour/icons';
 import { Step, StepContentType } from '@usertour/types';
@@ -50,6 +49,7 @@ import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
+import { getStepId } from '@/utils/content';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { stepIsReachable } from '@/pages/contents/components/builder/utils/content-validate';
 
@@ -70,11 +70,6 @@ const STEP_TYPE_META: Partial<
   },
 };
 
-// Get stable unique identifier for a step
-const getStepId = (step: Step, index: number): string => {
-  return step.id ?? step.cvid ?? `step-${index}`;
-};
-
 // Type definitions for SidebarContent props
 interface SidebarContentProps {
   index: number;
@@ -83,7 +78,6 @@ interface SidebarContentProps {
   listeners?: SyntheticListenerMap;
   attributes?: DraggableAttributes;
   isReachable?: boolean;
-  selected?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -94,29 +88,17 @@ interface SortableItemProps {
   step: Step;
   onClick: (action: string, index: number) => void;
   isReachable: boolean;
-  selected: boolean;
 }
 
 const SidebarContent = memo(
   forwardRef<HTMLDivElement, SidebarContentProps>(
     (
-      {
-        index,
-        step,
-        onClick,
-        listeners = {},
-        attributes = {},
-        isReachable = true,
-        selected = false,
-        ...props
-      },
+      { index, step, onClick, listeners = {}, attributes = {}, isReachable = true, ...props },
       ref,
     ) => {
       const { t } = useTranslation();
-      const handleSelect = useCallback(() => {
-        onClick?.('select', index);
-      }, [onClick, index]);
-
+      // Clicking the row opens the step for editing (and the canvas previews
+      // it). There is no separate select-without-edit affordance.
       const handleEdit = useCallback(() => {
         onClick?.('edit', index);
       }, [onClick, index]);
@@ -139,11 +121,8 @@ const SidebarContent = memo(
           ref={ref}
           {...attributes}
           {...props}
-          onClick={handleSelect}
-          className={cn(
-            'group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors',
-            selected ? 'border-primary/30 bg-accent/50' : 'hover:bg-slate-100',
-          )}
+          onClick={handleEdit}
+          className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-slate-100"
         >
           <div className="flex min-h-6 items-center gap-2">
             <RiDraggable
@@ -151,17 +130,10 @@ const SidebarContent = memo(
               onClick={(event) => event.stopPropagation()}
               className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
             />
-            <span
-              className={cn(
-                'grid size-[22px] shrink-0 place-items-center rounded-md text-[11px] font-semibold',
-                selected ? 'bg-primary text-primary-foreground' : 'bg-slate-200 text-slate-600',
-              )}
-            >
+            <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-slate-200 text-[11px] font-semibold text-slate-600">
               {index + 1}
             </span>
-            <TypeIcon
-              className={cn('h-4 w-4 shrink-0', selected ? 'text-primary' : 'text-slate-400')}
-            />
+            <TypeIcon className="h-4 w-4 shrink-0 text-slate-400" />
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
               {step.name}
             </span>
@@ -219,23 +191,6 @@ const SidebarContent = memo(
                 <span className="text-[11px] text-slate-400 group-hover:hidden">
                   {meta ? t(meta.labelKey) : null}
                 </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleEdit();
-                      }}
-                      className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground group-hover:grid"
-                    >
-                      <RiSettings3Line className="h-4 w-4 opacity-70" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent disableCloseAnimation>
-                    {t('contentBuilder.flow.editStepTooltip')}
-                  </TooltipContent>
-                </Tooltip>
                 <AlertDialog>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -280,45 +235,39 @@ const SidebarContent = memo(
 );
 SidebarContent.displayName = 'SidebarContent';
 
-const SortableItem = memo(
-  ({ id, index, step, onClick, isReachable, selected }: SortableItemProps) => {
-    const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
-      id,
-    });
+const SortableItem = memo(({ id, index, step, onClick, isReachable }: SortableItemProps) => {
+  const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
 
-    const style = useMemo(
-      () => ({
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0 : 1,
-      }),
-      [transform, transition, isDragging],
-    );
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0 : 1,
+    }),
+    [transform, transition, isDragging],
+  );
 
-    return (
-      <SidebarContent
-        ref={setNodeRef}
-        style={style}
-        isReachable={isReachable}
-        selected={selected}
-        index={index}
-        onClick={onClick}
-        step={step}
-        listeners={listeners}
-        attributes={attributes}
-      />
-    );
-  },
-);
+  return (
+    <SidebarContent
+      ref={setNodeRef}
+      style={style}
+      isReachable={isReachable}
+      index={index}
+      onClick={onClick}
+      step={step}
+      listeners={listeners}
+      attributes={attributes}
+    />
+  );
+});
 SortableItem.displayName = 'SortableItem';
 
 export const SidebarContents = () => {
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { removeStep, reorderSteps, enterStepSubMode } = useFlowEditor();
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Local highlight cursor for the overview list (the canvas is a separate
-  // persistent layer; selection here is a sidebar-only affordance).
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -362,18 +311,19 @@ export const SidebarContents = () => {
 
   const handleOnClick = useCallback(
     (action: string, index: number) => {
-      if (!currentVersion?.steps) {
-        return;
-      }
-      if (action === 'select') {
-        setSelectedIndex(index);
+      const steps = currentVersion?.steps;
+      if (!steps) {
         return;
       }
       if (action === 'delete') {
         removeStep(index);
         return;
       }
-      enterStepSubMode(index, action === 'trigger' ? 'trigger' : 'detail');
+      // Row click ('edit') and the trigger button open a sub-view keyed by the
+      // step's stable id (not its list position); the canvas previews the step
+      // on entering 'detail'. The select-without-edit action was removed to
+      // align flow with the other content types.
+      enterStepSubMode(getStepId(steps[index], index), action === 'trigger' ? 'trigger' : 'detail');
     },
     [currentVersion?.steps, removeStep, enterStepSubMode],
   );
@@ -422,7 +372,6 @@ export const SidebarContents = () => {
               id={id}
               index={index}
               isReachable={isReachable}
-              selected={index === selectedIndex}
               step={step}
               onClick={handleOnClick}
             />
@@ -433,7 +382,6 @@ export const SidebarContents = () => {
             <SidebarContent
               index={activeStep.index}
               isReachable={activeStep.isReachable}
-              selected={activeStep.index === selectedIndex}
               step={activeStep.step}
             />
           ) : null}

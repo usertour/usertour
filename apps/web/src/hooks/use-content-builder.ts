@@ -11,7 +11,7 @@ export const useContentBuilder = () => {
   const { invoke: createVersion } = useCreateContentVersionMutation();
   const { environment } = useAppContext();
 
-  const openBuilder = async (content: Content, contentType: string, stepIndex?: number) => {
+  const openBuilder = async (content: Content, contentType: string, stepId?: string) => {
     const editedVersionId = content?.editedVersionId;
     if (!editedVersionId) {
       return false;
@@ -37,8 +37,8 @@ export const useContentBuilder = () => {
 
     const baseUrl = `/env/${environment?.id}/${contentType}/${content?.id}/builder/${versionId}`;
     // Step is a path segment of the builder's descendant <Routes> (flow.tsx's
-    // `step/:index`), not a query param — `?step=` is no longer read.
-    const url = stepIndex !== undefined ? `${baseUrl}/step/${stepIndex}` : baseUrl;
+    // `step/:stepId`, keyed by the step's stable id), not a query param.
+    const url = stepId !== undefined ? `${baseUrl}/step/${stepId}` : baseUrl;
     navigate(url);
     return true;
   };

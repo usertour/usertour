@@ -2136,7 +2136,6 @@ const translations = {
       addTriggerTooltip: '添加触发器',
       editTriggersTooltip: '编辑触发器({{total}})',
       triggerTooltipDescription: '满足条件时自动执行动作 —— 例如跳转步骤、启动其他流程或关闭。',
-      editStepTooltip: '编辑步骤设置',
       deleteStepTooltip: '删除步骤',
       deleteConfirmTitle: '确定要删除吗？',
       deleteConfirmDescription: '删除后将无法通过任何方式访问或恢复该数据，请确认。',

@@ -4,6 +4,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { cuid, defaultStep, duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import { type ContentVersion, type Step } from '@usertour/types';
 import { useBuilderStore, useIsBusy } from '@/pages/contents/components/builder/core';
+import { getStepId } from '@/utils/content';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 
 // Editor abstraction for Flow content. Parallel to useTypeEditor
@@ -27,7 +28,7 @@ import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/d
 // Read-side store fields (currentStep / isShowError) stay on the public
 // store surface because cross-type hooks read them — use-current-theme
 // inherits step.themeId, use-content-position reads step.setting.position,
-// and use-seed-step-from-route seeds currentStep from the `step/:index`
+// and use-seed-step-from-route seeds currentStep from the `step/:stepId`
 // route param. currentIndex is NOT a store field: it's derived from the
 // route param below (the store field was a redundant mirror of the URL).
 // Writers stay here.
@@ -49,11 +50,13 @@ export const useFlowEditor = () => {
   const steps = currentVersion?.steps ?? [];
 
   // currentIndex follows the URL, not the store: the step/trigger routes
-  // carry it as `:index`; the new-step route (`step/new/:type`) implies
-  // steps.length. Deriving it here removes the seed-write / read-back round
-  // trip the old store field needed.
-  const { index, type } = useParams();
-  const currentIndex = type ? steps.length : Number.parseInt(index ?? '0', 10);
+  // carry the step's stable id as `:stepId`, resolved to a position here; the
+  // new-step route (`step/new/:type`) implies steps.length. Deriving it removes
+  // the seed-write / read-back round trip the old store field needed.
+  const { stepId: routeStepId, type } = useParams();
+  const currentIndex = type
+    ? steps.length
+    : steps.findIndex((step, i) => getStepId(step, i) === routeStepId);
 
   // ── Local-buffer mutators (currentStep) ─────────────────────
 
@@ -154,12 +157,14 @@ export const useFlowEditor = () => {
 
   // URL-driven: navigate to the sub-view route; the target route component
   // seeds its edit buffer from the route param via useSeedStepFromRoute.
-  // Relative paths — enter/create are called from the index (overview) route,
-  // exit from a depth-1 step/trigger route, so `..` returns to the overview.
+  // Keyed by the step's stable id (not its list position), so reorder/delete
+  // can't make a URL point at the wrong step. Relative paths — enter/create are
+  // called from the index (overview) route, exit from a depth-1 step/trigger
+  // route, so `..` returns to the overview.
 
   const enterStepSubMode = useCallback(
-    (index: number, target: 'detail' | 'trigger') => {
-      navigate(target === 'trigger' ? `trigger/${index}` : `step/${index}`);
+    (stepId: string, target: 'detail' | 'trigger') => {
+      navigate(target === 'trigger' ? `trigger/${stepId}` : `step/${stepId}`);
     },
     [navigate],
   );

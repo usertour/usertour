@@ -2261,7 +2261,6 @@ const translations = {
       editTriggersTooltip: 'Edit triggers ({{total}})',
       triggerTooltipDescription:
         'Automatically runs an action when its conditions are met — e.g. go to a step, start a flow, or dismiss.',
-      editStepTooltip: 'Edit step settings',
       deleteStepTooltip: 'Delete step',
       deleteConfirmTitle: 'Are you absolutely sure?',
       deleteConfirmDescription:

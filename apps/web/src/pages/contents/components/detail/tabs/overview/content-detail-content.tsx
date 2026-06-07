@@ -1,6 +1,7 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { useContentBuilder } from '@/hooks/use-content-builder';
+import { getStepId } from '@/utils/content';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
@@ -645,7 +646,7 @@ export const ContentDetailContent = () => {
         {contentType === ContentTypeName.FLOWS &&
           version.steps?.map((step, index) => (
             <ContentDetailContentStep
-              onEdit={() => openBuilder(content, contentType, index)}
+              onEdit={() => openBuilder(content, contentType, getStepId(step, index))}
               currentStep={step}
               index={index}
               key={index}
