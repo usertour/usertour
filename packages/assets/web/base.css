@@ -72,16 +72,16 @@
     --canvas-dot: 217 20% 22%;
 
     --muted: 215.3 25% 26.7%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted-foreground: 215 20% 65%;
 
-    --popover: 240 10% 3.9%;
+    --popover: 216 30% 19%;
     --popover-foreground: 0 0% 98%;
 
-    --card: 240 10% 3.9%;
+    --card: 217.2 33.3% 17.1%;
     --card-foreground: 0 0% 98%;
 
     --border: 215.3 25% 26.7%;
-    --input: 215.4 16.3% 46.9%;
+    --input: 215 20% 32%;
 
     --primary: 250 100% 60%;
     --primary-foreground: 0 0% 98%;
@@ -91,9 +91,9 @@
     --secondary-foreground: 0 0% 98%;
     --secondary-hover: 215.3 19.3% 34.5%;
 
-    --accent: 240 3.7% 15.9%;
+    --accent: 226 30% 26%;
     --accent-foreground: 0 0% 98%;
-    --accent-hover: 229.7 93.5% 81.8%;
+    --accent-hover: 226 40% 33%;
 
     --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 0 85.7% 97.3%;
@@ -105,7 +105,7 @@
     --editor-toolbar: 205.7 46.7% 97.1%;
     --editor-border: 203.3 39.1% 91%;
 
-    --ring: 240 3.7% 15.9%;
+    --ring: 215 20% 45%;
 
     --radius: 0.5rem;
 
