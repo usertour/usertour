@@ -87,7 +87,7 @@ export const InputNumber = memo((props: InputNumberProps) => {
         variant="compact-muted"
         type="text"
         inputMode="numeric"
-        className="pe-14 bg-slate-50 shadow-none"
+        className="pe-14 bg-surface shadow-none"
         value={inputValue}
         placeholder={placeholder}
         onChange={handleOnChange}

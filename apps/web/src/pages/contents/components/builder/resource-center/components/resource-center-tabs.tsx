@@ -111,19 +111,19 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
       onClick={() => onClick?.('select', tab)}
       className={cn(
         'group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors',
-        isActive ? 'border-primary/30 bg-accent/50' : 'hover:bg-slate-100',
+        isActive ? 'border-primary/30 bg-accent/50' : 'hover:bg-muted',
       )}
     >
       <div className="flex min-h-6 items-center gap-2">
         <RiDraggable
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
+          className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground/50"
         />
         {Icon ? (
           <Icon
             size={16}
-            className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-slate-400')}
+            className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')}
           />
         ) : null}
         <span
@@ -142,7 +142,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
                     e.stopPropagation();
                     onClick?.('edit', tab);
                   }}
-                  className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground group-hover:grid"
+                  className="hidden size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-foreground group-hover:grid"
                 >
                   <RiSettings3Line className="h-4 w-4 opacity-70" />
                 </button>
@@ -158,7 +158,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
               <button
                 type="button"
                 onClick={(e) => e.stopPropagation()}
-                className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+                className="hidden size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-destructive group-hover:grid"
               >
                 <Delete2Icon className="h-4 w-4 opacity-70" />
               </button>
@@ -285,7 +285,7 @@ export const ResourceCenterTabs = () => {
       <Button
         variant="ghost"
         onClick={startCreateTab}
-        className="mt-2 h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
+        className="mt-2 h-9 w-full rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:bg-accent/50 hover:text-primary"
       >
         <RiAddCircleLine className="mr-2 size-4 opacity-70" />
         {t('contentBuilder.resourceCenter.addTab')}

@@ -114,7 +114,7 @@ export const LauncherBehavior = () => {
 
   return (
     <FieldSection title={t('contentBuilder.launcher.behavior')}>
-      <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-1">
+      <div className="flex flex-col bg-surface p-3.5 rounded-lg space-y-1">
         <div className="text-sm">{t('contentBuilder.launcher.behaviorEditor.when')}</div>
         <div className="flex flex-row space-x-1 items-center">
           <TriggerDropdown

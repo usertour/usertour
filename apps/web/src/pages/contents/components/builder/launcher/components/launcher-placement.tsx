@@ -40,7 +40,7 @@ export const LauncherPlacement = () => {
       subTitle={t('contentBuilder.launcher.placementSubtitle')}
     >
       <FieldSection title={t('contentBuilder.launcher.placement')}>
-        <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-6 mt-2">
+        <div className="flex flex-col bg-surface p-3.5 rounded-lg space-y-6 mt-2">
           <ContentPlacementManual />
         </div>
       </FieldSection>

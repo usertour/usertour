@@ -73,7 +73,7 @@ const FlowBuilderDetailHeader = () => {
           variant="ghost"
           size="icon"
           onClick={exitToFlow}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>

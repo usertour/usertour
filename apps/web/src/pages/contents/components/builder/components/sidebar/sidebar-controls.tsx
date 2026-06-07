@@ -24,7 +24,7 @@ export const SidebarControls = (props: SidebarControlsProps) => {
         type="button"
         onClick={onSwitchSide}
         title={t('contentBuilder.common.switchSide')}
-        className="grid size-7 place-items-center rounded-md text-slate-300 hover:bg-muted hover:text-slate-500"
+        className="grid size-7 place-items-center rounded-md text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground"
       >
         <RiArrowLeftRightLine className="h-4 w-4" />
       </button>
@@ -32,7 +32,7 @@ export const SidebarControls = (props: SidebarControlsProps) => {
         type="button"
         onClick={onCollapse}
         title={t('contentBuilder.common.collapsePanel')}
-        className="grid size-7 place-items-center rounded-md text-slate-300 hover:bg-muted hover:text-slate-500"
+        className="grid size-7 place-items-center rounded-md text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground"
       >
         {isLeft ? <RiMenuFoldLine className="h-4 w-4" /> : <RiMenuUnfoldLine className="h-4 w-4" />}
       </button>

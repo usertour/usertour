@@ -11,7 +11,7 @@ export const LauncherZIndex = () => {
     <FieldSection title={t('contentBuilder.launcher.zIndex')}>
       <Input
         variant="compact-muted"
-        className="bg-slate-50 shadow-none"
+        className="bg-surface shadow-none"
         type="number"
         min={0}
         value={localData.zIndex ?? ''}

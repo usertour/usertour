@@ -122,18 +122,18 @@ const SidebarContent = memo(
           {...attributes}
           {...props}
           onClick={handleEdit}
-          className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-slate-100"
+          className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-muted"
         >
           <div className="flex min-h-6 items-center gap-2">
             <RiDraggable
               {...listeners}
               onClick={(event) => event.stopPropagation()}
-              className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
+              className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground/50"
             />
-            <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-slate-200 text-[11px] font-semibold text-slate-600">
+            <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
               {index + 1}
             </span>
-            <TypeIcon className="h-4 w-4 shrink-0 text-slate-400" />
+            <TypeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
               {step.name}
             </span>
@@ -165,13 +165,13 @@ const SidebarContent = memo(
                         handleEditTrigger();
                       }}
                       className={cn(
-                        'relative size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-foreground',
+                        'relative size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-foreground',
                         triggerCount > 0 ? 'grid' : 'hidden group-hover:grid',
                       )}
                     >
                       <EventIcon2 className="h-4 w-4 opacity-70" />
                       {triggerCount > 0 && (
-                        <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-white">
+                        <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
                           {triggerCount}
                         </span>
                       )}
@@ -188,7 +188,7 @@ const SidebarContent = memo(
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="text-[11px] text-slate-400 group-hover:hidden">
+                <span className="text-[11px] text-muted-foreground group-hover:hidden">
                   {meta ? t(meta.labelKey) : null}
                 </span>
                 <AlertDialog>
@@ -198,7 +198,7 @@ const SidebarContent = memo(
                         <button
                           type="button"
                           onClick={(event) => event.stopPropagation()}
-                          className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+                          className="hidden size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-destructive group-hover:grid"
                         >
                           <Delete2Icon className="h-4 w-4 opacity-70" />
                         </button>

@@ -51,7 +51,7 @@ const ChecklistItemHeader = () => {
             setCurrentItem(null);
             backToChecklist();
           }}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
@@ -106,7 +106,7 @@ const ChecklistItemBody = () => {
             <Label htmlFor={`${formPrefix}-name`}>{t('contentBuilder.checklist.itemName')}</Label>
             <Input
               variant="compact-muted"
-              className="bg-slate-50 shadow-none"
+              className="bg-surface shadow-none"
               id={`${formPrefix}-name`}
               value={currentItem?.name}
               placeholder={t('contentBuilder.checklist.none')}
@@ -119,7 +119,7 @@ const ChecklistItemBody = () => {
             </Label>
             <Input
               variant="compact-muted"
-              className="bg-slate-50 shadow-none"
+              className="bg-surface shadow-none"
               id={`${formPrefix}-description`}
               value={currentItem?.description}
               placeholder={t('contentBuilder.checklist.none')}

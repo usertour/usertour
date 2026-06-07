@@ -32,7 +32,7 @@ const FlowBuilderTriggerHeader = () => {
           variant="ghost"
           size="icon"
           onClick={exitToFlow}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
@@ -158,7 +158,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
           <Button
             variant="ghost"
             onClick={handleOnClick}
-            className="h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
+            className="h-9 w-full rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:bg-accent/50 hover:text-primary"
           >
             <RiAddCircleLine className="mr-2 size-4 opacity-70" />
             {t('contentBuilder.flow.addTrigger')}

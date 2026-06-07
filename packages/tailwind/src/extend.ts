@@ -194,6 +194,8 @@ export const extendBase = {
     'background-700': 'hsl(var(--background-700))',
     'background-800': 'hsl(var(--background-800))',
     'background-900': 'hsl(var(--background-900))',
+    surface: 'hsl(var(--surface))',
+    'surface-raised': 'hsl(var(--surface-raised))',
     success: 'hsl(var(--success))',
     warning: 'hsl(var(--warning))',
     'warning-foreground': 'hsl(var(--warning-foreground))',

@@ -84,7 +84,7 @@ const BlockContentListHeader = () => {
             setCurrentBlock(null);
             exitBlock();
           }}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
@@ -290,7 +290,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  className="bg-slate-50 text-sm shadow-none rounded-lg"
+                  className="bg-surface text-sm shadow-none rounded-lg"
                   zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [

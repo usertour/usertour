@@ -14,7 +14,7 @@ export const SettingsCard = (props: SettingsCardProps) => {
   const { title, tooltip, children } = props;
   return (
     <FieldSection title={title} tooltip={tooltip}>
-      <div className="flex flex-col space-y-2 rounded-lg bg-slate-50 p-3.5">{children}</div>
+      <div className="flex flex-col space-y-2 rounded-lg bg-surface p-3.5">{children}</div>
     </FieldSection>
   );
 };

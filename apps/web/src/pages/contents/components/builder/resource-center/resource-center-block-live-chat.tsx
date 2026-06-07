@@ -116,7 +116,7 @@ const BlockLiveChatHeader = () => {
             setCurrentBlock(null);
             exitBlock();
           }}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
@@ -205,7 +205,7 @@ const BlockLiveChatBody = () => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  className="bg-slate-50 text-sm shadow-none rounded-lg"
+                  className="bg-surface text-sm shadow-none rounded-lg"
                   zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [
@@ -233,7 +233,7 @@ const BlockLiveChatBody = () => {
               value={currentBlock.liveChatProvider}
               onChange={handleProviderChange}
               placeholder={t(`${I18N_PREFIX}.selectProvider`)}
-              className="w-full bg-slate-50 shadow-none"
+              className="w-full bg-surface shadow-none"
               contentStyle={{ zIndex: BUILDER_Z.popover }}
             />
           </div>
@@ -256,12 +256,12 @@ const BlockLiveChatBody = () => {
                   i18nKey={flashWarning.textKey}
                   components={{
                     strong: <strong />,
-                    code: <code className="rounded bg-slate-100 px-1" />,
+                    code: <code className="rounded bg-muted px-1" />,
                   }}
                 />
               </div>
               {flashWarning.code && (
-                <pre className="mt-2 rounded border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700 whitespace-pre-wrap break-all">
+                <pre className="mt-2 rounded border border-border bg-surface p-2 text-xs text-foreground whitespace-pre-wrap break-all">
                   <code>{flashWarning.code}</code>
                 </pre>
               )}

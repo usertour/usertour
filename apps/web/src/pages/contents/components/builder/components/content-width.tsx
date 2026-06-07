@@ -58,7 +58,7 @@ export const ContentWidth = memo((props: ContentWidthProps) => {
           variant="compact-muted"
           type="text"
           inputMode="numeric"
-          className="pe-9 bg-slate-50 shadow-none"
+          className="pe-9 bg-surface shadow-none"
           value={inputValue}
           placeholder={t('contentBuilder.shared.widthPlaceholder', { value: defaultWidth })}
           onChange={handleOnChange}

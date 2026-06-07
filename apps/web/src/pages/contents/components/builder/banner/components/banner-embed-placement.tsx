@@ -65,7 +65,7 @@ export const BannerEmbedPlacementSelect = () => {
         value={localData.embedPlacement}
         onChange={(value) => updateLocalData({ embedPlacement: value as BannerEmbedPlacement })}
         placeholder={t('contentBuilder.banner.selectPlacement')}
-        className="w-full bg-slate-50 shadow-none"
+        className="w-full bg-surface shadow-none"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
       {requiresElement && (
@@ -76,7 +76,7 @@ export const BannerEmbedPlacementSelect = () => {
           buildUrl={currentContent?.buildUrl}
           subTitle={t('contentBuilder.banner.containerElementSubtitle')}
         >
-          <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg space-y-6 mt-2">
+          <div className="flex flex-col bg-surface p-3.5 rounded-lg space-y-6 mt-2">
             <ContentPlacementManual />
           </div>
         </ContentPlacementProvider>

@@ -39,7 +39,7 @@ const TabSettingsHeader = () => {
             setEditingTab(null);
             exitTabSettings();
           }}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
@@ -88,7 +88,7 @@ const TabSettingsBody = () => {
               <ContentErrorAnchor>
                 <Input
                   variant="compact-muted"
-                  className="bg-slate-50 shadow-none"
+                  className="bg-surface shadow-none"
                   id="tab-name"
                   value={editingTab.name}
                   placeholder={t('contentBuilder.resourceCenter.tabNamePlaceholder')}

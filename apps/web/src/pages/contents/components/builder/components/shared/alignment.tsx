@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 const circleHoveredClassName =
   "bg-primary before:content-[''] before:border before:border-indigo-900 before:cursor-pointer before:h-2 before:w-2 before:rounded-[50%] before:border-solid before:scale-100 items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] scale-[1.6] hover:bg-primary hover:scale-[1.6]";
 const circleClassName =
-  'items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] bg-slate-300 hover:bg-primary hover:scale-[1.6]';
+  'items-center cursor-pointer flex justify-center h-2.5 relative transition-transform duration-200 w-2.5 rounded-[50%] bg-muted-foreground/40 hover:bg-primary hover:scale-[1.6]';
 
 const POSITIONS = {
   BOTTOM: 'bottom',
@@ -25,18 +25,18 @@ type Alignment = (typeof ALIGNMENTS)[keyof typeof ALIGNMENTS];
 
 // Tailwind classes that position the preview arrow for each side/align combo.
 const arrowClassByPosition: Record<string, string> = {
-  'bottom-start': 'border-b-slate-400 left-[12px] bottom-full',
-  'bottom-center': 'border-b-slate-400 left-[calc(50%_-_6px)] bottom-full',
-  'bottom-end': 'border-b-slate-400 right-[12px] bottom-full',
-  'right-start': 'border-r-slate-400 top-[12px] right-full',
-  'right-center': 'border-r-slate-400 top-[calc(50%_-_6px)] right-full',
-  'right-end': 'border-r-slate-400 bottom-[12px] right-full',
-  'left-start': 'border-l-slate-400 top-[12px] left-full',
-  'left-center': 'border-l-slate-400 top-[calc(50%_-_6px)] left-full',
-  'left-end': 'border-l-slate-400 bottom-[12px] left-full',
-  'top-start': 'border-t-slate-400 left-[12px] top-full',
-  'top-center': 'border-t-slate-400 left-[calc(50%_-_6px)] top-full',
-  'top-end': 'border-t-slate-400 right-[12px] top-full',
+  'bottom-start': 'border-b-muted-foreground left-[12px] bottom-full',
+  'bottom-center': 'border-b-muted-foreground left-[calc(50%_-_6px)] bottom-full',
+  'bottom-end': 'border-b-muted-foreground right-[12px] bottom-full',
+  'right-start': 'border-r-muted-foreground top-[12px] right-full',
+  'right-center': 'border-r-muted-foreground top-[calc(50%_-_6px)] right-full',
+  'right-end': 'border-r-muted-foreground bottom-[12px] right-full',
+  'left-start': 'border-l-muted-foreground top-[12px] left-full',
+  'left-center': 'border-l-muted-foreground top-[calc(50%_-_6px)] left-full',
+  'left-end': 'border-l-muted-foreground bottom-[12px] left-full',
+  'top-start': 'border-t-muted-foreground left-[12px] top-full',
+  'top-center': 'border-t-muted-foreground left-[calc(50%_-_6px)] top-full',
+  'top-end': 'border-t-muted-foreground right-[12px] top-full',
 };
 
 interface AlignmentProps {
@@ -105,7 +105,7 @@ export const Alignment = (props: AlignmentProps) => {
 
   return (
     <AlignmentContext.Provider value={value}>
-      <div className="flex flex-col bg-slate-50 p-3.5 rounded-lg">
+      <div className="flex flex-col bg-surface p-3.5 rounded-lg">
         <div className="items-center flex justify-between px-9 py-0">
           <Circle
             side={POSITIONS.BOTTOM}
@@ -133,7 +133,7 @@ export const Alignment = (props: AlignmentProps) => {
             />
             <Circle side={POSITIONS.RIGHT} align={ALIGNMENTS.END} onClick={handleAlignmentChange} />
           </div>
-          <div className="items-center bg-slate-200 rounded flex grow h-20 justify-center relative w-full m-3 px-3 py-6">
+          <div className="items-center bg-muted rounded flex grow h-20 justify-center relative w-full m-3 px-3 py-6">
             <p className="text-sm">{text}</p>
             <div
               className={cn('absolute border-transparent border-solid border-[6px]', arrowCls)}

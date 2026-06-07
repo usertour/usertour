@@ -59,10 +59,10 @@ export const ContentType = (props: ContentTypeProps) => {
                 'flex flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-sm font-medium transition-colors',
                 active
                   ? 'border-primary bg-accent/50 text-primary ring-2 ring-primary/10'
-                  : 'border-border bg-slate-50 text-slate-600 hover:border-slate-300',
+                  : 'border-border bg-surface text-muted-foreground hover:border-border',
               )}
             >
-              <Icon className={cn('h-5 w-5', active ? 'text-primary' : 'text-slate-400')} />
+              <Icon className={cn('h-5 w-5', active ? 'text-primary' : 'text-muted-foreground')} />
               <span>{t(labelKey)}</span>
             </button>
           );

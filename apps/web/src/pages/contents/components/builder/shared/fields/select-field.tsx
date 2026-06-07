@@ -18,7 +18,8 @@ export interface SelectFieldProps {
 }
 
 // A select row: label (+ optional `?` tooltip) above a full-width compact
-// select. White trigger so it reads on top of a SettingsCard's slate card.
+// select. Raised surface so the trigger reads on the SettingsCard card in light
+// and dark alike.
 // i18n-agnostic — the caller passes already-translated label/options.
 export const SelectField = (props: SelectFieldProps) => {
   const { label, value, onChange, options, tooltip, placeholder, zIndex } = props;
@@ -33,7 +34,7 @@ export const SelectField = (props: SelectFieldProps) => {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full bg-background-900 shadow-none"
+        className="w-full bg-surface-raised shadow-none"
         contentStyle={zIndex ? { zIndex } : undefined}
       />
     </div>

@@ -48,7 +48,7 @@ export const ItemEditorHeader = (props: ItemEditorHeaderProps) => {
           variant="ghost"
           size="icon"
           onClick={onBack}
-          className="mr-1.5 size-7 shrink-0 rounded-md text-slate-600 hover:bg-muted hover:text-foreground"
+          className="mr-1.5 size-7 shrink-0 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <RiArrowLeftSLine className="h-5 w-5" />
         </Button>
@@ -151,7 +151,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
               </QuestionTooltip>
             </div>
             <PopperEditorMini
-              className="bg-slate-50 text-sm shadow-none rounded-lg"
+              className="bg-surface text-sm shadow-none rounded-lg"
               zIndex={BUILDER_Z.popover}
               initialValue={
                 (item.navigateUrl as Descendant[]) ?? [

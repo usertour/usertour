@@ -88,15 +88,15 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
       {...attributes}
       style={style}
       onClick={() => onClick?.('edit', item)}
-      className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-slate-100"
+      className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-muted"
     >
       <div className="flex min-h-6 items-center gap-2">
         <RiDraggable
           {...listeners}
           onClick={(event) => event.stopPropagation()}
-          className="h-4 w-4 shrink-0 cursor-grab text-slate-300"
+          className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground/50"
         />
-        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-slate-200 text-[11px] font-semibold text-slate-600">
+        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
           {index + 1}
         </span>
         <span
@@ -110,7 +110,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
             <button
               type="button"
               onClick={(event) => event.stopPropagation()}
-              className="hidden size-6 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-destructive group-hover:grid"
+              className="hidden size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-destructive group-hover:grid"
             >
               <Delete2Icon className="h-4 w-4 opacity-70" />
             </button>

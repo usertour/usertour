@@ -72,11 +72,14 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
                 align,
                 active
                   ? 'border-primary bg-accent/50'
-                  : 'border-border bg-slate-50 hover:border-slate-300 hover:bg-slate-100',
+                  : 'border-border bg-surface hover:border-border hover:bg-muted',
               )}
             >
               <span
-                className={cn('h-1.5 w-3 rounded-[2px]', active ? 'bg-primary' : 'bg-slate-300')}
+                className={cn(
+                  'h-1.5 w-3 rounded-[2px]',
+                  active ? 'bg-primary' : 'bg-muted-foreground/40',
+                )}
               />
             </button>
           );

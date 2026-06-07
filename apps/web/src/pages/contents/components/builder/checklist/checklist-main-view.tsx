@@ -36,7 +36,7 @@ const ChecklistMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
-              className="bg-slate-50 shadow-none"
+              className="bg-surface shadow-none"
               id="launcher-button-text"
               value={localData.buttonText}
               onChange={(e) => updateLocalData({ buttonText: e.target.value })}
@@ -49,7 +49,7 @@ const ChecklistMainViewBody = () => {
           <Button
             variant="ghost"
             onClick={startCreateItem}
-            className="h-9 w-full rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-primary hover:bg-accent/50 hover:text-primary"
+            className="h-9 w-full rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:bg-accent/50 hover:text-primary"
           >
             <RiAddCircleLine className="mr-2 size-4 opacity-70" />
             {t('contentBuilder.checklist.addItem')}

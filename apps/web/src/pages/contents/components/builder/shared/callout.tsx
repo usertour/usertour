@@ -23,8 +23,8 @@ export const Callout = (props: CalloutProps) => {
   const { variant = 'info', title, children, className } = props;
   return (
     <div className={cn('border-l-2 py-0.5 pl-3', accentBar[variant], className)}>
-      {title ? <p className="mb-1 text-sm font-medium text-slate-700">{title}</p> : null}
-      <div className="text-sm leading-relaxed text-slate-600">{children}</div>
+      {title ? <p className="mb-1 text-sm font-medium text-foreground">{title}</p> : null}
+      <div className="text-sm leading-relaxed text-muted-foreground">{children}</div>
     </div>
   );
 };

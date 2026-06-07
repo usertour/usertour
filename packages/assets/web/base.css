@@ -11,6 +11,8 @@
     --background-700: 210 40% 96.1%;
     --background-800: 210 40% 96.1%;
     --background-900: 0 0% 100%;
+    --surface: 210 40% 98%;
+    --surface-raised: 0 0% 100%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -70,6 +72,8 @@
     --background-700: 215.3 25% 26.7%;
     --background-800: 217.2 33.3% 17.1%;
     --background-900: 221.5 46.4% 11%;
+    --surface: 217.2 33.3% 17.1%;
+    --surface-raised: 215.3 25% 26.7%;
 
     --muted: 215.3 25% 26.7%;
     --muted-foreground: 240 5% 64.9%;
