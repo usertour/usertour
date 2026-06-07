@@ -25,13 +25,20 @@ Legend: `[x]` covered · `[ ]` pending · `[~]` documented gap (see note).
 - [x] **users** — me, updateUser, changePassword, changeEmail, createOwnedProject, projects(resolveField)
 
 ## Phase 3 — admin (system-admin)
-- [ ] **admin** — adminSettings, adminInstanceSettings, updateInstanceLicense, updateInstanceGeneralSettings, updateInstanceAuthenticationSettings, updateInstanceRequire2FA, adminUsers, adminCreateUser, updateUserSystemAdmin, updateUserDisabled, adminProjects, adminCreateProject, updateProjectUsesInstanceLicense, adminProjectMembers, adminAddProjectMember, adminChangeProjectMemberRole, adminTransferProjectOwnership, adminRemoveProjectMember
+- [x] **admin** — adminSettings, adminInstanceSettings, updateInstanceLicense, updateInstanceGeneralSettings, updateInstanceAuthenticationSettings, updateInstanceRequire2FA, adminUsers, adminCreateUser, updateUserSystemAdmin, updateUserDisabled, adminProjects, adminCreateProject, updateProjectUsesInstanceLicense, adminProjectMembers, adminAddProjectMember, adminChangeProjectMemberRole, adminTransferProjectOwnership, adminRemoveProjectMember
 
 ## Phase 4 — B-class (external deps, mocked)
-- [ ] **auth** — createMagicLink, resendMagicLink, resetUserPassword, resetUserPasswordByCode, setupSystemAdmin, signup, acceptInvite, login, logout
-- [ ] **two-factor** — startTwoFactorSetup, confirmTwoFactorSetup, startTwoFactorSetupWithChallenge, confirmTwoFactorSetupWithChallenge, verifyTwoFactor, disableTwoFactor, regenerateRecoveryCodes
-- [ ] **subscription** — createCheckoutSession (Stripe), createPortalSession (Stripe), getSubscriptionPlans, getSubscriptionByProjectId, getSubscriptionUsage
-- [ ] **integration** — listIntegrations, getIntegration, updateIntegration, getSalesforceAuthUrl, getSalesforceObjectFields (jsforce), getIntegrationObjectMappings, getIntegrationObjectMapping, upsertIntegrationObjectMapping, updateIntegrationObjectMapping, deleteIntegrationObjectMapping, disconnectIntegration
+- [x] **auth** — createMagicLink, resendMagicLink, resetUserPassword, resetUserPasswordByCode, setupSystemAdmin (error-path), signup, acceptInvite, login, logout
+- [x] **two-factor** — startTwoFactorSetup, confirmTwoFactorSetup, startTwoFactorSetupWithChallenge, confirmTwoFactorSetupWithChallenge, verifyTwoFactor, disableTwoFactor, regenerateRecoveryCodes
+- [x] **subscription** — createCheckoutSession (Stripe mocked), createPortalSession (Stripe mocked), getSubscriptionPlans, getSubscriptionByProjectId, getSubscriptionUsage
+- [x] **integration** — listIntegrations, getIntegration, updateIntegration, getSalesforceAuthUrl, getSalesforceObjectFields (error-path), getIntegrationObjectMappings, getIntegrationObjectMapping, upsertIntegrationObjectMapping, updateIntegrationObjectMapping, deleteIntegrationObjectMapping, disconnectIntegration
+
+## Running the suite
+Use the canonical parallel command: `pnpm test:e2e -- test/e2e/gql` (17 suites /
+292 tests). Do NOT use `--runInBand` for the whole gql dir — booting 17 full apps
+in one process leaks redis/bullmq handles and a late afterAll can fail; the
+parallel workers (separate processes) avoid this and also isolate admin's
+per-file `IS_SELF_HOSTED_MODE` env toggle.
 
 ## Documented gaps
 - **projects.updateProjectLicense** — happy-path not covered; a valid license is a
@@ -42,3 +49,14 @@ Legend: `[x]` covered · `[ ]` pending · `[~]` documented gap (see note).
 - **utilities.createPresignedUrl** — branches on env: with S3 configured the
   success shape is asserted; the guard-rejection branch is the gap (or vice-versa
   in a no-S3 env). The test is robust to both.
+- **admin.updateInstanceLicense** — happy-path needs a signed instance license
+  (same as projects). require2FA turn-on and last-system-admin guard not exercised
+  (would pollute the shared instance singleton).
+- **integration.getSalesforceObjectFields** — happy-path needs a live Salesforce
+  OAuth session / mocked jsforce Connection; only the no-OAuth error is asserted.
+- **subscription** — Stripe webhook handlers are service-level (not GraphQL ops),
+  out of scope here.
+- **auth.setupSystemAdmin** — happy-path mutates global instance state; only the
+  SaaS-mode error path asserted. `logout` per-session cookie revocation needs
+  cookie-parser (only in main.ts, not configureApp) — delegated revoke logic
+  covered directly instead.
