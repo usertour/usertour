@@ -278,7 +278,7 @@ export const ScaleDistribution = ({
                 key={item.answer}
                 className="flex-1 max-w-28 min-w-20 flex flex-col items-center"
               >
-                <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                <div className="text-sm text-muted-foreground mb-1">{item.count}</div>
                 <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
                   {/* Light background bar with rounded corners */}
                   <div className={'absolute bottom-0 w-full h-full rounded-sm bg-blue-100'} />
@@ -292,7 +292,7 @@ export const ScaleDistribution = ({
                     }}
                   />
                 </div>
-                <div className="text-sm text-gray-600 mt-1 flex flex-row gap-1">
+                <div className="text-sm text-muted-foreground mt-1 flex flex-row gap-1">
                   {isStarRating ? (
                     <QuestionStarRating maxLength={scaleLength} score={score} />
                   ) : (
@@ -308,10 +308,10 @@ export const ScaleDistribution = ({
 
         {/* Score labels */}
         <div className="flex justify-between mt-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {question.data.lowLabel || 'Not at all likely'}
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {question.data.highLabel || 'Extremely likely'}
           </div>
         </div>

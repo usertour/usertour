@@ -41,7 +41,7 @@ const ContentPreviewFooter = ({
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
       <div className="flex-none flex flex-row justify-between items-center space-x-4">
-        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate min-w-0">
+        <span className="grow text-base font-medium text-foreground truncate min-w-0">
           {content.name ?? ''}
         </span>
 
@@ -237,7 +237,7 @@ const ContentTableItem = ({
     <div
       onClick={handleOnClick}
       ref={containerRef}
-      className="h-72 min-w-72  flex flex-col bg-white rounded-lg border hover:border-primary dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
+      className="h-72 min-w-72  flex flex-col bg-card rounded-lg border hover:border-primary hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer"
     >
       <div className="flex-none bg-muted rounded-t-md">
         <div

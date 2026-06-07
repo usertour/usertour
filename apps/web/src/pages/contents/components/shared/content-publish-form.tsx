@@ -190,18 +190,18 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
                   <div className="flex items-center space-x-2">
                     <Label htmlFor={`env-${env.id}`}>{env.name}</Label>
                     {isAlreadyPublished ? (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {t('contents.shared.publish.alreadyOnVersion', {
                           name: env.name,
                           version: version.sequence + 1,
                         })}
                       </span>
                     ) : publishedVersion ? (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         (v{publishedVersion.sequence + 1} → v{version.sequence + 1})
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {t('contents.shared.publish.unpublished')}
                       </span>
                     )}

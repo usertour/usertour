@@ -38,13 +38,13 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
     <>
       <GoogleFontCss settings={themeSetting} />
       <div
-        className="h-52 min-w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
+        className="h-52 min-w-80 bg-card rounded-lg border border-border hover:border-primary hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer"
         ref={containerRef}
         onClick={handleOnClick}
       >
         <div className="bg-surface rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-border">
           <div className="flex flex-row grow space-x-2">
-            <span className="text-base font-medium text-gray-900 dark:text-white max-w-40	truncate ...">
+            <span className="text-base font-medium text-foreground max-w-40	truncate ...">
               {theme.name}
             </span>
             {theme.isDefault && (

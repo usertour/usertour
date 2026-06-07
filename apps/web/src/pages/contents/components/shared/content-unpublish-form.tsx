@@ -173,7 +173,9 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
                   {isPublished ? (
                     version && (
                       <>
-                        <span className="text-sm text-gray-500">(v{version.sequence + 1})</span>
+                        <span className="text-sm text-muted-foreground">
+                          (v{version.sequence + 1})
+                        </span>
                         {isSelected && (
                           <span className="text-sm text-destructive">
                             {t('contents.shared.unpublish.toBeUnpublished')}
@@ -182,7 +184,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
                       </>
                     )
                   ) : (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {t('contents.shared.unpublish.notPublished')}
                     </span>
                   )}

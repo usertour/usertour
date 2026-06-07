@@ -13,10 +13,7 @@ export const ThemeListSkeleton = (props: ThemeListSkeletonProps) => {
   return (
     <div className="flex flex-wrap gap-4">
       {Array.from({ length: count }, (_, index) => (
-        <div
-          key={index}
-          className="h-52 w-80 bg-white rounded-lg border border-gray-100 dark:border-gray-800 dark:bg-gray-900"
-        >
+        <div key={index} className="h-52 w-80 bg-card rounded-lg border border-border">
           {/* Header band — matches ThemeCardPreview header */}
           <div className="bg-surface rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-border">
             <div className="flex flex-row grow space-x-2">

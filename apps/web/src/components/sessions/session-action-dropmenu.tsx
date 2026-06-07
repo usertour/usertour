@@ -64,7 +64,7 @@ const ResponseDialog = ({ open, onOpenChange, questions }: ResponseDialogProps) 
           <DialogTitle>{t('sessionActions.responseDialog.title')}</DialogTitle>
         </DialogHeader>
         {questions?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <EmptyPlaceholderIcon className="h-10 w-10 text-muted-foreground" />
             <p>{t('sessionActions.responseDialog.empty')}</p>
           </div>

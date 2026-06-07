@@ -82,7 +82,7 @@ const SocialProvidersDivider = () => {
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-gray-100 text-gray-50 dark:border-border" />
+        <div className="w-full border-t border-border" />
       </div>
       <div className="relative flex justify-center text-sm leading-5">
         <span className="px-2 font-medium bg-white text-background-accent dark:text-foreground/60 dark:bg-background">

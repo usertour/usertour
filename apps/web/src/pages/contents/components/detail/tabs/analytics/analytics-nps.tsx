@@ -245,7 +245,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
               const score = Number(item.answer);
               return (
                 <div key={item.answer} className="flex-1 flex flex-col items-center">
-                  <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                  <div className="text-sm text-muted-foreground mb-1">{item.count}</div>
                   <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
                     {/* Light background bar with rounded corners */}
                     <div
@@ -259,7 +259,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
                       }}
                     />
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">{score}</div>
+                  <div className="text-sm text-muted-foreground mt-1">{score}</div>
                 </div>
               );
             })}
@@ -277,7 +277,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
               const score = Number(item.answer);
               return (
                 <div key={item.answer} className="flex-1 flex flex-col items-center">
-                  <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                  <div className="text-sm text-muted-foreground mb-1">{item.count}</div>
                   <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
                     {/* Light background bar with rounded corners */}
                     <div
@@ -291,7 +291,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
                       }}
                     />
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">{score}</div>
+                  <div className="text-sm text-muted-foreground mt-1">{score}</div>
                 </div>
               );
             })}
@@ -309,7 +309,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
               const score = Number(item.answer);
               return (
                 <div key={item.answer} className="flex-1 flex flex-col items-center">
-                  <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                  <div className="text-sm text-muted-foreground mb-1">{item.count}</div>
                   <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
                     {/* Light background bar with rounded corners */}
                     <div
@@ -323,7 +323,7 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
                       }}
                     />
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">{score}</div>
+                  <div className="text-sm text-muted-foreground mt-1">{score}</div>
                 </div>
               );
             })}
@@ -333,8 +333,12 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
 
       {/* Score labels */}
       <div className="flex justify-between mt-4">
-        <div className="text-sm text-gray-600">{question.data.lowLabel || 'Not at all likely'}</div>
-        <div className="text-sm text-gray-600">{question.data.highLabel || 'Extremely likely'}</div>
+        <div className="text-sm text-muted-foreground">
+          {question.data.lowLabel || 'Not at all likely'}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {question.data.highLabel || 'Extremely likely'}
+        </div>
       </div>
     </div>
   );
@@ -383,12 +387,12 @@ export const NPSGauge = ({ score }: NPSGaugeProps) => {
       {/* Score display */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-center">
         <div className="text-2xl font-bold">{score}</div>
-        <div className="text-sm text-gray-500">{t('contents.analytics.nps.npsLabel')}</div>
+        <div className="text-sm text-muted-foreground">{t('contents.analytics.nps.npsLabel')}</div>
       </div>
 
       {/* Scale labels */}
-      <div className="absolute bottom-0 left-4 text-sm text-gray-500">-100</div>
-      <div className="absolute bottom-0 right-4 text-sm text-gray-500">100</div>
+      <div className="absolute bottom-0 left-4 text-sm text-muted-foreground">-100</div>
+      <div className="absolute bottom-0 right-4 text-sm text-muted-foreground">100</div>
     </div>
   );
 };
