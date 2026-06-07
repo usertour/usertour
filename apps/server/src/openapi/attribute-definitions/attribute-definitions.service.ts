@@ -20,6 +20,10 @@ export class OpenAPIAttributeDefinitionsService {
     const projectId = environment.projectId;
     const { limit = 20, scope, cursor, orderBy, eventName } = query;
 
+    // Defensive fallback. The DTO validates `scope` with
+    // `@IsEnum(OpenApiObjectType)`, which the global ValidationPipe rejects first
+    // as E1017 — so an out-of-enum scope never reaches here. Kept as
+    // defense-in-depth for any non-HTTP / future caller.
     if (scope && !isValidOpenApiObjectType(scope)) {
       throw new InvalidScopeError(scope);
     }

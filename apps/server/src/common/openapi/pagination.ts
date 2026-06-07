@@ -63,7 +63,10 @@ export async function paginate<T>(
   mapResult: (node: T) => any | Promise<any>,
   queryParams?: Record<string, any>,
 ): Promise<PaginationResult<any>> {
-  // Validate limit
+  // Defensive fallback. In practice this is shadowed by the controllers' DTO
+  // validation (`@Min(1)` on the `limit` query param), which the global
+  // ValidationPipe rejects first as E1017 — so a request never reaches here with
+  // limit < 1. Kept as defense-in-depth for any non-HTTP / future caller.
   if (limit < 1) {
     throw new InvalidLimitError();
   }

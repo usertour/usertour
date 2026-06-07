@@ -455,54 +455,62 @@ export class BizService {
     return conditions;
   }
 
-  async queryBizUser(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
-    const { first, last, before, after } = pagination;
+  /**
+   * Build the shared `where` for a biz-user/company GraphQL query: resolves the
+   * environment → projectId, applies segment (MANUAL join or CONDITION filter via
+   * createConditionsFilter), free-text search, and id/membership filters. Returns
+   * null when the environment or a referenced segment is missing (callers map
+   * that to `false`, matching the previous behavior). Extracted so the two query
+   * methods, which were ~90% identical, share one source of truth.
+   */
+  private async buildBizQueryWhere(
+    entity: 'user' | 'company',
+    query: BizQuery,
+  ): Promise<{ environmentId: string; where: Record<string, any> } | null> {
     const { environmentId, segmentId, data, userId, search, companyId } = query;
-    try {
-      const environmenet = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environment) {
+      return null;
+    }
+    const projectId = environment.projectId;
+    const bizType = entity === 'user' ? AttributeBizType.USER : AttributeBizType.COMPANY;
+    const manualSegmentField = entity === 'user' ? 'bizUsersOnSegment' : 'bizCompaniesOnSegment';
+
+    let conditions: any = data ? data : {};
+    let segment: Segment;
+    if (segmentId) {
+      segment = await this.prisma.segment.findFirst({
+        where: { id: segmentId, projectId },
       });
-      if (!environmenet) {
-        return false;
+      if (!segment) {
+        return null;
       }
-      const projectId = environmenet.projectId;
-      let conditions: any = data ? data : {};
-      let segment: Segment;
-      if (segmentId) {
-        segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId },
-        });
-        if (!segment) {
-          return false;
-        }
-        if (!data && segment.dataType === SegmentDataType.CONDITION) {
-          conditions = segment.data;
-        }
+      if (!data && segment.dataType === SegmentDataType.CONDITION) {
+        conditions = segment.data;
       }
-      const attributes = await this.prisma.attribute.findMany({
-        where: {
-          projectId,
-          bizType: AttributeBizType.USER,
-        },
-      });
-      const filter = createConditionsFilter(conditions, attributes);
-      // const conditions = { ...c };
-      const where: Record<string, any> = filter ? filter : {};
-      if (segment && segment.dataType === SegmentDataType.MANUAL) {
-        where.bizUsersOnSegment = {
-          some: {
-            segment: {
-              id: segment.id,
-            },
+    }
+    const attributes = await this.prisma.attribute.findMany({
+      where: { projectId, bizType },
+    });
+    const filter = createConditionsFilter(conditions, attributes);
+    const where: Record<string, any> = filter ? filter : {};
+    if (segment && segment.dataType === SegmentDataType.MANUAL) {
+      where[manualSegmentField] = {
+        some: {
+          segment: {
+            id: segment.id,
           },
-        };
-      }
+        },
+      };
+    }
+    if (search) {
+      where.OR = this.createSearchConditions(search, attributes, bizType);
+    }
+    if (entity === 'user') {
       if (userId) {
         where.id = userId;
-      }
-      if (search) {
-        // Support searching across multiple fields
-        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.USER);
       }
       if (companyId) {
         where.bizUsersOnCompany = {
@@ -511,7 +519,22 @@ export class BizService {
           },
         };
       }
-      const resp = await findManyCursorConnection(
+    } else if (companyId) {
+      where.id = companyId;
+    }
+
+    return { environmentId, where };
+  }
+
+  async queryBizUser(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
+    const { first, last, before, after } = pagination;
+    try {
+      const built = await this.buildBizQueryWhere('user', query);
+      if (!built) {
+        return false;
+      }
+      const { environmentId, where } = built;
+      return await findManyCursorConnection(
         (args) =>
           this.prisma.bizUser.findMany({
             where: {
@@ -537,7 +560,6 @@ export class BizService {
           }),
         { first, last, before, after },
       );
-      return resp;
     } catch (error) {
       throw new UnknownError(error);
     }
@@ -545,54 +567,13 @@ export class BizService {
 
   async queryBizCompany(query: BizQuery, pagination: PaginationArgs, orderBy: BizOrder) {
     const { first, last, before, after } = pagination;
-    const { environmentId, segmentId, data, companyId, search } = query;
     try {
-      const environmenet = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
-      });
-      if (!environmenet) {
+      const built = await this.buildBizQueryWhere('company', query);
+      if (!built) {
         return false;
       }
-      const projectId = environmenet.projectId;
-      let conditions: any = data ? data : {};
-      let segment: Segment;
-      if (segmentId) {
-        segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId },
-        });
-        if (!segment) {
-          return false;
-        }
-        if (!data && segment.dataType === SegmentDataType.CONDITION) {
-          conditions = segment.data;
-        }
-      }
-      const attributes = await this.prisma.attribute.findMany({
-        where: {
-          projectId: environmenet.projectId,
-          bizType: AttributeBizType.COMPANY,
-        },
-      });
-      const filter = createConditionsFilter(conditions, attributes);
-      // const conditions = { ...c };
-      const where: Record<string, any> = filter ? filter : {};
-      if (segment && segment.dataType === SegmentDataType.MANUAL) {
-        where.bizCompaniesOnSegment = {
-          some: {
-            segment: {
-              id: segment.id,
-            },
-          },
-        };
-      }
-      if (companyId) {
-        where.id = companyId;
-      }
-      if (search) {
-        // Support searching across multiple fields for companies
-        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.COMPANY);
-      }
-      const resp = await findManyCursorConnection(
+      const { environmentId, where } = built;
+      return await findManyCursorConnection(
         (args) =>
           this.prisma.bizCompany.findMany({
             where: {
@@ -613,7 +594,6 @@ export class BizService {
           }),
         { first, last, before, after },
       );
-      return resp;
     } catch (error) {
       throw new UnknownError(error);
     }
