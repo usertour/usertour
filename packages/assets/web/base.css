@@ -5,6 +5,8 @@
     --success: 142.1 70.6% 45.3%;
     --warning: 38 92% 50%;
     --warning-foreground: 48 96% 89%;
+    --info: 217 91% 60%;
+    --info-foreground: 210 40% 98%;
     --background-400: 212.7 26.8% 83.9%;
     --background-700: 210 40% 96.1%;
     --background-800: 210 40% 96.1%;
@@ -61,6 +63,8 @@
     --success: 142.1 70.6% 45.3%;
     --warning: 48 96% 89%;
     --warning-foreground: 38 92% 50%;
+    --info: 217 91% 60%;
+    --info-foreground: 210 40% 98%;
 
     --background-400: 215 20.2% 65.1%;
     --background-700: 215.3 25% 26.7%;

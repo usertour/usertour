@@ -1,14 +1,9 @@
-import {
-  RiAlertLine,
-  RiChat2Line,
-  RiEyeOffLine,
-  RiMessage2Line,
-  RiWindow2Line,
-} from '@usertour/icons';
+import { RiChat2Line, RiEyeOffLine, RiMessage2Line, RiWindow2Line } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { StepContentType } from '@usertour/types';
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Callout } from '@/pages/contents/components/builder/shared/callout';
 
 interface ContentTypeProps {
   type: string;
@@ -75,19 +70,13 @@ export const ContentType = (props: ContentTypeProps) => {
       </div>
 
       {type === StepContentType.HIDDEN && (
-        <div className="space-y-2.5 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-start gap-2">
-            <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <p className="text-sm font-semibold text-amber-900">
-              {t('contentBuilder.flow.hiddenWarningTitle')}
-            </p>
-          </div>
-          <div className="space-y-2 text-xs leading-relaxed text-amber-800">
+        <Callout variant="warning" title={t('contentBuilder.flow.hiddenWarningTitle')}>
+          <div className="space-y-2">
             <p>{t('contentBuilder.flow.hiddenWarning1')}</p>
             <p>{t('contentBuilder.flow.hiddenWarning2')}</p>
             <p>{t('contentBuilder.flow.hiddenWarning3')}</p>
           </div>
-        </div>
+        </Callout>
       )}
     </div>
   );

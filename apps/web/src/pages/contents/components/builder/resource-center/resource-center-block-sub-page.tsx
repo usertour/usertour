@@ -12,7 +12,8 @@ import {
   Label,
 } from '@usertour/ui';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
+import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
@@ -101,12 +102,7 @@ const BlockSubPageBody = () => {
     <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
-          <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <RiInformationLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-            <p className="text-sm text-blue-800">
-              {t('contentBuilder.resourceCenter.subPageInfo')}
-            </p>
-          </div>
+          <Callout variant="info">{t('contentBuilder.resourceCenter.subPageInfo')}</Callout>
 
           {/* Icon */}
           <div className="flex flex-col space-y-2">

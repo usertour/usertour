@@ -197,6 +197,8 @@ export const extendBase = {
     success: 'hsl(var(--success))',
     warning: 'hsl(var(--warning))',
     'warning-foreground': 'hsl(var(--warning-foreground))',
+    info: 'hsl(var(--info))',
+    'info-foreground': 'hsl(var(--info-foreground))',
     primary: {
       DEFAULT: 'hsl(var(--primary))',
       foreground: 'hsl(var(--primary-foreground))',

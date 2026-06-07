@@ -13,7 +13,8 @@ import {
 import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
+import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { ResourceCenterBlockType, RulesCondition } from '@usertour/types';
@@ -74,12 +75,7 @@ const BlockRichTextBody = () => {
     <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
-          <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <RiInformationLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-            <p className="text-sm text-blue-800">
-              {t('contentBuilder.resourceCenter.richTextInfo')}
-            </p>
-          </div>
+          <Callout variant="info">{t('contentBuilder.resourceCenter.richTextInfo')}</Callout>
 
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">

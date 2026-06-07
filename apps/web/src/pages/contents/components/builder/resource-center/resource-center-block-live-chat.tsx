@@ -13,7 +13,8 @@ import {
   Label,
 } from '@usertour/ui';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { RiAlertLine, RiArrowLeftSLine, RiInformationLine, SpinnerIcon } from '@usertour/icons';
+import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
+import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { PopperEditorMini, CodeEditor } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
@@ -238,44 +239,33 @@ const BlockLiveChatBody = () => {
           </div>
 
           {/* Provider description */}
-          {descriptionKey && (
-            <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <RiInformationLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-              <p className="text-sm text-blue-800">{t(descriptionKey)}</p>
-            </div>
-          )}
+          {descriptionKey && <Callout variant="info">{t(descriptionKey)}</Callout>}
 
           {/* Provider note (extra setup, e.g. Zendesk Messenger config) */}
           {noteKey && (
-            <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <RiInformationLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-              <div className="text-sm text-blue-800">
-                <Trans i18nKey={noteKey} components={{ strong: <strong /> }} />
-              </div>
-            </div>
+            <Callout variant="info">
+              <Trans i18nKey={noteKey} components={{ strong: <strong /> }} />
+            </Callout>
           )}
 
           {/* Flash warning */}
           {flashWarning && (
-            <div className="flex items-start space-x-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 min-w-0">
-              <RiAlertLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
-              <div className="text-sm text-yellow-800 min-w-0">
-                <div>
-                  <Trans
-                    i18nKey={flashWarning.textKey}
-                    components={{
-                      strong: <strong />,
-                      code: <code className="rounded bg-yellow-100 px-1" />,
-                    }}
-                  />
-                </div>
-                {flashWarning.code && (
-                  <pre className="mt-2 rounded bg-white/80 border border-yellow-200 p-2 text-xs text-foreground whitespace-pre-wrap break-all">
-                    <code>{flashWarning.code}</code>
-                  </pre>
-                )}
+            <Callout variant="warning">
+              <div>
+                <Trans
+                  i18nKey={flashWarning.textKey}
+                  components={{
+                    strong: <strong />,
+                    code: <code className="rounded bg-slate-100 px-1" />,
+                  }}
+                />
               </div>
-            </div>
+              {flashWarning.code && (
+                <pre className="mt-2 rounded border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700 whitespace-pre-wrap break-all">
+                  <code>{flashWarning.code}</code>
+                </pre>
+              )}
+            </Callout>
           )}
 
           {/* Custom code (only for custom provider) */}
