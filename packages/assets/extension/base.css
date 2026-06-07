@@ -2,7 +2,6 @@
   :root {
     --background: #ffffff;
     --foreground: #09090b;
-    --background-900: #0f1729;
 
     --muted: #f4f4f5;
     --muted-foreground: #71717a;
@@ -46,7 +45,6 @@
   .dark {
     --background: #09090b;
     --foreground: #fafafa;
-    --background-900: #0f1729;
 
     --muted: #27272a;
     --muted-foreground: #a1a1aa;

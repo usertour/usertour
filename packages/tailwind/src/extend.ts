@@ -190,7 +190,6 @@ export const extendBase = {
     ring: 'hsl(var(--ring))',
     background: 'hsl(var(--background))',
     foreground: 'hsl(var(--foreground))',
-    'background-900': 'hsl(var(--background-900))',
     surface: 'hsl(var(--surface))',
     'surface-raised': 'hsl(var(--surface-raised))',
     success: 'hsl(var(--success))',
