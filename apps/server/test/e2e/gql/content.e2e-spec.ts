@@ -1,0 +1,897 @@
+import { INestApplication } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+
+import { graphql, gqlData } from '../auth';
+import { createTestApp } from '../create-test-app';
+import {
+  buildContent,
+  buildEnvironment,
+  buildLocalization,
+  buildProject,
+  buildStep,
+  buildSubscription,
+  buildVersion,
+} from '../factories';
+import { buildAuthorizedUser, teardownProject } from './_support';
+
+/**
+ * Functional e2e for the `content` GraphQL resolver — the core product surface
+ * (flows / checklists / launchers / …). Follows the themes template: run as an
+ * authorized OWNER, assert each mutation's effect in the DB (not just the
+ * response), and cover key read / error cases. Auth (who-can-call) is already
+ * covered by permission.e2e-spec; here we run as OWNER.
+ *
+ * Service semantics worth noting:
+ *  - createContent: needs an existing environment; writes a Content + a
+ *    sequence-0 Version and points `Content.editedVersionId` at it. A bad
+ *    environmentId is wrapped into a generic UnknownError (the whole create is
+ *    in one try/catch).
+ *  - getContent: nullable — soft-deleted (`deleted=true`) content resolves to
+ *    null rather than erroring.
+ *  - "editable" gate (addContentStep[s] / updateContentStep / updateContentVersion
+ *    / updateVersionLocationData): the target version must be the content's
+ *    `editedVersionId` AND must not be the currently-published version. Publishing
+ *    the edited version therefore makes it non-editable.
+ *  - createContentVersion / restoreContentVersion: clone the source/edited
+ *    version into a NEW version (sequence + 1) and re-point editedVersionId.
+ *  - publishedContentVersion: upserts a ContentOnEnvironment row + flips
+ *    Content.published; unpublishedContentVersion deletes that row + clears it.
+ *  - deleteContent: soft-delete (`deleted=true`) and drops ContentOnEnvironment.
+ *  - duplicateContent: deep-copies content + edited version + steps into a new
+ *    Content row.
+ *  - updateVersionLocationData: only *updates* a pre-existing VersionOnLocalization
+ *    row (findManyVersionLocations is what creates them, one per project locale).
+ *  - queryContent / listContentVersions: relay-style cursor pagination.
+ */
+describe('GraphQL content (e2e)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let projectId: string;
+  let environmentId: string;
+  let token: string;
+  const userIds: string[] = [];
+
+  // A minimal-but-valid content config: duplicateConfig() touches
+  // autoStartRules / hideRules during duplicateContent, so keep them present.
+  const sampleConfig = {
+    enabledAutoStartRules: false,
+    enabledHideRules: false,
+    autoStartRules: [],
+    hideRules: [],
+  };
+
+  beforeAll(async () => {
+    app = await createTestApp();
+    prisma = app.get(PrismaService);
+
+    const project = await buildProject(prisma, { name: 'gql-content' });
+    projectId = project.id;
+    // The e2e app runs in cloud mode, so content creation may be plan-gated. A
+    // BUSINESS subscription clears the runway for every createContent below.
+    await buildSubscription(prisma, { projectId });
+    const environment = await buildEnvironment(prisma, { projectId, isPrimary: true });
+    environmentId = environment.id;
+
+    const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
+    token = owner.token;
+    userIds.push(owner.user.id);
+  }, 60000);
+
+  afterAll(async () => {
+    if (prisma) {
+      await teardownProject(prisma, projectId);
+      if (userIds.length) {
+        await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+      }
+    }
+    await app?.close();
+  });
+
+  // ── helpers ──────────────────────────────────────────────────────
+
+  const createContent = (name: string, type = 'flow') =>
+    graphql(app, {
+      token,
+      query: `mutation ($data: ContentInput!) {
+        createContent(data: $data) {
+          id name type environmentId projectId editedVersionId published deleted
+        }
+      }`,
+      variables: {
+        data: { name, type, environmentId, config: sampleConfig, data: {} },
+      },
+    });
+
+  /**
+   * Create a Content + its edited Version directly via factories. Returns both
+   * so editability-gated mutations have a fresh, unpublished edited version.
+   */
+  const seedContent = async (overrides: Record<string, unknown> = {}) => {
+    const content = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'flow',
+      ...overrides,
+    });
+    const version = await buildVersion(prisma, {
+      contentId: content.id,
+      sequence: 0,
+      config: sampleConfig,
+    });
+    return { content, version };
+  };
+
+  // ── createContent ────────────────────────────────────────────────
+
+  describe('createContent', () => {
+    it('creates a content + sequence-0 version and persists them', async () => {
+      const content = gqlData(await createContent('Flow A')).createContent;
+      expect(content).toMatchObject({
+        name: 'Flow A',
+        type: 'flow',
+        environmentId,
+        projectId,
+        published: false,
+        deleted: false,
+      });
+      expect(content.editedVersionId).toEqual(expect.any(String));
+
+      const row = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(row).toMatchObject({
+        name: 'Flow A',
+        type: 'flow',
+        environmentId,
+        projectId,
+        deleted: false,
+      });
+
+      const version = await prisma.version.findUnique({
+        where: { id: content.editedVersionId },
+      });
+      expect(version).toMatchObject({ contentId: content.id, sequence: 0 });
+    });
+
+    it('errors for an unknown environment', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentInput!) { createContent(data: $data) { id } }',
+        variables: {
+          data: { name: 'No Env', type: 'flow', environmentId: 'does-not-exist' },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── getContent ───────────────────────────────────────────────────
+
+  describe('getContent', () => {
+    it('reads a content by id', async () => {
+      const created = gqlData(await createContent('Readable')).createContent;
+      const res = await graphql(app, {
+        token,
+        query: 'query ($contentId: String!) { getContent(contentId: $contentId) { id name type } }',
+        variables: { contentId: created.id },
+      });
+      expect(gqlData(res).getContent).toMatchObject({
+        id: created.id,
+        name: 'Readable',
+        type: 'flow',
+      });
+    });
+
+    it('resolves the steps field from the edited version', async () => {
+      const { content, version } = await seedContent();
+      await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip' });
+      await buildStep(prisma, { versionId: version.id, sequence: 1, type: 'tooltip' });
+
+      const res = await graphql(app, {
+        token,
+        query:
+          'query ($contentId: String!) { getContent(contentId: $contentId) { id steps { id sequence } } }',
+        variables: { contentId: content.id },
+      });
+      const got = gqlData(res).getContent;
+      expect(got.steps).toHaveLength(2);
+      expect(got.steps.map((s: { sequence: number }) => s.sequence)).toEqual([0, 1]);
+    });
+
+    it('returns null for a soft-deleted content', async () => {
+      const { content } = await seedContent();
+      await prisma.content.update({ where: { id: content.id }, data: { deleted: true } });
+      const res = await graphql(app, {
+        token,
+        query: 'query ($contentId: String!) { getContent(contentId: $contentId) { id } }',
+        variables: { contentId: content.id },
+      });
+      expect(gqlData(res).getContent).toBeNull();
+    });
+  });
+
+  // ── updateContent ────────────────────────────────────────────────
+
+  describe('updateContent', () => {
+    it('updates the name + buildUrl and persists it', async () => {
+      const created = gqlData(await createContent('Before')).createContent;
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentUpdateInput!) {
+          updateContent(data: $data) { id name buildUrl }
+        }`,
+        variables: {
+          data: { contentId: created.id, content: { name: 'After', buildUrl: 'https://x.test' } },
+        },
+      });
+      expect(gqlData(res).updateContent).toMatchObject({
+        id: created.id,
+        name: 'After',
+        buildUrl: 'https://x.test',
+      });
+
+      const row = await prisma.content.findUnique({ where: { id: created.id } });
+      expect(row).toMatchObject({ name: 'After', buildUrl: 'https://x.test' });
+    });
+
+    it('errors updating an unknown content', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentUpdateInput!) { updateContent(data: $data) { id } }',
+        variables: { data: { contentId: 'does-not-exist', content: { name: 'x' } } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── duplicateContent ─────────────────────────────────────────────
+
+  describe('duplicateContent', () => {
+    it('deep-copies a content + its steps into a new row', async () => {
+      const { content, version } = await seedContent();
+      await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip', name: 's0' });
+      await buildStep(prisma, { versionId: version.id, sequence: 1, type: 'tooltip', name: 's1' });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentDuplicateInput!) {
+          duplicateContent(data: $data) { id name type environmentId projectId }
+        }`,
+        variables: { data: { contentId: content.id, name: 'Copy' } },
+      });
+      const copy = gqlData(res).duplicateContent;
+      expect(copy.id).not.toBe(content.id);
+      expect(copy).toMatchObject({ name: 'Copy', type: 'flow', environmentId, projectId });
+
+      // The mutation returns the freshly-created Content before editedVersionId is
+      // re-pointed, so read the persisted row to find the copied edited version.
+      const copyRow = await prisma.content.findUnique({ where: { id: copy.id } });
+      expect(copyRow).not.toBeNull();
+      expect(copyRow?.editedVersionId).toEqual(expect.any(String));
+
+      const copiedSteps = await prisma.step.findMany({
+        where: { versionId: copyRow!.editedVersionId! },
+        orderBy: { sequence: 'asc' },
+      });
+      expect(copiedSteps).toHaveLength(2);
+      // Brand-new step rows (not the source steps).
+      const sourceStepIds = await prisma.step
+        .findMany({ where: { versionId: version.id }, select: { id: true } })
+        .then((rows) => rows.map((r) => r.id));
+      for (const s of copiedSteps) {
+        expect(sourceStepIds).not.toContain(s.id);
+      }
+    });
+
+    it('errors duplicating an unknown content', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentDuplicateInput!) { duplicateContent(data: $data) { id } }',
+        variables: { data: { contentId: 'does-not-exist', name: 'Copy' } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── createContentVersion ─────────────────────────────────────────
+
+  describe('createContentVersion', () => {
+    it('clones the edited version into a new version and re-points editedVersionId', async () => {
+      const { content, version } = await seedContent();
+      await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip' });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentVersionInput!) {
+          createContentVersion(data: $data) { id sequence contentId }
+        }`,
+        variables: { data: { versionId: version.id, config: sampleConfig } },
+      });
+      const newVersion = gqlData(res).createContentVersion;
+      expect(newVersion.id).not.toBe(version.id);
+      expect(newVersion).toMatchObject({ contentId: content.id, sequence: 1 });
+
+      const contentRow = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(contentRow?.editedVersionId).toBe(newVersion.id);
+
+      const clonedSteps = await prisma.step.findMany({ where: { versionId: newVersion.id } });
+      expect(clonedSteps).toHaveLength(1);
+    });
+
+    it('errors for an unknown source version', async () => {
+      const res = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: ContentVersionInput!) { createContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: 'does-not-exist' } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── getContentVersion ────────────────────────────────────────────
+
+  describe('getContentVersion', () => {
+    it('reads a version (with ordered steps) by id', async () => {
+      const { version } = await seedContent();
+      await buildStep(prisma, { versionId: version.id, sequence: 1, type: 'tooltip' });
+      await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip' });
+
+      const res = await graphql(app, {
+        token,
+        query: `query ($versionId: String!) {
+          getContentVersion(versionId: $versionId) { id sequence steps { id sequence } }
+        }`,
+        variables: { versionId: version.id },
+      });
+      const got = gqlData(res).getContentVersion;
+      expect(got.id).toBe(version.id);
+      expect(got.steps.map((s: { sequence: number }) => s.sequence)).toEqual([0, 1]);
+    });
+
+    it('errors for an unknown version', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'query ($versionId: String!) { getContentVersion(versionId: $versionId) { id } }',
+        variables: { versionId: 'does-not-exist' },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── updateContentVersion ─────────────────────────────────────────
+
+  describe('updateContentVersion', () => {
+    it('updates the edited version data and persists it', async () => {
+      const { version } = await seedContent();
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: VersionUpdateInput!) {
+          updateContentVersion(data: $data) { id data }
+        }`,
+        variables: { data: { versionId: version.id, content: { data: { headline: 'hi' } } } },
+      });
+      expect(gqlData(res).updateContentVersion).toMatchObject({ id: version.id });
+
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      expect(row?.data).toEqual({ headline: 'hi' });
+    });
+
+    it('errors updating a published (non-editable) version', async () => {
+      const { content, version } = await seedContent();
+      // Publish the edited version → it is no longer editable.
+      await prisma.content.update({
+        where: { id: content.id },
+        data: { published: true, publishedVersionId: version.id },
+      });
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId,
+          contentId: content.id,
+          published: true,
+          publishedVersionId: version.id,
+        },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionUpdateInput!) { updateContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: version.id, content: { data: { x: 1 } } } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── restoreContentVersion ────────────────────────────────────────
+
+  describe('restoreContentVersion', () => {
+    it('creates a new version from an older one and re-points editedVersionId', async () => {
+      const { content, version: v0 } = await seedContent();
+      // Promote the edited version a couple of times so v0 is "older".
+      const v1 = await prisma.version.create({
+        data: { contentId: content.id, sequence: 1, config: sampleConfig },
+      });
+      await prisma.content.update({
+        where: { id: content.id },
+        data: { editedVersionId: v1.id },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: VersionIdInput!) {
+          restoreContentVersion(data: $data) { id sequence contentId }
+        }`,
+        variables: { data: { versionId: v0.id } },
+      });
+      const restored = gqlData(res).restoreContentVersion;
+      expect(restored.id).not.toBe(v0.id);
+      expect(restored.id).not.toBe(v1.id);
+      // sequence = editedVersion(v1).sequence + 1
+      expect(restored).toMatchObject({ contentId: content.id, sequence: 2 });
+
+      const contentRow = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(contentRow?.editedVersionId).toBe(restored.id);
+    });
+
+    it('errors restoring an unknown version', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionIdInput!) { restoreContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: 'does-not-exist' } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── publishedContentVersion ──────────────────────────────────────
+
+  describe('publishedContentVersion', () => {
+    it('publishes a version and writes a ContentOnEnvironment row', async () => {
+      const { content, version } = await seedContent();
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: VersionIdInput!) {
+          publishedContentVersion(data: $data) { id contentId }
+        }`,
+        variables: { data: { versionId: version.id, environmentId } },
+      });
+      expect(gqlData(res).publishedContentVersion).toMatchObject({ id: content.id });
+
+      const contentRow = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(contentRow).toMatchObject({ published: true, publishedVersionId: version.id });
+
+      const coe = await prisma.contentOnEnvironment.findUnique({
+        where: { environmentId_contentId: { environmentId, contentId: content.id } },
+      });
+      expect(coe).toMatchObject({
+        environmentId,
+        contentId: content.id,
+        published: true,
+        publishedVersionId: version.id,
+      });
+    });
+
+    it('errors publishing an unknown version', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionIdInput!) { publishedContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: 'does-not-exist', environmentId } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── unpublishedContentVersion ────────────────────────────────────
+
+  describe('unpublishedContentVersion', () => {
+    it('unpublishes a content and removes the ContentOnEnvironment row', async () => {
+      const { content, version } = await seedContent();
+      // Publish first via the mutation under test's sibling.
+      await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionIdInput!) { publishedContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: version.id, environmentId } },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentIdInput!) {
+          unpublishedContentVersion(data: $data) { success }
+        }`,
+        variables: { data: { contentId: content.id, environmentId } },
+      });
+      expect(gqlData(res).unpublishedContentVersion).toMatchObject({ success: true });
+
+      const contentRow = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(contentRow).toMatchObject({ published: false, publishedVersionId: null });
+
+      const coe = await prisma.contentOnEnvironment.findUnique({
+        where: { environmentId_contentId: { environmentId, contentId: content.id } },
+      });
+      expect(coe).toBeNull();
+    });
+
+    it('errors unpublishing an unknown content', async () => {
+      const res = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: ContentIdInput!) { unpublishedContentVersion(data: $data) { success } }',
+        variables: { data: { contentId: 'does-not-exist', environmentId } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── listContentVersions ──────────────────────────────────────────
+
+  describe('listContentVersions', () => {
+    it('lists versions for a content (newest sequence first)', async () => {
+      const { content, version: v0 } = await seedContent();
+      const v1 = await prisma.version.create({
+        data: { contentId: content.id, sequence: 1, config: sampleConfig },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `query ($contentId: String!, $first: Int) {
+          listContentVersions(contentId: $contentId, first: $first) {
+            totalCount
+            edges { cursor node { id sequence } }
+          }
+        }`,
+        variables: { contentId: content.id, first: 10 },
+      });
+      const conn = gqlData(res).listContentVersions;
+      expect(conn.totalCount).toBe(2);
+      const ids = conn.edges.map((e: { node: { id: string } }) => e.node.id);
+      expect(ids).toEqual([v1.id, v0.id]);
+    });
+
+    it('returns an empty connection for a content with no versions', async () => {
+      const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const res = await graphql(app, {
+        token,
+        query: `query ($contentId: String!, $first: Int) {
+          listContentVersions(contentId: $contentId, first: $first) { totalCount edges { cursor } }
+        }`,
+        variables: { contentId: content.id, first: 10 },
+      });
+      const conn = gqlData(res).listContentVersions;
+      expect(conn.totalCount).toBe(0);
+      expect(conn.edges).toEqual([]);
+    });
+  });
+
+  // ── addContentSteps ──────────────────────────────────────────────
+
+  describe('addContentSteps', () => {
+    it('replaces the edited version steps and persists them', async () => {
+      const { content, version } = await seedContent();
+      const themeId = (await buildThemeRow()).id;
+      // Pre-existing step that is NOT in the payload → should be deleted.
+      const stale = await buildStep(prisma, {
+        versionId: version.id,
+        sequence: 9,
+        type: 'tooltip',
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentStepsInput!) { addContentSteps(data: $data) { success } }',
+        variables: {
+          data: {
+            contentId: content.id,
+            versionId: version.id,
+            themeId,
+            steps: [
+              { type: 'tooltip', name: 'New 0', sequence: 0 },
+              { type: 'tooltip', name: 'New 1', sequence: 1 },
+            ],
+          },
+        },
+      });
+      expect(gqlData(res).addContentSteps).toMatchObject({ success: true });
+
+      const steps = await prisma.step.findMany({
+        where: { versionId: version.id },
+        orderBy: { sequence: 'asc' },
+      });
+      expect(steps.map((s) => s.name)).toEqual(['New 0', 'New 1']);
+      expect(steps.find((s) => s.id === stale.id)).toBeUndefined();
+
+      const versionRow = await prisma.version.findUnique({ where: { id: version.id } });
+      expect(versionRow?.themeId).toBe(themeId);
+    });
+
+    it('errors when versionId is not the content edited version', async () => {
+      const { content } = await seedContent();
+      const other = await seedContent();
+      const themeId = (await buildThemeRow()).id;
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentStepsInput!) { addContentSteps(data: $data) { success } }',
+        variables: {
+          data: {
+            contentId: content.id,
+            versionId: other.version.id,
+            themeId,
+            steps: [{ type: 'tooltip', sequence: 0 }],
+          },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── addContentStep ───────────────────────────────────────────────
+
+  describe('addContentStep', () => {
+    it('appends a step to the edited version', async () => {
+      const { version } = await seedContent();
+      await buildStep(prisma, {
+        versionId: version.id,
+        sequence: 0,
+        type: 'tooltip',
+        name: 'first',
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: CreateStepInput!) {
+          addContentStep(data: $data) { id name type versionId sequence }
+        }`,
+        variables: {
+          data: { versionId: version.id, type: 'tooltip', name: 'appended', sequence: 1 },
+        },
+      });
+      const step = gqlData(res).addContentStep;
+      expect(step).toMatchObject({ name: 'appended', type: 'tooltip', versionId: version.id });
+
+      const row = await prisma.step.findUnique({ where: { id: step.id } });
+      expect(row).toMatchObject({ name: 'appended', versionId: version.id });
+
+      const all = await prisma.step.findMany({ where: { versionId: version.id } });
+      expect(all).toHaveLength(2);
+    });
+
+    it('errors adding a step to an unknown version', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: CreateStepInput!) { addContentStep(data: $data) { id } }',
+        variables: { data: { versionId: 'does-not-exist', type: 'tooltip', sequence: 0 } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── updateContentStep ────────────────────────────────────────────
+
+  describe('updateContentStep', () => {
+    it('updates a step on the edited version and persists it', async () => {
+      const { version } = await seedContent();
+      const step = await buildStep(prisma, {
+        versionId: version.id,
+        sequence: 0,
+        type: 'tooltip',
+        name: 'old',
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($stepId: String!, $data: UpdateStepInput!) {
+          updateContentStep(stepId: $stepId, data: $data) { success }
+        }`,
+        variables: { stepId: step.id, data: { name: 'new name' } },
+      });
+      expect(gqlData(res).updateContentStep).toMatchObject({ success: true });
+
+      const row = await prisma.step.findUnique({ where: { id: step.id } });
+      expect(row?.name).toBe('new name');
+    });
+
+    it('errors updating an unknown step', async () => {
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($stepId: String!, $data: UpdateStepInput!) {
+          updateContentStep(stepId: $stepId, data: $data) { success }
+        }`,
+        variables: { stepId: 'does-not-exist', data: { name: 'x' } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── findManyVersionLocations ─────────────────────────────────────
+
+  describe('findManyVersionLocations', () => {
+    it('returns (and back-fills) a VersionOnLocalization row per project locale', async () => {
+      const { version } = await seedContent();
+      const loc = await buildLocalization(prisma, { projectId });
+
+      const res = await graphql(app, {
+        token,
+        query: `query ($versionId: String!) {
+          findManyVersionLocations(versionId: $versionId) {
+            id versionId localizationId enabled
+          }
+        }`,
+        variables: { versionId: version.id },
+      });
+      const rows = gqlData(res).findManyVersionLocations;
+      const found = rows.find((r: { localizationId: string }) => r.localizationId === loc.id);
+      expect(found).toMatchObject({ versionId: version.id, localizationId: loc.id });
+
+      // It actually created the join row.
+      const dbRow = await prisma.versionOnLocalization.findFirst({
+        where: { versionId: version.id, localizationId: loc.id },
+      });
+      expect(dbRow).not.toBeNull();
+    });
+  });
+
+  // ── updateVersionLocationData ────────────────────────────────────
+
+  describe('updateVersionLocationData', () => {
+    it('updates a pre-existing VersionOnLocalization row', async () => {
+      const { version } = await seedContent();
+      const loc = await buildLocalization(prisma, { projectId });
+      // The mutation only *updates* an existing relation — seed it first.
+      const relation = await prisma.versionOnLocalization.create({
+        data: { versionId: version.id, localizationId: loc.id, localized: {}, backup: {} },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: VersionUpdateLocalizationInput!) {
+          updateVersionLocationData(data: $data) {
+            id versionId localizationId enabled localized backup
+          }
+        }`,
+        variables: {
+          data: {
+            versionId: version.id,
+            localizationId: loc.id,
+            enabled: true,
+            localized: { greeting: 'hola' },
+            backup: { greeting: 'hello' },
+          },
+        },
+      });
+      const updated = gqlData(res).updateVersionLocationData;
+      expect(updated).toMatchObject({
+        id: relation.id,
+        versionId: version.id,
+        localizationId: loc.id,
+        enabled: true,
+      });
+      expect(updated.localized).toEqual({ greeting: 'hola' });
+
+      const row = await prisma.versionOnLocalization.findUnique({ where: { id: relation.id } });
+      expect(row).toMatchObject({ enabled: true });
+      expect(row?.localized).toEqual({ greeting: 'hola' });
+      expect(row?.backup).toEqual({ greeting: 'hello' });
+    });
+
+    it('errors when no VersionOnLocalization relation exists', async () => {
+      const { version } = await seedContent();
+      const loc = await buildLocalization(prisma, { projectId });
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: VersionUpdateLocalizationInput!) {
+          updateVersionLocationData(data: $data) { id }
+        }`,
+        variables: {
+          data: {
+            versionId: version.id,
+            localizationId: loc.id,
+            enabled: true,
+            localized: {},
+            backup: {},
+          },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── deleteContent ────────────────────────────────────────────────
+
+  describe('deleteContent', () => {
+    it('soft-deletes a content and drops its ContentOnEnvironment rows', async () => {
+      const { content, version } = await seedContent();
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId,
+          contentId: content.id,
+          published: true,
+          publishedVersionId: version.id,
+        },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentIdInput!) { deleteContent(data: $data) { success } }',
+        variables: { data: { contentId: content.id } },
+      });
+      expect(gqlData(res).deleteContent).toMatchObject({ success: true });
+
+      const row = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(row?.deleted).toBe(true);
+
+      const coes = await prisma.contentOnEnvironment.findMany({
+        where: { contentId: content.id },
+      });
+      expect(coes).toEqual([]);
+    });
+
+    it('errors deleting an unknown content', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentIdInput!) { deleteContent(data: $data) { success } }',
+        variables: { data: { contentId: 'does-not-exist' } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── queryContent ─────────────────────────────────────────────────
+
+  describe('queryContent', () => {
+    it('returns content for the environment (created item appears)', async () => {
+      const created = gqlData(await createContent('Queryable')).createContent;
+      const res = await graphql(app, {
+        token,
+        query: `query ($query: ContentQuery, $first: Int) {
+          queryContent(query: $query, first: $first) {
+            totalCount
+            edges { cursor node { id name type } }
+          }
+        }`,
+        variables: { query: { environmentId }, first: 50 },
+      });
+      const conn = gqlData(res).queryContent;
+      const ids = conn.edges.map((e: { node: { id: string } }) => e.node.id);
+      expect(ids).toContain(created.id);
+    });
+
+    it('filters by name (contains)', async () => {
+      const unique = `Needle-${Date.now()}`;
+      const created = gqlData(await createContent(unique)).createContent;
+      const res = await graphql(app, {
+        token,
+        query: `query ($query: ContentQuery, $first: Int) {
+          queryContent(query: $query, first: $first) { edges { node { id name } } }
+        }`,
+        variables: { query: { environmentId, name: unique }, first: 50 },
+      });
+      const nodes = gqlData(res).queryContent.edges.map(
+        (e: { node: { id: string; name: string } }) => e.node,
+      );
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0]).toMatchObject({ id: created.id, name: unique });
+    });
+
+    it('orders by createdAt desc', async () => {
+      const res = await graphql(app, {
+        token,
+        query: `query ($query: ContentQuery, $orderBy: ContentOrder, $first: Int) {
+          queryContent(query: $query, orderBy: $orderBy, first: $first) {
+            edges { node { id } }
+          }
+        }`,
+        variables: {
+          query: { environmentId },
+          orderBy: { field: 'createdAt', direction: 'desc' },
+          first: 5,
+        },
+      });
+      // Just assert it resolves without error and returns a connection.
+      expect(gqlData(res).queryContent.edges).toEqual(expect.any(Array));
+    });
+  });
+
+  // ── local helper that needs `prisma`/`projectId` in scope ─────────
+  async function buildThemeRow() {
+    return prisma.theme.create({
+      data: { name: `content-theme-${Date.now()}-${Math.random()}`, projectId },
+    });
+  }
+});
