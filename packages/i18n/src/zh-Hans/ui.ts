@@ -814,6 +814,12 @@ const translations = {
   common: {
     language: '语言',
     theme: '主题',
+    appearance: {
+      label: '外观',
+      light: '浅色',
+      dark: '深色',
+      system: '跟随系统',
+    },
     search: '搜索...',
     reset: '重置',
     addFilter: '添加筛选',
@@ -844,6 +850,14 @@ const translations = {
       none: '无成员属性',
       attributesCount_other: '{{count}} 个属性',
     },
+  },
+  userNav: {
+    systemAdmin: '系统管理',
+    myProjects: '我的项目',
+    currentProject: '当前项目',
+    otherProjects: '其他项目',
+    logout: '退出登录',
+    switchProjectFailed: '切换项目失败',
   },
   users: {
     actions: {
