@@ -869,6 +869,12 @@ const translations = {
   common: {
     language: 'Language',
     theme: 'Theme',
+    appearance: {
+      label: 'Appearance',
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System',
+    },
     search: 'Search...',
     reset: 'Reset',
     addFilter: 'Add filter',
@@ -900,6 +906,14 @@ const translations = {
       attributesCount_one: '{{count}} attribute',
       attributesCount_other: '{{count}} attributes',
     },
+  },
+  userNav: {
+    systemAdmin: 'System Admin',
+    myProjects: 'My Projects',
+    currentProject: 'CURRENT PROJECT',
+    otherProjects: 'OTHER PROJECTS',
+    logout: 'Log out',
+    switchProjectFailed: 'Switch project failed',
   },
   users: {
     actions: {

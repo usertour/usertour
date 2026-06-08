@@ -79,7 +79,7 @@ const LoadMoreButton = ({ loading, hasMore, onLoadMore }: LoadMoreButtonProps) =
       <Button
         onClick={onLoadMore}
         disabled={loading}
-        className="px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-muted border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <div className="flex items-center space-x-2">

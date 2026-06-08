@@ -7,6 +7,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Usertour</title>
     <script src="/config.js"></script>
+    <!-- Apply the persisted theme before React mounts so the first paint is
+         already correct (no light → dark flash). Reads the same AppStorage key
+         that src/contexts/theme-context.tsx writes: namespace `USERTOUR@0.0.1/`
+         + key `appearance`, value JSON-wrapped as { value, ... }. Keep both in
+         sync if the namespace/key ever changes. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('USERTOUR@0.0.1/appearance');
+          var theme = raw ? JSON.parse(raw).value : 'system';
+          var isDark =
+            theme === 'dark' ||
+            (theme === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

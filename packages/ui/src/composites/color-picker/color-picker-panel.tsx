@@ -350,7 +350,7 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
 
   return (
     <TooltipProvider>
-      <div className="bg-background p-4 rounded space-y-3 w-64">
+      <div className="bg-background dark:bg-popover p-4 rounded space-y-3 w-64">
         <ColorInput
           inputColor={inputColor}
           displayColor={displayColor}

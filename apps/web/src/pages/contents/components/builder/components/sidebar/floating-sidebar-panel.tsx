@@ -40,7 +40,7 @@ export const FloatingSidebarPanel = (props: FloatingSidebarPanelProps) => {
           collapsed && (isLeft ? '-translate-x-[460px]' : 'translate-x-[460px]'),
         )}
       >
-        <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-[0_18px_50px_rgba(15,23,42,0.14)]">
+        <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-[0_18px_50px_rgba(15,23,42,0.14)] dark:bg-card dark:shadow-[0_24px_64px_-8px_rgba(0,0,0,0.7)]">
           <div className="absolute right-3 top-3.5 z-10">
             <SidebarControls
               isLeft={isLeft}
@@ -58,7 +58,7 @@ export const FloatingSidebarPanel = (props: FloatingSidebarPanelProps) => {
           style={{ zIndex: BUILDER_Z.panel }}
           title={t('contentBuilder.common.expandPanel')}
           className={cn(
-            'fixed top-[22px] grid size-9 place-items-center rounded-xl border border-border bg-background text-muted-foreground shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:bg-muted hover:text-foreground',
+            'fixed top-[22px] grid size-9 place-items-center rounded-xl border border-border bg-background text-muted-foreground shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:bg-muted hover:text-foreground dark:bg-card dark:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.6)]',
             isLeft ? 'left-[18px]' : 'right-[18px]',
           )}
         >

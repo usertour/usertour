@@ -28,10 +28,7 @@ export const UrlAvatarTab = memo<UrlAvatarTabProps>((props) => {
           onChange={(e) => setUrlInput(e.target.value)}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          className={cn(
-            'bg-background',
-            error && 'border-destructive focus-visible:ring-destructive',
-          )}
+          className={cn('bg-card', error && 'border-destructive focus-visible:ring-destructive')}
           disabled={disabled}
         />
       </ThemeSettingErrorPopover>

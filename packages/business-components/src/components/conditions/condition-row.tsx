@@ -139,7 +139,7 @@ export function ConditionRow({
       // rules-group.tsx made the same allowance with pr-6.
       <div
         className={cn(
-          'group/condition relative rounded-lg border border-input/60 bg-background/40 p-2 pr-8 shadow-sm',
+          'group/condition relative rounded-lg border border-input/60 bg-background/40 dark:bg-muted/40 p-2 pr-8 shadow-sm',
           isHorizontal ? 'inline-block max-w-full' : 'w-full',
         )}
       >

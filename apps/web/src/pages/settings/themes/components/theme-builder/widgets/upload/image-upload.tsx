@@ -64,7 +64,7 @@ export const ImageUploadWidget = (props: ImageUploadWidgetProps) => {
   const previewSizeClass = previewAspect === 'wide' ? 'h-12 w-24' : 'h-12 w-12';
 
   return (
-    <div className="rounded-lg border bg-background p-4">
+    <div className="rounded-lg border bg-card p-4">
       {description && <p className="mb-3 text-sm text-muted-foreground">{description}</p>}
       <Upload
         accept={ACCEPT_IMAGE_TYPES}

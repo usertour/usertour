@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuSelectItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuSub,
@@ -17,11 +19,14 @@ import {
   DropdownMenuTrigger,
   useToast,
 } from '@usertour/ui';
+import { RiComputerLine, RiMoonClearLine, RiSunLine } from '@usertour/icons';
 import { useActiveUserProjectMutation } from '@usertour/hooks';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useEvent } from 'react-use';
+import { type Theme, useTheme } from '@/contexts/theme-context';
 
 export const AdminUserNav = () => {
   const { userInfo: user, signOutAndRedirect, globalConfig } = useAppContext();
@@ -29,6 +34,8 @@ export const AdminUserNav = () => {
   const posthog = usePostHog();
   const { invoke } = useActiveUserProjectMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
 
   const navigate = useNavigate();
 
@@ -67,7 +74,7 @@ export const AdminUserNav = () => {
       } catch (error) {
         toast({
           variant: 'destructive',
-          title: 'Switch project failed',
+          title: t('userNav.switchProjectFailed'),
         });
         console.error(error);
       }
@@ -97,36 +104,38 @@ export const AdminUserNav = () => {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/account`)}>
-            Account
+            {t('settings.nav.sections.account')}
             <DropdownMenuShortcut>⌘U</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/themes`)}>
-            Themes
+            {t('settings.nav.sections.themes')}
             <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/events`)}>
-            Events
+            {t('settings.nav.sections.events')}
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => navigate(`/project/${project?.id}/settings/environments`)}
           >
-            Environments
+            {t('settings.nav.sections.environments')}
           </DropdownMenuItem>
           {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/admin/general')}>
-                System Admin
+                {t('userNav.systemAdmin')}
               </DropdownMenuItem>
             </>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>My Projects</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>{t('userNav.myProjects')}</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="w-56">
-                <DropdownMenuLabel className="text-xs	">CURRENT PROJECT</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs	">
+                  {t('userNav.currentProject')}
+                </DropdownMenuLabel>
                 {activeProject && (
                   <DropdownMenuItem
                     key={activeProject.id}
@@ -140,7 +149,9 @@ export const AdminUserNav = () => {
                 <DropdownMenuSeparator />
                 {otherProjects.length > 0 && (
                   <>
-                    <DropdownMenuLabel className="text-xs">OTHER PROJECTS</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-xs">
+                      {t('userNav.otherProjects')}
+                    </DropdownMenuLabel>
                     {otherProjects.map((p) => (
                       <DropdownMenuItem
                         key={p.id}
@@ -156,10 +167,34 @@ export const AdminUserNav = () => {
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>{t('common.appearance.label')}</DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={theme}
+                  onValueChange={(value) => setTheme(value as Theme)}
+                >
+                  <DropdownMenuSelectItem value="light">
+                    <RiSunLine className="mr-2 h-4 w-4" />
+                    {t('common.appearance.light')}
+                  </DropdownMenuSelectItem>
+                  <DropdownMenuSelectItem value="dark">
+                    <RiMoonClearLine className="mr-2 h-4 w-4" />
+                    {t('common.appearance.dark')}
+                  </DropdownMenuSelectItem>
+                  <DropdownMenuSelectItem value="system">
+                    <RiComputerLine className="mr-2 h-4 w-4" />
+                    {t('common.appearance.system')}
+                  </DropdownMenuSelectItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logoutHandler}>
-          Log out
+          {t('userNav.logout')}
           <DropdownMenuShortcut>⇧⌘K</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

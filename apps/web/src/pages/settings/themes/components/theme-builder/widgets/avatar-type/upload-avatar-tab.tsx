@@ -20,7 +20,7 @@ export const UploadAvatarTab = memo<UploadAvatarTabProps>((props) => {
   const uploadedAvatarLabel = t('themeBuilder.actions.uploadedAvatar');
 
   return (
-    <div className="w-full min-w-0 bg-background rounded-lg p-4">
+    <div className="w-full min-w-0 bg-card rounded-lg p-4">
       <div className="mb-3">
         <h4 className="text-sm font-medium text-foreground">
           {t('themeBuilder.actions.uploadAvatarTitle')}

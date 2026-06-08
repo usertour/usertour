@@ -95,8 +95,8 @@ export const AdminSettingsPage = () => {
                   <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-zinc-950 dark:text-white">
                     {loading ? (
                       <div className="flex items-center gap-1.5">
-                        <Skeleton className="h-4 w-20 bg-background" />
-                        <Skeleton className="h-4 w-16 bg-background" />
+                        <Skeleton className="h-4 w-20 bg-background dark:bg-muted" />
+                        <Skeleton className="h-4 w-16 bg-background dark:bg-muted" />
                       </div>
                     ) : (
                       <>

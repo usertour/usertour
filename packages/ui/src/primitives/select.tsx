@@ -31,7 +31,7 @@ const selectTriggerVariants = cva(
         // Compact bordered — chip-popover form fields. Exposed for symmetry
         // with Input; Conditions itself uses a DropdownMenu under the hood
         // (Radix Select doesn't share a layer chain with Popover).
-        compact: 'h-7.5 rounded-lg bg-background text-sm',
+        compact: 'h-7.5 rounded-lg bg-background dark:bg-muted text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

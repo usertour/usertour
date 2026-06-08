@@ -156,7 +156,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
                 </LocalizationButton>
               </PopoverTrigger>
               <PopoverContent
-                className="bg-background w-[400px]"
+                className="bg-background dark:bg-popover w-[400px]"
                 side="top"
                 align="center"
                 sideOffset={5}
@@ -168,7 +168,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
                     onChange={(e) => {
                       setRemoteImageUrl(e.target.value);
                     }}
-                    className="bg-background w-80 "
+                    className="bg-background dark:bg-popover w-80 "
                   />
                   <Button
                     className="flex-none  h-9 py-1"
