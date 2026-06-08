@@ -214,9 +214,9 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     title: 'Personal API keys',
     icon: <KeyIcon className={ICON_CLASS} />,
     // Account-level (caller's own tokens across projects) — always visible.
+    // Default (non-muted) surface to match the env-key /settings/api list page.
     group: 'account',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
-    surface: 'muted',
     component: lazy(() =>
       import('./personal-api-keys').then((m) => ({ default: m.PersonalApiKeysList })),
     ),
