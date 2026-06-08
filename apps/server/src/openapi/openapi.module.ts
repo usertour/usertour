@@ -65,5 +65,11 @@ import { OpenAPIV2EventDefinitionsController } from './v2/event-definitions/even
     OpenAPIContentService,
     OpenAPIContentSessionsService,
   ],
+  exports: [
+    OpenAPIContentService,
+    OpenAPIAttributeDefinitionsService,
+    OpenAPIEventDefinitionsService,
+    OpenAPIUsersService,
+  ],
 })
 export class OpenAPIModule {}
