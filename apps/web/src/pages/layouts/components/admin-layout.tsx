@@ -44,7 +44,7 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
     : isNonPrimary;
 
   const surfaceClassName =
-    surface === 'muted' ? 'bg-muted dark:bg-background' : 'bg-background dark:bg-card/60';
+    surface === 'muted' ? 'bg-muted dark:bg-background' : 'bg-background dark:bg-card';
 
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
