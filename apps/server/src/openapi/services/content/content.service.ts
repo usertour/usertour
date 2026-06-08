@@ -22,22 +22,15 @@ type ContentWithVersions = Prisma.ContentGetPayload<{
   include: { editedVersion: true; publishedVersion: true };
 }>;
 
-// v2: per-environment publish rows, each optionally carrying its published version.
-type ContentOnEnvironmentWithVersion = Prisma.ContentOnEnvironmentGetPayload<{
-  include: { publishedVersion: true };
-}>;
-
+// v2: editedVersion plus the per-environment publish rows. The nested
+// `publishedVersion` is only populated when the expand is requested; the mappers
+// guard it at runtime.
 type ContentWithEnvironments = Prisma.ContentGetPayload<{
-  include: { editedVersion: true };
-}> & {
-  // The env rows are always loaded; the nested `publishedVersion` object is only
-  // present when the publishedVersion expand is requested, so it's optional here.
-  contentOnEnvironments?: Array<
-    Omit<ContentOnEnvironmentWithVersion, 'publishedVersion'> & {
-      publishedVersion?: ContentOnEnvironmentWithVersion['publishedVersion'] | null;
-    }
-  >;
-};
+  include: {
+    editedVersion: true;
+    contentOnEnvironments: { include: { publishedVersion: true } };
+  };
+}>;
 
 type VersionWithContent = Prisma.VersionGetPayload<{
   include: {
@@ -51,90 +44,92 @@ export class OpenAPIContentService {
 
   constructor(private contentService: ContentService) {}
 
-  // --- v1 (legacy: single publishedVersionId/publishedVersion) -------------
+  // v1 and v2 differ only in what they include and how they map it; the fetch +
+  // null-check + pagination plumbing below is shared.
 
   async getContent(id: string, projectId: string, query?: GetContentQueryDto): Promise<Content> {
-    const { expand } = query;
-    const content = await this.contentService.getContentWithRelations(id, projectId, {
-      editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
-      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
-    });
-
-    if (!content) {
-      throw new ContentNotFoundError();
-    }
-
-    return this.mapPrismaContentToApiContent(content as ContentWithVersions, expand);
+    const expand = query?.expand;
+    return this.getMapped(id, projectId, this.v1Include(expand), (c) =>
+      this.mapContentV1(c, expand),
+    );
   }
 
-  async listContent(
+  listContent(
     requestUrl: string,
     projectId: string,
     query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const { cursor, orderBy, limit, expand, type } = query;
-
-    const include = {
-      editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
-      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
-    };
-    const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
-
-    return paginate(
-      requestUrl,
-      cursor,
-      limit,
-      async (params) =>
-        this.contentService.listContentWithRelations(projectId, params, include, sortOrders, type),
-      (node) => this.mapPrismaContentToApiContent(node as ContentWithVersions, expand),
-      { ...(expand ? { expand } : {}), ...(type ? { type } : {}) },
+    return this.listMapped(requestUrl, projectId, query, this.v1Include(query.expand), (n) =>
+      this.mapContentV1(n, query.expand),
     );
   }
-
-  // --- v2 (per-environment publish state via environments[]) ---------------
 
   async getContentV2(
     id: string,
     projectId: string,
     query?: GetContentQueryDto,
   ): Promise<ContentV2> {
-    const { expand } = query;
-    const content = await this.contentService.getContentWithRelations(
-      id,
-      projectId,
-      this.v2Include(expand),
+    const expand = query?.expand;
+    return this.getMapped(id, projectId, this.v2Include(expand), (c) =>
+      this.mapContentV2(c, expand),
     );
-
-    if (!content) {
-      throw new ContentNotFoundError();
-    }
-
-    return this.mapPrismaContentToApiContentV2(content as ContentWithEnvironments, expand);
   }
 
-  async listContentV2(
+  listContentV2(
     requestUrl: string,
     projectId: string,
     query: ListContentQueryDto,
   ): Promise<{ results: ContentV2[]; next: string | null; previous: string | null }> {
-    const { cursor, orderBy, limit, expand, type } = query;
+    return this.listMapped(requestUrl, projectId, query, this.v2Include(query.expand), (n) =>
+      this.mapContentV2(n, query.expand),
+    );
+  }
 
-    const include = this.v2Include(expand);
+  // --- shared plumbing -----------------------------------------------------
+
+  // The generic include erases the relation types here, so the mapper receives an
+  // untyped node and re-asserts the concrete shape it loaded (mapContentV1 /
+  // mapContentV2 are strongly typed at their boundary).
+  private async getMapped<T>(
+    id: string,
+    projectId: string,
+    include: Prisma.ContentInclude,
+    map: (content: any) => T,
+  ): Promise<T> {
+    const content = await this.contentService.getContentWithRelations(id, projectId, include);
+    if (!content) {
+      throw new ContentNotFoundError();
+    }
+    return map(content);
+  }
+
+  private listMapped<T>(
+    requestUrl: string,
+    projectId: string,
+    query: ListContentQueryDto,
+    include: Prisma.ContentInclude,
+    map: (node: any) => T,
+  ): Promise<{ results: T[]; next: string | null; previous: string | null }> {
+    const { cursor, limit, orderBy, expand, type } = query;
     const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
-
     return paginate(
       requestUrl,
       cursor,
       limit,
-      async (params) =>
+      (params) =>
         this.contentService.listContentWithRelations(projectId, params, include, sortOrders, type),
-      (node) => this.mapPrismaContentToApiContentV2(node as ContentWithEnvironments, expand),
+      (node) => map(node),
       { ...(expand ? { expand } : {}), ...(type ? { type } : {}) },
     );
   }
 
-  // The v2 include: editedVersion plus the per-environment publish rows. The
-  // nested published version object is loaded only when the expand is requested.
+  private v1Include(expand?: ContentExpandType[]): Prisma.ContentInclude {
+    return {
+      editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
+      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
+    };
+  }
+
   private v2Include(expand?: ContentExpandType[]): Prisma.ContentInclude {
     return {
       editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
@@ -164,10 +159,11 @@ export class OpenAPIContentService {
     };
   }
 
-  private mapPrismaContentToApiContent(
-    content: ContentWithVersions,
+  // Fields shared by both response shapes (everything except publish state).
+  private mapBase(
+    content: ContentWithVersions | ContentWithEnvironments,
     expand?: ContentExpandType[],
-  ): Content {
+  ) {
     return {
       id: content.id,
       object: OpenApiObjectType.CONTENT,
@@ -178,30 +174,25 @@ export class OpenAPIContentService {
         expand?.includes(ContentExpandType.EDITED_VERSION) && content.editedVersion
           ? this.mapVersion(content.editedVersion)
           : undefined,
+      updatedAt: content.updatedAt.toISOString(),
+      createdAt: content.createdAt.toISOString(),
+    };
+  }
+
+  private mapContentV1(content: ContentWithVersions, expand?: ContentExpandType[]): Content {
+    return {
+      ...this.mapBase(content, expand),
       publishedVersionId: content.publishedVersionId,
       publishedVersion:
         expand?.includes(ContentExpandType.PUBLISHED_VERSION) && content.publishedVersion
           ? this.mapVersion(content.publishedVersion)
           : undefined,
-      updatedAt: content.updatedAt.toISOString(),
-      createdAt: content.createdAt.toISOString(),
     } as Content;
   }
 
-  private mapPrismaContentToApiContentV2(
-    content: ContentWithEnvironments,
-    expand?: ContentExpandType[],
-  ): ContentV2 {
+  private mapContentV2(content: ContentWithEnvironments, expand?: ContentExpandType[]): ContentV2 {
     return {
-      id: content.id,
-      object: OpenApiObjectType.CONTENT,
-      name: content.name,
-      type: content.type,
-      editedVersionId: content.editedVersionId,
-      editedVersion:
-        expand?.includes(ContentExpandType.EDITED_VERSION) && content.editedVersion
-          ? this.mapVersion(content.editedVersion)
-          : undefined,
+      ...this.mapBase(content, expand),
       environments: (content.contentOnEnvironments ?? []).map((coe) => ({
         environmentId: coe.environmentId,
         published: coe.published,
@@ -212,8 +203,6 @@ export class OpenAPIContentService {
             ? this.mapVersion(coe.publishedVersion)
             : undefined,
       })),
-      updatedAt: content.updatedAt.toISOString(),
-      createdAt: content.createdAt.toISOString(),
     } as ContentV2;
   }
 
