@@ -17,7 +17,7 @@ export const SettingsCard = (props: SettingsCardProps) => {
     <div
       className={cn(
         'mx-auto w-full min-w-[750px] max-w-3xl rounded-xl bg-card p-6 lg:p-8',
-        'shadow-sm shadow-foreground/[0.06] ring-1 ring-foreground/[0.03]',
+        'shadow-sm shadow-foreground/[0.06] dark:shadow-none ring-1 ring-foreground/[0.03]',
         className,
       )}
     >
