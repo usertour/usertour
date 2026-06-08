@@ -202,13 +202,6 @@ export const extendBase = {
       foreground: 'hsl(var(--primary-foreground))',
       hover: 'hsl(var(--primary-hover))',
     },
-    editor: {
-      DEFAULT: 'hsl(var(--editor))',
-      foreground: 'hsl(var(--editor-foreground))',
-      hover: 'hsl(var(--editor-hover))',
-      toolbar: 'hsl(var(--editor-toolbar))',
-      border: 'hsl(var(--editor-border))',
-    },
     secondary: {
       DEFAULT: 'hsl(var(--secondary))',
       foreground: 'hsl(var(--secondary-foreground))',

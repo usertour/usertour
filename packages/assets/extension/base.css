@@ -30,11 +30,6 @@
     --destructive: #ef4444;
     --destructive-foreground: #fafafa;
 
-    --editor: #f1f5f9;
-    --editor-foreground: #09090b;
-    --editor-hover: #f1f5f9;
-    --editor-toolbar: #f4f8fb;
-
     --ring: #a1a1aa;
 
     --radius: 0.5rem;
@@ -72,12 +67,6 @@
 
     --destructive: #7f1d1d;
     --destructive-foreground: #fef2f2;
-
-    --editor: #f1f5f9;
-    --editor-foreground: #09090b;
-    --editor-hover: #f1f5f9;
-    --editor-toolbar: #f4f8fb;
-    --editor-border: #dfeaf1;
 
     --ring: #27272a;
   }

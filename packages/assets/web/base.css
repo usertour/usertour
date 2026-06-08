@@ -41,12 +41,6 @@
     --destructive-foreground: 210 40% 98%;
     --destructive-hover: 0 84.2% 60.2%;
 
-    --editor: 210 40% 96.1%;
-    --editor-foreground: 240 10% 3.9%;
-    --editor-hover: 210 40% 96.1%;
-    --editor-toolbar: 205.7 46.7% 97.1%;
-    --editor-border: 203.3 39.1% 91%;
-
     --ring: 215 20.2% 65.1%;
 
     --radius: 0.5rem;
@@ -119,12 +113,6 @@
     --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 0 85.7% 97.3%;
     --destructive-hover: 0 84.2% 60.2%;
-
-    --editor: 210 40% 96.1%;
-    --editor-foreground: 240 10% 3.9%;
-    --editor-hover: 210 40% 96.1%;
-    --editor-toolbar: 205.7 46.7% 97.1%;
-    --editor-border: 203.3 39.1% 91%;
 
     --ring: 216 14% 48%;
 
