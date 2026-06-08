@@ -2105,6 +2105,16 @@ const translations = {
         otherPlaceholderHint: '其他…',
         allowMultiple: '允许多选',
       },
+      bindAttribute: {
+        bind: '绑定到用户属性',
+        bindTooltip: '将回答存储到用户属性',
+        select: '选择用户属性',
+        search: '搜索属性…',
+        empty: '未找到属性。',
+        userAttributes: '用户属性',
+        actions: '操作',
+        createNew: '+ 新建属性',
+      },
       common: {
         left: '左',
         top: '上',

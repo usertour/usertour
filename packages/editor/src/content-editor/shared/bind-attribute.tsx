@@ -2,24 +2,23 @@
 
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import {
+  BooleanField,
   Button,
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-  Label,
   Popover,
   PopoverContent,
   PopoverTrigger,
   ScrollArea,
-  Switch,
-  QuestionTooltip,
 } from '@usertour/ui';
 import { useListAttributesQuery } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { AttributeCreateForm } from '../../form/attribute-create-form';
 
@@ -47,6 +46,7 @@ export const BindAttribute = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [open, setOpen] = useState(false);
   const { attributes, refetch } = useListAttributesQuery(projectId, AttributeBizTypes.User);
+  const { t } = useTranslation();
 
   // Handle after attribute creation
   const handleAfterCreate = useCallback(
@@ -78,17 +78,12 @@ export const BindAttribute = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Label className="flex items-center gap-1">
-          Bind to user attribute
-          <QuestionTooltip>Store the response in a user attribute</QuestionTooltip>
-        </Label>
-        <Switch
-          className="data-[state=unchecked]:bg-muted"
-          checked={bindToAttribute}
-          onCheckedChange={onBindChange}
-        />
-      </div>
+      <BooleanField
+        label={t('contentBuilder.editor.bindAttribute.bind')}
+        tooltip={t('contentBuilder.editor.bindAttribute.bindTooltip')}
+        checked={bindToAttribute}
+        onChange={onBindChange}
+      />
 
       {bindToAttribute && (
         <>
@@ -96,7 +91,8 @@ export const BindAttribute = ({
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="flex-1 justify-between">
-                  {selectedAttributeData?.displayName || 'Select user attribute'}
+                  {selectedAttributeData?.displayName ||
+                    t('contentBuilder.editor.bindAttribute.select')}
                   <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -105,10 +101,10 @@ export const BindAttribute = ({
                 style={{ zIndex }}
               >
                 <Command>
-                  <CommandInput placeholder="Search attributes..." />
-                  <CommandEmpty>No attributes found.</CommandEmpty>
+                  <CommandInput placeholder={t('contentBuilder.editor.bindAttribute.search')} />
+                  <CommandEmpty>{t('contentBuilder.editor.bindAttribute.empty')}</CommandEmpty>
                   <ScrollArea className="h-72">
-                    <CommandGroup heading="User attributes">
+                    <CommandGroup heading={t('contentBuilder.editor.bindAttribute.userAttributes')}>
                       {filteredAttributes?.map((attr) => (
                         <CommandItem
                           key={attr.id}
@@ -126,13 +122,13 @@ export const BindAttribute = ({
                         </CommandItem>
                       ))}
                     </CommandGroup>
-                    <CommandGroup heading="Actions">
+                    <CommandGroup heading={t('contentBuilder.editor.bindAttribute.actions')}>
                       <CommandItem
                         value="create-new"
                         className="cursor-pointer"
                         onSelect={() => handleAttributeChange('create-new')}
                       >
-                        + Create new attribute
+                        {t('contentBuilder.editor.bindAttribute.createNew')}
                       </CommandItem>
                     </CommandGroup>
                   </ScrollArea>

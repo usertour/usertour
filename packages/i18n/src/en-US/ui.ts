@@ -2228,6 +2228,16 @@ const translations = {
         otherPlaceholderHint: 'Other...',
         allowMultiple: 'Allow multiple selection',
       },
+      bindAttribute: {
+        bind: 'Bind to user attribute',
+        bindTooltip: 'Store the response in a user attribute',
+        select: 'Select user attribute',
+        search: 'Search attributes...',
+        empty: 'No attributes found.',
+        userAttributes: 'User attributes',
+        actions: 'Actions',
+        createNew: '+ Create new attribute',
+      },
       common: {
         left: 'Left',
         top: 'Top',
