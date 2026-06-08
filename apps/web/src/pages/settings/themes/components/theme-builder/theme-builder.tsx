@@ -166,7 +166,7 @@ export const ThemeBuilder = (props: ThemeBuilderProps) => {
       {/* AdminShellMuted's content card is `flex h-full w-full` (flex-row);
           we stack TopBar + 3-column body vertically and let the inner panes
           own their own scroll. */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-card">
         <TopBar
           theme={theme}
           onRename={onRename}

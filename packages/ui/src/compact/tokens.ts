@@ -18,10 +18,8 @@ export const pillClass =
 
 // Side panel chrome. `relative` so absolute-positioned descendants (resize
 // handle, close button, etc.) anchor to the panel.
-export const panelClass =
-  'relative flex flex-none flex-col border-r border-border/50 bg-background';
-export const panelRightClass =
-  'relative flex flex-none flex-col border-l border-border/50 bg-background';
+export const panelClass = 'relative flex flex-none flex-col border-r border-border/50 bg-card';
+export const panelRightClass = 'relative flex flex-none flex-col border-l border-border/50 bg-card';
 
 // Panel sub-regions
 export const headerClass = 'flex-none border-b border-border/50 px-3 py-2.5';

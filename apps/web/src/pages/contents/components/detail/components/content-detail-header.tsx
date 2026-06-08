@@ -151,7 +151,7 @@ export const ContentDetailHeader = () => {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border/50 bg-background">
+      <div className="sticky top-0 z-10 border-b border-border/50 bg-card">
         <div className="flex h-14 w-full min-w-0 items-center gap-4 px-4">
           {/* Left: breadcrumb-style "<Type plural> ▸ <flow name>" with inline rename.
               The first segment uses the entity's content-type plural label

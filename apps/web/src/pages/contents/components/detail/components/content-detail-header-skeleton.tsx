@@ -7,7 +7,7 @@ import { Skeleton } from '@usertour/ui';
 // sidebar-inner detail headers stay at the same height.
 export const ContentDetailHeaderSkeleton = () => {
   return (
-    <div className="sticky top-0 z-10 border-b border-border/50 bg-background">
+    <div className="sticky top-0 z-10 border-b border-border/50 bg-card">
       <div className="flex h-14 w-full items-center gap-4 px-4">
         {/* Left: breadcrumb */}
         <div className="flex items-center gap-2">

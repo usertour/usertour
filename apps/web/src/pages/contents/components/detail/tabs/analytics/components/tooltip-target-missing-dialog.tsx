@@ -425,7 +425,7 @@ export const TooltipTargetMissingDialog = ({
 
             <div className="p-6">
               <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
+                <TableHeader className="sticky top-0 bg-popover z-10">
                   <TableRow>
                     <TableHead className="w-1/3">
                       {t('contents.analytics.tooltipMissing.user')}
