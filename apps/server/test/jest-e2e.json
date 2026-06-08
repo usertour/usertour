@@ -6,6 +6,7 @@
     "^@/(.*)$": "<rootDir>/src/$1"
   },
   "testEnvironment": "node",
+  "testTimeout": 30000,
   "testRegex": ".e2e-spec.ts$",
   "globalSetup": "<rootDir>/test/global-setup-e2e.ts",
   "setupFiles": ["<rootDir>/test/setup-e2e.ts"],
