@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Content, ContentVersion, Question } from '../models/content.model';
+import { Content, ContentVersion, Question } from '../../models/content.model';
 import {
   ContentExpandType,
   ContentOrderByType,

@@ -2,10 +2,10 @@ import { Controller, Delete, Query, UseFilters, UseGuards } from '@nestjs/common
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { OpenAPICompanyMembershipsService } from './company-memberships.service';
+import { OpenAPICompanyMembershipsService } from '../../services/company-memberships/company-memberships.service';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { DeleteResponseDto } from '@/common/openapi/dtos';
-import { DeleteCompanyMembershipQueryDto } from './company-memberships.dto';
+import { DeleteCompanyMembershipQueryDto } from '../../services/company-memberships/company-memberships.dto';
 
 @ApiTags('Company Memberships')
 @Controller('v1/company-memberships')

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Company } from '../models/company.model';
+import { Company } from '../../models/company.model';
 import { BizService } from '@/biz/biz.service';
 import {
   UpsertCompanyRequestDto,

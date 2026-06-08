@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Content } from '../models/content.model';
+import { Content } from '../../models/content.model';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 

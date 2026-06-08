@@ -12,8 +12,8 @@ import {
   GetContentVersionQueryDto,
   ListContentQueryDto,
   ListContentVersionsQueryDto,
-} from '../../content/content.dto';
-import { OpenAPIContentService } from '../../content/content.service';
+} from '../../services/content/content.dto';
+import { OpenAPIContentService } from '../../services/content/content.service';
 import { Content, ContentVersion } from '../../models/content.model';
 
 @ApiTags('Content (v2)')

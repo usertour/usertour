@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { User } from '../models/user.model';
+import { User } from '../../models/user.model';
 import { UserNotFoundError } from '@/common/errors/errors';
 import { UpsertUserRequestDto, UserOrderByType, GetUserQueryDto } from './users.dto';
 import { BizService } from '@/biz/biz.service';

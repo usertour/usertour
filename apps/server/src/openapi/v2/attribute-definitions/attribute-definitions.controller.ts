@@ -7,8 +7,8 @@ import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
-import { ListAttributeDefinitionsQueryDto } from '../../attribute-definitions/attribute-definitions.dto';
-import { OpenAPIAttributeDefinitionsService } from '../../attribute-definitions/attribute-definitions.service';
+import { ListAttributeDefinitionsQueryDto } from '../../services/attribute-definitions/attribute-definitions.dto';
+import { OpenAPIAttributeDefinitionsService } from '../../services/attribute-definitions/attribute-definitions.service';
 
 @ApiTags('Attribute Definitions (v2)')
 @Controller('v2/projects/:projectId/attribute-definitions')

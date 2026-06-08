@@ -13,8 +13,8 @@ import {
   ContentSessionsOutput,
   GetContentSessionQueryDto,
   ListContentSessionsQueryDto,
-} from '../../content-sessions/content-sessions.dto';
-import { OpenAPIContentSessionsService } from '../../content-sessions/content-sessions.service';
+} from '../../services/content-sessions/content-sessions.dto';
+import { OpenAPIContentSessionsService } from '../../services/content-sessions/content-sessions.service';
 import { ContentSession } from '../../models/content-session.model';
 
 @ApiTags('Content Sessions (v2)')

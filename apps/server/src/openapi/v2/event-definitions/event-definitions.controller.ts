@@ -7,8 +7,8 @@ import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
-import { ListEventDefinitionsQueryDto } from '../../event-definitions/event-definitions.dto';
-import { OpenAPIEventDefinitionsService } from '../../event-definitions/event-definitions.service';
+import { ListEventDefinitionsQueryDto } from '../../services/event-definitions/event-definitions.dto';
+import { OpenAPIEventDefinitionsService } from '../../services/event-definitions/event-definitions.service';
 
 @ApiTags('Event Definitions (v2)')
 @Controller('v2/projects/:projectId/event-definitions')

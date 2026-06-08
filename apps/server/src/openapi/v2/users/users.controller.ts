@@ -10,8 +10,8 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { Environment } from '@/environments/models/environment.model';
 
 import { User } from '../../models/user.model';
-import { GetUserQueryDto, ListUsersQueryDto } from '../../users/users.dto';
-import { OpenAPIUsersService } from '../../users/users.service';
+import { GetUserQueryDto, ListUsersQueryDto } from '../../services/users/users.dto';
+import { OpenAPIUsersService } from '../../services/users/users.service';
 
 @ApiTags('Users (v2)')
 @Controller('v2/projects/:projectId/environments/:environmentId/users')

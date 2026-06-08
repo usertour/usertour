@@ -17,12 +17,17 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { OpenAPIUsersService } from './users.service';
-import { UpsertUserRequestDto, ExpandType, ListUsersQueryDto, GetUserQueryDto } from './users.dto';
+import { OpenAPIUsersService } from '../../services/users/users.service';
+import {
+  UpsertUserRequestDto,
+  ExpandType,
+  ListUsersQueryDto,
+  GetUserQueryDto,
+} from '../../services/users/users.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
-import { User } from '../models/user.model';
+import { User } from '../../models/user.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';

@@ -10,15 +10,15 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { OpenAPICompaniesService } from './companies.service';
+import { OpenAPICompaniesService } from '../../services/companies/companies.service';
 import {
   ListCompaniesResponseDto,
   UpsertCompanyRequestDto,
   ListCompaniesQueryDto,
   GetCompanyQueryDto,
-} from './companies.dto';
+} from '../../services/companies/companies.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-import { Company } from '../models/company.model';
+import { Company } from '../../models/company.model';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';

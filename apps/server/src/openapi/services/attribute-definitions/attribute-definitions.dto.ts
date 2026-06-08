@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Attribute } from '../models/attribute.model';
+import { Attribute } from '../../models/attribute.model';
 import { IsString, IsOptional, IsNumber, Min, Max, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OpenApiObjectType } from '@/common/openapi/types';

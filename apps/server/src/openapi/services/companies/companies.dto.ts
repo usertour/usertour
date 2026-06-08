@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, ValidateNested, Min, Max, IsInt, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Company } from '../models/company.model';
+import { Company } from '../../models/company.model';
 
 export enum CompanyExpandType {
   USERS = 'users',

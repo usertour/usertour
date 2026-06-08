@@ -1,14 +1,14 @@
 import { Get, Param, Query, UseFilters, UseGuards, Controller } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { OpenAPIContentService } from './content.service';
-import { Content, ContentVersion } from '../models/content.model';
+import { OpenAPIContentService } from '../../services/content/content.service';
+import { Content, ContentVersion } from '../../models/content.model';
 import {
   GetContentQueryDto,
   ListContentQueryDto,
   GetContentVersionQueryDto,
   ListContentVersionsQueryDto,
-} from './content.dto';
+} from '../../services/content/content.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';

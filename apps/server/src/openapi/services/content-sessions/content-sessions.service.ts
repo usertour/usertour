@@ -5,7 +5,7 @@ import {
   GetContentSessionQueryDto,
   ListContentSessionsQueryDto,
 } from './content-sessions.dto';
-import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
+import { ContentSession, ContentSessionAnswers } from '../../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { Prisma } from '@prisma/client';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';

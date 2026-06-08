@@ -14,8 +14,8 @@ import {
   GetCompanyQueryDto,
   ListCompaniesQueryDto,
   ListCompaniesResponseDto,
-} from '../../companies/companies.dto';
-import { OpenAPICompaniesService } from '../../companies/companies.service';
+} from '../../services/companies/companies.dto';
+import { OpenAPICompaniesService } from '../../services/companies/companies.service';
 
 @ApiTags('Companies (v2)')
 @Controller('v2/projects/:projectId/environments/:environmentId/companies')

@@ -1,12 +1,12 @@
 import { Controller, Get, Query, Logger, UseGuards, UseFilters } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { OpenAPIEventDefinitionsService } from './event-definitions.service';
+import { OpenAPIEventDefinitionsService } from '../../services/event-definitions/event-definitions.service';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { ListEventDefinitionsQueryDto } from './event-definitions.dto';
+import { ListEventDefinitionsQueryDto } from '../../services/event-definitions/event-definitions.dto';
 
 @ApiTags('Event Definitions')
 @Controller('v1/event-definitions')

@@ -1,18 +1,18 @@
 import { Controller, Get, Param, Query, Delete, UseFilters, UseGuards, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { OpenAPIContentSessionsService } from './content-sessions.service';
+import { OpenAPIContentSessionsService } from '../../services/content-sessions/content-sessions.service';
 import {
   ContentSessionsOutput,
   GetContentSessionQueryDto,
   ListContentSessionsQueryDto,
-} from './content-sessions.dto';
+} from '../../services/content-sessions/content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { ContentSession } from '../models/content-session.model';
+import { ContentSession } from '../../models/content-session.model';
 
 @ApiTags('Content Sessions')
 @Controller('v1/content-sessions')
