@@ -2244,6 +2244,18 @@ const translations = {
         sameTab: 'Same tab',
         newTab: 'New tab',
       },
+      actionButtons: {
+        delete: 'Delete {{entity}}',
+        insertLeft: 'Insert {{entity}} to the left',
+        insert: 'Insert {{entity}}',
+        insertRight: 'Insert {{entity}} to the right',
+        entity: {
+          button: 'button',
+          embed: 'embed',
+          image: 'image',
+          column: 'column',
+        },
+      },
       common: {
         left: 'Left',
         top: 'Top',

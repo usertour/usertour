@@ -2121,6 +2121,18 @@ const translations = {
         sameTab: '当前标签页',
         newTab: '新标签页',
       },
+      actionButtons: {
+        delete: '删除{{entity}}',
+        insertLeft: '在左侧插入{{entity}}',
+        insert: '插入{{entity}}',
+        insertRight: '在右侧插入{{entity}}',
+        entity: {
+          button: '按钮',
+          embed: '嵌入',
+          image: '图片',
+          column: '列',
+        },
+      },
       common: {
         left: '左',
         top: '上',
