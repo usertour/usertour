@@ -74,8 +74,12 @@
 
     --surface: 224 19% 11%;
     --surface-raised: 223 18% 22%;
-    --canvas: 226 24% 8%;
-    --canvas-dot: 223 16% 22%;
+    /* Builder canvas floor: pushed below --background (8%) so the floating
+       sidebar panel (which lifts to --card) reads as hovering above the
+       canvas instead of sitting flush with it. Dark shadows barely register
+       on a near-black floor, so the lift comes from this lightness gap. */
+    --canvas: 226 28% 5%;
+    --canvas-dot: 223 16% 18%;
     /* Theme-builder preview "web page" canvas. A neutral mid-grey (not the deep
        app surface) so light widgets lift off it and modal dimmed overlays read
        as a grey wash rather than going to black. Stays a fixed neutral — it
