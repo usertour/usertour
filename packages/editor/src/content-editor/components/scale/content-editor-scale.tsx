@@ -136,7 +136,7 @@ export const ContentEditorScale = memo((props: ContentEditorScaleProps) => {
       validate={validateScale}
       renderDisplay={renderDisplay}
       renderPopoverContent={renderPopoverContent}
-      popoverClassName="z-50 w-72 rounded-md border bg-popover p-4"
+      popoverClassName="z-50 w-72 rounded-md border bg-card p-4"
     />
   );
 });

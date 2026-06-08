@@ -220,7 +220,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
           </PopoverTrigger>
         </EditorErrorTooltipTrigger>
         <PopoverContent
-          className="bg-popover max-h-[480px] overflow-y-auto"
+          className="bg-card max-h-[480px] overflow-y-auto"
           side="right"
           style={{ zIndex: zIndex }}
           sideOffset={10}

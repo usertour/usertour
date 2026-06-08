@@ -62,7 +62,7 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     validate = defaultValidate,
     renderDisplay,
     renderPopoverContent,
-    popoverClassName = 'bg-popover shadow-lg',
+    popoverClassName = 'bg-card shadow-lg',
   } = props;
 
   const {

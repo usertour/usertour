@@ -30,7 +30,7 @@ export const LauncherPosition = (props: LauncherPositionProps) => {
         options={options}
         value={type}
         onChange={(value) => onChange(value as LauncherPositionType)}
-        className="w-full bg-surface shadow-none"
+        className="w-full bg-surface dark:bg-surface-raised shadow-none"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
     </FieldSection>

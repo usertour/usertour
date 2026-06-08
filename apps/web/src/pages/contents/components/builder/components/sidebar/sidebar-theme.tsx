@@ -63,7 +63,7 @@ export const SidebarTheme = () => {
           value={currentVersion.themeId}
           onChange={handleThemeChange}
           placeholder={t('contentBuilder.shared.theme.selectPlaceholder')}
-          className="w-full bg-surface shadow-none hover:bg-muted"
+          className="w-full bg-surface dark:bg-surface-raised shadow-none hover:bg-muted"
           contentStyle={{ zIndex: BUILDER_Z.popover }}
         />
       )}

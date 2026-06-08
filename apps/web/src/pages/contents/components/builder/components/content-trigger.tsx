@@ -123,7 +123,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
 
   return (
     <>
-      <div className="flex flex-col bg-surface p-3.5 rounded-lg space-y-4 relative">
+      <div className="flex flex-col bg-surface dark:bg-surface-raised p-3.5 rounded-lg space-y-4 relative">
         <ContentError
           open={
             showError && (actions.length === 0 || conditions.length === 0 || hasIncompleteActions)

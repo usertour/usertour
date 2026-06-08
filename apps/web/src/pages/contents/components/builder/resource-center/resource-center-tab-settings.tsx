@@ -88,7 +88,7 @@ const TabSettingsBody = () => {
               <ContentErrorAnchor>
                 <Input
                   variant="compact-muted"
-                  className="bg-surface shadow-none"
+                  className="bg-surface dark:bg-surface-raised shadow-none"
                   id="tab-name"
                   value={editingTab.name}
                   placeholder={t('contentBuilder.resourceCenter.tabNamePlaceholder')}

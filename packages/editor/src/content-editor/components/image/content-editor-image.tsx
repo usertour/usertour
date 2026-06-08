@@ -192,12 +192,7 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
           onError={handleImageError}
         />
       </PopoverTrigger>
-      <PopoverContent
-        className="bg-popover"
-        side="right"
-        style={{ zIndex: zIndex }}
-        sideOffset={10}
-      >
+      <PopoverContent className="bg-card" side="right" style={{ zIndex: zIndex }} sideOffset={10}>
         <div className="flex flex-col gap-2.5">
           <WidthControls
             label={t('contentBuilder.editor.image.width')}

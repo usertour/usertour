@@ -256,7 +256,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
       </div>
       {isActive && (
         <PopoverContent
-          className="shadow-none drop-shadow-popover"
+          className="bg-card shadow-none drop-shadow-popover"
           side="left"
           style={{ zIndex }}
           sideOffset={5}
@@ -279,7 +279,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
                 value={width.type}
                 onChange={handleWidthTypeChange}
                 placeholder={t('contentBuilder.editor.width.selectType')}
-                className="shrink"
+                className="shrink bg-surface-raised"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
             </div>

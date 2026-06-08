@@ -11,7 +11,7 @@ export const BannerZIndex = () => {
     <FieldSection title={t('contentBuilder.banner.zIndex')}>
       <Input
         variant="compact-muted"
-        className="bg-surface shadow-none"
+        className="bg-surface dark:bg-surface-raised shadow-none"
         type="number"
         min={0}
         value={localData.zIndex ?? ''}
