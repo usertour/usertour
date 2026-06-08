@@ -5,7 +5,7 @@ import { ContentPlacementProvider } from '@/pages/contents/components/builder/co
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 export const LauncherPlacement = () => {
   const isShowError = useBuilderStore((state) => state.isShowError);

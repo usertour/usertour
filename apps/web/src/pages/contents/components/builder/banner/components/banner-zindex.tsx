@@ -1,7 +1,7 @@
 import { Input } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 export const BannerZIndex = () => {
   const { data: localData, updateData: updateLocalData } = useBannerEditor();

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { BooleanField, SettingsCard } from '@/pages/contents/components/builder/shared/fields';
+import { BooleanField, FieldCard } from '@usertour/ui';
 
 export type ContentSettingsData = {
   enabledBackdrop: boolean;
@@ -34,7 +34,7 @@ export const ContentSettings = (props: ContentSettingsProps) => {
         : undefined;
 
   return (
-    <SettingsCard title={t('contentBuilder.flow.settings')}>
+    <FieldCard title={t('contentBuilder.flow.settings')}>
       <BooleanField
         label={t('contentBuilder.flow.explicitCompletionStep')}
         tooltip={t('contentBuilder.flow.explicitCompletionStepHint')}
@@ -59,7 +59,7 @@ export const ContentSettings = (props: ContentSettingsProps) => {
           onChange={(checked) => update({ enabledBlockTarget: checked })}
         />
       )}
-    </SettingsCard>
+    </FieldCard>
   );
 };
 ContentSettings.displayName = 'ContentSettings';

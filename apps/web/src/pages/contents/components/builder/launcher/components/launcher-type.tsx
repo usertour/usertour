@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { IconPicker } from '@/pages/contents/components/builder/components';
 import { LauncherContentType } from '@/pages/contents/components/builder/launcher/components/launcher-content-type';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 export const LauncherType = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();

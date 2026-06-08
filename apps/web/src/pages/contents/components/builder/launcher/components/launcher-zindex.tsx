@@ -1,7 +1,7 @@
 import { Input } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 export const LauncherZIndex = () => {
   const { updateData: updateLocalData, data: localData } = useLauncherEditor();

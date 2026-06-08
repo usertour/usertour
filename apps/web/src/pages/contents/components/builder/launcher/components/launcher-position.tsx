@@ -2,7 +2,7 @@ import { BUILDER_Z } from '@usertour/constants';
 import { CompactSelect } from '@usertour/ui';
 import { LauncherPositionType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 interface LauncherPositionProps {
   type?: LauncherPositionType;

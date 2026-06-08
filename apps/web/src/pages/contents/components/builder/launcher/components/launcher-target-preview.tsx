@@ -1,7 +1,7 @@
 import { ElementIcon, RiSettings3Line } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 export const LauncherTargetPreview = () => {
   const { gotoLauncherTarget } = useLauncherEditor();
