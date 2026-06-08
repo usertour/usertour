@@ -11,7 +11,6 @@
     --surface-raised: 0 0% 100%;
     --canvas: 220 60% 99%;
     --canvas-dot: 216 30% 90%;
-    --preview-page: 0 0% 100%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -80,11 +79,6 @@
        on a near-black floor, so the lift comes from this lightness gap. */
     --canvas: 226 28% 5%;
     --canvas-dot: 223 16% 18%;
-    /* Theme-builder preview "web page" canvas. A neutral mid-grey (not the deep
-       app surface) so light widgets lift off it and modal dimmed overlays read
-       as a grey wash rather than going to black. Stays a fixed neutral — it
-       simulates an arbitrary page, not the dark app chrome. */
-    --preview-page: 215 16% 34%;
 
     --muted: 223 16% 14%;
     --muted-foreground: 225 13% 64%;
@@ -148,11 +142,5 @@
     background-color: hsl(var(--canvas));
     background-image: radial-gradient(hsl(var(--canvas-dot)) 1.1px, transparent 1.1px);
     background-size: 24px 24px;
-  }
-
-  /* Theme-builder preview "web page" canvas. Part of the canvas family, so it
-     is consumed via a component class here rather than a registered color. */
-  .bg-preview-page {
-    background-color: hsl(var(--preview-page));
   }
 }

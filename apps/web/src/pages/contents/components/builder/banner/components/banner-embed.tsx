@@ -46,11 +46,11 @@ interface PlacementPreviewProps {
 const PagePlacementPreview = (props: PlacementPreviewProps) => {
   const { placement, banner } = props;
   return (
-    <div className="h-full flex flex-col relative bg-white">
+    <div className="h-full flex flex-col relative bg-white dark:bg-card">
       {placement === BannerEmbedPlacement.TOP_OF_PAGE && (
         <div className="flex-shrink-0">{banner}</div>
       )}
-      <div className="flex-1 overflow-y-auto bg-white" />
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-card" />
       {placement === BannerEmbedPlacement.BOTTOM_OF_PAGE && (
         <div className="flex-shrink-0">{banner}</div>
       )}
@@ -67,7 +67,7 @@ interface ElementPlacementPreviewProps extends PlacementPreviewProps {
 const ElementPlacementPreview = (props: ElementPlacementPreviewProps) => {
   const { placement, banner, targetLabel } = props;
   return (
-    <div className="h-full flex flex-col relative bg-white">
+    <div className="h-full flex flex-col relative bg-white dark:bg-card">
       <div className="flex-1 overflow-y-auto p-12 pt-20">
         {placement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT && banner}
         <div className="border-2 border-dashed border-blue-400 bg-blue-50 rounded min-h-[80px] flex flex-col justify-center">
