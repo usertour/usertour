@@ -99,9 +99,22 @@ const SidebarContent = memo(
       const { t } = useTranslation();
       // Clicking the row opens the step for editing (and the canvas previews
       // it). There is no separate select-without-edit affordance.
-      const handleEdit = useCallback(() => {
-        onClick?.('edit', index);
-      }, [onClick, index]);
+      //
+      // The delete confirmation is an AlertDialog that Radix portals out of
+      // this row's DOM subtree. Its synthetic click events (Cancel / Delete /
+      // the dimmed overlay) still bubble up the *React* tree to this row-level
+      // handler, which would wrongly open the step — e.g. clicking Cancel would
+      // land the user in the step detail. Only treat a click as a row click
+      // when its real DOM target lives inside the row.
+      const handleEdit = useCallback(
+        (event: React.MouseEvent<HTMLDivElement>) => {
+          if (!event.currentTarget.contains(event.target as Node)) {
+            return;
+          }
+          onClick?.('edit', index);
+        },
+        [onClick, index],
+      );
 
       const handleEditTrigger = useCallback(() => {
         onClick?.('trigger', index);
