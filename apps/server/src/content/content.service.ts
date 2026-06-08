@@ -641,27 +641,13 @@ export class ContentService {
     });
   }
 
-  async getContentWithRelations(
-    id: string,
-    projectId: string,
-    include?: {
-      editedVersion?: boolean;
-      publishedVersion?: boolean;
-    },
-  ) {
+  async getContentWithRelations(id: string, projectId: string, include?: Prisma.ContentInclude) {
     return await this.prisma.content.findFirst({
       where: {
         id,
         projectId,
       },
-      include: {
-        editedVersion: include?.editedVersion ?? false,
-        // Publishing is per-environment. Always include the env rows; nest the
-        // published version object only when the publishedVersion expand is set.
-        contentOnEnvironments: {
-          include: { publishedVersion: include?.publishedVersion ?? false },
-        },
-      },
+      include,
     });
   }
 

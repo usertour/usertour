@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Content, ContentVersion, Question } from '../../models/content.model';
+import { Content, ContentV2, ContentVersion, Question } from '../../models/content.model';
 import {
   ContentExpandType,
   ContentOrderByType,
@@ -17,11 +17,17 @@ import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content-question';
+// v1 (legacy): the single top-level publishedVersion relation.
+type ContentWithVersions = Prisma.ContentGetPayload<{
+  include: { editedVersion: true; publishedVersion: true };
+}>;
+
+// v2: per-environment publish rows, each optionally carrying its published version.
 type ContentOnEnvironmentWithVersion = Prisma.ContentOnEnvironmentGetPayload<{
   include: { publishedVersion: true };
 }>;
 
-type ContentWithVersions = Prisma.ContentGetPayload<{
+type ContentWithEnvironments = Prisma.ContentGetPayload<{
   include: { editedVersion: true };
 }> & {
   // The env rows are always loaded; the nested `publishedVersion` object is only
@@ -45,6 +51,8 @@ export class OpenAPIContentService {
 
   constructor(private contentService: ContentService) {}
 
+  // --- v1 (legacy: single publishedVersionId/publishedVersion) -------------
+
   async getContent(id: string, projectId: string, query?: GetContentQueryDto): Promise<Content> {
     const { expand } = query;
     const content = await this.contentService.getContentWithRelations(id, projectId, {
@@ -56,7 +64,7 @@ export class OpenAPIContentService {
       throw new ContentNotFoundError();
     }
 
-    return this.mapPrismaContentToApiContent(content, expand);
+    return this.mapPrismaContentToApiContent(content as ContentWithVersions, expand);
   }
 
   async listContent(
@@ -68,13 +76,7 @@ export class OpenAPIContentService {
 
     const include = {
       editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
-      // Publishing is per-environment. Always include the env rows; nest the
-      // published version object only when the publishedVersion expand is set.
-      contentOnEnvironments: {
-        include: {
-          publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
-        },
-      },
+      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     };
     const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
 
@@ -84,9 +86,82 @@ export class OpenAPIContentService {
       limit,
       async (params) =>
         this.contentService.listContentWithRelations(projectId, params, include, sortOrders, type),
-      (node) => this.mapPrismaContentToApiContent(node, expand),
+      (node) => this.mapPrismaContentToApiContent(node as ContentWithVersions, expand),
       { ...(expand ? { expand } : {}), ...(type ? { type } : {}) },
     );
+  }
+
+  // --- v2 (per-environment publish state via environments[]) ---------------
+
+  async getContentV2(
+    id: string,
+    projectId: string,
+    query?: GetContentQueryDto,
+  ): Promise<ContentV2> {
+    const { expand } = query;
+    const content = await this.contentService.getContentWithRelations(
+      id,
+      projectId,
+      this.v2Include(expand),
+    );
+
+    if (!content) {
+      throw new ContentNotFoundError();
+    }
+
+    return this.mapPrismaContentToApiContentV2(content as ContentWithEnvironments, expand);
+  }
+
+  async listContentV2(
+    requestUrl: string,
+    projectId: string,
+    query: ListContentQueryDto,
+  ): Promise<{ results: ContentV2[]; next: string | null; previous: string | null }> {
+    const { cursor, orderBy, limit, expand, type } = query;
+
+    const include = this.v2Include(expand);
+    const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
+
+    return paginate(
+      requestUrl,
+      cursor,
+      limit,
+      async (params) =>
+        this.contentService.listContentWithRelations(projectId, params, include, sortOrders, type),
+      (node) => this.mapPrismaContentToApiContentV2(node as ContentWithEnvironments, expand),
+      { ...(expand ? { expand } : {}), ...(type ? { type } : {}) },
+    );
+  }
+
+  // The v2 include: editedVersion plus the per-environment publish rows. The
+  // nested published version object is loaded only when the expand is requested.
+  private v2Include(expand?: ContentExpandType[]): Prisma.ContentInclude {
+    return {
+      editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
+      contentOnEnvironments: {
+        include: {
+          publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
+        },
+      },
+    };
+  }
+
+  // --- mappers -------------------------------------------------------------
+
+  private mapVersion(version: {
+    id: string;
+    sequence: number;
+    updatedAt: Date;
+    createdAt: Date;
+  }): ContentVersion {
+    return {
+      id: version.id,
+      object: OpenApiObjectType.CONTENT_VERSION,
+      number: version.sequence,
+      questions: [],
+      updatedAt: version.updatedAt.toISOString(),
+      createdAt: version.createdAt.toISOString(),
+    };
   }
 
   private mapPrismaContentToApiContent(
@@ -101,14 +176,31 @@ export class OpenAPIContentService {
       editedVersionId: content.editedVersionId,
       editedVersion:
         expand?.includes(ContentExpandType.EDITED_VERSION) && content.editedVersion
-          ? {
-              id: content.editedVersion.id,
-              object: OpenApiObjectType.CONTENT_VERSION,
-              number: content.editedVersion.sequence,
-              questions: [],
-              updatedAt: content.editedVersion.updatedAt.toISOString(),
-              createdAt: content.editedVersion.createdAt.toISOString(),
-            }
+          ? this.mapVersion(content.editedVersion)
+          : undefined,
+      publishedVersionId: content.publishedVersionId,
+      publishedVersion:
+        expand?.includes(ContentExpandType.PUBLISHED_VERSION) && content.publishedVersion
+          ? this.mapVersion(content.publishedVersion)
+          : undefined,
+      updatedAt: content.updatedAt.toISOString(),
+      createdAt: content.createdAt.toISOString(),
+    } as Content;
+  }
+
+  private mapPrismaContentToApiContentV2(
+    content: ContentWithEnvironments,
+    expand?: ContentExpandType[],
+  ): ContentV2 {
+    return {
+      id: content.id,
+      object: OpenApiObjectType.CONTENT,
+      name: content.name,
+      type: content.type,
+      editedVersionId: content.editedVersionId,
+      editedVersion:
+        expand?.includes(ContentExpandType.EDITED_VERSION) && content.editedVersion
+          ? this.mapVersion(content.editedVersion)
           : undefined,
       environments: (content.contentOnEnvironments ?? []).map((coe) => ({
         environmentId: coe.environmentId,
@@ -117,19 +209,12 @@ export class OpenAPIContentService {
         publishedAt: coe.publishedAt.toISOString(),
         publishedVersion:
           expand?.includes(ContentExpandType.PUBLISHED_VERSION) && coe.publishedVersion
-            ? {
-                id: coe.publishedVersion.id,
-                object: OpenApiObjectType.CONTENT_VERSION,
-                number: coe.publishedVersion.sequence,
-                questions: [],
-                updatedAt: coe.publishedVersion.updatedAt.toISOString(),
-                createdAt: coe.publishedVersion.createdAt.toISOString(),
-              }
+            ? this.mapVersion(coe.publishedVersion)
             : undefined,
       })),
       updatedAt: content.updatedAt.toISOString(),
       createdAt: content.createdAt.toISOString(),
-    } as Content;
+    } as ContentV2;
   }
 
   async getContentVersion(

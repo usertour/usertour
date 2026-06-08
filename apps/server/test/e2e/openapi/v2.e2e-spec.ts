@@ -3,8 +3,17 @@ import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
+import { OpenApiObjectType } from '@/common/openapi/types';
+
 import { gqlData, graphql } from '../auth';
-import { buildBizUser, buildEnvironment, buildMembership, buildProject } from '../factories';
+import {
+  buildBizUser,
+  buildContent,
+  buildEnvironment,
+  buildMembership,
+  buildProject,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -26,6 +35,10 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
   let project2: string;
   let env2: string;
   const bizUserExternalId = 'v2-biz-1';
+
+  // A published content in projectA/envA, to assert the v2 environments[] shape.
+  let publishedContentId: string;
+  let publishedVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){
@@ -69,6 +82,20 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
     env2 = (await buildEnvironment(prisma, { projectId: project2 })).id;
 
     await buildBizUser(prisma, { environmentId: envA, externalId: bizUserExternalId });
+
+    // Publish a content to envA via a ContentOnEnvironment row (the real,
+    // per-environment publish state that v2 exposes as environments[]).
+    const content = await buildContent(prisma, { projectId: projectA, environmentId: envA });
+    publishedContentId = content.id;
+    publishedVersionId = (await buildVersion(prisma, { contentId: publishedContentId })).id;
+    await prisma.contentOnEnvironment.create({
+      data: {
+        environmentId: envA,
+        contentId: publishedContentId,
+        published: true,
+        publishedVersionId,
+      },
+    });
   }, 60000);
 
   afterAll(async () => {
@@ -155,6 +182,34 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
       const res = await v2('get', `/v2/projects/${projectA}/content`, full);
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.results)).toBe(true);
+    });
+
+    it('exposes per-environment publish state via environments[] (not legacy fields)', async () => {
+      const res = await v2('get', `/v2/projects/${projectA}/content/${publishedContentId}`, full);
+      expect(res.status).toBe(200);
+      expect(res.body.environments).toContainEqual(
+        expect.objectContaining({ environmentId: envA, published: true, publishedVersionId }),
+      );
+      // v2 drops the deprecated single-version legacy fields.
+      expect(res.body).not.toHaveProperty('publishedVersionId');
+      expect(res.body).not.toHaveProperty('publishedVersion');
+    });
+
+    it('expands environments[i].publishedVersion with the publishedVersion expand', async () => {
+      const res = await v2(
+        'get',
+        `/v2/projects/${projectA}/content/${publishedContentId}?expand=publishedVersion`,
+        full,
+      );
+      expect(res.status).toBe(200);
+      const env = res.body.environments.find(
+        (e: { environmentId: string }) => e.environmentId === envA,
+      );
+      expect(env).toBeDefined();
+      expect(env.publishedVersion).toMatchObject({
+        id: publishedVersionId,
+        object: OpenApiObjectType.CONTENT_VERSION,
+      });
     });
 
     it('reads attribute-definitions (200)', async () => {

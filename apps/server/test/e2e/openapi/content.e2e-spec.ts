@@ -27,7 +27,7 @@ describe('OpenAPI /v1/content (e2e)', () => {
   let versionId: string;
   let foreignContentId: string;
 
-  // A separate content with a per-environment publish row (the real publish state).
+  // A separate, published content. v1 reads the legacy Content.publishedVersionId.
   let publishedContentId: string;
   let publishedVersionId: string;
 
@@ -57,9 +57,8 @@ describe('OpenAPI /v1/content (e2e)', () => {
     });
     foreignContentId = foreign.id;
 
-    // Seed a content whose publish state lives on a ContentOnEnvironment row
-    // (per-environment publishing — the correct source of truth). No factory
-    // exists for ContentOnEnvironment, so create it directly.
+    // Seed a published content. v1's response reads the legacy
+    // Content.publishedVersionId scalar, so set it directly.
     const publishedContent = await buildContent(prisma, {
       projectId: fxA.projectId,
       environmentId: fxA.environmentId,
@@ -68,13 +67,9 @@ describe('OpenAPI /v1/content (e2e)', () => {
     publishedContentId = publishedContent.id;
     const publishedVersion = await buildVersion(prisma, { contentId: publishedContentId });
     publishedVersionId = publishedVersion.id;
-    await prisma.contentOnEnvironment.create({
-      data: {
-        environmentId: fxA.environmentId,
-        contentId: publishedContentId,
-        published: true,
-        publishedVersionId,
-      },
+    await prisma.content.update({
+      where: { id: publishedContentId },
+      data: { publishedVersionId },
     });
 
     fxPage = await seedApiFixture(prisma, { projectName: 'openapi-content-page' });
@@ -149,36 +144,30 @@ describe('OpenAPI /v1/content (e2e)', () => {
       });
     });
 
-    it('returns an empty environments array for unpublished content', async () => {
+    it('returns the legacy publish shape (publishedVersionId, no environments[]) on v1', async () => {
       const res = await openapi(app, {
         method: 'get',
         path: `/v1/content/${contentId}`,
         token: fxA.apiKey,
       });
       expect(res.status).toBe(200);
-      expect(res.body.environments).toEqual([]);
-      // The deprecated legacy single-version fields must be gone.
-      expect(res.body).not.toHaveProperty('publishedVersionId');
-      expect(res.body).not.toHaveProperty('publishedVersion');
+      // v1 is frozen on the single-version legacy shape; per-environment
+      // environments[] is a v2-only addition.
+      expect(res.body).not.toHaveProperty('environments');
+      expect(res.body.publishedVersionId).toBeNull();
     });
 
-    it('exposes per-environment publish state via environments[]', async () => {
+    it('exposes the legacy publishedVersionId', async () => {
       const res = await openapi(app, {
         method: 'get',
         path: `/v1/content/${publishedContentId}`,
         token: fxA.apiKey,
       });
       expect(res.status).toBe(200);
-      expect(res.body.environments).toContainEqual(
-        expect.objectContaining({
-          environmentId: fxA.environmentId,
-          published: true,
-          publishedVersionId,
-        }),
-      );
+      expect(res.body.publishedVersionId).toBe(publishedVersionId);
     });
 
-    it('expands environments[i].publishedVersion with the publishedVersion expand', async () => {
+    it('expands publishedVersion', async () => {
       const res = await openapi(app, {
         method: 'get',
         path: `/v1/content/${publishedContentId}`,
@@ -186,11 +175,7 @@ describe('OpenAPI /v1/content (e2e)', () => {
         query: { expand: 'publishedVersion' },
       });
       expect(res.status).toBe(200);
-      const env = res.body.environments.find(
-        (e: { environmentId: string }) => e.environmentId === fxA.environmentId,
-      );
-      expect(env).toBeDefined();
-      expect(env.publishedVersion).toMatchObject({
+      expect(res.body.publishedVersion).toMatchObject({
         id: publishedVersionId,
         object: OpenApiObjectType.CONTENT_VERSION,
       });

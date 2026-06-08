@@ -14,7 +14,7 @@ import {
   ListContentVersionsQueryDto,
 } from '../../services/content/content.dto';
 import { OpenAPIContentService } from '../../services/content/content.service';
-import { Content, ContentVersion } from '../../models/content.model';
+import { ContentV2, ContentVersion } from '../../models/content.model';
 
 @ApiTags('Content (v2)')
 @Controller('v2/projects/:projectId')
@@ -27,27 +27,27 @@ export class OpenAPIV2ContentController {
   @Get('content')
   @RequireCapability(Capability.ContentRead)
   @ApiOperation({ summary: 'List all content' })
-  @ApiResponse({ status: 200, description: 'List of content', type: Content, isArray: true })
+  @ApiResponse({ status: 200, description: 'List of content', type: ContentV2, isArray: true })
   async listContent(
     @RequestUrl() requestUrl: string,
     @Param('projectId') projectId: string,
     @Query() query: ListContentQueryDto,
-  ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentService.listContent(requestUrl, projectId, query);
+  ): Promise<{ results: ContentV2[]; next: string | null; previous: string | null }> {
+    return this.openAPIContentService.listContentV2(requestUrl, projectId, query);
   }
 
   @Get('content/:id')
   @RequireCapability(Capability.ContentRead)
   @ApiOperation({ summary: 'Get a content by ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
-  @ApiResponse({ status: 200, description: 'Content found', type: Content })
+  @ApiResponse({ status: 200, description: 'Content found', type: ContentV2 })
   @ApiResponse({ status: 404, description: 'Content not found' })
   async getContent(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
     @Query() query: GetContentQueryDto,
-  ): Promise<Content> {
-    return this.openAPIContentService.getContent(id, projectId, query);
+  ): Promise<ContentV2> {
+    return this.openAPIContentService.getContentV2(id, projectId, query);
   }
 
   @Get('content-versions')

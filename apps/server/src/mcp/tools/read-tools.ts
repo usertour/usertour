@@ -128,8 +128,9 @@ export function buildReadTools(): McpTool[] {
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
-        // `type` is filtered server-side (correct across pagination), not on one page.
-        const result = await ctx.services.content.listContent('mcp://content', ctx.projectId, {
+        // v2 shape (per-environment publish state); `type` is filtered
+        // server-side (correct across pagination), not on a single page.
+        const result = await ctx.services.content.listContentV2('mcp://content', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
           type: asString(args.type),
@@ -161,7 +162,8 @@ export function buildReadTools(): McpTool[] {
         const expand = Array.isArray(args.expand)
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpandType[])
           : undefined;
-        return ctx.services.content.getContent(id, ctx.projectId, { expand });
+        // v2 shape (per-environment publish state via environments[]).
+        return ctx.services.content.getContentV2(id, ctx.projectId, { expand });
       },
     },
 
