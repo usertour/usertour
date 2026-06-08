@@ -44,30 +44,31 @@ model Account {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime        @updatedAt @db.Timestamptz(6)
-  email           String?         @unique
-  emailVerified   DateTime?       @db.Timestamptz()
-  password        String?
-  avatarUrl       String?
-  name            String?
+  id                     String                  @id @default(cuid())
+  createdAt              DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(6)
+  email                  String?                 @unique
+  emailVerified          DateTime?               @db.Timestamptz()
+  password               String?
+  avatarUrl              String?
+  name                   String?
   /// Whether the user is a system admin (self-host only)
-  isSystemAdmin   Boolean         @default(false)
+  isSystemAdmin          Boolean                 @default(false)
   /// Whether the user is disabled (cannot login)
-  disabled        Boolean         @default(false)
+  disabled               Boolean                 @default(false)
   /// Whether the user has completed TOTP two-factor setup
-  twoFactorEnabled Boolean        @default(false)
+  twoFactorEnabled       Boolean                 @default(false)
   /// AES-256-GCM encrypted TOTP secret. Never log or expose.
-  twoFactorSecret  String?
+  twoFactorSecret        String?
   /// Timestamp when 2FA was last enabled
-  twoFactorEnabledAt DateTime?    @db.Timestamptz(6)
-  projects        UserOnProject[]
-  codes           Code[]
-  accounts        Account[]
-  refreshTokens   RefreshToken[]
-  invites         Invite[]
+  twoFactorEnabledAt     DateTime?               @db.Timestamptz(6)
+  projects               UserOnProject[]
+  codes                  Code[]
+  accounts               Account[]
+  refreshTokens          RefreshToken[]
+  invites                Invite[]
   twoFactorRecoveryCodes TwoFactorRecoveryCode[]
+  apiTokens              ApiToken[]
 }
 
 /// One-time backup codes for 2FA account recovery. Stored as bcrypt hash.
@@ -85,27 +86,27 @@ model TwoFactorRecoveryCode {
 /// Instance-level settings for self-hosted mode
 model InstanceSetting {
   /// Primary key
-  id          String   @id @default(cuid())
+  id                                      String   @id @default(cuid())
   /// Singleton key to ensure exactly one instance setting record exists
-  key         String   @unique @default("instance")
+  key                                     String   @unique @default("instance")
   /// Stable instance identifier
-  instanceId  String   @unique @default(cuid())
+  instanceId                              String   @unique @default(cuid())
   /// Instance display name
-  name        String?
+  name                                    String?
   /// Instance system admin contact email
-  contactEmail String?
+  contactEmail                            String?
   /// Whether public user registration is allowed
-  allowUserRegistration Boolean @default(true)
+  allowUserRegistration                   Boolean  @default(true)
   /// Whether all users must enable 2FA. Only meaningful in self-hosted mode.
-  require2FA  Boolean @default(false)
+  require2FA                              Boolean  @default(false)
   /// Whether self-host projects can manage project-level subscriptions
   allowProjectLevelSubscriptionManagement Boolean?
   /// Instance-level license JWT token
-  license     String?
+  license                                 String?
   /// Create timestamp
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdAt                               DateTime @default(now()) @db.Timestamptz(6)
   /// Update timestamp
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt                               DateTime @updatedAt @db.Timestamptz(6)
 }
 
 model Register {
@@ -141,10 +142,10 @@ model Invite {
 }
 
 model Code {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  user      User     @relation(fields: [userId], references: [id])
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id])
   userId    String
   /// When this code stops being valid. Set at creation (typically createdAt + 1h).
   /// Codes are single-use (deleted on consumption); this protects against forwarded
@@ -154,32 +155,33 @@ model Code {
   /// expiresAt, and the `expiresAt > now()` read filter naturally treats
   /// those rows as expired.
   expiresAt DateTime? @db.Timestamptz(6)
-  ext       Json?    @db.JsonB
+  ext       Json?     @db.JsonB
 }
 
 model Project {
-  id             String          @id @default(cuid())
-  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
-  name           String
-  logoUrl        String?
+  id                  String              @id @default(cuid())
+  createdAt           DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(6)
+  name                String
+  logoUrl             String?
   /// Whether this project is assigned to use the instance license entitlement
-  usesInstanceLicense Boolean    @default(false)
+  usesInstanceLicense Boolean             @default(false)
   /// Stripe customer ID
-  customerId     String?
+  customerId          String?
   /// Stripe subscription ID
-  subscriptionId String?
+  subscriptionId      String?
   /// License
-  license        String?
-  users          UserOnProject[]
-  environments   Environment[]
-  themes         Theme[]
-  attributes     Attribute[]
-  events         Event[]
-  localizations  Localization[]
-  invites        Invite[]
-  contents       Content[]
-  segments       Segment[]
+  license             String?
+  users               UserOnProject[]
+  apiTokens           ApiTokenOnProject[]
+  environments        Environment[]
+  themes              Theme[]
+  attributes          Attribute[]
+  events              Event[]
+  localizations       Localization[]
+  invites             Invite[]
+  contents            Content[]
+  segments            Segment[]
 }
 
 model UserOnProject {
@@ -233,6 +235,47 @@ model AccessToken {
 
   @@index([environmentId])
   @@index([accessToken])
+}
+
+/// User-owned API token for the public REST API (v2) and MCP/OAuth.
+/// Authority at request time = ROLE_CAPABILITIES[owner's role on the project] ∩ scopes.
+model ApiToken {
+  id           String              @id @default(cuid())
+  createdAt    DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime            @updatedAt @db.Timestamptz(6)
+  name         String
+  prefix       String              @default("ut_")
+  /// SHA-256 hash of the token secret. Plaintext is returned once at creation and never stored.
+  hashedSecret String              @unique
+  /// Trailing characters of the secret, for display only (e.g. "···a1b2").
+  partialKey   String
+  /// Capability[] (from @usertour/types) the token may exercise, intersected with the owner's role per request.
+  scopes       Json                @db.JsonB
+  /// Set when issued via an OAuth grant; null for user-created personal tokens.
+  clientId     String?
+  isActive     Boolean             @default(true)
+  expiresAt    DateTime?           @db.Timestamptz(6)
+  lastUsedAt   DateTime?           @db.Timestamptz(6)
+  user         User                @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userId       String
+  projects     ApiTokenOnProject[]
+
+  @@index([userId])
+  @@index([hashedSecret])
+  @@index([clientId])
+}
+
+/// Join table scoping an ApiToken to one or more projects (mirrors UserOnProject).
+model ApiTokenOnProject {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+  apiToken   ApiToken? @relation(fields: [apiTokenId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  project    Project?  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  apiTokenId String?
+  projectId  String?
+
+  @@unique([apiTokenId, projectId])
 }
 
 model Theme {

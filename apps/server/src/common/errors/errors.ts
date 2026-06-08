@@ -191,6 +191,42 @@ export class MissingApiKeyError extends OpenAPIError {
   };
 }
 
+export class ExpiredApiKeyError extends OpenAPIError {
+  code = 'E1020';
+  statusCode = HttpStatus.UNAUTHORIZED;
+  messageDict = {
+    en: 'API key has expired',
+    'zh-CN': 'API 密钥已过期',
+  };
+}
+
+export class ProjectNotInTokenScopeError extends OpenAPIError {
+  code = 'E1011';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'API key is not scoped to the requested project',
+    'zh-CN': 'API 密钥未授权访问该项目',
+  };
+}
+
+export class InsufficientScopeError extends OpenAPIError {
+  code = 'E1012';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'API key lacks the required scope for this operation',
+    'zh-CN': 'API 密钥缺少此操作所需的权限范围',
+  };
+}
+
+export class EnvironmentProjectMismatchError extends OpenAPIError {
+  code = 'E1019';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'Environment does not belong to the requested project',
+    'zh-CN': '环境不属于该项目',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
