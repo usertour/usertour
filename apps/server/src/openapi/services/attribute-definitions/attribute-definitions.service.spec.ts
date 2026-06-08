@@ -90,7 +90,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
-        environment,
+        environment.projectId,
         query,
       );
 
@@ -137,7 +137,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       };
 
       await expect(
-        service.listAttributeDefinitions('/v1/attribute-definitions', environment, query),
+        service.listAttributeDefinitions('/v1/attribute-definitions', environment.projectId, query),
       ).rejects.toThrow(new InvalidLimitError());
     });
 
@@ -192,7 +192,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
-        environment,
+        environment.projectId,
         query,
       );
 
@@ -274,7 +274,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
-        environment,
+        environment.projectId,
         query,
       );
 
@@ -356,7 +356,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
-        environment,
+        environment.projectId,
         query,
       );
 
@@ -418,7 +418,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
 
       const result = await service.listAttributeDefinitions(
         '/v1/attribute-definitions',
-        environment,
+        environment.projectId,
         query,
       );
 
@@ -457,7 +457,7 @@ describe('OpenAPIAttributeDefinitionsService', () => {
       };
 
       await expect(
-        service.listAttributeDefinitions('/v1/attribute-definitions', environment, query),
+        service.listAttributeDefinitions('/v1/attribute-definitions', environment.projectId, query),
       ).rejects.toThrow(new InvalidScopeError(invalidScope));
     });
   });

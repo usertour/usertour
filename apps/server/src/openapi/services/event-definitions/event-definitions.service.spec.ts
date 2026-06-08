@@ -81,7 +81,7 @@ describe('OpenAPIEventDefinitionsService', () => {
         },
       });
 
-      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment, {
+      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment.projectId, {
         ...mockQuery,
         cursor: undefined,
       });
@@ -107,7 +107,7 @@ describe('OpenAPIEventDefinitionsService', () => {
         },
       });
 
-      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment, {
+      const result = await service.listEventDefinitions(mockRequestUrl, mockEnvironment.projectId, {
         ...mockQuery,
         cursor: undefined,
       });
@@ -130,7 +130,7 @@ describe('OpenAPIEventDefinitionsService', () => {
         },
       });
 
-      await service.listEventDefinitions(mockRequestUrl, mockEnvironment, defaultQuery);
+      await service.listEventDefinitions(mockRequestUrl, mockEnvironment.projectId, defaultQuery);
 
       expect(mockBusinessEventsService.listWithPagination).toHaveBeenCalledWith(
         mockEnvironment.projectId,
