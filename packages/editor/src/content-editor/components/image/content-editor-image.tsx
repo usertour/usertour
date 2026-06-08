@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Popover, PopoverContent, PopoverTrigger, useToast } from '@usertour/ui';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
@@ -67,6 +68,7 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
     attributes,
   } = useContentEditorContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
 
   // Reset image loaded state when URL changes
@@ -198,13 +200,13 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
       >
         <div className="flex flex-col gap-2.5">
           <WidthControls
-            label="Image width"
+            label={t('contentBuilder.editor.image.width')}
             value={ensureDimensionWithDefaults(element.width)}
             options={IMAGE_WIDTH_TYPE_OPTIONS}
             onTypeChange={handleWidthTypeChange}
             onValueChange={handleWidthValueChange}
             zIndex={zIndex}
-            inputPlaceholder="Image width"
+            inputPlaceholder={t('contentBuilder.editor.image.width')}
           />
 
           <MarginControls

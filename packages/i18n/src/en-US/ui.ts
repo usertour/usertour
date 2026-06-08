@@ -2238,6 +2238,12 @@ const translations = {
         actions: 'Actions',
         createNew: '+ Create new attribute',
       },
+      link: {
+        url: 'Link URL',
+        removeLink: 'Remove link',
+        sameTab: 'Same tab',
+        newTab: 'New tab',
+      },
       common: {
         left: 'Left',
         top: 'Top',

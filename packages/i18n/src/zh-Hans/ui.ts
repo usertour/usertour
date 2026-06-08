@@ -2115,6 +2115,12 @@ const translations = {
         actions: '操作',
         createNew: '+ 新建属性',
       },
+      link: {
+        url: '链接 URL',
+        removeLink: '移除链接',
+        sameTab: '当前标签页',
+        newTab: '新标签页',
+      },
       common: {
         left: '左',
         top: '上',
