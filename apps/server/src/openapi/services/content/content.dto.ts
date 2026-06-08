@@ -84,6 +84,13 @@ export class ListContentQueryDto {
   @IsOptional()
   @IsEnum(ContentOrderByType, { each: true })
   orderBy?: ContentOrderByType[];
+
+  @ApiProperty({
+    description: 'Filter by content type (e.g. flow, checklist, launcher, banner, survey)',
+    required: false,
+  })
+  @IsOptional()
+  type?: string;
 }
 
 export class GetContentVersionQueryDto {

@@ -34,6 +34,23 @@ export class ContentVersion {
   createdAt: string;
 }
 
+export class ContentEnvironment {
+  @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
+  environmentId: string;
+
+  @ApiProperty({ example: true })
+  published: boolean;
+
+  @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
+  publishedVersionId: string;
+
+  @ApiProperty({ example: '2022-10-17T12:34:56.000+00:00' })
+  publishedAt: string;
+
+  @ApiProperty({ type: () => ContentVersion, nullable: true })
+  publishedVersion?: ContentVersion;
+}
+
 export class Content {
   @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
   id: string;
@@ -53,11 +70,8 @@ export class Content {
   @ApiProperty({ nullable: true })
   editedVersion?: ContentVersion;
 
-  @ApiProperty({ example: 'cm9cs634h00001mp50l45n7kz' })
-  publishedVersionId: string;
-
-  @ApiProperty({ nullable: true })
-  publishedVersion?: ContentVersion;
+  @ApiProperty({ type: [ContentEnvironment] })
+  environments: ContentEnvironment[];
 
   @ApiProperty({ example: '2022-10-17T12:34:56.000+00:00' })
   updatedAt: string;

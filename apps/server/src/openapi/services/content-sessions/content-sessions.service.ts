@@ -213,7 +213,9 @@ export class OpenAPIContentSessionsService {
               name: session.content.name,
               type: session.content.type,
               editedVersionId: session.content.editedVersionId,
-              publishedVersionId: session.content.publishedVersionId,
+              // Per-environment publish state is not loaded on the session's
+              // content expand; the dedicated content endpoints populate it.
+              environments: [],
               updatedAt: session.content.updatedAt.toISOString(),
               createdAt: session.content.createdAt.toISOString(),
             }

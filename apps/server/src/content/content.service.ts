@@ -656,7 +656,11 @@ export class ContentService {
       },
       include: {
         editedVersion: include?.editedVersion ?? false,
-        publishedVersion: include?.publishedVersion ?? false,
+        // Publishing is per-environment. Always include the env rows; nest the
+        // published version object only when the publishedVersion expand is set.
+        contentOnEnvironments: {
+          include: { publishedVersion: include?.publishedVersion ?? false },
+        },
       },
     });
   }
@@ -723,9 +727,10 @@ export class ContentService {
     },
     include?: Prisma.ContentInclude,
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
+    type?: string,
   ) {
     const baseQuery = {
-      where: { projectId },
+      where: { projectId, ...(type ? { type } : {}) },
       include,
       orderBy,
     };

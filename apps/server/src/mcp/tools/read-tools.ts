@@ -128,16 +128,13 @@ export function buildReadTools(): McpTool[] {
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        // `type` is filtered server-side (correct across pagination), not on one page.
         const result = await ctx.services.content.listContent('mcp://content', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          type: asString(args.type),
         });
-        const payload = toListPayload(result);
-        const type = asString(args.type);
-        if (type) {
-          payload.items = payload.items.filter((item) => (item as { type?: string }).type === type);
-        }
-        return payload;
+        return toListPayload(result);
       },
     },
 

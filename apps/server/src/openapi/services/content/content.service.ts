@@ -17,12 +17,21 @@ import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content-question';
-type ContentWithVersions = Prisma.ContentGetPayload<{
-  include: {
-    editedVersion: true;
-    publishedVersion: true;
-  };
+type ContentOnEnvironmentWithVersion = Prisma.ContentOnEnvironmentGetPayload<{
+  include: { publishedVersion: true };
 }>;
+
+type ContentWithVersions = Prisma.ContentGetPayload<{
+  include: { editedVersion: true };
+}> & {
+  // The env rows are always loaded; the nested `publishedVersion` object is only
+  // present when the publishedVersion expand is requested, so it's optional here.
+  contentOnEnvironments?: Array<
+    Omit<ContentOnEnvironmentWithVersion, 'publishedVersion'> & {
+      publishedVersion?: ContentOnEnvironmentWithVersion['publishedVersion'] | null;
+    }
+  >;
+};
 
 type VersionWithContent = Prisma.VersionGetPayload<{
   include: {
@@ -55,11 +64,17 @@ export class OpenAPIContentService {
     projectId: string,
     query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const { cursor, orderBy, limit, expand } = query;
+    const { cursor, orderBy, limit, expand, type } = query;
 
     const include = {
       editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
-      publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
+      // Publishing is per-environment. Always include the env rows; nest the
+      // published version object only when the publishedVersion expand is set.
+      contentOnEnvironments: {
+        include: {
+          publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
+        },
+      },
     };
     const sortOrders = parseOrderBy(orderBy || [ContentOrderByType.CREATED_AT]);
 
@@ -68,9 +83,9 @@ export class OpenAPIContentService {
       cursor,
       limit,
       async (params) =>
-        this.contentService.listContentWithRelations(projectId, params, include, sortOrders),
+        this.contentService.listContentWithRelations(projectId, params, include, sortOrders, type),
       (node) => this.mapPrismaContentToApiContent(node, expand),
-      expand ? { expand } : {},
+      { ...(expand ? { expand } : {}), ...(type ? { type } : {}) },
     );
   }
 
@@ -95,18 +110,23 @@ export class OpenAPIContentService {
               createdAt: content.editedVersion.createdAt.toISOString(),
             }
           : undefined,
-      publishedVersionId: content.publishedVersionId,
-      publishedVersion:
-        expand?.includes(ContentExpandType.PUBLISHED_VERSION) && content.publishedVersion
-          ? {
-              id: content.publishedVersion.id,
-              object: OpenApiObjectType.CONTENT_VERSION,
-              number: content.publishedVersion.sequence,
-              questions: [],
-              updatedAt: content.publishedVersion.updatedAt.toISOString(),
-              createdAt: content.publishedVersion.createdAt.toISOString(),
-            }
-          : undefined,
+      environments: (content.contentOnEnvironments ?? []).map((coe) => ({
+        environmentId: coe.environmentId,
+        published: coe.published,
+        publishedVersionId: coe.publishedVersionId,
+        publishedAt: coe.publishedAt.toISOString(),
+        publishedVersion:
+          expand?.includes(ContentExpandType.PUBLISHED_VERSION) && coe.publishedVersion
+            ? {
+                id: coe.publishedVersion.id,
+                object: OpenApiObjectType.CONTENT_VERSION,
+                number: coe.publishedVersion.sequence,
+                questions: [],
+                updatedAt: coe.publishedVersion.updatedAt.toISOString(),
+                createdAt: coe.publishedVersion.createdAt.toISOString(),
+              }
+            : undefined,
+      })),
       updatedAt: content.updatedAt.toISOString(),
       createdAt: content.createdAt.toISOString(),
     } as Content;

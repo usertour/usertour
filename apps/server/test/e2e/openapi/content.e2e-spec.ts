@@ -27,6 +27,10 @@ describe('OpenAPI /v1/content (e2e)', () => {
   let versionId: string;
   let foreignContentId: string;
 
+  // A separate content with a per-environment publish row (the real publish state).
+  let publishedContentId: string;
+  let publishedVersionId: string;
+
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
@@ -52,6 +56,26 @@ describe('OpenAPI /v1/content (e2e)', () => {
       environmentId: fxB.environmentId,
     });
     foreignContentId = foreign.id;
+
+    // Seed a content whose publish state lives on a ContentOnEnvironment row
+    // (per-environment publishing — the correct source of truth). No factory
+    // exists for ContentOnEnvironment, so create it directly.
+    const publishedContent = await buildContent(prisma, {
+      projectId: fxA.projectId,
+      environmentId: fxA.environmentId,
+      name: 'Published flow',
+    });
+    publishedContentId = publishedContent.id;
+    const publishedVersion = await buildVersion(prisma, { contentId: publishedContentId });
+    publishedVersionId = publishedVersion.id;
+    await prisma.contentOnEnvironment.create({
+      data: {
+        environmentId: fxA.environmentId,
+        contentId: publishedContentId,
+        published: true,
+        publishedVersionId,
+      },
+    });
 
     fxPage = await seedApiFixture(prisma, { projectName: 'openapi-content-page' });
     for (let i = 0; i < 3; i++) {
@@ -121,6 +145,53 @@ describe('OpenAPI /v1/content (e2e)', () => {
       expect(res.status).toBe(200);
       expect(res.body.editedVersion).toMatchObject({
         id: versionId,
+        object: OpenApiObjectType.CONTENT_VERSION,
+      });
+    });
+
+    it('returns an empty environments array for unpublished content', async () => {
+      const res = await openapi(app, {
+        method: 'get',
+        path: `/v1/content/${contentId}`,
+        token: fxA.apiKey,
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.environments).toEqual([]);
+      // The deprecated legacy single-version fields must be gone.
+      expect(res.body).not.toHaveProperty('publishedVersionId');
+      expect(res.body).not.toHaveProperty('publishedVersion');
+    });
+
+    it('exposes per-environment publish state via environments[]', async () => {
+      const res = await openapi(app, {
+        method: 'get',
+        path: `/v1/content/${publishedContentId}`,
+        token: fxA.apiKey,
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.environments).toContainEqual(
+        expect.objectContaining({
+          environmentId: fxA.environmentId,
+          published: true,
+          publishedVersionId,
+        }),
+      );
+    });
+
+    it('expands environments[i].publishedVersion with the publishedVersion expand', async () => {
+      const res = await openapi(app, {
+        method: 'get',
+        path: `/v1/content/${publishedContentId}`,
+        token: fxA.apiKey,
+        query: { expand: 'publishedVersion' },
+      });
+      expect(res.status).toBe(200);
+      const env = res.body.environments.find(
+        (e: { environmentId: string }) => e.environmentId === fxA.environmentId,
+      );
+      expect(env).toBeDefined();
+      expect(env.publishedVersion).toMatchObject({
+        id: publishedVersionId,
         object: OpenApiObjectType.CONTENT_VERSION,
       });
     });
