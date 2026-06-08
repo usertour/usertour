@@ -11,6 +11,7 @@ export * from './hooks/localizations';
 export * from './hooks/account';
 export * from './hooks/events';
 export * from './hooks/access-tokens';
+export * from './hooks/api-tokens';
 export * from './hooks/content';
 export * from './hooks/segments';
 export * from './hooks/activity-feed';

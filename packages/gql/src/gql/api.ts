@@ -40,3 +40,45 @@ export const GetAccessToken = gql`
     getAccessToken(environmentId: $environmentId, accessTokenId: $accessTokenId)
   }
 `;
+
+// ── Personal API tokens (v2 / MCP) ─────────────────────────────────
+
+export const ApiTokens = gql`
+  query ApiTokens {
+    apiTokens {
+      id
+      name
+      partialKey
+      scopes
+      projectIds
+      isActive
+      expiresAt
+      lastUsedAt
+      createdAt
+    }
+  }
+`;
+
+export const CreateApiToken = gql`
+  mutation CreateApiToken($input: CreateApiTokenInput!) {
+    createApiToken(input: $input) {
+      token
+      apiToken {
+        id
+        name
+        partialKey
+        scopes
+        projectIds
+        isActive
+        expiresAt
+        createdAt
+      }
+    }
+  }
+`;
+
+export const RevokeApiToken = gql`
+  mutation RevokeApiToken($id: String!) {
+    revokeApiToken(id: $id)
+  }
+`;

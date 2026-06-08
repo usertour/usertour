@@ -36,10 +36,11 @@ export type SettingsSectionKey =
   | 'billing'
   | 'subscription'
   | 'account'
+  | 'personal-api-keys'
   | 'api'
   | 'integrations';
 
-export type SettingsSectionGroup = 'general' | 'developer';
+export type SettingsSectionGroup = 'general' | 'developer' | 'account';
 
 /**
  * Deployment mode the section is visible in. Cloud-only items hide on
@@ -198,14 +199,26 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   {
     key: 'account',
-    title: 'Account',
+    title: 'Profile',
     icon: <AccountIcon className={ICON_CLASS} />,
     // Personal account settings — not project-scoped, always visible.
-    group: 'general',
+    group: 'account',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     surface: 'muted',
     component: lazy(() =>
       import('./account').then((module) => ({ default: module.SettingsAccountDetail })),
+    ),
+  },
+  {
+    key: 'personal-api-keys',
+    title: 'Personal API keys',
+    icon: <KeyIcon className={ICON_CLASS} />,
+    // Account-level (caller's own tokens across projects) — always visible.
+    group: 'account',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    surface: 'muted',
+    component: lazy(() =>
+      import('./personal-api-keys').then((m) => ({ default: m.PersonalApiKeysList })),
     ),
   },
   {

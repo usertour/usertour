@@ -72,6 +72,7 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 const GROUP_LABEL_KEY: Record<SettingsSectionGroup, string> = {
   general: 'settings.nav.general',
   developer: 'settings.nav.developer',
+  account: 'settings.nav.account',
 };
 
 export const SettingsSidebarNav = () => {
@@ -105,6 +106,7 @@ export const SettingsSidebarNav = () => {
 
   const generalItems = visibleItems.filter(({ section }) => section.group === 'general');
   const developerItems = visibleItems.filter(({ section }) => section.group === 'developer');
+  const accountItems = visibleItems.filter(({ section }) => section.group === 'account');
 
   return (
     <AdminSidebarContainerTemplate>
@@ -122,6 +124,13 @@ export const SettingsSidebarNav = () => {
         <NavSection
           title={t(GROUP_LABEL_KEY.developer)}
           items={developerItems}
+          currentPath={location.pathname}
+          onNavigate={navigate}
+        />
+        <div className="h-2" />
+        <NavSection
+          title={t(GROUP_LABEL_KEY.account)}
+          items={accountItems}
           currentPath={location.pathname}
           onNavigate={navigate}
         />
