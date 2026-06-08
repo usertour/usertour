@@ -66,7 +66,7 @@ export const AdminAuthenticationPage = () => {
       await refetch();
       toast({
         variant: 'success',
-        title: 'Authentication settings updated',
+        title: t('admin.authentication.settingsUpdated'),
       });
     } catch (error) {
       toast({
@@ -108,20 +108,19 @@ export const AdminAuthenticationPage = () => {
   return (
     <SettingsContent>
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight">Authentication</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure how users can register for this self-hosted instance.
-        </p>
+        <h3 className="text-xl font-semibold tracking-tight">{t('admin.authentication.title')}</h3>
+        <p className="text-sm text-muted-foreground">{t('admin.authentication.description')}</p>
       </div>
       <Separator />
 
       <div className="space-y-8">
         <div className="flex items-start justify-between gap-6 rounded-xl border border-border/60 p-5">
           <div className="space-y-1">
-            <div className="text-sm font-medium">Allow new user registration</div>
+            <div className="text-sm font-medium">
+              {t('admin.authentication.allowRegistrationLabel')}
+            </div>
             <div className="text-sm text-muted-foreground">
-              When disabled, only system admins can create new users. Invite-based join flows remain
-              available.
+              {t('admin.authentication.allowRegistrationDescription')}
             </div>
           </div>
           {loading ? (
@@ -194,7 +193,7 @@ export const AdminAuthenticationPage = () => {
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={loading || updating}>
-            Save changes
+            {t('admin.common.saveChanges')}
           </Button>
         </div>
       </div>

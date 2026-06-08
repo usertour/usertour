@@ -43,12 +43,11 @@ export const BrowserFrame = forwardRef<HTMLDivElement, BrowserFrameProps>((props
           <div className="w-12" />
         )}
       </div>
-      {/* Inner viewport — the simulated web page widgets render onto. Uses the
-          --preview-page canvas (white in light, neutral mid-grey in dark) so
-          light widgets lift off it and modal dimmed overlays read as a grey
-          wash rather than going to black. It simulates a page, so it stays a
-          neutral canvas instead of following the dark app chrome. */}
-      <div ref={ref} className="relative flex-1 overflow-hidden bg-preview-page">
+      {/* Inner viewport — the simulated web page widgets render onto. Shares the
+          frame's card surface (white in light, card in dark) so the simulated
+          browser reads as one clean surface; chrome and viewport split only by
+          the header border. */}
+      <div ref={ref} className="relative flex-1 overflow-hidden bg-card">
         {children}
       </div>
     </div>
