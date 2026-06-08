@@ -2,8 +2,17 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SelectPopover, Input, Label, Popover, PopoverArrow, PopoverContent } from '@usertour/ui';
+import {
+  CompactSelect,
+  Input,
+  Label,
+  Popover,
+  PopoverArrow,
+  PopoverContent,
+  SelectField,
+} from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
+import { useTranslation } from 'react-i18next';
 import { useComposedRefs } from '@usertour/react-compose-refs';
 import { cn } from '@usertour/tailwind';
 import { PADDING_KEY_MAPPING } from '@usertour/widget';
@@ -49,6 +58,21 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   const { element, children, path, id, className } = props;
   const { zIndex, deleteColumn, insertColumnInGroup, updateElement, activeId } =
     useContentEditorContext();
+  const { t } = useTranslation();
+  // SelectPopover-shaped option lists carry `name`; the field primitives want
+  // `label`. (The option copy itself is migrated to i18n in a later pass.)
+  const columnWidthOptions = COLUMN_WIDTH_TYPE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.name,
+  }));
+  const distributeOptions = JUSTIFY_CONTENT_OPTIONS_LIST.map((option) => ({
+    value: option.value,
+    label: option.name,
+  }));
+  const alignOptions = ALIGN_ITEMS_OPTIONS_LIST.map((option) => ({
+    value: option.value,
+    label: option.name,
+  }));
   const {
     attributes,
     listeners,
@@ -216,43 +240,42 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
           sideOffset={5}
         >
           <div className="flex flex-col gap-2.5">
-            <Label>Column width</Label>
+            <Label>{t('contentBuilder.editor.column.width')}</Label>
             <div className="flex gap-x-2">
               {width.type !== WIDTH_TYPES.FILL && (
                 <Input
+                  variant="compact-muted"
                   type="number"
                   value={width.value?.toString() ?? ''}
-                  placeholder="Column width"
+                  placeholder={t('contentBuilder.editor.column.width')}
                   onChange={handleWidthValueChange}
-                  className="bg-background dark:bg-muted flex-none w-[120px]"
+                  className="flex-none w-[120px]"
                 />
               )}
-              <SelectPopover
-                options={COLUMN_WIDTH_TYPE_OPTIONS}
+              <CompactSelect
+                options={columnWidthOptions}
                 value={width.type}
-                onValueChange={handleWidthTypeChange}
-                placeholder="Select width type"
+                onChange={handleWidthTypeChange}
+                placeholder={t('contentBuilder.editor.width.selectType')}
                 className="shrink"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
             </div>
 
-            <Label>Distribute content</Label>
-            <SelectPopover
-              options={JUSTIFY_CONTENT_OPTIONS_LIST}
+            <SelectField
+              label={t('contentBuilder.editor.column.distribute')}
+              options={distributeOptions}
               value={element.justifyContent ?? DEFAULT_JUSTIFY_CONTENT}
-              onValueChange={handleDistributeValueChange}
-              placeholder="Select a distribute"
-              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              onChange={handleDistributeValueChange}
+              zIndex={zIndex + EDITOR_SELECT}
             />
 
-            <Label>Align Items</Label>
-            <SelectPopover
-              options={ALIGN_ITEMS_OPTIONS_LIST}
+            <SelectField
+              label={t('contentBuilder.editor.column.align')}
+              options={alignOptions}
               value={element.alignItems ?? DEFAULT_ALIGN_ITEMS}
-              onValueChange={handleAlignValueChange}
-              placeholder="Select align items"
-              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              onChange={handleAlignValueChange}
+              zIndex={zIndex + EDITOR_SELECT}
             />
 
             <PaddingControls

@@ -2207,6 +2207,11 @@ const translations = {
       padding: {
         label: 'Padding',
       },
+      column: {
+        width: 'Column width',
+        distribute: 'Distribute content',
+        align: 'Align Items',
+      },
       common: {
         left: 'Left',
         top: 'Top',

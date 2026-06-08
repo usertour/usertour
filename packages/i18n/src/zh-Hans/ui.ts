@@ -2084,6 +2084,11 @@ const translations = {
       padding: {
         label: '内边距',
       },
+      column: {
+        width: '列宽',
+        distribute: '内容分布',
+        align: '对齐方式',
+      },
       common: {
         left: '左',
         top: '上',
