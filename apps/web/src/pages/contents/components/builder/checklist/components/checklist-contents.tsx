@@ -23,7 +23,7 @@ import {
   SortableList,
   type SortableRowProps,
 } from '@/pages/contents/components/builder/components/sortable-list';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 type RowAction = 'edit' | 'delete';
 

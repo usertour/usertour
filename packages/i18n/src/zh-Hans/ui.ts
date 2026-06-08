@@ -2033,6 +2033,19 @@ const translations = {
     },
   },
   contentBuilder: {
+    editor: {
+      button: {
+        text: '按钮文字',
+        textPlaceholder: '输入按钮文字',
+        style: '按钮样式',
+        stylePlaceholder: '选择样式',
+        stylePrimary: '主要',
+        styleSecondary: '次要',
+        whenClicked: '点击按钮时',
+        disableIf: '满足条件时禁用按钮…',
+        hideIf: '满足条件时隐藏按钮…',
+      },
+    },
     common: {
       save: '保存',
       default: '默认',

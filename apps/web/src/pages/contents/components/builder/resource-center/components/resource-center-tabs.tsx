@@ -42,7 +42,7 @@ import { useTranslation } from 'react-i18next';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { getActiveIcon } from '@/pages/contents/components/builder/components/icon-picker/utils';
 import { type SortableRowProps } from '@/pages/contents/components/builder/components/sortable-list';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 interface TabContentProps {
   tab: ResourceCenterTab;

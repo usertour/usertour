@@ -1,4 +1,6 @@
-import { CompactSelect, Label, QuestionTooltip } from '@usertour/ui';
+import { Label } from '../../primitives/label';
+import { QuestionTooltip } from '../../primitives/tooltip';
+import { CompactSelect } from '../../compact/select';
 
 export interface SelectFieldOption {
   value: string;
@@ -12,15 +14,15 @@ export interface SelectFieldProps {
   options: SelectFieldOption[];
   tooltip?: string;
   placeholder?: string;
-  // z-index for the popover content — pass the builder's popover layer when the
+  // z-index for the popover content — pass the host popover layer when the
   // field renders inside a dialog/popover stack.
   zIndex?: number;
 }
 
 // A select row: label (+ optional `?` tooltip) above a full-width compact
-// select. Raised surface so the trigger reads on the SettingsCard card in light
-// and dark alike.
-// i18n-agnostic — the caller passes already-translated label/options.
+// select. Raised surface so the trigger reads on the FieldCard card in light
+// and dark alike. i18n-agnostic — the caller passes already-translated
+// label/options.
 export const SelectField = (props: SelectFieldProps) => {
   const { label, value, onChange, options, tooltip, placeholder, zIndex } = props;
   return (

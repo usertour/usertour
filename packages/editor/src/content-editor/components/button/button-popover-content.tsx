@@ -1,7 +1,7 @@
 // Button popover content component
 
 import { Conditions } from '@usertour/business-components';
-import { SelectPopover, type SelectPopoverOption, Input, Label, Switch } from '@usertour/ui';
+import { BooleanField, Label, SelectField, type SelectFieldOption, TextField } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
 import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
 import { RulesCondition, ButtonSemanticType } from '@usertour/types';
@@ -13,12 +13,6 @@ import type { ContentEditorButtonElement } from '../../../types/editor';
 import { BUTTON_STYLES } from '../../constants';
 import { ActionButtonsBase, MarginControls } from '../../shared';
 import type { MarginPosition } from '../../types';
-
-// SelectPopover options
-const BUTTON_STYLE_OPTIONS: SelectPopoverOption[] = [
-  { value: BUTTON_STYLES.DEFAULT, name: 'Primary' },
-  { value: BUTTON_STYLES.SECONDARY, name: 'Secondary' },
-];
 
 // Disable/Hide-button conditions evaluate at render time against the
 // current viewer state, so per-event predicates ("user fired event X")
@@ -36,7 +30,7 @@ const BUTTON_CONDITION_FILTER_ITEMS = [
 export interface ButtonPopoverContentProps {
   element: ContentEditorButtonElement;
   zIndex: number;
-  onButtonTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onButtonTextChange: (value: string) => void;
   onButtonStyleChange: (type: ButtonSemanticType) => void;
   onMarginChange: (position: MarginPosition, value: string) => void;
   onMarginEnabledChange: (enabled: boolean) => void;
@@ -65,6 +59,8 @@ export interface ButtonPopoverContentProps {
   ) => Promise<Step | undefined>;
 }
 
+const noop = () => {};
+
 export const ButtonPopoverContent = memo(
   ({
     element,
@@ -92,30 +88,32 @@ export const ButtonPopoverContent = memo(
   }: ButtonPopoverContentProps) => {
     const { t } = useTranslation();
 
-    // Wrapper to handle SelectPopover's string return value
+    const styleOptions: SelectFieldOption[] = [
+      { value: BUTTON_STYLES.DEFAULT, label: t('contentBuilder.editor.button.stylePrimary') },
+      { value: BUTTON_STYLES.SECONDARY, label: t('contentBuilder.editor.button.styleSecondary') },
+    ];
+
+    // SelectField returns a string; narrow it back to the semantic type.
     const handleStyleChange = (value: string) => {
       onButtonStyleChange(value as ButtonSemanticType);
     };
 
     return (
       <div className="flex flex-col gap-2.5">
-        <Label htmlFor="button-text">Button text</Label>
-        <Input
-          type="text"
-          className="bg-popover"
-          id="button-text"
+        <TextField
+          label={t('contentBuilder.editor.button.text')}
           value={element.data.text}
-          placeholder="Enter button text"
           onChange={onButtonTextChange}
+          placeholder={t('contentBuilder.editor.button.textPlaceholder')}
         />
 
-        <Label>Button style</Label>
-        <SelectPopover
-          options={BUTTON_STYLE_OPTIONS}
-          value={element.data.type}
-          onValueChange={handleStyleChange}
-          placeholder="Select a style"
-          contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+        <SelectField
+          label={t('contentBuilder.editor.button.style')}
+          options={styleOptions}
+          value={element.data.type ?? BUTTON_STYLES.DEFAULT}
+          onChange={handleStyleChange}
+          placeholder={t('contentBuilder.editor.button.stylePlaceholder')}
+          zIndex={zIndex + EDITOR_SELECT}
         />
 
         <MarginControls
@@ -124,7 +122,7 @@ export const ButtonPopoverContent = memo(
           onMarginEnabledChange={onMarginEnabledChange}
         />
 
-        <Label>When button is clicked</Label>
+        <Label>{t('contentBuilder.editor.button.whenClicked')}</Label>
         <Actions
           baseZIndex={zIndex}
           currentStep={currentStep}
@@ -139,20 +137,14 @@ export const ButtonPopoverContent = memo(
         />
 
         <div className="flex flex-col space-y-2">
-          <div className="flex items-center justify-between space-x-2">
-            <Label htmlFor="disable-button" className="font-normal">
-              Disable button if...
-            </Label>
-            <Switch
-              id="disable-button"
-              className="data-[state=unchecked]:bg-input"
-              checked={element.data?.disableButton ?? false}
-              onCheckedChange={onDisableButtonChange}
-            />
-          </div>
+          <BooleanField
+            label={t('contentBuilder.editor.button.disableIf')}
+            checked={element.data?.disableButton ?? false}
+            onChange={onDisableButtonChange ?? noop}
+          />
           {element.data?.disableButton && (
             <Conditions
-              onChange={onDisableConditionsChange ?? (() => {})}
+              onChange={onDisableConditionsChange ?? noop}
               conditions={element.data?.disableButtonConditions ?? []}
               attributes={attributes}
               contents={contentList}
@@ -166,20 +158,14 @@ export const ButtonPopoverContent = memo(
         </div>
 
         <div className="flex flex-col space-y-2">
-          <div className="flex items-center justify-between space-x-2">
-            <Label htmlFor="hide-button" className="font-normal">
-              Hide button if...
-            </Label>
-            <Switch
-              id="hide-button"
-              className="data-[state=unchecked]:bg-input"
-              checked={element.data?.hideButton ?? false}
-              onCheckedChange={onHideButtonChange}
-            />
-          </div>
+          <BooleanField
+            label={t('contentBuilder.editor.button.hideIf')}
+            checked={element.data?.hideButton ?? false}
+            onChange={onHideButtonChange ?? noop}
+          />
           {element.data?.hideButton && (
             <Conditions
-              onChange={onHideConditionsChange ?? (() => {})}
+              onChange={onHideConditionsChange ?? noop}
               conditions={element.data?.hideButtonConditions ?? []}
               attributes={attributes}
               contents={contentList}

@@ -3,7 +3,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { BooleanField, SettingsCard } from '@/pages/contents/components/builder/shared/fields';
+import { BooleanField, FieldCard } from '@usertour/ui';
 
 const SETTINGS_ITEMS: readonly {
   key:
@@ -24,7 +24,7 @@ export const BannerSettings = () => {
   const { t } = useTranslation();
 
   return (
-    <SettingsCard title={t('contentBuilder.banner.settings')}>
+    <FieldCard title={t('contentBuilder.banner.settings')}>
       {SETTINGS_ITEMS.map((item) => (
         <BooleanField
           key={item.key}
@@ -34,7 +34,7 @@ export const BannerSettings = () => {
           onChange={(checked) => updateLocalData({ [item.key]: checked })}
         />
       ))}
-    </SettingsCard>
+    </FieldCard>
   );
 };
 

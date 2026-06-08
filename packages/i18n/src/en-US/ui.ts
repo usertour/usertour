@@ -2155,6 +2155,19 @@ const translations = {
     },
   },
   contentBuilder: {
+    editor: {
+      button: {
+        text: 'Button text',
+        textPlaceholder: 'Enter button text',
+        style: 'Button style',
+        stylePlaceholder: 'Select a style',
+        stylePrimary: 'Primary',
+        styleSecondary: 'Secondary',
+        whenClicked: 'When button is clicked',
+        disableIf: 'Disable button if...',
+        hideIf: 'Hide button if...',
+      },
+    },
     common: {
       save: 'Save',
       default: 'Default',

@@ -93,6 +93,7 @@ export type {
   UseScaledPreviewResult,
 } from './composites/preview/scaled-preview-container';
 export * from './composites/settings';
+export * from './composites/fields';
 export * from './compact';
 
 // Promoted from apps/web/src/components/molecules (pure UI primitives, no business types).

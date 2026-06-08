@@ -27,7 +27,7 @@ import {
   BLOCK_TYPE_LABELS,
   getResourceCenterBlockTypeIcon,
 } from '@/pages/contents/components/builder/resource-center/resource-center-block-options';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 interface BlockContentProps {
   index: number;

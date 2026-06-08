@@ -11,7 +11,7 @@ import { ContentPlacementProvider } from '@/pages/contents/components/builder/co
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { FieldSection } from '@/pages/contents/components/builder/shared/fields';
+import { FieldSection } from '@usertour/ui';
 
 const PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; i18n: string }[] = [
   { value: BannerEmbedPlacement.TOP_OF_PAGE, i18n: 'topOfPage' },

@@ -10,11 +10,7 @@ import { useChecklistEditor } from '@/pages/contents/components/builder/checklis
 import { BuilderSidebarLayout } from '@/pages/contents/components/builder/components/sidebar/builder-sidebar-layout';
 import { SidebarTheme } from '@/pages/contents/components/builder/components/sidebar/sidebar-theme';
 import { ChecklistContents } from '@/pages/contents/components/builder/checklist/components/checklist-contents';
-import {
-  BooleanField,
-  SelectField,
-  SettingsCard,
-} from '@/pages/contents/components/builder/shared/fields';
+import { BooleanField, SelectField, FieldCard } from '@usertour/ui';
 
 const labelStyles = 'flex justify-start items-center space-x-1';
 
@@ -55,7 +51,7 @@ const ChecklistMainViewBody = () => {
             {t('contentBuilder.checklist.addItem')}
           </Button>
 
-          <SettingsCard title={t('contentBuilder.checklist.settings')}>
+          <FieldCard title={t('contentBuilder.checklist.settings')}>
             <SelectField
               label={t('contentBuilder.checklist.initialDisplay')}
               tooltip={t('contentBuilder.checklist.initialDisplayTooltip')}
@@ -107,7 +103,7 @@ const ChecklistMainViewBody = () => {
               checked={localData.autoDismissChecklist}
               onChange={(value) => updateLocalData({ autoDismissChecklist: value })}
             />
-          </SettingsCard>
+          </FieldCard>
         </div>
       </ScrollArea>
     </CardContent>

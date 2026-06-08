@@ -1,5 +1,7 @@
-import { Label, QuestionTooltip, Switch } from '@usertour/ui';
 import { useId } from 'react';
+import { Label } from '../../primitives/label';
+import { Switch } from '../../primitives/switch';
+import { QuestionTooltip } from '../../primitives/tooltip';
 
 export interface BooleanFieldProps {
   label: string;
@@ -10,8 +12,8 @@ export interface BooleanFieldProps {
 }
 
 // A single switch row: label (+ optional `?` tooltip) on the left, switch on the
-// right. Keeps the builder's bg-input unchecked track. i18n-agnostic — the
-// caller passes already-translated label/tooltip.
+// right. Keeps the bg-input unchecked track. i18n-agnostic — the caller passes
+// an already-translated label/tooltip.
 export const BooleanField = (props: BooleanFieldProps) => {
   const { label, checked, onChange, tooltip, disabled } = props;
   const id = useId();
