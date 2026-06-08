@@ -1,6 +1,6 @@
 // Shared popover field components for question editors (NPS, Scale, Star Rating)
 
-import { Input, Label, QuestionTooltip } from '@usertour/ui';
+import { Input, Label, QuestionTooltip, TextField } from '@usertour/ui';
 import { memo } from 'react';
 
 import { useTranslation } from 'react-i18next';
@@ -28,29 +28,22 @@ interface QuestionNameFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
-  id?: string;
   placeholder?: string;
 }
 
 export const QuestionNameField = memo<QuestionNameFieldProps>(
-  ({ value, onChange, error, id = 'question-name', placeholder = 'Question name?' }) => (
-    <>
-      <Label htmlFor={id}>Question name</Label>
-      <Input
-        id={id}
+  ({ value, onChange, error, placeholder }) => {
+    const { t } = useTranslation();
+    return (
+      <TextField
+        label={t('contentBuilder.editor.question.name')}
         value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : undefined}
+        onChange={onChange}
+        placeholder={placeholder ?? t('contentBuilder.editor.question.namePlaceholder')}
+        error={error}
       />
-      {error && (
-        <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </>
-  ),
+    );
+  },
 );
 
 QuestionNameField.displayName = 'QuestionNameField';
@@ -70,7 +63,7 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
 
     return (
       <>
-        <Label>When answer is submitted</Label>
+        <Label>{t('contentBuilder.editor.question.whenSubmitted')}</Label>
         <Actions
           baseZIndex={zIndex}
           currentStep={currentStep}
@@ -89,7 +82,8 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
 
 ContentActionsField.displayName = 'ContentActionsField';
 
-// Labels Field Component (low/high with tooltip)
+// Labels Field Component (low/high with tooltip). One label governs two
+// side-by-side inputs, so it keeps a bespoke layout rather than two TextFields.
 interface LabelsFieldProps {
   lowLabel?: string;
   highLabel?: string;
@@ -105,38 +99,41 @@ export const LabelsField = memo<LabelsFieldProps>(
     highLabel,
     onLowLabelChange,
     onHighLabelChange,
-    lowPlaceholder = 'Default',
-    highPlaceholder = 'Default',
-  }) => (
-    <>
-      <Label className="flex items-center gap-1">
-        Labels
-        <QuestionTooltip>
-          Below each option, provide labels to clearly convey their meaning, such as "Bad"
-          positioned under the left option and "Good" under the right.
-        </QuestionTooltip>
-      </Label>
-      <div className="flex flex-row gap-2">
-        <Input
-          type="text"
-          value={lowLabel || ''}
-          placeholder={lowPlaceholder}
-          onChange={(e) => onLowLabelChange(e.target.value)}
-        />
-        <Input
-          type="text"
-          value={highLabel || ''}
-          placeholder={highPlaceholder}
-          onChange={(e) => onHighLabelChange(e.target.value)}
-        />
+    lowPlaceholder,
+    highPlaceholder,
+  }) => {
+    const { t } = useTranslation();
+    return (
+      <div className="flex flex-col space-y-2">
+        <Label className="flex items-center gap-1">
+          {t('contentBuilder.editor.question.labels')}
+          <QuestionTooltip>{t('contentBuilder.editor.question.labelsTooltip')}</QuestionTooltip>
+        </Label>
+        <div className="flex flex-row gap-2">
+          <Input
+            variant="compact-muted"
+            type="text"
+            value={lowLabel || ''}
+            placeholder={lowPlaceholder ?? t('contentBuilder.editor.question.defaultLabel')}
+            onChange={(event) => onLowLabelChange(event.target.value)}
+          />
+          <Input
+            variant="compact-muted"
+            type="text"
+            value={highLabel || ''}
+            placeholder={highPlaceholder ?? t('contentBuilder.editor.question.defaultLabel')}
+            onChange={(event) => onHighLabelChange(event.target.value)}
+          />
+        </div>
       </div>
-    </>
-  ),
+    );
+  },
 );
 
 LabelsField.displayName = 'LabelsField';
 
-// Scale Range Field Component (for scale and star-rating)
+// Scale Range Field Component (for scale and star-rating). One label over two
+// side-by-side numeric inputs joined by a dash — bespoke layout, not NumberField.
 interface ScaleRangeFieldProps {
   lowRange: number;
   highRange: number;
@@ -166,6 +163,8 @@ export const ScaleRangeField = memo<ScaleRangeFieldProps>(
     highPlaceholder = '10',
     highMinFollowsLow = false,
   }) => {
+    const { t } = useTranslation();
+
     const handleLowRangeChange = (value: string) => {
       const numValue = Number(value);
       if (!Number.isNaN(numValue)) {
@@ -184,27 +183,31 @@ export const ScaleRangeField = memo<ScaleRangeFieldProps>(
     const highMin = highMinFollowsLow ? lowRange + 1 : minValue;
 
     return (
-      <>
-        <Label className="flex items-center gap-1">Scale range</Label>
+      <div className="flex flex-col space-y-2">
+        <Label className="flex items-center gap-1">
+          {t('contentBuilder.editor.question.scaleRange')}
+        </Label>
         <div className="flex flex-row gap-2 items-center">
           <Input
+            variant="compact-muted"
             type="number"
             value={lowRange}
             placeholder={lowPlaceholder}
             min={minValue}
             max={maxValue}
             disabled={lowDisabled}
-            onChange={(e) => handleLowRangeChange(e.target.value)}
+            onChange={(event) => handleLowRangeChange(event.target.value)}
             aria-describedby={error ? 'range-error' : undefined}
           />
           <p>-</p>
           <Input
+            variant="compact-muted"
             type="number"
             value={highRange}
             placeholder={highPlaceholder}
             min={highMin}
             max={maxValue}
-            onChange={(e) => handleHighRangeChange(e.target.value)}
+            onChange={(event) => handleHighRangeChange(event.target.value)}
             aria-describedby={error ? 'range-error' : undefined}
           />
         </div>
@@ -213,7 +216,7 @@ export const ScaleRangeField = memo<ScaleRangeFieldProps>(
             {error}
           </p>
         )}
-      </>
+      </div>
     );
   },
 );

@@ -2045,6 +2045,22 @@ const translations = {
         disableIf: '满足条件时禁用按钮…',
         hideIf: '满足条件时隐藏按钮…',
       },
+      textInput: {
+        placeholder: '占位文字',
+        placeholderHint: '输入占位文字',
+        buttonText: '按钮文字',
+        buttonTextHint: '输入按钮文字',
+        required: '必填',
+      },
+      question: {
+        name: '问题名称',
+        namePlaceholder: '问题名称？',
+        whenSubmitted: '提交答案时',
+        labels: '标签',
+        labelsTooltip: '在每个选项下方提供标签以清晰传达含义，例如左侧选项下方标"差"、右侧标"好"。',
+        defaultLabel: '默认',
+        scaleRange: '取值范围',
+      },
     },
     common: {
       save: '保存',

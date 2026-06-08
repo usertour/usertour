@@ -1,33 +1,26 @@
 // Shared popover field components for text input editors (SingleLineText, MultiLineText)
 
-import { Input, Label, Switch } from '@usertour/ui';
-import { memo, useCallback } from 'react';
+import { BooleanField, TextField } from '@usertour/ui';
+import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Placeholder Field Component
 interface PlaceholderFieldProps {
   value: string;
   onChange: (value: string) => void;
-  id?: string;
-  placeholder?: string;
 }
 
-export const PlaceholderField = memo<PlaceholderFieldProps>(
-  ({ value, onChange, id = 'placeholder', placeholder = 'Enter placeholder text' }) => {
-    const handleChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(e.target.value);
-      },
-      [onChange],
-    );
-
-    return (
-      <div className="space-y-2">
-        <Label htmlFor={id}>Placeholder</Label>
-        <Input id={id} value={value || ''} onChange={handleChange} placeholder={placeholder} />
-      </div>
-    );
-  },
-);
+export const PlaceholderField = memo<PlaceholderFieldProps>(({ value, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <TextField
+      label={t('contentBuilder.editor.textInput.placeholder')}
+      value={value || ''}
+      onChange={onChange}
+      placeholder={t('contentBuilder.editor.textInput.placeholderHint')}
+    />
+  );
+});
 
 PlaceholderField.displayName = 'PlaceholderField';
 
@@ -35,34 +28,19 @@ PlaceholderField.displayName = 'PlaceholderField';
 interface ButtonTextFieldProps {
   value: string;
   onChange: (value: string) => void;
-  id?: string;
-  placeholder?: string;
-  label?: string;
 }
 
-export const ButtonTextField = memo<ButtonTextFieldProps>(
-  ({
-    value,
-    onChange,
-    id = 'button-text',
-    placeholder = 'Enter button text',
-    label = 'Button text',
-  }) => {
-    const handleChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(e.target.value);
-      },
-      [onChange],
-    );
-
-    return (
-      <div className="space-y-2">
-        <Label htmlFor={id}>{label}</Label>
-        <Input id={id} value={value || ''} onChange={handleChange} placeholder={placeholder} />
-      </div>
-    );
-  },
-);
+export const ButtonTextField = memo<ButtonTextFieldProps>(({ value, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <TextField
+      label={t('contentBuilder.editor.textInput.buttonText')}
+      value={value || ''}
+      onChange={onChange}
+      placeholder={t('contentBuilder.editor.textInput.buttonTextHint')}
+    />
+  );
+});
 
 ButtonTextField.displayName = 'ButtonTextField';
 
@@ -70,23 +48,18 @@ ButtonTextField.displayName = 'ButtonTextField';
 interface RequiredFieldProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  id?: string;
-  label?: string;
 }
 
-export const RequiredField = memo<RequiredFieldProps>(
-  ({ checked, onCheckedChange, id = 'required', label = 'Required' }) => (
-    <div className="flex items-center justify-between">
-      <Label htmlFor={id}>{label}</Label>
-      <Switch
-        id={id}
-        className="data-[state=unchecked]:bg-muted"
-        checked={checked || false}
-        onCheckedChange={onCheckedChange}
-      />
-    </div>
-  ),
-);
+export const RequiredField = memo<RequiredFieldProps>(({ checked, onCheckedChange }) => {
+  const { t } = useTranslation();
+  return (
+    <BooleanField
+      label={t('contentBuilder.editor.textInput.required')}
+      checked={checked || false}
+      onChange={onCheckedChange}
+    />
+  );
+});
 
 RequiredField.displayName = 'RequiredField';
 

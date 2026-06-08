@@ -2167,6 +2167,23 @@ const translations = {
         disableIf: 'Disable button if...',
         hideIf: 'Hide button if...',
       },
+      textInput: {
+        placeholder: 'Placeholder',
+        placeholderHint: 'Enter placeholder text',
+        buttonText: 'Button text',
+        buttonTextHint: 'Enter button text',
+        required: 'Required',
+      },
+      question: {
+        name: 'Question name',
+        namePlaceholder: 'Question name?',
+        whenSubmitted: 'When answer is submitted',
+        labels: 'Labels',
+        labelsTooltip:
+          'Below each option, provide labels to clearly convey their meaning, such as "Bad" positioned under the left option and "Good" under the right.',
+        defaultLabel: 'Default',
+        scaleRange: 'Scale range',
+      },
     },
     common: {
       save: 'Save',
