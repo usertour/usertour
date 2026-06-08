@@ -41,7 +41,7 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
       onValueChange={(value) => onChange(value as LauncherDataType)}
       modal={false}
     >
-      <CompactSelectTrigger className="bg-surface shadow-none">
+      <CompactSelectTrigger className="bg-surface dark:bg-surface-raised shadow-none">
         <span className="flex shrink-0 items-center">{getIcon(type)}</span>
         <CompactSelectValue className="min-w-0 flex-1 truncate text-left">
           {(value) => getLabel(value as LauncherDataType)}

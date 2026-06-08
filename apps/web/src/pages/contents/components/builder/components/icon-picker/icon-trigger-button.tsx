@@ -35,7 +35,7 @@ export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTrigger
       <Button
         ref={ref}
         variant="outline"
-        className="flex h-7.5 w-full items-center justify-start rounded-lg bg-surface px-3 text-sm font-normal shadow-none hover:bg-muted"
+        className="flex h-7.5 w-full items-center justify-start rounded-lg bg-surface dark:bg-surface-raised px-3 text-sm font-normal shadow-none hover:bg-muted"
         type="button"
         {...props}
       >

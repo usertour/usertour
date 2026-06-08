@@ -32,7 +32,7 @@ export const ContentAlignment = (props: ContentAlignmentProps) => {
         onValueChange={(value) => handleDataChange({ alignType: value as AlignType })}
       >
         <TabsList
-          className="grid w-full grid-cols-2 bg-surface"
+          className="grid w-full grid-cols-2 bg-surface dark:bg-surface-raised"
           aria-label={t('contentBuilder.shared.alignment')}
         >
           <TabsTrigger value="auto" variant="primary">

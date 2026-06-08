@@ -48,7 +48,6 @@ const ScalePopoverContent = memo(
     return (
       <div className="flex flex-col gap-2.5">
         <QuestionNameField
-          id="scale-question"
           value={localData.name}
           onChange={(name) => handleDataChange({ name })}
           error={isEmptyString(localData.name) ? 'Question name is required' : undefined}
@@ -137,7 +136,7 @@ export const ContentEditorScale = memo((props: ContentEditorScaleProps) => {
       validate={validateScale}
       renderDisplay={renderDisplay}
       renderPopoverContent={renderPopoverContent}
-      popoverClassName="z-50 w-72 rounded-md border bg-popover p-4"
+      popoverClassName="z-50 w-72 rounded-md border bg-card p-4"
     />
   );
 });

@@ -82,7 +82,7 @@ export const ContentEditorMultipleChoice = memo((props: ContentEditorMultipleCho
       id={id}
       renderDisplay={renderDisplay}
       renderPopoverContent={renderPopoverContent}
-      popoverClassName="w-96 bg-popover shadow-lg"
+      popoverClassName="w-96 bg-card shadow-lg"
     />
   );
 });

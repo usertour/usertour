@@ -3,6 +3,7 @@
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour/icons';
 import { memo } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { TooltipActionButton } from './tooltip-action-button';
 
@@ -24,37 +25,43 @@ export const ActionButtonsBase = memo(
     onAddRight,
     disabled,
     renderMiddleActions,
-  }: ActionButtonsBaseProps) => (
-    <div className="flex items-center">
-      <TooltipActionButton
-        tooltip={`Delete ${entityName}`}
-        icon={<DeleteIcon className="fill-destructive" />}
-        onClick={onDelete}
-        disabled={disabled}
-        destructive
-      />
+  }: ActionButtonsBaseProps) => {
+    const { t } = useTranslation();
+    const entity = t(`contentBuilder.editor.actionButtons.entity.${entityName}`);
+    return (
+      <div className="flex items-center">
+        <TooltipActionButton
+          tooltip={t('contentBuilder.editor.actionButtons.delete', { entity })}
+          icon={<DeleteIcon className="fill-destructive" />}
+          onClick={onDelete}
+          disabled={disabled}
+          destructive
+        />
 
-      {renderMiddleActions?.()}
+        {renderMiddleActions?.()}
 
-      <div className="grow" />
+        <div className="grow" />
 
-      <TooltipActionButton
-        tooltip={`Insert ${entityName} to the left`}
-        icon={<InsertColumnLeftIcon className="fill-foreground" />}
-        onClick={onAddLeft}
-        disabled={disabled}
-      />
+        <TooltipActionButton
+          tooltip={t('contentBuilder.editor.actionButtons.insertLeft', { entity })}
+          icon={<InsertColumnLeftIcon className="fill-foreground" />}
+          onClick={onAddLeft}
+          disabled={disabled}
+        />
 
-      <div className="flex-none mx-1 leading-10">Insert {entityName}</div>
+        <div className="flex-none mx-1 leading-10">
+          {t('contentBuilder.editor.actionButtons.insert', { entity })}
+        </div>
 
-      <TooltipActionButton
-        tooltip={`Insert ${entityName} to the right`}
-        icon={<InsertColumnRightIcon className="fill-foreground" />}
-        onClick={onAddRight}
-        disabled={disabled}
-      />
-    </div>
-  ),
+        <TooltipActionButton
+          tooltip={t('contentBuilder.editor.actionButtons.insertRight', { entity })}
+          icon={<InsertColumnRightIcon className="fill-foreground" />}
+          onClick={onAddRight}
+          disabled={disabled}
+        />
+      </div>
+    );
+  },
 );
 
 ActionButtonsBase.displayName = 'ActionButtonsBase';

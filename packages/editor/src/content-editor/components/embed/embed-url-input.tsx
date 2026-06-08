@@ -3,6 +3,7 @@
 import { Button, Input, Label, QuestionTooltip } from '@usertour/ui';
 import { ArrowRightIcon } from '@usertour/icons';
 import { memo, useCallback, useId } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface EmbedUrlInputProps {
   url: string;
@@ -15,6 +16,7 @@ export const EmbedUrlInput = memo(
   ({ url, isLoading, onUrlChange, onSubmit }: EmbedUrlInputProps) => {
     const id = useId();
     const inputId = `${id}-embed-url`;
+    const { t } = useTranslation();
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -28,21 +30,18 @@ export const EmbedUrlInput = memo(
     return (
       <>
         <div className="flex flex-row space-x-1">
-          <Label htmlFor={inputId}>Embed URL</Label>
-          <QuestionTooltip>
-            Enter the URL of any content you want to embed. This could be a YouTube video, a form,
-            documentation, a website, or even a direct link to a video file. We support most
-            embeddable content from the web.
-          </QuestionTooltip>
+          <Label htmlFor={inputId}>{t('contentBuilder.editor.embed.url')}</Label>
+          <QuestionTooltip>{t('contentBuilder.editor.embed.urlTooltip')}</QuestionTooltip>
         </div>
         <div className="flex gap-x-2">
           <Input
+            variant="compact-muted"
             id={inputId}
-            placeholder="Enter URL"
+            placeholder={t('contentBuilder.editor.embed.urlPlaceholder')}
             value={url}
             onChange={onUrlChange}
             onKeyDown={handleKeyDown}
-            className="bg-background dark:bg-muted w-80"
+            className="w-80"
             disabled={isLoading}
           />
           <Button
@@ -53,7 +52,9 @@ export const EmbedUrlInput = memo(
             disabled={isLoading || !url.trim()}
           >
             <ArrowRightIcon className="mr-1" />
-            {isLoading ? 'Loading...' : 'Load'}
+            {isLoading
+              ? t('contentBuilder.editor.embed.loading')
+              : t('contentBuilder.editor.embed.load')}
           </Button>
         </div>
       </>

@@ -5,6 +5,7 @@ import type { EmbedData } from '@usertour/widget';
 import { Embed } from '@usertour/widget';
 import type { ContentOmbedInfo } from '@usertour/types';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
@@ -26,6 +27,7 @@ export interface ContentEditorEmbedProps {
 export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbedProps) => {
   const { zIndex, insertElementInColumn, deleteElementInColumn, updateElement, getOembedInfo } =
     useContentEditorContext();
+  const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -185,7 +187,7 @@ export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbe
         <Embed data={embedData} isReadOnly={false} />
       </PopoverTrigger>
       <PopoverContent
-        className="bg-popover"
+        className="bg-card"
         side="right"
         align="start"
         style={{ zIndex }}
@@ -200,23 +202,23 @@ export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbe
           />
 
           <WidthControls
-            label="Display width"
+            label={t('contentBuilder.editor.embed.displayWidth')}
             value={ensureDimensionWithDefaults(element.width)}
             options={EMBED_DIMENSION_TYPE_OPTIONS}
             onTypeChange={handleWidthTypeChange}
             onValueChange={handleWidthValueChange}
             zIndex={zIndex}
-            inputPlaceholder="Display width"
+            inputPlaceholder={t('contentBuilder.editor.embed.displayWidth')}
           />
 
           <WidthControls
-            label="Display height"
+            label={t('contentBuilder.editor.embed.displayHeight')}
             value={ensureDimensionWithDefaults(element.height)}
             options={EMBED_DIMENSION_TYPE_OPTIONS}
             onTypeChange={handleHeightTypeChange}
             onValueChange={handleHeightValueChange}
             zIndex={zIndex}
-            inputPlaceholder="Display height"
+            inputPlaceholder={t('contentBuilder.editor.embed.displayHeight')}
           />
 
           <MarginControls

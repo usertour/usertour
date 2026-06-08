@@ -14,6 +14,7 @@ import {
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour/constants';
 import { DeleteIcon } from '@usertour/icons';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Descendant } from 'slate';
 
 import { PopperEditorMini } from '../../richtext-editor/editor';
@@ -48,6 +49,7 @@ export interface LinkEditorPanelProps {
  * Provides a button to remove link formatting from selected text
  */
 const DeleteLinkButton = memo(({ onDelete }: DeleteLinkButtonProps) => {
+  const { t } = useTranslation();
   return (
     <TooltipProvider>
       <Tooltip>
@@ -62,7 +64,7 @@ const DeleteLinkButton = memo(({ onDelete }: DeleteLinkButtonProps) => {
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
-          <p>Remove link</p>
+          <p>{t('contentBuilder.editor.link.removeLink')}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -76,14 +78,15 @@ DeleteLinkButton.displayName = 'DeleteLinkButton';
  * Allows user to choose between opening link in same tab or new tab
  */
 const OpenTypeTabs = memo(({ defaultValue, onValueChange }: OpenTypeTabsProps) => {
+  const { t } = useTranslation();
   return (
     <Tabs className="w-full" defaultValue={defaultValue} onValueChange={onValueChange}>
       <TabsList className="h-auto w-full">
         <TabsTrigger value={LINK_OPEN_TYPE.SAME} className={TAB_TRIGGER_CLASS} variant="primary">
-          Same tab
+          {t('contentBuilder.editor.link.sameTab')}
         </TabsTrigger>
         <TabsTrigger value={LINK_OPEN_TYPE.NEW} className={TAB_TRIGGER_CLASS} variant="primary">
-          New tab
+          {t('contentBuilder.editor.link.newTab')}
         </TabsTrigger>
       </TabsList>
     </Tabs>

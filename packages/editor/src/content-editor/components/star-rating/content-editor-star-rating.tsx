@@ -26,11 +26,7 @@ const StarRatingPopoverContent = memo(
     contextProps: QuestionContextProps;
   }) => (
     <div className="flex flex-col gap-2.5">
-      <QuestionNameField
-        id="star-rating-question"
-        value={localData.name}
-        onChange={(name) => handleDataChange({ name })}
-      />
+      <QuestionNameField value={localData.name} onChange={(name) => handleDataChange({ name })} />
 
       <ContentActionsField
         actions={localData.actions}
