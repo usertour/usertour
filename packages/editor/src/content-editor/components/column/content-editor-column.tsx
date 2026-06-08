@@ -29,12 +29,12 @@ import {
 } from '../../../types/editor';
 import {
   ACTIVE_CLASSES,
-  ALIGN_ITEMS_OPTIONS_LIST,
+  ALIGN_ITEMS_OPTIONS,
   COLUMN_WIDTH_TYPE_OPTIONS,
   DEFAULT_ALIGN_ITEMS,
   DEFAULT_JUSTIFY_CONTENT,
   HOVER_CLASSES,
-  JUSTIFY_CONTENT_OPTIONS_LIST,
+  JUSTIFY_CONTENT_OPTIONS,
   WIDTH_TYPES,
 } from '../../constants';
 import { PaddingControls } from '../../shared';
@@ -59,20 +59,42 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   const { zIndex, deleteColumn, insertColumnInGroup, updateElement, activeId } =
     useContentEditorContext();
   const { t } = useTranslation();
-  // SelectPopover-shaped option lists carry `name`; the field primitives want
-  // `label`. (The option copy itself is migrated to i18n in a later pass.)
+  // Width-unit options keep the constant's `name` (%, pixels, fill) — bare
+  // units, not worth translating. The distribute/align options are
+  // user-facing layout choices, so they get i18n labels.
   const columnWidthOptions = COLUMN_WIDTH_TYPE_OPTIONS.map((option) => ({
     value: option.value,
     label: option.name,
   }));
-  const distributeOptions = JUSTIFY_CONTENT_OPTIONS_LIST.map((option) => ({
-    value: option.value,
-    label: option.name,
-  }));
-  const alignOptions = ALIGN_ITEMS_OPTIONS_LIST.map((option) => ({
-    value: option.value,
-    label: option.name,
-  }));
+  const distributeOptions = [
+    { value: JUSTIFY_CONTENT_OPTIONS.START, label: t('contentBuilder.editor.column.justifyLeft') },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.CENTER,
+      label: t('contentBuilder.editor.column.justifyCenter'),
+    },
+    { value: JUSTIFY_CONTENT_OPTIONS.END, label: t('contentBuilder.editor.column.justifyRight') },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.BETWEEN,
+      label: t('contentBuilder.editor.column.justifyBetween'),
+    },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.EVENLY,
+      label: t('contentBuilder.editor.column.justifyEvenly'),
+    },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.AROUND,
+      label: t('contentBuilder.editor.column.justifyAround'),
+    },
+  ];
+  const alignOptions = [
+    { value: ALIGN_ITEMS_OPTIONS.START, label: t('contentBuilder.editor.column.alignTop') },
+    { value: ALIGN_ITEMS_OPTIONS.CENTER, label: t('contentBuilder.editor.column.alignCenter') },
+    { value: ALIGN_ITEMS_OPTIONS.END, label: t('contentBuilder.editor.column.alignBottom') },
+    {
+      value: ALIGN_ITEMS_OPTIONS.BASELINE,
+      label: t('contentBuilder.editor.column.alignBaseline'),
+    },
+  ];
   const {
     attributes,
     listeners,
