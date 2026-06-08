@@ -64,35 +64,35 @@
          popover/surface-raised 21-22  (overlays that float above content)
          secondary 23  (raised chips/segmented selection)
          border 26  (hairline divider, the lightest so it stays visible) */
-    --background: 220 14% 8%;
-    --foreground: 0 0% 98%;
+    --background: 226 22% 8%;
+    --foreground: 225 14% 78%;
     --success: 142.1 70.6% 45.3%;
     --warning: 48 96% 89%;
     --warning-foreground: 38 92% 50%;
     --info: 217 91% 60%;
     --info-foreground: 210 40% 98%;
 
-    --surface: 218 13% 12%;
-    --surface-raised: 217 13% 22%;
-    --canvas: 220 20% 8%;
-    --canvas-dot: 217 13% 22%;
+    --surface: 224 19% 11%;
+    --surface-raised: 223 18% 22%;
+    --canvas: 226 24% 8%;
+    --canvas-dot: 223 16% 22%;
     /* Theme-builder preview "web page" canvas. A neutral mid-grey (not the deep
        app surface) so light widgets lift off it and modal dimmed overlays read
        as a grey wash rather than going to black. Stays a fixed neutral — it
        simulates an arbitrary page, not the dark app chrome. */
     --preview-page: 215 16% 34%;
 
-    --muted: 217 11% 14%;
-    --muted-foreground: 216 12% 64%;
+    --muted: 223 16% 14%;
+    --muted-foreground: 225 13% 64%;
 
-    --popover: 217 13% 21%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 223 18% 21%;
+    --popover-foreground: 225 14% 78%;
 
-    --card: 217 13% 17%;
-    --card-foreground: 0 0% 98%;
+    --card: 223 18% 16%;
+    --card-foreground: 225 14% 78%;
 
-    --border: 216 11% 26%;
-    --input: 216 11% 24%;
+    --border: 222 16% 26%;
+    --input: 222 16% 24%;
 
     /* Brand purple lifted for dark: the light value (#5533FF) has very low
        luminance, so on the dark surfaces text-primary links/icons drop to a
@@ -102,11 +102,11 @@
     --primary-foreground: 0 0% 98%;
     --primary-hover: 250 95% 70%;
 
-    --secondary: 217 11% 23%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-hover: 217 11% 29%;
+    --secondary: 223 15% 23%;
+    --secondary-foreground: 225 14% 78%;
+    --secondary-hover: 223 15% 29%;
 
-    --accent: 226 28% 30%;
+    --accent: 226 32% 33%;
     --accent-foreground: 0 0% 98%;
     --accent-hover: 226 36% 37%;
 
@@ -114,7 +114,7 @@
     --destructive-foreground: 0 85.7% 97.3%;
     --destructive-hover: 0 84.2% 60.2%;
 
-    --ring: 216 14% 48%;
+    --ring: 222 16% 48%;
 
     --radius: 0.5rem;
 
