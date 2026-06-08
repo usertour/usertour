@@ -185,7 +185,7 @@ export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbe
         <Embed data={embedData} isReadOnly={false} />
       </PopoverTrigger>
       <PopoverContent
-        className="bg-background"
+        className="bg-popover"
         side="right"
         align="start"
         style={{ zIndex }}

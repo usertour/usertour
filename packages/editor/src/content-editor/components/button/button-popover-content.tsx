@@ -102,7 +102,7 @@ export const ButtonPopoverContent = memo(
         <Label htmlFor="button-text">Button text</Label>
         <Input
           type="text"
-          className="bg-background"
+          className="bg-popover"
           id="button-text"
           value={element.data.text}
           placeholder="Enter button text"

@@ -70,7 +70,7 @@ export const SelectPopover = (props: SelectPopoverProps) => {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn('flex-1 justify-between', className)}
+          className={cn('flex-1 justify-between dark:bg-muted', className)}
           disabled={disabled}
         >
           {selectedOption?.display || selectedOption?.name || placeholder}
