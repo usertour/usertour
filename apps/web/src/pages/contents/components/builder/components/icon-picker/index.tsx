@@ -138,7 +138,7 @@ export const IconPicker = ({
             zIndex: zIndex + 1,
           }}
         >
-          <div className={cn('bg-background space-y-3 rounded p-4', popoverWidthClassName)}>
+          <div className={cn('space-y-3 rounded p-4', popoverWidthClassName)}>
             <Tabs value={activeTab} onValueChange={handleTabValueChange}>
               <UnderlineTabsList>
                 {showInherit && (
