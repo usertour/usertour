@@ -15,7 +15,7 @@ export const ThemeListSkeleton = (props: ThemeListSkeletonProps) => {
       {Array.from({ length: count }, (_, index) => (
         <div key={index} className="h-52 w-80 bg-card rounded-lg border border-border">
           {/* Header band — matches ThemeCardPreview header */}
-          <div className="bg-surface dark:bg-muted rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-border">
+          <div className="bg-surface dark:bg-surface-raised rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-border">
             <div className="flex flex-row grow space-x-2">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-5 w-16" />
