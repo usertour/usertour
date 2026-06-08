@@ -50,10 +50,12 @@ export enum ModalPosition {
   LeftTop = 'leftTop',
   CenterTop = 'centerTop',
   RightTop = 'rightTop',
+  LeftCenter = 'leftCenter',
+  Center = 'center',
+  RightCenter = 'rightCenter',
   LeftBottom = 'leftBottom',
   CenterBottom = 'centerBottom',
   RightBottom = 'rightBottom',
-  Center = 'center',
 }
 
 export enum StepContentType {

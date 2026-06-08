@@ -191,7 +191,7 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
         />
       </PopoverTrigger>
       <PopoverContent
-        className="bg-background"
+        className="bg-popover"
         side="right"
         style={{ zIndex: zIndex }}
         sideOffset={10}

@@ -106,6 +106,11 @@ export const ContentEditorContextProvider = ({
   const onValueChangeRef = useRef(onValueChange);
   onValueChangeRef.current = onValueChange;
 
+  // Identity of the initial contents, used to skip the mount-time onValueChange
+  // below. Compared by reference (not a first-render boolean) so it also holds
+  // under React StrictMode's double-mount in development.
+  const initialContentsRef = useRef(contents);
+
   // Helper function to handle restricted type check and show error
   const handleRestrictedTypeCheck = useCallback(
     (currentContents: ContentEditorRoot[], element: ContentEditorElement): boolean => {
@@ -318,8 +323,15 @@ export const ContentEditorContextProvider = ({
     [updateRecursive],
   );
 
-  // Use ref pattern to avoid adding onValueChange to dependency array
+  // Use ref pattern to avoid adding onValueChange to dependency array.
+  // Skip the mount-time fire: onValueChange must reflect user edits, not the
+  // initial value echoed straight back. That mount echo raced with the flow
+  // builder's route-driven step re-seeding and grafted the previous step's
+  // content onto the freshly selected step.
   useEffect(() => {
+    if (contents === initialContentsRef.current) {
+      return;
+    }
     const callback = onValueChangeRef.current;
     if (callback) {
       callback(removeID(contents));

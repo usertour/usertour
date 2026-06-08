@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { ContentStepsInput } from './dto/content-steps.input';
 import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
-import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
@@ -82,117 +80,6 @@ export class ContentService {
       await this.cache.invalidate(envIds.flatMap((envId) => this.cache.envContentKeys(envId)));
     }
     return updated;
-  }
-
-  async addContentSteps(input: ContentStepsInput) {
-    const { contentId, versionId, steps, themeId } = input;
-    // Editable-only: matches addContentStep / updateContentStep /
-    // updateStepsSequence / updateContentVersion. The previous inline check
-    // duplicated the rule and was easy to drift out of sync.
-    await this.contentVersionIsEditable(versionId);
-    // Caller passes contentId explicitly — guard rail (versionId must belong
-    // to this content) since contentVersionIsEditable doesn't see contentId.
-    const content = await this.getContent(contentId);
-    if (!content || content.editedVersionId !== versionId) {
-      throw new ParamsError();
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const versionSteps = await tx.step.findMany({ where: { versionId } });
-        const deleteStepIds = versionSteps
-          .filter((vstep) => !steps.find((pstep) => pstep.id === vstep.id))
-          .map((s) => s.id);
-        //delete steps
-        await tx.step.deleteMany({ where: { id: { in: deleteStepIds } } });
-        //up sequence
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        //update or create step
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { ...step, versionId },
-            });
-          } else {
-            await tx.step.create({ data: { ...step, versionId } });
-          }
-        }
-        //update version
-        await tx.version.update({
-          where: { id: versionId },
-          data: { themeId },
-        });
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
-  async addContentStep(data: CreateStepInput) {
-    const versionId = data.versionId;
-    // Editable-only: must match content.editedVersionId AND not be currently
-    // published. Aligns with addContentSteps / updateStepsSequence /
-    // updateContentVersion (the previous guard let historical published
-    // versions through, breaking the published-immutability contract).
-    await this.contentVersionIsEditable(versionId);
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const versionSteps = await tx.step.findMany({
-          where: { versionId, sequence: { gte: data.sequence } },
-          orderBy: { sequence: 'asc' },
-        });
-        for (const step of versionSteps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        for (const step of versionSteps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 1 },
-            });
-          }
-        }
-
-        // const maxSeq = await tx.step.aggregate({
-        //   where: { versionId },
-        //   _max: {
-        //     sequence: true,
-        //   },
-        // });
-        return await tx.step.create({
-          data: { ...data, versionId },
-        });
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
-  async updateContentStep(stepId: string, data: UpdateStepInput) {
-    const version = await this.prisma.step.findUnique({ where: { id: stepId } }).version();
-    if (!version) {
-      throw new ParamsError();
-    }
-    // Editable-only: see addContentStep.
-    await this.contentVersionIsEditable(version.id);
-    return await this.prisma.step.update({
-      where: { id: stepId },
-      data,
-    });
   }
 
   async getContentByStepId(stepId: string) {
@@ -314,9 +201,70 @@ export class ContentService {
     if (!(await this.contentVersionIsEditable(versionId))) {
       return;
     }
-    return await this.prisma.version.update({
-      where: { id: versionId },
-      data: content,
+    const { steps, ...versionFields } = content;
+
+    // No steps in the payload → scalar-only update (detail's path:
+    // themeId / config / data / scheduledAt). Still return steps via include:
+    // the shared document requests `steps`, so omitting them here makes Apollo
+    // normalize Version.steps to null and wipe the step list from the cache.
+    if (!steps) {
+      return await this.prisma.version.update({
+        where: { id: versionId },
+        data: versionFields,
+        include: { steps: { orderBy: { sequence: 'asc' } } },
+      });
+    }
+
+    // Contract: when steps are sent (the builder's whole-version save) each one
+    // must carry a front-end cvid — it's the upsert key.
+    if (steps.some((step) => !step.cvid)) {
+      throw new ParamsError();
+    }
+
+    // Whole-version save: write the scalar fields AND upsert the entire step
+    // list by cvid, in one transaction; return the full version so the client
+    // re-baselines from the response (no follow-up fetch).
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.version.update({ where: { id: versionId }, data: versionFields });
+
+      const existing = await tx.step.findMany({ where: { versionId } });
+      const incomingCvids = new Set(steps.map((step) => step.cvid));
+
+      // Delete steps dropped from the list.
+      const deleteIds = existing
+        .filter((step) => !incomingCvids.has(step.cvid))
+        .map((step) => step.id);
+      if (deleteIds.length > 0) {
+        await tx.step.deleteMany({ where: { id: { in: deleteIds } } });
+      }
+
+      // sequence is unique per version (@@unique([versionId, sequence])), so
+      // park surviving rows out of range before reassigning — otherwise an
+      // in-loop sequence write collides with a not-yet-moved row.
+      for (const step of existing) {
+        if (incomingCvids.has(step.cvid)) {
+          await tx.step.update({
+            where: { versionId_cvid: { versionId, cvid: step.cvid } },
+            data: { sequence: { increment: 10000 } },
+          });
+        }
+      }
+
+      // Upsert by cvid: matching cvid → update; new cvid → create with the
+      // front-end cvid + a server-generated primary id. Final sequence = index.
+      for (let index = 0; index < steps.length; index++) {
+        const { id, cvid, ...rest } = steps[index];
+        await tx.step.upsert({
+          where: { versionId_cvid: { versionId, cvid: cvid as string } },
+          create: { ...rest, cvid, versionId, sequence: index },
+          update: { ...rest, sequence: index },
+        });
+      }
+
+      return await tx.version.findUnique({
+        where: { id: versionId },
+        include: { steps: { orderBy: { sequence: 'asc' } } },
+      });
     });
   }
 

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEventList } from '@/hooks/use-event-list';
 import { EyeNoneIcon, EventTrackerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
@@ -305,6 +306,7 @@ const BannerPreviewContent = ({
 
 const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
   const { eventList } = useEventList();
+  const { t } = useTranslation();
 
   const versionData =
     typeof currentVersion.data === 'string' ? JSON.parse(currentVersion.data) : currentVersion.data;
@@ -322,12 +324,14 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
       </div>
       <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
         <span className="text-sm font-medium text-foreground truncate max-w-full">
-          {hasEvent ? eventDisplayName || 'Event configured' : 'No event selected'}
+          {hasEvent
+            ? eventDisplayName || t('contents.shared.trackerPreview.eventConfigured')
+            : t('contents.shared.trackerPreview.noEventSelected')}
         </span>
         <span className="text-xs text-muted-foreground">
           {conditionCount > 0
-            ? `${conditionCount} trigger condition${conditionCount > 1 ? 's' : ''}`
-            : 'No trigger conditions'}
+            ? t('contents.shared.trackerPreview.triggerConditions', { count: conditionCount })
+            : t('contents.shared.trackerPreview.noTriggerConditions')}
         </span>
       </div>
     </div>

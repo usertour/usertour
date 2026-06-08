@@ -174,7 +174,7 @@ function StepGotoEditor({
       <ActionDropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-full items-center justify-between rounded-md border border-input/60 bg-background px-2 text-sm shadow-sm"
+          className="flex h-9 w-full items-center justify-between rounded-md border border-input/60 bg-background dark:bg-muted px-2 text-sm shadow-sm"
         >
           <span className="flex items-center gap-2">
             <ArrowRightIcon className="h-3.5 w-3.5" />

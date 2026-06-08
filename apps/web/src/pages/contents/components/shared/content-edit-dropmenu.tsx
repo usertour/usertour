@@ -8,6 +8,7 @@ import {
 import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour/icons';
 import { Content } from '@usertour/types';
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
@@ -22,6 +23,7 @@ type ContentEditDropdownMenuProps = {
 };
 export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => {
   const { content, children, onSubmit, disabled } = props;
+  const { t } = useTranslation();
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
   const [openUnpublish, setOpenUnpublish] = useState(false);
@@ -59,7 +61,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={!isPublished || disabled}
           >
             <UnPublishIcon className="mr-1" width={14} height={14} />
-            Unpublish
+            {t('contents.shared.menu.unpublish')}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={handleDuplicateOpen}
@@ -67,7 +69,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={disabled}
           >
             <CopyIcon className="mr-1" width={15} height={15} />
-            Duplicate {contentTypeMeta.singular}
+            {t('contents.shared.menu.duplicate', { type: contentTypeMeta.singular })}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -76,7 +78,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={isPublishedAtLeastOneEnvironment(content) || disabled}
           >
             <Delete2Icon className="mr-1" />
-            Delete {contentTypeMeta.singular}
+            {t('contents.shared.menu.delete', { type: contentTypeMeta.singular })}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

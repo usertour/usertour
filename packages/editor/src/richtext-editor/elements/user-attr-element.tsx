@@ -120,7 +120,7 @@ const UserAttrPopoverContent = memo(
           <Label htmlFor="fallback-text">Fallback</Label>
           <Input
             type="text"
-            className="bg-background"
+            className="bg-background dark:bg-muted"
             id="fallback-text"
             value={fallback}
             placeholder="Enter fallback text"

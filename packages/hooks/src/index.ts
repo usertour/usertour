@@ -6,6 +6,7 @@ export * from './hooks/gql';
 // New wrappers should land here, organised by settings section, rather
 // than growing `gql.ts` further.
 export * from './hooks/themes';
+export * from './hooks/storage';
 export * from './hooks/localizations';
 export * from './hooks/account';
 export * from './hooks/events';
@@ -20,3 +21,4 @@ export * from './hooks/use-checklist-preview-animation';
 export { useContentCount } from './hooks/use-content-count';
 export { useCurrentUserId } from './hooks/use-current-user-id';
 export * from './hooks/use-cursor-fetch-more';
+export * from './hooks/storage';

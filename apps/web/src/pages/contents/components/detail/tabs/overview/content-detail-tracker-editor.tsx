@@ -1,0 +1,293 @@
+import { useAppContext } from '@/contexts/app-context';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useEventList } from '@/hooks/use-event-list';
+import { EventCreateDialog } from '@/components/events/event-create-dialog';
+import { useContentDetail } from '@/hooks/use-content-detail';
+import { useContentVersion } from '@/hooks/use-content-version';
+import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
+import { buildConfig } from '@usertour/helpers';
+import { Event, RulesCondition } from '@usertour/types';
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  QuestionTooltip,
+  Input,
+} from '@usertour/ui';
+import { EventTrackerIcon } from '@usertour/icons';
+import {
+  ContentDetailAutoStartRules,
+  ContentDetailAutoStartRulesType,
+} from './content-detail-autostart-rules';
+import { XIcon, SearchIcon, CheckIcon } from 'lucide-react';
+
+// ============================================================================
+// Event Selector Component
+// ============================================================================
+
+interface TrackerEventSelectorProps {
+  selectedEventId: string | undefined;
+  onEventSelect: (eventId: string | undefined) => void;
+  disabled?: boolean;
+}
+
+const TrackerEventSelector = ({
+  selectedEventId,
+  onEventSelect,
+  disabled = false,
+}: TrackerEventSelectorProps) => {
+  const { t } = useTranslation();
+  const { eventList, refetch } = useEventList();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+
+  const events: Event[] = eventList ?? [];
+
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery) return events;
+    const q = searchQuery.toLowerCase();
+    return events.filter(
+      (e) => e.displayName.toLowerCase().includes(q) || e.codeName.toLowerCase().includes(q),
+    );
+  }, [events, searchQuery]);
+
+  const selectedEvent = useMemo(
+    () => events.find((e) => e.id === selectedEventId),
+    [events, selectedEventId],
+  );
+
+  const handleCreated = useCallback(
+    async (createdEvent: { id: string }) => {
+      await refetch();
+      onEventSelect(createdEvent.id);
+    },
+    [onEventSelect, refetch],
+  );
+
+  // If an event is selected, show the summary card
+  if (selectedEvent) {
+    return (
+      <div className="space-y-3">
+        <div className="border rounded-lg p-4 bg-card">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <div className="mt-0.5 flex-none rounded-md bg-primary/10 p-2">
+                <EventTrackerIcon className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 w-full overflow-hidden">
+                <div className="font-medium text-sm truncate max-w-full">
+                  {selectedEvent.displayName}
+                </div>
+                <div className="text-xs text-muted-foreground font-mono truncate max-w-full">
+                  {selectedEvent.codeName}
+                </div>
+                {selectedEvent.description && (
+                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2 break-all overflow-hidden">
+                    {selectedEvent.description}
+                  </div>
+                )}
+              </div>
+            </div>
+            {!disabled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex-none h-6 w-6"
+                onClick={() => onEventSelect(undefined)}
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise show the search/select UI
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={t('contents.overview.tracker.eventSearchPlaceholder')}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-8"
+          disabled={disabled}
+        />
+      </div>
+      <div className="border rounded-md overflow-hidden">
+        <div className="max-h-48 overflow-y-auto">
+          {filteredEvents.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              {events.length === 0
+                ? t('contents.overview.tracker.noEventsDefined')
+                : t('contents.overview.tracker.noMatchingEvents')}
+            </div>
+          ) : (
+            filteredEvents.map((event) => (
+              <button
+                type="button"
+                key={event.id}
+                disabled={disabled}
+                className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground text-sm border-b last:border-b-0 flex items-center justify-between"
+                onClick={() => onEventSelect(event.id)}
+              >
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{event.displayName}</div>
+                  <div className="text-xs text-muted-foreground font-mono truncate">
+                    {event.codeName}
+                  </div>
+                </div>
+                {event.id === selectedEventId && (
+                  <CheckIcon className="h-4 w-4 text-primary flex-none" />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+        {!disabled && (
+          <button
+            type="button"
+            className="w-full px-3 py-2 text-left text-sm border-t hover:bg-accent hover:text-accent-foreground flex items-center gap-2 cursor-pointer"
+            onClick={() => setOpenCreateDialog(true)}
+          >
+            <span className="font-medium">{t('contents.overview.tracker.createNewEvent')}</span>
+          </button>
+        )}
+      </div>
+      <EventCreateDialog
+        open={openCreateDialog}
+        onOpenChange={setOpenCreateDialog}
+        onCreated={handleCreated}
+      />
+    </div>
+  );
+};
+
+// ============================================================================
+// Tracker Editor (Two-Column Layout)
+// ============================================================================
+
+export const ContentDetailTrackerEditor = () => {
+  const { t } = useTranslation();
+  const { contentId } = useContentDetailUI();
+  const { content } = useContentDetail(contentId);
+  const { version } = useContentVersion(content?.editedVersionId);
+  const { isViewOnly } = useAppContext();
+  const { debouncedUpdateVersion, saveVersionData } = useContentVersionUpdate();
+
+  const config = buildConfig(version?.config, content?.type);
+  const versionData = (version?.data ?? {}) as Record<string, any>;
+  const selectedEventId = versionData.eventId as string | undefined;
+
+  // Handle event selection change - update version data
+  const handleEventSelect = useCallback(
+    async (eventId: string | undefined) => {
+      const newData = { ...versionData, eventId: eventId ?? null };
+      await saveVersionData(newData);
+    },
+    [versionData, saveVersionData],
+  );
+
+  // Handle conditions change - update config. Mirrors the policy in
+  // content-detail-settings.tsx: empty conditions are a scratch state
+  // (don't autosave), and any queued save from a prior non-empty edit
+  // must be cancelled too — otherwise a rapid delete sequence (delete
+  // A, delete B, delete C) leaves the debounce queue holding the
+  // second-to-last value, which fires after the user emptied the list
+  // and resyncs server back to that stale value on refetch.
+  const handleAutoStartRulesDataChange = useCallback(
+    (enabled: boolean, conditions: RulesCondition[], setting: any) => {
+      if (conditions.length === 0) {
+        debouncedUpdateVersion.cancel();
+        return;
+      }
+      const newConfig = {
+        ...config,
+        enabledAutoStartRules: enabled,
+        autoStartRules: conditions,
+        autoStartRulesSetting: setting,
+      };
+      debouncedUpdateVersion(newConfig);
+    },
+    [config, debouncedUpdateVersion],
+  );
+
+  if (!version || !content) return null;
+
+  return (
+    <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto w-full items-start">
+      {/* Left panel: Conditions */}
+      <div className="flex flex-col space-y-6 flex-none w-[420px]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-1">
+              <span>{t('contents.overview.tracker.whenThisHappens')}</span>
+              <QuestionTooltip contentClassName="max-w-sm">
+                {t('contents.overview.tracker.whenThisHappensTooltip')}
+              </QuestionTooltip>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContentDetailAutoStartRules
+              defaultConditions={config.autoStartRules}
+              defaultEnabled={config.enabledAutoStartRules}
+              setting={config.autoStartRulesSetting}
+              name={t('contents.overview.tracker.triggerConditions')}
+              showEnabledSwitch={false}
+              onDataChange={handleAutoStartRulesDataChange}
+              content={content}
+              type={ContentDetailAutoStartRulesType.START_RULES}
+              showIfCompleted={false}
+              showFrequency={false}
+              showWait={false}
+              showPriority={false}
+              showAtLeast={false}
+              disabled={isViewOnly}
+              filterItems={[
+                'user-attr',
+                'current-page',
+                'element',
+                'text-input',
+                'text-fill',
+                'time',
+                'group',
+              ]}
+              featureTooltip={t('contents.overview.tracker.triggerConditionsTooltip')}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Right panel: Event Selection */}
+      <div className="flex flex-col space-y-6 flex-1 min-w-0 max-w-[560px]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-1">
+              <span>{t('contents.overview.tracker.thenTrackThisEvent')}</span>
+              <QuestionTooltip contentClassName="max-w-sm">
+                {t('contents.overview.tracker.thenTrackThisEventTooltip')}
+              </QuestionTooltip>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TrackerEventSelector
+              selectedEventId={selectedEventId}
+              onEventSelect={handleEventSelect}
+              disabled={isViewOnly}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+ContentDetailTrackerEditor.displayName = 'ContentDetailTrackerEditor';

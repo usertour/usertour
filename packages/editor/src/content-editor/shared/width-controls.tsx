@@ -33,7 +33,7 @@ export const WidthControls = memo(
     zIndex,
     showValueInput = true,
     inputPlaceholder = 'Width',
-    inputClassName = 'bg-background grow',
+    inputClassName = 'bg-background dark:bg-muted grow',
     comboBoxClassName = 'flex-none w-20 h-auto px-2',
   }: WidthControlsProps) => {
     const id = useId();

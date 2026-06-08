@@ -42,7 +42,7 @@ export const EmbedUrlInput = memo(
             value={url}
             onChange={onUrlChange}
             onKeyDown={handleKeyDown}
-            className="bg-background w-80"
+            className="bg-background dark:bg-muted w-80"
             disabled={isLoading}
           />
           <Button

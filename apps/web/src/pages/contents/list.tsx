@@ -2,9 +2,10 @@ import { useAppContext } from '@/contexts/app-context';
 import { ScrollRootProvider } from '@/contexts/scroll-root-context';
 import { NotFound } from '@/routes/not-found';
 import { ScrollArea } from '@usertour/ui';
-import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { ReactNode, useState } from 'react';
+import { RiExternalLinkLine } from '@usertour/icons';
+import { ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useParams } from 'react-router-dom';
 import { ContentDataType } from '@usertour/types';
 import { ContentListLayout } from './components/list/content-list-layout';
@@ -53,151 +54,155 @@ const ContentDescription = ({ text, docUrl, linkText }: ContentDescriptionProps)
         <br />
         <a href={docUrl} className="text-primary hover:underline" target="_blank" rel="noreferrer">
           <span>{linkText}</span>
-          <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
+          <RiExternalLinkLine className="size-3.5 inline ml-0.5 mb-0.5" />
         </a>
       </>
     )}
   </>
 );
 
-// Centralized configuration for all content types
-const CONTENT_CONFIG: Record<string, ContentConfig> = {
-  flows: {
-    dataType: ContentDataType.FLOW,
-    title: 'Flows',
-    description: (
-      <ContentDescription
-        text="Step-by-step flows with tooltips and pop-up modals. Perfect for: product tours, user guides, and announcements."
-        docUrl="https://docs.usertour.io/building-experiences/creating-your-first-flow/"
-        linkText="Read more in our Creating your first flow guide"
-      />
-    ),
-    emptyTitle: 'No flows added',
-    emptyDescription: 'You have not added any flows. Add one below.',
-    createForm: ({ open, onOpenChange, onSubmit }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.FLOW}
-        open={open}
-        onOpenChange={onOpenChange}
-        onSubmit={onSubmit}
-      />
-    ),
-    buttonId: 'create-flow-button',
-  },
-  checklists: {
-    dataType: ContentDataType.CHECKLIST,
-    title: 'Checklists',
-    description: (
-      <ContentDescription
-        text="A checklist helps users feel accomplished, encourages them to engage more with your product, and guides them step-by-step through clear actions."
-        docUrl="https://docs.usertour.io/how-to-guides/checklists"
-        linkText="Read more in our Checklists guide"
-      />
-    ),
-    emptyTitle: 'No checklists added',
-    emptyDescription: 'You have not added any checklists. Add one below.',
-    createForm: ({ open, onOpenChange, onSubmit }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.CHECKLIST}
-        open={open}
-        onOpenChange={onOpenChange}
-        onSubmit={onSubmit}
-      />
-    ),
-  },
-  launchers: {
-    dataType: ContentDataType.LAUNCHER,
-    title: 'Launchers',
-    description: (
-      <ContentDescription
-        text="Launchers work well for: Highlighting key features with hotspots, Showing helpful tips with tooltips."
-        docUrl="https://docs.usertour.io/how-to-guides/launchers"
-        linkText="Read more in our Launchers guide"
-      />
-    ),
-    emptyTitle: 'No launchers added',
-    emptyDescription: 'You have not added any launchers. Add one below.',
-    createForm: ({ open, onOpenChange, onSubmit }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.LAUNCHER}
-        open={open}
-        onOpenChange={onOpenChange}
-        onSubmit={onSubmit}
-      />
-    ),
-  },
-  banners: {
-    dataType: ContentDataType.BANNER,
-    title: 'Banners',
-    description: (
-      <ContentDescription
-        text="Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users."
-        docUrl="https://docs.usertour.io/how-to-guides/banners"
-        linkText="Read more in our Banners guide"
-      />
-    ),
-    emptyTitle: 'No banners added',
-    emptyDescription: 'You have not added any banners. Add one below.',
-    createForm: ({ open, onOpenChange, onSubmit }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.BANNER}
-        open={open}
-        onOpenChange={onOpenChange}
-        onSubmit={onSubmit}
-      />
-    ),
-  },
-  trackers: {
-    dataType: ContentDataType.TRACKER,
-    title: 'Event trackers',
-    description: (
-      <ContentDescription
-        text="Event trackers let you track business events when conditions are met."
-        docUrl="https://docs.usertour.io/how-to-guides/event-trackers"
-        linkText="Read more in our Event trackers guide"
-      />
-    ),
-    emptyTitle: 'No event trackers added',
-    emptyDescription: 'You have not added any event trackers. Add one below.',
-    createForm: ({ open, onOpenChange, onSubmit }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.TRACKER}
-        open={open}
-        onOpenChange={onOpenChange}
-        onSubmit={onSubmit}
-      />
-    ),
-  },
-  'resource-centers': {
-    dataType: ContentDataType.RESOURCE_CENTER,
-    title: 'Resource Centers',
-    description: (
-      <ContentDescription
-        text="A Resource Center provides a centralized hub for users to access help, guides, checklists, and more — all from a single launcher button."
-        docUrl="https://docs.usertour.io/how-to-guides/resource-center"
-        linkText="Read more in our Resource Center guide"
-      />
-    ),
-    emptyTitle: 'No resource centers added',
-    emptyDescription: 'You have not added any resource centers. Add one below.',
-    createForm: ({ open, onOpenChange, onSubmit }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.RESOURCE_CENTER}
-        open={open}
-        onOpenChange={onOpenChange}
-        onSubmit={onSubmit}
-      />
-    ),
-  },
+// Centralized configuration for all content types. Built per-render from the
+// translator so every label is localised; doc URLs stay as literal constants.
+const buildContentConfig = (t: TFunction): Record<string, ContentConfig> => {
+  const config: Record<string, ContentConfig> = {
+    flows: {
+      dataType: ContentDataType.FLOW,
+      title: t('contents.list.flows.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.flows.text')}
+          docUrl="https://docs.usertour.io/building-experiences/creating-your-first-flow/"
+          linkText={t('contents.list.flows.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.flows.emptyTitle'),
+      emptyDescription: t('contents.list.flows.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.FLOW}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+      buttonId: 'create-flow-button',
+    },
+    checklists: {
+      dataType: ContentDataType.CHECKLIST,
+      title: t('contents.list.checklists.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.checklists.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/checklists"
+          linkText={t('contents.list.checklists.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.checklists.emptyTitle'),
+      emptyDescription: t('contents.list.checklists.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.CHECKLIST}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+    launchers: {
+      dataType: ContentDataType.LAUNCHER,
+      title: t('contents.list.launchers.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.launchers.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/launchers"
+          linkText={t('contents.list.launchers.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.launchers.emptyTitle'),
+      emptyDescription: t('contents.list.launchers.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.LAUNCHER}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+    banners: {
+      dataType: ContentDataType.BANNER,
+      title: t('contents.list.banners.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.banners.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/banners"
+          linkText={t('contents.list.banners.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.banners.emptyTitle'),
+      emptyDescription: t('contents.list.banners.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.BANNER}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+    trackers: {
+      dataType: ContentDataType.TRACKER,
+      title: t('contents.list.trackers.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.trackers.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/event-trackers"
+          linkText={t('contents.list.trackers.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.trackers.emptyTitle'),
+      emptyDescription: t('contents.list.trackers.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.TRACKER}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+    'resource-centers': {
+      dataType: ContentDataType.RESOURCE_CENTER,
+      title: t('contents.list.resourceCenters.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.resourceCenters.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/resource-center"
+          linkText={t('contents.list.resourceCenters.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.resourceCenters.emptyTitle'),
+      emptyDescription: t('contents.list.resourceCenters.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.RESOURCE_CENTER}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+  };
+  // Support 'content' as alias for 'flows'
+  config.content = config.flows;
+  return config;
 };
-
-// Support 'content' as alias for 'flows'
-CONTENT_CONFIG.content = CONTENT_CONFIG.flows;
 
 export const ContentList = () => {
   const { contentType } = useParams();
   const { environment, project } = useAppContext();
   const { t } = useTranslation();
+  const contentConfig = useMemo(() => buildContentConfig(t), [t]);
 
   // Hold the ScrollArea Viewport DOM node so the DataTable can register
   // it as the IntersectionObserver root for infinite scroll.
@@ -213,7 +218,7 @@ export const ContentList = () => {
   if (!contentType) {
     return <NotFound />;
   }
-  const config = CONTENT_CONFIG[contentType];
+  const config = contentConfig[contentType];
   if (!config) {
     return <NotFound />;
   }

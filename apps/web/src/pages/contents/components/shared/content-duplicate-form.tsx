@@ -27,6 +27,7 @@ import { Content, ContentDataType } from '@usertour/types';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { getContentTypeMeta } from './content-type-meta';
 
@@ -52,6 +53,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
 
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const showError = (title: string) => {
     toast({
       variant: 'destructive',
@@ -79,7 +81,9 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
       if (duplicated?.id) {
         toast({
           variant: 'success',
-          title: `The ${contentTypeMeta.singular} has been successfully created`,
+          title: t('contents.shared.duplicate.successToast', {
+            type: contentTypeMeta.singular,
+          }),
         });
       }
       onSuccess();
@@ -95,12 +99,16 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Duplicate {contentTypeMeta.singular}</DialogTitle>
+              <DialogTitle>
+                {t('contents.shared.duplicate.title', { type: contentTypeMeta.singular })}
+              </DialogTitle>
               <DialogDescription>
                 {content.type === ContentDataType.FLOW &&
-                  `This will create a new ${contentTypeMeta.singular} with a copy of the original ${contentTypeMeta.singular}'s steps.`}
+                  t('contents.shared.duplicate.descriptionFlow', {
+                    type: contentTypeMeta.singular,
+                  })}
                 {content.type !== ContentDataType.FLOW &&
-                  `This will create a new ${contentTypeMeta.singular} with a copy of the original ${contentTypeMeta.singular}.`}
+                  t('contents.shared.duplicate.description', { type: contentTypeMeta.singular })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2 pb-4 pt-4">
@@ -110,9 +118,14 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{t('contents.shared.duplicate.nameLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder={`Enter ${contentTypeMeta.singular} name`} {...field} />
+                        <Input
+                          placeholder={t('contents.shared.duplicate.namePlaceholder', {
+                            type: contentTypeMeta.singular,
+                          })}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -123,12 +136,12 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" type="button">
-                  Cancel
+                  {t('contents.shared.common.cancel')}
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Create
+                {t('contents.shared.common.create')}
               </Button>
             </DialogFooter>
           </form>

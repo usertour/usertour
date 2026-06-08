@@ -57,6 +57,20 @@ export const computePositionStyle = (placement: string, offsetX: number, offsetY
       transform: 'translateX(-50%)',
       top: `${offsetY}px`,
     };
+  } else if (placement === 'leftCenter') {
+    customStyle = {
+      ...customStyle,
+      left: `${offsetX}px`,
+      top: '50%',
+      transform: 'translateY(-50%)',
+    };
+  } else if (placement === 'rightCenter') {
+    customStyle = {
+      ...customStyle,
+      right: `${offsetX}px`,
+      top: '50%',
+      transform: 'translateY(-50%)',
+    };
   }
   return customStyle;
 };

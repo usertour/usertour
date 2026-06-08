@@ -9,9 +9,7 @@ export const AdminSidebarContainerTemplate = (props: {
   return (
     <div className="group peer text-foreground">
       <div className="duration-200 bg-white border-gray-200/60 dark:bg-card dark:border-border/40 dark:shadow-inner dark:shadow-black/20 inset-y-0 z-10 hidden h-full w-[15rem] transition-[left,right,width] ease-linear md:flex left-0 border-r ">
-        <div className="flex h-full w-full flex-col bg-background/10 dark:bg-background/80 ">
-          {children}
-        </div>
+        <div className="flex h-full w-full flex-col">{children}</div>
       </div>
     </div>
   );

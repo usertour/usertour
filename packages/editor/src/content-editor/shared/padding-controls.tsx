@@ -55,7 +55,7 @@ export const PaddingControls = memo(
                 value={padding?.left ?? ''}
                 placeholder="Left"
                 onChange={handleLeftChange}
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center gap-y-2">
@@ -63,13 +63,13 @@ export const PaddingControls = memo(
                 value={padding?.top ?? ''}
                 onChange={handleTopChange}
                 placeholder="Top"
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
               <Input
                 value={padding?.bottom ?? ''}
                 onChange={handleBottomChange}
                 placeholder="Bottom"
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center">
@@ -77,7 +77,7 @@ export const PaddingControls = memo(
                 value={padding?.right ?? ''}
                 placeholder="Right"
                 onChange={handleRightChange}
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
             </div>
           </div>

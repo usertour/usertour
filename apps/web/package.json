@@ -30,7 +30,6 @@
     "@reduxjs/toolkit": "^1.9.5",
     "@tanstack/react-table": "^8.9.3",
     "@uiw/react-codemirror": "^4.23.0",
-    "@usertour/builder": "workspace:^",
     "@usertour/business-components": "workspace:^",
     "@usertour/constants": "workspace:^",
     "@usertour/editor": "workspace:^",
@@ -57,6 +56,7 @@
     "graphql": "^16.7.1",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.0.2",
+    "immer": "^10.1.1",
     "install": "^0.13.0",
     "is-hotkey": "^0.2.0",
     "lodash": "^4.17.21",
@@ -82,13 +82,15 @@
     "use-debounce": "^10.0.5",
     "usertour.js": "^0.0.15",
     "vite-plugin-mkcert": "^1.17.5",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@medusajs/ui-preset": "^1.0.2",
     "@types/crypto-js": "^4.2.2",
     "@types/is-hotkey": "^0.1.7",
     "@types/jest": "29.4.0",
+    "@types/lodash": "^4.17.13",
     "@types/node": "^20.4.5",
     "@types/react": "^18.2.15",
     "@types/react-color": "^3.0.10",

@@ -35,6 +35,7 @@ import { getAuthToken, getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content } from '@usertour/types';
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
@@ -65,6 +66,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   const { invoke: updateContent } = useUpdateContentMutation();
   const { invoke: createContentVersion } = useCreateContentVersionMutation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   // const [open, setOpen] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,7 +97,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
       if (!created?.id) {
         return toast({
           variant: 'destructive',
-          title: 'Failed to create a new version.',
+          title: t('contents.shared.edit.createVersionFailure'),
         });
       }
       versionId = created.id;
@@ -129,7 +131,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
       if (!content || !project?.id || !environment?.token) {
         return toast({
           variant: 'destructive',
-          title: 'Failed to open builder.',
+          title: t('contents.shared.edit.openBuilderFailure'),
         });
       }
       try {
@@ -141,7 +143,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
         });
       }
     },
-    [content, environment],
+    [content, environment, t],
   );
 
   return (
@@ -151,7 +153,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleOnSubmit)}>
               <DialogHeader>
-                <DialogTitle>Edit flow in builder </DialogTitle>
+                <DialogTitle>{t('contents.shared.edit.title')}</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-2 py-4 ">
@@ -161,7 +163,9 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                     name="type"
                     render={({ field }) => (
                       <FormItem className="flex flex-row space-y-0 space-x-2 space-y-0 pt-1">
-                        <FormLabel className="w-32">Builder Type</FormLabel>
+                        <FormLabel className="w-32">
+                          {t('contents.shared.edit.builderTypeLabel')}
+                        </FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -173,7 +177,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                                 <RadioGroupItem value={BuilderType.EXTENSION} />
                               </FormControl>
                               <FormLabel className="font-normal cursor-pointer">
-                                Extension Builder
+                                {t('contents.shared.edit.extensionBuilder')}
                               </FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -181,7 +185,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                                 <RadioGroupItem value={BuilderType.WEB} />
                               </FormControl>
                               <FormLabel className="font-normal  cursor-pointer">
-                                Web Builder
+                                {t('contents.shared.edit.webBuilder')}
                               </FormLabel>
                             </FormItem>
                           </RadioGroup>
@@ -197,11 +201,13 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                       name="buildUrl"
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                          <FormLabel className="w-32 flex-none">Build Url</FormLabel>
+                          <FormLabel className="w-32 flex-none">
+                            {t('contents.shared.edit.buildUrlLabel')}
+                          </FormLabel>
                           <FormControl>
                             <div className="flex flex-col space-x-1 w-full grow">
                               <Input
-                                placeholder="Enter the URL you want to add an experience to"
+                                placeholder={t('contents.shared.edit.buildUrlPlaceholder')}
                                 {...field}
                               />
                               <FormMessage />
@@ -211,9 +217,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                       )}
                     />
                     <p className="text-xs text-muted-foreground">
-                      This is the page URL where you build & edit the Flow. This URL is for yourself
-                      only, and will not affect the ‘page trigger’ conditions for the flow (where
-                      users see the Flow live).
+                      {t('contents.shared.edit.buildUrlHint')}
                     </p>
                   </>
                 )}
@@ -221,7 +225,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline" type="button">
-                    Cancel
+                    {t('contents.shared.common.cancel')}
                   </Button>
                 </DialogClose>
                 <Button
@@ -235,7 +239,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                   {form.getValues('type') === BuilderType.EXTENSION && openTarget.isLoading && (
                     <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Submit
+                  {t('contents.shared.common.submit')}
                 </Button>
               </DialogFooter>
             </form>

@@ -40,7 +40,7 @@ export const ContentTypeSelectorPopover = memo(
     return (
       <PopoverContent
         sideOffset={sideOffset}
-        className={className ?? 'w-auto border-none bg-background rounded-lg drop-shadow-popover'}
+        className={className ?? 'w-auto border-none bg-popover rounded-lg drop-shadow-popover'}
         style={popoverContentStyle}
         {...props}
       >

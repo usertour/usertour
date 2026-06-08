@@ -53,7 +53,7 @@ export const MarginControls = memo(
                 value={margin?.left ?? ''}
                 placeholder="Left"
                 onChange={handleLeftChange}
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center gap-y-2">
@@ -61,13 +61,13 @@ export const MarginControls = memo(
                 value={margin?.top ?? ''}
                 onChange={handleTopChange}
                 placeholder="Top"
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
               <Input
                 value={margin?.bottom ?? ''}
                 onChange={handleBottomChange}
                 placeholder="Bottom"
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center">
@@ -75,7 +75,7 @@ export const MarginControls = memo(
                 value={margin?.right ?? ''}
                 placeholder="Right"
                 onChange={handleRightChange}
-                className="bg-background flex-none w-20"
+                className="bg-background dark:bg-muted flex-none w-20"
               />
             </div>
           </div>

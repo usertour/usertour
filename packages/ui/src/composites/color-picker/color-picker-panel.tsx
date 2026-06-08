@@ -46,7 +46,7 @@ const IconTooltip = React.memo((props: IconTooltipProps) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent className="max-w-xs bg-foreground">{tooltip}</TooltipContent>
+      <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
     </Tooltip>
   );
 });

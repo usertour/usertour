@@ -224,7 +224,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
                   value={width.value?.toString() ?? ''}
                   placeholder="Column width"
                   onChange={handleWidthValueChange}
-                  className="bg-background flex-none w-[120px]"
+                  className="bg-background dark:bg-muted flex-none w-[120px]"
                 />
               )}
               <SelectPopover

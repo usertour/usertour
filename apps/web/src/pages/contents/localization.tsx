@@ -2,8 +2,8 @@ import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
 import { NotFound } from '@/routes/not-found';
 import { ContentTypeName } from '@usertour/types';
 import { useParams } from 'react-router-dom';
-import { ContentDetailHeader } from './components/detail/content-detail-header';
-import { ContentLocalizationDetail } from './components/version/content-localization-detail';
+import { ContentDetailHeader } from './components/detail/components/content-detail-header';
+import { ContentLocalizationDetail } from './components/detail/tabs/localization/content-localization-detail';
 
 export const ContentLocalization = () => {
   const { contentId, contentType, locateCode } = useParams();

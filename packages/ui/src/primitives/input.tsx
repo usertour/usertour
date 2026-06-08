@@ -21,7 +21,7 @@ import { cn } from '@usertour/tailwind';
 // inherited these from base shadcn, so keeping them shared preserves their
 // rendering exactly.
 const inputVariants = cva(
-  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 w-full min-w-0 transition-[color,box-shadow] outline-none file:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-muted w-full min-w-0 transition-[color,box-shadow] outline-none file:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
   {
     variants: {
       variant: {
@@ -31,7 +31,7 @@ const inputVariants = cva(
         // Compact bordered — 30px / 12px / soft border on white. Used in
         // chip-popover form fields and other dense bordered contexts.
         compact:
-          'h-7.5 rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm md:text-sm',
+          'h-7.5 rounded-lg border border-input bg-background dark:bg-muted px-3 py-1 text-sm shadow-sm md:text-sm',
         // Compact muted — 30px / 14px / bg-muted with the same soft border
         // as bordered (kept so muted+bordered ≈ visual rendering of the
         // legacy CompactInput, which was muted-on-bordered-base by way of
@@ -70,7 +70,7 @@ const OutlineInput = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         data-slot="input"
         className={cn(
-          'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 h-9 w-full min-w-0 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+          'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-muted h-9 w-full min-w-0 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
           'focus-visible:outline-none',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
           'bg-transparent border-transparent focus:border-input border-b',
