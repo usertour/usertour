@@ -110,7 +110,11 @@ const tabsTriggerVariants = cva(
 );
 
 const indicatorBackgroundByVariant: Record<'default' | 'primary', string> = {
-  default: 'bg-background dark:bg-muted',
+  // The list track is bg-muted, so the active pill has to sit ABOVE it. In
+  // light a white (bg-background) pill lifts off the grey track; in dark
+  // bg-background (8%) would sink below the muted (14%) track and disappear,
+  // so the pill lifts to surface-raised (22%) instead.
+  default: 'bg-background dark:bg-surface-raised',
   primary: 'bg-primary',
 };
 
