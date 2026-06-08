@@ -96,7 +96,7 @@ export const EditableTitle = (props: EditableTitleProps) => {
           // when the HTML size attr requests an intrinsic width far wider
           // than the breadcrumb slot — long names just scroll inside the
           // capped field instead of blowing out the header.
-          'min-w-0 max-w-full -mx-1 rounded border border-input bg-background px-1 text-sm font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+          'min-w-0 max-w-full -mx-1 rounded border border-input bg-background dark:bg-muted px-1 text-sm font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           className,
         )}
       />

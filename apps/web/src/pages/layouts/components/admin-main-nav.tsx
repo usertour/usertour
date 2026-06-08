@@ -18,7 +18,7 @@ import { AdminUserNav } from './admin-user-nav';
 
 // Extract common button styles to reduce repetition
 const commonButtonStyles =
-  'inline-flex main-transition items-center justify-center whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border dark:hover:border-dark-accent hover:shadow hover:border-input hover:bg-background !text-foreground hover:!text-foreground dark:!text-foreground dark:hover:!text-dark-accent-foreground h-9 w-9 p-0 relative unstyled-button border-transparent shadow-none bg-transparent dark:shadow-none dark:bg-transparent dark:hover:bg-secondary';
+  'inline-flex main-transition items-center justify-center whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border dark:hover:border-dark-accent hover:shadow hover:border-input hover:bg-background dark:bg-muted !text-foreground hover:!text-foreground dark:!text-foreground dark:hover:!text-dark-accent-foreground h-9 w-9 p-0 relative unstyled-button border-transparent shadow-none bg-transparent dark:shadow-none dark:bg-transparent dark:hover:bg-secondary';
 
 // Extract common icon styles
 const commonIconStyles = '!h-[18px] !w-[18px] text-primary-modified dark:text-foreground/[60%]';
@@ -101,7 +101,10 @@ const NavButton = ({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          className={cn(commonButtonStyles, isActive ? 'bg-background shadow border-input' : '')}
+          className={cn(
+            commonButtonStyles,
+            isActive ? 'bg-background dark:bg-muted shadow border-input' : '',
+          )}
           {...props}
         >
           <Icon className={cn(commonIconStyles, isActive ? 'text-primary' : '')} />

@@ -141,7 +141,7 @@ export const VersionHistoryList = () => {
                     ? 'bg-success ring-success/30'
                     : hasDraft
                       ? 'bg-primary ring-primary/30'
-                      : 'bg-background ring-border/80';
+                      : 'bg-background dark:bg-muted ring-border/80';
                   return (
                     <div key={version.id} className="relative pl-6">
                       <span

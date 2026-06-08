@@ -110,7 +110,7 @@ const tabsTriggerVariants = cva(
 );
 
 const indicatorBackgroundByVariant: Record<'default' | 'primary', string> = {
-  default: 'bg-background',
+  default: 'bg-background dark:bg-muted',
   primary: 'bg-primary',
 };
 

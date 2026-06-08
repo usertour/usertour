@@ -220,7 +220,7 @@ const ChecklistItemsColumn = ({
               'flex-none w-8 h-8 border-2 border-transparent rounded-full flex justify-center items-center mr-3 text-sm text-white',
               checklistItemIds.includes(item.id)
                 ? 'bg-success'
-                : 'border border-foreground/25 bg-background',
+                : 'border border-foreground/25 bg-background dark:bg-muted',
             )}
           >
             {checklistItemIds.includes(item.id) && (
