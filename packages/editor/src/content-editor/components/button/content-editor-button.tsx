@@ -89,8 +89,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
   );
 
   const handleButtonTextChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
+    (value: string) => {
       updateElement({ ...element, data: { ...element.data, text: value } }, id);
     },
     [element, id, updateElement],
