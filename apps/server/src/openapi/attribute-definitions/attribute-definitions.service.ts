@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
-import { Environment } from '@/environments/models/environment.model';
 import { mapBizType, mapDataType, OpenApiObjectType } from '@/common/openapi/types';
 import { InvalidScopeError } from '@/common/errors/errors';
 import { isValidOpenApiObjectType, mapOpenApiObjectTypeToBizType } from '@/common/openapi/types';
@@ -14,10 +13,9 @@ export class OpenAPIAttributeDefinitionsService {
 
   async listAttributeDefinitions(
     requestUrl: string,
-    environment: Environment,
+    projectId: string,
     query: ListAttributeDefinitionsQueryDto,
   ) {
-    const projectId = environment.projectId;
     const { limit = 20, scope, cursor, orderBy, eventName } = query;
 
     if (scope && !isValidOpenApiObjectType(scope)) {

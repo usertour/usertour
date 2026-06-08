@@ -1,10 +1,15 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 /**
- * The display + parsing prefix for an API token. The full token presented to
- * the user is `ut_<secret>`; only the SHA-256 hash of `<secret>` is stored.
+ * The display + parsing prefix for a personal API token. The full token
+ * presented to the user is `utp_<secret>`; only the SHA-256 hash of `<secret>`
+ * is stored.
+ *
+ * Self-describing prefix family so a token's type is identifiable from the
+ * string alone (e.g. in logs): `utp_` personal, `uto_` reserved for
+ * OAuth-issued tokens, `uts_` for service accounts.
  */
-export const API_TOKEN_PREFIX = 'ut_';
+export const API_TOKEN_PREFIX = 'utp_';
 
 const SECRET_BYTES = 32;
 

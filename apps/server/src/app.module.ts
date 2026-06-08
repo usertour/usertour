@@ -5,6 +5,7 @@ import { AppService } from '@/app.service';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { AuthModule } from '@/auth/auth.module';
 import { BizModule } from '@/biz/biz.module';
+import { ApiTokenModule } from '@/api-token/api-token.module';
 import config from '@/common/configs/config';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
@@ -128,6 +129,7 @@ import { Logger } from '@nestjs/common';
     HttpModule,
     WebSocketModule,
     AuthModule,
+    ApiTokenModule,
     UsersModule,
     ContentModule,
     EnvironmentsModule,

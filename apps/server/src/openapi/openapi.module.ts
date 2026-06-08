@@ -21,6 +21,13 @@ import { OpenAPICompanyMembershipsController } from './company-memberships/compa
 import { OpenAPICompanyMembershipsService } from './company-memberships/company-memberships.service';
 import { OpenAPIEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { OpenAPIEventDefinitionsService } from './event-definitions/event-definitions.service';
+import { ApiTokenModule } from '@/api-token/api-token.module';
+import { OpenAPIV2UsersController } from './v2/users/users.controller';
+import { OpenAPIV2CompaniesController } from './v2/companies/companies.controller';
+import { OpenAPIV2ContentSessionsController } from './v2/content-sessions/content-sessions.controller';
+import { OpenAPIV2ContentController } from './v2/content/content.controller';
+import { OpenAPIV2AttributeDefinitionsController } from './v2/attribute-definitions/attribute-definitions.controller';
+import { OpenAPIV2EventDefinitionsController } from './v2/event-definitions/event-definitions.controller';
 
 @Module({
   imports: [
@@ -30,6 +37,7 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     EventsModule,
     BizModule,
     ContentModule,
+    ApiTokenModule,
   ],
   controllers: [
     OpenAPICompaniesController,
@@ -39,6 +47,12 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     OpenAPICompanyMembershipsController,
     OpenAPIContentController,
     OpenAPIContentSessionsController,
+    OpenAPIV2UsersController,
+    OpenAPIV2CompaniesController,
+    OpenAPIV2ContentSessionsController,
+    OpenAPIV2ContentController,
+    OpenAPIV2AttributeDefinitionsController,
+    OpenAPIV2EventDefinitionsController,
   ],
   providers: [
     OpenAPIKeyGuard,

@@ -3,7 +3,6 @@ import { EventDefinition } from '../models/event-definition.model';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { Environment } from '@/environments/models/environment.model';
 import { EventDefinitionOrderByType, ListEventDefinitionsQueryDto } from './event-definitions.dto';
 import { parseOrderBy } from '@/common/openapi/sort';
 @Injectable()
@@ -14,11 +13,10 @@ export class OpenAPIEventDefinitionsService {
 
   async listEventDefinitions(
     requestUrl: string,
-    environment: Environment,
+    projectId: string,
     query: ListEventDefinitionsQueryDto,
   ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
     const { cursor, limit, orderBy } = query;
-    const projectId = environment.projectId;
     const sortOrders = parseOrderBy(orderBy || [EventDefinitionOrderByType.CREATED_AT]);
 
     return paginate(

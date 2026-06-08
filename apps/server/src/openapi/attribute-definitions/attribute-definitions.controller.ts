@@ -27,7 +27,7 @@ export class OpenAPIAttributeDefinitionsController {
   ) {
     return this.openAPIAttributeDefinitionsService.listAttributeDefinitions(
       requestUrl,
-      environment,
+      environment.projectId,
       query,
     );
   }

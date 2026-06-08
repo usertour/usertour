@@ -244,7 +244,7 @@ model ApiToken {
   createdAt    DateTime            @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime            @updatedAt @db.Timestamptz(6)
   name         String
-  prefix       String              @default("ut_")
+  prefix       String              @default("utp_")
   /// SHA-256 hash of the token secret. Plaintext is returned once at creation and never stored.
   hashedSecret String              @unique
   /// Trailing characters of the secret, for display only (e.g. "···a1b2").

@@ -35,7 +35,7 @@ export class OpenAPIContentController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: GetContentQueryDto,
   ): Promise<Content> {
-    return this.openAPIContentService.getContent(id, environment, query);
+    return this.openAPIContentService.getContent(id, environment.projectId, query);
   }
 
   @Get('v1/content')
@@ -46,7 +46,7 @@ export class OpenAPIContentController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentService.listContent(requestUrl, environment, query);
+    return this.openAPIContentService.listContent(requestUrl, environment.projectId, query);
   }
 
   @Get('v1/content-versions/:id')
@@ -59,7 +59,7 @@ export class OpenAPIContentController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
-    return this.openAPIContentService.getContentVersion(id, environment, query);
+    return this.openAPIContentService.getContentVersion(id, environment.projectId, query);
   }
 
   @Get('v1/content-versions')
@@ -70,6 +70,6 @@ export class OpenAPIContentController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: ListContentVersionsQueryDto,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    return this.openAPIContentService.listContentVersions(requestUrl, environment, query);
+    return this.openAPIContentService.listContentVersions(requestUrl, environment.projectId, query);
   }
 }

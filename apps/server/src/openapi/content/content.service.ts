@@ -15,7 +15,6 @@ import { ContentService } from '@/content/content.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content-question';
 type ContentWithVersions = Prisma.ContentGetPayload<{
@@ -37,13 +36,9 @@ export class OpenAPIContentService {
 
   constructor(private contentService: ContentService) {}
 
-  async getContent(
-    id: string,
-    environment: Environment,
-    query?: GetContentQueryDto,
-  ): Promise<Content> {
+  async getContent(id: string, projectId: string, query?: GetContentQueryDto): Promise<Content> {
     const { expand } = query;
-    const content = await this.contentService.getContentWithRelations(id, environment.projectId, {
+    const content = await this.contentService.getContentWithRelations(id, projectId, {
       editedVersion: expand?.includes(ContentExpandType.EDITED_VERSION) ?? false,
       publishedVersion: expand?.includes(ContentExpandType.PUBLISHED_VERSION) ?? false,
     });
@@ -57,7 +52,7 @@ export class OpenAPIContentService {
 
   async listContent(
     requestUrl: string,
-    environment: Environment,
+    projectId: string,
     query: ListContentQueryDto,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
     const { cursor, orderBy, limit, expand } = query;
@@ -73,12 +68,7 @@ export class OpenAPIContentService {
       cursor,
       limit,
       async (params) =>
-        this.contentService.listContentWithRelations(
-          environment.projectId,
-          params,
-          include,
-          sortOrders,
-        ),
+        this.contentService.listContentWithRelations(projectId, params, include, sortOrders),
       (node) => this.mapPrismaContentToApiContent(node, expand),
       expand ? { expand } : {},
     );
@@ -124,11 +114,10 @@ export class OpenAPIContentService {
 
   async getContentVersion(
     id: string,
-    environment: Environment,
+    projectId: string,
     query: GetContentVersionQueryDto,
   ): Promise<ContentVersion> {
     const { expand } = query;
-    const projectId = environment.projectId;
     const version = await this.contentService.getContentVersionWithRelations(id, projectId, {
       content: true,
     });
@@ -142,11 +131,10 @@ export class OpenAPIContentService {
 
   async listContentVersions(
     requestUrl: string,
-    environment: Environment,
+    projectId: string,
     query: ListContentVersionsQueryDto,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     const { contentId, cursor, orderBy, expand, limit = 20 } = query;
-    const projectId = environment.projectId;
 
     const content = await this.contentService.getContentById(contentId);
     if (!content) {

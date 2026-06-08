@@ -25,6 +25,10 @@ export class OpenAPIEventDefinitionsController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: ListEventDefinitionsQueryDto,
   ) {
-    return this.openAPIEventDefinitionsService.listEventDefinitions(requestUrl, environment, query);
+    return this.openAPIEventDefinitionsService.listEventDefinitions(
+      requestUrl,
+      environment.projectId,
+      query,
+    );
   }
 }
