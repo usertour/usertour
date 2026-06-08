@@ -2184,6 +2184,35 @@ const translations = {
         defaultLabel: 'Default',
         scaleRange: 'Scale range',
       },
+      embed: {
+        url: 'Embed URL',
+        urlTooltip:
+          'Enter the URL of any content you want to embed. This could be a YouTube video, a form, documentation, a website, or even a direct link to a video file. We support most embeddable content from the web.',
+        urlPlaceholder: 'Enter URL',
+        load: 'Load',
+        loading: 'Loading...',
+        displayWidth: 'Display width',
+        displayHeight: 'Display height',
+      },
+      image: {
+        width: 'Image width',
+      },
+      width: {
+        label: 'Width',
+        selectType: 'Select type',
+      },
+      margin: {
+        label: 'Margin',
+      },
+      padding: {
+        label: 'Padding',
+      },
+      common: {
+        left: 'Left',
+        top: 'Top',
+        bottom: 'Bottom',
+        right: 'Right',
+      },
     },
     common: {
       save: 'Save',

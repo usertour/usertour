@@ -2061,6 +2061,35 @@ const translations = {
         defaultLabel: '默认',
         scaleRange: '取值范围',
       },
+      embed: {
+        url: '嵌入 URL',
+        urlTooltip:
+          '输入任何想嵌入内容的 URL。可以是 YouTube 视频、表单、文档、网站,甚至视频文件的直链。我们支持网络上大多数可嵌入内容。',
+        urlPlaceholder: '输入 URL',
+        load: '加载',
+        loading: '加载中…',
+        displayWidth: '显示宽度',
+        displayHeight: '显示高度',
+      },
+      image: {
+        width: '图片宽度',
+      },
+      width: {
+        label: '宽度',
+        selectType: '选择类型',
+      },
+      margin: {
+        label: '外边距',
+      },
+      padding: {
+        label: '内边距',
+      },
+      common: {
+        left: '左',
+        top: '上',
+        bottom: '下',
+        right: '右',
+      },
     },
     common: {
       save: '保存',

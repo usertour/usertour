@@ -1,8 +1,9 @@
 // Shared WidthControls component for content editor elements
 
-import { SelectPopover, type SelectPopoverOption, Input, Label } from '@usertour/ui';
+import { CompactSelect, type SelectPopoverOption, Input, Label } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
-import { memo, useCallback, useEffect, useId, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { WIDTH_TYPES } from '../constants';
 import type { DimensionConfig } from '../types/width';
@@ -25,19 +26,26 @@ export interface WidthControlsProps {
 
 export const WidthControls = memo(
   ({
-    label = 'Width',
+    label,
     value,
     options,
     onTypeChange,
     onValueChange,
     zIndex,
     showValueInput = true,
-    inputPlaceholder = 'Width',
-    inputClassName = 'bg-background dark:bg-muted grow',
-    comboBoxClassName = 'flex-none w-20 h-auto px-2',
+    inputPlaceholder,
+    inputClassName = 'grow',
+    comboBoxClassName = 'flex-none w-20',
   }: WidthControlsProps) => {
     const id = useId();
     const widthInputId = `${id}-width-input`;
+    const { t } = useTranslation();
+
+    // SelectPopover-shaped options carry `name`; CompactSelect wants `label`.
+    const typeOptions = useMemo(
+      () => options.map((option) => ({ value: option.value, label: option.name })),
+      [options],
+    );
 
     // Local state for display value to allow typing any characters
     const [displayValue, setDisplayValue] = useState<string>(value.value?.toString() ?? '');
@@ -109,25 +117,26 @@ export const WidthControls = memo(
 
     return (
       <>
-        <Label htmlFor={widthInputId}>{label}</Label>
+        <Label htmlFor={widthInputId}>{label ?? t('contentBuilder.editor.width.label')}</Label>
         <div className="flex gap-x-2">
           {showValueInput && (
             <Input
+              variant="compact-muted"
               id={widthInputId}
               type="text"
               inputMode="numeric"
               value={displayValue}
-              placeholder={inputPlaceholder}
+              placeholder={inputPlaceholder ?? t('contentBuilder.editor.width.label')}
               onChange={handleValueChange}
               onBlur={handleBlur}
               className={inputClassName}
             />
           )}
-          <SelectPopover
-            options={options}
+          <CompactSelect
+            options={typeOptions}
             value={value.type}
-            onValueChange={handleTypeChange}
-            placeholder="Select type"
+            onChange={handleTypeChange}
+            placeholder={t('contentBuilder.editor.width.selectType')}
             className={comboBoxClassName}
             contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
           />
