@@ -5,7 +5,7 @@ import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useBuilderStore, useProjectId } from '@/pages/contents/components/builder/core';
@@ -32,13 +32,9 @@ export const SidebarTheme = () => {
     setCurrentVersion((prev) => (prev ? { ...prev, themeId: value } : prev));
   };
 
-  const handleEditTheme = useCallback(() => {
-    if (!currentVersion) {
-      return;
-    }
-    const url = `/project/${projectId}/settings/theme/${currentVersion.themeId}`;
-    window.open(url, '_blank');
-  }, [currentVersion]);
+  const editThemeUrl = currentVersion
+    ? `/project/${projectId}/settings/theme/${currentVersion.themeId}`
+    : undefined;
 
   return (
     <>
@@ -48,9 +44,11 @@ export const SidebarTheme = () => {
           <QuestionTooltip>{t('contentBuilder.shared.theme.flowTooltip')}</QuestionTooltip>
         </div>
 
-        <Button variant="link" onClick={handleEditTheme} className="p-0 h-full text-sm">
-          {t('contentBuilder.shared.theme.edit')}
-          <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
+        <Button variant="link" asChild className="p-0 h-full text-sm">
+          <a href={editThemeUrl} target="_blank" rel="noopener noreferrer">
+            {t('contentBuilder.shared.theme.edit')}
+            <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
+          </a>
         </Button>
       </div>
       {currentVersion && (

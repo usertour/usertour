@@ -102,16 +102,12 @@ const FlowBuilderDetailBody = () => {
     return getThemeWidthByStepType(currentStep.type, effectiveTheme?.settings);
   }, [currentStep?.type, effectiveTheme?.settings]);
 
-  const handleEditTheme = useCallback(() => {
-    // The theme to edit is the step's explicit override, else the version's
-    // theme. No explicit themeId → nothing to edit (don't fall back to default).
-    const themeId = currentStep?.themeId || currentVersion?.themeId;
-    if (!themeId) {
-      return;
-    }
-    const url = `/project/${projectId}/settings/theme/${themeId}`;
-    window.open(url, '_blank');
-  }, [currentStep?.themeId, currentVersion?.themeId, projectId]);
+  // The theme to edit is the step's explicit override, else the version's
+  // theme. No explicit themeId → no link (don't fall back to default).
+  const editThemeId = currentStep?.themeId || currentVersion?.themeId;
+  const editThemeUrl = editThemeId
+    ? `/project/${projectId}/settings/theme/${editThemeId}`
+    : undefined;
 
   const handleAlignmentChange = (value: ContentAlignmentData) => {
     updateCurrentStep((pre) => ({
@@ -172,7 +168,7 @@ const FlowBuilderDetailBody = () => {
               <>
                 <ContentTheme
                   themeList={themeList}
-                  onEdited={handleEditTheme}
+                  editUrl={editThemeUrl}
                   themeId={currentStep.themeId}
                   onChange={handleThemeChange}
                 />

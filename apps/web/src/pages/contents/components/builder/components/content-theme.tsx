@@ -9,11 +9,13 @@ interface ContentThemeProps {
   themeList: Theme[] | null;
   themeId?: string;
   onChange: (themeId: string | undefined) => void;
-  onEdited: () => void;
+  // Theme builder URL for the selected theme; opened in a new tab via a real
+  // link (keeps the content builder context). Undefined → no theme to edit.
+  editUrl?: string;
 }
 
 export const ContentTheme = (props: ContentThemeProps) => {
-  const { themeId: initialValue, themeList, onChange, onEdited } = props;
+  const { themeId: initialValue, themeList, onChange, editUrl } = props;
   const { t } = useTranslation();
 
   const themeOptions = useMemo(() => {
@@ -39,9 +41,11 @@ export const ContentTheme = (props: ContentThemeProps) => {
           <QuestionTooltip>{t('contentBuilder.shared.theme.stepTooltip')}</QuestionTooltip>
         </div>
 
-        <Button variant="link" onClick={onEdited} className="p-0 h-full">
-          {t('contentBuilder.shared.theme.edit')}
-          <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
+        <Button variant="link" asChild className="p-0 h-full">
+          <a href={editUrl} target="_blank" rel="noopener noreferrer">
+            {t('contentBuilder.shared.theme.edit')}
+            <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
+          </a>
         </Button>
       </div>
 
