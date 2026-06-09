@@ -5,6 +5,7 @@ import { ParamsError } from '@/common/errors';
 import {
   AuthoringAction,
   AuthoringCondition,
+  AuthoringHideRules,
   AuthoringStartRules,
   AuthoringTrigger,
 } from './authoring.schema';
@@ -223,7 +224,9 @@ export function compileStartRules(start: AuthoringStartRules | undefined, r: Com
       ...(start.frequency.atLeast ? { atLeast: start.frequency.atLeast } : {}),
     };
   }
-  if (start.priority) setting.priority = start.priority;
+  if (start.priority) {
+    setting.priority = start.priority;
+  }
   if (start.waitMs !== undefined) setting.wait = start.waitMs;
   if (start.startIfNotComplete !== undefined) setting.startIfNotComplete = start.startIfNotComplete;
   return {
@@ -231,4 +234,12 @@ export function compileStartRules(start: AuthoringStartRules | undefined, r: Com
     autoStartRules: compileConditions(start.when, r),
     ...(Object.keys(setting).length ? { autoStartRulesSetting: setting } : {}),
   };
+}
+
+/** Compile version-level hide rules back into config fragments. */
+export function compileHideRules(hide: AuthoringHideRules | null | undefined, r: CompileResolvers) {
+  if (!hide) {
+    return { enabledHideRules: false, hideRules: [] };
+  }
+  return { enabledHideRules: true, hideRules: compileConditions(hide.when, r) };
 }

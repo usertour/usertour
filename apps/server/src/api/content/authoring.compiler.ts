@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 
-import { AuthoringBlock, AuthoringQuestion, AuthoringStep } from './authoring.schema';
+import {
+  AuthoringBlock,
+  AuthoringPlacement,
+  AuthoringQuestion,
+  AuthoringTarget,
+  AuthoringTrigger,
+} from './authoring.schema';
 import { markdownToRichText } from './markdown';
 import {
   CompileResolvers,
@@ -35,8 +41,22 @@ type InternalStep = {
   setting?: unknown;
 };
 
+/** The fields the compiler reads — satisfied by both the read step and write input. */
+type StepToCompile = {
+  cvid?: string | null;
+  name: string;
+  type: string;
+  sequence: number;
+  target?: AuthoringTarget;
+  placement?: AuthoringPlacement;
+  width?: number;
+  skippable?: boolean;
+  content: AuthoringBlock[];
+  triggers?: AuthoringTrigger[];
+};
+
 export function compileStep(
-  step: AuthoringStep,
+  step: StepToCompile,
   existing: InternalStep | undefined,
   r: CompileResolvers,
 ): CompiledStep {
@@ -54,7 +74,7 @@ export function compileStep(
 
 // ── Setting (merge placement / width / skippable into existing) ───────────────
 
-function compileSetting(step: AuthoringStep, existingSetting: unknown): unknown {
+function compileSetting(step: StepToCompile, existingSetting: unknown): unknown {
   const s: Record<string, unknown> = { ...((existingSetting as Record<string, unknown>) ?? {}) };
   const p = step.placement;
   if (p && 'side' in p) {

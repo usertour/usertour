@@ -24,6 +24,7 @@ describe('API v2 /content-versions (e2e)', () => {
   let projectId: string;
   let contentId: string;
   let versionId: string;
+  let writeVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -38,7 +39,7 @@ describe('API v2 /content-versions (e2e)', () => {
     return gqlData(res).createApiToken.token;
   }
 
-  function api(method: 'get', path: string, token?: string) {
+  function api(method: 'get' | 'patch', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
@@ -102,6 +103,10 @@ describe('API v2 /content-versions (e2e)', () => {
       cvid: 'cv-2',
       sequence: 1,
     });
+
+    // A dedicated editable (draft) version for write tests, isolated from the reads.
+    const writeContent = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    writeVersionId = (await buildVersion(prisma, { contentId: writeContent.id, sequence: 0 })).id;
   }, 60000);
 
   afterAll(async () => {
@@ -234,6 +239,73 @@ describe('API v2 /content-versions (e2e)', () => {
     );
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
+  });
+
+  it('writes steps + start rules to a draft version (PATCH)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'Authored',
+          type: 'modal',
+          cvid: 'w-1',
+          placement: { position: 'center' },
+          content: [
+            { type: 'text', markdown: '**Hello** {{ first_name | default: "there" }}' },
+            { type: 'button', text: 'Got it', variant: 'primary' },
+          ],
+        },
+      ],
+      startRules: { when: [{ type: 'current_url', includes: ['/app/*'] }] },
+    });
+    expect(res.status).toBe(200);
+    const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'w-1');
+    expect(step).toMatchObject({ name: 'Authored', type: 'modal' });
+    expect(step.content).toHaveLength(2);
+    expect(step.content[0]).toMatchObject({
+      type: 'text',
+      markdown: '**Hello** {{ first_name | default: "there" }}',
+    });
+    expect(step.content[1]).toMatchObject({ type: 'button', text: 'Got it', variant: 'primary' });
+    expect(res.body.startRules.when[0]).toMatchObject({
+      type: 'current_url',
+      includes: ['/app/*'],
+    });
+  });
+
+  it('rejects writing run_javascript (read-only)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'JS',
+          type: 'modal',
+          cvid: 'w-2',
+          content: [],
+          triggers: [{ do: [{ type: 'run_javascript', script: 'alert(1)' }] }],
+        },
+      ],
+    });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it('rejects a write without the update scope (403 E1012)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      token,
+    ).send({ steps: [] });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
   });
 
   it('rejects insufficient scope (403 E1012)', async () => {

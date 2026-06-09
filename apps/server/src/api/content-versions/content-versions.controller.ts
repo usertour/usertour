@@ -1,4 +1,14 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -14,6 +24,7 @@ import {
   GetContentVersionQueryDto,
   ListContentVersionsQueryDto,
   ListContentVersionsResponseDto,
+  UpdateVersionBodyDto,
 } from './content-versions.schema';
 
 @ApiTags('Content versions (v2)')
@@ -55,5 +66,20 @@ export class ApiContentVersionsController {
     @Query() query: GetContentVersionQueryDto,
   ) {
     return this.service.get(id, projectId, query);
+  }
+
+  @Patch(':id')
+  @RequireCapability(Capability.ContentUpdate)
+  @ApiOperation({ summary: 'Update a draft content version (steps / rules)' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content version ID' })
+  @ApiResponse({ status: 200, description: 'Updated content version', type: ContentVersionDto })
+  @ApiResponse({ status: 404, description: 'Content version not found' })
+  async update(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: UpdateVersionBodyDto,
+  ) {
+    return this.service.update(id, projectId, body);
   }
 }

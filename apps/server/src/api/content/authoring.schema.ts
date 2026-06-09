@@ -272,7 +272,11 @@ export type AuthoringBlock =
     }
   | { object: ApiObjectType.BLOCK; id?: string; type: 'unsupported'; note?: string };
 
-const blockBase = { object: z.literal(ApiObjectType.BLOCK), id: z.string().optional() };
+const blockBase = {
+  // Present on read; optional on write input (defaulted) so clients needn't echo it.
+  object: z.literal(ApiObjectType.BLOCK).default(ApiObjectType.BLOCK),
+  id: z.string().optional(),
+};
 export const authoringBlock = z.lazy(() =>
   z.union([
     z.object({ ...blockBase, type: z.literal('text'), markdown: z.string() }),
@@ -356,3 +360,22 @@ export type AuthoringStartRules = z.infer<typeof authoringStartRules>;
 
 export const authoringHideRules = z.object({ when: z.array(authoringCondition) });
 export type AuthoringHideRules = z.infer<typeof authoringHideRules>;
+
+// ── Write input ──────────────────────────────────────────────────────────────
+// A lenient step shape for writes: `id` (server-owned) is omitted for new steps,
+// `cvid` is the merge key, `sequence` defaults to the array position, `object` is
+// not required. Compiled by the write path and merged onto the existing step.
+export const authoringStepInput = z.object({
+  id: z.string().optional(),
+  cvid: z.string().optional(),
+  name: z.string(),
+  type: z.string(),
+  sequence: z.number().optional(),
+  target: authoringTarget.optional(),
+  placement: authoringPlacement.optional(),
+  width: z.number().optional(),
+  skippable: z.boolean().optional(),
+  content: z.array(authoringBlock).default([]),
+  triggers: z.array(authoringTrigger).optional(),
+});
+export type AuthoringStepInput = z.infer<typeof authoringStepInput>;

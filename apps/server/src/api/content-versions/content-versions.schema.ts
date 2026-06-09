@@ -1,6 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+import {
+  authoringHideRules,
+  authoringStartRules,
+  authoringStepInput,
+} from '../content/authoring.schema';
 import { contentVersion } from '../content/content.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
@@ -26,6 +31,19 @@ export const listContentVersionsQuery = z.object({
 export class ListContentVersionsQueryDto extends createZodDto(listContentVersionsQuery) {}
 
 export class ContentVersionDto extends createZodDto(contentVersion) {}
+
+/**
+ * Write body for PATCH content-versions/:id. All fields optional — only the
+ * provided ones are written. `steps` replaces the version's step list (merged
+ * by cvid); `startRules`/`hideRules` set or clear (null) the version's rules.
+ */
+export const updateVersionBody = z.object({
+  steps: z.array(authoringStepInput).optional(),
+  startRules: authoringStartRules.nullable().optional(),
+  hideRules: authoringHideRules.nullable().optional(),
+});
+export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
+export type UpdateVersionBody = z.infer<typeof updateVersionBody>;
 
 export const listContentVersionsResponse = z.object({
   results: z.array(contentVersion),

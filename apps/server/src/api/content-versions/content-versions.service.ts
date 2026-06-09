@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ContentNotFoundError } from '@/common/errors/errors';
+import { ContentNotFoundError, ParamsError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 
+import { compileStep } from '../content/authoring.compiler';
 import { decompileStep } from '../content/authoring.mapper';
 import { ContentVersion } from '../content/content.schema';
+import { CompileResolvers, compileHideRules, compileStartRules } from '../content/rules.compiler';
 import {
   DecompileResolvers,
   decompileHideRules,
@@ -14,7 +16,11 @@ import {
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapQuestions, mapVersion } from './content-versions.mapper';
-import { GetContentVersionQuery, ListContentVersionsQuery } from './content-versions.schema';
+import {
+  GetContentVersionQuery,
+  ListContentVersionsQuery,
+  UpdateVersionBody,
+} from './content-versions.schema';
 
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (value === undefined) {
@@ -142,6 +148,76 @@ export class ApiContentVersionsService {
     return {
       attributeCode: (id) => attrMap.get(id) ?? id,
       eventCode: (id) => eventMap.get(id) ?? id,
+    };
+  }
+
+  /**
+   * Write a draft version: compile the authoring steps + rules and field-merge
+   * them onto the existing internal version, then delegate persistence to the
+   * domain `updateContentVersion` (the builder's exact path — cvid upsert in a
+   * transaction). Only the provided fields are touched.
+   */
+  async update(id: string, projectId: string, body: UpdateVersionBody): Promise<ContentVersion> {
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      steps: { orderBy: { sequence: 'asc' } },
+    });
+    if (!version) {
+      throw new ContentNotFoundError();
+    }
+    const resolvers = await this.buildCompileResolvers(projectId);
+    const content: Record<string, unknown> = {};
+
+    if (body.steps) {
+      const existingByCvid = new Map(
+        ((version.steps ?? []) as { cvid: string }[]).map((s) => [s.cvid, s]),
+      );
+      content.steps = body.steps.map((s, i) =>
+        compileStep(
+          { ...s, cvid: s.cvid ?? null, sequence: s.sequence ?? i, content: s.content ?? [] },
+          s.cvid ? existingByCvid.get(s.cvid) : undefined,
+          resolvers,
+        ),
+      );
+    }
+
+    if (body.startRules !== undefined || body.hideRules !== undefined) {
+      const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
+      if (body.startRules !== undefined) {
+        Object.assign(config, compileStartRules(body.startRules ?? undefined, resolvers));
+      }
+      if (body.hideRules !== undefined) {
+        Object.assign(config, compileHideRules(body.hideRules, resolvers));
+      }
+      content.config = config;
+    }
+
+    if (Object.keys(content).length > 0) {
+      const result = await this.content.updateContentVersion({
+        versionId: id,
+        content: content as never,
+      });
+      if (!result) {
+        throw new ParamsError('Version is not editable');
+      }
+    }
+
+    return this.get(id, projectId, { expand: ['steps'] });
+  }
+
+  /** Map stable codes back to internal ids (code→id; fallback: the code itself). */
+  private async buildCompileResolvers(projectId: string): Promise<CompileResolvers> {
+    const [attributes, events] = await Promise.all([
+      this.prisma.attribute.findMany({
+        where: { projectId },
+        select: { id: true, codeName: true },
+      }),
+      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
+    ]);
+    const attrMap = new Map(attributes.map((a) => [a.codeName, a.id]));
+    const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
+    return {
+      attributeId: (code) => attrMap.get(code) ?? code,
+      eventId: (code) => eventMap.get(code) ?? code,
     };
   }
 }
