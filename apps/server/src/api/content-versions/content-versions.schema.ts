@@ -8,7 +8,7 @@ function singleOrArray<T extends z.ZodTypeAny>(item: T) {
   return z.union([item, z.array(item)]).optional();
 }
 
-export const versionExpand = z.enum(['questions']);
+export const versionExpand = z.enum(['questions', 'steps']);
 const orderByField = z.enum(['createdAt', '-createdAt']);
 
 export const getContentVersionQuery = z.object({

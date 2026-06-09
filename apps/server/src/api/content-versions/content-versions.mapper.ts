@@ -1,9 +1,16 @@
 import { extractQuestionData } from '@/utils/content-question';
 
+import { AuthoringStep } from '../content/authoring.schema';
 import { ContentVersion, Question } from '../content/content.schema';
 import { ApiObjectType } from '../shared/object-type';
 
-type VersionNode = { id: string; sequence: number; updatedAt: Date; createdAt: Date };
+type VersionNode = {
+  id: string;
+  sequence: number;
+  themeId: string | null;
+  updatedAt: Date;
+  createdAt: Date;
+};
 
 /** Pure: extract the API questions from a version's steps (mirrors the v1 mapping). */
 export function mapQuestions(steps: { data: unknown }[]): Question[] {
@@ -24,16 +31,22 @@ export function mapQuestions(steps: { data: unknown }[]): Question[] {
 }
 
 /**
- * Pure version -> API content-version for the versions endpoint. `questions` is
- * null unless the questions expand was requested (the service does that I/O and
- * passes the already-extracted questions in).
+ * Pure version -> API content-version for the versions endpoint. `questions` and
+ * `steps` are populated only when their expand was requested (the service does
+ * that I/O and passes the already-extracted/decompiled values in).
  */
-export function mapVersion(version: VersionNode, questions: Question[] | null): ContentVersion {
+export function mapVersion(
+  version: VersionNode,
+  questions: Question[] | null,
+  steps?: AuthoringStep[],
+): ContentVersion {
   return {
     id: version.id,
     object: ApiObjectType.CONTENT_VERSION,
     number: version.sequence,
+    themeId: version.themeId ?? null,
     questions,
+    ...(steps ? { steps } : {}),
     updatedAt: version.updatedAt.toISOString(),
     createdAt: version.createdAt.toISOString(),
   };

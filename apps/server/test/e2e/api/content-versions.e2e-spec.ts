@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildContent, buildEnvironment, buildProject, buildVersion } from '../factories';
+import {
+  buildContent,
+  buildEnvironment,
+  buildProject,
+  buildStep,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -50,6 +56,20 @@ describe('API v2 /content-versions (e2e)', () => {
     const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
     contentId = content.id;
     versionId = (await buildVersion(prisma, { contentId, sequence: 0 })).id;
+    await buildStep(prisma, {
+      versionId,
+      type: 'tooltip',
+      name: 'Step one',
+      cvid: 'cv-1',
+      sequence: 0,
+    });
+    await buildStep(prisma, {
+      versionId,
+      type: 'modal',
+      name: 'Step two',
+      cvid: 'cv-2',
+      sequence: 1,
+    });
   }, 60000);
 
   afterAll(async () => {
@@ -79,6 +99,39 @@ describe('API v2 /content-versions (e2e)', () => {
     );
     expect(res.status).toBe(200);
     expect(res.body.results.map((v: { id: string }) => v.id)).toContain(versionId);
+  });
+
+  it('exposes themeId on a version (null when no theme)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('themeId');
+  });
+
+  it('decompiles slim authoring steps with expand=steps (ordered by sequence)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content-versions/${versionId}?expand=steps`,
+      token,
+    );
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.steps)).toBe(true);
+    expect(res.body.steps).toHaveLength(2);
+    expect(res.body.steps[0]).toMatchObject({
+      object: 'step',
+      cvid: 'cv-1',
+      name: 'Step one',
+      type: 'tooltip',
+      sequence: 0,
+    });
+    expect(res.body.steps[1].sequence).toBe(1);
+  });
+
+  it('omits steps without the expand', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    expect(res.body.steps).toBeUndefined();
   });
 
   it('returns questions as an array when expanded', async () => {

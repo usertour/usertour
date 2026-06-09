@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 
+import { decompileStep } from '../content/authoring.mapper';
 import { ContentVersion } from '../content/content.schema';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -16,27 +17,32 @@ function toArray<T>(value: T | T[] | undefined): T[] {
   return Array.isArray(value) ? value : [value];
 }
 
+type VersionNode = {
+  id: string;
+  sequence: number;
+  themeId: string | null;
+  updatedAt: Date;
+  createdAt: Date;
+};
+
 /**
  * v2 content-versions handler. Depends on the domain {@link ContentService}; the
- * `questions` expand needs a second fetch (the version's steps), which the service
- * does before handing the extracted questions to the pure mapper.
+ * `questions` and `steps` expands both derive from the version's step rows, which
+ * the service loads once before handing the extracted/decompiled values to the
+ * pure mapper.
  */
 @Injectable()
 export class ApiContentVersionsService {
   constructor(private readonly content: ContentService) {}
 
   async get(id: string, projectId: string, query: GetContentVersionQuery): Promise<ContentVersion> {
-    const wantsQuestions = toArray(query.expand).includes('questions');
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       content: true,
     });
     if (!version) {
       throw new ContentNotFoundError();
     }
-    const questions = wantsQuestions
-      ? mapQuestions(await this.loadSteps(version.id, projectId))
-      : null;
-    return mapVersion(version, questions);
+    return this.toVersion(version, projectId, toArray(query.expand));
   }
 
   async list(
@@ -45,7 +51,7 @@ export class ApiContentVersionsService {
     query: ListContentVersionsQuery,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     const { contentId, limit, cursor } = query;
-    const wantsQuestions = toArray(query.expand).includes('questions');
+    const expand = toArray(query.expand);
     const orderBy = parseOrderBy(
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
     );
@@ -59,6 +65,7 @@ export class ApiContentVersionsService {
       requestUrl,
       cursor,
       limit,
+      query: expand.length ? { expand } : undefined,
       fetch: (params) =>
         this.content.listContentVersionsWithRelations(
           projectId,
@@ -67,17 +74,33 @@ export class ApiContentVersionsService {
           { content: true },
           orderBy,
         ),
-      map: async (node) =>
-        mapVersion(
-          node,
-          wantsQuestions ? mapQuestions(await this.loadSteps(node.id, projectId)) : null,
-        ),
+      map: (node) => this.toVersion(node, projectId, expand),
     });
   }
 
-  private async loadSteps(versionId: string, projectId: string): Promise<{ data: unknown }[]> {
+  /**
+   * Build the API version. `questions` and `steps` both derive from the version's
+   * step rows, so load them once when either expand is requested.
+   */
+  private async toVersion(
+    version: VersionNode,
+    projectId: string,
+    expand: string[],
+  ): Promise<ContentVersion> {
+    const wantsQuestions = expand.includes('questions');
+    const wantsSteps = expand.includes('steps');
+    if (!wantsQuestions && !wantsSteps) {
+      return mapVersion(version, null);
+    }
+    const steps = await this.loadSteps(version.id, projectId);
+    const questions = wantsQuestions ? mapQuestions(steps) : null;
+    const decompiled = wantsSteps ? steps.map(decompileStep) : undefined;
+    return mapVersion(version, questions, decompiled);
+  }
+
+  private async loadSteps(versionId: string, projectId: string) {
     const version = await this.content.getContentVersionWithRelations(versionId, projectId, {
-      steps: true,
+      steps: { orderBy: { sequence: 'asc' } },
     });
     return version?.steps ?? [];
   }

@@ -22,6 +22,7 @@ describe('mapContent (pure)', () => {
       object: 'content',
       name: 'Flow',
       type: 'flow',
+      buildUrl: null,
       editedVersionId: 'v1',
       editedVersion: undefined,
       environments: [],

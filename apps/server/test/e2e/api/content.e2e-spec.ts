@@ -93,6 +93,7 @@ describe('API v2 /content (e2e)', () => {
     const item = res.body.results.find((c: { id: string }) => c.id === flowId);
     expect(item).toMatchObject({ id: flowId, object: 'content', type: 'flow' });
     expect(Array.isArray(item.environments)).toBe(true);
+    expect(item).toHaveProperty('buildUrl');
     expect(item).not.toHaveProperty('publishedVersionId');
     expect(item).not.toHaveProperty('publishedVersion');
   });

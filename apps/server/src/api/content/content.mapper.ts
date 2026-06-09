@@ -1,7 +1,13 @@
 import { ApiObjectType } from '../shared/object-type';
 import { Content, ContentExpand, ContentVersion } from './content.schema';
 
-type VersionNode = { id: string; sequence: number; updatedAt: Date; createdAt: Date };
+type VersionNode = {
+  id: string;
+  sequence: number;
+  themeId: string | null;
+  updatedAt: Date;
+  createdAt: Date;
+};
 
 /** Pure version -> API content-version (the slim form embedded in content; questions empty here). */
 export function mapContentVersion(version: VersionNode): ContentVersion {
@@ -9,6 +15,7 @@ export function mapContentVersion(version: VersionNode): ContentVersion {
     id: version.id,
     object: ApiObjectType.CONTENT_VERSION,
     number: version.sequence,
+    themeId: version.themeId ?? null,
     questions: [],
     updatedAt: version.updatedAt.toISOString(),
     createdAt: version.createdAt.toISOString(),
@@ -27,6 +34,7 @@ export function mapContent(node: any, expand: ContentExpand[]): Content {
     object: ApiObjectType.CONTENT,
     name: node.name,
     type: node.type,
+    buildUrl: node.buildUrl ?? null,
     editedVersionId: node.editedVersionId,
     editedVersion:
       expand.includes('editedVersion') && node.editedVersion

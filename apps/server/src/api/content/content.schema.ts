@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
+import { authoringStep } from './authoring.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
 function singleOrArray<T extends z.ZodTypeAny>(item: T) {
@@ -40,7 +41,10 @@ export const contentVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
   number: z.number(),
+  themeId: z.string().nullable(),
   questions: z.array(question).nullable(),
+  /** Decompiled steps — only present when the `steps` expand is requested. */
+  steps: z.array(authoringStep).optional(),
   updatedAt: z.string(),
   createdAt: z.string(),
 });
@@ -59,6 +63,7 @@ export const content = z.object({
   object: z.literal(ApiObjectType.CONTENT),
   name: z.string(),
   type: z.string(),
+  buildUrl: z.string().nullable(),
   editedVersionId: z.string(),
   editedVersion: contentVersion.optional(),
   environments: z.array(contentEnvironment),

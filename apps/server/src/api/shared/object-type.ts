@@ -17,6 +17,8 @@ export enum ApiObjectType {
   EVENT_DEFINITION = 'eventDefinition',
   CONTENT_SESSION_ANSWER = 'contentSessionAnswer',
   QUESTION = 'question',
+  STEP = 'step',
+  BLOCK = 'block',
 }
 
 export function isApiObjectType(value: string): value is ApiObjectType {
