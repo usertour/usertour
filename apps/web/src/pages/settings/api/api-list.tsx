@@ -3,13 +3,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { format } from 'date-fns';
-import {
-  Alert,
-  AlertDescription,
-  NewItemButton,
-  ResourceListPage,
-  type ResourceTableColumn,
-} from '@usertour/ui';
+import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { WarningIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { type AccessToken, useListAccessTokensQuery } from '@usertour/hooks';
@@ -67,13 +61,13 @@ export const SettingsApiList = () => {
       actions={<NewApiKeyButton onSuccess={refetch} />}
       description={
         <>
-          <Alert variant="warning" className="mb-3">
-            <WarningIcon className="h-4 w-4" />
-            <AlertDescription>
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-warning/50 px-4 py-3 text-sm text-warning">
+            <WarningIcon className="h-4 w-4 shrink-0" />
+            <span>
               <Trans
                 i18nKey="settings.api.deprecation"
                 components={{
-                  link: (
+                  a: (
                     <Link
                       to={`/project/${project?.id}/settings/personal-api-keys`}
                       className="font-medium underline"
@@ -81,8 +75,8 @@ export const SettingsApiList = () => {
                   ),
                 }}
               />
-            </AlertDescription>
-          </Alert>
+            </span>
+          </div>
           {t('settings.api.headerBody')}
           <br />
           <Trans
