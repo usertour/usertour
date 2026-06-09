@@ -43,13 +43,16 @@ export class ApiToken {
   updatedAt: Date;
 }
 
-/** Returned only by createApiToken — carries the plaintext token shown exactly once. */
+/**
+ * Carries a plaintext token shown exactly once — returned by createApiToken (a
+ * brand-new token) and rotateApiToken (a freshly-rotated secret).
+ */
 @ObjectType()
 export class CreatedApiToken {
   @Field(() => ApiToken)
   apiToken: ApiToken;
 
-  /** The full plaintext token. Shown once at creation and never retrievable again. */
+  /** The full plaintext token. Shown once and never retrievable again. */
   @Field()
   token: string;
 }
@@ -75,4 +78,27 @@ export class CreateApiTokenInput {
   @Field(() => Date, { nullable: true })
   @IsOptional()
   expiresAt?: Date;
+}
+
+/** Partial edit of a token's metadata. Only the provided fields change. */
+@InputType()
+export class UpdateApiTokenInput {
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  projectIds?: string[];
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  scopes?: string[];
 }

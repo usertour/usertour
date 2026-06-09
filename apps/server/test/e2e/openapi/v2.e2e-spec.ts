@@ -19,7 +19,8 @@ import { createTestApp } from '../create-test-app';
 
 /**
  * Real-DB contract test for the v2 API surface and its credential:
- * - GraphQL self-service token management (create reveal-once / list / revoke)
+ * - GraphQL self-service token management (create reveal-once / list / update /
+ *   rotate / delete)
  * - the ApiTokenGuard chain on project-rooted v2 read routes:
  *   project-in-token-scope, ROLE_CAPABILITIES[role] ∩ scopes, env-belongs-to-
  *   project, and live UserOnProject membership.
@@ -47,7 +48,13 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
     }
   }`;
   const LIST = 'query{ apiTokens { id name scopes projectIds isActive } }';
-  const REVOKE = 'mutation($id: String!){ revokeApiToken(id: $id) }';
+  const UPDATE = `mutation($id: String!, $input: UpdateApiTokenInput!){
+    updateApiToken(id: $id, input: $input){ id name scopes projectIds }
+  }`;
+  const ROTATE = `mutation($id: String!){
+    rotateApiToken(id: $id){ token apiToken { id partialKey } }
+  }`;
+  const DELETE = 'mutation($id: String!){ deleteApiToken(id: $id) }';
 
   async function mint(
     scopes: Capability[],
@@ -151,6 +158,45 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
       await prisma.project.deleteMany({ where: { id: stranger.id } });
+    });
+
+    it('updates a token name + scopes', async () => {
+      const created = await mint([Capability.ContentRead], [projectA]);
+      const res = await graphql(app, {
+        query: UPDATE,
+        variables: {
+          id: created.apiToken.id,
+          input: { name: 'renamed', scopes: [Capability.BizdataRead] },
+        },
+        token: ownerToken,
+      });
+      const updated = gqlData(res).updateApiToken;
+      expect(updated.name).toBe('renamed');
+      expect(updated.scopes).toEqual([Capability.BizdataRead]);
+      expect(updated.projectIds).toEqual([projectA]);
+    });
+
+    it('rotates a token: the old secret stops working, the new one works', async () => {
+      const created = await mint([Capability.ContentRead], [projectA]);
+      // The freshly-minted secret works against a v2 route.
+      let res = await v2('get', `/v2/projects/${projectA}/content`, created.token);
+      expect(res.status).toBe(200);
+
+      const rotateRes = await graphql(app, {
+        query: ROTATE,
+        variables: { id: created.apiToken.id },
+        token: ownerToken,
+      });
+      const rotated = gqlData(rotateRes).rotateApiToken;
+      expect(rotated.token.startsWith('utp_')).toBe(true);
+      expect(rotated.token).not.toBe(created.token);
+
+      // Old secret is now rejected; the rotated one is accepted.
+      res = await v2('get', `/v2/projects/${projectA}/content`, created.token);
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1000');
+      res = await v2('get', `/v2/projects/${projectA}/content`, rotated.token);
+      expect(res.status).toBe(200);
     });
   });
 
@@ -256,10 +302,10 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
       expect(res.body.error.code).toBe('E1019');
     });
 
-    it('rejects a revoked token (403 E1000)', async () => {
+    it('rejects a deleted token (403 E1000)', async () => {
       const created = await mint([Capability.ContentRead], [projectA]);
       await graphql(app, {
-        query: REVOKE,
+        query: DELETE,
         variables: { id: created.apiToken.id },
         token: ownerToken,
       });

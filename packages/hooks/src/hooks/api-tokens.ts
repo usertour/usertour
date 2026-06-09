@@ -1,5 +1,11 @@
 import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
-import { ApiTokens, CreateApiToken, RevokeApiToken } from '@usertour/gql';
+import {
+  ApiTokens,
+  CreateApiToken,
+  DeleteApiToken,
+  RotateApiToken,
+  UpdateApiToken,
+} from '@usertour/gql';
 
 export interface ApiToken {
   id: string;
@@ -19,6 +25,12 @@ export interface CreateApiTokenInput {
   projectIds: string[];
   scopes: string[];
   expiresAt?: string | null;
+}
+
+export interface UpdateApiTokenInput {
+  name?: string;
+  projectIds?: string[];
+  scopes?: string[];
 }
 
 export interface CreatedApiToken {
@@ -50,15 +62,39 @@ export const useCreateApiTokenMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useRevokeApiTokenMutation = () => {
-  // Revoke is a soft deactivate (isActive=false); refetch so the row reflects
-  // the new state rather than evicting it from the cache.
-  const [mutation, { loading, error }] = useMutation(RevokeApiToken, {
+export const useUpdateApiTokenMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateApiToken, {
+    refetchQueries: ['ApiTokens'],
+  });
+  // Returns the updated record, or null on failure.
+  const invoke = async (id: string, input: UpdateApiTokenInput): Promise<ApiToken | null> => {
+    const response = await mutation({ variables: { id, input } });
+    return (response.data?.updateApiToken as ApiToken | undefined) ?? null;
+  };
+  return { invoke, loading, error };
+};
+
+export const useRotateApiTokenMutation = () => {
+  // Rotating mints a new secret on the same record; the plaintext is shown
+  // once (like create). Refetch so the masked tail updates in the list.
+  const [mutation, { loading, error }] = useMutation(RotateApiToken, {
+    refetchQueries: ['ApiTokens'],
+  });
+  const invoke = async (id: string): Promise<CreatedApiToken | null> => {
+    const response = await mutation({ variables: { id } });
+    return response.data?.rotateApiToken ?? null;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteApiTokenMutation = () => {
+  // Hard delete; refetch evicts the row from the list.
+  const [mutation, { loading, error }] = useMutation(DeleteApiToken, {
     refetchQueries: ['ApiTokens'],
   });
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { id } });
-    return !!response.data?.revokeApiToken;
+    return !!response.data?.deleteApiToken;
   };
   return { invoke, loading, error };
 };

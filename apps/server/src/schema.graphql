@@ -846,6 +846,7 @@ type Mutation {
   createSegment(data: CreatSegment!): Segment!
   createTheme(data: CreateThemeInput!): Theme!
   deleteAccessToken(accessTokenId: String!, environmentId: String!): Boolean!
+  deleteApiToken(id: String!): Boolean!
   deleteAttribute(data: DeleteAttributeInput!): Attribute!
   deleteBizCompany(data: BizUserOrCompanyIdsInput!): Common!
   deleteBizCompanyOnSegment(data: DeleteBizCompanyOnSegment!): Common!
@@ -873,7 +874,7 @@ type Mutation {
   resetUserPassword(data: ResetPasswordInput!): Common!
   resetUserPasswordByCode(data: ResetPasswordByCodeInput!): Common!
   restoreContentVersion(data: VersionIdInput!): Version!
-  revokeApiToken(id: String!): Boolean!
+  rotateApiToken(id: String!): CreatedApiToken!
   setDefaultLocalization(id: String!): Localization!
   setDefaultTheme(themeId: String!): Theme!
   setupSystemAdmin(data: SetupSystemAdminInput!): Auth!
@@ -881,6 +882,7 @@ type Mutation {
   startTwoFactorSetup: TwoFactorSetupPayload!
   startTwoFactorSetupWithChallenge(challengeToken: String!): TwoFactorSetupPayload!
   unpublishedContentVersion(data: ContentIdInput!): Common!
+  updateApiToken(id: String!, input: UpdateApiTokenInput!): ApiToken!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
   updateContent(data: ContentUpdateInput!): Content!
   updateContentVersion(data: VersionUpdateInput!): Version!
@@ -1260,6 +1262,12 @@ type TwoFactorSetupPayload {
 input TwoFactorStepUpInput {
   code: String!
   isRecoveryCode: Boolean! = false
+}
+
+input UpdateApiTokenInput {
+  name: String
+  projectIds: [String!]
+  scopes: [String!]
 }
 
 input UpdateAttributeInput {

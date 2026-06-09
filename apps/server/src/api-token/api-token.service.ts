@@ -11,9 +11,11 @@ import {
   hashApiTokenSecret,
   partialApiTokenSecret,
 } from './api-token.crypto';
-import { CreateApiTokenInput } from './dto/api-token.dto';
+import { CreateApiTokenInput, UpdateApiTokenInput } from './dto/api-token.dto';
 
 const KNOWN_CAPABILITIES = new Set<string>(Object.values(Capability));
+
+const TOKEN_INCLUDE = { projects: true } as const;
 
 @Injectable()
 export class ApiTokenService {
@@ -26,27 +28,8 @@ export class ApiTokenService {
    * returned exactly once and never stored.
    */
   async createToken(userId: string, input: CreateApiTokenInput) {
-    const scopes = [...new Set(input.scopes)];
-    if (scopes.length === 0) {
-      throw new ParamsError('At least one scope is required');
-    }
-    const unknown = scopes.filter((s) => !KNOWN_CAPABILITIES.has(s));
-    if (unknown.length > 0) {
-      throw new ParamsError(`Unknown scope(s): ${unknown.join(', ')}`);
-    }
-
-    const projectIds = [...new Set(input.projectIds)];
-    if (projectIds.length === 0) {
-      throw new ParamsError('At least one project is required');
-    }
-    for (const projectId of projectIds) {
-      const membership = await this.prisma.userOnProject.findFirst({
-        where: { userId, projectId },
-      });
-      if (!membership) {
-        throw new ParamsError(`No access to project: ${projectId}`);
-      }
-    }
+    const scopes = this.validateScopes(input.scopes);
+    const projectIds = await this.validateProjects(userId, input.projectIds);
 
     if (input.expiresAt && input.expiresAt.getTime() <= Date.now()) {
       throw new ParamsError('expiresAt must be in the future');
@@ -66,7 +49,7 @@ export class ApiTokenService {
           create: projectIds.map((projectId) => ({ projectId })),
         },
       },
-      include: { projects: true },
+      include: TOKEN_INCLUDE,
     });
 
     return { token, plaintext: composeApiToken(secret) };
@@ -76,20 +59,119 @@ export class ApiTokenService {
   async listTokens(userId: string) {
     return this.prisma.apiToken.findMany({
       where: { userId },
-      include: { projects: true },
+      include: TOKEN_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
   }
 
   /**
-   * Revoke a token. Scoped to `userId` so a user can only revoke their own
-   * tokens. Returns true if a token was revoked.
+   * Update a token's name, scopes, and/or project scope. Only the fields
+   * present on `input` change. Scoped to `userId` so a user can only edit their
+   * own tokens. The secret is untouched — use {@link rotateToken} to replace it.
    */
-  async revokeToken(userId: string, id: string): Promise<boolean> {
-    const result = await this.prisma.apiToken.updateMany({
-      where: { id, userId, isActive: true },
-      data: { isActive: false },
+  async updateToken(userId: string, id: string, input: UpdateApiTokenInput) {
+    await this.requireOwnToken(userId, id);
+
+    const data: {
+      name?: string;
+      scopes?: string[];
+      projects?: { deleteMany: Record<string, never>; create: { projectId: string }[] };
+    } = {};
+
+    if (input.name !== undefined) {
+      data.name = input.name;
+    }
+    if (input.scopes !== undefined) {
+      data.scopes = this.validateScopes(input.scopes);
+    }
+    if (input.projectIds !== undefined) {
+      const projectIds = await this.validateProjects(userId, input.projectIds);
+      // Replace the join rows wholesale — the set of projects is small and the
+      // edit is explicit, so a delete-all + recreate is simpler than diffing.
+      data.projects = {
+        deleteMany: {},
+        create: projectIds.map((projectId) => ({ projectId })),
+      };
+    }
+
+    return this.prisma.apiToken.update({
+      where: { id },
+      data,
+      include: TOKEN_INCLUDE,
+    });
+  }
+
+  /**
+   * Rotate a token's secret: generate a fresh secret, replace the stored hash +
+   * partial, and return the new plaintext exactly once. Name, scopes, projects,
+   * and expiry are preserved; the previous secret stops working immediately.
+   * Scoped to `userId`.
+   */
+  async rotateToken(userId: string, id: string) {
+    await this.requireOwnToken(userId, id);
+
+    const secret = generateApiTokenSecret();
+    const token = await this.prisma.apiToken.update({
+      where: { id },
+      data: {
+        hashedSecret: hashApiTokenSecret(secret),
+        partialKey: partialApiTokenSecret(secret),
+      },
+      include: TOKEN_INCLUDE,
+    });
+
+    return { token, plaintext: composeApiToken(secret) };
+  }
+
+  /**
+   * Permanently delete a token. Scoped to `userId` so a user can only delete
+   * their own tokens. Returns true if a token was deleted.
+   */
+  async deleteToken(userId: string, id: string): Promise<boolean> {
+    const result = await this.prisma.apiToken.deleteMany({
+      where: { id, userId },
     });
     return result.count > 0;
+  }
+
+  /** Assert the token exists and belongs to `userId`, or throw. */
+  private async requireOwnToken(userId: string, id: string): Promise<void> {
+    const existing = await this.prisma.apiToken.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new ParamsError('Token not found');
+    }
+  }
+
+  /** Dedupe + validate that scopes are non-empty and all known capabilities. */
+  private validateScopes(input: string[]): string[] {
+    const scopes = [...new Set(input)];
+    if (scopes.length === 0) {
+      throw new ParamsError('At least one scope is required');
+    }
+    const unknown = scopes.filter((s) => !KNOWN_CAPABILITIES.has(s));
+    if (unknown.length > 0) {
+      throw new ParamsError(`Unknown scope(s): ${unknown.join(', ')}`);
+    }
+    return scopes;
+  }
+
+  /** Dedupe + validate that projects are non-empty and the user belongs to each. */
+  private async validateProjects(userId: string, input: string[]): Promise<string[]> {
+    const projectIds = [...new Set(input)];
+    if (projectIds.length === 0) {
+      throw new ParamsError('At least one project is required');
+    }
+    for (const projectId of projectIds) {
+      const membership = await this.prisma.userOnProject.findFirst({
+        where: { userId, projectId },
+      });
+      if (!membership) {
+        throw new ParamsError(`No access to project: ${projectId}`);
+      }
+    }
+    return projectIds;
   }
 }

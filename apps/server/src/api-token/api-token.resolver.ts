@@ -4,7 +4,12 @@ import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
 
 import { ApiTokenService } from './api-token.service';
-import { ApiToken, CreateApiTokenInput, CreatedApiToken } from './dto/api-token.dto';
+import {
+  ApiToken,
+  CreateApiTokenInput,
+  CreatedApiToken,
+  UpdateApiTokenInput,
+} from './dto/api-token.dto';
 
 type ApiTokenRow = Awaited<ReturnType<ApiTokenService['listTokens']>>[number];
 
@@ -32,9 +37,25 @@ export class ApiTokenResolver {
     return { apiToken: this.toModel(token), token: plaintext };
   }
 
+  @Mutation(() => ApiToken)
+  async updateApiToken(
+    @UserEntity() user: User,
+    @Args('id') id: string,
+    @Args('input') input: UpdateApiTokenInput,
+  ): Promise<ApiToken> {
+    const token = await this.apiTokenService.updateToken(user.id, id, input);
+    return this.toModel(token);
+  }
+
+  @Mutation(() => CreatedApiToken)
+  async rotateApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<CreatedApiToken> {
+    const { token, plaintext } = await this.apiTokenService.rotateToken(user.id, id);
+    return { apiToken: this.toModel(token), token: plaintext };
+  }
+
   @Mutation(() => Boolean)
-  async revokeApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<boolean> {
-    return this.apiTokenService.revokeToken(user.id, id);
+  async deleteApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<boolean> {
+    return this.apiTokenService.deleteToken(user.id, id);
   }
 
   private toModel(row: ApiTokenRow): ApiToken {

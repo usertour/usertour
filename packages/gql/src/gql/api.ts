@@ -77,8 +77,43 @@ export const CreateApiToken = gql`
   }
 `;
 
-export const RevokeApiToken = gql`
-  mutation RevokeApiToken($id: String!) {
-    revokeApiToken(id: $id)
+export const UpdateApiToken = gql`
+  mutation UpdateApiToken($id: String!, $input: UpdateApiTokenInput!) {
+    updateApiToken(id: $id, input: $input) {
+      id
+      name
+      partialKey
+      scopes
+      projectIds
+      isActive
+      expiresAt
+      lastUsedAt
+      createdAt
+    }
+  }
+`;
+
+export const RotateApiToken = gql`
+  mutation RotateApiToken($id: String!) {
+    rotateApiToken(id: $id) {
+      token
+      apiToken {
+        id
+        name
+        partialKey
+        scopes
+        projectIds
+        isActive
+        expiresAt
+        lastUsedAt
+        createdAt
+      }
+    }
+  }
+`;
+
+export const DeleteApiToken = gql`
+  mutation DeleteApiToken($id: String!) {
+    deleteApiToken(id: $id)
   }
 `;

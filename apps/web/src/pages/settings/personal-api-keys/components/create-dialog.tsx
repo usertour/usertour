@@ -1,20 +1,11 @@
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Label,
   useToast,
 } from '@usertour/ui';
 import { useState } from 'react';
@@ -23,11 +14,14 @@ import { useCreateApiTokenMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
-import { API_TOKEN_SCOPE_OPTIONS } from './scopes';
 import { RevealDialog } from './reveal-dialog';
+import {
+  TokenFormFields,
+  type TokenFormValues,
+  tokenFormDefaults,
+  tokenFormSchema,
+} from './token-form';
 
 interface CreateDialogProps {
   open: boolean;
@@ -36,36 +30,21 @@ interface CreateDialogProps {
   onSubmit?: () => void;
 }
 
-const formSchema = z.object({
-  name: z.string().min(2).max(50),
-  projectIds: z.array(z.string()).min(1),
-  scopes: z.array(z.string()).min(1),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const defaultValues: FormValues = {
-  name: '',
-  projectIds: [],
-  scopes: [],
-};
-
 export const CreateDialog = (props: CreateDialogProps) => {
   const { open, onOpenChange, onSubmit } = props;
   const [newToken, setNewToken] = useState('');
-  const { projects } = useAppContext();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
+  const form = useForm<TokenFormValues>({
+    resolver: zodResolver(tokenFormSchema),
+    defaultValues: tokenFormDefaults,
     mode: 'onChange',
   });
 
   const { invoke: createApiToken, loading: creating } = useCreateApiTokenMutation();
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = async (values: TokenFormValues) => {
     try {
       const result = await createApiToken({
         name: values.name.trim(),
@@ -76,7 +55,7 @@ export const CreateDialog = (props: CreateDialogProps) => {
         toast({ title: t('settings.personalApiKeys.createFailure'), variant: 'destructive' });
         return;
       }
-      form.reset(defaultValues);
+      form.reset(tokenFormDefaults);
       onSubmit?.();
       onOpenChange(false);
       setNewToken(result.token);
@@ -95,90 +74,7 @@ export const CreateDialog = (props: CreateDialogProps) => {
               <DialogHeader>
                 <DialogTitle>{t('settings.personalApiKeys.createTitle')}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.personalApiKeys.nameLabel')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t('settings.personalApiKeys.namePlaceholder')}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>{t('settings.common.changeableLater')}</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="projectIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.personalApiKeys.projectsLabel')}</FormLabel>
-                      <div className="space-y-2">
-                        {projects.map((project) => {
-                          const id = project.id ?? '';
-                          return (
-                            <div key={id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`project-${id}`}
-                                checked={field.value.includes(id)}
-                                onCheckedChange={(checked) => {
-                                  field.onChange(
-                                    checked
-                                      ? [...field.value, id]
-                                      : field.value.filter((value) => value !== id),
-                                  );
-                                }}
-                              />
-                              <Label htmlFor={`project-${id}`} className="font-normal">
-                                {project.name}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="scopes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.personalApiKeys.scopesLabel')}</FormLabel>
-                      <div className="space-y-2">
-                        {API_TOKEN_SCOPE_OPTIONS.map((scope) => (
-                          <div key={scope.value} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`scope-${scope.value}`}
-                              checked={field.value.includes(scope.value)}
-                              onCheckedChange={(checked) => {
-                                field.onChange(
-                                  checked
-                                    ? [...field.value, scope.value]
-                                    : field.value.filter((value) => value !== scope.value),
-                                );
-                              }}
-                            />
-                            <Label htmlFor={`scope-${scope.value}`} className="font-normal">
-                              {t(scope.labelKey)}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <TokenFormFields control={form.control} />
               <DialogFooter>
                 <Button
                   variant="outline"

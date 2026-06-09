@@ -1,14 +1,25 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { format } from 'date-fns';
-import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { format, formatDistanceToNow } from 'date-fns';
+import {
+  Badge,
+  NewItemButton,
+  ResourceListPage,
+  type ResourceTableColumn,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
 import { type ApiToken, useListApiTokensQuery } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CreateDialog } from './components/create-dialog';
 import { RowActions } from './components/row-actions';
 import { API_TOKEN_SCOPE_OPTIONS, getScopeLabelKey } from './components/scopes';
+
+const TOTAL_SCOPE_COUNT = API_TOKEN_SCOPE_OPTIONS.length;
 
 const NewKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
@@ -28,7 +39,7 @@ export const PersonalApiKeysList = () => {
   const { projects } = useAppContext();
   // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
   // false for refetches, so the table updates in place instead of flashing
-  // back to the skeleton when a token is created/revoked.
+  // back to the skeleton when a token is created/deleted.
   const { apiTokens, loading, refetch } = useListApiTokensQuery(SHARED_CACHE_QUERY_OPTIONS);
   const { t } = useTranslation();
 
@@ -42,7 +53,7 @@ export const PersonalApiKeysList = () => {
     return index;
   }, [projects]);
 
-  // Scope value -> label. Unknown scopes fall back to their raw value below.
+  // Scope value -> label. Unknown scopes fall back to their raw value.
   const scopeLabelByValue = useMemo(() => {
     const index: Record<string, string> = {};
     for (const scope of API_TOKEN_SCOPE_OPTIONS) {
@@ -50,6 +61,14 @@ export const PersonalApiKeysList = () => {
     }
     return index;
   }, [t]);
+
+  const labelForScope = useCallback(
+    (scope: string) => {
+      const fallbackKey = getScopeLabelKey(scope);
+      return scopeLabelByValue[scope] ?? (fallbackKey ? t(fallbackKey) : scope);
+    },
+    [scopeLabelByValue, t],
+  );
 
   const columns: ResourceTableColumn<ApiToken>[] = [
     {
@@ -77,25 +96,45 @@ export const PersonalApiKeysList = () => {
     },
     {
       header: t('settings.personalApiKeys.columns.scopes'),
-      cell: (token) => (
-        <div className="flex flex-wrap gap-1">
-          {token.scopes.map((scope) => (
-            <Badge key={scope} variant="secondary">
-              {scopeLabelByValue[scope] ??
-                (getScopeLabelKey(scope) ? t(getScopeLabelKey(scope) as string) : scope)}
-            </Badge>
-          ))}
-        </div>
-      ),
+      headerClassName: 'w-32',
+      // Collapse to a single badge — listing every scope wraps into several
+      // rows and clutters the table. The full list lives in the tooltip.
+      cell: (token) => {
+        const count = token.scopes.length;
+        const summary =
+          count >= TOTAL_SCOPE_COUNT
+            ? t('settings.personalApiKeys.scopesAll')
+            : t('settings.personalApiKeys.scopesCount', { count });
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="secondary" className="cursor-default font-normal">
+                  {summary}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="flex flex-col gap-0.5">
+                  {token.scopes.map((scope) => (
+                    <span key={scope}>{labelForScope(scope)}</span>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     },
     {
-      header: t('settings.personalApiKeys.columns.status'),
-      headerClassName: 'w-28',
+      header: t('settings.personalApiKeys.columns.lastUsed'),
+      headerClassName: 'w-36',
       cell: (token) =>
-        token.isActive ? (
-          <Badge variant="success">{t('settings.personalApiKeys.statusActive')}</Badge>
+        token.lastUsedAt ? (
+          formatDistanceToNow(new Date(token.lastUsedAt), { addSuffix: true })
         ) : (
-          <Badge variant="secondary">{t('settings.personalApiKeys.statusRevoked')}</Badge>
+          <span className="text-muted-foreground">
+            {t('settings.personalApiKeys.lastUsedNever')}
+          </span>
         ),
     },
     {
