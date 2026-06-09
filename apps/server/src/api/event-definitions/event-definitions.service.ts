@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 import { EventsService } from '@/events/events.service';
 
-import { ApiObjectType } from '../shared/object-type';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
+import { mapEventDefinition } from './event-definitions.mapper';
 import { EventDefinition, ListEventDefinitionsQuery } from './event-definitions.schema';
 
 /**
@@ -29,14 +29,7 @@ export class ApiEventDefinitionsService {
       cursor,
       limit,
       fetch: (params) => this.events.listWithPagination(projectId, params, sortOrders),
-      map: (node) => ({
-        id: node.id,
-        object: ApiObjectType.EVENT_DEFINITION,
-        createdAt: new Date(node.createdAt).toISOString(),
-        description: node.description,
-        displayName: node.displayName,
-        codeName: node.codeName,
-      }),
+      map: mapEventDefinition,
     });
   }
 }

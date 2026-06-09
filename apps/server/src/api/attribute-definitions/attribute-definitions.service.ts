@@ -3,15 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/attributes/attributes.service';
 import { InvalidScopeError } from '@/common/errors/errors';
 
-import {
-  ApiObjectType,
-  isApiObjectType,
-  mapBizTypeToScope,
-  mapDataType,
-  mapScopeToBizType,
-} from '../shared/object-type';
+import { ApiObjectType, isApiObjectType, mapScopeToBizType } from '../shared/object-type';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
+import { mapAttribute } from './attribute-definitions.mapper';
 import { Attribute, ListAttributeDefinitionsQuery } from './attribute-definitions.schema';
 
 /** Coerce a single-or-array query param to an array (or undefined). */
@@ -57,17 +52,7 @@ export class ApiAttributeDefinitionsService {
           toArray(eventName),
           sortOrders,
         ),
-      map: (node) => ({
-        id: node.id,
-        object: ApiObjectType.ATTRIBUTE_DEFINITION,
-        createdAt:
-          typeof node.createdAt === 'string' ? node.createdAt : node.createdAt.toISOString(),
-        dataType: mapDataType(node.dataType),
-        description: node.description,
-        displayName: node.displayName,
-        codeName: node.codeName,
-        scope: mapBizTypeToScope(node.bizType),
-      }),
+      map: mapAttribute,
     });
   }
 }
