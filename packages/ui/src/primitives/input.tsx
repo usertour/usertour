@@ -45,7 +45,7 @@ const inputVariants = cva(
         // explicit dark:bg-surface-raised overrides the cva base's
         // dark:bg-muted (cn()'s twMerge keeps the later class).
         'compact-surface':
-          'h-7.5 rounded-lg border border-input bg-surface-raised dark:bg-surface-raised px-3 py-1 text-sm shadow-none md:text-sm',
+          'h-7.5 rounded-lg border border-input bg-surface-raised dark:bg-surface-raised/50 px-3 py-1 text-sm shadow-none md:text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

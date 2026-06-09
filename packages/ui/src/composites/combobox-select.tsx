@@ -139,7 +139,7 @@ export const ComboboxSelect = (props: ComboboxSelectProps) => {
         className={cn(
           'flex w-full items-center justify-between border border-input text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
           surface === 'raised'
-            ? 'bg-surface-raised dark:bg-surface-raised shadow-none hover:bg-muted'
+            ? 'bg-surface-raised dark:bg-surface-raised/50 shadow-none hover:bg-muted'
             : 'bg-muted shadow-sm hover:bg-muted/70',
           size === 'compact' ? 'h-7.5 rounded-lg px-3' : 'h-9 rounded-md px-3',
           className,

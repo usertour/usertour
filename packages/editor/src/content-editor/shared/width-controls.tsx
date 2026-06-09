@@ -35,7 +35,7 @@ export const WidthControls = memo(
     showValueInput = true,
     inputPlaceholder,
     inputClassName = 'grow',
-    comboBoxClassName = 'flex-none w-20 bg-surface-raised',
+    comboBoxClassName = 'flex-none w-20 bg-surface-raised dark:bg-surface-raised/50',
   }: WidthControlsProps) => {
     const id = useId();
     const widthInputId = `${id}-width-input`;

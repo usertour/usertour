@@ -121,7 +121,7 @@ function TextInputEditor({ condition, onChange }: EditorProps) {
       />
       {showValueInput && (
         <Input
-          variant="compact"
+          variant="compact-surface"
           value={data.value ?? ''}
           onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
           placeholder={t('conditions.types.textInput.valuePlaceholder')}

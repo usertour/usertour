@@ -60,7 +60,7 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
         tooltip={t('conditions.types.element.selector.elementTextTooltip')}
       >
         <Input
-          variant="compact"
+          variant="compact-surface"
           value={innerData.content || ''}
           onChange={handleTextChange}
           placeholder={placeholder}
@@ -72,7 +72,7 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
         tooltip={t('conditions.types.element.selector.cssSelectorTooltip')}
       >
         <Input
-          variant="compact"
+          variant="compact-surface"
           value={innerData.customSelector || ''}
           onChange={handleSelectorChange}
           placeholder={placeholder}

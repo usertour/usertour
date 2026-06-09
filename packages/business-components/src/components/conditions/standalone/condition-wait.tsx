@@ -57,7 +57,7 @@ export function ConditionWait({
         <span className="text-sm">{t('conditions.standalone.wait.before')}</span>
         <ConditionErrorTooltipAnchor asChild>
           <Input
-            variant="compact"
+            variant="compact-surface"
             type="text"
             value={inputValue}
             onChange={handleChange}

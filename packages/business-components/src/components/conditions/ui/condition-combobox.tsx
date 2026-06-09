@@ -1,5 +1,4 @@
 import { ComboboxSelect } from '@usertour/ui';
-import { cn } from '@usertour/tailwind';
 import { type ReactNode } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
 
@@ -53,10 +52,11 @@ export function ConditionCombobox({
       searchPlaceholder={searchPlaceholder}
       emptyText={emptyText}
       disabled={disabled}
-      // Match the rest of the conditions chrome (CompactPopoverTrigger):
-      // white surface + softer hover, overriding ComboboxSelect's default
-      // muted fill so the value picker sits flush with the operator select.
-      className={cn('bg-background hover:bg-muted/40 dark:bg-muted', className)}
+      // Match the conditions editor chrome (CompactPopoverTrigger + the
+      // surface-raised inputs): a raised trigger so the value picker sits
+      // flush with the operator select and the rest of the editor popover.
+      surface="raised"
+      className={className}
       options={groups ? undefined : items}
       groups={groups?.map((group) => ({ heading: group.heading, options: group.items }))}
       contentStyle={{ zIndex: popover }}

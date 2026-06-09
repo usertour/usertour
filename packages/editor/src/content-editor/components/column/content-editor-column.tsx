@@ -276,7 +276,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
                 value={width.type}
                 onChange={handleWidthTypeChange}
                 placeholder={t('contentBuilder.editor.width.selectType')}
-                className="shrink bg-surface-raised"
+                className="shrink bg-surface-raised dark:bg-surface-raised/50"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
             </div>
