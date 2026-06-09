@@ -27,7 +27,7 @@ export const TextField = (props: TextFieldProps) => {
         {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
       </div>
       <Input
-        variant="compact-muted"
+        variant="compact-surface"
         id={id}
         value={value}
         placeholder={placeholder}

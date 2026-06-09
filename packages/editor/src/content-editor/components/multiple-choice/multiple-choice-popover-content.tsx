@@ -67,13 +67,13 @@ export const MultipleChoicePopoverContent = memo(
         localData.options.map((option, index) => (
           <div key={index} className="flex gap-2">
             <Input
-              variant="compact-muted"
+              variant="compact-surface"
               value={option.value ?? ''}
               onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
               placeholder={t('contentBuilder.editor.multipleChoice.optionValue')}
             />
             <Input
-              variant="compact-muted"
+              variant="compact-surface"
               value={option.label ?? ''}
               onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
               placeholder={t('contentBuilder.editor.multipleChoice.optionLabel')}
@@ -138,7 +138,7 @@ export const MultipleChoicePopoverContent = memo(
             </Label>
             <div className="flex flex-row gap-2 items-center">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 type="number"
                 value={localData.lowRange ?? ''}
                 placeholder={t('contentBuilder.editor.question.defaultLabel')}
@@ -146,7 +146,7 @@ export const MultipleChoicePopoverContent = memo(
               />
               <p>-</p>
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 type="number"
                 value={localData.highRange ?? ''}
                 placeholder={t('contentBuilder.editor.question.defaultLabel')}

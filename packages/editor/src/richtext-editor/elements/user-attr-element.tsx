@@ -123,6 +123,7 @@ const UserAttrPopoverContent = memo(
               searchPlaceholder={t('common.search')}
               emptyText={t('common.selectPopover.noItems')}
               size="compact"
+              surface="raised"
               contentStyle={{ zIndex: zIndex + 2 }}
             />
           </div>

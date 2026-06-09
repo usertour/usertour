@@ -115,7 +115,7 @@ export const WidthControls = memo(
         <div className="flex gap-x-2">
           {showValueInput && (
             <Input
-              variant="compact-muted"
+              variant="compact-surface"
               id={widthInputId}
               type="text"
               inputMode="numeric"

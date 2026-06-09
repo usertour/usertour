@@ -71,6 +71,7 @@ export const BindAttribute = ({
         <>
           <ComboboxSelect
             size="compact"
+            surface="raised"
             value={selectedAttribute}
             onValueChange={handleAttributeChange}
             placeholder={t('contentBuilder.editor.bindAttribute.select')}

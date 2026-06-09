@@ -263,7 +263,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
             <div className="flex gap-x-2">
               {width.type !== WIDTH_TYPES.FILL && (
                 <Input
-                  variant="compact-muted"
+                  variant="compact-surface"
                   type="number"
                   value={width.value?.toString() ?? ''}
                   placeholder={t('contentBuilder.editor.column.width')}

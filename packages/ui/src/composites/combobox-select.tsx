@@ -47,6 +47,13 @@ export interface ComboboxSelectProps {
   emptyText?: string;
   /** `compact` aligns the trigger with field controls (h-7.5, rounded-lg). */
   size?: 'default' | 'compact';
+  /**
+   * Trigger surface. `muted` (default) = bg-muted, for popovers / dialogs.
+   * `raised` = bg-surface-raised + shadow-none, for the builder editor where
+   * controls sit on a surface card and must match the input + select around
+   * them.
+   */
+  surface?: 'muted' | 'raised';
   /** Extra node rendered after the list (e.g. a "Create new" action). */
   footerSlot?: ReactNode;
   disabled?: boolean;
@@ -75,6 +82,7 @@ export const ComboboxSelect = (props: ComboboxSelectProps) => {
     searchPlaceholder,
     emptyText,
     size = 'default',
+    surface = 'muted',
     footerSlot,
     disabled = false,
     className,
@@ -129,7 +137,10 @@ export const ComboboxSelect = (props: ComboboxSelectProps) => {
         disabled={disabled}
         endIcon={<RiExpandUpDownLine className="size-4 shrink-0 opacity-50" />}
         className={cn(
-          'flex w-full items-center justify-between border border-input bg-muted text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+          'flex w-full items-center justify-between border border-input text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+          surface === 'raised'
+            ? 'bg-surface-raised dark:bg-surface-raised shadow-none hover:bg-muted'
+            : 'bg-muted shadow-sm hover:bg-muted/70',
           size === 'compact' ? 'h-7.5 rounded-lg px-3' : 'h-9 rounded-md px-3',
           className,
         )}

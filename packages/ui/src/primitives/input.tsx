@@ -38,6 +38,14 @@ const inputVariants = cva(
         // class inheritance). Used in dense settings / inspector panels.
         'compact-muted':
           'h-7.5 rounded-lg border border-input bg-muted px-3 py-1 text-sm shadow-sm md:text-sm',
+        // Compact surface — 30px / 14px / bg-surface-raised, shadow-none. The
+        // builder editor's "raised control on a surface card" treatment; pairs
+        // with the surface select triggers (CompactSelect / ComboboxSelect) so
+        // input + select share one background inside builder popovers. The
+        // explicit dark:bg-surface-raised overrides the cva base's
+        // dark:bg-muted (cn()'s twMerge keeps the later class).
+        'compact-surface':
+          'h-7.5 rounded-lg border border-input bg-surface-raised dark:bg-surface-raised px-3 py-1 text-sm shadow-none md:text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

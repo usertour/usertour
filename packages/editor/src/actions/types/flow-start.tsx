@@ -145,6 +145,7 @@ function FlowStartEditor({
       </span>
       <ComboboxSelect
         size="compact"
+        surface="raised"
         value={data.contentId}
         onValueChange={(contentId) => {
           const content = contents?.find((entry) => entry.id === contentId);
@@ -184,6 +185,7 @@ function FlowStartEditor({
           <span className="text-sm">{t('actions.types.flowStart.stepLabel')}</span>
           <ComboboxSelect
             size="compact"
+            surface="raised"
             value={data.stepCvid}
             onValueChange={(cvid) => {
               const step = steps.find((entry) => entry.cvid === cvid);

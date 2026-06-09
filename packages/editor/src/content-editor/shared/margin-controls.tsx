@@ -47,7 +47,7 @@ export const MarginControls = memo(
           <div className="flex gap-x-2">
             <div className="flex flex-col justify-center">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={margin?.left ?? ''}
                 placeholder={t('contentBuilder.editor.common.left')}
                 onChange={handleLeftChange}
@@ -56,14 +56,14 @@ export const MarginControls = memo(
             </div>
             <div className="flex flex-col justify-center gap-y-2">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={margin?.top ?? ''}
                 onChange={handleTopChange}
                 placeholder={t('contentBuilder.editor.common.top')}
                 className="flex-none w-20"
               />
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={margin?.bottom ?? ''}
                 onChange={handleBottomChange}
                 placeholder={t('contentBuilder.editor.common.bottom')}
@@ -72,7 +72,7 @@ export const MarginControls = memo(
             </div>
             <div className="flex flex-col justify-center">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={margin?.right ?? ''}
                 placeholder={t('contentBuilder.editor.common.right')}
                 onChange={handleRightChange}

@@ -49,7 +49,7 @@ export const PaddingControls = memo(
           <div className="flex gap-x-2">
             <div className="flex flex-col justify-center">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={padding?.left ?? ''}
                 placeholder={t('contentBuilder.editor.common.left')}
                 onChange={handleLeftChange}
@@ -58,14 +58,14 @@ export const PaddingControls = memo(
             </div>
             <div className="flex flex-col justify-center gap-y-2">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={padding?.top ?? ''}
                 onChange={handleTopChange}
                 placeholder={t('contentBuilder.editor.common.top')}
                 className="flex-none w-20"
               />
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={padding?.bottom ?? ''}
                 onChange={handleBottomChange}
                 placeholder={t('contentBuilder.editor.common.bottom')}
@@ -74,7 +74,7 @@ export const PaddingControls = memo(
             </div>
             <div className="flex flex-col justify-center">
               <Input
-                variant="compact-muted"
+                variant="compact-surface"
                 value={padding?.right ?? ''}
                 placeholder={t('contentBuilder.editor.common.right')}
                 onChange={handleRightChange}

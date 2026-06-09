@@ -35,7 +35,7 @@ export const EmbedUrlInput = memo(
         </div>
         <div className="flex gap-x-2">
           <Input
-            variant="compact-muted"
+            variant="compact-surface"
             id={inputId}
             placeholder={t('contentBuilder.editor.embed.urlPlaceholder')}
             value={url}
