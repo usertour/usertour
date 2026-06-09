@@ -1,0 +1,128 @@
+import { compileStep } from './authoring.compiler';
+import { decompileStep } from './authoring.mapper';
+import { markdownToRichText } from './markdown';
+import { richTextToMarkdown } from './rich-text';
+import { CompileResolvers } from './rules.compiler';
+
+const ids: CompileResolvers = { attributeId: (c) => c, eventId: (c) => c };
+
+describe('markdown round-trip', () => {
+  it.each([
+    'Hi **there**!',
+    '# Title',
+    '- a\n- b',
+    'See [docs](https://x.io)',
+    '{{ first_name | default: "friend" }}',
+  ])('round-trips %p', (md) => {
+    expect(richTextToMarkdown(markdownToRichText(md))).toBe(md);
+  });
+});
+
+describe('compileStep → decompileStep round-trip', () => {
+  it('preserves target, placement, width, content, triggers', () => {
+    const authoring = {
+      object: 'step' as const,
+      id: 's1',
+      cvid: 'cv1',
+      name: 'Welcome',
+      type: 'tooltip',
+      sequence: 0,
+      target: { by: 'selector' as const, selector: '.cta' },
+      placement: { side: 'bottom' as const, align: 'center' as const },
+      width: 320,
+      content: [
+        { object: 'block' as const, type: 'text' as const, markdown: 'Hi **there**' },
+        {
+          object: 'block' as const,
+          type: 'button' as const,
+          text: 'Next',
+          variant: 'primary' as const,
+        },
+      ],
+      triggers: [{ do: [{ type: 'dismiss' as const }] }],
+    };
+    const compiled = compileStep(authoring as any, undefined, ids);
+    const back = decompileStep({
+      id: 's1',
+      cvid: compiled.cvid,
+      name: 'Welcome',
+      type: 'tooltip',
+      sequence: 0,
+      data: compiled.data,
+      target: compiled.target,
+      setting: compiled.setting,
+      trigger: compiled.trigger,
+    });
+
+    expect(back.target).toEqual({ by: 'selector', selector: '.cta' });
+    expect(back.placement).toMatchObject({ side: 'bottom', align: 'center' });
+    expect(back.width).toBe(320);
+    expect(back.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
+    expect(back.content[1]).toMatchObject({ type: 'button', text: 'Next', variant: 'primary' });
+    expect(back.triggers).toEqual([{ do: [{ type: 'dismiss' }] }]);
+  });
+});
+
+describe('field-level merge', () => {
+  it('preserves element styling, target fingerprint, and setting offsets', () => {
+    const existing = {
+      cvid: 'cv1',
+      data: [
+        {
+          id: 'r1',
+          element: { type: 'group' },
+          children: [
+            {
+              id: 'c1',
+              element: { type: 'column' },
+              children: [
+                {
+                  id: 'b1',
+                  element: { type: 'image', url: 'old.png', width: { type: 'percent', value: 50 } },
+                  children: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      target: { type: 'auto', selectors: { tag: 'button' } },
+      setting: { side: 'top', align: 'start', sideOffset: 99 },
+    };
+    const authoring = {
+      object: 'step' as const,
+      id: 's1',
+      cvid: 'cv1',
+      name: 'X',
+      type: 'tooltip',
+      sequence: 0,
+      placement: { side: 'bottom' as const, align: 'center' as const },
+      content: [{ object: 'block' as const, id: 'b1', type: 'image' as const, url: 'new.png' }],
+    };
+    const compiled: any = compileStep(authoring as any, existing, ids);
+
+    const imageEl = compiled.data[0].children[0].children[0].element;
+    expect(imageEl.url).toBe('new.png'); // overwritten
+    expect(imageEl.width).toEqual({ type: 'percent', value: 50 }); // preserved styling
+
+    // no authoring target → the internal "auto" fingerprint is preserved
+    expect(compiled.target).toEqual({ type: 'auto', selectors: { tag: 'button' } });
+    // setting offset preserved, side/align overwritten
+    expect(compiled.setting).toMatchObject({ side: 'bottom', align: 'center', sideOffset: 99 });
+  });
+});
+
+describe('run_javascript is write-rejected', () => {
+  it('throws when an action is run_javascript', () => {
+    const authoring = {
+      object: 'step' as const,
+      id: 's1',
+      name: 'X',
+      type: 'tooltip',
+      sequence: 0,
+      content: [],
+      triggers: [{ do: [{ type: 'run_javascript' as const, script: 'alert(1)' }] }],
+    };
+    expect(() => compileStep(authoring as any, undefined, ids)).toThrow();
+  });
+});

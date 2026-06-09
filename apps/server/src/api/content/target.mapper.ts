@@ -34,3 +34,23 @@ function parseNth(sequence: unknown): number | undefined {
   const n = Number.parseInt(sequence, 10);
   return Number.isFinite(n) && n >= 1 ? n - 1 : undefined;
 }
+
+/**
+ * Compile an authoring target back into internal element-targeting data — the
+ * inverse of {@link decompileTarget}. A selector target → manual customSelector;
+ * a text target → content match. Returns `{}` when absent (e.g. an element
+ * condition with no target).
+ */
+export function compileTargetToElementData(target: AuthoringTarget | undefined): any {
+  if (!target) {
+    return {};
+  }
+  if (target.by === 'selector') {
+    return {
+      type: 'manual',
+      customSelector: target.selector,
+      ...(target.nth !== undefined ? { sequence: `${target.nth + 1}st` } : {}),
+    };
+  }
+  return { type: 'auto', content: target.text, isDynamicContent: true };
+}
