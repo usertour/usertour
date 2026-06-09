@@ -5,16 +5,19 @@ import { ZodTypeAny } from 'zod';
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
 import { ApiContentService } from '@/api/content/content.service';
+import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiUsersService } from '@/api/users/users.service';
 
 /**
- * The v2 API services an MCP tool handler can reach through its context. Kept
- * narrow (read surfaces only) so a tool can't accidentally call a mutating
- * method — MCP tools are just another binding of the v2 read contracts.
+ * The v2 API services an MCP tool handler can reach through its context — the
+ * same contracts the REST API binds. Read tools use the read methods; write
+ * tools (gated by content:create/update/delete) use the create/update/delete +
+ * version-write methods.
  */
 export interface McpServices {
   content: ApiContentService;
+  contentVersions: ApiContentVersionsService;
   attributeDefinitions: ApiAttributeDefinitionsService;
   eventDefinitions: ApiEventDefinitionsService;
   users: ApiUsersService;

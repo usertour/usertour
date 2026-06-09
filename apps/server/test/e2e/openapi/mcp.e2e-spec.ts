@@ -258,4 +258,70 @@ describe('MCP endpoint (e2e)', () => {
       expect(res.body.error.code).toBe('E1000');
     });
   });
+
+  describe('write tools', () => {
+    it('hides write tools without write scopes', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
+      const names = extractResult(res).result.tools.map((t: { name: string }) => t.name);
+      expect(names).not.toContain('create_content');
+      expect(names).not.toContain('update_content_version');
+    });
+
+    it('create_content + update_content_version round-trip via MCP', async () => {
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+
+      const list = extractResult(await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token));
+      const names = list.result.tools.map((t: { name: string }) => t.name);
+      expect(names).toEqual(expect.arrayContaining(['create_content', 'update_content_version']));
+
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 2,
+              method: 'tools/call',
+              params: { name: 'create_content', arguments: { type: 'flow', name: 'MCP flow' } },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(created).toMatchObject({ object: 'content', type: 'flow', name: 'MCP flow' });
+
+      const updated = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 3,
+              method: 'tools/call',
+              params: {
+                name: 'update_content_version',
+                arguments: {
+                  versionId: created.editedVersionId,
+                  steps: [
+                    {
+                      name: 'Welcome',
+                      type: 'modal',
+                      cvid: 'm-1',
+                      content: [{ type: 'text', markdown: 'Hi **there**' }],
+                    },
+                  ],
+                },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      const step = updated.steps.find((s: { cvid: string }) => s.cvid === 'm-1');
+      expect(step).toMatchObject({ name: 'Welcome', type: 'modal' });
+      expect(step.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
+    });
+  });
 });

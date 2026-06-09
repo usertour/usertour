@@ -60,6 +60,7 @@ import { ApiUsersService } from './users/users.service';
   // Exported for the MCP module, which binds these read services as tools.
   exports: [
     ApiContentService,
+    ApiContentVersionsService,
     ApiAttributeDefinitionsService,
     ApiEventDefinitionsService,
     ApiUsersService,

@@ -5,12 +5,14 @@ import { PrismaService } from 'nestjs-prisma';
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
 import { ApiContentService } from '@/api/content/content.service';
+import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { OpenAPIError } from '@/common/errors/errors';
 
 import { McpServices, McpTool } from './mcp.types';
 import { buildReadTools } from './tools/read-tools';
+import { buildWriteTools } from './tools/write-tools';
 
 const SERVER_INFO = { name: 'usertour', version: '1.0.0' };
 
@@ -30,17 +32,19 @@ export class McpService {
     private readonly auth: ApiTokenAuthService,
     private readonly prisma: PrismaService,
     contentService: ApiContentService,
+    contentVersionsService: ApiContentVersionsService,
     attributeDefinitionsService: ApiAttributeDefinitionsService,
     eventDefinitionsService: ApiEventDefinitionsService,
     usersService: ApiUsersService,
   ) {
     this.services = {
       content: contentService,
+      contentVersions: contentVersionsService,
       attributeDefinitions: attributeDefinitionsService,
       eventDefinitions: eventDefinitionsService,
       users: usersService,
     };
-    this.tools = buildReadTools();
+    this.tools = [...buildReadTools(), ...buildWriteTools()];
   }
 
   /**
