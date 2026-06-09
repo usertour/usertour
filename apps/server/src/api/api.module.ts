@@ -9,6 +9,8 @@ import { EventsModule } from '@/events/events.module';
 
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
+import { ApiCompaniesController } from './companies/companies.controller';
+import { ApiCompaniesService } from './companies/companies.service';
 import { ApiContentController } from './content/content.controller';
 import { ApiContentService } from './content/content.service';
 import { ApiContentVersionsController } from './content-versions/content-versions.controller';
@@ -32,6 +34,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentController,
     ApiContentVersionsController,
     ApiUsersController,
+    ApiCompaniesController,
   ],
   providers: [
     ApiEventDefinitionsService,
@@ -39,6 +42,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentService,
     ApiContentVersionsService,
     ApiUsersService,
+    ApiCompaniesService,
     OpenAPIExceptionFilter,
   ],
 })
