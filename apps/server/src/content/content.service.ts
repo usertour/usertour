@@ -641,13 +641,23 @@ export class ContentService {
     });
   }
 
-  async getContentWithRelations(id: string, projectId: string, include?: Prisma.ContentInclude) {
+  async getContentWithRelations(
+    id: string,
+    projectId: string,
+    include?: {
+      editedVersion?: boolean;
+      publishedVersion?: boolean;
+    },
+  ) {
     return await this.prisma.content.findFirst({
       where: {
         id,
         projectId,
       },
-      include,
+      include: {
+        editedVersion: include?.editedVersion ?? false,
+        publishedVersion: include?.publishedVersion ?? false,
+      },
     });
   }
 
@@ -713,10 +723,9 @@ export class ContentService {
     },
     include?: Prisma.ContentInclude,
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
-    type?: string,
   ) {
     const baseQuery = {
-      where: { projectId, ...(type ? { type } : {}) },
+      where: { projectId },
       include,
       orderBy,
     };

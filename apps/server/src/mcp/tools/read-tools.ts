@@ -2,8 +2,8 @@ import { Capability } from '@usertour/types';
 import { Environment } from '@prisma/client';
 import { z } from 'zod';
 
-import { ContentExpandType } from '@/openapi/services/content/content.dto';
-import { ExpandType } from '@/openapi/services/users/users.dto';
+import { ContentExpandType } from '@/openapi/content/content.dto';
+import { ExpandType } from '@/openapi/users/users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 
 import { McpTool, McpToolContext } from '../mcp.types';
@@ -128,12 +128,14 @@ export function buildReadTools(): McpTool[] {
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
-        // v2 shape (per-environment publish state); `type` is filtered
-        // server-side (correct across pagination), not on a single page.
-        const result = await ctx.services.content.listContentV2('mcp://content', ctx.projectId, {
+        // TEMP (Phase 0 revert): the v1 facade is environment-scoped and returns
+        // the legacy single-version content shape. We bridge via the project's
+        // primary environment; the per-environment shape + server-side `type`
+        // filter + project-scoping return with the new v2 module.
+        const environment = await resolveEnvironment(args, ctx);
+        const result = await ctx.services.content.listContent('mcp://content', environment, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
-          type: asString(args.type),
         });
         return toListPayload(result);
       },
@@ -162,8 +164,9 @@ export function buildReadTools(): McpTool[] {
         const expand = Array.isArray(args.expand)
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpandType[])
           : undefined;
-        // v2 shape (per-environment publish state via environments[]).
-        return ctx.services.content.getContentV2(id, ctx.projectId, { expand });
+        // TEMP (Phase 0 revert): env-scoped v1 facade; bridge via primary env.
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.content.getContent(id, environment, { expand });
       },
     },
 
@@ -186,9 +189,11 @@ export function buildReadTools(): McpTool[] {
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const scope = asString(args.scope) as OpenApiObjectType | undefined;
+        // TEMP (Phase 0 revert): env-scoped v1 facade; bridge via primary env.
+        const environment = await resolveEnvironment(args, ctx);
         const result = await ctx.services.attributeDefinitions.listAttributeDefinitions(
           'mcp://attribute-definitions',
-          ctx.projectId,
+          environment,
           { limit: asLimit(args.limit), cursor: asString(args.cursor), scope },
         );
         return toListPayload(result);
@@ -208,9 +213,11 @@ export function buildReadTools(): McpTool[] {
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        // TEMP (Phase 0 revert): env-scoped v1 facade; bridge via primary env.
+        const environment = await resolveEnvironment(args, ctx);
         const result = await ctx.services.eventDefinitions.listEventDefinitions(
           'mcp://event-definitions',
-          ctx.projectId,
+          environment,
           { limit: asLimit(args.limit), cursor: asString(args.cursor) },
         );
         return toListPayload(result);

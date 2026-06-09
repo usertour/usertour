@@ -3,10 +3,10 @@ import { PrismaService } from 'nestjs-prisma';
 import { ZodTypeAny } from 'zod';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
-import { OpenAPIAttributeDefinitionsService } from '@/openapi/services/attribute-definitions/attribute-definitions.service';
-import { OpenAPIContentService } from '@/openapi/services/content/content.service';
-import { OpenAPIEventDefinitionsService } from '@/openapi/services/event-definitions/event-definitions.service';
-import { OpenAPIUsersService } from '@/openapi/services/users/users.service';
+import { OpenAPIAttributeDefinitionsService } from '@/openapi/attribute-definitions/attribute-definitions.service';
+import { OpenAPIContentService } from '@/openapi/content/content.service';
+import { OpenAPIEventDefinitionsService } from '@/openapi/event-definitions/event-definitions.service';
+import { OpenAPIUsersService } from '@/openapi/users/users.service';
 
 /**
  * The OpenAPI facade services an MCP tool handler can reach through its
