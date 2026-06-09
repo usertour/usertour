@@ -184,6 +184,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
             value={searchValue}
             onChange={handleSearchChange}
             placeholder={t('common.search')}
+            clearLabel={t('common.clearSearch')}
           />
           <DataTableViewOptions
             table={table}

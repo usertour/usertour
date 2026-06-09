@@ -52,7 +52,7 @@ export const AmplitudeIntegration = () => {
         region={{
           defaultValue: 'US',
           options: [
-            { value: 'US', label: 'Default(US)' },
+            { value: 'US', label: t('settings.integrations.providerCard.regionDefaultUS') },
             { value: 'EU', label: 'EU' },
           ],
         }}

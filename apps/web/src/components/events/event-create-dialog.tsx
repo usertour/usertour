@@ -243,6 +243,8 @@ export const EventCreateDialog = ({
                   className="w-full"
                   contentClassName="w-[--radix-popover-trigger-width]"
                   placeholder={t('settings.events.form.attributesPlaceholder')}
+                  searchPlaceholder={t('common.search')}
+                  emptyText={t('common.selectPopover.noItems')}
                   value={selectedAttributeValue}
                   // Hide attributes already added to this new event so
                   // the dropdown only shows still-pickable options.

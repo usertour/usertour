@@ -1,4 +1,5 @@
 import { EmptyContentPreview } from '@/pages/contents/components/shared/content-preview';
+import { useTranslation } from 'react-i18next';
 
 interface EmptyPlaceholderProps {
   children: React.ReactNode;
@@ -7,10 +8,11 @@ interface EmptyPlaceholderProps {
 }
 
 export const EmptyPlaceholder = (props: EmptyPlaceholderProps) => {
+  const { t } = useTranslation();
   const {
     children,
-    name = 'No items found',
-    description = 'You have not added any items yet.',
+    name = t('dataTable.emptyName'),
+    description = t('dataTable.emptyDescription'),
   } = props;
   return (
     <div className="flex h-[450px] shrink-0 items-center justify-center rounded-md border border-dashed">

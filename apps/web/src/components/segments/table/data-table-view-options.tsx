@@ -5,6 +5,7 @@ import { Table } from '@tanstack/react-table';
 import { Button, Popover, PopoverContent, PopoverTrigger, Input } from '@usertour/ui';
 import { RiDraggable, RiEyeLine, RiEyeOffLine, RiLayoutColumnLine } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
+import { useTranslation } from 'react-i18next';
 import {
   DndContext,
   DragEndEvent,
@@ -186,6 +187,7 @@ export function DataTableViewOptions<TData>({
   onColumnsChange,
   disabled = false,
 }: DataTableViewOptionsProps<TData>) {
+  const { t } = useTranslation();
   const [search, setSearch] = React.useState('');
   const [activeId, setActiveId] = React.useState<UniqueIdentifier | null>(null);
 
@@ -392,7 +394,7 @@ export function DataTableViewOptions<TData>({
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="hidden h-8 lg:flex" disabled={disabled}>
           <RiLayoutColumnLine className="mr-2 h-4 w-4" />
-          Customize Columns
+          {t('dataTable.customizeColumns')}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -411,7 +413,7 @@ export function DataTableViewOptions<TData>({
         <div className="flex flex-col">
           <div className="p-2">
             <Input
-              placeholder="Search columns..."
+              placeholder={t('dataTable.searchColumns')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8"
@@ -420,7 +422,7 @@ export function DataTableViewOptions<TData>({
           <div className="max-h-[360px] overflow-y-auto">
             {nothingMatches && search ? (
               <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                No columns found.
+                {t('dataTable.noColumnsFound')}
               </div>
             ) : (
               <DndContext
@@ -435,7 +437,7 @@ export function DataTableViewOptions<TData>({
                     <div className="px-2 py-2">
                       <div className="flex items-center justify-between px-2 py-1">
                         <span className="text-xs font-medium text-muted-foreground">
-                          Shown in table
+                          {t('dataTable.shownInTable')}
                         </span>
                         <Button
                           type="button"
@@ -444,12 +446,12 @@ export function DataTableViewOptions<TData>({
                           onClick={handleHideAll}
                           disabled={!dragEnabled}
                         >
-                          Hide all
+                          {t('dataTable.hideAll')}
                         </Button>
                       </div>
                       {filteredShown.length === 0 ? (
                         <div className="px-2 py-3 text-xs text-muted-foreground italic">
-                          No matches
+                          {t('dataTable.noMatches')}
                         </div>
                       ) : (
                         filteredShown.map((id) => {
@@ -473,8 +475,8 @@ export function DataTableViewOptions<TData>({
                   <DividerRow
                     visible={hiddenSlice.length > 0}
                     showBorder={shownSlice.length > 0}
-                    label="Hidden in table"
-                    actionLabel="Show all"
+                    label={t('dataTable.hiddenInTable')}
+                    actionLabel={t('dataTable.showAll')}
                     onAction={handleShowAll}
                     actionDisabled={!dragEnabled}
                   />
@@ -483,7 +485,7 @@ export function DataTableViewOptions<TData>({
                     <div className="px-2 pb-2">
                       {filteredHidden.length === 0 ? (
                         <div className="px-2 py-3 text-xs text-muted-foreground italic">
-                          No matches
+                          {t('dataTable.noMatches')}
                         </div>
                       ) : (
                         filteredHidden.map((id) => {

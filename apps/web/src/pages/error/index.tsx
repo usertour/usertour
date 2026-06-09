@@ -1,29 +1,22 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type ErrorPageProps = {
   type?: '403' | '404' | '500';
 };
 
 export const ErrorPage: React.FC<ErrorPageProps> = ({ type }) => {
-  const unauth = 'You are not authorized to access this page.';
-  const notFound = 'The page you are trying to visit does not exist.';
-  const serverErr = 'Oops! Something is wrong with the server. Please Try again later';
-
-  // The reason we use this function is because the ant.design "Result"
-  // component does not call our t() function
-  // const getTranslation = (value: string) => {
-  //     return i18n.getDataByLanguage(lang || "en").translation[value];
-  // };
+  const { t } = useTranslation();
 
   const showResult = () => {
     if (type === '403') {
-      return <>{unauth}</>;
+      return <>{t('error.forbidden')}</>;
     }
     if (type === '500') {
-      return <>{serverErr}</>;
+      return <>{t('error.serverError')}</>;
     }
     if (type === '404') {
-      return <>{notFound}</>;
+      return <>{t('error.notFound')}</>;
     }
     return null;
   };

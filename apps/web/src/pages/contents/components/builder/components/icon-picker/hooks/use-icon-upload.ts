@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@usertour/ui';
 import { useAws } from '@usertour/hooks';
+import { useTranslation } from 'react-i18next';
 import type { RcUploadOption } from '@/pages/contents/components/builder/components/icon-picker/types';
 
 interface UseIconUploadProps {
@@ -11,6 +12,7 @@ export const useIconUpload = ({ onUploadSuccess }: UseIconUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { upload } = useAws();
+  const { t } = useTranslation();
 
   const handleUpload = useCallback(
     (option: RcUploadOption) => {
@@ -20,7 +22,7 @@ export const useIconUpload = ({ onUploadSuccess }: UseIconUploadProps) => {
       const file = option.file;
       if (!(file instanceof File)) {
         const error = new Error('Invalid file type');
-        toast({ variant: 'destructive', title: 'Please select a valid file' });
+        toast({ variant: 'destructive', title: t('contentBuilder.iconPicker.invalidFile') });
         option.onError?.(error);
         setIsUploading(false);
         return;
@@ -49,7 +51,7 @@ export const useIconUpload = ({ onUploadSuccess }: UseIconUploadProps) => {
             onUploadSuccess(url);
           } else {
             const error = new Error('Upload failed');
-            toast({ variant: 'destructive', title: 'Failed to upload icon' });
+            toast({ variant: 'destructive', title: t('contentBuilder.iconPicker.uploadFailed') });
             option.onError?.(error);
           }
         } catch (err) {
@@ -64,7 +66,7 @@ export const useIconUpload = ({ onUploadSuccess }: UseIconUploadProps) => {
       // Start async processing without returning a promise
       processUpload();
     },
-    [onUploadSuccess, upload, toast],
+    [onUploadSuccess, upload, toast, t],
   );
 
   return { handleUpload, isUploading };

@@ -254,6 +254,7 @@ export const ScaleDistribution = ({
   question,
   className,
 }: ScaleDistributionProps) => {
+  const { t } = useTranslation();
   if (!averageByDay) return null;
 
   const lowRange = question.data.lowRange ?? 0;
@@ -309,10 +310,10 @@ export const ScaleDistribution = ({
         {/* Score labels */}
         <div className="flex justify-between mt-4">
           <div className="text-sm text-muted-foreground">
-            {question.data.lowLabel || 'Not at all likely'}
+            {question.data.lowLabel || t('contentBuilder.analytics.notAtAllLikely')}
           </div>
           <div className="text-sm text-muted-foreground">
-            {question.data.highLabel || 'Extremely likely'}
+            {question.data.highLabel || t('contentBuilder.analytics.extremelyLikely')}
           </div>
         </div>
       </div>

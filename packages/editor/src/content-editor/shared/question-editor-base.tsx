@@ -52,7 +52,9 @@ export interface QuestionEditorBaseProps<T extends QuestionElementBase> {
 // Default validation - just check if name is empty
 const defaultValidate = <T extends QuestionElementBase>(data: T['data']): ValidationResult => ({
   isValid: !isEmptyString(data.name),
-  errorMessage: isEmptyString(data.name) ? 'Question name is required' : undefined,
+  errorMessage: isEmptyString(data.name)
+    ? 'contentBuilder.editor.question.nameRequired'
+    : undefined,
 });
 
 function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionEditorBaseProps<T>) {
@@ -205,7 +207,9 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
         </PopoverContent>
       </Popover>
       <EditorErrorTooltipContent side="bottom" style={{ zIndex }}>
-        {validationResult.errorMessage || 'Please fix the errors above'}
+        {validationResult.errorMessage
+          ? t(validationResult.errorMessage)
+          : t('contentBuilder.editor.question.fixErrors')}
       </EditorErrorTooltipContent>
     </EditorErrorTooltip>
   );

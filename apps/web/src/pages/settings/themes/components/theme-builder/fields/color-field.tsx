@@ -7,6 +7,7 @@ import {
 } from '@usertour/ui';
 import { useCurrentUserId } from '@usertour/hooks';
 import { useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';
 import { getPath } from '../draft-util';
 import type { ColorResolver } from '../schema/types';
@@ -27,6 +28,7 @@ export const ColorField = (props: ColorFieldProps) => {
   const [open, setOpen] = useState(false);
   const { activeSettings, finalSettings, getField, setField, isReadOnly } = useBuilderContext();
   const userId = useCurrentUserId();
+  const { t } = useTranslation();
   const value = getField<string>(path) ?? '';
   const isAuto = value === 'Auto';
 
@@ -60,6 +62,15 @@ export const ColorField = (props: ColorFieldProps) => {
             onChange={(autoFlag, color) => {
               setOpen(false);
               setField(path, autoFlag ? 'Auto' : color || '');
+            }}
+            labels={{
+              useThisColor: t('common.colorPicker.useThisColor'),
+              removeColor: t('common.colorPicker.removeColor'),
+              tailwindColors: t('common.colorPicker.tailwindColors'),
+              recentlyUsed: t('common.colorPicker.recentlyUsed'),
+              done: t('common.colorPicker.done'),
+              colorPicker: t('common.colorPicker.colorPicker'),
+              colorPalette: t('common.colorPicker.colorPalette'),
             }}
           />
         </PopoverContent>

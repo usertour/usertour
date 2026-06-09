@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 // "Rows per page" Select + "Page X of Y" indicator + First / Prev /
 // Next / Last buttons. The right-hand cluster of every cursor-paginated
@@ -42,11 +43,12 @@ export interface CursorPaginationControlsProps<TData> {
 
 export function CursorPaginationControls<TData>(props: CursorPaginationControlsProps<TData>) {
   const { table, busy = false, pageSizeOptions } = props;
+  const { t } = useTranslation();
   return (
     <div className="flex items-center space-x-6 lg:space-x-8">
       {pageSizeOptions !== undefined && (
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">{t('pagination.rowsPerPage')}</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -68,7 +70,10 @@ export function CursorPaginationControls<TData>(props: CursorPaginationControlsP
         </div>
       )}
       <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-        Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+        {t('pagination.pageOf', {
+          current: table.getState().pagination.pageIndex + 1,
+          total: table.getPageCount(),
+        })}
       </div>
       <div className="flex items-center space-x-2">
         <Button
@@ -77,7 +82,7 @@ export function CursorPaginationControls<TData>(props: CursorPaginationControlsP
           onClick={() => table.setPageIndex(0)}
           disabled={busy || !table.getCanPreviousPage()}
         >
-          <span className="sr-only">Go to first page</span>
+          <span className="sr-only">{t('pagination.goToFirstPage')}</span>
           <DoubleArrowLeftIcon className="h-4 w-4" />
         </Button>
         <Button
@@ -86,7 +91,7 @@ export function CursorPaginationControls<TData>(props: CursorPaginationControlsP
           onClick={() => table.previousPage()}
           disabled={busy || !table.getCanPreviousPage()}
         >
-          <span className="sr-only">Go to previous page</span>
+          <span className="sr-only">{t('pagination.goToPreviousPage')}</span>
           <ChevronLeftIcon className="h-4 w-4" />
         </Button>
         <Button
@@ -95,7 +100,7 @@ export function CursorPaginationControls<TData>(props: CursorPaginationControlsP
           onClick={() => table.nextPage()}
           disabled={busy || !table.getCanNextPage()}
         >
-          <span className="sr-only">Go to next page</span>
+          <span className="sr-only">{t('pagination.goToNextPage')}</span>
           <ChevronRightIcon className="h-4 w-4" />
         </Button>
         <Button
@@ -104,7 +109,7 @@ export function CursorPaginationControls<TData>(props: CursorPaginationControlsP
           onClick={() => table.setPageIndex(table.getPageCount() - 1)}
           disabled={busy || !table.getCanNextPage()}
         >
-          <span className="sr-only">Go to last page</span>
+          <span className="sr-only">{t('pagination.goToLastPage')}</span>
           <DoubleArrowRightIcon className="h-4 w-4" />
         </Button>
       </div>

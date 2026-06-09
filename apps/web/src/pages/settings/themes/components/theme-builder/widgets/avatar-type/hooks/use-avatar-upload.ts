@@ -4,6 +4,7 @@ import { useApolloClient } from '@apollo/client';
 import { createPresignedUrl } from '@usertour/gql';
 import { useToast } from '@usertour/ui';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 interface RcUploadOption {
   file: File | Blob | string;
@@ -22,6 +23,7 @@ interface UseAvatarUploadProps {
 export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const client = useApolloClient();
 
   // Upload to AWS S3
@@ -41,7 +43,7 @@ export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
       const { signedUrl, cdnUrl } = data?.createPresignedUrl ?? {};
 
       if (!signedUrl || !cdnUrl) {
-        throw new Error('Unable to generate upload URL. Please try again later.');
+        throw new Error(t('settings.themes.upload.generateUrlFailed'));
       }
 
       await axios.put(signedUrl, file, {
@@ -60,7 +62,7 @@ export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
       const file = option.file;
       if (!(file instanceof File)) {
         const error = new Error('Invalid file type');
-        toast({ variant: 'destructive', title: 'Please select a valid file' });
+        toast({ variant: 'destructive', title: t('settings.themes.upload.invalidFile') });
         option.onError?.(error);
         setIsUploading(false);
         return;
@@ -88,7 +90,10 @@ export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
             onUploadSuccess(url);
           } else {
             const error = new Error('Upload failed');
-            toast({ variant: 'destructive', title: 'Failed to upload avatar' });
+            toast({
+              variant: 'destructive',
+              title: t('settings.themes.upload.avatarUploadFailed'),
+            });
             option.onError?.(error);
           }
         } catch (err) {

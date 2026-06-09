@@ -18,6 +18,8 @@ export const ColorPicker = (props: ColorPickerProps) => {
     showAutoButton = false,
     disabled = false,
     userId,
+    labels,
+    autoLabel,
   } = props;
   const [color, setColor] = useState<string>(isAutoColor ? autoColor : defaultColor);
   const [isAuto, setIsAuto] = useState(isAutoColor);
@@ -64,7 +66,7 @@ export const ColorPicker = (props: ColorPickerProps) => {
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
         <Button className={buttonClassName} style={buttonStyle} disabled={disabled}>
-          {isAuto ? 'Auto' : color.toLowerCase()}
+          {isAuto ? autoLabel : color.toLowerCase()}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -78,6 +80,7 @@ export const ColorPicker = (props: ColorPickerProps) => {
           onChange={handleColorChange}
           showAutoButton={showAutoButton}
           userId={userId}
+          labels={labels}
         />
         <PopoverArrow className="fill-background" width={20} height={10} />
       </PopoverContent>

@@ -23,8 +23,12 @@ export interface SelectPopoverProps {
   options: SelectPopoverOption[];
   value?: string;
   onValueChange: (value: string) => void;
+  /** Displayed when no option is selected. Pass t('…') from the consumer — no English default. */
   placeholder?: string;
+  /** Displayed inside CommandEmpty when no options match. Pass t('…') from the consumer — no English default. */
   emptyText?: string;
+  /** Placeholder for the search input. Pass t('…') from the consumer — no English default. */
+  searchPlaceholder?: string;
   className?: string;
   contentClassName?: string;
   contentStyle?: CSSProperties;
@@ -46,8 +50,9 @@ export const SelectPopover = (props: SelectPopoverProps) => {
     options,
     value,
     onValueChange,
-    placeholder = 'Select option',
-    emptyText = 'No items found.',
+    placeholder,
+    emptyText,
+    searchPlaceholder,
     className,
     contentClassName,
     contentStyle,
@@ -83,7 +88,7 @@ export const SelectPopover = (props: SelectPopoverProps) => {
         withoutPortal={withoutPortal}
       >
         <Command>
-          <CommandInput placeholder="Search..." />
+          <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>

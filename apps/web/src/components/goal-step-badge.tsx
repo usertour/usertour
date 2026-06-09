@@ -1,7 +1,9 @@
 import { FlagIcon } from '@usertour/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 export const GoalStepBadge = () => {
+  const { t } = useTranslation();
   return (
     <TooltipProvider>
       <Tooltip>
@@ -11,7 +13,7 @@ export const GoalStepBadge = () => {
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Goal step</p>
+          <p>{t('contents.goalStep')}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

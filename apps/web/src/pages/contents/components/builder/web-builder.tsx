@@ -11,6 +11,7 @@ import { LauncherBuilder } from '@/pages/contents/components/builder/launcher';
 import { ResourceCenterBuilder } from '@/pages/contents/components/builder/resource-center';
 import { WebBuilderLoading } from '@/pages/contents/components/builder/components/web-builder-loading';
 import { useListsLoading } from '@/pages/contents/components/builder/hooks/use-lists-loading';
+import { useTranslation } from 'react-i18next';
 
 export interface WebBuilderProps {
   contentId: string;
@@ -31,9 +32,10 @@ function WebBuilderContent() {
   const { ready } = useBuilderInit();
   const listsLoading = useListsLoading();
   const currentContent = useBuilderStore((state) => state.currentContent);
+  const { t } = useTranslation();
 
   if (!ready || listsLoading) {
-    return <WebBuilderLoading message="Loading builder..." />;
+    return <WebBuilderLoading message={t('contentBuilder.loadingBuilder')} />;
   }
 
   switch (currentContent?.type) {

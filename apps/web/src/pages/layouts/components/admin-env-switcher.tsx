@@ -21,6 +21,7 @@ import {
 import { cn } from '@usertour/tailwind';
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const AdminEnvSwitcher = () => {
   const [open, setOpen] = React.useState(false);
@@ -29,6 +30,7 @@ export const AdminEnvSwitcher = () => {
   const location = useLocation();
   const { environment, isViewOnly } = useAppContext();
   const { selectEnvironment } = useEnvironmentSelection();
+  const { t } = useTranslation();
 
   const { environmentList, refetch } = useEnvironmentList();
 
@@ -81,7 +83,9 @@ export const AdminEnvSwitcher = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[200px]" align="end" forceMount side="right">
-          <DropdownMenuLabel className="font-normal">Environments</DropdownMenuLabel>
+          <DropdownMenuLabel className="font-normal">
+            {t('settings.nav.sections.environments')}
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             {environmentList?.map((env) => (
@@ -111,7 +115,7 @@ export const AdminEnvSwitcher = () => {
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={handleCreate} disabled={isViewOnly}>
               <PlusCircledIcon className="mr-2 h-5 w-5" />
-              Create Environment
+              {t('settings.environments.createButton')}
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

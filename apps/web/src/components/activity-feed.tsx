@@ -54,11 +54,12 @@ function formatDateHeader(dateKey: string): string {
   return format(new Date(`${dateKey}T00:00:00`), 'MMM d, yyyy');
 }
 
-// Get event display name
-function getEventDisplayName(event: BizEvent): string {
+// Get event display name; returns null when no name is available so the
+// caller can substitute a translated fallback.
+function getEventDisplayName(event: BizEvent): string | null {
   if (event.event?.displayName) return event.event.displayName;
   if (event.event?.codeName) return event.event.codeName;
-  return 'Unknown event';
+  return null;
 }
 
 type EventCategory =
@@ -97,8 +98,13 @@ const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: str
 
 const CATEGORY_ICON_COLOR = 'text-muted-foreground';
 
-// Extract inline descriptor: content name + sub-context (step/task/url)
-function getEventDescriptor(event: BizEvent): { primary?: string; secondary?: string } {
+// Extract inline descriptor: content name + sub-context (step/task/url).
+// `formatStep` receives the step number string and returns a localised label
+// (e.g. "Step 3"); the caller passes `(n) => t('activityFeed.stepN', { number: n })`.
+function getEventDescriptor(
+  event: BizEvent,
+  formatStep: (number: string) => string,
+): { primary?: string; secondary?: string } {
   const data = (event.data || {}) as Record<string, unknown>;
   const category = getEventCategory(event);
 
@@ -111,7 +117,7 @@ function getEventDescriptor(event: BizEvent): { primary?: string; secondary?: st
       const stepNumber = str(data[EventAttributes.FLOW_STEP_NUMBER]);
       const stepName = str(data[EventAttributes.FLOW_STEP_NAME]);
       const secondary = stepNumber
-        ? `Step ${stepNumber}${stepName ? `: ${stepName}` : ''}`
+        ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}`
         : stepName;
       return { primary, secondary };
     }
@@ -188,11 +194,15 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
     attributeList,
     copyWithToast,
   } = props;
+  const { t } = useTranslation();
   const time = format(new Date(event.createdAt), 'hh:mm a');
-  const displayName = getEventDisplayName(event);
+  const displayName = getEventDisplayName(event) ?? t('activityFeed.unknownEvent');
   const category = getEventCategory(event);
   const CategoryIcon = CATEGORY_ICON[category];
-  const { primary: descriptorPrimary, secondary: descriptorSecondary } = getEventDescriptor(event);
+  const { primary: descriptorPrimary, secondary: descriptorSecondary } = getEventDescriptor(
+    event,
+    (number) => t('activityFeed.stepN', { number }),
+  );
   const hasDescriptor = !!(descriptorPrimary || descriptorSecondary);
   const hasEventData = !!(event.data && Object.keys(event.data).length > 0);
   const fallbackSessionAttributeKey =
@@ -456,7 +466,7 @@ export const ActivityFeed = ({
                 <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reload</TooltipContent>
+            <TooltipContent>{t('activityFeed.reload')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

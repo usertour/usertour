@@ -95,6 +95,7 @@ function TimeEditor({ condition, onChange }: EditorProps) {
         </div>
         <DateTimePicker
           value={partsToDate(start)}
+          placeholder={t('common.datePicker.pickDateTime')}
           onChange={(d) => commit({ start: dateToParts(d) })}
           zIndex={popoverZIndex}
         />
@@ -105,6 +106,7 @@ function TimeEditor({ condition, onChange }: EditorProps) {
         </div>
         <DateTimePicker
           value={partsToDate(end)}
+          placeholder={t('common.datePicker.pickDateTime')}
           onChange={(d) => commit({ end: dateToParts(d) })}
           zIndex={popoverZIndex}
         />

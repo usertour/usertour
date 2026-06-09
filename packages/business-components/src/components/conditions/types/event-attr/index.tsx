@@ -292,6 +292,7 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
       {showDatePicker && (
         <DateTimePicker
           mode="date"
+          placeholder={t('common.datePicker.pickDate')}
           value={data.value ? new Date(`${data.value}T00:00:00`) : undefined}
           onChange={(d) =>
             onChange(writeData(condition, { value: d ? format(d, 'yyyy-MM-dd') : '' }))

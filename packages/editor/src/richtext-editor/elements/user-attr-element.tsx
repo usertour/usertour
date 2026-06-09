@@ -1,5 +1,6 @@
 import type { ChangeEvent, MouseEvent, ReactNode } from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Transforms } from 'slate';
 import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
@@ -63,6 +64,7 @@ interface UserAttributeElementSerializeProps {
  * Provides a button to remove user attribute element
  */
 const DeleteUserAttrButton = memo(({ onDelete }: DeleteUserAttrButtonProps) => {
+  const { t } = useTranslation();
   return (
     <TooltipProvider>
       <Tooltip>
@@ -77,7 +79,7 @@ const DeleteUserAttrButton = memo(({ onDelete }: DeleteUserAttrButtonProps) => {
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
-          <p>Delete user attribute</p>
+          <p>{t('contentBuilder.editor.userAttr.deleteTooltip')}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -100,6 +102,7 @@ const UserAttrPopoverContent = memo(
     onFallbackChange,
     onDelete,
   }: UserAttrPopoverContentProps) => {
+    const { t } = useTranslation();
     return (
       <PopoverContent
         className="w-72"
@@ -114,16 +117,18 @@ const UserAttrPopoverContent = memo(
             options={options}
             value={attrCode}
             onValueChange={onAttrChange}
-            placeholder="Select an attribute"
+            placeholder={t('contentBuilder.editor.userAttr.selectPlaceholder')}
+            searchPlaceholder={t('common.search')}
+            emptyText={t('common.selectPopover.noItems')}
             contentStyle={{ zIndex: zIndex + 2 }}
           />
-          <Label htmlFor="fallback-text">Fallback</Label>
+          <Label htmlFor="fallback-text">{t('contentBuilder.editor.userAttr.fallbackLabel')}</Label>
           <Input
             type="text"
             className="bg-background dark:bg-muted"
             id="fallback-text"
             value={fallback}
-            placeholder="Enter fallback text"
+            placeholder={t('contentBuilder.editor.userAttr.fallbackPlaceholder')}
             onChange={onFallbackChange}
           />
           <DeleteUserAttrButton onDelete={onDelete} />

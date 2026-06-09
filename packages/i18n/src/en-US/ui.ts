@@ -189,6 +189,29 @@ const translations = {
       totalProjects_other: '{{count}} projects total',
     },
   },
+  dataTable: {
+    customizeColumns: 'Customize Columns',
+    searchColumns: 'Search columns...',
+    noColumnsFound: 'No columns found.',
+    shownInTable: 'Shown in table',
+    hideAll: 'Hide all',
+    noMatches: 'No matches',
+    hiddenInTable: 'Hidden in table',
+    showAll: 'Show all',
+    emptyMessage: 'No results found',
+    emptyDescription: 'Try adjusting your filters or search terms',
+    emptyName: 'No items found',
+    emptyDescription2: 'You have not added any items yet.',
+    searchPlaceholder: 'Search...',
+    noResults: 'No results found.',
+    clearFilters: 'Clear filters',
+  },
+  segments: {
+    sidebar: {
+      new: 'New',
+      segments: 'Segments',
+    },
+  },
   settings: {
     nav: {
       heading: 'Settings',
@@ -449,6 +472,14 @@ const translations = {
       },
     },
     themes: {
+      upload: {
+        invalidImageFile: 'Please select a valid image file.',
+        unsupportedImageType: 'Only PNG, JPG, or SVG files are supported.',
+        maxFileSizeExceeded: 'Max file size is {{mb}}MB.',
+        invalidFile: 'Please select a valid file',
+        avatarUploadFailed: 'Failed to upload avatar',
+        generateUrlFailed: 'Unable to generate upload URL. Please try again later.',
+      },
       defaultBadge: 'Default',
       setDefaultMenuItem: 'Set as company default',
       setDefaultSuccess: 'The theme has been successfully set as default',
@@ -633,6 +664,11 @@ const translations = {
           alerting: 'Alerting (coming soon)',
         },
       },
+      banner: {
+        sessionLimitMessage:
+          "You've reached your session limit. Upgrade your plan to create more sessions.",
+        upgradeButton: 'Upgrade Plan',
+      },
     },
     subscription: {
       title: 'Subscription',
@@ -703,6 +739,7 @@ const translations = {
       enableFailedToast: 'Failed to enable integration',
       disableFailedToast: 'Failed to disable integration',
       providerCard: {
+        regionDefaultUS: 'Default (US)',
         usertourLogoAlt: 'Usertour logo',
         // {{provider}} resolves to the provider's display name
         // (e.g. "Mixpanel", "Heap"). The headline is the toggle label
@@ -1047,6 +1084,9 @@ const translations = {
     tab: 'Activity feed',
     count_one: '{{count}} event',
     count_other: '{{count}} events',
+    unknownEvent: 'Unknown event',
+    reload: 'Reload',
+    stepN: 'Step {{number}}',
   },
   privacyPage: {
     title: 'Privacy Policy',
@@ -1055,6 +1095,25 @@ const translations = {
     title: 'Terms of Service',
   },
   common: {
+    colorPicker: {
+      useThisColor: 'Use this color',
+      removeColor: 'Remove color (use default)',
+      tailwindColors: 'Tailwind CSS colors',
+      recentlyUsed: 'Recently used',
+      done: 'Done',
+      colorPicker: 'Color picker',
+      colorPalette: 'Color palette',
+      auto: 'Auto',
+    },
+    selectPopover: {
+      noItems: 'No items found.',
+      selectOption: 'Select option',
+    },
+    datePicker: {
+      pickDate: 'Pick a date',
+      pickDateTime: 'Pick a date and time',
+    },
+    clearSearch: 'Clear search',
     language: 'Language',
     theme: 'Theme',
     appearance: {
@@ -1211,6 +1270,17 @@ const translations = {
       countLabel_other: '{{count}} sessions',
       deletedContentBadge: 'Deleted',
       deletedContentTooltip: 'This content was deleted. Historical session data is preserved.',
+      status: {
+        active: 'Active',
+        completed: 'Completed',
+        dismissed: 'Dismissed',
+        seen: 'Seen',
+        activated: 'Activated',
+      },
+      completedIn: 'Completed in {{date}}',
+      stepN: 'Step {{number}}',
+      taskClicked: 'User clicked this task',
+      taskHidden: 'Task is hidden for user',
       table: {
         content: 'Content',
         status: 'Status',
@@ -1239,6 +1309,11 @@ const translations = {
           ago: 'ago',
         },
         deleteAction: 'Delete session',
+        questionTable: {
+          question: 'Question',
+          answer: 'Answer',
+          noQuestions: 'No questions found.',
+        },
       },
     },
     sidebar: {
@@ -1841,6 +1916,7 @@ const translations = {
       group: { today: 'Today', yesterday: 'Yesterday' },
       action: { publish: 'Publish...', restore: 'Restore...' },
     },
+    goalStep: 'Goal step',
   },
   companies: {
     actions: {
@@ -1992,8 +2068,24 @@ const translations = {
       description:
         'With themes, you can make flows and other Usertour content look like a native part of your app.',
     },
+    dropdownMenu: {
+      pushUpdates: 'Push Updates',
+      discardChanges: 'Discard Changes',
+      unpublish: 'Unpublish',
+    },
+    fontSelect: {
+      loadFontFamily: 'Load a font family...',
+      searchFontFamily: 'Search font family...',
+      noItemsFound: 'No items found.',
+      fontFamilyHeading: 'Font family',
+    },
   },
   themeBuilder: {
+    preview: {
+      selectTypePlaceholder: 'Select a type...',
+      searchTypesPlaceholder: 'Search types...',
+      noTypesFound: 'No types found.',
+    },
     chrome: {
       // Sidebar / top bar
       variations: 'Variations',
@@ -2255,6 +2347,8 @@ const translations = {
         black: 'Black 900',
       },
       placementCornerCenter: {
+        topCenter: 'Top center',
+        bottomCenter: 'Bottom center',
         topLeft: 'Top left',
         topRight: 'Top right',
         bottomLeft: 'Bottom left',
@@ -2343,6 +2437,11 @@ const translations = {
     },
   },
   contentBuilder: {
+    loadingBuilder: 'Loading builder...',
+    analytics: {
+      notAtAllLikely: 'Not at all likely',
+      extremelyLikely: 'Extremely likely',
+    },
     editor: {
       button: {
         text: 'Button text',
@@ -2371,6 +2470,12 @@ const translations = {
           'Below each option, provide labels to clearly convey their meaning, such as "Bad" positioned under the left option and "Good" under the right.',
         defaultLabel: 'Default',
         scaleRange: 'Scale range',
+        nameRequired: 'Question name is required',
+        invalidRange: 'Invalid range: low must be ≤ high, and both must be between 0-100',
+        fixErrors: 'Please fix the errors above',
+        lowLabel: 'Low label',
+        highLabel: 'High label',
+        defaultPlaceholder: 'Default',
       },
       embed: {
         url: 'Embed URL',
@@ -2460,6 +2565,87 @@ const translations = {
         bottom: 'Bottom',
         right: 'Right',
       },
+      placeholder: "Write, type '/' for commands…",
+      placeholderMini: 'Write text here…',
+      toolbar: {
+        formattingOptions: 'Formatting options',
+        textFormatting: 'Text formatting',
+        additionalFormattingOptions: 'Additional formatting options',
+        additionalFormatting: 'Additional formatting',
+        textAlignment: 'Text alignment',
+        bold: {
+          tooltip: 'Bold ⌘B',
+          ariaLabel: 'Toggle bold formatting',
+        },
+        italic: {
+          tooltip: 'Italic ⌘I',
+          ariaLabel: 'Toggle italic formatting',
+        },
+        underline: {
+          tooltip: 'Underline ⌘U',
+          ariaLabel: 'Toggle underline formatting',
+        },
+        color: {
+          tooltip: 'Font color',
+          ariaLabel: 'Choose font color',
+        },
+        code: {
+          tooltip: 'Code ⌘`',
+          ariaLabel: 'Toggle code block',
+        },
+        h1: {
+          tooltip: 'Heading 1',
+          ariaLabel: 'Toggle heading 1',
+        },
+        h2: {
+          tooltip: 'Heading 2',
+          ariaLabel: 'Toggle heading 2',
+        },
+        link: {
+          tooltip: 'Insert link',
+          ariaLabel: 'Insert link',
+        },
+        userAttribute: {
+          tooltip: 'User attribute',
+          ariaLabel: 'Insert user attribute',
+        },
+        numberedList: {
+          tooltip: 'Numbered list',
+          ariaLabel: 'Toggle numbered list',
+        },
+        bulletedList: {
+          tooltip: 'Bulleted list',
+          ariaLabel: 'Toggle bulleted list',
+        },
+        alignLeft: {
+          tooltip: 'Align left',
+          ariaLabel: 'Align text left',
+        },
+        alignCenter: {
+          tooltip: 'Align center',
+          ariaLabel: 'Align text center',
+        },
+        alignRight: {
+          tooltip: 'Align right',
+          ariaLabel: 'Align text right',
+        },
+        slashCommand: {
+          text: 'Text',
+          h1: 'Heading 1',
+          h2: 'Heading 2',
+          codeBlock: 'Code Block',
+          numberedList: 'Numbered List',
+          bulletedList: 'Bulleted List',
+          userAttribute: 'User Attribute',
+          noResults: 'No search results',
+        },
+      },
+      userAttr: {
+        deleteTooltip: 'Delete user attribute',
+        selectPlaceholder: 'Select an attribute',
+        fallbackLabel: 'Fallback',
+        fallbackPlaceholder: 'Enter fallback text',
+      },
     },
     common: {
       save: 'Save',
@@ -2478,6 +2664,9 @@ const translations = {
       expandPanel: 'Expand panel',
     },
     iconPicker: {
+      invalidFile: 'Please select a valid file',
+      uploadFailed: 'Failed to upload icon',
+      invalidUrl: 'Please enter a valid URL',
       tabDefault: 'Default',
       tabBuiltin: 'Built-in',
       tabUpload: 'Upload',
@@ -3264,6 +3453,42 @@ const translations = {
         enterCode: 'Enter the code',
       },
     },
+  },
+  license: {
+    status: {
+      expired: 'Expired',
+      invalid: 'Invalid',
+      active: 'Active',
+    },
+  },
+  pagination: {
+    rowsPerPage: 'Rows per page',
+    pageOf: 'Page {{current}} of {{total}}',
+    goToFirstPage: 'Go to first page',
+    goToPreviousPage: 'Go to previous page',
+    goToNextPage: 'Go to next page',
+    goToLastPage: 'Go to last page',
+  },
+  nav: {
+    resources: 'Resources',
+    installUsertourJs: 'Install Usertour.js',
+    documentation: 'Documentation',
+  },
+  attributes: {
+    typeChip: {
+      number: 'NUMBER',
+      string: 'STRING',
+      boolean: 'BOOLEAN',
+      list: 'LIST',
+      dateTime: 'DATETIME',
+      randomAB: 'RANDOM A/B',
+      randomNumber: 'RANDOM',
+    },
+  },
+  error: {
+    forbidden: 'You are not authorized to access this page.',
+    notFound: 'The page you are trying to visit does not exist.',
+    serverError: 'Oops! Something is wrong with the server. Please try again later.',
   },
 };
 

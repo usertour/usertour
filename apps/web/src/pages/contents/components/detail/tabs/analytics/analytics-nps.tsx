@@ -334,10 +334,10 @@ export const NPSDistribution = ({ npsByDay, question, className }: NPSDistributi
       {/* Score labels */}
       <div className="flex justify-between mt-4">
         <div className="text-sm text-muted-foreground">
-          {question.data.lowLabel || 'Not at all likely'}
+          {question.data.lowLabel || t('contentBuilder.analytics.notAtAllLikely')}
         </div>
         <div className="text-sm text-muted-foreground">
-          {question.data.highLabel || 'Extremely likely'}
+          {question.data.highLabel || t('contentBuilder.analytics.extremelyLikely')}
         </div>
       </div>
     </div>
