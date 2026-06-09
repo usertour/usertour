@@ -114,4 +114,35 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
+
+  // Error-code alignment with v1's published catalog.
+  it('maps a bad limit to E1017 (zod validation)', async () => {
+    const res = await api(
+      'get',
+      `/v2/projects/${fx.projectId}/attribute-definitions?limit=0`,
+      v2Token,
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
+
+  it('maps a bad orderBy enum to E1017 (zod validation)', async () => {
+    const res = await api(
+      'get',
+      `/v2/projects/${fx.projectId}/attribute-definitions?orderBy=nope`,
+      v2Token,
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
+
+  it('maps an invalid scope to E1015 (service-level, not E1017)', async () => {
+    const res = await api(
+      'get',
+      `/v2/projects/${fx.projectId}/attribute-definitions?scope=nope`,
+      v2Token,
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1015');
+  });
 });

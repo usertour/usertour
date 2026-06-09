@@ -77,10 +77,11 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect(seeded).toMatchObject({ object: 'eventDefinition', displayName: 'Flow Started' });
   });
 
-  it('coerces + validates the query via zod (limit=0 → 400)', async () => {
+  it('maps a zod validation failure to the documented E1017 (limit=0)', async () => {
     const token = await mint([Capability.EventRead]);
     const res = await api('get', `/v2/projects/${projectId}/event-definitions?limit=0`, token);
     expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
   });
 
   it('rejects a missing Authorization header (401 E1010)', async () => {

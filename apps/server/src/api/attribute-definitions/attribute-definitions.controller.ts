@@ -1,13 +1,13 @@
 import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
-import { ZodValidationPipe } from 'nestjs-zod';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
+import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiAttributeDefinitionsService } from './attribute-definitions.service';
 import {
   ListAttributeDefinitionsQueryDto,
@@ -18,7 +18,7 @@ import {
 @Controller('v2/projects/:projectId/attribute-definitions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
-@UsePipes(ZodValidationPipe)
+@UsePipes(ApiValidationPipe)
 @ApiBearerAuth()
 export class ApiAttributeDefinitionsController {
   constructor(private readonly service: ApiAttributeDefinitionsService) {}
