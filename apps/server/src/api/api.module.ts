@@ -3,10 +3,13 @@ import { Module } from '@nestjs/common';
 import { ApiTokenModule } from '@/api-token/api-token.module';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { ContentModule } from '@/content/content.module';
 import { EventsModule } from '@/events/events.module';
 
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
+import { ApiContentController } from './content/content.controller';
+import { ApiContentService } from './content/content.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
 
@@ -17,8 +20,17 @@ import { ApiEventDefinitionsService } from './event-definitions/event-definition
  * Depends only on the domain layer + api-token auth, never on the legacy facade.
  */
 @Module({
-  imports: [ApiTokenModule, EventsModule, AttributesModule],
-  controllers: [ApiEventDefinitionsController, ApiAttributeDefinitionsController],
-  providers: [ApiEventDefinitionsService, ApiAttributeDefinitionsService, OpenAPIExceptionFilter],
+  imports: [ApiTokenModule, EventsModule, AttributesModule, ContentModule],
+  controllers: [
+    ApiEventDefinitionsController,
+    ApiAttributeDefinitionsController,
+    ApiContentController,
+  ],
+  providers: [
+    ApiEventDefinitionsService,
+    ApiAttributeDefinitionsService,
+    ApiContentService,
+    OpenAPIExceptionFilter,
+  ],
 })
 export class ApiModule {}

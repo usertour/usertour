@@ -661,6 +661,15 @@ export class ContentService {
     });
   }
 
+  /**
+   * Like {@link getContentWithRelations} but with a caller-provided Prisma
+   * include — lets the v2 API load per-environment publish rows
+   * (`contentOnEnvironments`) that the v1 flag-based variant can't express.
+   */
+  async findContentWithRelations(id: string, projectId: string, include: Prisma.ContentInclude) {
+    return await this.prisma.content.findFirst({ where: { id, projectId }, include });
+  }
+
   async getContentVersionWithRelations(
     versionId: string,
     projectId: string,
@@ -723,9 +732,10 @@ export class ContentService {
     },
     include?: Prisma.ContentInclude,
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
+    type?: string,
   ) {
     const baseQuery = {
-      where: { projectId },
+      where: { projectId, ...(type ? { type } : {}) },
       include,
       orderBy,
     };
