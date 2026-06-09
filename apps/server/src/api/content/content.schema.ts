@@ -77,5 +77,6 @@ export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 export type Content = z.infer<typeof content>;
 export type ContentVersion = z.infer<typeof contentVersion>;
 export type ContentExpand = z.infer<typeof contentExpand>;
+export type Question = z.infer<typeof question>;
 export type ListContentQuery = z.infer<typeof listContentQuery>;
 export type GetContentQuery = z.infer<typeof getContentQuery>;

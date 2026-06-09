@@ -10,6 +10,8 @@ import { ApiAttributeDefinitionsController } from './attribute-definitions/attri
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
 import { ApiContentController } from './content/content.controller';
 import { ApiContentService } from './content/content.service';
+import { ApiContentVersionsController } from './content-versions/content-versions.controller';
+import { ApiContentVersionsService } from './content-versions/content-versions.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
 
@@ -25,11 +27,13 @@ import { ApiEventDefinitionsService } from './event-definitions/event-definition
     ApiEventDefinitionsController,
     ApiAttributeDefinitionsController,
     ApiContentController,
+    ApiContentVersionsController,
   ],
   providers: [
     ApiEventDefinitionsService,
     ApiAttributeDefinitionsService,
     ApiContentService,
+    ApiContentVersionsService,
     OpenAPIExceptionFilter,
   ],
 })
