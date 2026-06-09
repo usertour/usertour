@@ -1,6 +1,7 @@
 # Content authoring schema (v2) — design
 
-> Status: **agreed (v0)** — decisions locked (§11), ready for Phase 1. Captures
+> Status: **implemented (v0)** — read (decompiler) + write (compiler + field
+> merge) + MCP tools shipped on `feat/api-token`; decisions locked (§11). Captures
 > the design + decisions for enriching the v2
 > content/version surface with the actual step content, as a single
 > representation that serves **read and write** and **REST and MCP**.
@@ -316,12 +317,14 @@ MCP write tool ──┘     1. validate authoring (zod + reference & operator v
 
 ## 10. Phasing
 
-- **Phase 1** (read, cheap): `content.buildUrl`, `version.themeId`; `steps`
-  (slim → blocks) behind `expand=steps`. Decompiler only.
-- **Phase 2** (read, rich): full block decompile incl. questions/columns +
+- **Phase 1** ✅ (read, cheap): `content.buildUrl`, `version.themeId`; `steps`
+  behind `expand=steps`. Decompiler.
+- **Phase 2** ✅ (read, rich): full block decompile incl. questions/columns +
   **rules** (start/hide rules, step triggers, button/question actions &
-  conditions); `expand=theme`.
-- **Phase 4** (write): compiler + write endpoints + MCP write. (Phase 3 = OAuth.)
+  conditions).
+- **Phase 4** ✅ (write): compiler (markdown→slate, blocks/rules→internal) +
+  field-level merge + write endpoints (content CRUD, `PATCH content-versions/:id`)
+  + MCP write tools. (Phase 3 = OAuth, still pending.)
 
 ## 11. Decisions
 
