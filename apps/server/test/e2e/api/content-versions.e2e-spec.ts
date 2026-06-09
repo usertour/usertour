@@ -62,6 +62,27 @@ describe('API v2 /content-versions (e2e)', () => {
       name: 'Step one',
       cvid: 'cv-1',
       sequence: 0,
+      data: [
+        {
+          element: { type: 'group' },
+          children: [
+            {
+              element: { type: 'column' },
+              children: [
+                {
+                  element: {
+                    type: 'text',
+                    data: [{ type: 'paragraph', children: [{ text: 'Hello' }] }],
+                  },
+                },
+                { element: { type: 'button', data: { text: 'Next', type: 'primary' } } },
+              ],
+            },
+          ],
+        },
+      ],
+      target: { type: 'manual', customSelector: '.cta' },
+      setting: { side: 'bottom', align: 'center', width: 320 },
     });
     await buildStep(prisma, {
       versionId,
@@ -126,6 +147,24 @@ describe('API v2 /content-versions (e2e)', () => {
       sequence: 0,
     });
     expect(res.body.steps[1].sequence).toBe(1);
+  });
+
+  it('decompiles step body, target, and placement (expand=steps)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content-versions/${versionId}?expand=steps`,
+      token,
+    );
+    expect(res.status).toBe(200);
+    const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'cv-1');
+    expect(step.target).toEqual({ by: 'selector', selector: '.cta' });
+    expect(step.placement).toMatchObject({ side: 'bottom', align: 'center' });
+    expect(step.width).toBe(320);
+    expect(step.content).toEqual([
+      { object: 'block', type: 'text', markdown: 'Hello' },
+      { object: 'block', type: 'button', text: 'Next', variant: 'primary' },
+    ]);
   });
 
   it('omits steps without the expand', async () => {
