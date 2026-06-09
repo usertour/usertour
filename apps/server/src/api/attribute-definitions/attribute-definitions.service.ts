@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 
 import { AttributesService } from '@/attributes/attributes.service';
 import { InvalidScopeError } from '@/common/errors/errors';
-import { paginate } from '@/common/openapi/pagination';
-import { parseOrderBy } from '@/common/openapi/sort';
-import {
-  isValidOpenApiObjectType,
-  mapBizType,
-  mapDataType,
-  mapOpenApiObjectTypeToBizType,
-  OpenApiObjectType,
-} from '@/common/openapi/types';
 
+import {
+  ApiObjectType,
+  isApiObjectType,
+  mapBizTypeToScope,
+  mapDataType,
+  mapScopeToBizType,
+} from '../shared/object-type';
+import { paginate } from '../shared/pagination';
+import { parseOrderBy } from '../shared/sort';
 import { Attribute, ListAttributeDefinitionsQuery } from './attribute-definitions.schema';
 
 /** Coerce a single-or-array query param to an array (or undefined). */
@@ -38,18 +38,18 @@ export class ApiAttributeDefinitionsService {
   ): Promise<{ results: Attribute[]; next: string | null; previous: string | null }> {
     const { limit, cursor, scope, orderBy, eventName } = query;
 
-    if (scope && !isValidOpenApiObjectType(scope)) {
+    if (scope && !isApiObjectType(scope)) {
       throw new InvalidScopeError(scope);
     }
 
-    const bizType = scope ? mapOpenApiObjectTypeToBizType(scope as OpenApiObjectType) : undefined;
+    const bizType = scope ? mapScopeToBizType(scope as ApiObjectType) : undefined;
     const sortOrders = parseOrderBy(toArray(orderBy) || ['displayName']);
 
-    return paginate(
+    return paginate({
       requestUrl,
       cursor,
       limit,
-      (params) =>
+      fetch: (params) =>
         this.attributes.listWithPagination(
           projectId,
           params,
@@ -57,17 +57,17 @@ export class ApiAttributeDefinitionsService {
           toArray(eventName),
           sortOrders,
         ),
-      (node) => ({
+      map: (node) => ({
         id: node.id,
-        object: OpenApiObjectType.ATTRIBUTE_DEFINITION,
+        object: ApiObjectType.ATTRIBUTE_DEFINITION,
         createdAt:
           typeof node.createdAt === 'string' ? node.createdAt : node.createdAt.toISOString(),
         dataType: mapDataType(node.dataType),
         description: node.description,
         displayName: node.displayName,
         codeName: node.codeName,
-        scope: mapBizType(node.bizType),
+        scope: mapBizTypeToScope(node.bizType),
       }),
-    );
+    });
   }
 }

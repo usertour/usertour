@@ -2,8 +2,8 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
-import { OpenApiObjectType } from '@/common/openapi/types';
 
+import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
 /** A query param that arrives as a single string or a repeated array (mirrors v1). */
@@ -20,13 +20,13 @@ export class ListAttributeDefinitionsQueryDto extends createZodDto(listAttribute
 
 export const attribute = z.object({
   id: z.string(),
-  object: z.literal(OpenApiObjectType.ATTRIBUTE_DEFINITION),
+  object: z.literal(ApiObjectType.ATTRIBUTE_DEFINITION),
   createdAt: z.string(),
   dataType: z.nativeEnum(AttributeDataTypeNames),
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
-  scope: z.nativeEnum(OpenApiObjectType),
+  scope: z.nativeEnum(ApiObjectType),
 });
 
 export const listAttributeDefinitionsResponse = z.object({

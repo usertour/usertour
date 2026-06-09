@@ -1,8 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { OpenApiObjectType } from '@/common/openapi/types';
-
+import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
 /**
@@ -17,7 +16,7 @@ export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefiniti
 
 export const eventDefinition = z.object({
   id: z.string(),
-  object: z.literal(OpenApiObjectType.EVENT_DEFINITION),
+  object: z.literal(ApiObjectType.EVENT_DEFINITION),
   createdAt: z.string(),
   description: z.string(),
   displayName: z.string(),

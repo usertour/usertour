@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { paginate } from '@/common/openapi/pagination';
-import { OpenApiObjectType } from '@/common/openapi/types';
-import { parseOrderBy } from '@/common/openapi/sort';
 import { EventsService } from '@/events/events.service';
 
+import { ApiObjectType } from '../shared/object-type';
+import { paginate } from '../shared/pagination';
+import { parseOrderBy } from '../shared/sort';
 import { EventDefinition, ListEventDefinitionsQuery } from './event-definitions.schema';
 
 /**
@@ -24,19 +24,19 @@ export class ApiEventDefinitionsService {
     const { cursor, limit } = query;
     const sortOrders = parseOrderBy(['createdAt']);
 
-    return paginate(
+    return paginate({
       requestUrl,
       cursor,
       limit,
-      (params) => this.events.listWithPagination(projectId, params, sortOrders),
-      (node) => ({
+      fetch: (params) => this.events.listWithPagination(projectId, params, sortOrders),
+      map: (node) => ({
         id: node.id,
-        object: OpenApiObjectType.EVENT_DEFINITION,
+        object: ApiObjectType.EVENT_DEFINITION,
         createdAt: new Date(node.createdAt).toISOString(),
         description: node.description,
         displayName: node.displayName,
         codeName: node.codeName,
       }),
-    );
+    });
   }
 }
