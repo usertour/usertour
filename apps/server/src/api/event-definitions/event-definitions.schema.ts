@@ -3,22 +3,14 @@ import { z } from 'zod';
 
 import { OpenApiObjectType } from '@/common/openapi/types';
 
+import { cursor, limit } from '../shared/pagination.schema';
+
 /**
  * The single source of truth for the v2 event-definitions endpoint: these zod
  * schemas drive request validation (via ZodValidationPipe), the OpenAPI spec
  * (via nestjs-zod + @nestjs/swagger), the handler's types, and the MCP tool's
  * input schema — one definition, every binding.
  */
-
-// Shared pagination fragments — reused across resources (and by MCP).
-export const limit = z.coerce
-  .number()
-  .int()
-  .min(1)
-  .max(100)
-  .default(20)
-  .describe('Max items per page (1-100, default 20).');
-export const cursor = z.string().optional().describe('Pagination cursor from a prior response.');
 
 export const listEventDefinitionsQuery = z.object({ cursor, limit });
 export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefinitionsQuery) {}
