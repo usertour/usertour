@@ -695,6 +695,8 @@ const translations = {
     },
     api: {
       title: 'API keys for {{environment}}',
+      deprecation:
+        'Environment API keys are being deprecated and will be removed in a future release. Use <link>Personal API keys</link> instead.',
       newButton: 'New API key',
       columns: {
         name: 'Name',

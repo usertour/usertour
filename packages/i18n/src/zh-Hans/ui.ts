@@ -666,6 +666,7 @@ const translations = {
     },
     api: {
       title: '{{environment}} 环境的 API 密钥',
+      deprecation: '环境 API 密钥即将下线、后续版本将移除,请改用 <link>Personal API keys</link>。',
       newButton: '新建 API 密钥',
       columns: {
         name: '名称',

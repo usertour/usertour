@@ -9,6 +9,8 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { useAppContext } from '@/contexts/app-context';
+import { useListAccessTokensQuery } from '@usertour/hooks';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -78,15 +80,25 @@ const GROUP_LABEL_KEY: Record<SettingsSectionGroup, string> = {
 export const SettingsSidebarNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project, globalConfig, can } = useAppContext();
+  const { project, environment, globalConfig, can } = useAppContext();
   const { t } = useTranslation();
 
   const currentMode = globalConfig?.isSelfHostedMode
     ? SettingsMode.SELF_HOSTED
     : SettingsMode.CLOUD;
 
+  // The legacy env-key API ("API" in the Advanced group) is being deprecated:
+  // show it only while the project still has env keys, so new projects are
+  // steered to Personal API keys. The page stays reachable by URL for existing
+  // integrations.
+  const { accessTokens } = useListAccessTokensQuery(environment?.id, SHARED_CACHE_QUERY_OPTIONS);
+  const hasEnvKeys = (accessTokens?.length ?? 0) > 0;
+
   const visibleItems = SETTINGS_SECTIONS.filter((section) => {
     if (section.hideFromSidebar) {
+      return false;
+    }
+    if (section.key === 'api' && !hasEnvKeys) {
       return false;
     }
     if (section.capability && !can(section.capability)) {
