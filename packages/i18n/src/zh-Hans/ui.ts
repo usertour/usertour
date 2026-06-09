@@ -724,7 +724,10 @@ const translations = {
       createSuccess: '个人 API 密钥已创建',
       createFailure: '创建个人 API 密钥失败。',
       scopes: {
-        content: '内容',
+        content: '读取内容',
+        contentCreate: '创建内容',
+        contentUpdate: '编辑内容',
+        contentDelete: '删除内容',
         users: '用户',
         attributes: '属性',
         events: '事件',

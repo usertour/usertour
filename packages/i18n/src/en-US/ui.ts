@@ -758,7 +758,10 @@ const translations = {
       createSuccess: 'Personal API key created successfully',
       createFailure: 'Failed to create personal API key.',
       scopes: {
-        content: 'Content',
+        content: 'Read content',
+        contentCreate: 'Create content',
+        contentUpdate: 'Edit content',
+        contentDelete: 'Delete content',
         users: 'Users',
         attributes: 'Attributes',
         events: 'Events',

@@ -10,6 +10,9 @@ export interface ApiTokenScopeOption {
 
 export const API_TOKEN_SCOPE_OPTIONS: readonly ApiTokenScopeOption[] = [
   { value: 'content:read', labelKey: 'settings.personalApiKeys.scopes.content' },
+  { value: 'content:create', labelKey: 'settings.personalApiKeys.scopes.contentCreate' },
+  { value: 'content:update', labelKey: 'settings.personalApiKeys.scopes.contentUpdate' },
+  { value: 'content:delete', labelKey: 'settings.personalApiKeys.scopes.contentDelete' },
   { value: 'bizdata:read', labelKey: 'settings.personalApiKeys.scopes.users' },
   { value: 'attribute:read', labelKey: 'settings.personalApiKeys.scopes.attributes' },
   { value: 'event:read', labelKey: 'settings.personalApiKeys.scopes.events' },
