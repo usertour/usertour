@@ -81,8 +81,8 @@ const SortableRow = ({ row, visible, dragEnabled, disabled, onToggle }: Sortable
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm bg-popover hover:bg-accent',
-        isDragging && 'shadow-md ring-1 ring-border',
+        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
+        isDragging && 'bg-popover shadow-md ring-1 ring-border',
         disabled && 'opacity-50 pointer-events-none',
       )}
     >
