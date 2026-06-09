@@ -160,4 +160,17 @@ describe('API v2 /content (e2e)', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
+
+  it('rejects a missing Authorization header (401 E1010)', async () => {
+    const res = await api('get', `/v2/projects/${projectId}/content`);
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('E1010');
+  });
+
+  it('maps a bad expand enum to E1017 (zod validation)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api('get', `/v2/projects/${projectId}/content?expand=nope`, token);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
 });
