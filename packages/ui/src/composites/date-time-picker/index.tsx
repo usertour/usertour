@@ -17,6 +17,10 @@ export interface DateTimePickerProps {
   // trigger label is date-only — used for date-only condition types.
   mode?: DateTimePickerMode;
   disabled?: boolean;
+  /**
+   * Trigger label shown when no date is selected. Pass t('…') from the consumer —
+   * no English default is provided so the caller must supply a translated string.
+   */
   placeholder?: string;
   className?: string;
   // Conditions render this picker inside a Radix popover whose z-index is
@@ -41,10 +45,9 @@ const TRIGGER_FORMAT: Record<DateTimePickerMode, string> = {
   datetime: 'MMM d, yyyy, h:mm a',
 };
 
-const DEFAULT_PLACEHOLDER: Record<DateTimePickerMode, string> = {
-  date: 'Pick a date',
-  datetime: 'Pick a date and time',
-};
+// No DEFAULT_PLACEHOLDER — callers must pass a translated placeholder via the
+// `placeholder` prop. Omitting it results in an empty trigger label, which is
+// intentional: it forces consumers to supply a locale-aware string.
 
 // Combined date + time picker. Calendar on the left, hour and minute scroll
 // columns on the right (24h, 1-minute step). When `mode="date"` the time
@@ -91,9 +94,7 @@ export const DateTimePicker = (props: DateTimePickerProps) => {
     onChange(buildAt(draft, draft.getHours(), minute));
   };
 
-  const triggerLabel = value
-    ? format(value, TRIGGER_FORMAT[mode])
-    : (placeholder ?? DEFAULT_PLACEHOLDER[mode]);
+  const triggerLabel = value ? format(value, TRIGGER_FORMAT[mode]) : placeholder;
 
   return (
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>

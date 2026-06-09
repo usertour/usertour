@@ -79,7 +79,11 @@ export type {
   ErrorTooltipTriggerProps,
 } from './composites/error-tooltip';
 export { ColorPicker, ColorPickerPanel } from './composites/color-picker';
-export type { ColorPickerProps, ColorPickerPanelProps } from './composites/color-picker';
+export type {
+  ColorPickerProps,
+  ColorPickerPanelProps,
+  ColorPickerPanelLabels,
+} from './composites/color-picker';
 export {
   ScaledPreviewContainer,
   AutoScaledPreviewContainer,

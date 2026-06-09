@@ -184,6 +184,29 @@ const translations = {
       totalProjects_other: '共 {{count}} 个项目',
     },
   },
+  dataTable: {
+    customizeColumns: '自定义列',
+    searchColumns: '搜索列...',
+    noColumnsFound: '未找到列。',
+    shownInTable: '表格中显示',
+    hideAll: '全部隐藏',
+    noMatches: '无匹配项',
+    hiddenInTable: '表格中隐藏',
+    showAll: '全部显示',
+    emptyMessage: '暂无数据',
+    emptyDescription: '请尝试调整筛选条件或搜索词',
+    emptyName: '暂无内容',
+    emptyDescription2: '你还没有添加任何内容。',
+    searchPlaceholder: '搜索...',
+    noResults: '未找到结果。',
+    clearFilters: '清除筛选',
+  },
+  segments: {
+    sidebar: {
+      new: '新建',
+      segments: '分群',
+    },
+  },
   settings: {
     nav: {
       heading: '设置',
@@ -426,6 +449,14 @@ const translations = {
       },
     },
     themes: {
+      upload: {
+        invalidImageFile: '请选择有效的图片文件。',
+        unsupportedImageType: '仅支持 PNG、JPG 或 SVG 格式。',
+        maxFileSizeExceeded: '文件大小不能超过 {{mb}}MB。',
+        invalidFile: '请选择有效的文件',
+        avatarUploadFailed: '头像上传失败',
+        generateUrlFailed: '无法生成上传地址，请稍后重试。',
+      },
       defaultBadge: '默认',
       setDefaultMenuItem: '设为公司默认',
       setDefaultSuccess: '已将该主题设为默认',
@@ -607,6 +638,10 @@ const translations = {
           alerting: '告警(即将推出)',
         },
       },
+      banner: {
+        sessionLimitMessage: '您已达到会话上限。升级套餐以创建更多会话。',
+        upgradeButton: '升级套餐',
+      },
     },
     subscription: {
       title: '订阅',
@@ -716,6 +751,7 @@ const translations = {
       enableFailedToast: '启用集成失败',
       disableFailedToast: '停用集成失败',
       providerCard: {
+        regionDefaultUS: '默认（美国）',
         usertourLogoAlt: 'Usertour 标志',
         headline: '将事件从 Usertour 推送到 {{provider}}',
         tooltip: '开启后,Usertour 产生的事件会持续推送到您的 {{provider}} 项目。',
@@ -1031,6 +1067,9 @@ const translations = {
     loading: '加载中...',
     tab: '活动流',
     count_other: '{{count}} 个事件',
+    unknownEvent: '未知事件',
+    reload: '刷新',
+    stepN: '步骤 {{number}}',
   },
   privacyPage: {
     title: '隐私政策',
@@ -1039,6 +1078,25 @@ const translations = {
     title: '服务条款',
   },
   common: {
+    colorPicker: {
+      useThisColor: '使用此颜色',
+      removeColor: '移除颜色（使用默认）',
+      tailwindColors: 'Tailwind CSS 颜色',
+      recentlyUsed: '最近使用',
+      done: '完成',
+      colorPicker: '颜色选择器',
+      colorPalette: '颜色面板',
+      auto: '自动',
+    },
+    selectPopover: {
+      noItems: '未找到选项。',
+      selectOption: '请选择',
+    },
+    datePicker: {
+      pickDate: '选择日期',
+      pickDateTime: '选择日期和时间',
+    },
+    clearSearch: '清除搜索',
     language: '语言',
     theme: '主题',
     appearance: {
@@ -1182,6 +1240,17 @@ const translations = {
       countLabel_other: '{{count}} 个会话',
       deletedContentBadge: '已删除',
       deletedContentTooltip: '该内容已被删除,历史会话数据保留。',
+      status: {
+        active: '活跃',
+        completed: '已完成',
+        dismissed: '已忽略',
+        seen: '已查看',
+        activated: '已激活',
+      },
+      completedIn: '已完成，耗时 {{date}}',
+      stepN: '步骤 {{number}}',
+      taskClicked: '用户点击了该任务',
+      taskHidden: '该任务对用户不可见',
       table: {
         content: '内容',
         status: '状态',
@@ -1210,6 +1279,11 @@ const translations = {
           ago: '前',
         },
         deleteAction: '删除会话',
+        questionTable: {
+          question: '问题',
+          answer: '回答',
+          noQuestions: '未找到问题。',
+        },
       },
     },
     sidebar: {
@@ -1779,6 +1853,7 @@ const translations = {
       group: { today: '今天', yesterday: '昨天' },
       action: { publish: '发布...', restore: '恢复...' },
     },
+    goalStep: '目标步骤',
   },
   companies: {
     actions: {
@@ -1921,8 +1996,24 @@ const translations = {
       newTheme: '新建主题',
       description: '通过主题，您可以让流程和其他 Usertour 内容看起来像是您应用的原生部分。',
     },
+    dropdownMenu: {
+      pushUpdates: '推送更新',
+      discardChanges: '放弃更改',
+      unpublish: '取消发布',
+    },
+    fontSelect: {
+      loadFontFamily: '加载字体...',
+      searchFontFamily: '搜索字体...',
+      noItemsFound: '未找到项目。',
+      fontFamilyHeading: '字体系列',
+    },
   },
   themeBuilder: {
+    preview: {
+      selectTypePlaceholder: '选择类型...',
+      searchTypesPlaceholder: '搜索类型...',
+      noTypesFound: '未找到类型。',
+    },
     chrome: {
       variations: '变体',
       base: '基础',
@@ -2172,6 +2263,8 @@ const translations = {
         black: '极粗 900',
       },
       placementCornerCenter: {
+        topCenter: '顶部居中',
+        bottomCenter: '底部居中',
         topLeft: '左上',
         topRight: '右上',
         bottomLeft: '左下',
@@ -2260,6 +2353,11 @@ const translations = {
     },
   },
   contentBuilder: {
+    loadingBuilder: '加载编辑器中...',
+    analytics: {
+      notAtAllLikely: '完全不可能',
+      extremelyLikely: '非常可能',
+    },
     editor: {
       button: {
         text: '按钮文字',
@@ -2287,6 +2385,12 @@ const translations = {
         labelsTooltip: '在每个选项下方提供标签以清晰传达含义，例如左侧选项下方标"差"、右侧标"好"。',
         defaultLabel: '默认',
         scaleRange: '取值范围',
+        nameRequired: '问题名称不能为空',
+        invalidRange: '无效范围：低值必须 ≤ 高值，且两者须在 0-100 之间',
+        fixErrors: '请先修正以上错误',
+        lowLabel: '低值标签',
+        highLabel: '高值标签',
+        defaultPlaceholder: '默认',
       },
       embed: {
         url: '嵌入 URL',
@@ -2376,6 +2480,88 @@ const translations = {
         bottom: '下',
         right: '右',
       },
+      placeholder: '输入内容，输入 / 调出命令…',
+      placeholderMini: '在此输入文字…',
+      toolbar: {
+        formattingOptions: '格式选项',
+        textFormatting: '文字格式',
+        additionalFormattingOptions: '更多格式选项',
+        additionalFormatting: '更多格式',
+        textAlignment: '文字对齐',
+        bold: {
+          tooltip: '加粗 ⌘B',
+          ariaLabel: '切换加粗',
+        },
+        italic: {
+          tooltip: '斜体 ⌘I',
+          ariaLabel: '切换斜体',
+        },
+        underline: {
+          tooltip: '下划线 ⌘U',
+          ariaLabel: '切换下划线',
+        },
+        color: {
+          tooltip: '字体颜色',
+          ariaLabel: '选择字体颜色',
+        },
+        code: {
+          tooltip: '代码 ⌘`',
+          ariaLabel: '切换代码块',
+        },
+        h1: {
+          tooltip: '一级标题',
+          ariaLabel: '切换一级标题',
+        },
+        h2: {
+          tooltip: '二级标题',
+          ariaLabel: '切换二级标题',
+        },
+        link: {
+          tooltip: '插入链接',
+          ariaLabel: '插入链接',
+        },
+        userAttribute: {
+          tooltip: '用户属性',
+          ariaLabel: '插入用户属性',
+        },
+        numberedList: {
+          tooltip: '有序列表',
+          ariaLabel: '切换有序列表',
+        },
+        bulletedList: {
+          tooltip: '无序列表',
+          ariaLabel: '切换无序列表',
+        },
+        alignLeft: {
+          tooltip: '左对齐',
+          ariaLabel: '文字左对齐',
+        },
+        alignCenter: {
+          tooltip: '居中对齐',
+          ariaLabel: '文字居中对齐',
+        },
+        alignRight: {
+          tooltip: '右对齐',
+          ariaLabel: '文字右对齐',
+        },
+        slashCommand: {
+          text: '正文',
+          h1: '一级标题',
+          h2: '二级标题',
+          codeBlock: '代码块',
+          numberedList: '有序列表',
+          bulletedList: '无序列表',
+          userAttribute: '用户属性',
+          noResults: '无搜索结果',
+        },
+      },
+      userAttr: {
+        attributeLabel: '属性',
+        deleteTooltip: '删除用户属性',
+        selectPlaceholder: '选择属性',
+        fallbackLabel: '兜底文本',
+        fallbackPlaceholder: '输入兜底文本',
+      },
     },
     common: {
       save: '保存',
@@ -2394,6 +2580,9 @@ const translations = {
       expandPanel: '展开面板',
     },
     iconPicker: {
+      invalidFile: '请选择有效的文件',
+      uploadFailed: '图标上传失败',
+      invalidUrl: '请输入有效的 URL',
       tabDefault: '默认',
       tabBuiltin: '内置',
       tabUpload: '上传',
@@ -3152,6 +3341,42 @@ const translations = {
         enterCode: '请输入代码',
       },
     },
+  },
+  license: {
+    status: {
+      expired: '已过期',
+      invalid: '无效',
+      active: '有效',
+    },
+  },
+  pagination: {
+    rowsPerPage: '每页行数',
+    pageOf: '第 {{current}} / {{total}} 页',
+    goToFirstPage: '跳转到第一页',
+    goToPreviousPage: '跳转到上一页',
+    goToNextPage: '跳转到下一页',
+    goToLastPage: '跳转到最后一页',
+  },
+  nav: {
+    resources: '资源',
+    installUsertourJs: '安装 Usertour.js',
+    documentation: '文档',
+  },
+  attributes: {
+    typeChip: {
+      number: '数字',
+      string: '文本',
+      boolean: '布尔',
+      list: '列表',
+      dateTime: '日期时间',
+      randomAB: '随机 A/B',
+      randomNumber: '随机',
+    },
+  },
+  error: {
+    forbidden: '您无权访问此页面。',
+    notFound: '您访问的页面不存在。',
+    serverError: '服务器出现问题，请稍后重试。',
   },
 };
 

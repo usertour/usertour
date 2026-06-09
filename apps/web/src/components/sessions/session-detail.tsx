@@ -5,6 +5,7 @@ import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 import { cn } from '@usertour/tailwind';
 import { QuestionStarRating } from '../question';
 import type { QuestionWithAnswer } from '@/utils/session';
+import { useTranslation } from 'react-i18next';
 
 // Get color based on score and type
 const getDarkBarColor = (score: number, type: 'NPS' | 'SCALE') => {
@@ -90,13 +91,14 @@ interface SessionResponseProps {
  * Questions are ordered by step sequence, showing both answered and unanswered questions
  */
 const SessionResponse = ({ questions }: SessionResponseProps) => {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center w-full h-full justify-center">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-1/2">Question</TableHead>
-            <TableHead className="w-1/2">Answer</TableHead>
+            <TableHead className="w-1/2">{t('sessions.detail.questionTable.question')}</TableHead>
+            <TableHead className="w-1/2">{t('sessions.detail.questionTable.answer')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -129,7 +131,7 @@ const SessionResponse = ({ questions }: SessionResponseProps) => {
           ) : (
             <TableRow>
               <TableCell colSpan={2} className="h-24 text-center">
-                No questions found.
+                {t('sessions.detail.questionTable.noQuestions')}
               </TableCell>
             </TableRow>
           )}

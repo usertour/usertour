@@ -1,14 +1,15 @@
 import { AttributeDataType } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
+import { useTranslation } from 'react-i18next';
 
-const TYPE_LABELS: Partial<Record<AttributeDataType, string>> = {
-  [AttributeDataType.Number]: 'NUMBER',
-  [AttributeDataType.String]: 'STRING',
-  [AttributeDataType.Boolean]: 'BOOLEAN',
-  [AttributeDataType.List]: 'LIST',
-  [AttributeDataType.DateTime]: 'DATETIME',
-  [AttributeDataType.RandomAB]: 'RANDOM A/B',
-  [AttributeDataType.RandomNumber]: 'RANDOM',
+const TYPE_I18N_KEYS: Partial<Record<AttributeDataType, string>> = {
+  [AttributeDataType.Number]: 'attributes.typeChip.number',
+  [AttributeDataType.String]: 'attributes.typeChip.string',
+  [AttributeDataType.Boolean]: 'attributes.typeChip.boolean',
+  [AttributeDataType.List]: 'attributes.typeChip.list',
+  [AttributeDataType.DateTime]: 'attributes.typeChip.dateTime',
+  [AttributeDataType.RandomAB]: 'attributes.typeChip.randomAB',
+  [AttributeDataType.RandomNumber]: 'attributes.typeChip.randomNumber',
 };
 
 interface AttributeTypeChipProps {
@@ -17,9 +18,10 @@ interface AttributeTypeChipProps {
 }
 
 export const AttributeTypeChip = ({ dataType, className }: AttributeTypeChipProps) => {
+  const { t } = useTranslation();
   if (dataType === undefined) return null;
-  const label = TYPE_LABELS[dataType];
-  if (!label) return null;
+  const i18nKey = TYPE_I18N_KEYS[dataType];
+  if (!i18nKey) return null;
 
   return (
     <span
@@ -28,7 +30,7 @@ export const AttributeTypeChip = ({ dataType, className }: AttributeTypeChipProp
         className,
       )}
     >
-      {label}
+      {t(i18nKey)}
     </span>
   );
 };

@@ -8,6 +8,7 @@ import {
 import { useCurrentUserId } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';
 import { useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';
 import { getPath } from '../draft-util';
 
@@ -24,6 +25,7 @@ const Cell = (props: CellProps) => {
   const [open, setOpen] = useState(false);
   const { finalSettings, getField, setField, isReadOnly } = useBuilderContext();
   const userId = useCurrentUserId();
+  const { t } = useTranslation();
   const value = getField<string>(path) ?? '';
   const isAuto = value === 'Auto';
   const fallback = getPath(finalSettings, path);
@@ -65,6 +67,15 @@ const Cell = (props: CellProps) => {
             onChange={(autoFlag, color) => {
               setOpen(false);
               setField(path, autoFlag ? 'Auto' : color || '');
+            }}
+            labels={{
+              useThisColor: t('common.colorPicker.useThisColor'),
+              removeColor: t('common.colorPicker.removeColor'),
+              tailwindColors: t('common.colorPicker.tailwindColors'),
+              recentlyUsed: t('common.colorPicker.recentlyUsed'),
+              done: t('common.colorPicker.done'),
+              colorPicker: t('common.colorPicker.colorPicker'),
+              colorPalette: t('common.colorPicker.colorPalette'),
             }}
           />
         </PopoverContent>

@@ -274,7 +274,7 @@ export function ConditionRow({
             <button
               type="button"
               onClick={onRemove}
-              aria-label="Remove condition"
+              aria-label={t('conditions.actions.removeCondition')}
               className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
             >
               <RiCloseLine className="h-3.5 w-3.5" />

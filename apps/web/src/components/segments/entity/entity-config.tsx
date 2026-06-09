@@ -147,7 +147,7 @@ export const USER_CONFIG: EntityConfig<BizUser> = {
   navToList: (envId) => `/env/${envId}/users`,
   DetailContent: UserDetailContentAdapter,
   i18n: {
-    sidebarTitle: 'Users',
+    sidebarTitle: 'users.detail.breadcrumb',
     createSegmentTooltip: 'users.segments.tooltips.createSegment',
     editSegmentNameTooltip: 'users.segments.tooltips.editName',
     emptyMessage: 'users.empty.noUsersFound',
@@ -183,7 +183,7 @@ export const COMPANY_CONFIG: EntityConfig<BizCompany> = {
   navToList: (envId) => `/env/${envId}/companies`,
   DetailContent: CompanyDetailContentAdapter,
   i18n: {
-    sidebarTitle: 'Companies',
+    sidebarTitle: 'companies.detail.breadcrumb',
     createSegmentTooltip: 'companies.segments.tooltips.createSegment',
     // Inconsistency in legacy keys: companies uses `detail.tooltips.editName`,
     // not `segments.tooltips.editName`. Preserve verbatim.

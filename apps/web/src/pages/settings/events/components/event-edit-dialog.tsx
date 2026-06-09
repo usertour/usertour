@@ -265,6 +265,8 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
                   className="w-full"
                   contentClassName="w-[--radix-popover-trigger-width]"
                   placeholder={t('settings.events.form.attributesPlaceholder')}
+                  searchPlaceholder={t('common.search')}
+                  emptyText={t('common.selectPopover.noItems')}
                   value={selectedAttributeValue}
                   // Hide attributes already associated with this event;
                   // re-picking them is a no-op (with a warning toast),

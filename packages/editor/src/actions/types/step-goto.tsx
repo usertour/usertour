@@ -9,11 +9,11 @@ import {
 } from '@usertour/ui';
 import {
   ArrowRightIcon,
-  EyeNoneIcon,
-  ModelIcon,
-  RiMessageFill,
+  RiChat2Line,
+  RiEyeOffLine,
+  RiMessage2Line,
+  RiWindow2Line,
   SpinnerIcon,
-  TooltipIcon,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -53,13 +53,13 @@ const writeData = (condition: RulesCondition, patch: Partial<StepGotoData>): Rul
 const getStepTypeIcon = (type: string) => {
   switch (type) {
     case StepContentType.BUBBLE:
-      return <RiMessageFill className="h-4 w-4 shrink-0" />;
+      return <RiMessage2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.TOOLTIP:
-      return <TooltipIcon className="h-4 w-4 shrink-0" />;
+      return <RiChat2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.MODAL:
-      return <ModelIcon className="h-4 w-4 shrink-0" />;
+      return <RiWindow2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.HIDDEN:
-      return <EyeNoneIcon className="h-4 w-4 shrink-0" />;
+      return <RiEyeOffLine className="h-4 w-4 shrink-0" />;
     default:
       return null;
   }
@@ -211,19 +211,19 @@ function StepGotoEditor({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.BUBBLE)}>
-                    <RiMessageFill className="h-4 w-4 shrink-0" />
+                    <RiMessage2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.bubble')}
                   </ActionDropdownMenuItem>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.TOOLTIP)}>
-                    <TooltipIcon className="h-4 w-4 shrink-0" />
+                    <RiChat2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.tooltip')}
                   </ActionDropdownMenuItem>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.MODAL)}>
-                    <ModelIcon className="h-4 w-4 shrink-0" />
+                    <RiWindow2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.modal')}
                   </ActionDropdownMenuItem>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.HIDDEN)}>
-                    <EyeNoneIcon className="h-4 w-4 shrink-0" />
+                    <RiEyeOffLine className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.hidden')}
                   </ActionDropdownMenuItem>
                 </DropdownMenuSubContent>

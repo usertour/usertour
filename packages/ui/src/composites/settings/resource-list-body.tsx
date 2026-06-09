@@ -19,7 +19,7 @@ export interface ResourceListBodyProps<T> {
   loading?: boolean;
   /** Custom skeleton during load. Defaults to a placeholder table. */
   skeleton?: ReactNode;
-  /** Custom empty-state cell content. Defaults to "No results.". */
+  /** Empty-state cell content. Pass a translated string — no English default. */
   empty?: ReactNode;
   onRowClick?: (item: T) => void;
 }

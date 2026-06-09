@@ -1,5 +1,6 @@
 import { sectionLabelClass } from '@usertour/ui';
 import { ModalPosition } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { NumberField } from './number-field';
 import { SelectField } from './select-field';
 
@@ -16,23 +17,31 @@ export interface PlacementFieldProps {
   labels?: { position?: string; offsetX?: string; offsetY?: string };
 }
 
-const DEFAULT_OPTIONS: { value: string; label: string }[] = [
-  { value: ModalPosition.LeftTop, label: 'Top left' },
-  { value: ModalPosition.CenterTop, label: 'Top center' },
-  { value: ModalPosition.RightTop, label: 'Top right' },
-  { value: ModalPosition.LeftBottom, label: 'Bottom left' },
-  { value: ModalPosition.CenterBottom, label: 'Bottom center' },
-  { value: ModalPosition.RightBottom, label: 'Bottom right' },
-  { value: ModalPosition.Center, label: 'Center' },
-];
-
 export const PlacementField = (props: PlacementFieldProps) => {
   const { path, label, options, labels } = props;
-  const opts = options ?? DEFAULT_OPTIONS;
+  const { t } = useTranslation();
+
+  const defaultOptions: { value: string; label: string }[] = [
+    { value: ModalPosition.LeftTop, label: t('themeBuilder.placementCornerCenter.topLeft') },
+    { value: ModalPosition.CenterTop, label: t('themeBuilder.placementCornerCenter.topCenter') },
+    { value: ModalPosition.RightTop, label: t('themeBuilder.placementCornerCenter.topRight') },
+    { value: ModalPosition.LeftBottom, label: t('themeBuilder.placementCornerCenter.bottomLeft') },
+    {
+      value: ModalPosition.CenterBottom,
+      label: t('themeBuilder.placementCornerCenter.bottomCenter'),
+    },
+    {
+      value: ModalPosition.RightBottom,
+      label: t('themeBuilder.placementCornerCenter.bottomRight'),
+    },
+    { value: ModalPosition.Center, label: t('themeBuilder.placementCornerCenter.center') },
+  ];
+
+  const opts = options ?? defaultOptions;
   const lbls = {
-    position: labels?.position ?? 'Anchor',
-    offsetX: labels?.offsetX ?? 'Offset X',
-    offsetY: labels?.offsetY ?? 'Offset Y',
+    position: labels?.position ?? t('themeBuilder.fields.common.placement'),
+    offsetX: labels?.offsetX ?? t('themeBuilder.fields.common.offsetX'),
+    offsetY: labels?.offsetY ?? t('themeBuilder.fields.common.offsetY'),
   };
   return (
     <div className="space-y-1">

@@ -305,6 +305,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       {showDatePicker && (
         <DateTimePicker
           mode="date"
+          placeholder={t('common.datePicker.pickDate')}
           value={data.value ? new Date(`${data.value}T00:00:00`) : undefined}
           onChange={(d) => handleValueChange(d ? format(d, 'yyyy-MM-dd') : '')}
           zIndex={popoverZIndex}

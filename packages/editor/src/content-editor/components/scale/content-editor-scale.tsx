@@ -3,6 +3,7 @@
 import { isEmptyString } from '@usertour/helpers';
 import { Scale, validateScaleRange } from '@usertour/widget';
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ContentEditorScaleElement } from '../../../types/editor';
 import { BindAttribute } from '../../shared/bind-attribute';
@@ -18,12 +19,12 @@ import type { QuestionContextProps, ValidationResult } from '../../shared';
 // Validation function for scale
 const validateScale = (data: ContentEditorScaleElement['data']): ValidationResult => {
   if (isEmptyString(data.name)) {
-    return { isValid: false, errorMessage: 'Question name is required' };
+    return { isValid: false, errorMessage: 'contentBuilder.editor.question.nameRequired' };
   }
   if (!validateScaleRange(data.lowRange, data.highRange)) {
     return {
       isValid: false,
-      errorMessage: 'Invalid range: low must be ≤ high, and both must be between 0-100',
+      errorMessage: 'contentBuilder.editor.question.invalidRange',
     };
   }
   return { isValid: true };
@@ -40,6 +41,7 @@ const ScalePopoverContent = memo(
     handleDataChange: (data: Partial<ContentEditorScaleElement['data']>) => void;
     contextProps: QuestionContextProps;
   }) => {
+    const { t } = useTranslation();
     const isRangeValid = useMemo(
       () => validateScaleRange(localData.lowRange, localData.highRange),
       [localData.lowRange, localData.highRange],
@@ -50,7 +52,11 @@ const ScalePopoverContent = memo(
         <QuestionNameField
           value={localData.name}
           onChange={(name) => handleDataChange({ name })}
-          error={isEmptyString(localData.name) ? 'Question name is required' : undefined}
+          error={
+            isEmptyString(localData.name)
+              ? t('contentBuilder.editor.question.nameRequired')
+              : undefined
+          }
         />
 
         <ContentActionsField
@@ -66,11 +72,7 @@ const ScalePopoverContent = memo(
           onHighRangeChange={(highRange) => handleDataChange({ highRange })}
           minValue={0}
           maxValue={100}
-          error={
-            !isRangeValid
-              ? 'Invalid range: low must be ≤ high, and both must be between 0-100'
-              : undefined
-          }
+          error={!isRangeValid ? t('contentBuilder.editor.question.invalidRange') : undefined}
         />
 
         <LabelsField
@@ -78,8 +80,8 @@ const ScalePopoverContent = memo(
           highLabel={localData.highLabel}
           onLowLabelChange={(lowLabel) => handleDataChange({ lowLabel })}
           onHighLabelChange={(highLabel) => handleDataChange({ highLabel })}
-          lowPlaceholder="Low label"
-          highPlaceholder="High label"
+          lowPlaceholder={t('contentBuilder.editor.question.lowLabel')}
+          highPlaceholder={t('contentBuilder.editor.question.highLabel')}
         />
 
         <BindAttribute
