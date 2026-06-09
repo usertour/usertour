@@ -10,6 +10,7 @@ import {
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { useAppContext } from '@/contexts/app-context';
 import { useListAccessTokensQuery } from '@usertour/hooks';
+import { Capability } from '@usertour/types';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -88,10 +89,16 @@ export const SettingsSidebarNav = () => {
     : SettingsMode.CLOUD;
 
   // The legacy env-key API ("API" in the Advanced group) is being deprecated:
-  // show it only while the project still has env keys, so new projects are
-  // steered to Personal API keys. The page stays reachable by URL for existing
-  // integrations.
-  const { accessTokens } = useListAccessTokensQuery(environment?.id, SHARED_CACHE_QUERY_OPTIONS);
+  // show it only while the project still has env keys, steering new projects to
+  // Personal API keys. Only query when the caller can actually read env keys —
+  // otherwise listAccessTokens returns a permission error that the global Apollo
+  // error link turns into a full-page redirect. Users without the capability
+  // don't see the API item anyway (capability filter below).
+  const canReadEnvKeys = can(Capability.AccessTokenRead);
+  const { accessTokens } = useListAccessTokensQuery(
+    canReadEnvKeys ? environment?.id : undefined,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   const hasEnvKeys = (accessTokens?.length ?? 0) > 0;
 
   const visibleItems = SETTINGS_SECTIONS.filter((section) => {
