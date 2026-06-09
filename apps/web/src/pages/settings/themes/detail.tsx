@@ -61,7 +61,11 @@ export const SettingsThemeDetail = () => {
     [theme, updateTheme, toast],
   );
 
-  if (loading) {
+  // Gate on "loading AND no theme yet" so a refetch of getTheme
+  // (cache-and-network) can't unmount the ThemeBuilder mid-edit and drop the
+  // unsaved draft. getTheme isn't a refetchQueries target today, but the
+  // guard is cheap insurance against that changing.
+  if (loading && !theme) {
     return <ContentLoading message={t('common.loading')} />;
   }
 
