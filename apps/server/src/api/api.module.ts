@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { ApiTokenModule } from '@/api-token/api-token.module';
 import { AttributesModule } from '@/attributes/attributes.module';
+import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ContentModule } from '@/content/content.module';
 import { EventsModule } from '@/events/events.module';
@@ -14,6 +15,8 @@ import { ApiContentVersionsController } from './content-versions/content-version
 import { ApiContentVersionsService } from './content-versions/content-versions.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
+import { ApiUsersController } from './users/users.controller';
+import { ApiUsersService } from './users/users.service';
 
 /**
  * The contract-first v2 public API. A peer of (not nested in) the legacy
@@ -22,18 +25,20 @@ import { ApiEventDefinitionsService } from './event-definitions/event-definition
  * Depends only on the domain layer + api-token auth, never on the legacy facade.
  */
 @Module({
-  imports: [ApiTokenModule, EventsModule, AttributesModule, ContentModule],
+  imports: [ApiTokenModule, EventsModule, AttributesModule, ContentModule, BizModule],
   controllers: [
     ApiEventDefinitionsController,
     ApiAttributeDefinitionsController,
     ApiContentController,
     ApiContentVersionsController,
+    ApiUsersController,
   ],
   providers: [
     ApiEventDefinitionsService,
     ApiAttributeDefinitionsService,
     ApiContentService,
     ApiContentVersionsService,
+    ApiUsersService,
     OpenAPIExceptionFilter,
   ],
 })
