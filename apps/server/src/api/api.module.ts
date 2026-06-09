@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AnalyticsModule } from '@/analytics/analytics.module';
 import { ApiTokenModule } from '@/api-token/api-token.module';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
@@ -13,6 +14,8 @@ import { ApiCompaniesController } from './companies/companies.controller';
 import { ApiCompaniesService } from './companies/companies.service';
 import { ApiContentController } from './content/content.controller';
 import { ApiContentService } from './content/content.service';
+import { ApiContentSessionsController } from './content-sessions/content-sessions.controller';
+import { ApiContentSessionsService } from './content-sessions/content-sessions.service';
 import { ApiContentVersionsController } from './content-versions/content-versions.controller';
 import { ApiContentVersionsService } from './content-versions/content-versions.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
@@ -27,7 +30,14 @@ import { ApiUsersService } from './users/users.service';
  * Depends only on the domain layer + api-token auth, never on the legacy facade.
  */
 @Module({
-  imports: [ApiTokenModule, EventsModule, AttributesModule, ContentModule, BizModule],
+  imports: [
+    ApiTokenModule,
+    EventsModule,
+    AttributesModule,
+    ContentModule,
+    BizModule,
+    AnalyticsModule,
+  ],
   controllers: [
     ApiEventDefinitionsController,
     ApiAttributeDefinitionsController,
@@ -35,6 +45,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentVersionsController,
     ApiUsersController,
     ApiCompaniesController,
+    ApiContentSessionsController,
   ],
   providers: [
     ApiEventDefinitionsService,
@@ -43,6 +54,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentVersionsService,
     ApiUsersService,
     ApiCompaniesService,
+    ApiContentSessionsService,
     OpenAPIExceptionFilter,
   ],
 })
