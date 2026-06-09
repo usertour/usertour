@@ -16,10 +16,17 @@ const ComboboxValue = (props: ComboboxValueProps) => (
   <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
 );
 
-export type ComboboxTriggerProps = ComboboxPrimitive.Trigger.Props;
+export type ComboboxTriggerProps = ComboboxPrimitive.Trigger.Props & {
+  /**
+   * Trailing icon. Defaults to a chevron (the input-trigger affordance);
+   * pass an up/down caret to align a button-trigger select with the rest
+   * of the field controls (CompactSelect / ConditionCombobox).
+   */
+  endIcon?: React.ReactNode;
+};
 
 const ComboboxTrigger = (props: ComboboxTriggerProps) => {
-  const { className, children, ...rest } = props;
+  const { className, children, endIcon, ...rest } = props;
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
@@ -27,10 +34,12 @@ const ComboboxTrigger = (props: ComboboxTriggerProps) => {
       {...rest}
     >
       {children}
-      <IconChevronDown
-        data-slot="combobox-trigger-icon"
-        className="text-muted-foreground pointer-events-none size-4"
-      />
+      {endIcon ?? (
+        <IconChevronDown
+          data-slot="combobox-trigger-icon"
+          className="text-muted-foreground pointer-events-none size-4"
+        />
+      )}
     </ComboboxPrimitive.Trigger>
   );
 };
@@ -95,6 +104,12 @@ export type ComboboxContentProps = ComboboxPrimitive.Popup.Props &
   > & {
     positionerClassName?: string;
     positionerStyle?: React.CSSProperties;
+    /**
+     * Portal mount target. Pass a node inside a Radix Dialog so the popup
+     * lands within react-remove-scroll's allow-tree — a body-portaled popup
+     * is dead to pointer + wheel inside a Dialog. Defaults to document.body.
+     */
+    container?: ComboboxPrimitive.Portal.Props['container'];
   };
 
 const ComboboxContent = (props: ComboboxContentProps) => {
@@ -108,10 +123,11 @@ const ComboboxContent = (props: ComboboxContentProps) => {
     style,
     positionerClassName,
     positionerStyle,
+    container,
     ...rest
   } = props;
   return (
-    <ComboboxPrimitive.Portal>
+    <ComboboxPrimitive.Portal container={container}>
       <ComboboxPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}

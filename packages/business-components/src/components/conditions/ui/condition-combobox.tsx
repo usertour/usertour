@@ -1,18 +1,6 @@
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  CompactPopoverTrigger,
-} from '@usertour/ui';
-import { RiCheckLine, RiExpandUpDownLine } from '@usertour/icons';
+import { ComboboxSelect } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
 
 export interface ConditionComboboxItem {
@@ -33,7 +21,6 @@ interface Props {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
-  triggerLabel?: string;
   disabled?: boolean;
   className?: string;
   // Optional grouping: renders a heading above each set
@@ -41,8 +28,9 @@ interface Props {
 }
 
 // Searchable picker. Used wherever the user picks from a long list (attributes,
-// events, contents, segments). Visually matches the rest of the conditions
-// chrome (h-7.5 trigger, text-sm, rounded-lg).
+// events, contents, segments). Thin wrapper over the shared ComboboxSelect that
+// wires in the conditions-chrome z-index and compact field sizing — the item
+// shape (value/label/leading/hint) is already what ComboboxSelect expects.
 export function ConditionCombobox({
   value,
   onChange,
@@ -50,96 +38,28 @@ export function ConditionCombobox({
   placeholder,
   searchPlaceholder,
   emptyText = '',
-  triggerLabel,
   disabled,
   className,
   groups,
 }: Props) {
-  const [open, setOpen] = useState(false);
   const { popover } = useConditionsZIndex();
 
-  // The label shown on the trigger: explicit override > selected item label > placeholder.
-  const selected = items.find((i) => i.value === value);
-  const display = triggerLabel ?? selected?.label ?? placeholder ?? '';
-
-  const renderItems = (entries: ConditionComboboxItem[]) =>
-    entries.map((item) => (
-      <CommandItem
-        key={item.value}
-        // cmdk filters against this string by substring. Include the hint
-        // (e.g., an attribute's codeName) so callers can search by it the
-        // way v1 RulesUserAttribute / RulesEvent did with their custom
-        // filter — searching "user_email" matches an attribute whose
-        // displayName is "Email" but codeName is "user_email_addr".
-        value={`${item.value} ${item.label}${item.hint ? ` ${item.hint}` : ''}`}
-        disabled={item.disabled}
-        onSelect={() => {
-          onChange(item.value);
-          setOpen(false);
-        }}
-        className="text-sm"
-      >
-        {item.leading ? (
-          <span className="mr-2 inline-flex items-center">{item.leading}</span>
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <div className="truncate">{item.label}</div>
-          {item.hint && (
-            <div className="truncate text-[11px] text-muted-foreground">{item.hint}</div>
-          )}
-        </div>
-        <RiCheckLine
-          className={cn('ml-auto h-3.5 w-3.5', value === item.value ? 'opacity-100' : 'opacity-0')}
-        />
-      </CommandItem>
-    ));
-
   return (
-    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
-      <PopoverTrigger asChild>
-        <CompactPopoverTrigger
-          disabled={disabled}
-          aria-expanded={open}
-          className={cn('justify-between', className)}
-        >
-          <span className="truncate text-left">{display}</span>
-          <RiExpandUpDownLine className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
-        </CompactPopoverTrigger>
-      </PopoverTrigger>
-      <PopoverContent
-        // Match the trigger width via the Radix popper variable instead of a
-        // fixed 260px — when the trigger lives in a wider editor popover
-        // (e.g. event chip's 360px panel) a hard-coded 260px reads as a
-        // visible width mismatch with the button right above it.
-        className="w-[var(--radix-popper-anchor-width)] rounded-lg p-0 text-sm"
-        align="start"
-        sideOffset={6}
-        style={{ zIndex: popover }}
-      >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} className="h-8 text-sm" />
-          {/*
-           * Use cmdk's CommandList (native overflow-y: auto) rather than
-           * Radix ScrollArea here. ScrollArea's viewport relies on h-full
-           * percentage height — combined with a max-h-N parent it never gets
-           * a definite height to resolve against, so the content stops
-           * scrolling once it overflows. CommandList is also where cmdk's
-           * keyboard-nav and CommandEmpty visibility expect to live.
-           */}
-          <CommandList>
-            <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
-              {emptyText}
-            </CommandEmpty>
-            {groups
-              ? groups.map((g) => (
-                  <CommandGroup key={g.heading} heading={g.heading}>
-                    {renderItems(g.items)}
-                  </CommandGroup>
-                ))
-              : renderItems(items)}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <ComboboxSelect
+      size="compact"
+      value={value}
+      onValueChange={onChange}
+      placeholder={placeholder}
+      searchPlaceholder={searchPlaceholder}
+      emptyText={emptyText}
+      disabled={disabled}
+      // Match the rest of the conditions chrome (CompactPopoverTrigger):
+      // white surface + softer hover, overriding ComboboxSelect's default
+      // muted fill so the value picker sits flush with the operator select.
+      className={cn('bg-background hover:bg-muted/40 dark:bg-muted', className)}
+      options={groups ? undefined : items}
+      groups={groups?.map((group) => ({ heading: group.heading, options: group.items }))}
+      contentStyle={{ zIndex: popover }}
+    />
   );
 }

@@ -33,7 +33,7 @@ export type {
 export type { ConditionsTranslator } from './components/conditions/conditions-context';
 export { GoogleFontCss } from './components/theme/google-font';
 // Generic composition UI primitives live in @usertour/ui —
-// import them from there directly. Examples: SelectPopover, DateTimePicker,
+// import them from there directly. Examples: ComboboxSelect, DateTimePicker,
 // ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.
 
 // Settings-domain components — aware of IntegrationModel and other

@@ -59,13 +59,10 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   const { zIndex, deleteColumn, insertColumnInGroup, updateElement, activeId } =
     useContentEditorContext();
   const { t } = useTranslation();
-  // Width-unit options keep the constant's `name` (%, pixels, fill) — bare
-  // units, not worth translating. The distribute/align options are
-  // user-facing layout choices, so they get i18n labels.
-  const columnWidthOptions = COLUMN_WIDTH_TYPE_OPTIONS.map((option) => ({
-    value: option.value,
-    label: option.name,
-  }));
+  // Width-unit options (%, pixels, fill) are bare units, not worth translating,
+  // so COLUMN_WIDTH_TYPE_OPTIONS is passed straight through below. The
+  // distribute/align options are user-facing layout choices, so they get i18n
+  // labels instead.
   const distributeOptions = [
     { value: JUSTIFY_CONTENT_OPTIONS.START, label: t('contentBuilder.editor.column.justifyLeft') },
     {
@@ -275,7 +272,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
                 />
               )}
               <CompactSelect
-                options={columnWidthOptions}
+                options={COLUMN_WIDTH_TYPE_OPTIONS}
                 value={width.type}
                 onChange={handleWidthTypeChange}
                 placeholder={t('contentBuilder.editor.width.selectType')}
