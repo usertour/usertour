@@ -31,6 +31,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 // import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
+import { ApiModule } from './api/api.module';
 import { McpModule } from './mcp/mcp.module';
 import { IntegrationModule } from './integration/integration.module';
 import { LicenseModule } from './license/license.module';
@@ -147,6 +148,7 @@ import { Logger } from '@nestjs/common';
     IntegrationModule,
     LicenseModule,
     OpenAPIModule,
+    ApiModule,
     McpModule,
     SharedModule,
     AdminModule,

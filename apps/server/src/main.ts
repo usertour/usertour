@@ -7,8 +7,10 @@ import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { cleanupOpenApiDoc } from 'nestjs-zod';
 import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
+import { ApiModule } from './api/api.module';
 import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
@@ -67,9 +69,13 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, config, {
-    include: [OpenAPIModule],
-  });
+  // v1 (OpenAPIModule, @ApiProperty DTOs) and v2 (ApiModule, zod DTOs) are
+  // scanned into one document; cleanupOpenApiDoc renders the zod-derived schemas.
+  const document = cleanupOpenApiDoc(
+    SwaggerModule.createDocument(app, config, {
+      include: [OpenAPIModule, ApiModule],
+    }),
+  );
   SwaggerModule.setup('api', app, document);
 
   const configService = app.get(ConfigService);
