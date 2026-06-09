@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
+import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
+import { ApiContentService } from '@/api/content/content.service';
+import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiUsersService } from '@/api/users/users.service';
 import { OpenAPIError } from '@/common/errors/errors';
-import { OpenAPIAttributeDefinitionsService } from '@/openapi/attribute-definitions/attribute-definitions.service';
-import { OpenAPIContentService } from '@/openapi/content/content.service';
-import { OpenAPIEventDefinitionsService } from '@/openapi/event-definitions/event-definitions.service';
-import { OpenAPIUsersService } from '@/openapi/users/users.service';
 
 import { McpServices, McpTool } from './mcp.types';
 import { buildReadTools } from './tools/read-tools';
@@ -29,10 +29,10 @@ export class McpService {
   constructor(
     private readonly auth: ApiTokenAuthService,
     private readonly prisma: PrismaService,
-    contentService: OpenAPIContentService,
-    attributeDefinitionsService: OpenAPIAttributeDefinitionsService,
-    eventDefinitionsService: OpenAPIEventDefinitionsService,
-    usersService: OpenAPIUsersService,
+    contentService: ApiContentService,
+    attributeDefinitionsService: ApiAttributeDefinitionsService,
+    eventDefinitionsService: ApiEventDefinitionsService,
+    usersService: ApiUsersService,
   ) {
     this.services = {
       content: contentService,

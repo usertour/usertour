@@ -3,21 +3,21 @@ import { PrismaService } from 'nestjs-prisma';
 import { ZodTypeAny } from 'zod';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
-import { OpenAPIAttributeDefinitionsService } from '@/openapi/attribute-definitions/attribute-definitions.service';
-import { OpenAPIContentService } from '@/openapi/content/content.service';
-import { OpenAPIEventDefinitionsService } from '@/openapi/event-definitions/event-definitions.service';
-import { OpenAPIUsersService } from '@/openapi/users/users.service';
+import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
+import { ApiContentService } from '@/api/content/content.service';
+import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiUsersService } from '@/api/users/users.service';
 
 /**
- * The OpenAPI facade services an MCP tool handler can reach through its
- * context. Kept narrow (read surfaces only) so a tool can't accidentally call
- * a mutating method.
+ * The v2 API services an MCP tool handler can reach through its context. Kept
+ * narrow (read surfaces only) so a tool can't accidentally call a mutating
+ * method — MCP tools are just another binding of the v2 read contracts.
  */
 export interface McpServices {
-  content: OpenAPIContentService;
-  attributeDefinitions: OpenAPIAttributeDefinitionsService;
-  eventDefinitions: OpenAPIEventDefinitionsService;
-  users: OpenAPIUsersService;
+  content: ApiContentService;
+  attributeDefinitions: ApiAttributeDefinitionsService;
+  eventDefinitions: ApiEventDefinitionsService;
+  users: ApiUsersService;
 }
 
 /**

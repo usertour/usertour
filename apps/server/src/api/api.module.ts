@@ -57,5 +57,12 @@ import { ApiUsersService } from './users/users.service';
     ApiContentSessionsService,
     OpenAPIExceptionFilter,
   ],
+  // Exported for the MCP module, which binds these read services as tools.
+  exports: [
+    ApiContentService,
+    ApiAttributeDefinitionsService,
+    ApiEventDefinitionsService,
+    ApiUsersService,
+  ],
 })
 export class ApiModule {}

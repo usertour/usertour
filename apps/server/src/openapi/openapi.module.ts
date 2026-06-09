@@ -51,14 +51,5 @@ import { OpenAPIEventDefinitionsService } from './event-definitions/event-defini
     OpenAPIContentService,
     OpenAPIContentSessionsService,
   ],
-  // TEMP (Phase 0 revert): exported only for the MCP bridge, which reuses these
-  // read facades until it moves to the new v2 module — at which point these
-  // exports are removed and this module is back to exactly the staging version.
-  exports: [
-    OpenAPIContentService,
-    OpenAPIAttributeDefinitionsService,
-    OpenAPIEventDefinitionsService,
-    OpenAPIUsersService,
-  ],
 })
 export class OpenAPIModule {}

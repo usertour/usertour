@@ -154,9 +154,7 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
     });
   });
 
-  // TEMP (Phase 0 revert): the v2 read endpoints were reverted; these tests move
-  // to the new v2 module's e2e when it lands. Token management above stays live.
-  describe.skip('v2 read auth chain', () => {
+  describe('v2 read auth chain', () => {
     let full: string;
 
     beforeAll(async () => {
