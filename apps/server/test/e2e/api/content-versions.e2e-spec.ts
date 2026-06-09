@@ -277,6 +277,103 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('round-trips a rich version: write → INDEPENDENT read is consistent', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const payload = {
+      steps: [
+        {
+          name: 'Tour step',
+          type: 'tooltip',
+          cvid: 'rt-1',
+          target: { by: 'selector', selector: '.start-btn' },
+          placement: { side: 'bottom', align: 'center' },
+          width: 360,
+          content: [
+            {
+              type: 'text',
+              markdown: '## Welcome {{ first_name | default: "there" }}\n\nLet us begin.',
+            },
+            {
+              type: 'button',
+              text: 'Dismiss',
+              variant: 'secondary',
+              actions: [{ type: 'dismiss' }],
+            },
+            {
+              type: 'question',
+              question: {
+                kind: 'choice',
+                name: 'Role',
+                allowMultiple: false,
+                options: [
+                  { label: 'Dev', value: 'dev' },
+                  { label: 'PM', value: 'pm' },
+                ],
+              },
+            },
+          ],
+          triggers: [
+            { when: [{ type: 'current_url', includes: ['/welcome'] }], do: [{ type: 'dismiss' }] },
+          ],
+        },
+      ],
+      startRules: {
+        when: [{ type: 'segment', segment: 'seg_x', in: true }],
+        frequency: { mode: 'once' },
+      },
+    };
+
+    // WRITE
+    const w = await api(
+      'patch',
+      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      token,
+    ).send(payload);
+    expect(w.status).toBe(200);
+
+    // INDEPENDENT READ (a fresh request, re-fetched from the DB)
+    const r = await api(
+      'get',
+      `/v2/projects/${projectId}/content-versions/${writeVersionId}?expand=steps`,
+      token,
+    );
+    expect(r.status).toBe(200);
+
+    const step = r.body.steps.find((s: { cvid: string }) => s.cvid === 'rt-1');
+    expect(step.target).toEqual({ by: 'selector', selector: '.start-btn' });
+    expect(step.placement).toMatchObject({ side: 'bottom', align: 'center' });
+    expect(step.width).toBe(360);
+    expect(step.content[0]).toMatchObject({
+      type: 'text',
+      markdown: '## Welcome {{ first_name | default: "there" }}\n\nLet us begin.',
+    });
+    expect(step.content[1]).toMatchObject({
+      type: 'button',
+      text: 'Dismiss',
+      variant: 'secondary',
+      actions: [{ type: 'dismiss' }],
+    });
+    expect(step.content[2]).toMatchObject({
+      type: 'question',
+      question: {
+        kind: 'choice',
+        name: 'Role',
+        allowMultiple: false,
+        options: [
+          { label: 'Dev', value: 'dev' },
+          { label: 'PM', value: 'pm' },
+        ],
+      },
+    });
+    expect(step.triggers).toEqual([
+      { when: [{ type: 'current_url', includes: ['/welcome'] }], do: [{ type: 'dismiss' }] },
+    ]);
+    expect(r.body.startRules).toMatchObject({
+      when: [{ type: 'segment', segment: 'seg_x', in: true }],
+      frequency: { mode: 'once' },
+    });
+  });
+
   it('rejects writing run_javascript (read-only)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const res = await api(
