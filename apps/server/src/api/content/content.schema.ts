@@ -83,6 +83,23 @@ export const listContentResponse = z.object({
 });
 export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 
+/** Write body for POST content. */
+export const createContentBody = z.object({
+  type: z.string().describe('Content kind: flow, checklist, launcher, banner, survey.'),
+  name: z.string().optional(),
+  buildUrl: z.string().optional(),
+});
+export class CreateContentBodyDto extends createZodDto(createContentBody) {}
+export type CreateContentBody = z.infer<typeof createContentBody>;
+
+/** Write body for PATCH content/:id (metadata only). */
+export const updateContentBody = z.object({
+  name: z.string().optional(),
+  buildUrl: z.string().optional(),
+});
+export class UpdateContentBodyDto extends createZodDto(updateContentBody) {}
+export type UpdateContentBody = z.infer<typeof updateContentBody>;
+
 export type Content = z.infer<typeof content>;
 export type ContentVersion = z.infer<typeof contentVersion>;
 export type ContentExpand = z.infer<typeof contentExpand>;

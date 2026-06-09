@@ -39,7 +39,7 @@ describe('API v2 /content (e2e)', () => {
     return gqlData(res).createApiToken.token;
   }
 
-  function api(method: 'get', path: string, token?: string) {
+  function api(method: 'get' | 'post' | 'patch' | 'delete', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
@@ -173,5 +173,52 @@ describe('API v2 /content (e2e)', () => {
     const res = await api('get', `/v2/projects/${projectId}/content?expand=nope`, token);
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('E1017');
+  });
+
+  it('creates, renames, and deletes content (CRUD)', async () => {
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentCreate,
+      Capability.ContentUpdate,
+      Capability.ContentDelete,
+    ]);
+
+    // create
+    const created = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'flow',
+      name: 'Created via API',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      object: 'content',
+      type: 'flow',
+      name: 'Created via API',
+    });
+    expect(typeof created.body.editedVersionId).toBe('string');
+    const id = created.body.id;
+
+    // rename
+    const renamed = await api('patch', `/v2/projects/${projectId}/content/${id}`, token).send({
+      name: 'Renamed',
+    });
+    expect(renamed.status).toBe(200);
+    expect(renamed.body.name).toBe('Renamed');
+
+    // delete
+    const deleted = await api('delete', `/v2/projects/${projectId}/content/${id}`, token);
+    expect(deleted.status).toBe(204);
+
+    // gone
+    const gone = await api('get', `/v2/projects/${projectId}/content/${id}`, token);
+    expect(gone.status).toBe(404);
+  });
+
+  it('rejects create without the create scope (403 E1012)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'flow',
+    });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
   });
 });

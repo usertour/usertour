@@ -1,4 +1,17 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -11,9 +24,11 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiContentService } from './content.service';
 import {
   ContentDto,
+  CreateContentBodyDto,
   GetContentQueryDto,
   ListContentQueryDto,
   ListContentResponseDto,
+  UpdateContentBodyDto,
 } from './content.schema';
 
 @ApiTags('Content (v2)')
@@ -51,5 +66,41 @@ export class ApiContentController {
     @Query() query: GetContentQueryDto,
   ) {
     return this.service.get(id, projectId, query);
+  }
+
+  @Post()
+  @RequireCapability(Capability.ContentCreate)
+  @ApiOperation({ summary: 'Create content' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Content created', type: ContentDto })
+  async create(@Param('projectId') projectId: string, @Body() body: CreateContentBodyDto) {
+    return this.service.create(projectId, body);
+  }
+
+  @Patch(':id')
+  @RequireCapability(Capability.ContentUpdate)
+  @ApiOperation({ summary: 'Update content metadata' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content ID' })
+  @ApiResponse({ status: 200, description: 'Content updated', type: ContentDto })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async update(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: UpdateContentBodyDto,
+  ) {
+    return this.service.update(id, projectId, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.ContentDelete)
+  @ApiOperation({ summary: 'Delete content' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content ID' })
+  @ApiResponse({ status: 204, description: 'Content deleted' })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
+    await this.service.remove(id, projectId);
   }
 }

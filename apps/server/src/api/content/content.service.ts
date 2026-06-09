@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { PrismaService } from 'nestjs-prisma';
 
-import { ContentNotFoundError } from '@/common/errors/errors';
+import { ContentNotFoundError, ParamsError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapContent } from './content.mapper';
-import { Content, ContentExpand, GetContentQuery, ListContentQuery } from './content.schema';
+import {
+  Content,
+  ContentExpand,
+  CreateContentBody,
+  GetContentQuery,
+  ListContentQuery,
+  UpdateContentBody,
+} from './content.schema';
 
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (value === undefined) {
@@ -23,7 +31,56 @@ function toArray<T>(value: T | T[] | undefined): T[] {
  */
 @Injectable()
 export class ApiContentService {
-  constructor(private readonly content: ContentService) {}
+  constructor(
+    private readonly content: ContentService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  /** Create content (+ its initial draft version) in the project's primary environment. */
+  async create(projectId: string, body: CreateContentBody): Promise<Content> {
+    const environment = await this.primaryEnvironment(projectId);
+    const created = await this.content.createContent({
+      type: body.type,
+      name: body.name,
+      buildUrl: body.buildUrl,
+      environmentId: environment.id,
+    });
+    if (!created) {
+      throw new ParamsError('Failed to create content');
+    }
+    return this.get(created.id, projectId, {});
+  }
+
+  /** Update content metadata (name / buildUrl). */
+  async update(id: string, projectId: string, body: UpdateContentBody): Promise<Content> {
+    await this.requireContent(id, projectId);
+    await this.content.updateContent(id, { name: body.name, buildUrl: body.buildUrl });
+    return this.get(id, projectId, {});
+  }
+
+  /** Delete (archive) content. */
+  async remove(id: string, projectId: string): Promise<void> {
+    await this.requireContent(id, projectId);
+    await this.content.deleteContent(id);
+  }
+
+  private async requireContent(id: string, projectId: string): Promise<void> {
+    const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
+    if (!node || (node as { deleted?: boolean }).deleted) {
+      throw new ContentNotFoundError();
+    }
+  }
+
+  private async primaryEnvironment(projectId: string) {
+    const env =
+      (await this.prisma.environment.findFirst({
+        where: { projectId, deleted: false, isPrimary: true },
+      })) ?? (await this.prisma.environment.findFirst({ where: { projectId, deleted: false } }));
+    if (!env) {
+      throw new ParamsError('No environment found for this project');
+    }
+    return env;
+  }
 
   async list(
     requestUrl: string,
@@ -56,7 +113,7 @@ export class ApiContentService {
   async get(id: string, projectId: string, query: GetContentQuery): Promise<Content> {
     const expand = toArray<ContentExpand>(query.expand);
     const node = await this.content.findContentWithRelations(id, projectId, this.include(expand));
-    if (!node) {
+    if (!node || (node as { deleted?: boolean }).deleted) {
       throw new ContentNotFoundError();
     }
     return mapContent(node, expand);
