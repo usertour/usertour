@@ -2512,6 +2512,7 @@ const translations = {
         },
       },
       userAttr: {
+        attributeLabel: '属性',
         deleteTooltip: '删除用户属性',
         selectPlaceholder: '选择属性',
         fallbackLabel: '兜底文本',

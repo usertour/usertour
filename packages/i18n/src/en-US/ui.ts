@@ -2641,6 +2641,7 @@ const translations = {
         },
       },
       userAttr: {
+        attributeLabel: 'Attribute',
         deleteTooltip: 'Delete user attribute',
         selectPlaceholder: 'Select an attribute',
         fallbackLabel: 'Fallback',

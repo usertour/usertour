@@ -90,7 +90,11 @@ export const BindAttribute = ({
           <div className="flex flex-row">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex-1 justify-between">
+                <Button
+                  variant="outline"
+                  size="compact"
+                  className="flex-1 justify-between rounded-lg"
+                >
                   {selectedAttributeData?.displayName ||
                     t('contentBuilder.editor.bindAttribute.select')}
                   <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />

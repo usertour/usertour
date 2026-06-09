@@ -29,6 +29,8 @@ export interface SelectPopoverProps {
   emptyText?: string;
   /** Placeholder for the search input. Pass t('…') from the consumer — no English default. */
   searchPlaceholder?: string;
+  /** Trigger size. `compact` aligns the trigger with field controls (h-7.5, rounded-lg). */
+  size?: 'default' | 'compact';
   className?: string;
   contentClassName?: string;
   contentStyle?: CSSProperties;
@@ -53,6 +55,7 @@ export const SelectPopover = (props: SelectPopoverProps) => {
     placeholder,
     emptyText,
     searchPlaceholder,
+    size = 'default',
     className,
     contentClassName,
     contentStyle,
@@ -75,7 +78,12 @@ export const SelectPopover = (props: SelectPopoverProps) => {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn('flex-1 justify-between dark:bg-surface-raised', className)}
+          size={size === 'compact' ? 'compact' : 'default'}
+          className={cn(
+            'w-full justify-between dark:bg-surface-raised',
+            size === 'compact' && 'rounded-lg',
+            className,
+          )}
           disabled={disabled}
         >
           {selectedOption?.display || selectedOption?.name || placeholder}
