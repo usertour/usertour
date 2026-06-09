@@ -1,6 +1,10 @@
 import { extractQuestionData } from '@/utils/content-question';
 
-import { AuthoringStep } from '../content/authoring.schema';
+import {
+  AuthoringHideRules,
+  AuthoringStartRules,
+  AuthoringStep,
+} from '../content/authoring.schema';
 import { ContentVersion, Question } from '../content/content.schema';
 import { ApiObjectType } from '../shared/object-type';
 
@@ -39,6 +43,7 @@ export function mapVersion(
   version: VersionNode,
   questions: Question[] | null,
   steps?: AuthoringStep[],
+  rules?: { startRules?: AuthoringStartRules; hideRules?: AuthoringHideRules },
 ): ContentVersion {
   return {
     id: version.id,
@@ -47,6 +52,8 @@ export function mapVersion(
     themeId: version.themeId ?? null,
     questions,
     ...(steps ? { steps } : {}),
+    ...(rules?.startRules ? { startRules: rules.startRules } : {}),
+    ...(rules?.hideRules ? { hideRules: rules.hideRules } : {}),
     updatedAt: version.updatedAt.toISOString(),
     createdAt: version.createdAt.toISOString(),
   };

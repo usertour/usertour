@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
-import { authoringStep } from './authoring.schema';
+import { authoringHideRules, authoringStartRules, authoringStep } from './authoring.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
 function singleOrArray<T extends z.ZodTypeAny>(item: T) {
@@ -45,6 +45,10 @@ export const contentVersion = z.object({
   questions: z.array(question).nullable(),
   /** Decompiled steps — only present when the `steps` expand is requested. */
   steps: z.array(authoringStep).optional(),
+  /** Auto-start rules (present on the standalone content-versions endpoint). */
+  startRules: authoringStartRules.optional(),
+  /** Hide rules (present on the standalone content-versions endpoint). */
+  hideRules: authoringHideRules.optional(),
   updatedAt: z.string(),
   createdAt: z.string(),
 });

@@ -4,9 +4,16 @@ import {
   AuthoringPlacement,
   AuthoringQuestion,
   AuthoringStep,
-  AuthoringTarget,
 } from './authoring.schema';
 import { richTextToMarkdown } from './rich-text';
+import {
+  DecompileResolvers,
+  IDENTITY_RESOLVERS,
+  decompileActions,
+  decompileConditions,
+  decompileTriggers,
+} from './rules.mapper';
+import { decompileTarget, hasAutoTarget } from './target.mapper';
 
 /** Internal step row, untyped at the relation boundary (generic Prisma include). */
 type StepNode = {
@@ -27,14 +34,18 @@ const POSITIONS = new Set(['center', 'top', 'bottom', 'left', 'right']);
 
 /**
  * Decompile an internal step into the authoring step: identity + target +
- * placement + content blocks. (Rules — triggers / button & answer actions — are
- * layered on in a later pass.)
+ * placement + content blocks + triggers. `resolvers` map internal attribute /
+ * event ids to stable codes (identity by default, e.g. for unit tests).
  */
-export function decompileStep(step: StepNode): AuthoringStep {
-  const { blocks, hasUnsupported: contentUnsupported } = decompileContent(step.data);
+export function decompileStep(
+  step: StepNode,
+  resolvers: DecompileResolvers = IDENTITY_RESOLVERS,
+): AuthoringStep {
+  const { blocks, hasUnsupported: contentUnsupported } = decompileContent(step.data, resolvers);
   const target = decompileTarget(step.target);
   const placement = decompilePlacement(step.setting, step.type ?? '');
   const setting = (step.setting ?? {}) as Record<string, unknown>;
+  const triggers = decompileTriggers(step.trigger, resolvers);
 
   // A tooltip whose only targeting is the internal "auto" fingerprint can't be
   // represented — flag it so consumers know the target is opaque.
@@ -53,6 +64,7 @@ export function decompileStep(step: StepNode): AuthoringStep {
     ...(typeof setting.width === 'number' ? { width: setting.width } : {}),
     ...(typeof setting.skippable === 'boolean' ? { skippable: setting.skippable } : {}),
     content: blocks,
+    ...(triggers.length ? { triggers } : {}),
     ...(hasUnsupported ? { advanced: { hasUnsupported: true } } : {}),
   };
 }
@@ -60,10 +72,10 @@ export function decompileStep(step: StepNode): AuthoringStep {
 // ── Content blocks ───────────────────────────────────────────────────────────
 
 /** ContentEditorRoot[] → flat block list (multi-column rows → a `columns` block). */
-export function decompileContent(data: unknown): {
-  blocks: AuthoringBlock[];
-  hasUnsupported: boolean;
-} {
+export function decompileContent(
+  data: unknown,
+  resolvers: DecompileResolvers = IDENTITY_RESOLVERS,
+): { blocks: AuthoringBlock[]; hasUnsupported: boolean } {
   const roots = Array.isArray(data) ? data : [];
   const blocks: AuthoringBlock[] = [];
   let hasUnsupported = false;
@@ -75,7 +87,7 @@ export function decompileContent(data: unknown): {
         ? (columns[0] as any).children
         : [];
       for (const el of elements) {
-        const { block, unsupported } = decompileElement(el);
+        const { block, unsupported } = decompileElement(el, resolvers);
         hasUnsupported = hasUnsupported || unsupported;
         blocks.push(block);
       }
@@ -83,7 +95,7 @@ export function decompileContent(data: unknown): {
       const cols = columns.map((col: any) => {
         const colBlocks: AuthoringBlock[] = (Array.isArray(col?.children) ? col.children : []).map(
           (el: unknown) => {
-            const { block, unsupported } = decompileElement(el);
+            const { block, unsupported } = decompileElement(el, resolvers);
             hasUnsupported = hasUnsupported || unsupported;
             return block;
           },
@@ -112,7 +124,10 @@ function decompileColumnWidth(
   return { unit: w.type, ...(typeof w.value === 'number' ? { value: w.value } : {}) };
 }
 
-function decompileElement(wrapper: unknown): { block: AuthoringBlock; unsupported: boolean } {
+function decompileElement(
+  wrapper: unknown,
+  resolvers: DecompileResolvers,
+): { block: AuthoringBlock; unsupported: boolean } {
   const id = (wrapper as any)?.id as string | undefined;
   const e = (wrapper as any)?.element ?? {};
   const base = { object: ApiObjectType.BLOCK as const, ...(typeof id === 'string' ? { id } : {}) };
@@ -142,12 +157,24 @@ function decompileElement(wrapper: unknown): { block: AuthoringBlock; unsupporte
     case 'button': {
       const variant =
         e.data?.type === 'primary' || e.data?.type === 'secondary' ? e.data.type : undefined;
+      const actions = decompileActions(e.data?.actions);
+      const disableConds = Array.isArray(e.data?.disableButtonConditions)
+        ? e.data.disableButtonConditions
+        : [];
+      const hideConds = Array.isArray(e.data?.hideButtonConditions)
+        ? e.data.hideButtonConditions
+        : [];
       return {
         block: {
           ...base,
           type: 'button',
           text: typeof e.data?.text === 'string' ? e.data.text : '',
           ...(variant ? { variant } : {}),
+          ...(actions.length ? { actions } : {}),
+          ...(disableConds.length
+            ? { disabledWhen: decompileConditions(disableConds, resolvers) }
+            : {}),
+          ...(hideConds.length ? { hiddenWhen: decompileConditions(hideConds, resolvers) } : {}),
         },
         unsupported: false,
       };
@@ -167,7 +194,11 @@ function decompileElement(wrapper: unknown): { block: AuthoringBlock; unsupporte
       if (!question) {
         return { block: { ...base, type: 'unsupported' }, unsupported: true };
       }
-      return { block: { ...base, type: 'question', question }, unsupported: false };
+      const actions = decompileActions(e.data?.actions);
+      return {
+        block: { ...base, type: 'question', question, ...(actions.length ? { actions } : {}) },
+        unsupported: false,
+      };
     }
     default:
       return {
@@ -254,36 +285,6 @@ function decompileQuestion(e: any): AuthoringQuestion | undefined {
     default:
       return undefined;
   }
-}
-
-// ── Target ───────────────────────────────────────────────────────────────────
-
-function decompileTarget(raw: unknown): AuthoringTarget | undefined {
-  const t = raw as any;
-  if (!t || typeof t !== 'object') {
-    return undefined;
-  }
-  if (t.type && t.type !== 'auto' && typeof t.customSelector === 'string' && t.customSelector) {
-    const nth = parseNth(t.sequence);
-    return { by: 'selector', selector: t.customSelector, ...(nth !== undefined ? { nth } : {}) };
-  }
-  if (typeof t.content === 'string' && t.content) {
-    return { by: 'text', text: t.content };
-  }
-  return undefined;
-}
-
-function hasAutoTarget(raw: unknown): boolean {
-  const t = raw as any;
-  return !!(t && typeof t === 'object' && (t.selectors || t.selectorsList || t.type === 'auto'));
-}
-
-function parseNth(sequence: unknown): number | undefined {
-  if (typeof sequence !== 'string') {
-    return undefined;
-  }
-  const n = Number.parseInt(sequence, 10);
-  return Number.isFinite(n) && n >= 1 ? n - 1 : undefined;
 }
 
 // ── Placement ────────────────────────────────────────────────────────────────

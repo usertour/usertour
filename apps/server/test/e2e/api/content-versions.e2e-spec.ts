@@ -55,13 +55,24 @@ describe('API v2 /content-versions (e2e)', () => {
 
     const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
     contentId = content.id;
-    versionId = (await buildVersion(prisma, { contentId, sequence: 0 })).id;
+    versionId = (
+      await buildVersion(prisma, {
+        contentId,
+        sequence: 0,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['/app/*'] } }],
+          autoStartRulesSetting: { frequency: { frequency: 'once' }, priority: 'medium' },
+        },
+      })
+    ).id;
     await buildStep(prisma, {
       versionId,
       type: 'tooltip',
       name: 'Step one',
       cvid: 'cv-1',
       sequence: 0,
+      trigger: [{ conditions: [], actions: [{ type: 'flow-dismis', data: {} }], wait: 0 }],
       data: [
         {
           element: { type: 'group' },
@@ -165,6 +176,29 @@ describe('API v2 /content-versions (e2e)', () => {
       { object: 'block', type: 'text', markdown: 'Hello' },
       { object: 'block', type: 'button', text: 'Next', variant: 'primary' },
     ]);
+  });
+
+  it('decompiles version start rules from config', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    expect(res.status).toBe(200);
+    expect(res.body.startRules).toMatchObject({
+      when: [{ type: 'current_url', includes: ['/app/*'] }],
+      frequency: { mode: 'once' },
+      priority: 'medium',
+    });
+    expect(res.body.hideRules).toBeUndefined();
+  });
+
+  it('decompiles step triggers (conditions → actions)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content-versions/${versionId}?expand=steps`,
+      token,
+    );
+    const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'cv-1');
+    expect(step.triggers).toEqual([{ do: [{ type: 'dismiss' }], waitMs: 0 }]);
   });
 
   it('omits steps without the expand', async () => {
