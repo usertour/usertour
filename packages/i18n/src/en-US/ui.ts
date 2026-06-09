@@ -216,7 +216,6 @@ const translations = {
     nav: {
       heading: 'Settings',
       general: 'General',
-      developer: 'Advanced',
       account: 'Account',
       sections: {
         general: 'Project',

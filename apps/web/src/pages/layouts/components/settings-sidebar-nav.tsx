@@ -74,7 +74,6 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 
 const GROUP_LABEL_KEY: Record<SettingsSectionGroup, string> = {
   general: 'settings.nav.general',
-  developer: 'settings.nav.developer',
   account: 'settings.nav.account',
 };
 
@@ -88,9 +87,9 @@ export const SettingsSidebarNav = () => {
     ? SettingsMode.SELF_HOSTED
     : SettingsMode.CLOUD;
 
-  // The legacy env-key API ("API" in the Advanced group) is being deprecated:
-  // show it only while the project still has env keys, steering new projects to
-  // Personal API keys. Only query when the caller can actually read env keys —
+  // The legacy env-key API ("API" item) is being deprecated: show it only while
+  // the project still has env keys, steering new projects to Personal API keys.
+  // Only query when the caller can actually read env keys —
   // otherwise listAccessTokens returns a permission error that the global Apollo
   // error link turns into a full-page redirect. Users without the capability
   // don't see the API item anyway (capability filter below).
@@ -124,7 +123,6 @@ export const SettingsSidebarNav = () => {
   }));
 
   const generalItems = visibleItems.filter(({ section }) => section.group === 'general');
-  const developerItems = visibleItems.filter(({ section }) => section.group === 'developer');
   const accountItems = visibleItems.filter(({ section }) => section.group === 'account');
 
   return (
@@ -136,13 +134,6 @@ export const SettingsSidebarNav = () => {
         <NavSection
           title={t(GROUP_LABEL_KEY.general)}
           items={generalItems}
-          currentPath={location.pathname}
-          onNavigate={navigate}
-        />
-        <div className="h-2" />
-        <NavSection
-          title={t(GROUP_LABEL_KEY.developer)}
-          items={developerItems}
           currentPath={location.pathname}
           onNavigate={navigate}
         />

@@ -41,7 +41,7 @@ export type SettingsSectionKey =
   | 'api'
   | 'integrations';
 
-export type SettingsSectionGroup = 'general' | 'developer' | 'account';
+export type SettingsSectionGroup = 'general' | 'account';
 
 /**
  * Deployment mode the section is visible in. Cloud-only items hide on
@@ -227,7 +227,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     title: 'API',
     icon: <RiKey2Line className={ICON_CLASS} />,
     capability: Capability.AccessTokenRead,
-    group: 'developer',
+    group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     component: lazy(() => import('./api').then((module) => ({ default: module.SettingsApiList }))),
   },
@@ -236,7 +236,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     title: 'Integrations',
     icon: <RiPuzzleLine className={ICON_CLASS} />,
     capability: Capability.IntegrationRead,
-    group: 'developer',
+    group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     hideFromSidebar: true,
     component: lazy(() =>

@@ -211,7 +211,6 @@ const translations = {
     nav: {
       heading: '设置',
       general: '常规',
-      developer: '高级',
       account: '账户',
       sections: {
         general: '项目',
