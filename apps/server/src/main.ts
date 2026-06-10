@@ -85,26 +85,18 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   // A v2-only OpenAPI document (ApiModule, contract-first zod), served at
-  // /api-v2 (UI) + /api-v2-json (JSON). The public docs site renders the v2 API
-  // reference directly from this URL — no committed snapshot, no drift.
-  //
-  // A cross-origin OpenAPI client (the docs site, served from another host) reads
-  // the request base URL ONLY from the spec's `servers` — there is no docs-side
-  // override. So the deployment supplies its public API URL via OPENAPI_SERVER_URL
-  // (ops config, not hard-coded): cloud sets it. Self-host may leave it unset —
-  // the same-origin Swagger UI at /api-v2 then falls back to the browser origin.
-  const v2Builder = new DocumentBuilder()
+  // /api-v2 (UI) + /api-v2-json (JSON). Host-agnostic on purpose: the server only
+  // guarantees a clean, v2-only, valid spec is reachable here. The public docs own
+  // the published host — they commit a snapshot of this spec and stamp their own
+  // `servers`. The same-origin Swagger UI at /api-v2 uses the browser origin.
+  const v2Config = new DocumentBuilder()
     .setTitle('Usertour API v2')
     .setDescription('Project-scoped v2 API — personal API token (utp_) authentication.')
     .setVersion('2.0')
-    .addBearerAuth();
-  if (process.env.OPENAPI_SERVER_URL) {
-    v2Builder.addServer(process.env.OPENAPI_SERVER_URL);
-  }
+    .addBearerAuth()
+    .build();
   const v2Document = normalizeOpenApiParameters(
-    cleanupOpenApiDoc(
-      SwaggerModule.createDocument(app, v2Builder.build(), { include: [ApiModule] }),
-    ),
+    cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
   );
   SwaggerModule.setup('api-v2', app, v2Document);
 
