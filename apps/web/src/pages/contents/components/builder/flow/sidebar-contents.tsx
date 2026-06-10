@@ -53,21 +53,12 @@ import { getStepId } from '@/utils/content';
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { stepIsReachable } from '@/pages/contents/components/builder/utils/content-validate';
 
-// Per step-type: the row glyph + the i18n key for its short type label
-// (shown on the right of the row, hidden on hover to make room for actions).
-const STEP_TYPE_META: Partial<
-  Record<StepContentType, { Icon: ComponentType<{ className?: string }>; labelKey: string }>
-> = {
-  [StepContentType.TOOLTIP]: {
-    Icon: RiChat2Line,
-    labelKey: 'contentBuilder.flow.stepType.tooltip',
-  },
-  [StepContentType.MODAL]: { Icon: RiWindow2Line, labelKey: 'contentBuilder.flow.stepType.modal' },
-  [StepContentType.HIDDEN]: { Icon: RiEyeOffLine, labelKey: 'contentBuilder.flow.stepType.hidden' },
-  [StepContentType.BUBBLE]: {
-    Icon: RiMessage2Line,
-    labelKey: 'contentBuilder.flow.stepType.bubble',
-  },
+// Per step-type row glyph, shown left of the step name.
+const STEP_TYPE_ICON: Partial<Record<StepContentType, ComponentType<{ className?: string }>>> = {
+  [StepContentType.TOOLTIP]: RiChat2Line,
+  [StepContentType.MODAL]: RiWindow2Line,
+  [StepContentType.HIDDEN]: RiEyeOffLine,
+  [StepContentType.BUBBLE]: RiMessage2Line,
 };
 
 // Type definitions for SidebarContent props
@@ -124,9 +115,7 @@ const SidebarContent = memo(
         onClick?.('delete', index);
       }, [onClick, index]);
 
-      const meta =
-        STEP_TYPE_META[step.type as StepContentType] ?? STEP_TYPE_META[StepContentType.MODAL];
-      const TypeIcon = meta?.Icon ?? RiWindow2Line;
+      const TypeIcon = STEP_TYPE_ICON[step.type as StepContentType] ?? RiWindow2Line;
       const triggerCount = step.trigger?.length ?? 0;
 
       return (
@@ -150,25 +139,23 @@ const SidebarContent = memo(
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
               {step.name}
             </span>
-            {!isReachable && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      onClick={(event) => event.stopPropagation()}
-                      className="flex shrink-0 cursor-help items-center text-warning"
-                    >
-                      <RiAlertLine className="h-4 w-4" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[220px]">
-                    {t('contentBuilder.flow.stepNotReachable')}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             <TooltipProvider>
               <div className="flex shrink-0 items-center gap-1">
+                {!isReachable && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        onClick={(event) => event.stopPropagation()}
+                        className="grid size-6 shrink-0 cursor-help place-items-center text-warning"
+                      >
+                        <RiAlertLine className="h-4 w-4" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[220px]">
+                      {t('contentBuilder.flow.stepNotReachable')}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
@@ -201,9 +188,6 @@ const SidebarContent = memo(
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="text-[11px] text-muted-foreground group-hover:hidden">
-                  {meta ? t(meta.labelKey) : null}
-                </span>
                 <AlertDialog>
                   <Tooltip>
                     <TooltipTrigger asChild>
