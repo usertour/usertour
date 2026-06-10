@@ -14,7 +14,8 @@ In scope (the real gaps, prioritized):
 
 1. **Publishing & lifecycle** — publish / unpublish a version to an environment
    (immediate publish only; scheduling is deferred, see §3).
-2. **`themeId` writable** on a version.
+2. **`themeId` writable** on a version, plus a read-only theme list to make the id
+   discoverable (§4).
 3. **Non-flow content types** — `checklist`, `launcher`, `banner`, `tracker`,
    `resource-center` (their authorable config lives in `version.data`, which the v0
    step-only codec never touches). `resource-center` is the heaviest (its own block
@@ -89,6 +90,12 @@ PATCH /v2/projects/:projectId/content-versions/:id
   analogous to how segment/attribute references are resolved).
 - Read already returns `themeId`; this closes the round-trip.
 - Merge semantics match the existing rules merge: omitted = untouched, `null` = clear.
+
+**Decided: add a read-only `GET /v2/projects/:projectId/themes`** alongside this.
+Once `themeId` is writable, a client needs to discover valid theme ids; a thin
+list/get theme resource (id + name, the usual `schema.ts` + `mapper.ts` projection)
+closes that gap. Gate on a `theme:read` scope (enum already has it). It is a small,
+self-contained resource — build it with the `themeId`-writable change.
 
 ## 5. Non-flow content types — `version.data` codec
 
@@ -216,16 +223,31 @@ but three blocks need new handling:
 - `live-chat` → a provider enum (`LiveChatProvider`) + provider config; model the
   provider + opaque settings, do not hard-code per-provider fields.
 
-Give it its own codec area (`resource-center.{schema,decompile,compile}.ts`) rather
-than overloading `version-data.*`; it is large enough to stand alone, and like
+Decided: **support all six block types** in v0 (including `content-list` and
+`live-chat`). Give it its own codec area (`resource-center.{schema,decompile,compile}.ts`)
+rather than overloading `version-data.*`; it is large enough to stand alone, and like
 `rules.*` it can move to `shared/` if anything else ever reuses the block taxonomy.
+This is the single largest piece of the completion work.
 
-**`tracker`** — the lightest, but there is **no `TrackerData` type today** (the
-runtime only hints at `{ eventId }` + `EVENT_TRACKER_*` attributes). **Action item:
-locate where a tracker's config actually persists** (`version.data`? a step? a bare
-event binding) before designing its shape. Likely a small wrapper: a target element
-(→ target codec) + an event reference (id↔code resolver) + optional conditions. Do
-not design the schema until the storage is confirmed.
+**`tracker`** — the lightest, now fully specified from the builder
+(`content-detail-tracker-editor.tsx`). A tracker is a "when X happens → track event Y"
+rule with two stored parts:
+
+- the **trigger** ("when this happens") lives in `config.autoStartRules` — the *same*
+  field the existing `startRules` codec already handles (tracker uses only `when`; no
+  frequency / priority / wait). So a tracker's trigger is authored through the existing
+  `startRules.when`, **no new code**.
+- the **tracked event** ("then track this event") lives in `version.data.eventId` — a
+  single event reference.
+
+So the only new `data` shape is one field:
+
+```ts
+representationTracker = { event: string }   // version.data.eventId, via the event id↔code resolver
+```
+
+reusing the event resolver that event conditions already use. (No `TrackerData` type
+exists in the model; `version.data` simply holds `{ eventId }`.)
 
 ## 6. Create draft version
 
@@ -252,6 +274,7 @@ is copied (sequence + 1, config ids regenerated), the copy becomes the new
   added).
 - `data` and `themeId` writes ride on **`content:update`** (no new scope).
 - Create version on **`content:update`** (matches the existing endpoint-capability map).
+- `GET themes` on **`theme:read`** (enum already has it; add to the scope catalog).
 - MCP: optionally add `publish_content` / `unpublish_content` write tools (scope-gated,
   same pattern as `update_content_version`); `data` flows through the existing
   `update_content_version` tool once `updateVersionBody` carries it.
@@ -261,25 +284,24 @@ is copied (sequence + 1, config ids regenerated), the copy becomes the new
 Ordered by value-unblocked vs. effort (domain is ready for all of them):
 
 1. **Publish / unpublish** — unblocks the whole author→ship loop; pure wiring.
-2. **`themeId` writable** — one field; high-frequency builder action.
+2. **`themeId` writable + `GET themes`** — one field + a thin read resource; the
+   theme list makes the writable id discoverable.
 3. **Create draft version** — small; binds `createContentVersion` (§6).
-4. **Non-flow types** — the big one; ship per type, cheapest first: `checklist` →
-   `launcher` → `banner` → `tracker` → `resource-center`. Each of the first three
-   reuses the leaf codecs, so the incremental cost is the wrapper + merge + tests.
-   `tracker` is blocked on locating its storage (§5.4); `resource-center` is its own
-   block-taxonomy codec and should be scheduled as a project of its own.
+4. **Non-flow types** — the big one; ship per type, cheapest first:
+   `tracker` (one field + existing `startRules`) → `checklist` → `launcher` →
+   `banner` → `resource-center`. The middle three reuse the leaf codecs (wrapper +
+   merge + tests each); **`resource-center` is the largest single effort** — its own
+   six-block-type codec — and should be scheduled as a project of its own.
 
 ## 9. Open items still to resolve
 
-The earlier Q1–Q4 are decided (scheduling deferred · forking = `content:update`,
-fork-to-head · tracker + resource-center in scope · non-flow `data` behind
-`expand=data`). What remains, scoped to the work above:
+The earlier Q1–Q4 and the three follow-ups are all decided:
 
-- **Tracker storage** — locate where a tracker's config persists; no `TrackerData`
-  type exists today (§5.4). Blocks the tracker schema.
-- **Resource-center depth for v0** — ship all six block types at once, or start with
-  the common ones (`richtext` / `action` / `divider` / `sub-page`) and defer
-  `content-list` (cross-content refs) + `live-chat` (provider integrations)?
-- **Theme listing** — `themeId` becomes writable, but themes are not yet a v2
-  resource, so a client can't discover valid theme ids. Consider a read-only
-  `GET themes` alongside (small, separate from this doc's scope).
+- scheduling deferred (publish immediate)
+- forking = `content:update`, fork-to-new-editable-head
+- non-flow `data` behind `expand=data`
+- **tracker** fully specified — trigger reuses `startRules`, `data` is `{ eventId }` (§5.4)
+- **resource-center** — all six block types in v0 (§5.4)
+- **theme listing** — add read-only `GET themes` with the `themeId` change (§4)
+
+Nothing blocking remains; the design is ready to implement in the §8 order.
