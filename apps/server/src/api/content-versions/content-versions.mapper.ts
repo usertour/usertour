@@ -45,6 +45,7 @@ export function mapVersion(
   questions: Question[] | null,
   steps?: RepresentationStep[],
   rules?: { startRules?: RepresentationStartRules; hideRules?: RepresentationHideRules },
+  data?: unknown,
 ): ContentVersion {
   return {
     id: version.id,
@@ -55,6 +56,7 @@ export function mapVersion(
     ...(steps ? { steps } : {}),
     ...(rules?.startRules ? { startRules: rules.startRules } : {}),
     ...(rules?.hideRules ? { hideRules: rules.hideRules } : {}),
+    ...(data !== undefined ? { data } : {}),
     updatedAt: version.updatedAt.toISOString(),
     createdAt: version.createdAt.toISOString(),
   };

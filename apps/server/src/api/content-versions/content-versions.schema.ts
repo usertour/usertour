@@ -13,7 +13,7 @@ function singleOrArray<T extends z.ZodTypeAny>(item: T) {
   return z.union([item, z.array(item)]).optional();
 }
 
-export const versionExpand = z.enum(['questions', 'steps']);
+export const versionExpand = z.enum(['questions', 'steps', 'data']);
 const orderByField = z.enum(['createdAt', '-createdAt']);
 
 export const getContentVersionQuery = z.object({
@@ -43,6 +43,12 @@ export const updateVersionBody = z.object({
   startRules: representationStartRules.nullable().optional(),
   hideRules: representationHideRules.nullable().optional(),
   themeId: z.string().nullable().optional().describe('Theme to apply, or null to clear.'),
+  /**
+   * Type-specific body for non-flow content (checklist / launcher / banner /
+   * tracker / resource-center). Validated against the content type; field-level
+   * merged onto the existing version data. Not used by `flow` (use `steps`).
+   */
+  data: z.unknown().optional(),
 });
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;

@@ -18,6 +18,8 @@ import {
   decompileHideRules,
   decompileStartRules,
 } from '../content-representation/rules.decompile';
+import { compileVersionData } from '../content-representation/version-data.compile';
+import { decompileVersionData } from '../content-representation/version-data.decompile';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapQuestions, mapVersion } from './content-versions.mapper';
@@ -40,6 +42,8 @@ type VersionNode = {
   sequence: number;
   themeId: string | null;
   config?: unknown;
+  data?: unknown;
+  content?: { type?: string | null } | null;
   updatedAt: Date;
   createdAt: Date;
 };
@@ -123,15 +127,21 @@ export class ApiContentVersionsService {
         ? { hideRules: decompileHideRules(version.config, resolvers) }
         : {}),
     };
+    // Type-specific body (checklist / launcher / banner / tracker / resource-center).
+    const data =
+      expand.includes('data') && version.content?.type
+        ? decompileVersionData(version.content.type, version.data, resolvers)
+        : undefined;
+
     const wantsQuestions = expand.includes('questions');
     const wantsSteps = expand.includes('steps');
     if (!wantsQuestions && !wantsSteps) {
-      return mapVersion(version, null, undefined, rules);
+      return mapVersion(version, null, undefined, rules, data);
     }
     const steps = await this.loadSteps(version.id, projectId);
     const questions = wantsQuestions ? mapQuestions(steps) : null;
     const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
-    return mapVersion(version, questions, decompiled, rules);
+    return mapVersion(version, questions, decompiled, rules, data);
   }
 
   private async loadSteps(versionId: string, projectId: string) {
@@ -188,6 +198,7 @@ export class ApiContentVersionsService {
   async update(id: string, projectId: string, body: UpdateVersionBody): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       steps: { orderBy: { sequence: 'asc' } },
+      content: true,
     });
     if (!version) {
       throw new ContentNotFoundError();
@@ -224,6 +235,19 @@ export class ApiContentVersionsService {
         await this.requireTheme(body.themeId, projectId);
       }
       content.themeId = body.themeId; // null clears → falls back to project default
+    }
+
+    if (body.data !== undefined) {
+      const contentType = (version as { content?: { type?: string | null } | null }).content?.type;
+      if (!contentType) {
+        throw new ParamsError('Cannot resolve content type for this version');
+      }
+      content.data = compileVersionData(
+        contentType,
+        body.data,
+        (version as { data?: unknown }).data,
+        resolvers,
+      );
     }
 
     if (Object.keys(content).length > 0) {

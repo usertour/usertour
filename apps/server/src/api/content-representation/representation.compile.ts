@@ -110,7 +110,7 @@ function indexElements(data: unknown): Map<string, any> {
   return map;
 }
 
-function compileContent(
+export function compileContent(
   blocks: RepresentationBlock[],
   existingData: unknown,
   r: CompileResolvers,

@@ -404,6 +404,12 @@ export const contentVersion = z.object({
   startRules: representationStartRules.optional(),
   /** Hide rules (present on the standalone content-versions endpoint). */
   hideRules: representationHideRules.optional(),
+  /**
+   * Decompiled type-specific body for non-flow content (checklist / launcher /
+   * banner / tracker / resource-center) — only present when the `data` expand is
+   * requested. Shape is determined by the content type.
+   */
+  data: z.unknown().optional(),
   updatedAt: z.string(),
   createdAt: z.string(),
 });
