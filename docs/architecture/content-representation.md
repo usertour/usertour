@@ -252,7 +252,7 @@ markdown ~1:1. The two non-markdown bits:
 
 ## 8. Read & write
 
-### Read (decompiler) — `src/api/content/`, `src/api/content-versions/`
+### Read (decompiler) — `src/api/content-representation/` (engine), surfaced by `src/api/content/` + `src/api/content-versions/`
 - Walk `roots → columns → elements`; single-column-single-element → a block;
   multi-column → a `columns` block; unrepresentable → `unsupported`.
 - Heavy data behind `expand` (e.g. `?expand=steps`), like the existing

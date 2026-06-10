@@ -27,14 +27,33 @@ Full design + locked decisions: `docs/architecture/content-representation.md`.
    - `<area>.decompile.ts` — internal → representation
    - `<area>.compile.ts` — representation → internal
 
-   Areas today (`apps/server/src/api/content/`): `representation` (the
-   step/blocks orchestrator), `rules`, `target`, `text`. The leaf format codec is
-   `text.decompile.ts` (slate → markdown) / `text.compile.ts` (markdown → slate).
+   Areas today (`apps/server/src/api/content-representation/`): `representation`
+   (the step/blocks orchestrator), `rules`, `target`, `text`. The leaf format codec
+   is `text.decompile.ts` (slate → markdown) / `text.compile.ts` (markdown → slate).
 
 One-line memory: **representation is the noun; compile/decompile are its two
 directions; each area is one pair of files.**
 
 ## Where it lives, and when to share
+
+The codec is its own resource folder — three flat siblings under
+`apps/server/src/api/`:
+
+- `content/` — the **Content envelope** only (`content.{schema,mapper,service,
+  controller}.ts`): id, name, type, buildUrl, per-environment publish state.
+- `content-versions/` — the **version resource** (`content-versions.{schema,
+  mapper,service,controller}.ts`): the editable body, list/get/write.
+- `content-representation/` — the **codec + the version's representation shape**:
+  `representation.*`, `rules.*`, `target.*`, `text.*`, plus the `contentVersion` /
+  `question` zod shapes (they embed `steps` / start- / hide-rules, which *are*
+  representation).
+
+Dependency: `content → content-representation ← content-versions`. The two
+resources never import each other — the shared shape lives in the codec, so the
+graph stays acyclic. The codec is a sibling, **not** in `shared/`: `shared/` is
+for genuinely cross-resource utilities (pagination, sort, object-type,
+validation pipe — every resource uses them), whereas the representation is
+content-specific (only these two resources touch it).
 
 Content is currently the **only** resource with a non-trivial representation —
 every other v2 resource is a near-1:1 `schema.ts` + `mapper.ts` projection and

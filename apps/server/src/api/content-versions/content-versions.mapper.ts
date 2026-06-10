@@ -1,11 +1,12 @@
 import { extractQuestionData } from '@/utils/content-question';
 
 import {
+  ContentVersion,
+  Question,
   RepresentationHideRules,
   RepresentationStartRules,
   RepresentationStep,
-} from '../content/representation.schema';
-import { ContentVersion, Question } from '../content/content.schema';
+} from '../content-representation/representation.schema';
 import { ApiObjectType } from '../shared/object-type';
 
 type VersionNode = {

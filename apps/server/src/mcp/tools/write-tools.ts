@@ -5,7 +5,7 @@ import {
   representationHideRules,
   representationStartRules,
   representationStepInput,
-} from '@/api/content/representation.schema';
+} from '@/api/content-representation/representation.schema';
 
 import { McpTool } from '../mcp.types';
 

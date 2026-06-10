@@ -1,13 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+import { contentVersion } from '../content-representation/representation.schema';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
-import {
-  representationHideRules,
-  representationStartRules,
-  representationStep,
-} from './representation.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
 function singleOrArray<T extends z.ZodTypeAny>(item: T) {
@@ -33,29 +29,6 @@ export const getContentQuery = z.object({
   expand: singleOrArray(contentExpand).describe('Inline: editedVersion and/or publishedVersion.'),
 });
 export class GetContentQueryDto extends createZodDto(getContentQuery) {}
-
-export const question = z.object({
-  object: z.literal(ApiObjectType.QUESTION),
-  cvid: z.string(),
-  name: z.string(),
-  type: z.string(),
-});
-
-export const contentVersion = z.object({
-  id: z.string(),
-  object: z.literal(ApiObjectType.CONTENT_VERSION),
-  number: z.number(),
-  themeId: z.string().nullable(),
-  questions: z.array(question).nullable(),
-  /** Decompiled steps — only present when the `steps` expand is requested. */
-  steps: z.array(representationStep).optional(),
-  /** Auto-start rules (present on the standalone content-versions endpoint). */
-  startRules: representationStartRules.optional(),
-  /** Hide rules (present on the standalone content-versions endpoint). */
-  hideRules: representationHideRules.optional(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
-});
 
 /** Per-environment publish state — the v2 replacement for the deprecated single publishedVersionId. */
 export const contentEnvironment = z.object({
@@ -105,8 +78,6 @@ export class UpdateContentBodyDto extends createZodDto(updateContentBody) {}
 export type UpdateContentBody = z.infer<typeof updateContentBody>;
 
 export type Content = z.infer<typeof content>;
-export type ContentVersion = z.infer<typeof contentVersion>;
 export type ContentExpand = z.infer<typeof contentExpand>;
-export type Question = z.infer<typeof question>;
 export type ListContentQuery = z.infer<typeof listContentQuery>;
 export type GetContentQuery = z.infer<typeof getContentQuery>;

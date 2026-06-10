@@ -380,3 +380,33 @@ export const representationStepInput = z.object({
   triggers: z.array(representationTrigger).optional(),
 });
 export type RepresentationStepInput = z.infer<typeof representationStepInput>;
+
+// ── Version resource shapes (v2 GET projection) ──────────────────────────────
+// The content-version resource embeds representation: decompiled `steps` plus the
+// version-level start / hide rules. These shapes live here (not in content.schema)
+// because the embedded payload IS representation — keeping content ⊥ content-versions.
+export const question = z.object({
+  object: z.literal(ApiObjectType.QUESTION),
+  cvid: z.string(),
+  name: z.string(),
+  type: z.string(),
+});
+
+export const contentVersion = z.object({
+  id: z.string(),
+  object: z.literal(ApiObjectType.CONTENT_VERSION),
+  number: z.number(),
+  themeId: z.string().nullable(),
+  questions: z.array(question).nullable(),
+  /** Decompiled steps — only present when the `steps` expand is requested. */
+  steps: z.array(representationStep).optional(),
+  /** Auto-start rules (present on the standalone content-versions endpoint). */
+  startRules: representationStartRules.optional(),
+  /** Hide rules (present on the standalone content-versions endpoint). */
+  hideRules: representationHideRules.optional(),
+  updatedAt: z.string(),
+  createdAt: z.string(),
+});
+
+export type ContentVersion = z.infer<typeof contentVersion>;
+export type Question = z.infer<typeof question>;

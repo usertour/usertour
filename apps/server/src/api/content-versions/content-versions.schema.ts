@@ -2,11 +2,11 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 import {
+  contentVersion,
   representationHideRules,
   representationStartRules,
   representationStepInput,
-} from '../content/representation.schema';
-import { contentVersion } from '../content/content.schema';
+} from '../content-representation/representation.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
 function singleOrArray<T extends z.ZodTypeAny>(item: T) {

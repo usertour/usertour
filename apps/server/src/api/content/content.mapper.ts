@@ -1,5 +1,6 @@
+import { ContentVersion } from '../content-representation/representation.schema';
 import { ApiObjectType } from '../shared/object-type';
-import { Content, ContentExpand, ContentVersion } from './content.schema';
+import { Content, ContentExpand } from './content.schema';
 
 type VersionNode = {
   id: string;

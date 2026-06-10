@@ -4,15 +4,19 @@ import { PrismaService } from 'nestjs-prisma';
 import { ContentNotFoundError, ParamsError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 
-import { compileStep } from '../content/representation.compile';
-import { decompileStep } from '../content/representation.decompile';
-import { ContentVersion } from '../content/content.schema';
-import { CompileResolvers, compileHideRules, compileStartRules } from '../content/rules.compile';
+import { compileStep } from '../content-representation/representation.compile';
+import { decompileStep } from '../content-representation/representation.decompile';
+import { ContentVersion } from '../content-representation/representation.schema';
+import {
+  CompileResolvers,
+  compileHideRules,
+  compileStartRules,
+} from '../content-representation/rules.compile';
 import {
   DecompileResolvers,
   decompileHideRules,
   decompileStartRules,
-} from '../content/rules.decompile';
+} from '../content-representation/rules.decompile';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapQuestions, mapVersion } from './content-versions.mapper';
