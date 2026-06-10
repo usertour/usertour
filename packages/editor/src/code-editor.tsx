@@ -1,13 +1,19 @@
 'use client';
 
+import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import { useEffect, useMemo, useState } from 'react';
+
+export type CodeEditorLanguage = 'javascript' | 'css';
 
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
   height?: string;
+  language?: CodeEditorLanguage;
+  placeholder?: string;
+  readOnly?: boolean;
 }
 
 // CodeMirror's theme is a JS extension, not a CSS class, so it can't ride the
@@ -28,8 +34,18 @@ const useIsDarkMode = () => {
   return isDark;
 };
 
-export const CodeEditor = ({ value, onChange, height = '200px' }: CodeEditorProps) => {
-  const extensions = useMemo(() => [javascript({ jsx: false, typescript: false })], []);
+export const CodeEditor = ({
+  value,
+  onChange,
+  height = '200px',
+  language = 'javascript',
+  placeholder,
+  readOnly = false,
+}: CodeEditorProps) => {
+  const extensions = useMemo(
+    () => [language === 'css' ? css() : javascript({ jsx: false, typescript: false })],
+    [language],
+  );
   const isDark = useIsDarkMode();
 
   return (
@@ -39,6 +55,8 @@ export const CodeEditor = ({ value, onChange, height = '200px' }: CodeEditorProp
       theme={isDark ? 'dark' : 'light'}
       basicSetup={{ lineNumbers: false }}
       extensions={extensions}
+      placeholder={placeholder}
+      readOnly={readOnly}
       onChange={onChange}
     />
   );

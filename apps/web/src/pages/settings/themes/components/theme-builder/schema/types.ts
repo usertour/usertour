@@ -71,14 +71,15 @@ export type FieldDef =
       label: string;
       placeholder?: string;
     })
-  // Multi-line raw-text field rendered in a monospace textarea. Used for
-  // the theme's custom CSS.
+  // Multi-line code field rendered in a CodeMirror editor (syntax
+  // highlighting, bracket matching). Used for the theme's custom CSS.
   | (FieldBase & {
-      type: 'textarea';
+      type: 'code';
       path: string;
       label: string;
+      language: 'css' | 'javascript';
       placeholder?: string;
-      rows?: number;
+      height?: string;
     })
   | (FieldBase & {
       type: 'placement';

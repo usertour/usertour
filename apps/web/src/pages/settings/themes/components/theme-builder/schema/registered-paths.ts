@@ -27,7 +27,7 @@ const expandFieldPaths = (field: FieldDef): string[] => {
     case 'boolean':
     case 'select':
     case 'text':
-    case 'textarea':
+    case 'code':
     case 'font-family':
     case 'image-upload':
       return [field.path];

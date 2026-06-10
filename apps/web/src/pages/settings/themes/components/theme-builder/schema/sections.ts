@@ -1288,12 +1288,12 @@ export const builderSections: BuilderSection[] = [
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
       {
-        type: 'textarea',
+        type: 'code',
         path: 'customCss',
+        language: 'css',
         label: 'themeBuilder.fields.customCss.label',
         placeholder: 'themeBuilder.fields.customCss.placeholder',
         tooltip: 'themeBuilder.fields.customCss.tooltip',
-        rows: 10,
       },
       {
         type: 'inline-alert',

@@ -13,8 +13,8 @@ import { PlacementField } from './placement-field';
 import { SelectField } from './select-field';
 import { SliderField } from './slider-field';
 import { SubSection } from './sub-section';
+import { CodeField } from './code-field';
 import { TextField } from './text-field';
-import { TextareaField } from './textarea-field';
 import { TripleColorField } from './triple-color-field';
 
 export interface FieldRendererProps {
@@ -108,14 +108,15 @@ export const FieldRenderer = (props: FieldRendererProps) => {
           tooltip={tooltip}
         />
       );
-    case 'textarea':
+    case 'code':
       return (
-        <TextareaField
+        <CodeField
           path={field.path}
           label={t(field.label)}
+          language={field.language}
           placeholder={field.placeholder ? t(field.placeholder) : undefined}
           tooltip={tooltip}
-          rows={field.rows}
+          height={field.height}
         />
       );
     case 'placement':
