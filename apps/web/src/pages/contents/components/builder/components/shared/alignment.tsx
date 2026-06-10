@@ -1,4 +1,5 @@
 import { cn } from '@usertour/tailwind';
+import { SurfaceCard } from '@usertour/ui';
 import { createContext, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -105,7 +106,7 @@ export const Alignment = (props: AlignmentProps) => {
 
   return (
     <AlignmentContext.Provider value={value}>
-      <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg">
+      <SurfaceCard className="flex flex-col">
         <div className="items-center flex justify-between px-9 py-0">
           <Circle
             side={POSITIONS.BOTTOM}
@@ -158,7 +159,7 @@ export const Alignment = (props: AlignmentProps) => {
           <Circle side={POSITIONS.TOP} align={ALIGNMENTS.CENTER} onClick={handleAlignmentChange} />
           <Circle side={POSITIONS.TOP} align={ALIGNMENTS.END} onClick={handleAlignmentChange} />
         </div>
-      </div>
+      </SurfaceCard>
     </AlignmentContext.Provider>
   );
 };

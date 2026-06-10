@@ -5,7 +5,7 @@ import { ContentPlacementProvider } from '@/pages/contents/components/builder/co
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { FieldSection } from '@usertour/ui';
+import { FieldSection, SurfaceCard } from '@usertour/ui';
 
 export const LauncherPlacement = () => {
   const isShowError = useBuilderStore((state) => state.isShowError);
@@ -40,9 +40,9 @@ export const LauncherPlacement = () => {
       subTitle={t('contentBuilder.launcher.placementSubtitle')}
     >
       <FieldSection title={t('contentBuilder.launcher.placement')}>
-        <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg space-y-6 mt-2">
+        <SurfaceCard className="flex flex-col space-y-6 mt-2">
           <ContentPlacementManual />
-        </div>
+        </SurfaceCard>
       </FieldSection>
     </ContentPlacementProvider>
   );

@@ -26,7 +26,7 @@ import {
 import { useCallback } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
-import { FieldSection } from '@usertour/ui';
+import { FieldSection, SurfaceCard } from '@usertour/ui';
 
 interface TriggerOption {
   value: string;
@@ -114,7 +114,7 @@ export const LauncherBehavior = () => {
 
   return (
     <FieldSection title={t('contentBuilder.launcher.behavior')}>
-      <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg space-y-1">
+      <SurfaceCard className="flex flex-col space-y-1">
         <div className="text-sm">{t('contentBuilder.launcher.behaviorEditor.when')}</div>
         <div className="flex flex-row space-x-1 items-center">
           <TriggerDropdown
@@ -181,7 +181,7 @@ export const LauncherBehavior = () => {
             />
           </TabsContent>
         </Tabs>
-      </div>
+      </SurfaceCard>
     </FieldSection>
   );
 };

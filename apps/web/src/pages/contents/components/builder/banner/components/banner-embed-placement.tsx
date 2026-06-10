@@ -11,7 +11,7 @@ import { ContentPlacementProvider } from '@/pages/contents/components/builder/co
 import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { FieldSection } from '@usertour/ui';
+import { FieldSection, SurfaceCard } from '@usertour/ui';
 
 const PLACEMENT_OPTIONS: { value: BannerEmbedPlacement; i18n: string }[] = [
   { value: BannerEmbedPlacement.TOP_OF_PAGE, i18n: 'topOfPage' },
@@ -76,9 +76,9 @@ export const BannerEmbedPlacementSelect = () => {
           buildUrl={currentContent?.buildUrl}
           subTitle={t('contentBuilder.banner.containerElementSubtitle')}
         >
-          <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg space-y-6 mt-2">
+          <SurfaceCard className="flex flex-col space-y-6 mt-2">
             <ContentPlacementManual />
-          </div>
+          </SurfaceCard>
         </ContentPlacementProvider>
       )}
     </FieldSection>

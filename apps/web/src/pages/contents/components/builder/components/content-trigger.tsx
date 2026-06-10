@@ -1,4 +1,4 @@
-import { Button, Label } from '@usertour/ui';
+import { Button, Label, SurfaceCard } from '@usertour/ui';
 import { BUILDER_Z } from '@usertour/constants';
 import { Delete2Icon } from '@usertour/icons';
 import {
@@ -123,7 +123,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
 
   return (
     <>
-      <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg space-y-4 relative">
+      <SurfaceCard className="flex flex-col space-y-4 relative">
         <ContentError
           open={
             showError && (actions.length === 0 || conditions.length === 0 || hasIncompleteActions)
@@ -188,7 +188,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
           <Delete2Icon className="text-destructive mr-1 size-3.5" />
           {t('contentBuilder.flow.deleteTrigger')}
         </Button>
-      </div>
+      </SurfaceCard>
     </>
   );
 };

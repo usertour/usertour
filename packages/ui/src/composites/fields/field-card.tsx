@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { FieldSection } from './field-section';
+import { SurfaceCard } from './surface-card';
 
 export interface FieldCardProps {
   title: string;
@@ -18,9 +19,7 @@ export const FieldCard = (props: FieldCardProps) => {
   const { title, tooltip, children } = props;
   return (
     <FieldSection title={title} tooltip={tooltip}>
-      <div className="flex flex-col space-y-2 rounded-lg bg-surface dark:bg-surface/50 p-3.5">
-        {children}
-      </div>
+      <SurfaceCard className="flex flex-col space-y-2">{children}</SurfaceCard>
     </FieldSection>
   );
 };
