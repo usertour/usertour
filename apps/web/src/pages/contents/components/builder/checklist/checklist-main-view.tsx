@@ -32,7 +32,7 @@ const ChecklistMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
-              className="bg-surface dark:bg-surface-raised shadow-none"
+              className="bg-surface dark:bg-surface-raised/50 shadow-none"
               id="launcher-button-text"
               value={localData.buttonText}
               onChange={(e) => updateLocalData({ buttonText: e.target.value })}

@@ -37,7 +37,7 @@ export const LauncherType = () => {
       {localData.type === LauncherDataType.BUTTON && (
         <Input
           variant="compact-muted"
-          className="bg-surface dark:bg-surface-raised shadow-none"
+          className="bg-surface dark:bg-surface-raised/50 shadow-none"
           value={localData.buttonText ?? ''}
           placeholder={t('contentBuilder.launcher.buttonText')}
           onChange={(event) => {

@@ -114,7 +114,7 @@ export const LauncherBehavior = () => {
 
   return (
     <FieldSection title={t('contentBuilder.launcher.behavior')}>
-      <div className="flex flex-col bg-surface dark:bg-surface-raised p-3.5 rounded-lg space-y-1">
+      <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg space-y-1">
         <div className="text-sm">{t('contentBuilder.launcher.behaviorEditor.when')}</div>
         <div className="flex flex-row space-x-1 items-center">
           <TriggerDropdown
@@ -134,7 +134,7 @@ export const LauncherBehavior = () => {
           defaultValue={localData.behavior.actionType}
           onValueChange={handleStateChange('actionType')}
         >
-          <TabsList className="grid w-full grid-cols-2 bg-background">
+          <TabsList className="grid w-full grid-cols-2 bg-background dark:bg-surface-raised/50">
             <TabsTrigger value="show-tooltip" variant="primary">
               {t('contentBuilder.launcher.behaviorEditor.showTooltip')}
             </TabsTrigger>
@@ -144,7 +144,7 @@ export const LauncherBehavior = () => {
           </TabsList>
           <TabsContent
             value={LauncherActionType.SHOW_TOOLTIP}
-            className="bg-background p-2 rounded-lg "
+            className="bg-background dark:bg-surface-raised/50 p-2 rounded-lg "
           >
             <div
               className="flex flex-row items-center justify-between cursor-pointer h-8"
@@ -161,7 +161,7 @@ export const LauncherBehavior = () => {
           </TabsContent>
           <TabsContent
             value={LauncherActionType.PERFORM_ACTION}
-            className="bg-background p-2 rounded-lg"
+            className="bg-background dark:bg-card p-2 rounded-lg"
           >
             <Actions
               baseZIndex={BUILDER_Z.popover}

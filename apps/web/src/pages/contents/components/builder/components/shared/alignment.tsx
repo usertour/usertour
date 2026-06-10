@@ -105,7 +105,7 @@ export const Alignment = (props: AlignmentProps) => {
 
   return (
     <AlignmentContext.Provider value={value}>
-      <div className="flex flex-col bg-surface dark:bg-surface-raised p-3.5 rounded-lg">
+      <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg">
         <div className="items-center flex justify-between px-9 py-0">
           <Circle
             side={POSITIONS.BOTTOM}

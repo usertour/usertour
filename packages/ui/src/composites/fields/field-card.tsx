@@ -18,7 +18,7 @@ export const FieldCard = (props: FieldCardProps) => {
   const { title, tooltip, children } = props;
   return (
     <FieldSection title={title} tooltip={tooltip}>
-      <div className="flex flex-col space-y-2 rounded-lg bg-surface dark:bg-surface-raised p-3.5">
+      <div className="flex flex-col space-y-2 rounded-lg bg-surface dark:bg-surface/50 p-3.5">
         {children}
       </div>
     </FieldSection>

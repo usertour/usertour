@@ -55,7 +55,7 @@ export const ContentTheme = (props: ContentThemeProps) => {
         value={themeId}
         onChange={handleThemeChange}
         placeholder={t('contentBuilder.shared.theme.sameAsFlow')}
-        className="w-full bg-surface dark:bg-surface-raised shadow-none hover:bg-muted"
+        className="w-full bg-surface dark:bg-surface-raised/50 shadow-none hover:bg-muted"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
     </div>

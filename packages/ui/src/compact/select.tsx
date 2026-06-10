@@ -27,7 +27,7 @@ export const CompactSelectTrigger = (props: CompactSelectTriggerProps) => {
       id={id}
       disabled={disabled}
       className={cn(
-        'flex h-7.5 w-full items-center gap-2 rounded-lg border border-input bg-muted px-3 text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+        'flex h-7.5 w-full items-center gap-2 rounded-lg border border-input bg-muted dark:bg-surface-raised/50 px-3 text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
     >

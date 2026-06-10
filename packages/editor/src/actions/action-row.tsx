@@ -30,7 +30,7 @@ interface Props {
 // Outer chip: holds the trigger and the close button as one rounded unit
 // joined by a 1px divider — the close belongs visually to the chip.
 const CHIP_OUTER =
-  'group/action inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-card text-sm shadow-sm transition-colors hover:border-input';
+  'group/action inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-card dark:bg-surface-raised/50 text-sm shadow-sm transition-colors hover:border-input';
 
 const CHIP_INVALID = 'border-destructive/70 hover:border-destructive';
 

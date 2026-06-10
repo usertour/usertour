@@ -10,7 +10,7 @@ export const LauncherTargetPreview = () => {
   return (
     <FieldSection title={t('contentBuilder.launcher.target')}>
       <div
-        className="flex flex-row items-center justify-between cursor-pointer bg-surface dark:bg-surface-raised p-3.5 rounded-lg"
+        className="flex flex-row items-center justify-between cursor-pointer bg-surface dark:bg-surface/50 p-3.5 rounded-lg"
         onClick={gotoLauncherTarget}
       >
         <div className="flex flex-row space-x-1 items-center">

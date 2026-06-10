@@ -17,11 +17,13 @@ const SelectPortal = SelectPrimitive.Portal;
 
 // Shared base: the structural / interaction classes every variant needs
 // (border, padding, focus ring, placeholder color, disabled treatment).
-// Variants only carry their *differences* (height, radius, surface, text
-// scale). This matches what the previous CompactSelect / ConditionSelect
+// Variants carry only their *differences* (height, radius, LIGHT surface,
+// text scale) plus a shared dark fill (surface-raised/50, set once in the
+// base) — so every trigger reads consistently on dark panels, matching
+// Input. This mirrors what the previous CompactSelect / ConditionSelect
 // wrappers got from base-class inheritance.
 const selectTriggerVariants = cva(
-  'flex w-full items-center justify-between border border-input shadow-sm px-3 py-2 ring-offset-background placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+  'flex w-full items-center justify-between border border-input dark:bg-surface-raised/50 shadow-sm px-3 py-2 ring-offset-background placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
   {
     variants: {
       variant: {
@@ -31,7 +33,7 @@ const selectTriggerVariants = cva(
         // Compact bordered — chip-popover form fields. Exposed for symmetry
         // with Input; Conditions itself uses a DropdownMenu under the hood
         // (Radix Select doesn't share a layer chain with Popover).
-        compact: 'h-7.5 rounded-lg bg-background dark:bg-muted text-sm',
+        compact: 'h-7.5 rounded-lg bg-background text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

@@ -205,7 +205,7 @@ const BlockLiveChatBody = () => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  className="bg-surface dark:bg-surface-raised text-sm shadow-none rounded-lg"
+                  className="bg-surface dark:bg-surface-raised/50 text-sm shadow-none rounded-lg"
                   zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [
@@ -233,7 +233,7 @@ const BlockLiveChatBody = () => {
               value={currentBlock.liveChatProvider}
               onChange={handleProviderChange}
               placeholder={t(`${I18N_PREFIX}.selectProvider`)}
-              className="w-full bg-surface dark:bg-surface-raised shadow-none"
+              className="w-full bg-surface dark:bg-surface-raised/50 shadow-none"
               contentStyle={{ zIndex: BUILDER_Z.popover }}
             />
           </div>
@@ -261,7 +261,7 @@ const BlockLiveChatBody = () => {
                 />
               </div>
               {flashWarning.code && (
-                <pre className="mt-2 rounded border border-border bg-surface dark:bg-surface-raised p-2 text-xs text-foreground whitespace-pre-wrap break-all">
+                <pre className="mt-2 rounded border border-border bg-surface dark:bg-surface-raised/50 p-2 text-xs text-foreground whitespace-pre-wrap break-all">
                   <code>{flashWarning.code}</code>
                 </pre>
               )}

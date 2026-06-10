@@ -18,7 +18,7 @@ export const UploadIconTab = React.memo<UploadIconTabProps>(
     const showPreview = iconSource === LauncherIconSource.UPLOAD && iconUrl;
 
     return (
-      <div className="w-full min-w-0 bg-background rounded-lg shadow-sm p-4">
+      <div className="w-full min-w-0 bg-background dark:bg-card rounded-lg shadow-sm p-4">
         <div className="mb-3">
           <h4 className="text-sm font-medium text-foreground">
             {t('contentBuilder.iconPicker.uploadTitle')}

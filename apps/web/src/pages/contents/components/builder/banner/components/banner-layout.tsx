@@ -68,7 +68,7 @@ export const BannerLayout = () => {
 
   return (
     <FieldSection title={t('contentBuilder.banner.layout')}>
-      <div className="flex flex-col bg-surface dark:bg-surface-raised p-3.5 rounded-lg space-y-3">
+      <div className="flex flex-col bg-surface dark:bg-surface/50 p-3.5 rounded-lg space-y-3">
         {NUMBER_FIELDS.map((key) => (
           <div key={key} className="space-y-2">
             <div className="flex items-center space-x-1">
