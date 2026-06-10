@@ -363,12 +363,12 @@ export const representationHideRules = z.object({ when: z.array(representationCo
 export type RepresentationHideRules = z.infer<typeof representationHideRules>;
 
 // ── Write input ──────────────────────────────────────────────────────────────
-// A lenient step shape for writes: `id` (server-owned) is omitted for new steps,
-// `cvid` is the merge key, `sequence` defaults to the array position, `object` is
-// not required. Compiled by the write path and merged onto the existing step.
+// A lenient step shape for writes: `id` is the merge key — provide the server-
+// assigned step id to update an existing step, omit it to create a new one. The
+// internal `cvid` is server-owned and never accepted here (preserved on update,
+// generated on create). `sequence` defaults to the array position.
 export const representationStepInput = z.object({
   id: z.string().optional(),
-  cvid: z.string().optional(),
   name: z.string(),
   type: z.string(),
   sequence: z.number().optional(),

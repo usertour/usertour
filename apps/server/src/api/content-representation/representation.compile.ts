@@ -61,7 +61,9 @@ export function compileStep(
   r: CompileResolvers,
 ): CompiledStep {
   return {
-    cvid: step.cvid ?? cuid(),
+    // cvid is server-owned: preserve the matched existing step's cvid on update,
+    // generate a fresh one on create. Never taken from client input.
+    cvid: step.cvid ?? existing?.cvid ?? cuid(),
     name: step.name,
     type: step.type,
     sequence: step.sequence,
@@ -202,7 +204,10 @@ function compileElement(
     case 'embed':
       return { id, element: { ...keepStyle, type: 'embed', url: block.url }, children: null };
     case 'question': {
-      const q = compileQuestion(block.question);
+      // The question's cvid is server-owned: preserve the matched element's cvid
+      // on update, generate on create — the client-supplied value is ignored.
+      const existingCvid = (existing?.element as any)?.data?.cvid;
+      const q = compileQuestion(block.question, existingCvid);
       return {
         id,
         element: {
@@ -228,9 +233,12 @@ function compileElement(
   }
 }
 
-function compileQuestion(q: RepresentationQuestion): { type: string; data: any } {
+function compileQuestion(
+  q: RepresentationQuestion,
+  existingCvid?: string,
+): { type: string; data: any } {
   const bind = q.bindAttribute ? { bindToAttribute: true, selectedAttribute: q.bindAttribute } : {};
-  const base = { cvid: q.cvid ?? cuid(), name: q.name, ...bind };
+  const base = { cvid: existingCvid ?? cuid(), name: q.name, ...bind };
   switch (q.kind) {
     case 'nps':
       return {

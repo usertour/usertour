@@ -81,8 +81,10 @@ discriminator (A-shape).
 ```ts
 RepresentationStep = {
   object: "step";
-  id?: string;            // server-owned; present on read, absent on write = new
-  cvid?: string;          // upsert key (see §8); server-generated for new steps
+  id?: string;            // server-owned handle. The WRITE merge key: present on a
+                          // read; echo it to update a step, omit it to create one.
+  cvid?: string;          // internal logical id, server-owned. Read-only — exposed
+                          // for reference (e.g. goto targets); NEVER accepted on write.
   name: string;
   type: "tooltip" | "modal" | "bubble" | "hidden";
   target?: RepresentationTarget;        // tooltip/bubble; n/a for modal
@@ -297,9 +299,13 @@ MCP write tool ──┘     1. validate representation (zod + reference & opera
   of that on every edit. So compile = *merge deltas onto the existing internal
   tree*, not rebuild. Step-level read-modify-write preserves untouched **steps**;
   block/field-level merge preserves untouched **styling within edited steps**.
-- Matching keys: `cvid` for steps (also the domain upsert key — omitted steps are
-  deleted, so the merge must resend the full list), `id` for blocks. Both
-  round-trip on read; new steps/blocks get server-generated keys.
+- Matching keys are **server-owned, never client-minted**: a step's `id`, a block's
+  `id`. The client echoes the id from a read to update, or omits it to create;
+  omitted steps are deleted, so the merge must resend the full list. The internal
+  `cvid` is resolved from the matched step (preserved on update, generated on
+  create) — clients never supply it. Same rule for non-flow `data` (checklist
+  items, resource-center tabs/blocks key by `id`). All ids are `cuid()`-generated,
+  matching the builder and DB.
 - The domain `updateContentVersion` is a whole-version upsert by `cvid`; the v2
   service feeds it the merged full list.
 - Writes only on editable drafts (`contentVersionIsEditable` already guards

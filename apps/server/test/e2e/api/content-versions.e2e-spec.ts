@@ -258,7 +258,6 @@ describe('API v2 /content-versions (e2e)', () => {
         {
           name: 'Authored',
           type: 'modal',
-          cvid: 'w-1',
           placement: { position: 'center' },
           content: [
             { type: 'text', markdown: '**Hello** {{ first_name | default: "there" }}' },
@@ -269,8 +268,9 @@ describe('API v2 /content-versions (e2e)', () => {
       startRules: { when: [{ type: 'current_url', includes: ['/app/*'] }] },
     });
     expect(res.status).toBe(200);
-    const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'w-1');
+    const step = res.body.steps.find((s: { name: string }) => s.name === 'Authored');
     expect(step).toMatchObject({ name: 'Authored', type: 'modal' });
+    expect(typeof step.id).toBe('string'); // server-assigned step id (the write handle)
     expect(step.content).toHaveLength(2);
     expect(step.content[0]).toMatchObject({
       type: 'text',
@@ -290,7 +290,6 @@ describe('API v2 /content-versions (e2e)', () => {
         {
           name: 'Tour step',
           type: 'tooltip',
-          cvid: 'rt-1',
           target: { by: 'selector', selector: '.start-btn' },
           placement: { side: 'bottom', align: 'center' },
           width: 360,
@@ -345,7 +344,7 @@ describe('API v2 /content-versions (e2e)', () => {
     );
     expect(r.status).toBe(200);
 
-    const step = r.body.steps.find((s: { cvid: string }) => s.cvid === 'rt-1');
+    const step = r.body.steps.find((s: { name: string }) => s.name === 'Tour step');
     expect(step.target).toEqual({ by: 'selector', selector: '.start-btn' });
     expect(step.placement).toMatchObject({ side: 'bottom', align: 'center' });
     expect(step.width).toBe(360);
@@ -391,7 +390,6 @@ describe('API v2 /content-versions (e2e)', () => {
         {
           name: 'JS',
           type: 'modal',
-          cvid: 'w-2',
           content: [],
           triggers: [{ do: [{ type: 'run_javascript', script: 'alert(1)' }] }],
         },
@@ -558,10 +556,11 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
-  // cvid is a per-version key (DB `@@unique([versionId, cvid])`), and fork copies
-  // cvids — so one content can have two versions whose steps share a cvid. This
-  // pins the invariant that a write keyed by cvid only touches its own version.
-  describe('cvid is version-scoped (no cross-version bleed)', () => {
+  // cvid is a per-version internal key (DB `@@unique([versionId, cvid])`), and fork
+  // copies cvids — so one content can have two versions whose steps share a cvid.
+  // The public write key is the globally-unique step `id`; this pins that writing
+  // a step by id only touches its own version, never the same-cvid step elsewhere.
+  describe('writes are keyed by step id, not cvid (no cross-version bleed)', () => {
     const textData = (text: string) => [
       {
         element: { type: 'group' },
@@ -576,13 +575,13 @@ describe('API v2 /content-versions (e2e)', () => {
       },
     ];
 
-    it('writing a step by cvid in one version leaves the same cvid in another version intact', async () => {
+    it('writing a step by id leaves a same-cvid step in another version intact', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
 
       // one content, two versions, BOTH with a step cvid 'shared'
       const c = await buildContent(prisma, { projectId, type: 'flow' });
       const vA = await buildVersion(prisma, { contentId: c.id, sequence: 0 });
-      await buildStep(prisma, {
+      const stepA = await buildStep(prisma, {
         versionId: vA.id,
         type: 'modal',
         name: 'A',
@@ -592,7 +591,7 @@ describe('API v2 /content-versions (e2e)', () => {
       });
       // building vB last makes it the content's edited (writable) version
       const vB = await buildVersion(prisma, { contentId: c.id, sequence: 1 });
-      await buildStep(prisma, {
+      const stepB = await buildStep(prisma, {
         versionId: vB.id,
         type: 'modal',
         name: 'B',
@@ -601,7 +600,7 @@ describe('API v2 /content-versions (e2e)', () => {
         data: textData('B original'),
       });
 
-      // write the 'shared' step of vB only
+      // update vB's step by its (globally-unique) id
       const w = await api(
         'patch',
         `/v2/projects/${projectId}/content-versions/${vB.id}`,
@@ -609,9 +608,9 @@ describe('API v2 /content-versions (e2e)', () => {
       ).send({
         steps: [
           {
+            id: stepB.id,
             name: 'B',
             type: 'modal',
-            cvid: 'shared',
             content: [{ type: 'text', markdown: 'B updated' }],
           },
         ],
@@ -628,12 +627,13 @@ describe('API v2 /content-versions (e2e)', () => {
         `/v2/projects/${projectId}/content-versions/${vA.id}?expand=steps`,
         token,
       );
-      const sB = rB.body.steps.find((s: { cvid: string }) => s.cvid === 'shared');
-      const sA = rA.body.steps.find((s: { cvid: string }) => s.cvid === 'shared');
+      const sB = rB.body.steps.find((s: { id: string }) => s.id === stepB.id);
+      const sA = rA.body.steps.find((s: { id: string }) => s.id === stepA.id);
 
       expect(sB.content[0]).toMatchObject({ type: 'text', markdown: 'B updated' });
       expect(sA.content[0]).toMatchObject({ type: 'text', markdown: 'A original' }); // untouched
-      expect(sA.id).not.toBe(sB.id); // genuinely separate rows that share a cvid
+      expect(sA.cvid).toBe(sB.cvid); // they really do share the internal cvid
+      expect(sA.id).not.toBe(sB.id); // ...yet are distinct rows, targeted by id
     });
   });
 });

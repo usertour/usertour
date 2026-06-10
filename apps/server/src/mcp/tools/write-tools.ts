@@ -74,9 +74,10 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Write steps and/or start/hide rules to a draft (editable) content version. `steps` ' +
-        'replaces the version step list, merged by `cvid` (omit cvid to add a new step). Text ' +
-        'blocks use markdown, with `{{ attribute | default: "x" }}` for user attributes. ' +
-        'Returns the updated version with its decompiled steps.',
+        'replaces the version step list, merged by step `id` (pass the id from a read to update ' +
+        'that step, omit it to add a new one). Text blocks use markdown, with ' +
+        '`{{ attribute | default: "x" }}` for user attributes. Returns the updated version with ' +
+        'its decompiled steps.',
       inputSchema: {
         versionId: z.string(),
         steps: z.array(representationStepInput).optional(),

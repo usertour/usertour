@@ -207,13 +207,23 @@ export class ApiContentVersionsService {
     const content: Record<string, unknown> = {};
 
     if (body.steps) {
-      const existingByCvid = new Map(
-        ((version.steps ?? []) as { cvid: string }[]).map((s) => [s.cvid, s]),
+      // Steps merge by their server-assigned `id` (echo to update, omit to create);
+      // the internal cvid is resolved from the matched step, never from the client.
+      const existingById = new Map(
+        (
+          (version.steps ?? []) as {
+            id: string;
+            cvid?: string;
+            data?: unknown;
+            target?: unknown;
+            setting?: unknown;
+          }[]
+        ).map((s) => [s.id, s]),
       );
       content.steps = body.steps.map((s, i) =>
         compileStep(
-          { ...s, cvid: s.cvid ?? null, sequence: s.sequence ?? i, content: s.content ?? [] },
-          s.cvid ? existingByCvid.get(s.cvid) : undefined,
+          { ...s, sequence: s.sequence ?? i, content: s.content ?? [] },
+          s.id ? existingById.get(s.id) : undefined,
           resolvers,
         ),
       );

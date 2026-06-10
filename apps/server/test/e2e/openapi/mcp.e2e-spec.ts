@@ -308,7 +308,6 @@ describe('MCP endpoint (e2e)', () => {
                     {
                       name: 'Welcome',
                       type: 'modal',
-                      cvid: 'm-1',
                       content: [{ type: 'text', markdown: 'Hi **there**' }],
                     },
                   ],
@@ -319,7 +318,7 @@ describe('MCP endpoint (e2e)', () => {
           ),
         ),
       );
-      const step = updated.steps.find((s: { cvid: string }) => s.cvid === 'm-1');
+      const step = updated.steps.find((s: { name: string }) => s.name === 'Welcome');
       expect(step).toMatchObject({ name: 'Welcome', type: 'modal' });
       expect(step.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
     });
