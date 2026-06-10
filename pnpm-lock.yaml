@@ -584,6 +584,9 @@ importers:
       '@medusajs/ui':
         specifier: ^2.2.4
         version: 2.4.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
+      '@openpicker/sdk':
+        specifier: ^0.2.5
+        version: 0.2.5
       '@radix-ui/react-accordion':
         specifier: ^1.1.2
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -4230,6 +4233,12 @@ packages:
 
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
+
+  '@openpicker/protocol@0.1.3':
+    resolution: {integrity: sha512-FmEqRkmow0BHYMtqu/h4xXf2jG1RSnk3LPhcX5A109eC1FJNg5ETx8gdtLeI/qRz8KthuHw3oC4O1q7ai3lVSw==}
+
+  '@openpicker/sdk@0.2.5':
+    resolution: {integrity: sha512-34epK8CzGi9JGYvwC0/EzK/QahcRZeMuUq3KlimcgePbmjiZQBWIPk9kviMfe3CC5N0PZo3QzacJ69M6P3ynxQ==}
 
   '@opentelemetry/api-logs@0.203.0':
     resolution: {integrity: sha512-9B9RU0H7Ya1Dx/Rkyc4stuBZSGVQF27WigitInx2QQoj6KUpEFYPKoWjdFTunJYxmXmh17HeBvbMa1EhGyPmqQ==}
@@ -16957,6 +16966,12 @@ snapshots:
       '@octokit/openapi-types': 22.2.0
 
   '@one-ini/wasm@0.1.1': {}
+
+  '@openpicker/protocol@0.1.3': {}
+
+  '@openpicker/sdk@0.2.5':
+    dependencies:
+      '@openpicker/protocol': 0.1.3
 
   '@opentelemetry/api-logs@0.203.0':
     dependencies:

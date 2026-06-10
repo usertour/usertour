@@ -9,6 +9,7 @@ import { ChecklistBuilder } from '@/pages/contents/components/builder/checklist'
 import { FlowBuilder } from '@/pages/contents/components/builder/flow';
 import { LauncherBuilder } from '@/pages/contents/components/builder/launcher';
 import { ResourceCenterBuilder } from '@/pages/contents/components/builder/resource-center';
+import { ElementPickerHost } from '@/pages/contents/components/builder/components/element-picker-host';
 import { WebBuilderLoading } from '@/pages/contents/components/builder/components/web-builder-loading';
 import { useListsLoading } from '@/pages/contents/components/builder/hooks/use-lists-loading';
 import { useTranslation } from 'react-i18next';
@@ -56,7 +57,9 @@ function WebBuilderContent() {
 
 export const WebBuilder = (props: WebBuilderProps) => (
   <BuilderProvider {...props}>
-    <WebBuilderContent />
+    <ElementPickerHost>
+      <WebBuilderContent />
+    </ElementPickerHost>
   </BuilderProvider>
 );
 

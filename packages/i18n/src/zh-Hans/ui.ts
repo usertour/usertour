@@ -2314,6 +2314,21 @@ const translations = {
       notAtAllLikely: '完全不可能',
       extremelyLikely: '非常可能',
     },
+    elementPicker: {
+      installTitle: '安装元素选择器扩展',
+      installDescription:
+        '选择元素发生在你自己应用的页面上(单独的标签页)。安装 Usertour 元素选择器浏览器扩展后,即可在页面上点选目标元素。',
+      installAction: '添加到 Chrome',
+      installDismiss: '暂不安装',
+      pickFailed: '选取元素失败,请重试。',
+      urlDialogTitle: '在哪个页面选取元素?',
+      urlDialogDescription:
+        '输入你产品的 URL,我们会在新标签页打开它;你可以在页面里继续导航到目标位置再选取。该地址会保存为这个内容的 build URL,下次直接使用。',
+      urlPlaceholder: 'https://app.example.com',
+      urlInvalid: '请输入有效的 URL',
+      urlCancel: '取消',
+      urlConfirm: '打开并选取',
+    },
     editor: {
       button: {
         text: '按钮文字',
@@ -2609,6 +2624,8 @@ const translations = {
       cssSelectorTooltip:
         '高级功能：如果可以，我们建议用文本来选中元素。如果元素没有文本，或文本过于通用，可以改用 CSS 选择器。如果文本和 CSS 选择器都填写了，Usertour 会选中同时匹配两者的元素。',
       cssSelectorRequired: 'CSS 选择器不能为空',
+      pickElement: '在你的应用中点选元素',
+      pickElementMatches: '该选择器匹配到 {{count}} 个元素,请在下方选择使用哪一个。',
       ifMultipleMatches: '若匹配到多个元素',
       ifMultipleMatchesTooltip:
         '如果有多个元素符合你的条件，你可以告诉 Usertour 选中其中哪一个。元素先按垂直位置、再按水平位置排序，即越靠上、越靠左的元素优先。',
@@ -3040,6 +3057,8 @@ const translations = {
           cssSelector: 'CSS 选择器',
           cssSelectorTooltip:
             '用文本选通常更简单也更稳定,优先试这种。元素没有文本,或者文字太通用没法唯一定位时,改用 CSS 选择器。两个都填的话,Usertour 会匹配同时满足两者的元素。',
+          pickElement: '在你的应用中点选元素',
+          pickElementMatches: '该选择器匹配到 {{count}} 个元素,请在下方选择使用哪一个。',
           ifMultipleMatches: '匹配到多个时',
           ifMultipleMatchesTooltip:
             '有多个元素都匹配时,告诉 Usertour 选哪一个。排序是先上后下、再从左到右 —— 最上面、最左边的那个排第一。',

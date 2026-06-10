@@ -1,6 +1,7 @@
+import { PickElementButton, type PickElementResult } from '@usertour/business-components';
 import { BUILDER_Z } from '@usertour/constants';
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
-import { ChangeEvent, useCallback } from 'react';
+import { ChangeEvent, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ContentError,
@@ -13,6 +14,9 @@ import { SequenceSelect } from '@/pages/contents/components/builder/components/c
 export const ContentPlacementManual = () => {
   const { target, onTargetChange, isShowError } = useContentPlacement();
   const { t } = useTranslation();
+  // Match count reported by the last visual pick — transient hint guiding
+  // the user to the sequence select; cleared on manual selector edits.
+  const [pickedMatchCount, setPickedMatchCount] = useState<number | null>(null);
 
   const handleContentChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -23,7 +27,16 @@ export const ContentPlacementManual = () => {
 
   const handleSelectorChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
+      setPickedMatchCount(null);
       onTargetChange({ customSelector: e.target.value });
+    },
+    [onTargetChange],
+  );
+
+  const handleElementPicked = useCallback(
+    (result: PickElementResult) => {
+      setPickedMatchCount(result.matchCount);
+      onTargetChange({ customSelector: result.selector });
     },
     [onTargetChange],
   );
@@ -54,14 +67,26 @@ export const ContentPlacementManual = () => {
             <QuestionTooltip>{t('contentBuilder.shared.cssSelectorTooltip')}</QuestionTooltip>
           </div>
 
-          <ContentErrorAnchor>
-            <Input
-              variant="compact"
-              id="css-selector"
-              value={target?.customSelector ?? ''}
-              onChange={handleSelectorChange}
+          <div className="flex items-center gap-1.5">
+            <ContentErrorAnchor className="flex-1">
+              <Input
+                variant="compact"
+                id="css-selector"
+                value={target?.customSelector ?? ''}
+                onChange={handleSelectorChange}
+              />
+            </ContentErrorAnchor>
+            <PickElementButton
+              label={t('contentBuilder.shared.pickElement')}
+              onPicked={handleElementPicked}
             />
-          </ContentErrorAnchor>
+          </div>
+
+          {pickedMatchCount !== null && pickedMatchCount > 1 && (
+            <p className="text-sm text-muted-foreground">
+              {t('contentBuilder.shared.pickElementMatches', { count: pickedMatchCount })}
+            </p>
+          )}
 
           <SequenceSelect
             value={target?.sequence}

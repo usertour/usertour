@@ -1,6 +1,7 @@
 import { TextFillIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { FORM_CONTROL_PICK_TARGETS } from '../../../element-picker';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextFill } from '../../validators';
@@ -78,6 +79,7 @@ function TextFillEditor({ condition, onChange }: EditorProps) {
       <ConditionElementSelector
         data={elementData}
         onDataChange={(next) => onChange(writeData(condition, { elementData: next }))}
+        pickMustMatch={FORM_CONTROL_PICK_TARGETS}
       />
     </div>
   );

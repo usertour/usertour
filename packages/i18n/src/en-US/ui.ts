@@ -2442,6 +2442,21 @@ const translations = {
       notAtAllLikely: 'Not at all likely',
       extremelyLikely: 'Extremely likely',
     },
+    elementPicker: {
+      installTitle: 'Install the element picker extension',
+      installDescription:
+        "Element picking happens on your app's own page, in a separate tab. Install the Usertour element picker browser extension to point and click on the element you want.",
+      installAction: 'Add to Chrome',
+      installDismiss: 'Maybe later',
+      pickFailed: 'Failed to pick an element. Please try again.',
+      urlDialogTitle: 'Where should we open your app?',
+      urlDialogDescription:
+        "Enter your app's URL — we'll open it in a new tab where you can navigate to the right page and pick the element. The URL is saved as this content's build URL for next time.",
+      urlPlaceholder: 'https://app.example.com',
+      urlInvalid: 'Enter a valid URL',
+      urlCancel: 'Cancel',
+      urlConfirm: 'Open and pick',
+    },
     editor: {
       button: {
         text: 'Button text',
@@ -2740,6 +2755,9 @@ const translations = {
       cssSelectorTooltip:
         'Advanced feature: if possible, we recommend selecting elements using text. If an element does not have text, or the text is very generic, you can select it using a CSS selector instead. If both text and CSS selector are filled in, Usertour will select an element matching both.',
       cssSelectorRequired: 'CSS selector is required',
+      pickElement: 'Select element in your app',
+      pickElementMatches:
+        'The selector matches {{count}} elements — choose which one to use below.',
       ifMultipleMatches: 'If multiple matches',
       ifMultipleMatchesTooltip:
         'If multiple elements match your criteria, you can tell Usertour which of the elements to select. Elements are sorted first by vertical position and second by horizontal position. I.e. an element higher up on the page and more towards the left takes precedence.',
@@ -3191,6 +3209,9 @@ const translations = {
           cssSelector: 'CSS selector',
           cssSelectorTooltip:
             'Picking by text is usually the easier, more stable option — try that first. Use a CSS selector when the element has no text, or its text is too generic to identify a single element. If you fill in both, Usertour matches an element that satisfies both.',
+          pickElement: 'Select element in your app',
+          pickElementMatches:
+            'The selector matches {{count}} elements — choose which one to use below.',
           ifMultipleMatches: 'If multiple matches',
           ifMultipleMatchesTooltip:
             'When more than one element matches, pick which one to use. Matches are ordered top-to-bottom first, then left-to-right — so the highest, leftmost match comes first.',
