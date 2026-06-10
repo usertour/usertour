@@ -106,9 +106,9 @@ const ChecklistItemBody = () => {
             <Label htmlFor={`${formPrefix}-name`}>{t('contentBuilder.checklist.itemName')}</Label>
             <Input
               variant="compact-muted"
-              className="bg-surface dark:bg-surface-raised shadow-none"
+              className="bg-surface dark:bg-surface-raised/50 shadow-none"
               id={`${formPrefix}-name`}
-              value={currentItem?.name}
+              value={currentItem?.name ?? ''}
               placeholder={t('contentBuilder.checklist.none')}
               onChange={handleInputChange('name')}
             />
@@ -119,9 +119,9 @@ const ChecklistItemBody = () => {
             </Label>
             <Input
               variant="compact-muted"
-              className="bg-surface dark:bg-surface-raised shadow-none"
+              className="bg-surface dark:bg-surface-raised/50 shadow-none"
               id={`${formPrefix}-description`}
-              value={currentItem?.description}
+              value={currentItem?.description ?? ''}
               placeholder={t('contentBuilder.checklist.none')}
               onChange={handleInputChange('description')}
             />

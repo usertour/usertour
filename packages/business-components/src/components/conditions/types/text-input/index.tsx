@@ -2,6 +2,7 @@ import { TextInputIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { FORM_CONTROL_PICK_TARGETS } from '../../../element-picker';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
@@ -113,6 +114,7 @@ function TextInputEditor({ condition, onChange }: EditorProps) {
       <ConditionElementSelector
         data={elementData}
         onDataChange={(next) => onChange(writeData(condition, { elementData: next }))}
+        pickMustMatch={FORM_CONTROL_PICK_TARGETS}
       />
       <OperatorSelect
         value={data.logic ?? 'is'}
@@ -121,7 +123,7 @@ function TextInputEditor({ condition, onChange }: EditorProps) {
       />
       {showValueInput && (
         <Input
-          variant="compact"
+          variant="compact-surface"
           value={data.value ?? ''}
           onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
           placeholder={t('conditions.types.textInput.valuePlaceholder')}

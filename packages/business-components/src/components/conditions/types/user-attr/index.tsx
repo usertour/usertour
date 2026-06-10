@@ -268,7 +268,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
           // gets equal width without crowding the connector word.
           <div className="flex items-center gap-2">
             <Input
-              variant="compact"
+              variant="compact-surface"
               type={inputType}
               value={data.value ?? ''}
               onChange={(e) => handleValueChange(e.target.value)}
@@ -277,7 +277,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
             />
             <span className="text-sm text-muted-foreground">{t('conditions.operators.and')}</span>
             <Input
-              variant="compact"
+              variant="compact-surface"
               type={inputType}
               value={data.value2 ?? ''}
               onChange={(e) => handleValue2Change(e.target.value)}
@@ -286,7 +286,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
           </div>
         ) : (
           <Input
-            variant="compact"
+            variant="compact-surface"
             type={inputType}
             value={data.value ?? ''}
             onChange={(e) => handleValueChange(e.target.value)}

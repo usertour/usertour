@@ -48,7 +48,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
     (subscriptionLoading && !subscription);
 
   if (isLoading) {
-    return <ContentLoading message={t('common.loading')} />;
+    return <ContentLoading message={t('common.loading')} className="min-h-screen" />;
   }
 
   return (

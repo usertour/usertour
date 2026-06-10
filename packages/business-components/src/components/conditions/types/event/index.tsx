@@ -231,7 +231,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
               options={countLogicOptions}
             />
             <Input
-              variant="compact"
+              variant="compact-surface"
               type="number"
               min={0}
               value={data.count ?? ''}
@@ -250,7 +250,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
                   {t('conditions.operators.and')}
                 </span>
                 <Input
-                  variant="compact"
+                  variant="compact-surface"
                   type="number"
                   min={0}
                   value={data.count2 ?? ''}
@@ -281,7 +281,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
             {showTimeInputs && (
               <>
                 <Input
-                  variant="compact"
+                  variant="compact-surface"
                   type="number"
                   min={0}
                   value={data.windowValue ?? ''}
@@ -300,7 +300,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
                       {t('conditions.operators.and')}
                     </span>
                     <Input
-                      variant="compact"
+                      variant="compact-surface"
                       type="number"
                       min={0}
                       value={data.windowValue2 ?? ''}

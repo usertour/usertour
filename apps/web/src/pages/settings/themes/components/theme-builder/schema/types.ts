@@ -71,6 +71,16 @@ export type FieldDef =
       label: string;
       placeholder?: string;
     })
+  // Multi-line code field rendered in a CodeMirror editor (syntax
+  // highlighting, bracket matching). Used for the theme's custom CSS.
+  | (FieldBase & {
+      type: 'code';
+      path: string;
+      label: string;
+      language: 'css' | 'javascript';
+      placeholder?: string;
+      height?: string;
+    })
   | (FieldBase & {
       type: 'placement';
       path: string;

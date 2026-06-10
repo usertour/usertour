@@ -59,7 +59,7 @@ export const ContentType = (props: ContentTypeProps) => {
                 'flex flex-col items-center gap-2 rounded-lg border px-2 py-3.5 text-sm font-medium transition-colors',
                 active
                   ? 'border-primary bg-accent/50 text-primary ring-2 ring-primary/10'
-                  : 'border-border bg-surface dark:bg-surface-raised text-muted-foreground hover:border-border',
+                  : 'border-border bg-surface dark:bg-surface-raised/50 text-muted-foreground hover:border-border',
               )}
             >
               <Icon className={cn('h-5 w-5', active ? 'text-primary' : 'text-muted-foreground')} />

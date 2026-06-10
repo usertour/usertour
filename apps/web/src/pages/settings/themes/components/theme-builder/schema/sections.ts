@@ -195,6 +195,19 @@ export const builderSections: BuilderSection[] = [
     fields: [
       { type: 'font-family', path: 'font.fontFamily', label: 'themeBuilder.fields.font.family' },
       {
+        type: 'text',
+        path: 'font.customFontFamily',
+        label: 'themeBuilder.fields.font.customFamily',
+        placeholder: 'themeBuilder.fields.font.customFamilyPlaceholder',
+        visibleWhen: (s) => s.font.fontFamily === 'Custom font',
+      },
+      {
+        type: 'inline-alert',
+        variant: 'info',
+        message: 'themeBuilder.fields.font.customFontHint',
+        visibleWhen: (s) => s.font.fontFamily === 'Custom font',
+      },
+      {
         type: 'number',
         path: 'font.fontSize',
         label: 'themeBuilder.fields.font.bodySize',
@@ -1265,6 +1278,28 @@ export const builderSections: BuilderSection[] = [
         min: 0,
         max: 100,
         suffix: '%',
+      },
+    ],
+  },
+
+  {
+    id: 'custom-css',
+    label: 'themeBuilder.sections.customCss',
+    previewWidget: ThemeDetailPreviewType.TOOLTIP,
+    fields: [
+      {
+        type: 'code',
+        path: 'customCss',
+        language: 'css',
+        label: 'themeBuilder.fields.customCss.label',
+        placeholder: 'themeBuilder.fields.customCss.placeholder',
+        tooltip: 'themeBuilder.fields.customCss.tooltip',
+      },
+      {
+        type: 'inline-alert',
+        variant: 'info',
+        message: 'themeBuilder.fields.customCss.hint',
+        visibleWhen: () => true,
       },
     ],
   },

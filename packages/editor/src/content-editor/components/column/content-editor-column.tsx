@@ -59,13 +59,10 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   const { zIndex, deleteColumn, insertColumnInGroup, updateElement, activeId } =
     useContentEditorContext();
   const { t } = useTranslation();
-  // Width-unit options keep the constant's `name` (%, pixels, fill) — bare
-  // units, not worth translating. The distribute/align options are
-  // user-facing layout choices, so they get i18n labels.
-  const columnWidthOptions = COLUMN_WIDTH_TYPE_OPTIONS.map((option) => ({
-    value: option.value,
-    label: option.name,
-  }));
+  // Width-unit options (%, pixels, fill) are bare units, not worth translating,
+  // so COLUMN_WIDTH_TYPE_OPTIONS is passed straight through below. The
+  // distribute/align options are user-facing layout choices, so they get i18n
+  // labels instead.
   const distributeOptions = [
     { value: JUSTIFY_CONTENT_OPTIONS.START, label: t('contentBuilder.editor.column.justifyLeft') },
     {
@@ -266,7 +263,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
             <div className="flex gap-x-2">
               {width.type !== WIDTH_TYPES.FILL && (
                 <Input
-                  variant="compact-muted"
+                  variant="compact-surface"
                   type="number"
                   value={width.value?.toString() ?? ''}
                   placeholder={t('contentBuilder.editor.column.width')}
@@ -275,11 +272,11 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
                 />
               )}
               <CompactSelect
-                options={columnWidthOptions}
+                options={COLUMN_WIDTH_TYPE_OPTIONS}
                 value={width.type}
                 onChange={handleWidthTypeChange}
                 placeholder={t('contentBuilder.editor.width.selectType')}
-                className="shrink bg-surface-raised"
+                className="shrink bg-surface-raised dark:bg-surface-raised/50"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
             </div>

@@ -36,7 +36,7 @@ export const SelectField = (props: SelectFieldProps) => {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full bg-surface-raised shadow-none"
+        className="w-full bg-surface-raised dark:bg-surface-raised/50 shadow-none"
         contentStyle={zIndex ? { zIndex } : undefined}
       />
     </div>

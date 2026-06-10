@@ -3,10 +3,15 @@ import type { ElementSelectorPropsData } from '@usertour/types';
 import { type ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { useConditionsT } from '../conditions-context';
 import { ConditionSelect } from '../ui/condition-select';
+import type { PickElementResult } from '../../element-picker';
+import { PickElementButton } from '../../element-picker';
 
 export interface ConditionElementSelectorProps {
   data: ElementSelectorPropsData;
   onDataChange: (data: ElementSelectorPropsData) => void;
+  // Restricts what the visual picker can select (CSS selector) — e.g.
+  // text-input / text-fill conditions limit picking to form controls.
+  pickMustMatch?: string;
 }
 
 // Manual element-selection editor reskinned for the v2 conditions chrome.
@@ -15,9 +20,16 @@ export interface ConditionElementSelectorProps {
 // preview lives in the chip Summary; the editor stays manual-only to match
 // v1 behavior. The wrapper sets `type: 'manual'` on every patch so any
 // pre-existing auto data converts on first edit.
-export function ConditionElementSelector({ data, onDataChange }: ConditionElementSelectorProps) {
+export function ConditionElementSelector({
+  data,
+  onDataChange,
+  pickMustMatch,
+}: ConditionElementSelectorProps) {
   const t = useConditionsT();
   const [innerData, setInnerData] = useState<ElementSelectorPropsData>(data);
+  // Match count reported by the last visual pick — transient hint guiding
+  // the user to the "if multiple matches" select; cleared on manual edits.
+  const [pickedMatchCount, setPickedMatchCount] = useState<number | null>(null);
 
   const update = useCallback(
     (patch: Partial<ElementSelectorPropsData>) => {
@@ -36,9 +48,15 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
 
   const handleTextChange = (e: ChangeEvent<HTMLInputElement>) =>
     update({ content: e.target.value });
-  const handleSelectorChange = (e: ChangeEvent<HTMLInputElement>) =>
+  const handleSelectorChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setPickedMatchCount(null);
     update({ customSelector: e.target.value });
+  };
   const handleSequenceChange = (value: string) => update({ sequence: value });
+  const handleElementPicked = (result: PickElementResult) => {
+    setPickedMatchCount(result.matchCount);
+    update({ customSelector: result.selector });
+  };
 
   const sequenceOptions = useMemo(
     () => [
@@ -60,7 +78,7 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
         tooltip={t('conditions.types.element.selector.elementTextTooltip')}
       >
         <Input
-          variant="compact"
+          variant="compact-surface"
           value={innerData.content || ''}
           onChange={handleTextChange}
           placeholder={placeholder}
@@ -71,13 +89,29 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
         label={t('conditions.types.element.selector.cssSelector')}
         tooltip={t('conditions.types.element.selector.cssSelectorTooltip')}
       >
-        <Input
-          variant="compact"
-          value={innerData.customSelector || ''}
-          onChange={handleSelectorChange}
-          placeholder={placeholder}
-        />
+        <div className="flex items-center gap-1.5">
+          <Input
+            variant="compact-surface"
+            className="flex-1"
+            value={innerData.customSelector || ''}
+            onChange={handleSelectorChange}
+            placeholder={placeholder}
+          />
+          <PickElementButton
+            label={t('conditions.types.element.selector.pickElement')}
+            mustMatch={pickMustMatch}
+            onPicked={handleElementPicked}
+          />
+        </div>
       </Field>
+
+      {pickedMatchCount !== null && pickedMatchCount > 1 && (
+        <p className="text-sm text-muted-foreground">
+          {t('conditions.types.element.selector.pickElementMatches', {
+            count: pickedMatchCount,
+          })}
+        </p>
+      )}
 
       {innerData.selectorsList && innerData.selectorsList.length > 0 && (
         <div className="flex flex-row flex-wrap gap-1">

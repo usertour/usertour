@@ -57,8 +57,12 @@ export * from './composites/combobox';
 export * from './composites/input-group';
 // Composition UI primitives — twice-composed shadcn-style components,
 // no business knowledge, freely depended on by any consumer.
-export { SelectPopover } from './composites/select-popover';
-export type { SelectPopoverOption, SelectPopoverProps } from './composites/select-popover';
+export { ComboboxSelect } from './composites/combobox-select';
+export type {
+  ComboboxSelectOption,
+  ComboboxSelectGroup,
+  ComboboxSelectProps,
+} from './composites/combobox-select';
 export { LoadingContainer } from './composites/loading';
 export { LoadingButton } from './composites/loading-button';
 export type { LoadingButtonProps } from './composites/loading-button';

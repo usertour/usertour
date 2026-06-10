@@ -151,7 +151,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
               </QuestionTooltip>
             </div>
             <PopperEditorMini
-              className="bg-surface dark:bg-surface-raised text-sm shadow-none rounded-lg"
+              className="bg-surface dark:bg-surface-raised/50 text-sm shadow-none rounded-lg"
               zIndex={BUILDER_Z.popover}
               initialValue={
                 (item.navigateUrl as Descendant[]) ?? [

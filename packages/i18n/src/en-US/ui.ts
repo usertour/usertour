@@ -2287,6 +2287,7 @@ const translations = {
       launcherButtons: 'Launcher buttons',
       backdrop: 'Backdrop',
       focusHighlight: 'Focus highlight',
+      customCss: 'Custom CSS',
     },
     subSections: {
       brandColors: 'Brand colors',
@@ -2328,6 +2329,10 @@ const translations = {
       },
       font: {
         family: 'Font family',
+        customFamily: 'Custom font family',
+        customFamilyPlaceholder: 'e.g. My Brand Sans',
+        customFontHint:
+          'Your developers must install this custom font in your theme by adding @font-face rules via Custom CSS (see the Custom CSS section below).',
         bodySize: 'Body size',
         lineHeight: 'Line height',
         bodyWeight: 'Body weight',
@@ -2335,6 +2340,13 @@ const translations = {
         h1Size: 'H1 size',
         h2Size: 'H2 size',
         linkColor: 'Link color',
+      },
+      customCss: {
+        label: 'CSS rules',
+        placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
+        tooltip:
+          'Raw CSS injected into every widget. Use it for @font-face rules backing the custom font, or for advanced style overrides.',
+        hint: 'This CSS is injected into all widgets (tooltips, modals, checklists, banners and the resource center). Widget internals may change between releases, so keep selectors as simple as possible.',
       },
       buttons: {
         height: 'Height',
@@ -2509,6 +2521,22 @@ const translations = {
     analytics: {
       notAtAllLikely: 'Not at all likely',
       extremelyLikely: 'Extremely likely',
+    },
+    elementPicker: {
+      installTitle: 'Install the element picker extension',
+      installDescription:
+        "Element picking happens on your app's own page, in a separate tab. Install the Usertour element picker browser extension to point and click on the element you want.",
+      installAction: 'Add to Chrome',
+      installDismiss: 'Maybe later',
+      installWaiting: 'Waiting for the extension — picking starts as soon as it is installed.',
+      pickFailed: 'Failed to pick an element. Please try again.',
+      urlDialogTitle: 'Where should we open your app?',
+      urlDialogDescription:
+        "Enter your app's URL — we'll open it in a new tab where you can navigate to the right page and pick the element. The URL is saved as this content's build URL for next time.",
+      urlPlaceholder: 'https://app.example.com',
+      urlInvalid: 'Enter a valid URL',
+      urlCancel: 'Cancel',
+      urlConfirm: 'Open and pick',
     },
     editor: {
       button: {
@@ -2808,6 +2836,9 @@ const translations = {
       cssSelectorTooltip:
         'Advanced feature: if possible, we recommend selecting elements using text. If an element does not have text, or the text is very generic, you can select it using a CSS selector instead. If both text and CSS selector are filled in, Usertour will select an element matching both.',
       cssSelectorRequired: 'CSS selector is required',
+      pickElement: 'Select element in your app',
+      pickElementMatches:
+        'The selector matches {{count}} elements — choose which one to use below.',
       ifMultipleMatches: 'If multiple matches',
       ifMultipleMatchesTooltip:
         'If multiple elements match your criteria, you can tell Usertour which of the elements to select. Elements are sorted first by vertical position and second by horizontal position. I.e. an element higher up on the page and more towards the left takes precedence.',
@@ -3259,6 +3290,9 @@ const translations = {
           cssSelector: 'CSS selector',
           cssSelectorTooltip:
             'Picking by text is usually the easier, more stable option — try that first. Use a CSS selector when the element has no text, or its text is too generic to identify a single element. If you fill in both, Usertour matches an element that satisfies both.',
+          pickElement: 'Select element in your app',
+          pickElementMatches:
+            'The selector matches {{count}} elements — choose which one to use below.',
           ifMultipleMatches: 'If multiple matches',
           ifMultipleMatchesTooltip:
             'When more than one element matches, pick which one to use. Matches are ordered top-to-bottom first, then left-to-right — so the highest, leftmost match comes first.',

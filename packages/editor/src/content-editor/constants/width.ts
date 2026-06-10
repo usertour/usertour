@@ -1,6 +1,6 @@
 // Width-related constants shared across content editor components
 
-import type { SelectPopoverOption } from '@usertour/ui';
+import type { CompactSelectOption } from '@usertour/ui';
 
 export const WIDTH_TYPES = {
   PERCENT: 'percent',
@@ -9,16 +9,16 @@ export const WIDTH_TYPES = {
 } as const;
 
 // Width type options for image component (without fill)
-export const IMAGE_WIDTH_TYPE_OPTIONS: SelectPopoverOption[] = [
-  { value: WIDTH_TYPES.PERCENT, name: '%' },
-  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
+export const IMAGE_WIDTH_TYPE_OPTIONS: CompactSelectOption[] = [
+  { value: WIDTH_TYPES.PERCENT, label: '%' },
+  { value: WIDTH_TYPES.PIXELS, label: 'pixels' },
 ];
 
 // Width type options for column component (with fill)
-export const COLUMN_WIDTH_TYPE_OPTIONS: SelectPopoverOption[] = [
-  { value: WIDTH_TYPES.PERCENT, name: '%' },
-  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
-  { value: WIDTH_TYPES.FILL, name: 'fill' },
+export const COLUMN_WIDTH_TYPE_OPTIONS: CompactSelectOption[] = [
+  { value: WIDTH_TYPES.PERCENT, label: '%' },
+  { value: WIDTH_TYPES.PIXELS, label: 'pixels' },
+  { value: WIDTH_TYPES.FILL, label: 'fill' },
 ];
 
 export const DEFAULT_WIDTH = 100;

@@ -111,14 +111,14 @@ export const LabelsField = memo<LabelsFieldProps>(
         </Label>
         <div className="flex flex-row gap-2">
           <Input
-            variant="compact-muted"
+            variant="compact-surface"
             type="text"
             value={lowLabel || ''}
             placeholder={lowPlaceholder ?? t('contentBuilder.editor.question.defaultLabel')}
             onChange={(event) => onLowLabelChange(event.target.value)}
           />
           <Input
-            variant="compact-muted"
+            variant="compact-surface"
             type="text"
             value={highLabel || ''}
             placeholder={highPlaceholder ?? t('contentBuilder.editor.question.defaultLabel')}
@@ -189,7 +189,7 @@ export const ScaleRangeField = memo<ScaleRangeFieldProps>(
         </Label>
         <div className="flex flex-row gap-2 items-center">
           <Input
-            variant="compact-muted"
+            variant="compact-surface"
             type="number"
             value={lowRange}
             placeholder={lowPlaceholder}
@@ -201,7 +201,7 @@ export const ScaleRangeField = memo<ScaleRangeFieldProps>(
           />
           <p>-</p>
           <Input
-            variant="compact-muted"
+            variant="compact-surface"
             type="number"
             value={highRange}
             placeholder={highPlaceholder}

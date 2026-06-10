@@ -22,19 +22,31 @@ export const PlacementField = (props: PlacementFieldProps) => {
   const { t } = useTranslation();
 
   const defaultOptions: { value: string; label: string }[] = [
-    { value: ModalPosition.LeftTop, label: t('themeBuilder.placementCornerCenter.topLeft') },
-    { value: ModalPosition.CenterTop, label: t('themeBuilder.placementCornerCenter.topCenter') },
-    { value: ModalPosition.RightTop, label: t('themeBuilder.placementCornerCenter.topRight') },
-    { value: ModalPosition.LeftBottom, label: t('themeBuilder.placementCornerCenter.bottomLeft') },
+    {
+      value: ModalPosition.LeftTop,
+      label: t('themeBuilder.options.placementCornerCenter.topLeft'),
+    },
+    {
+      value: ModalPosition.CenterTop,
+      label: t('themeBuilder.options.placementCornerCenter.topCenter'),
+    },
+    {
+      value: ModalPosition.RightTop,
+      label: t('themeBuilder.options.placementCornerCenter.topRight'),
+    },
+    {
+      value: ModalPosition.LeftBottom,
+      label: t('themeBuilder.options.placementCornerCenter.bottomLeft'),
+    },
     {
       value: ModalPosition.CenterBottom,
-      label: t('themeBuilder.placementCornerCenter.bottomCenter'),
+      label: t('themeBuilder.options.placementCornerCenter.bottomCenter'),
     },
     {
       value: ModalPosition.RightBottom,
-      label: t('themeBuilder.placementCornerCenter.bottomRight'),
+      label: t('themeBuilder.options.placementCornerCenter.bottomRight'),
     },
-    { value: ModalPosition.Center, label: t('themeBuilder.placementCornerCenter.center') },
+    { value: ModalPosition.Center, label: t('themeBuilder.options.placementCornerCenter.center') },
   ];
 
   const opts = options ?? defaultOptions;

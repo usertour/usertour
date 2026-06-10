@@ -1,23 +1,23 @@
 // Column-specific constants
 
-import type { SelectPopoverOption } from '@usertour/ui';
+import type { CompactSelectOption } from '@usertour/ui';
 
 import { ALIGN_ITEMS_OPTIONS, JUSTIFY_CONTENT_OPTIONS } from './styles';
 
-// SelectPopover options for justify content (horizontal distribution)
-export const JUSTIFY_CONTENT_OPTIONS_LIST: SelectPopoverOption[] = [
-  { value: JUSTIFY_CONTENT_OPTIONS.START, name: 'Left' },
-  { value: JUSTIFY_CONTENT_OPTIONS.CENTER, name: 'Center' },
-  { value: JUSTIFY_CONTENT_OPTIONS.END, name: 'Right' },
-  { value: JUSTIFY_CONTENT_OPTIONS.BETWEEN, name: 'Space Between' },
-  { value: JUSTIFY_CONTENT_OPTIONS.EVENLY, name: 'Space Evenly' },
-  { value: JUSTIFY_CONTENT_OPTIONS.AROUND, name: 'Space Around' },
+// Justify-content options for horizontal distribution
+export const JUSTIFY_CONTENT_OPTIONS_LIST: CompactSelectOption[] = [
+  { value: JUSTIFY_CONTENT_OPTIONS.START, label: 'Left' },
+  { value: JUSTIFY_CONTENT_OPTIONS.CENTER, label: 'Center' },
+  { value: JUSTIFY_CONTENT_OPTIONS.END, label: 'Right' },
+  { value: JUSTIFY_CONTENT_OPTIONS.BETWEEN, label: 'Space Between' },
+  { value: JUSTIFY_CONTENT_OPTIONS.EVENLY, label: 'Space Evenly' },
+  { value: JUSTIFY_CONTENT_OPTIONS.AROUND, label: 'Space Around' },
 ];
 
-// SelectPopover options for align items (vertical alignment)
-export const ALIGN_ITEMS_OPTIONS_LIST: SelectPopoverOption[] = [
-  { value: ALIGN_ITEMS_OPTIONS.START, name: 'Top' },
-  { value: ALIGN_ITEMS_OPTIONS.CENTER, name: 'Center' },
-  { value: ALIGN_ITEMS_OPTIONS.END, name: 'Bottom' },
-  { value: ALIGN_ITEMS_OPTIONS.BASELINE, name: 'Baseline' },
+// Align-items options for vertical alignment
+export const ALIGN_ITEMS_OPTIONS_LIST: CompactSelectOption[] = [
+  { value: ALIGN_ITEMS_OPTIONS.START, label: 'Top' },
+  { value: ALIGN_ITEMS_OPTIONS.CENTER, label: 'Center' },
+  { value: ALIGN_ITEMS_OPTIONS.END, label: 'Bottom' },
+  { value: ALIGN_ITEMS_OPTIONS.BASELINE, label: 'Baseline' },
 ];

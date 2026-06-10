@@ -213,7 +213,7 @@ function FrequencyEvery({
         <ConditionErrorTooltip open={openError}>
           <ConditionErrorTooltipAnchor asChild>
             <Input
-              variant="compact"
+              variant="compact-surface"
               type="text"
               value={displayTimes}
               onChange={handleTimesChange}
@@ -227,7 +227,7 @@ function FrequencyEvery({
         </ConditionErrorTooltip>
         <span className="text-sm">{t('conditions.standalone.frequency.timesComma')}</span>
         <Input
-          variant="compact"
+          variant="compact-surface"
           type="text"
           value={value.duration}
           onChange={(e) => update({ duration: Number.parseInt(e.target.value) || 0 })}
@@ -257,7 +257,7 @@ function FrequencyEvery({
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm">{t('conditions.standalone.frequency.every')}</span>
       <Input
-        variant="compact"
+        variant="compact-surface"
         type="text"
         value={value.duration}
         onChange={(e) => update({ duration: Number.parseInt(e.target.value) || 0 })}
@@ -302,7 +302,7 @@ function FrequencyAtLeast({
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm">{t('conditions.standalone.frequency.atLeast')}</span>
       <Input
-        variant="compact"
+        variant="compact-surface"
         type="text"
         value={value.duration}
         onChange={(e) => onChange({ ...value, duration: Number.parseInt(e.target.value) || 0 })}

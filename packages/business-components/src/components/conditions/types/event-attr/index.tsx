@@ -254,7 +254,7 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
           // numeric-range case.
           <div className="flex items-center gap-2">
             <Input
-              variant="compact"
+              variant="compact-surface"
               type={inputType}
               value={data.value ?? ''}
               onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
@@ -263,7 +263,7 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
             />
             <span className="text-sm text-muted-foreground">{t('conditions.operators.and')}</span>
             <Input
-              variant="compact"
+              variant="compact-surface"
               type={inputType}
               value={data.value2 ?? ''}
               onChange={(e) => onChange(writeData(condition, { value2: e.target.value }))}
@@ -272,7 +272,7 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
           </div>
         ) : (
           <Input
-            variant="compact"
+            variant="compact-surface"
             type={inputType}
             value={data.value ?? ''}
             onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}

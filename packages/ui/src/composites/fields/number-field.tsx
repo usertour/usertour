@@ -66,7 +66,7 @@ export const NumberField = (props: NumberFieldProps) => {
       </div>
       <div className="relative">
         <Input
-          variant="compact-muted"
+          variant="compact-surface"
           id={id}
           type="number"
           value={value ?? ''}

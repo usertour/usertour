@@ -290,7 +290,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
               <Label>{t('contentBuilder.resourceCenter.name')}</Label>
               <ContentErrorAnchor>
                 <PopperEditorMini
-                  className="bg-surface dark:bg-surface-raised text-sm shadow-none rounded-lg"
+                  className="bg-surface dark:bg-surface-raised/50 text-sm shadow-none rounded-lg"
                   zIndex={BUILDER_Z.popover}
                   initialValue={
                     (currentBlock.name as Descendant[]) ?? [

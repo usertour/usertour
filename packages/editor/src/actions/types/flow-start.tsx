@@ -1,23 +1,5 @@
-import {
-  Button,
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  ScrollArea,
-} from '@usertour/ui';
-import {
-  EyeNoneIcon,
-  ModelIcon,
-  RiExternalLinkLine,
-  RiCheckLine,
-  TooltipIcon,
-} from '@usertour/icons';
-import { cn } from '@usertour/tailwind';
+import { ComboboxSelect } from '@usertour/ui';
+import { EyeNoneIcon, ModelIcon, RiExternalLinkLine, TooltipIcon } from '@usertour/icons';
 import {
   ContentActionsItemType,
   ContentDataType,
@@ -25,7 +7,7 @@ import {
   type RulesCondition,
   type Step,
 } from '@usertour/types';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   useActionsContext,
   useActionsT,
@@ -102,44 +84,6 @@ function FlowStartSummary({ condition }: { condition: RulesCondition }) {
   );
 }
 
-// Reusable picker shell — header, search box, scroll area. The two pickers
-// inside FlowStart (content + step) only differ in their item list; reusing
-// the same shell keeps them visually consistent.
-function PickerPopover({
-  open,
-  onOpenChange,
-  triggerLabel,
-  searchPlaceholder,
-  emptyLabel,
-  children,
-  zIndex,
-}: {
-  open: boolean;
-  onOpenChange: (next: boolean) => void;
-  triggerLabel: string;
-  searchPlaceholder: string;
-  emptyLabel: string;
-  children: React.ReactNode;
-  zIndex: number;
-}) {
-  return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full justify-between overflow-hidden">
-          <span className="min-w-0 truncate">{triggerLabel}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popper-anchor-width)] p-0" style={{ zIndex }}>
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandEmpty>{emptyLabel}</CommandEmpty>
-          <ScrollArea className="h-72">{children}</ScrollArea>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 function FlowStartEditor({
   condition,
   onChange,
@@ -152,9 +96,6 @@ function FlowStartEditor({
   const { contents } = useActionsContext();
   const { popover: popoverZIndex } = useActionsZIndex();
   const data = readData(condition);
-
-  const [contentPickerOpen, setContentPickerOpen] = useState(false);
-  const [stepPickerOpen, setStepPickerOpen] = useState(false);
 
   const { flows, checklists } = useMemo(() => {
     if (!contents || contents.length === 0) return { flows: [], checklists: [] };
@@ -172,8 +113,6 @@ function FlowStartEditor({
   const isFlow = selectedContent?.type === ContentDataType.FLOW;
   const steps = (isFlow ? selectedContent?.steps : []) ?? [];
 
-  const stepIndex = steps.findIndex((step) => step.cvid === data.stepCvid);
-
   const handleSelectContent = useCallback(
     (content: Content) => {
       // Switching content invalidates any previously chosen stepCvid — clear
@@ -188,7 +127,6 @@ function FlowStartEditor({
           logic: data.logic ?? 'and',
         }),
       );
-      setContentPickerOpen(false);
     },
     [condition, data.logic, onChange],
   );
@@ -196,109 +134,80 @@ function FlowStartEditor({
   const handleSelectStep = useCallback(
     (step: Step) => {
       onChange(writeData(condition, { stepCvid: step.cvid }));
-      setStepPickerOpen(false);
     },
     [condition, onChange],
   );
-
-  const contentTriggerLabel = selectedContent?.name || t('actions.types.flowStart.selectContent');
-  const stepTriggerLabel = (() => {
-    if (!isFlow) return '';
-    if (data.stepCvid && stepIndex !== -1) {
-      return `${stepIndex + 1}. ${steps[stepIndex].name}`;
-    }
-    return t('actions.types.flowStart.selectStep');
-  })();
 
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm">
         {t(`actions.types.flowStart.heading.${isFlow ? 'flow' : 'checklist'}`)}
       </span>
-      <PickerPopover
-        open={contentPickerOpen}
-        onOpenChange={setContentPickerOpen}
-        triggerLabel={contentTriggerLabel}
+      <ComboboxSelect
+        size="compact"
+        surface="raised"
+        value={data.contentId}
+        onValueChange={(contentId) => {
+          const content = contents?.find((entry) => entry.id === contentId);
+          if (content) {
+            handleSelectContent(content);
+          }
+        }}
+        placeholder={t('actions.types.flowStart.selectContent')}
         searchPlaceholder={t('actions.types.flowStart.searchContent')}
-        emptyLabel={t('actions.types.flowStart.empty')}
-        zIndex={popoverZIndex}
-      >
-        {flows.length > 0 && (
-          <CommandGroup heading={t('actions.types.flowStart.flow')}>
-            {flows.map((flow) => (
-              <CommandItem
-                key={flow.id}
-                value={flow.id}
-                onSelect={() => handleSelectContent(flow)}
-                className="cursor-pointer"
-              >
-                <span className="min-w-0 truncate">{flow.name}</span>
-                <RiCheckLine
-                  className={cn(
-                    'ml-auto h-4 w-4',
-                    data.contentId === flow.id ? 'opacity-100' : 'opacity-0',
-                  )}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
-        {checklists.length > 0 && (
-          <CommandGroup heading={t('actions.types.flowStart.checklist')}>
-            {checklists.map((checklist) => (
-              <CommandItem
-                key={checklist.id}
-                value={checklist.id}
-                onSelect={() => handleSelectContent(checklist)}
-                className="cursor-pointer"
-              >
-                <span className="min-w-0 truncate">{checklist.name}</span>
-                <RiCheckLine
-                  className={cn(
-                    'ml-auto h-4 w-4',
-                    data.contentId === checklist.id ? 'opacity-100' : 'opacity-0',
-                  )}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
-      </PickerPopover>
+        emptyText={t('actions.types.flowStart.empty')}
+        groups={[
+          ...(flows.length > 0
+            ? [
+                {
+                  heading: t('actions.types.flowStart.flow'),
+                  options: flows.map((flow) => ({ value: flow.id, label: flow.name ?? '' })),
+                },
+              ]
+            : []),
+          ...(checklists.length > 0
+            ? [
+                {
+                  heading: t('actions.types.flowStart.checklist'),
+                  options: checklists.map((checklist) => ({
+                    value: checklist.id,
+                    label: checklist.name ?? '',
+                  })),
+                },
+              ]
+            : []),
+        ]}
+        contentStyle={{ zIndex: popoverZIndex }}
+      />
 
       {isFlow && (
         <>
           <span className="text-sm">{t('actions.types.flowStart.stepLabel')}</span>
-          <PickerPopover
-            open={stepPickerOpen}
-            onOpenChange={setStepPickerOpen}
-            triggerLabel={stepTriggerLabel}
+          <ComboboxSelect
+            size="compact"
+            surface="raised"
+            value={data.stepCvid}
+            onValueChange={(cvid) => {
+              const step = steps.find((entry) => entry.cvid === cvid);
+              if (step) {
+                handleSelectStep(step);
+              }
+            }}
+            placeholder={t('actions.types.flowStart.selectStep')}
             searchPlaceholder={t('actions.types.flowStart.searchStep')}
-            emptyLabel={t('actions.types.flowStart.empty')}
-            zIndex={popoverZIndex}
-          >
-            <CommandGroup heading={t('actions.types.flowStart.steps')}>
-              {steps.map((step, index) => (
-                <CommandItem
-                  key={step.cvid}
-                  value={step.cvid as string}
-                  onSelect={() => handleSelectStep(step)}
-                  className="cursor-pointer"
-                >
-                  <div className="flex w-full min-w-0 items-center gap-1">
-                    {getStepTypeIcon(step.type)}
-                    <span className="shrink-0">{index + 1}.</span>
-                    <span className="min-w-0 truncate">{step.name}</span>
-                  </div>
-                  <RiCheckLine
-                    className={cn(
-                      'ml-auto h-4 w-4',
-                      data.stepCvid === step.cvid ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </PickerPopover>
+            emptyText={t('actions.types.flowStart.empty')}
+            groups={[
+              {
+                heading: t('actions.types.flowStart.steps'),
+                options: steps.map((step, index) => ({
+                  value: step.cvid as string,
+                  label: `${index + 1}. ${step.name ?? ''}`,
+                  leading: getStepTypeIcon(step.type),
+                })),
+              },
+            ]}
+            contentStyle={{ zIndex: popoverZIndex }}
+          />
         </>
       )}
     </div>

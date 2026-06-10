@@ -22,7 +22,7 @@ export const UrlIconTab = React.memo<UrlIconTabProps>(
             placeholder={t('contentBuilder.iconPicker.urlPlaceholder')}
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
-            className="bg-background dark:bg-muted flex-1"
+            className="bg-background dark:bg-surface-raised/50 flex-1"
             disabled={isUploading}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {

@@ -47,7 +47,7 @@ const ResourceCenterMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
-              className="bg-surface dark:bg-surface-raised shadow-none"
+              className="bg-surface dark:bg-surface-raised/50 shadow-none"
               id="header-text"
               value={localData.headerText}
               onChange={(e) => {
@@ -66,7 +66,7 @@ const ResourceCenterMainViewBody = () => {
             </div>
             <Input
               variant="compact-muted"
-              className="bg-surface dark:bg-surface-raised shadow-none"
+              className="bg-surface dark:bg-surface-raised/50 shadow-none"
               id="launcher-button-text"
               value={localData.buttonText}
               onChange={(e) => {

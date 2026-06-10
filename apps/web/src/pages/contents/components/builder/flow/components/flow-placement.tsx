@@ -1,4 +1,4 @@
-import { Button } from '@usertour/ui';
+import { Button, SurfaceCard } from '@usertour/ui';
 import { RiExternalLinkLine } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { useAttributeList } from '@/hooks/use-attribute-list';
@@ -63,7 +63,7 @@ export const FlowPlacement = () => {
             <RiExternalLinkLine className="ml-1 h-4 w-4 opacity-70" />
           </Button>
         </div>
-        <div className="flex flex-col bg-surface dark:bg-surface-raised p-3.5 rounded-lg space-y-6 mt-2">
+        <SurfaceCard className="flex flex-col space-y-6 mt-2">
           <ContentPlacementManual />
           <ContentPlacementActions
             createStep={createNewStep}
@@ -72,7 +72,7 @@ export const FlowPlacement = () => {
             contents={contents}
             currentVersion={currentVersion}
           />
-        </div>
+        </SurfaceCard>
       </div>
     </ContentPlacementProvider>
   );

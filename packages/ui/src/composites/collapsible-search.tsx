@@ -82,7 +82,7 @@ export const CollapsibleSearch = (props: CollapsibleSearchProps) => {
         expanded
           ? cn(
               expandedWidthClassName,
-              'border border-input bg-background dark:bg-muted focus-within:ring-2 focus-within:ring-ring/50',
+              'border border-input bg-background dark:bg-surface-raised/50 focus-within:ring-2 focus-within:ring-ring/50',
             )
           : 'w-8 cursor-pointer hover:bg-accent',
         className,

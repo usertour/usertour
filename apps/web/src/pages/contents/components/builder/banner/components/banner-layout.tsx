@@ -7,7 +7,7 @@ import { Input, Label, QuestionTooltip } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
-import { FieldSection } from '@usertour/ui';
+import { FieldSection, SurfaceCard } from '@usertour/ui';
 
 const defaultMargin: BannerOuterMargin = {
   top: 0,
@@ -68,7 +68,7 @@ export const BannerLayout = () => {
 
   return (
     <FieldSection title={t('contentBuilder.banner.layout')}>
-      <div className="flex flex-col bg-surface dark:bg-surface-raised p-3.5 rounded-lg space-y-3">
+      <SurfaceCard className="flex flex-col space-y-3">
         {NUMBER_FIELDS.map((key) => (
           <div key={key} className="space-y-2">
             <div className="flex items-center space-x-1">
@@ -108,7 +108,7 @@ export const BannerLayout = () => {
             <div className="flex flex-col justify-center">{marginInput('right')}</div>
           </div>
         </div>
-      </div>
+      </SurfaceCard>
     </FieldSection>
   );
 };

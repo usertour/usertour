@@ -10,7 +10,7 @@ export const ContentBuilder = () => {
   const { t } = useTranslation();
 
   if (!project || !project.id || !contentId || !versionId || !environment || !contentType) {
-    return <ContentLoading message={t('common.loading')} />;
+    return <ContentLoading message={t('common.loading')} className="min-h-screen" />;
   }
 
   return (

@@ -8,7 +8,7 @@ import { ReactEditor, useSlateStatic } from 'slate-react';
 import type { Attribute } from '@usertour/types';
 import {
   Button,
-  SelectPopover,
+  ComboboxSelect,
   Label,
   TextField,
   Popover,
@@ -40,7 +40,7 @@ interface DeleteUserAttrButtonProps {
 
 interface UserAttrOption {
   value: string;
-  name: string;
+  label: string;
 }
 
 interface UserAttrPopoverContentProps {
@@ -115,7 +115,7 @@ const UserAttrPopoverContent = memo(
         <div className="flex flex-col space-y-3">
           <div className="flex flex-col space-y-2">
             <Label>{t('contentBuilder.editor.userAttr.attributeLabel')}</Label>
-            <SelectPopover
+            <ComboboxSelect
               options={options}
               value={attrCode}
               onValueChange={onAttrChange}
@@ -123,6 +123,7 @@ const UserAttrPopoverContent = memo(
               searchPlaceholder={t('common.search')}
               emptyText={t('common.selectPopover.noItems')}
               size="compact"
+              surface="raised"
               contentStyle={{ zIndex: zIndex + 2 }}
             />
           </div>
@@ -162,7 +163,7 @@ export const UserAttributeElement = memo((props: RenderElementProps) => {
         ?.filter((attr: Attribute) => attr.bizType === USER_ATTR_BIZ_TYPE)
         ?.map((attr: Attribute) => ({
           value: attr.codeName,
-          name: attr.displayName,
+          label: attr.displayName,
         })) ?? []
     );
   }, [editorAttributes]);

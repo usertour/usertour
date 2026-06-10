@@ -72,7 +72,7 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
                 align,
                 active
                   ? 'border-primary bg-accent/50'
-                  : 'border-border bg-surface dark:bg-surface-raised hover:border-border hover:bg-muted',
+                  : 'border-border bg-surface dark:bg-surface-raised/50 hover:border-border hover:bg-muted',
               )}
             >
               <span

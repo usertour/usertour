@@ -1,8 +1,8 @@
 // Shared WidthControls component for content editor elements
 
-import { CompactSelect, type SelectPopoverOption, Input, Label } from '@usertour/ui';
+import { CompactSelect, type CompactSelectOption, Input, Label } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
-import { memo, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { WIDTH_TYPES } from '../constants';
@@ -14,7 +14,7 @@ const MAX_PERCENT_VALUE = 100;
 export interface WidthControlsProps {
   label?: string;
   value: DimensionConfig;
-  options: SelectPopoverOption[];
+  options: CompactSelectOption[];
   onTypeChange: (type: string) => void;
   onValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   zIndex: number;
@@ -35,17 +35,11 @@ export const WidthControls = memo(
     showValueInput = true,
     inputPlaceholder,
     inputClassName = 'grow',
-    comboBoxClassName = 'flex-none w-20 bg-surface-raised',
+    comboBoxClassName = 'flex-none w-20 bg-surface-raised dark:bg-surface-raised/50',
   }: WidthControlsProps) => {
     const id = useId();
     const widthInputId = `${id}-width-input`;
     const { t } = useTranslation();
-
-    // SelectPopover-shaped options carry `name`; CompactSelect wants `label`.
-    const typeOptions = useMemo(
-      () => options.map((option) => ({ value: option.value, label: option.name })),
-      [options],
-    );
 
     // Local state for display value to allow typing any characters
     const [displayValue, setDisplayValue] = useState<string>(value.value?.toString() ?? '');
@@ -121,7 +115,7 @@ export const WidthControls = memo(
         <div className="flex gap-x-2">
           {showValueInput && (
             <Input
-              variant="compact-muted"
+              variant="compact-surface"
               id={widthInputId}
               type="text"
               inputMode="numeric"
@@ -133,7 +127,7 @@ export const WidthControls = memo(
             />
           )}
           <CompactSelect
-            options={typeOptions}
+            options={options}
             value={value.type}
             onChange={handleTypeChange}
             placeholder={t('contentBuilder.editor.width.selectType')}
