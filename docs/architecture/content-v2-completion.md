@@ -12,10 +12,13 @@ Naming/codec rules are unchanged — see
 
 In scope (the real gaps, prioritized):
 
-1. **Publishing & lifecycle** — publish / unpublish a version to an environment.
+1. **Publishing & lifecycle** — publish / unpublish a version to an environment
+   (immediate publish only; scheduling is deferred, see §3).
 2. **`themeId` writable** on a version.
-3. **Non-flow content types** — `checklist`, `launcher`, `banner` (their authorable
-   config lives in `version.data`, which the v0 step-only codec never touches).
+3. **Non-flow content types** — `checklist`, `launcher`, `banner`, `tracker`,
+   `resource-center` (their authorable config lives in `version.data`, which the v0
+   step-only codec never touches). `resource-center` is the heaviest (its own block
+   taxonomy); `tracker` the lightest.
 4. **Create draft version** — fork a new editable version.
 
 Explicitly **out of scope** (decided):
@@ -25,11 +28,10 @@ Explicitly **out of scope** (decided):
   build API for it until the feature itself exists.
 - **`hideRulesSetting`** — carries no runtime meaning today; skip until it does.
 - **`config.name`** (version-config name) — no meaning; not settable.
+- **Scheduled publishing** (`version.scheduledAt`) — deferred; needs a worker that
+  flips scheduled → published at the due time (§3).
 - **Granular step ops** (`.../steps/:cvid`) — the whole-version `PATCH` already
   covers create/update/delete-by-cvid; revisit only on a concrete need.
-- **`tracker` / `resource-center`** content types — confirm product priority
-  before designing (resource-center is a meta-container over other types). Listed
-  here so they aren't silently forgotten.
 
 ## 2. The enabler — the domain layer is already ready
 
@@ -70,9 +72,9 @@ DELETE /v2/projects/:projectId/content/:id/environments/:environmentId
   sees the new live state in one round-trip.
 - Binds the existing domain methods directly; no new persistence logic.
 
-**Scheduling** (`version.scheduledAt`) is a follow-up: it needs a worker that flips
-scheduled → published at the due time. Confirm that mechanism exists before exposing
-a `scheduledAt` on the PUT body. Until then, publish is immediate. (Open question Q1.)
+**Scheduling** (`version.scheduledAt`) is **deferred** (decided): publish is
+immediate, no `scheduledAt` on the PUT body. It needs a worker that flips
+scheduled → published at the due time; revisit when that worker exists.
 
 ## 4. `themeId` writable
 
@@ -184,7 +186,9 @@ representationBanner = {
 ### 5.3 Read / write plumbing
 
 - **Read**: `content-versions` service loads `content.type`, runs
-  `decompileVersionData(version.data, type, resolvers)`, exposes under `expand=data`.
+  `decompileVersionData(version.data, type, resolvers)`, exposes under `expand=data`
+  — **decided (was Q4)**: behind `expand`, not always-on, for payload symmetry with
+  `steps` (both are heavy bodies; keep the default version response slim).
   (`get_content` / version GET inherit it for free via the shared service; MCP too.)
 - **Write**: `updateVersionBody` gains an optional `data` field (one of the three
   shapes, validated against `content.type`). The compile path field-level merges the
@@ -195,19 +199,51 @@ representationBanner = {
   for that type; `steps` stays the flow shape. A request must not mix the wrong
   `data` shape with the content's type (validation error).
 
+### 5.4 `resource-center` and `tracker`
+
+Both are in scope. They differ enough from the first three to call out:
+
+**`resource-center`** — the heaviest. It is not a single body but its **own block
+taxonomy** (`ResourceCenterBlockType`): `richtext`, `action`, `divider`, `sub-page`,
+`content-list`, `live-chat`. Each block shares `onlyShowBlock` + `onlyShowBlockConditions`
+(→ rules codec) and most carry an icon (`LauncherIconSource`). Reuse is still strong,
+but three blocks need new handling:
+
+- `richtext` / `sub-page` → `content: ContentEditorRoot[]` via the block codec; `sub-page` nests.
+- `action` → `clickedActions: RulesCondition[]` via the rules codec.
+- `content-list` → **references other content by id** → needs an id↔code resolver,
+  same pattern as segment/attribute references.
+- `live-chat` → a provider enum (`LiveChatProvider`) + provider config; model the
+  provider + opaque settings, do not hard-code per-provider fields.
+
+Give it its own codec area (`resource-center.{schema,decompile,compile}.ts`) rather
+than overloading `version-data.*`; it is large enough to stand alone, and like
+`rules.*` it can move to `shared/` if anything else ever reuses the block taxonomy.
+
+**`tracker`** — the lightest, but there is **no `TrackerData` type today** (the
+runtime only hints at `{ eventId }` + `EVENT_TRACKER_*` attributes). **Action item:
+locate where a tracker's config actually persists** (`version.data`? a step? a bare
+event binding) before designing its shape. Likely a small wrapper: a target element
+(→ target codec) + an event reference (id↔code resolver) + optional conditions. Do
+not design the schema until the storage is confirmed.
+
 ## 6. Create draft version
 
 ```
 POST /v2/projects/:projectId/content-versions
   body: { contentId }
-  capability: content:create        (or content:update — see Q2)
+  capability: content:update
   → forks editedVersion (regenerated config ids), repoints editedVersionId,
     returns the new version
 ```
 
-Binds `createContentVersion`. **Open question Q2**: confirm the builder's actual
-use of forking (is a new editable version created on demand, or only snapshotted at
-publish?) before fixing the verb's exact semantics and capability.
+Binds `createContentVersion`. Semantics confirmed from the codebase (no longer
+open): the web builder already forks versions on demand (e.g. saving content
+settings calls `createContentVersion({ versionId })`), and the existing
+endpoint-capability map gates it on **`content:update`** — so v2 matches that
+capability and that fork-to-new-editable-head semantics: the current edited version
+is copied (sequence + 1, config ids regenerated), the copy becomes the new
+`editedVersion`, and the previous draft is frozen as a historical version.
 
 ## 7. Capability boundary
 
@@ -215,7 +251,7 @@ publish?) before fixing the verb's exact semantics and capability.
   to the personal-key scope catalog + i18n labels, like the write scopes were
   added).
 - `data` and `themeId` writes ride on **`content:update`** (no new scope).
-- Create version on `content:create` (pending Q2).
+- Create version on **`content:update`** (matches the existing endpoint-capability map).
 - MCP: optionally add `publish_content` / `unpublish_content` write tools (scope-gated,
   same pattern as `update_content_version`); `data` flows through the existing
   `update_content_version` tool once `updateVersionBody` carries it.
@@ -226,18 +262,24 @@ Ordered by value-unblocked vs. effort (domain is ready for all of them):
 
 1. **Publish / unpublish** — unblocks the whole author→ship loop; pure wiring.
 2. **`themeId` writable** — one field; high-frequency builder action.
-3. **Create draft version** — small; pending Q2.
-4. **Non-flow types** — the big one; ship per type: `checklist` → `launcher` →
-   `banner`. Each reuses the leaf codecs, so the incremental cost is the wrapper +
-   merge + tests.
+3. **Create draft version** — small; binds `createContentVersion` (§6).
+4. **Non-flow types** — the big one; ship per type, cheapest first: `checklist` →
+   `launcher` → `banner` → `tracker` → `resource-center`. Each of the first three
+   reuses the leaf codecs, so the incremental cost is the wrapper + merge + tests.
+   `tracker` is blocked on locating its storage (§5.4); `resource-center` is its own
+   block-taxonomy codec and should be scheduled as a project of its own.
 
-## 9. Open questions to lock before building
+## 9. Open items still to resolve
 
-- **Q1 — scheduling**: is there a worker that publishes `scheduledAt` versions? If
-  not, publish stays immediate and `scheduledAt` is deferred.
-- **Q2 — version forking**: exact semantics + capability for `POST content-versions`
-  (on-demand new draft vs. publish-time snapshot).
-- **Q3 — tracker / resource-center**: in product scope for v2 or not?
-- **Q4 — non-flow `data` exposure**: always include `data` for non-flow types, or
-  strictly behind `expand=data`? (Leaning `expand=data` for payload symmetry with
-  `steps`.)
+The earlier Q1–Q4 are decided (scheduling deferred · forking = `content:update`,
+fork-to-head · tracker + resource-center in scope · non-flow `data` behind
+`expand=data`). What remains, scoped to the work above:
+
+- **Tracker storage** — locate where a tracker's config persists; no `TrackerData`
+  type exists today (§5.4). Blocks the tracker schema.
+- **Resource-center depth for v0** — ship all six block types at once, or start with
+  the common ones (`richtext` / `action` / `divider` / `sub-page`) and defer
+  `content-list` (cross-content refs) + `live-chat` (provider integrations)?
+- **Theme listing** — `themeId` becomes writable, but themes are not yet a v2
+  resource, so a client can't discover valid theme ids. Consider a read-only
+  `GET themes` alongside (small, separate from this doc's scope).
