@@ -557,4 +557,83 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(res.body.error.code).toBe('E1012');
     });
   });
+
+  // cvid is a per-version key (DB `@@unique([versionId, cvid])`), and fork copies
+  // cvids — so one content can have two versions whose steps share a cvid. This
+  // pins the invariant that a write keyed by cvid only touches its own version.
+  describe('cvid is version-scoped (no cross-version bleed)', () => {
+    const textData = (text: string) => [
+      {
+        element: { type: 'group' },
+        children: [
+          {
+            element: { type: 'column' },
+            children: [
+              { element: { type: 'text', data: [{ type: 'paragraph', children: [{ text }] }] } },
+            ],
+          },
+        ],
+      },
+    ];
+
+    it('writing a step by cvid in one version leaves the same cvid in another version intact', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+
+      // one content, two versions, BOTH with a step cvid 'shared'
+      const c = await buildContent(prisma, { projectId, type: 'flow' });
+      const vA = await buildVersion(prisma, { contentId: c.id, sequence: 0 });
+      await buildStep(prisma, {
+        versionId: vA.id,
+        type: 'modal',
+        name: 'A',
+        cvid: 'shared',
+        sequence: 0,
+        data: textData('A original'),
+      });
+      // building vB last makes it the content's edited (writable) version
+      const vB = await buildVersion(prisma, { contentId: c.id, sequence: 1 });
+      await buildStep(prisma, {
+        versionId: vB.id,
+        type: 'modal',
+        name: 'B',
+        cvid: 'shared',
+        sequence: 0,
+        data: textData('B original'),
+      });
+
+      // write the 'shared' step of vB only
+      const w = await api(
+        'patch',
+        `/v2/projects/${projectId}/content-versions/${vB.id}`,
+        token,
+      ).send({
+        steps: [
+          {
+            name: 'B',
+            type: 'modal',
+            cvid: 'shared',
+            content: [{ type: 'text', markdown: 'B updated' }],
+          },
+        ],
+      });
+      expect(w.status).toBe(200);
+
+      const rB = await api(
+        'get',
+        `/v2/projects/${projectId}/content-versions/${vB.id}?expand=steps`,
+        token,
+      );
+      const rA = await api(
+        'get',
+        `/v2/projects/${projectId}/content-versions/${vA.id}?expand=steps`,
+        token,
+      );
+      const sB = rB.body.steps.find((s: { cvid: string }) => s.cvid === 'shared');
+      const sA = rA.body.steps.find((s: { cvid: string }) => s.cvid === 'shared');
+
+      expect(sB.content[0]).toMatchObject({ type: 'text', markdown: 'B updated' });
+      expect(sA.content[0]).toMatchObject({ type: 'text', markdown: 'A original' }); // untouched
+      expect(sA.id).not.toBe(sB.id); // genuinely separate rows that share a cvid
+    });
+  });
 });
