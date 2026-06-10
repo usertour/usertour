@@ -31,6 +31,8 @@ describe('API v2 version.data codec (e2e)', () => {
   let eventCode: string;
   let trackerVersionId: string;
   let checklistVersionId: string;
+  let launcherVersionId: string;
+  let bannerVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -68,6 +70,8 @@ describe('API v2 version.data codec (e2e)', () => {
     eventCode = (await buildEvent(prisma, { projectId, codeName: 'evt_signup' })).codeName;
     trackerVersionId = await newVersion('tracker');
     checklistVersionId = await newVersion('checklist');
+    launcherVersionId = await newVersion('launcher');
+    bannerVersionId = await newVersion('banner');
   }, 60000);
 
   afterAll(async () => {
@@ -223,6 +227,116 @@ describe('API v2 version.data codec (e2e)', () => {
         token,
       );
       expect(res.status).toBeGreaterThanOrEqual(400);
+    });
+  });
+
+  describe('launcher', () => {
+    it('round-trips the launcher body (write → independent read)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        launcherVersionId,
+        {
+          data: {
+            style: 'icon',
+            icon: { source: 'builtin', type: 'rocket' },
+            target: { by: 'selector', selector: '.launch-here' },
+            tooltip: {
+              placement: { side: 'bottom', align: 'center', sideOffset: 8 },
+              width: 320,
+              content: [{ type: 'text', markdown: 'Hi from the launcher' }],
+              settings: {
+                dismissAfterFirstActivation: true,
+                keepOpenWhenHovered: false,
+                hideLauncherWhenTooltipShown: true,
+              },
+            },
+            behavior: {
+              triggerElement: 'launcher',
+              event: 'clicked',
+              action: 'perform-action',
+              actions: [{ type: 'navigate', url: '/go' }],
+            },
+          },
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const d = (await readData(launcherVersionId, token)).body.data;
+      expect(d).toMatchObject({ style: 'icon', icon: { source: 'builtin', type: 'rocket' } });
+      expect(d.target).toEqual({ by: 'selector', selector: '.launch-here' });
+      expect(d.tooltip).toMatchObject({
+        placement: { side: 'bottom', align: 'center', sideOffset: 8 },
+        width: 320,
+        settings: {
+          dismissAfterFirstActivation: true,
+          keepOpenWhenHovered: false,
+          hideLauncherWhenTooltipShown: true,
+        },
+      });
+      expect(d.tooltip.content[0]).toMatchObject({
+        type: 'text',
+        markdown: 'Hi from the launcher',
+      });
+      expect(d.behavior).toMatchObject({
+        triggerElement: 'launcher',
+        event: 'clicked',
+        action: 'perform-action',
+        actions: [{ type: 'navigate', url: '/go' }],
+      });
+    });
+  });
+
+  describe('banner', () => {
+    it('round-trips the banner body (write → independent read)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        bannerVersionId,
+        {
+          data: {
+            placement: 'top-of-page',
+            content: [{ type: 'text', markdown: 'We ship Friday' }],
+            settings: {
+              overlayOverAppContent: false,
+              stickToTop: true,
+              allowDismiss: true,
+              animateOnAppear: false,
+            },
+            layout: {
+              maxContentWidth: 800,
+              borderRadius: 6,
+              outerMargin: { top: 8, right: 8, bottom: 8, left: 8 },
+            },
+          },
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const d = (await readData(bannerVersionId, token)).body.data;
+      expect(d).toMatchObject({
+        placement: 'top-of-page',
+        settings: {
+          overlayOverAppContent: false,
+          stickToTop: true,
+          allowDismiss: true,
+          animateOnAppear: false,
+        },
+        layout: {
+          maxContentWidth: 800,
+          borderRadius: 6,
+          outerMargin: { top: 8, right: 8, bottom: 8, left: 8 },
+        },
+      });
+      expect(d.content[0]).toMatchObject({ type: 'text', markdown: 'We ship Friday' });
+    });
+
+    it('rejects a data body on a flow content type (E1017)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const flowVersionId = await newVersion('flow');
+      const res = await write(flowVersionId, { data: { placement: 'top-of-page' } }, token);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
     });
   });
 });

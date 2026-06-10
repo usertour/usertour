@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
-import { representationBlock } from './representation.schema';
-import { representationAction, representationCondition } from './representation.schema';
+import {
+  representationAction,
+  representationBlock,
+  representationCondition,
+  representationTarget,
+} from './representation.schema';
 
 /**
  * Representation of a version's type-specific body — the `version.data` payload
@@ -47,8 +51,101 @@ export const representationChecklist = z.object({
 });
 export type RepresentationChecklist = z.infer<typeof representationChecklist>;
 
+// ── launcher  (from LauncherData) ────────────────────────────────────────────
+// `target` is the launcher's anchor element; `tooltip.content` are blocks; the
+// behavior `actions` are actions (perform-action mode). Screenshot / zIndex are
+// dropped on read and preserved on write.
+const launcherPlacement = z.object({
+  side: z.enum(['top', 'right', 'bottom', 'left']),
+  align: z.enum(['start', 'center', 'end']),
+  sideOffset: z.number().optional(),
+  alignOffset: z.number().optional(),
+});
+export const representationLauncher = z.object({
+  style: z.enum(['beacon', 'icon', 'hidden', 'button']).optional(),
+  icon: z
+    .object({
+      source: z.enum(['none', 'builtin', 'upload', 'url', 'inherit']).optional(),
+      url: z.string().optional(),
+      type: z.string().optional(),
+    })
+    .optional(),
+  buttonText: z.string().optional(),
+  target: representationTarget.optional(),
+  tooltip: z
+    .object({
+      placement: launcherPlacement.optional(),
+      width: z.number().optional(),
+      content: z.array(representationBlock).optional(),
+      settings: z
+        .object({
+          dismissAfterFirstActivation: z.boolean().optional(),
+          keepOpenWhenHovered: z.boolean().optional(),
+          hideLauncherWhenTooltipShown: z.boolean().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  behavior: z
+    .object({
+      triggerElement: z.enum(['launcher', 'target', 'target-or-launcher']).optional(),
+      event: z.enum(['clicked', 'hovered']).optional(),
+      action: z.enum(['show-tooltip', 'perform-action']).optional(),
+      actions: z.array(representationAction).optional(),
+    })
+    .optional(),
+});
+export type RepresentationLauncher = z.infer<typeof representationLauncher>;
+
+// ── banner  (from BannerData) ────────────────────────────────────────────────
+// `content` are blocks; `containerTarget` is the anchor element for container/
+// element-relative placements. Computed height / zIndex are dropped + preserved.
+export const representationBanner = z.object({
+  placement: z
+    .enum([
+      'top-of-page',
+      'bottom-of-page',
+      'top-of-container-element',
+      'bottom-of-container-element',
+      'immediately-before-element',
+      'immediately-after-element',
+    ])
+    .optional(),
+  content: z.array(representationBlock).optional(),
+  settings: z
+    .object({
+      overlayOverAppContent: z.boolean().optional(),
+      stickToTop: z.boolean().optional(),
+      allowDismiss: z.boolean().optional(),
+      animateOnAppear: z.boolean().optional(),
+    })
+    .optional(),
+  containerTarget: representationTarget.optional(),
+  layout: z
+    .object({
+      maxContentWidth: z.number().optional(),
+      maxEmbedWidth: z.number().optional(),
+      borderRadius: z.number().optional(),
+      outerMargin: z
+        .object({
+          top: z.number(),
+          right: z.number(),
+          bottom: z.number(),
+          left: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+export type RepresentationBanner = z.infer<typeof representationBanner>;
+
 // ── union (selected by content type) ─────────────────────────────────────────
-export const representationVersionData = z.union([representationTracker, representationChecklist]);
+export const representationVersionData = z.union([
+  representationTracker,
+  representationChecklist,
+  representationLauncher,
+  representationBanner,
+]);
 export type RepresentationVersionData = z.infer<typeof representationVersionData>;
 
 // Re-exported so the codec files share the leaf schemas without re-importing.

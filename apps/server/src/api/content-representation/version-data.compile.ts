@@ -6,9 +6,14 @@ import { ValidationError } from '@/common/errors/errors';
 
 import { compileContent } from './representation.compile';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
+import { compileTargetToElementData } from './target.compile';
 import {
+  representationBanner,
+  RepresentationBanner,
   representationChecklist,
   RepresentationChecklist,
+  representationLauncher,
+  RepresentationLauncher,
   representationTracker,
   RepresentationTracker,
 } from './version-data.schema';
@@ -33,6 +38,10 @@ export function compileVersionData(
       return compileTracker(parse(representationTracker, data), existingData, resolvers);
     case 'checklist':
       return compileChecklist(parse(representationChecklist, data), existingData, resolvers);
+    case 'launcher':
+      return compileLauncher(parse(representationLauncher, data), existingData, resolvers);
+    case 'banner':
+      return compileBanner(parse(representationBanner, data), existingData, resolvers);
     default:
       throw new ValidationError(`Content type "${contentType}" does not accept a data body`);
   }
@@ -89,6 +98,92 @@ function compileChecklist(
         onlyShowTaskConditions: onlyShowTask ? compileConditions(it.onlyShowWhen ?? [], r) : [],
       };
     });
+  }
+  return out;
+}
+
+function compileLauncher(
+  rep: RepresentationLauncher,
+  existing: unknown,
+  r: CompileResolvers,
+): unknown {
+  const base = (existing ?? {}) as Record<string, any>;
+  const out: Record<string, any> = { ...base };
+  if (rep.style !== undefined) out.type = rep.style;
+  if (rep.icon !== undefined) {
+    if (rep.icon.source !== undefined) out.iconSource = rep.icon.source;
+    if (rep.icon.url !== undefined) out.iconUrl = rep.icon.url;
+    if (rep.icon.type !== undefined) out.iconType = rep.icon.type;
+  }
+  if (rep.buttonText !== undefined) out.buttonText = rep.buttonText;
+  if (rep.target !== undefined) {
+    out.target = { ...(base.target ?? {}), element: compileTargetToElementData(rep.target) };
+  }
+  if (rep.tooltip !== undefined) {
+    const t: Record<string, any> = { ...(base.tooltip ?? {}) };
+    const p = rep.tooltip.placement;
+    if (p !== undefined) {
+      t.alignment = {
+        ...(base.tooltip?.alignment ?? {}),
+        side: p.side,
+        align: p.align,
+        ...(p.sideOffset !== undefined ? { sideOffset: p.sideOffset } : {}),
+        ...(p.alignOffset !== undefined ? { alignOffset: p.alignOffset } : {}),
+      };
+    }
+    if (rep.tooltip.width !== undefined) t.width = rep.tooltip.width;
+    if (rep.tooltip.content !== undefined) {
+      t.content = compileContent(rep.tooltip.content, base.tooltip?.content, r);
+    }
+    const s = rep.tooltip.settings;
+    if (s !== undefined) {
+      const settings: Record<string, any> = { ...(base.tooltip?.settings ?? {}) };
+      if (s.dismissAfterFirstActivation !== undefined) {
+        settings.dismissAfterFirstActivation = s.dismissAfterFirstActivation;
+      }
+      if (s.keepOpenWhenHovered !== undefined) {
+        settings.keepTooltipOpenWhenHovered = s.keepOpenWhenHovered;
+      }
+      if (s.hideLauncherWhenTooltipShown !== undefined) {
+        settings.hideLauncherWhenTooltipIsDisplayed = s.hideLauncherWhenTooltipShown;
+      }
+      t.settings = settings;
+    }
+    out.tooltip = t;
+  }
+  if (rep.behavior !== undefined) {
+    const b: Record<string, any> = { ...(base.behavior ?? {}) };
+    if (rep.behavior.triggerElement !== undefined) b.triggerElement = rep.behavior.triggerElement;
+    if (rep.behavior.event !== undefined) b.triggerEvent = rep.behavior.event;
+    if (rep.behavior.action !== undefined) b.actionType = rep.behavior.action;
+    if (rep.behavior.actions !== undefined) b.actions = compileActions(rep.behavior.actions);
+    out.behavior = b;
+  }
+  return out;
+}
+
+function compileBanner(rep: RepresentationBanner, existing: unknown, r: CompileResolvers): unknown {
+  const base = (existing ?? {}) as Record<string, any>;
+  const out: Record<string, any> = { ...base };
+  if (rep.placement !== undefined) out.embedPlacement = rep.placement;
+  if (rep.content !== undefined) out.contents = compileContent(rep.content, base.contents, r);
+  if (rep.settings !== undefined) {
+    const s = rep.settings;
+    if (s.overlayOverAppContent !== undefined)
+      out.overlayEmbedOverAppContent = s.overlayOverAppContent;
+    if (s.stickToTop !== undefined) out.stickToTopOfViewport = s.stickToTop;
+    if (s.allowDismiss !== undefined) out.allowUsersToDismissEmbed = s.allowDismiss;
+    if (s.animateOnAppear !== undefined) out.animateWhenEmbedAppears = s.animateOnAppear;
+  }
+  if (rep.containerTarget !== undefined) {
+    out.containerElement = compileTargetToElementData(rep.containerTarget);
+  }
+  if (rep.layout !== undefined) {
+    const l = rep.layout;
+    if (l.maxContentWidth !== undefined) out.maxContentWidth = l.maxContentWidth;
+    if (l.maxEmbedWidth !== undefined) out.maxEmbedWidth = l.maxEmbedWidth;
+    if (l.borderRadius !== undefined) out.borderRadius = l.borderRadius;
+    if (l.outerMargin !== undefined) out.outerMargin = l.outerMargin;
   }
   return out;
 }
