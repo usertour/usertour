@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { cuid } from '@usertour/helpers';
 
 import {
   RepresentationBlock,
@@ -61,7 +61,7 @@ export function compileStep(
   r: CompileResolvers,
 ): CompiledStep {
   return {
-    cvid: step.cvid ?? randomUUID(),
+    cvid: step.cvid ?? cuid(),
     name: step.name,
     type: step.type,
     sequence: step.sequence,
@@ -119,10 +119,10 @@ export function compileContent(
   return (blocks ?? []).map((block) => {
     if (block.type === 'columns') {
       return {
-        id: block.id ?? randomUUID(),
+        id: block.id ?? cuid(),
         element: { type: 'group' },
         children: block.columns.map((col) => ({
-          id: randomUUID(),
+          id: cuid(),
           element: {
             type: 'column',
             ...(col.width ? { width: { type: col.width.unit, value: col.width.value } } : {}),
@@ -132,11 +132,11 @@ export function compileContent(
       };
     }
     return {
-      id: randomUUID(),
+      id: cuid(),
       element: { type: 'group' },
       children: [
         {
-          id: randomUUID(),
+          id: cuid(),
           element: { type: 'column' },
           children: [compileElement(block, byId, r)],
         },
@@ -151,7 +151,7 @@ function compileElement(
   r: CompileResolvers,
 ): any {
   const existing = block.id ? byId.get(block.id) : undefined;
-  const id = block.id ?? randomUUID();
+  const id = block.id ?? cuid();
   const keepStyle = existing?.element ?? {};
 
   switch (block.type) {
@@ -230,7 +230,7 @@ function compileElement(
 
 function compileQuestion(q: RepresentationQuestion): { type: string; data: any } {
   const bind = q.bindAttribute ? { bindToAttribute: true, selectedAttribute: q.bindAttribute } : {};
-  const base = { cvid: q.cvid ?? randomUUID(), name: q.name, ...bind };
+  const base = { cvid: q.cvid ?? cuid(), name: q.name, ...bind };
   switch (q.kind) {
     case 'nps':
       return {

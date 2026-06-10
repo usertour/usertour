@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { cuid } from '@usertour/helpers';
 
 import { z } from 'zod';
 
@@ -96,7 +96,7 @@ function compileChecklist(
       const onlyShowTask = it.onlyShowWhen !== undefined;
       return {
         ...(prev ?? {}),
-        id: it.id ?? randomUUID(),
+        id: it.id ?? cuid(),
         name: it.name,
         ...(it.description !== undefined ? { description: it.description } : {}),
         isCompleted: prev?.isCompleted ?? false,

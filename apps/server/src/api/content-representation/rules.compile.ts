@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { cuid } from '@usertour/helpers';
 
 import { ParamsError } from '@/common/errors';
 
@@ -89,7 +89,7 @@ const SCOPE: Record<string, string> = {
 };
 
 const rule = (type: string, data: any, extra?: Partial<Rule>): Rule => ({
-  id: randomUUID(),
+  id: cuid(),
   type,
   data,
   ...extra,
@@ -204,7 +204,7 @@ export function compileTriggers(
   r: CompileResolvers,
 ): Rule[] {
   return (triggers ?? []).map((t) => ({
-    id: randomUUID(),
+    id: cuid(),
     conditions: compileConditions(t.when, r),
     actions: compileActions(t.do),
     ...(t.waitMs !== undefined ? { wait: t.waitMs } : {}),

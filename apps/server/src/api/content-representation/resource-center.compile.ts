@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { cuid } from '@usertour/helpers';
 
 import { compileContent } from './representation.compile';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
@@ -32,7 +32,7 @@ export function compileResourceCenter(
       }
     }
     out.tabs = rep.tabs.map((t) => ({
-      id: t.id ?? randomUUID(),
+      id: t.id ?? cuid(),
       name: t.name,
       iconSource: t.icon?.source ?? 'none',
       iconType: t.icon?.type ?? '',
@@ -49,7 +49,7 @@ function compileBlock(
   r: CompileResolvers,
 ): unknown {
   const prev = b.id ? prevById.get(b.id) : undefined;
-  const id = b.id ?? randomUUID();
+  const id = b.id ?? cuid();
   const onlyShowBlock = b.onlyShowWhen !== undefined;
   const cond = {
     onlyShowBlock,
