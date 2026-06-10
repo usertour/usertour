@@ -305,3 +305,36 @@ The earlier Q1–Q4 and the three follow-ups are all decided:
 - **theme listing** — add read-only `GET themes` with the `themeId` change (§4)
 
 Nothing blocking remains; the design is ready to implement in the §8 order.
+
+## 10. API surface summary
+
+All paths this doc adds, consolidated. `:p` = `:projectId`.
+
+### New paths
+
+| Method | Path | Purpose | Scope | § |
+|---|---|---|---|---|
+| `PUT` | `/v2/projects/:p/content/:id/environments/:environmentId` | Publish — set this env's live version (body `{ versionId }`, idempotent) | `content:publish` | 3 |
+| `DELETE` | `/v2/projects/:p/content/:id/environments/:environmentId` | Unpublish — clear this env's live version | `content:publish` | 3 |
+| `POST` | `/v2/projects/:p/content-versions` | Create draft version (fork, body `{ contentId }`) | `content:update` | 6 |
+| `GET` | `/v2/projects/:p/themes` | List themes (read-only — makes `themeId` discoverable) | `theme:read` | 4 |
+| `GET` | `/v2/projects/:p/themes/:id` | Get one theme | `theme:read` | 4 |
+
+### Extensions to existing paths (no new route)
+
+| Method | Path | Extension | Scope | § |
+|---|---|---|---|---|
+| `PATCH` | `/v2/projects/:p/content-versions/:id` | body `+= themeId` (omit = untouched, `null` = clear) | `content:update` | 4 |
+| `PATCH` | `/v2/projects/:p/content-versions/:id` | body `+= data` (checklist / launcher / banner / tracker / resource-center body) | `content:update` | 5 |
+| `GET` | `/v2/projects/:p/content-versions/:id?expand=data` | read `data` (non-flow body; heavy → behind `expand`, symmetric with `steps`) | `content:read` | 5 |
+
+### Notes
+
+- Non-flow content types add **no new paths** — they ride the version `PATCH`
+  (write `data`) and `GET ?expand=data` (read `data`); one version is exactly one
+  content type, so `data` is that type's discriminated shape.
+- New scopes vs. the current catalog: only **`content:publish`** and **`theme:read`**
+  (both already in the `Capability` enum; add to the personal-key scope catalog).
+  Everything else reuses `content:read` / `content:update`.
+- MCP (optional): `publish_content` / `unpublish_content` tools mirror the publish
+  paths; `data` flows through the existing `update_content_version` tool.
