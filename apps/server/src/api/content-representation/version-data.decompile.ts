@@ -1,4 +1,5 @@
 import { decompileContent } from './representation.decompile';
+import { decompileResourceCenter } from './resource-center.decompile';
 import { decompileActions, decompileConditions, DecompileResolvers } from './rules.decompile';
 import { decompileTarget } from './target.decompile';
 import {
@@ -28,6 +29,8 @@ export function decompileVersionData(
       return decompileLauncher(data, resolvers);
     case 'banner':
       return decompileBanner(data, resolvers);
+    case 'resource-center':
+      return decompileResourceCenter(data, resolvers);
     default:
       return undefined;
   }

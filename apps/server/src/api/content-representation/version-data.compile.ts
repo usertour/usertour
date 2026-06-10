@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { ValidationError } from '@/common/errors/errors';
 
 import { compileContent } from './representation.compile';
+import { compileResourceCenter } from './resource-center.compile';
+import { representationResourceCenter } from './resource-center.schema';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
 import { compileTargetToElementData } from './target.compile';
 import {
@@ -42,6 +44,12 @@ export function compileVersionData(
       return compileLauncher(parse(representationLauncher, data), existingData, resolvers);
     case 'banner':
       return compileBanner(parse(representationBanner, data), existingData, resolvers);
+    case 'resource-center':
+      return compileResourceCenter(
+        parse(representationResourceCenter, data),
+        existingData,
+        resolvers,
+      );
     default:
       throw new ValidationError(`Content type "${contentType}" does not accept a data body`);
   }

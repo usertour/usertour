@@ -33,6 +33,7 @@ describe('API v2 version.data codec (e2e)', () => {
   let checklistVersionId: string;
   let launcherVersionId: string;
   let bannerVersionId: string;
+  let rcVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -72,6 +73,7 @@ describe('API v2 version.data codec (e2e)', () => {
     checklistVersionId = await newVersion('checklist');
     launcherVersionId = await newVersion('launcher');
     bannerVersionId = await newVersion('banner');
+    rcVersionId = await newVersion('resource-center');
   }, 60000);
 
   afterAll(async () => {
@@ -335,6 +337,99 @@ describe('API v2 version.data codec (e2e)', () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const flowVersionId = await newVersion('flow');
       const res = await write(flowVersionId, { data: { placement: 'top-of-page' } }, token);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+    });
+  });
+
+  describe('resource-center', () => {
+    it('round-trips all six block types (write → independent read)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        rcVersionId,
+        {
+          data: {
+            buttonText: 'Help',
+            headerText: 'Resources',
+            tabs: [
+              {
+                name: 'Getting started',
+                icon: { source: 'builtin', type: 'book' },
+                blocks: [
+                  { type: 'richtext', content: [{ type: 'text', markdown: 'Welcome aboard' }] },
+                  { type: 'divider' },
+                  {
+                    type: 'action',
+                    name: 'Contact us',
+                    icon: { source: 'builtin', type: 'mail' },
+                    clickActions: [{ type: 'navigate', url: '/contact' }],
+                    onlyShowWhen: [{ type: 'current_url', includes: ['/app'] }],
+                  },
+                  {
+                    type: 'sub-page',
+                    name: 'Guides',
+                    content: [{ type: 'text', markdown: 'Guide body' }],
+                  },
+                  {
+                    type: 'content-list',
+                    name: 'Tours',
+                    showSearchField: true,
+                    items: [{ content: 'c_abc', contentType: 'flow' }],
+                  },
+                  { type: 'live-chat', name: 'Chat', provider: 'intercom', customCode: '' },
+                ],
+              },
+            ],
+          },
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const d = (await readData(rcVersionId, token)).body.data;
+      expect(d).toMatchObject({ buttonText: 'Help', headerText: 'Resources' });
+      expect(d.tabs).toHaveLength(1);
+      const tab = d.tabs[0];
+      expect(tab).toMatchObject({
+        name: 'Getting started',
+        icon: { source: 'builtin', type: 'book' },
+      });
+      expect(typeof tab.id).toBe('string');
+
+      const byType = Object.fromEntries(tab.blocks.map((b: { type: string }) => [b.type, b]));
+      expect(byType.richtext.content[0]).toMatchObject({
+        type: 'text',
+        markdown: 'Welcome aboard',
+      });
+      expect(byType.divider).toBeDefined();
+      expect(byType.action).toMatchObject({
+        name: 'Contact us',
+        icon: { source: 'builtin', type: 'mail' },
+        clickActions: [{ type: 'navigate', url: '/contact' }],
+        onlyShowWhen: [{ type: 'current_url', includes: ['/app'] }],
+      });
+      expect(byType['sub-page'].content[0]).toMatchObject({ type: 'text', markdown: 'Guide body' });
+      expect(byType['content-list']).toMatchObject({
+        name: 'Tours',
+        showSearchField: true,
+        items: [{ content: 'c_abc', contentType: 'flow' }],
+      });
+      expect(byType['live-chat']).toMatchObject({ name: 'Chat', provider: 'intercom' });
+      // every block carries a server-assigned id (merge key)
+      for (const b of tab.blocks) expect(typeof b.id).toBe('string');
+    });
+
+    it('rejects an invalid live-chat provider (E1017)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        rcVersionId,
+        {
+          data: {
+            tabs: [{ name: 'T', blocks: [{ type: 'live-chat', name: 'x', provider: 'nope' }] }],
+          },
+        },
+        token,
+      );
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1017');
     });

@@ -6,6 +6,7 @@ import {
   representationCondition,
   representationTarget,
 } from './representation.schema';
+import { representationResourceCenter } from './resource-center.schema';
 
 /**
  * Representation of a version's type-specific body — the `version.data` payload
@@ -140,11 +141,14 @@ export const representationBanner = z.object({
 export type RepresentationBanner = z.infer<typeof representationBanner>;
 
 // ── union (selected by content type) ─────────────────────────────────────────
+// resource-center lives in its own codec area (resource-center.*); referenced here
+// only so the union type covers every non-flow body.
 export const representationVersionData = z.union([
   representationTracker,
   representationChecklist,
   representationLauncher,
   representationBanner,
+  representationResourceCenter,
 ]);
 export type RepresentationVersionData = z.infer<typeof representationVersionData>;
 
