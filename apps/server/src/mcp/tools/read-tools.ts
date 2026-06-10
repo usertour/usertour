@@ -50,7 +50,7 @@ function asLimit(value: unknown): number {
  * passed `environmentId`, validate it belongs to the project; otherwise fall back
  * to the project's primary environment (then the first live one).
  */
-async function resolveEnvironment(
+export async function resolveEnvironment(
   args: Record<string, unknown>,
   ctx: McpToolContext,
 ): Promise<Environment> {
@@ -260,6 +260,21 @@ export function buildReadTools(): McpTool[] {
         }
         const environment = await resolveEnvironment(args, ctx);
         return ctx.services.users.getUser(id, environment.id, { expand: 'companies' });
+      },
+    },
+
+    {
+      name: 'list_themes',
+      title: 'List themes',
+      capability: Capability.ThemeRead,
+      description:
+        "List the project's themes (id, name, isDefault) — the theme ids accepted by a version's " +
+        '`themeId`. Bounded per-project set; returns `{ items }`.',
+      inputSchema: {},
+      async handler(_args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const result = await ctx.services.themes.list(ctx.projectId);
+        return { items: result.results };
       },
     },
   ];

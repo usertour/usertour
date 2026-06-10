@@ -7,6 +7,7 @@ import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attr
 import { ApiContentService } from '@/api/content/content.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 
 /**
@@ -21,6 +22,7 @@ export interface McpServices {
   attributeDefinitions: ApiAttributeDefinitionsService;
   eventDefinitions: ApiEventDefinitionsService;
   users: ApiUsersService;
+  themes: ApiThemesService;
 }
 
 /**

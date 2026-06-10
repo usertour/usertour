@@ -762,6 +762,8 @@ const translations = {
         contentCreate: 'Create content',
         contentUpdate: 'Edit content',
         contentDelete: 'Delete content',
+        contentPublish: 'Publish content',
+        themes: 'Read themes',
         users: 'Users',
         attributes: 'Attributes',
         events: 'Events',

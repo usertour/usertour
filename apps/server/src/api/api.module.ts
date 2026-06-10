@@ -70,6 +70,7 @@ import { ApiUsersService } from './users/users.service';
     ApiAttributeDefinitionsService,
     ApiEventDefinitionsService,
     ApiUsersService,
+    ApiThemesService,
   ],
 })
 export class ApiModule {}

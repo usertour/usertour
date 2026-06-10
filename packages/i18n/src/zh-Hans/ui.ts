@@ -728,6 +728,8 @@ const translations = {
         contentCreate: '创建内容',
         contentUpdate: '编辑内容',
         contentDelete: '删除内容',
+        contentPublish: '发布内容',
+        themes: '读取主题',
         users: '用户',
         attributes: '属性',
         events: '事件',

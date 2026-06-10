@@ -8,6 +8,7 @@ import {
 } from '@/api/content-representation/representation.schema';
 
 import { McpTool } from '../mcp.types';
+import { resolveEnvironment } from './read-tools';
 
 /**
  * Write-side MCP tools — gated by content:create / content:update /
@@ -81,9 +82,77 @@ export function buildWriteTools(): McpTool[] {
         steps: z.array(representationStepInput).optional(),
         startRules: representationStartRules.nullable().optional(),
         hideRules: representationHideRules.nullable().optional(),
+        themeId: z.string().nullable().optional().describe('Theme to apply, or null to clear.'),
+        data: z
+          .unknown()
+          .optional()
+          .describe(
+            'Type-specific body for non-flow content (checklist / launcher / banner / tracker / ' +
+              'resource-center). Validated against the content type.',
+          ),
       },
       handler: (args, ctx) =>
         ctx.services.contentVersions.update(String(args.versionId), ctx.projectId, args as never),
+    },
+    {
+      name: 'create_content_version',
+      title: 'Create a draft content version',
+      capability: Capability.ContentUpdate,
+      description:
+        "Fork the content's current edited version into a new draft (the new editable version); " +
+        'the previous draft is frozen as history. Returns the new version.',
+      inputSchema: { contentId: z.string() },
+      handler: (args, ctx) =>
+        ctx.services.contentVersions.create(ctx.projectId, { contentId: String(args.contentId) }),
+    },
+    {
+      name: 'publish_content',
+      title: 'Publish a version to an environment',
+      capability: Capability.ContentPublish,
+      description:
+        "Publish a version as an environment's live version (idempotent). Defaults to the " +
+        'primary environment; pass `environmentId` to target another. Returns the content with ' +
+        'refreshed `environments[]`.',
+      inputSchema: {
+        contentId: z.string(),
+        versionId: z.string(),
+        environmentId: z
+          .string()
+          .optional()
+          .describe('Environment to publish to (defaults to the primary environment).'),
+      },
+      handler: async (args, ctx) => {
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.content.publish(
+          String(args.contentId),
+          ctx.projectId,
+          environment.id,
+          String(args.versionId),
+        );
+      },
+    },
+    {
+      name: 'unpublish_content',
+      title: 'Unpublish content from an environment',
+      capability: Capability.ContentPublish,
+      description:
+        "Clear an environment's live version for a content. Defaults to the primary environment; " +
+        'pass `environmentId` to target another. Returns the content with refreshed `environments[]`.',
+      inputSchema: {
+        contentId: z.string(),
+        environmentId: z
+          .string()
+          .optional()
+          .describe('Environment to unpublish from (defaults to the primary environment).'),
+      },
+      handler: async (args, ctx) => {
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.content.unpublish(
+          String(args.contentId),
+          ctx.projectId,
+          environment.id,
+        );
+      },
     },
   ];
 }

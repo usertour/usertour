@@ -323,5 +323,71 @@ describe('MCP endpoint (e2e)', () => {
       expect(step).toMatchObject({ name: 'Welcome', type: 'modal' });
       expect(step.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
     });
+
+    it('publish_content + create_content_version via MCP', async () => {
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.ContentPublish,
+        ],
+        [projectA],
+      );
+
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: { name: 'create_content', arguments: { type: 'flow', name: 'MCP publish' } },
+            },
+            token,
+          ),
+        ),
+      );
+
+      // publish the edited version to the (defaulted) environment
+      const published = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 2,
+              method: 'tools/call',
+              params: {
+                name: 'publish_content',
+                arguments: { contentId: created.id, versionId: created.editedVersionId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(
+        published.environments.some(
+          (e: { publishedVersionId: string }) => e.publishedVersionId === created.editedVersionId,
+        ),
+      ).toBe(true);
+
+      // fork a new draft version
+      const forked = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 3,
+              method: 'tools/call',
+              params: { name: 'create_content_version', arguments: { contentId: created.id } },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(forked).toMatchObject({ object: 'contentVersion' });
+      expect(forked.id).not.toBe(created.editedVersionId);
+    });
   });
 });

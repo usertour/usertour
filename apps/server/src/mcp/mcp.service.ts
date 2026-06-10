@@ -7,6 +7,7 @@ import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attr
 import { ApiContentService } from '@/api/content/content.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { OpenAPIError } from '@/common/errors/errors';
 
@@ -36,6 +37,7 @@ export class McpService {
     attributeDefinitionsService: ApiAttributeDefinitionsService,
     eventDefinitionsService: ApiEventDefinitionsService,
     usersService: ApiUsersService,
+    themesService: ApiThemesService,
   ) {
     this.services = {
       content: contentService,
@@ -43,6 +45,7 @@ export class McpService {
       attributeDefinitions: attributeDefinitionsService,
       eventDefinitions: eventDefinitionsService,
       users: usersService,
+      themes: themesService,
     };
     this.tools = [...buildReadTools(), ...buildWriteTools()];
   }
