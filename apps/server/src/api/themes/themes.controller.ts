@@ -30,7 +30,7 @@ export class ApiThemesController {
 
   @Get(':id')
   @RequireCapability(Capability.ThemeRead)
-  @ApiOperation({ summary: 'Get a theme by ID' })
+  @ApiOperation({ summary: 'Get a theme' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme found', type: ThemeDto })

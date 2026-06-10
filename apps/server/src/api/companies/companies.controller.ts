@@ -43,7 +43,7 @@ export class ApiCompaniesController {
 
   @Get(':id')
   @RequireCapability(Capability.BizdataRead)
-  @ApiOperation({ summary: 'Get a company by ID' })
+  @ApiOperation({ summary: 'Get a company' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })

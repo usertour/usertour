@@ -57,7 +57,7 @@ export class ApiContentVersionsController {
 
   @Get(':id')
   @RequireCapability(Capability.ContentRead)
-  @ApiOperation({ summary: 'Get a content version by ID' })
+  @ApiOperation({ summary: 'Get a content version' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Content version found', type: ContentVersionDto })
@@ -72,7 +72,10 @@ export class ApiContentVersionsController {
 
   @Post()
   @RequireCapability(Capability.ContentUpdate)
-  @ApiOperation({ summary: 'Create a draft content version (fork the edited version)' })
+  @ApiOperation({
+    summary: 'Create a content version',
+    description: "Fork the content's current edited version into a new draft.",
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Created content version', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content not found' })
@@ -82,7 +85,10 @@ export class ApiContentVersionsController {
 
   @Post(':id/restore')
   @RequireCapability(Capability.ContentUpdate)
-  @ApiOperation({ summary: 'Restore a historical version as the new draft' })
+  @ApiOperation({
+    summary: 'Restore a content version',
+    description: 'Fork a historical version forward as the new draft.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content version ID to restore' })
   @ApiResponse({ status: 201, description: 'New draft version', type: ContentVersionDto })
@@ -93,7 +99,11 @@ export class ApiContentVersionsController {
 
   @Patch(':id')
   @RequireCapability(Capability.ContentUpdate)
-  @ApiOperation({ summary: 'Update a draft content version (steps / rules)' })
+  @ApiOperation({
+    summary: 'Update a content version',
+    description:
+      'Write steps, start/hide rules, themeId, or type-specific data to a draft version.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Updated content version', type: ContentVersionDto })

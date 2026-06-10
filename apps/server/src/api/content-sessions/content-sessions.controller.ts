@@ -47,7 +47,7 @@ export class ApiContentSessionsController {
 
   @Get(':id')
   @RequireCapability(Capability.BizdataRead)
-  @ApiOperation({ summary: 'Get a content session by ID' })
+  @ApiOperation({ summary: 'Get a content session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })

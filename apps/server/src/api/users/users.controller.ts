@@ -38,7 +38,7 @@ export class ApiUsersController {
 
   @Get(':id')
   @RequireCapability(Capability.BizdataRead)
-  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiOperation({ summary: 'Get a user' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'User external ID' })

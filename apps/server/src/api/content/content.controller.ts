@@ -60,7 +60,7 @@ export class ApiContentController {
 
   @Get(':id')
   @RequireCapability(Capability.ContentRead)
-  @ApiOperation({ summary: 'Get content by ID' })
+  @ApiOperation({ summary: 'Get a content' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Content found', type: ContentDto })
@@ -75,7 +75,7 @@ export class ApiContentController {
 
   @Post()
   @RequireCapability(Capability.ContentCreate)
-  @ApiOperation({ summary: 'Create content' })
+  @ApiOperation({ summary: 'Create a content' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Content created', type: ContentDto })
   async create(@Param('projectId') projectId: string, @Body() body: CreateContentBodyDto) {
@@ -84,7 +84,10 @@ export class ApiContentController {
 
   @Patch(':id')
   @RequireCapability(Capability.ContentUpdate)
-  @ApiOperation({ summary: 'Update content metadata' })
+  @ApiOperation({
+    summary: 'Update a content',
+    description: 'Update content metadata (name, buildUrl).',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Content updated', type: ContentDto })
@@ -100,7 +103,7 @@ export class ApiContentController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.ContentDelete)
-  @ApiOperation({ summary: 'Delete content' })
+  @ApiOperation({ summary: 'Delete a content' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 204, description: 'Content deleted' })
@@ -111,7 +114,11 @@ export class ApiContentController {
 
   @Post(':id/duplicate')
   @RequireCapability(Capability.ContentCreate)
-  @ApiOperation({ summary: 'Duplicate content' })
+  @ApiOperation({
+    summary: 'Duplicate a content',
+    description:
+      "Duplicate into a new content (copies the edited version's steps / config / data).",
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID to duplicate' })
   @ApiResponse({ status: 201, description: 'Duplicated content', type: ContentDto })
@@ -126,7 +133,10 @@ export class ApiContentController {
 
   @Put(':id/environments/:environmentId')
   @RequireCapability(Capability.ContentPublish)
-  @ApiOperation({ summary: 'Publish a version to an environment' })
+  @ApiOperation({
+    summary: 'Publish a version',
+    description: "Publish a version as this environment's live version (idempotent).",
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
@@ -143,7 +153,10 @@ export class ApiContentController {
 
   @Delete(':id/environments/:environmentId')
   @RequireCapability(Capability.ContentPublish)
-  @ApiOperation({ summary: 'Unpublish content from an environment' })
+  @ApiOperation({
+    summary: 'Unpublish a content',
+    description: "Clear this environment's live version for the content.",
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
