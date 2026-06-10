@@ -40,7 +40,7 @@ describe('API v2 /content-versions (e2e)', () => {
     return gqlData(res).createApiToken.token;
   }
 
-  function api(method: 'get' | 'patch', path: string, token?: string) {
+  function api(method: 'get' | 'post' | 'patch', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
@@ -504,6 +504,57 @@ describe('API v2 /content-versions (e2e)', () => {
       const r = await read(token);
       expect(r.body.startRules).toBeUndefined();
       expect(r.body.hideRules).toEqual({ when: [{ type: 'current_url', includes: ['/b'] }] });
+    });
+  });
+
+  // POST content-versions forks the content's edited version into a new draft.
+  describe('create draft version (POST)', () => {
+    it('forks the edited version into a new draft (201, copies steps)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({
+        contentId,
+      });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ object: 'contentVersion' });
+      expect(res.body.id).not.toBe(versionId); // a new version, not the source
+
+      // the fork carries the source version's steps (cv-1, cv-2)
+      const read = await api(
+        'get',
+        `/v2/projects/${projectId}/content-versions/${res.body.id}?expand=steps`,
+        token,
+      );
+      expect(read.status).toBe(200);
+      expect(read.body.steps.map((s: { cvid: string }) => s.cvid).sort()).toEqual(['cv-1', 'cv-2']);
+
+      // the new version becomes the content's edited (head) version
+      const content = await api('get', `/v2/projects/${projectId}/content/${contentId}`, token);
+      expect(content.body.editedVersionId).toBe(res.body.id);
+    });
+
+    it('returns 404 forking an unknown content (E1004)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({
+        contentId: 'does-not-exist',
+      });
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('E1004');
+    });
+
+    it('maps a missing contentId body to E1017 (zod validation)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({});
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+    });
+
+    it('rejects create without the update scope (403 E1012)', async () => {
+      const token = await mint([Capability.ContentRead]);
+      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({
+        contentId,
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1012');
     });
   });
 });

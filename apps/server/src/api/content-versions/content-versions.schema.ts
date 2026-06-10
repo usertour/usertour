@@ -47,6 +47,13 @@ export const updateVersionBody = z.object({
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;
 
+/** Write body for POST content-versions — fork a new draft version of a content. */
+export const createVersionBody = z.object({
+  contentId: z.string().describe('The content to fork a new draft version of.'),
+});
+export class CreateVersionBodyDto extends createZodDto(createVersionBody) {}
+export type CreateVersionBody = z.infer<typeof createVersionBody>;
+
 export const listContentVersionsResponse = z.object({
   results: z.array(contentVersion),
   next: z.string().nullable(),

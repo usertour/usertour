@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   UseFilters,
   UseGuards,
@@ -21,6 +22,7 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiContentVersionsService } from './content-versions.service';
 import {
   ContentVersionDto,
+  CreateVersionBodyDto,
   GetContentVersionQueryDto,
   ListContentVersionsQueryDto,
   ListContentVersionsResponseDto,
@@ -66,6 +68,16 @@ export class ApiContentVersionsController {
     @Query() query: GetContentVersionQueryDto,
   ) {
     return this.service.get(id, projectId, query);
+  }
+
+  @Post()
+  @RequireCapability(Capability.ContentUpdate)
+  @ApiOperation({ summary: 'Create a draft content version (fork the edited version)' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Created content version', type: ContentVersionDto })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async create(@Param('projectId') projectId: string, @Body() body: CreateVersionBodyDto) {
+    return this.service.create(projectId, body);
   }
 
   @Patch(':id')

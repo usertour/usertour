@@ -22,6 +22,7 @@ import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapQuestions, mapVersion } from './content-versions.mapper';
 import {
+  CreateVersionBody,
   GetContentVersionQuery,
   ListContentVersionsQuery,
   UpdateVersionBody,
@@ -163,6 +164,27 @@ export class ApiContentVersionsService {
    * domain `updateContentVersion` (the builder's exact path — cvid upsert in a
    * transaction). Only the provided fields are touched.
    */
+  /**
+   * Fork a new draft version from the content's current edited version (the
+   * builder's "new version" action): the fork becomes the new editedVersion, the
+   * previous draft is frozen as a historical version.
+   */
+  async create(projectId: string, body: CreateVersionBody): Promise<ContentVersion> {
+    const content = await this.content.findContentWithRelations(body.contentId, projectId, {});
+    if (!content || (content as { deleted?: boolean }).deleted) {
+      throw new ContentNotFoundError();
+    }
+    const editedVersionId = (content as { editedVersionId?: string | null }).editedVersionId;
+    if (!editedVersionId) {
+      throw new ParamsError('Content has no editable version to fork');
+    }
+    const created = await this.content.createContentVersion({ versionId: editedVersionId });
+    if (!created) {
+      throw new ParamsError('Failed to create version');
+    }
+    return this.get(created.id, projectId, {});
+  }
+
   async update(id: string, projectId: string, body: UpdateVersionBody): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       steps: { orderBy: { sequence: 'asc' } },
