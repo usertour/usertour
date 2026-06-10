@@ -195,6 +195,25 @@ export class ApiContentVersionsService {
     return this.get(created.id, projectId, {});
   }
 
+  /**
+   * Restore a historical version: fork it forward as the new edited (head)
+   * version — config / data / theme / steps copied from version `id`. Binds the
+   * same domain method the builder uses. Returns the new version.
+   */
+  async restore(id: string, projectId: string): Promise<ContentVersion> {
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      content: true,
+    });
+    if (!version || (version.content as { deleted?: boolean } | null)?.deleted) {
+      throw new ContentNotFoundError();
+    }
+    const created = await this.content.restoreContentVersion(id);
+    if (!created) {
+      throw new ParamsError('Failed to restore version');
+    }
+    return this.get(created.id, projectId, {});
+  }
+
   async update(id: string, projectId: string, body: UpdateVersionBody): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       steps: { orderBy: { sequence: 'asc' } },

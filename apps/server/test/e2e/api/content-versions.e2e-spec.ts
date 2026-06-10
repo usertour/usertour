@@ -636,4 +636,86 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(sA.id).not.toBe(sB.id); // ...yet are distinct rows, targeted by id
     });
   });
+
+  // POST content-versions/:id/restore forks a historical version forward.
+  describe('restore a historical version (POST :id/restore)', () => {
+    const oldStepData = [
+      {
+        element: { type: 'group' },
+        children: [
+          {
+            element: { type: 'column' },
+            children: [
+              {
+                element: {
+                  type: 'text',
+                  data: [{ type: 'paragraph', children: [{ text: 'historical' }] }],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    it('forks a historical version forward as the new draft', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const c = await buildContent(prisma, { projectId, type: 'flow' });
+      const v0 = await buildVersion(prisma, { contentId: c.id, sequence: 0 });
+      await buildStep(prisma, {
+        versionId: v0.id,
+        type: 'modal',
+        name: 'Old step',
+        cvid: 'old-1',
+        sequence: 0,
+        data: oldStepData,
+      });
+      // a newer version becomes the edited head, making v0 historical
+      const v1 = await buildVersion(prisma, { contentId: c.id, sequence: 1 });
+
+      const res = await api(
+        'post',
+        `/v2/projects/${projectId}/content-versions/${v0.id}/restore`,
+        token,
+      );
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ object: 'contentVersion' });
+      expect(res.body.id).not.toBe(v0.id);
+      expect(res.body.id).not.toBe(v1.id);
+
+      // the restored version carries v0's step
+      const read = await api(
+        'get',
+        `/v2/projects/${projectId}/content-versions/${res.body.id}?expand=steps`,
+        token,
+      );
+      expect(read.body.steps.map((s: { name: string }) => s.name)).toContain('Old step');
+
+      // ...and is now the content's edited (head) version
+      const content = await api('get', `/v2/projects/${projectId}/content/${c.id}`, token);
+      expect(content.body.editedVersionId).toBe(res.body.id);
+    });
+
+    it('returns 404 restoring an unknown version (E1004)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await api(
+        'post',
+        `/v2/projects/${projectId}/content-versions/nope/restore`,
+        token,
+      );
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('E1004');
+    });
+
+    it('rejects restore without the update scope (403 E1012)', async () => {
+      const token = await mint([Capability.ContentRead]);
+      const res = await api(
+        'post',
+        `/v2/projects/${projectId}/content-versions/${versionId}/restore`,
+        token,
+      );
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1012');
+    });
+  });
 });

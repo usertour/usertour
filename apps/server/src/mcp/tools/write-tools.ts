@@ -107,6 +107,35 @@ export function buildWriteTools(): McpTool[] {
         ctx.services.contentVersions.create(ctx.projectId, { contentId: String(args.contentId) }),
     },
     {
+      name: 'restore_content_version',
+      title: 'Restore a historical version',
+      capability: Capability.ContentUpdate,
+      description:
+        'Restore a historical content version by forking it forward as the new draft (config / ' +
+        'data / theme / steps copied from it). Returns the new version.',
+      inputSchema: { versionId: z.string() },
+      handler: (args, ctx) =>
+        ctx.services.contentVersions.restore(String(args.versionId), ctx.projectId),
+    },
+    {
+      name: 'duplicate_content',
+      title: 'Duplicate content',
+      capability: Capability.ContentCreate,
+      description:
+        'Duplicate a piece of content into a fresh content (copies the edited version). ' +
+        'Optionally set a `name` and a target `environmentId`. Returns the new content.',
+      inputSchema: {
+        contentId: z.string(),
+        name: z.string().optional(),
+        environmentId: z.string().optional(),
+      },
+      handler: (args, ctx) =>
+        ctx.services.content.duplicate(String(args.contentId), ctx.projectId, {
+          name: args.name as string | undefined,
+          environmentId: args.environmentId as string | undefined,
+        }),
+    },
+    {
       name: 'publish_content',
       title: 'Publish a version to an environment',
       capability: Capability.ContentPublish,

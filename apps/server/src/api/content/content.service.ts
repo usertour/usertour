@@ -12,6 +12,7 @@ import {
   Content,
   ContentExpand,
   CreateContentBody,
+  DuplicateContentBody,
   GetContentQuery,
   ListContentQuery,
   UpdateContentBody,
@@ -90,6 +91,33 @@ export class ApiContentService {
     await this.requireContent(id, projectId);
     await this.content.unpublishedContentVersion(id, environmentId);
     return this.get(id, projectId, {});
+  }
+
+  /**
+   * Duplicate content into a fresh content (copies the edited version's steps /
+   * config / data), optionally into another environment. Binds the same domain
+   * method the builder uses. Returns the new content.
+   */
+  async duplicate(id: string, projectId: string, body: DuplicateContentBody): Promise<Content> {
+    await this.requireContent(id, projectId);
+    if (body.environmentId) {
+      await this.requireEnvironment(body.environmentId, projectId);
+    }
+    const created = await this.content.duplicateContent(id, body.name ?? '', body.environmentId);
+    if (!created) {
+      throw new ParamsError('Failed to duplicate content');
+    }
+    return this.get(created.id, projectId, {});
+  }
+
+  /** Assert an environment exists in the project (for the duplicate target). */
+  private async requireEnvironment(environmentId: string, projectId: string): Promise<void> {
+    const env = await this.prisma.environment.findFirst({
+      where: { id: environmentId, projectId, deleted: false },
+    });
+    if (!env) {
+      throw new ParamsError('Environment not found in this project');
+    }
   }
 
   private async requireContent(id: string, projectId: string): Promise<void> {

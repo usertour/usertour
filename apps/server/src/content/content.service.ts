@@ -735,7 +735,9 @@ export class ContentService {
     type?: string,
   ) {
     const baseQuery = {
-      where: { projectId, ...(type ? { type } : {}) },
+      // Exclude soft-deleted content — the public-API list (v1 + v2) must never
+      // surface archived content (the single-get path already guards `deleted`).
+      where: { projectId, deleted: false, ...(type ? { type } : {}) },
       include,
       orderBy,
     };

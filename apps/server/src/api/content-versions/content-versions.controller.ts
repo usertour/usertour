@@ -80,6 +80,17 @@ export class ApiContentVersionsController {
     return this.service.create(projectId, body);
   }
 
+  @Post(':id/restore')
+  @RequireCapability(Capability.ContentUpdate)
+  @ApiOperation({ summary: 'Restore a historical version as the new draft' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content version ID to restore' })
+  @ApiResponse({ status: 201, description: 'New draft version', type: ContentVersionDto })
+  @ApiResponse({ status: 404, description: 'Content version not found' })
+  async restore(@Param('id') id: string, @Param('projectId') projectId: string) {
+    return this.service.restore(id, projectId);
+  }
+
   @Patch(':id')
   @RequireCapability(Capability.ContentUpdate)
   @ApiOperation({ summary: 'Update a draft content version (steps / rules)' })

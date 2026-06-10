@@ -221,4 +221,68 @@ describe('API v2 /content (e2e)', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
+
+  it('duplicates content into a fresh content (POST :id/duplicate)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
+      token,
+    ).send({ name: 'Onboarding copy' });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ object: 'content', type: 'flow', name: 'Onboarding copy' });
+    expect(res.body.id).not.toBe(flowId); // a new content
+    expect(typeof res.body.editedVersionId).toBe('string');
+  });
+
+  it('defaults the duplicate name to the source name', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
+      token,
+    ).send({});
+    expect(res.status).toBe(201);
+    expect(res.body.name).toBe('Onboarding'); // source name
+  });
+
+  it('returns 404 duplicating unknown content (E1004)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const res = await api('post', `/v2/projects/${projectId}/content/nope/duplicate`, token).send(
+      {},
+    );
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1004');
+  });
+
+  it('rejects duplicate without the create scope (403 E1012)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
+      token,
+    ).send({});
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
+  });
+
+  it('excludes soft-deleted content from the list', async () => {
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentCreate,
+      Capability.ContentDelete,
+    ]);
+    const created = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'flow',
+      name: 'To be archived',
+    });
+    const id = created.body.id;
+    // present before delete
+    let list = await api('get', `/v2/projects/${projectId}/content?limit=100`, token);
+    expect(list.body.results.map((c: { id: string }) => c.id)).toContain(id);
+    // delete, then it must be gone from the list
+    await api('delete', `/v2/projects/${projectId}/content/${id}`, token);
+    list = await api('get', `/v2/projects/${projectId}/content?limit=100`, token);
+    expect(list.body.results.map((c: { id: string }) => c.id)).not.toContain(id);
+  });
 });

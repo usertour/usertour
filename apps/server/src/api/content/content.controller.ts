@@ -28,6 +28,7 @@ import { ApiContentService } from './content.service';
 import {
   ContentDto,
   CreateContentBodyDto,
+  DuplicateContentBodyDto,
   GetContentQueryDto,
   ListContentQueryDto,
   ListContentResponseDto,
@@ -106,6 +107,21 @@ export class ApiContentController {
   @ApiResponse({ status: 404, description: 'Content not found' })
   async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
     await this.service.remove(id, projectId);
+  }
+
+  @Post(':id/duplicate')
+  @RequireCapability(Capability.ContentCreate)
+  @ApiOperation({ summary: 'Duplicate content' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content ID to duplicate' })
+  @ApiResponse({ status: 201, description: 'Duplicated content', type: ContentDto })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async duplicate(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: DuplicateContentBodyDto,
+  ) {
+    return this.service.duplicate(id, projectId, body);
   }
 
   @Put(':id/environments/:environmentId')

@@ -84,6 +84,17 @@ export const publishContentBody = z.object({
 export class PublishContentBodyDto extends createZodDto(publishContentBody) {}
 export type PublishContentBody = z.infer<typeof publishContentBody>;
 
+/** Write body for POST content/:id/duplicate. */
+export const duplicateContentBody = z.object({
+  name: z.string().optional().describe('Name for the copy (defaults to the source name).'),
+  environmentId: z
+    .string()
+    .optional()
+    .describe('Target environment (defaults to the source content’s environment).'),
+});
+export class DuplicateContentBodyDto extends createZodDto(duplicateContentBody) {}
+export type DuplicateContentBody = z.infer<typeof duplicateContentBody>;
+
 export type Content = z.infer<typeof content>;
 export type ContentExpand = z.infer<typeof contentExpand>;
 export type ListContentQuery = z.infer<typeof listContentQuery>;
