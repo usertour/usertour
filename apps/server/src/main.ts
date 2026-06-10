@@ -11,6 +11,7 @@ import { cleanupOpenApiDoc } from 'nestjs-zod';
 import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
+import { normalizeOpenApiParameters } from './common/openapi/normalize-parameters';
 import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
@@ -71,10 +72,15 @@ async function bootstrap() {
     .build();
   // v1 (OpenAPIModule, @ApiProperty DTOs) and v2 (ApiModule, zod DTOs) are
   // scanned into one document; cleanupOpenApiDoc renders the zod-derived schemas.
-  const document = cleanupOpenApiDoc(
-    SwaggerModule.createDocument(app, config, {
-      include: [OpenAPIModule, ApiModule],
-    }),
+  // normalizeOpenApiParameters fixes union query params (singleOrArray) that
+  // nestjs-zod renders with `anyOf` at the parameter top level — invalid per the
+  // OpenAPI spec, rejected by strict validators (swagger-parser, Mintlify).
+  const document = normalizeOpenApiParameters(
+    cleanupOpenApiDoc(
+      SwaggerModule.createDocument(app, config, {
+        include: [OpenAPIModule, ApiModule],
+      }),
+    ),
   );
   SwaggerModule.setup('api', app, document);
 

@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { ApiModule } from '@/api/api.module';
+import { normalizeOpenApiParameters } from '@/common/openapi/normalize-parameters';
 import { OpenAPIModule } from '@/openapi/openapi.module';
 
 import { gqlData, graphql } from '../auth';
@@ -110,5 +111,54 @@ describe('API v2 /event-definitions (e2e)', () => {
     // the zod-derived response schema was rendered into components
     const schemas = doc.components?.schemas ?? {};
     expect(Object.keys(schemas)).toContain('ListEventDefinitionsResponseDto');
+  });
+
+  it('emits valid OpenAPI parameters (union query params normalized into schema)', () => {
+    const config = new DocumentBuilder().setTitle('t').addBearerAuth().build();
+    const raw = cleanupOpenApiDoc(
+      SwaggerModule.createDocument(app, config, { include: [OpenAPIModule, ApiModule] }),
+    );
+
+    // Before normalization, nestjs-zod leaves union (singleOrArray) query params
+    // with `anyOf` at the parameter top level — invalid OpenAPI.
+    const ALLOWED = new Set([
+      'name',
+      'in',
+      'description',
+      'required',
+      'deprecated',
+      'allowEmptyValue',
+      'style',
+      'explode',
+      'allowReserved',
+      'schema',
+      'example',
+      'examples',
+      'content',
+      '$ref',
+    ]);
+    const strayBefore: string[] = [];
+    for (const item of Object.values(raw.paths)) {
+      for (const op of Object.values(item ?? {})) {
+        for (const p of (op as { parameters?: Record<string, unknown>[] })?.parameters ?? []) {
+          if ('$ref' in p) continue;
+          if (Object.keys(p).some((k) => !ALLOWED.has(k))) strayBefore.push(String(p.name));
+        }
+      }
+    }
+    expect(strayBefore.length).toBeGreaterThan(0); // the quirk exists (guards the test's premise)
+
+    // After the same normalization main.ts applies, every parameter is valid.
+    const doc = normalizeOpenApiParameters(raw);
+    for (const [path, item] of Object.entries(doc.paths)) {
+      for (const op of Object.values(item ?? {})) {
+        for (const p of (op as { parameters?: Record<string, unknown>[] })?.parameters ?? []) {
+          if ('$ref' in p) continue;
+          const stray = Object.keys(p).filter((k) => !ALLOWED.has(k));
+          expect({ path, name: p.name, stray }).toEqual({ path, name: p.name, stray: [] });
+          expect(p.schema ?? p.content).toBeDefined();
+        }
+      }
+    }
   });
 });
