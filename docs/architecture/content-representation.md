@@ -81,10 +81,15 @@ discriminator (A-shape).
 ```ts
 RepresentationStep = {
   object: "step";
-  id?: string;            // server-owned handle. The WRITE merge key: present on a
-                          // read; echo it to update a step, omit it to create one.
-  cvid?: string;          // internal logical id, server-owned. Read-only — exposed
-                          // for reference (e.g. goto targets); NEVER accepted on write.
+  id?: string;            // server-owned per-version row id. The WRITE merge key:
+                          // present on a read; echo to update a step, omit to create.
+  cvid?: string;          // server-owned, version-STABLE logical id. Read-only,
+                          // exposed as the cross-step REFERENCE handle (goto_step
+                          // targets it). NEVER accepted as a write identity — but a
+                          // client echoes it to reference a step. It is deliberately
+                          // NOT `id`: fork copies steps with the SAME cvid (new ids),
+                          // so cvid-based references stay valid across version copies;
+                          // id-based ones would break on fork.
   name: string;
   type: "tooltip" | "modal" | "bubble" | "hidden";
   target?: RepresentationTarget;        // tooltip/bubble; n/a for modal
@@ -173,8 +178,8 @@ StringOp = "is"|"not"|"contains"|"not_contains"|"starts_with"|"ends_with"|"match
 
 // Effects.
 RepresentationAction =
-  | { type:"goto_step";       step: string }                  // step key/cvid
-  | { type:"start_flow";      flow: string; step?: string }
+  | { type:"goto_step";       step: string }                  // target step's cvid (version-stable; survives fork)
+  | { type:"start_flow";      flow: string; step?: string }   // flow = content id; step = a cvid in that flow
   | { type:"navigate";        url: string; newTab?: boolean; newWindow?: boolean } // url supports {{ }} (see §6)
   | { type:"dismiss" }                                        // dismiss the current content
   | { type:"run_javascript";  script: string }               // READ-ONLY: never accepted on write
