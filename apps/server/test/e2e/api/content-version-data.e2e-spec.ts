@@ -30,6 +30,7 @@ describe('API v2 version.data codec (e2e)', () => {
   let environmentId: string;
   let eventCode: string;
   let trackerVersionId: string;
+  let checklistVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -66,6 +67,7 @@ describe('API v2 version.data codec (e2e)', () => {
 
     eventCode = (await buildEvent(prisma, { projectId, codeName: 'evt_signup' })).codeName;
     trackerVersionId = await newVersion('tracker');
+    checklistVersionId = await newVersion('checklist');
   }, 60000);
 
   afterAll(async () => {
@@ -128,6 +130,99 @@ describe('API v2 version.data codec (e2e)', () => {
       const res = await write(trackerVersionId, { data: { event: eventCode } }, token);
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe('E1012');
+    });
+  });
+
+  describe('checklist', () => {
+    const payload = {
+      data: {
+        buttonText: 'Get started',
+        initialDisplay: 'expanded',
+        completionOrder: 'ordered',
+        preventDismiss: true,
+        autoDismiss: false,
+        content: [{ type: 'text', markdown: 'Welcome' }],
+        items: [
+          {
+            name: 'Connect your data',
+            description: 'Hook up a source',
+            completeWhen: [{ type: 'current_url', includes: ['/connected'] }],
+            clickActions: [{ type: 'navigate', url: '/connect' }],
+          },
+          {
+            name: 'Invite a teammate',
+            onlyShowWhen: [{ type: 'current_url', includes: ['/team'] }],
+            clickActions: [{ type: 'dismiss' }],
+          },
+        ],
+      },
+    };
+
+    it('round-trips the checklist body (write → independent read)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(checklistVersionId, payload, token);
+      expect(w.status).toBe(200);
+
+      const r = await readData(checklistVersionId, token);
+      expect(r.status).toBe(200);
+      const d = r.body.data;
+      expect(d).toMatchObject({
+        buttonText: 'Get started',
+        initialDisplay: 'expanded',
+        completionOrder: 'ordered',
+        preventDismiss: true,
+        autoDismiss: false,
+      });
+      expect(d.content[0]).toMatchObject({ type: 'text', markdown: 'Welcome' });
+      expect(d.items).toHaveLength(2);
+      expect(d.items[0]).toMatchObject({
+        name: 'Connect your data',
+        description: 'Hook up a source',
+        completeWhen: [{ type: 'current_url', includes: ['/connected'] }],
+        clickActions: [{ type: 'navigate', url: '/connect' }],
+      });
+      expect(typeof d.items[0].id).toBe('string'); // server-assigned merge key
+      expect(d.items[1]).toMatchObject({
+        name: 'Invite a teammate',
+        onlyShowWhen: [{ type: 'current_url', includes: ['/team'] }],
+        clickActions: [{ type: 'dismiss' }],
+      });
+      expect(d.items[1].completeWhen).toEqual([]);
+    });
+
+    it('keeps item ids stable across a re-write that reuses them', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      await write(checklistVersionId, payload, token);
+      const first = await readData(checklistVersionId, token);
+      const id0 = first.body.data.items[0].id;
+
+      // re-send the same first item WITH its id → must reuse, not regenerate
+      const rewrite = {
+        data: {
+          ...payload.data,
+          items: [{ id: id0, name: 'Connect your data (renamed)', clickActions: [] }],
+        },
+      };
+      const w = await write(checklistVersionId, rewrite, token);
+      expect(w.status).toBe(200);
+      const r = await readData(checklistVersionId, token);
+      expect(r.body.data.items).toHaveLength(1);
+      expect(r.body.data.items[0].id).toBe(id0);
+      expect(r.body.data.items[0].name).toBe('Connect your data (renamed)');
+    });
+
+    it('rejects run_javascript in a click action (read-only)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        checklistVersionId,
+        {
+          data: {
+            items: [{ name: 'JS', clickActions: [{ type: 'run_javascript', script: 'alert(1)' }] }],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBeGreaterThanOrEqual(400);
     });
   });
 });

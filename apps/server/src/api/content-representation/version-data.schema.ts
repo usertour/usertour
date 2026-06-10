@@ -24,8 +24,31 @@ export const representationTracker = z.object({
 });
 export type RepresentationTracker = z.infer<typeof representationTracker>;
 
+// ── checklist  (from ChecklistData) ──────────────────────────────────────────
+// Items merge by `id` on write (server-owned key, round-trips on read) so runtime
+// state (isCompleted / isVisible …) is preserved; omit `id` for a new item.
+// `completeWhen` / `onlyShowWhen` are conditions; `clickActions` are actions.
+const checklistItem = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  description: z.string().optional(),
+  completeWhen: z.array(representationCondition).default([]),
+  clickActions: z.array(representationAction).default([]),
+  onlyShowWhen: z.array(representationCondition).optional(),
+});
+export const representationChecklist = z.object({
+  buttonText: z.string().optional(),
+  initialDisplay: z.enum(['expanded', 'button']).optional(),
+  completionOrder: z.enum(['any', 'ordered']).optional(),
+  preventDismiss: z.boolean().optional(),
+  autoDismiss: z.boolean().optional(),
+  content: z.array(representationBlock).optional(),
+  items: z.array(checklistItem).optional(),
+});
+export type RepresentationChecklist = z.infer<typeof representationChecklist>;
+
 // ── union (selected by content type) ─────────────────────────────────────────
-export const representationVersionData = z.union([representationTracker]);
+export const representationVersionData = z.union([representationTracker, representationChecklist]);
 export type RepresentationVersionData = z.infer<typeof representationVersionData>;
 
 // Re-exported so the codec files share the leaf schemas without re-importing.
