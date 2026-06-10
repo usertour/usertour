@@ -13,7 +13,6 @@ import {
   RiEyeOffLine,
   RiMessage2Line,
   RiWindow2Line,
-  SpinnerIcon,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -112,7 +111,6 @@ function StepGotoEditor({
   const t = useActionsT();
   const { currentVersion, currentStep, createStep } = useActionsContext();
   const data = readData(condition);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Open this editor as a controlled dropdown — distinct from ActionRow's
   // chip popover. ActionRow's popover renders the dropdown trigger; the
@@ -136,10 +134,8 @@ function StepGotoEditor({
   const handleCreate = useCallback(
     async (stepType?: string) => {
       if (!createStep || !currentVersion) return;
-      setIsLoading(true);
       const seq = currentStep?.sequence ?? 0;
       const newStep = await createStep(currentVersion, seq + 1, stepType);
-      setIsLoading(false);
       if (newStep?.cvid) {
         handleSelect(newStep.cvid);
       }
@@ -152,10 +148,8 @@ function StepGotoEditor({
       if (!createStep || !currentVersion?.steps) return;
       const source = currentVersion.steps.find((step) => step.cvid === cvid);
       if (!source) return;
-      setIsLoading(true);
       const seq = currentStep?.sequence ?? 0;
       const newStep = await createStep(currentVersion, seq + 1, undefined, source);
-      setIsLoading(false);
       if (newStep?.cvid) {
         handleSelect(newStep.cvid);
       }
@@ -180,7 +174,6 @@ function StepGotoEditor({
             <ArrowRightIcon className="h-3.5 w-3.5" />
             <span>{t('actions.types.stepGoto.prefix')}</span>
           </span>
-          {isLoading && <SpinnerIcon className="h-4 w-4 animate-spin" />}
         </button>
       </ActionDropdownMenuTrigger>
       <ActionDropdownMenuContent align="start" className="w-[var(--radix-popper-anchor-width)]">
