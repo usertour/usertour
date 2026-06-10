@@ -161,4 +161,16 @@ describe('API v2 /event-definitions (e2e)', () => {
       }
     }
   });
+
+  it('builds a v2-only OpenAPI document (the /api-v2-json the docs render from)', () => {
+    // Mirrors main.ts: a document scanning ONLY ApiModule → v2 paths, no v1.
+    const v2Config = new DocumentBuilder().setTitle('Usertour API v2').addBearerAuth().build();
+    const v2 = normalizeOpenApiParameters(
+      cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
+    );
+    const paths = Object.keys(v2.paths);
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths.every((p) => p.startsWith('/v2/'))).toBe(true); // v2 only
+    expect(paths.some((p) => p.startsWith('/v1/'))).toBe(false); // no legacy v1
+  });
 });
