@@ -8,6 +8,14 @@ MCP). This doc designs **what is still missing** to make the v2 `content` and
 Naming/codec rules are unchanged — see
 `docs/conventions/content-representation-codec.md`.
 
+> **Status: IMPLEMENTED.** All four scope items shipped — publish/unpublish,
+> `themeId` writable + `GET themes`, create draft version, and all five non-flow
+> content-type body codecs (tracker, checklist, launcher, banner, resource-center).
+> Covered by REST + MCP e2e. The sections below are the design of record; the API
+> surface table in §10 matches what's live. Out-of-scope items (localization,
+> `hideRulesSetting`, `config.name`, scheduled publish, granular step ops) remain
+> deferred.
+
 ## 1. Scope
 
 In scope (the real gaps, prioritized):
