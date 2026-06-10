@@ -2448,6 +2448,7 @@ const translations = {
         "Element picking happens on your app's own page, in a separate tab. Install the Usertour element picker browser extension to point and click on the element you want.",
       installAction: 'Add to Chrome',
       installDismiss: 'Maybe later',
+      installWaiting: 'Waiting for the extension — picking starts as soon as it is installed.',
       pickFailed: 'Failed to pick an element. Please try again.',
       urlDialogTitle: 'Where should we open your app?',
       urlDialogDescription:

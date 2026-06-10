@@ -2320,6 +2320,7 @@ const translations = {
         '选择元素发生在你自己应用的页面上(单独的标签页)。安装 Usertour 元素选择器浏览器扩展后,即可在页面上点选目标元素。',
       installAction: '添加到 Chrome',
       installDismiss: '暂不安装',
+      installWaiting: '正在等待扩展安装,装好后会立即开始选取。',
       pickFailed: '选取元素失败,请重试。',
       urlDialogTitle: '在哪个页面选取元素?',
       urlDialogDescription:

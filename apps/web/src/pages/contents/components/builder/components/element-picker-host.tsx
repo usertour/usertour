@@ -1,6 +1,7 @@
 import { createOpenpicker, OpenpickerError } from '@openpicker/sdk';
 import { ElementPickerProvider, type PickElementFunction } from '@usertour/business-components';
 import { useUpdateContentMutation } from '@usertour/hooks';
+import { SpinnerIcon } from '@usertour/icons';
 import {
   Button,
   Dialog,
@@ -12,7 +13,7 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 
@@ -65,6 +66,22 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
   // Resolver for the pick currently waiting on the URL dialog. Settled with
   // the entered URL on confirm, or null on dismiss.
   const urlResolverRef = useRef<((url: string | null) => void) | null>(null);
+  // Resolver for the pick currently waiting on the install dialog. The
+  // extension injects into already-open tabs on install, so while the
+  // dialog is open we poll isAvailable() — the moment it turns true the
+  // dialog closes and the original pick resumes; dismissing settles false.
+  const installResolverRef = useRef<((installed: boolean) => void) | null>(null);
+
+  // Settle pending pick flows if the builder unmounts mid-dialog so their
+  // poll loops and awaiting callers don't outlive the host.
+  useEffect(() => {
+    return () => {
+      urlResolverRef.current?.(null);
+      urlResolverRef.current = null;
+      installResolverRef.current?.(false);
+      installResolverRef.current = null;
+    };
+  }, []);
 
   const requestBuildUrl = useCallback((): Promise<string | null> => {
     setUrlValue('');
@@ -90,6 +107,36 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
     settleUrlDialog(normalized);
   }, [urlValue, settleUrlDialog]);
 
+  const settleInstallDialog = useCallback((installed: boolean) => {
+    installResolverRef.current?.(installed);
+    installResolverRef.current = null;
+    setIsInstallDialogOpen(false);
+  }, []);
+
+  const waitForExtensionInstall = useCallback((): Promise<boolean> => {
+    setIsInstallDialogOpen(true);
+    return new Promise((resolve) => {
+      installResolverRef.current = resolve;
+      const poll = async () => {
+        // Each isAvailable() is itself a ping with a timeout, so this
+        // loop settles into a ~2s cadence. It exits when the dialog is
+        // settled (the ref no longer points at this pick's resolver).
+        while (installResolverRef.current === resolve) {
+          if (await openpicker.isAvailable()) {
+            if (installResolverRef.current === resolve) {
+              installResolverRef.current = null;
+              setIsInstallDialogOpen(false);
+              resolve(true);
+            }
+            return;
+          }
+          await new Promise((delay) => setTimeout(delay, 500));
+        }
+      };
+      void poll();
+    });
+  }, []);
+
   const pickElement = useCallback<PickElementFunction>(
     async (options) => {
       let url = currentContent?.buildUrl;
@@ -113,8 +160,10 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
         }
       }
       if (!(await openpicker.isAvailable())) {
-        setIsInstallDialogOpen(true);
-        return null;
+        const installed = await waitForExtensionInstall();
+        if (!installed) {
+          return null;
+        }
       }
       try {
         const result = await openpicker.pick({
@@ -132,6 +181,9 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
             return null;
           }
           if (error.code === 'extension_not_installed') {
+            // Rare race: the extension disappeared between the availability
+            // check and the pick. Reopen the waiting dialog; the user
+            // re-triggers the pick once it's back.
             setIsInstallDialogOpen(true);
             return null;
           }
@@ -143,7 +195,15 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
         return null;
       }
     },
-    [currentContent, requestBuildUrl, updateContent, setCurrentContent, t, toast],
+    [
+      currentContent,
+      requestBuildUrl,
+      waitForExtensionInstall,
+      updateContent,
+      setCurrentContent,
+      t,
+      toast,
+    ],
   );
 
   return (
@@ -195,7 +255,14 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
           </form>
         </DialogContent>
       </Dialog>
-      <Dialog open={isInstallDialogOpen} onOpenChange={setIsInstallDialogOpen}>
+      <Dialog
+        open={isInstallDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            settleInstallDialog(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('contentBuilder.elementPicker.installTitle')}</DialogTitle>
@@ -203,8 +270,12 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
               {t('contentBuilder.elementPicker.installDescription')}
             </DialogDescription>
           </DialogHeader>
+          <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+            <SpinnerIcon className="h-4 w-4 animate-spin" />
+            {t('contentBuilder.elementPicker.installWaiting')}
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsInstallDialogOpen(false)}>
+            <Button variant="outline" onClick={() => settleInstallDialog(false)}>
               {t('contentBuilder.elementPicker.installDismiss')}
             </Button>
             <Button asChild>
