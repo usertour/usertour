@@ -326,6 +326,11 @@ MCP write tool ──┘     1. validate representation (zod + reference & opera
   field-level merge + write endpoints (content CRUD, `PATCH content-versions/:id`)
   + MCP write tools. (Phase 3 = OAuth, still pending.)
 
+This design covers the **flow** content type (steps + blocks + rules). Publishing,
+`themeId` writes, the non-flow content types (checklist / launcher / banner via
+`version.data`), and version forking are designed in the successor doc
+`docs/architecture/content-v2-completion.md`.
+
 ## 11. Decisions
 
 1. **`columns` block** to represent side-by-side (not flatten-to-`unsupported`).
