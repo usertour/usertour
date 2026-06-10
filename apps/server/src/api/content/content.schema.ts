@@ -77,6 +77,13 @@ export const updateContentBody = z.object({
 export class UpdateContentBodyDto extends createZodDto(updateContentBody) {}
 export type UpdateContentBody = z.infer<typeof updateContentBody>;
 
+/** Write body for PUT content/:id/environments/:environmentId (publish). */
+export const publishContentBody = z.object({
+  versionId: z.string().describe('The version to publish as this environment’s live version.'),
+});
+export class PublishContentBodyDto extends createZodDto(publishContentBody) {}
+export type PublishContentBody = z.infer<typeof publishContentBody>;
+
 export type Content = z.infer<typeof content>;
 export type ContentExpand = z.infer<typeof contentExpand>;
 export type ListContentQuery = z.infer<typeof listContentQuery>;

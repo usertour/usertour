@@ -64,6 +64,34 @@ export class ApiContentService {
     await this.content.deleteContent(id);
   }
 
+  /**
+   * Publish a version as the environment's live version (idempotent). The env is
+   * already resolved + project-checked by the guard; here we only assert the
+   * version belongs to this content. Returns the content with refreshed
+   * `environments[]` so the caller sees the new live state in one round-trip.
+   */
+  async publish(
+    id: string,
+    projectId: string,
+    environmentId: string,
+    versionId: string,
+  ): Promise<Content> {
+    await this.requireContent(id, projectId);
+    const version = await this.content.getContentVersionById(versionId);
+    if (!version || version.contentId !== id) {
+      throw new ContentNotFoundError();
+    }
+    await this.content.publishedContentVersion(versionId, environmentId);
+    return this.get(id, projectId, {});
+  }
+
+  /** Unpublish the content from an environment (clear its live version). */
+  async unpublish(id: string, projectId: string, environmentId: string): Promise<Content> {
+    await this.requireContent(id, projectId);
+    await this.content.unpublishedContentVersion(id, environmentId);
+    return this.get(id, projectId, {});
+  }
+
   private async requireContent(id: string, projectId: string): Promise<void> {
     const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
     if (!node || (node as { deleted?: boolean }).deleted) {
