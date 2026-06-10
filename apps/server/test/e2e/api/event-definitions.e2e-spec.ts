@@ -7,6 +7,7 @@ import request from 'supertest';
 
 import { ApiModule } from '@/api/api.module';
 import { normalizeOpenApiParameters } from '@/common/openapi/normalize-parameters';
+import { stripTagSuffix } from '@/common/openapi/strip-tag-suffix';
 import { OpenAPIModule } from '@/openapi/openapi.module';
 
 import { gqlData, graphql } from '../auth';
@@ -163,14 +164,28 @@ describe('API v2 /event-definitions (e2e)', () => {
   });
 
   it('builds a v2-only OpenAPI document (the /api-v2-json the docs render from)', () => {
-    // Mirrors main.ts: a document scanning ONLY ApiModule → v2 paths, no v1.
+    // Mirrors main.ts: a document scanning ONLY ApiModule → v2 paths, no v1, with
+    // the " (v2)" tag suffix stripped for clean docs navigation groups.
     const v2Config = new DocumentBuilder().setTitle('Usertour API v2').addBearerAuth().build();
-    const v2 = normalizeOpenApiParameters(
-      cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
+    const v2 = stripTagSuffix(
+      normalizeOpenApiParameters(
+        cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
+      ),
+      ' (v2)',
     );
     const paths = Object.keys(v2.paths);
     expect(paths.length).toBeGreaterThan(0);
     expect(paths.every((p) => p.startsWith('/v2/'))).toBe(true); // v2 only
     expect(paths.some((p) => p.startsWith('/v1/'))).toBe(false); // no legacy v1
+
+    // group tags are clean (no "(v2)" suffix) — the anchor + paths already say v2
+    const tags = new Set<string>();
+    for (const item of Object.values(v2.paths)) {
+      for (const op of Object.values(item ?? {})) {
+        for (const t of (op as { tags?: string[] })?.tags ?? []) tags.add(t);
+      }
+    }
+    expect([...tags].filter((t) => t.includes('(v2)'))).toEqual([]);
+    expect(tags.has('Content')).toBe(true);
   });
 });
