@@ -1,26 +1,26 @@
 import { randomUUID } from 'node:crypto';
 
 import {
-  AuthoringBlock,
-  AuthoringPlacement,
-  AuthoringQuestion,
-  AuthoringTarget,
-  AuthoringTrigger,
-} from './authoring.schema';
-import { markdownToRichText } from './markdown';
+  RepresentationBlock,
+  RepresentationPlacement,
+  RepresentationQuestion,
+  RepresentationTarget,
+  RepresentationTrigger,
+} from './representation.schema';
+import { compileText } from './text.compile';
 import {
   CompileResolvers,
   compileActions,
   compileConditions,
   compileTriggers,
-} from './rules.compiler';
-import { compileTargetToElementData } from './target.mapper';
+} from './rules.compile';
+import { compileTargetToElementData } from './target.compile';
 
 /**
- * Compile an authoring step back into the internal step shape the domain
+ * Compile a representation step back into the internal step shape the domain
  * `updateContentVersion` accepts — the inverse of the decompiler. Writes are a
  * FIELD-LEVEL MERGE onto the existing internal step (matched by step cvid /
- * block id): authoring-expressible fields are overwritten, while styling, the
+ * block id): representation-expressible fields are overwritten, while styling, the
  * "auto" target fingerprint, and setting offsets are preserved from `existing`.
  */
 export interface CompiledStep {
@@ -47,12 +47,12 @@ type StepToCompile = {
   name: string;
   type: string;
   sequence: number;
-  target?: AuthoringTarget;
-  placement?: AuthoringPlacement;
+  target?: RepresentationTarget;
+  placement?: RepresentationPlacement;
   width?: number;
   skippable?: boolean;
-  content: AuthoringBlock[];
-  triggers?: AuthoringTrigger[];
+  content: RepresentationBlock[];
+  triggers?: RepresentationTrigger[];
 };
 
 export function compileStep(
@@ -111,7 +111,7 @@ function indexElements(data: unknown): Map<string, any> {
 }
 
 function compileContent(
-  blocks: AuthoringBlock[],
+  blocks: RepresentationBlock[],
   existingData: unknown,
   r: CompileResolvers,
 ): unknown {
@@ -145,7 +145,11 @@ function compileContent(
   });
 }
 
-function compileElement(block: AuthoringBlock, byId: Map<string, any>, r: CompileResolvers): any {
+function compileElement(
+  block: RepresentationBlock,
+  byId: Map<string, any>,
+  r: CompileResolvers,
+): any {
   const existing = block.id ? byId.get(block.id) : undefined;
   const id = block.id ?? randomUUID();
   const keepStyle = existing?.element ?? {};
@@ -154,7 +158,7 @@ function compileElement(block: AuthoringBlock, byId: Map<string, any>, r: Compil
     case 'text':
       return {
         id,
-        element: { type: 'text', data: markdownToRichText(block.markdown) },
+        element: { type: 'text', data: compileText(block.markdown) },
         children: null,
       };
     case 'image':
@@ -224,7 +228,7 @@ function compileElement(block: AuthoringBlock, byId: Map<string, any>, r: Compil
   }
 }
 
-function compileQuestion(q: AuthoringQuestion): { type: string; data: any } {
+function compileQuestion(q: RepresentationQuestion): { type: string; data: any } {
   const bind = q.bindAttribute ? { bindToAttribute: true, selectedAttribute: q.bindAttribute } : {};
   const base = { cvid: q.cvid ?? randomUUID(), name: q.name, ...bind };
   switch (q.kind) {

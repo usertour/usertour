@@ -5,7 +5,7 @@ import {
   decompileHideRules,
   decompileStartRules,
   decompileTriggers,
-} from './rules.mapper';
+} from './rules.decompile';
 
 const resolvers = {
   attributeCode: (id: string) => (id === 'a1' ? 'plan' : id),

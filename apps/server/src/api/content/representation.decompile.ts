@@ -1,19 +1,19 @@
 import { ApiObjectType } from '../shared/object-type';
 import {
-  AuthoringBlock,
-  AuthoringPlacement,
-  AuthoringQuestion,
-  AuthoringStep,
-} from './authoring.schema';
-import { richTextToMarkdown } from './rich-text';
+  RepresentationBlock,
+  RepresentationPlacement,
+  RepresentationQuestion,
+  RepresentationStep,
+} from './representation.schema';
+import { decompileText } from './text.decompile';
 import {
   DecompileResolvers,
   IDENTITY_RESOLVERS,
   decompileActions,
   decompileConditions,
   decompileTriggers,
-} from './rules.mapper';
-import { decompileTarget, hasAutoTarget } from './target.mapper';
+} from './rules.decompile';
+import { decompileTarget, hasAutoTarget } from './target.decompile';
 
 /** Internal step row, untyped at the relation boundary (generic Prisma include). */
 type StepNode = {
@@ -33,14 +33,14 @@ const ALIGNS = new Set(['start', 'center', 'end']);
 const POSITIONS = new Set(['center', 'top', 'bottom', 'left', 'right']);
 
 /**
- * Decompile an internal step into the authoring step: identity + target +
+ * Decompile an internal step into the representation step: identity + target +
  * placement + content blocks + triggers. `resolvers` map internal attribute /
  * event ids to stable codes (identity by default, e.g. for unit tests).
  */
 export function decompileStep(
   step: StepNode,
   resolvers: DecompileResolvers = IDENTITY_RESOLVERS,
-): AuthoringStep {
+): RepresentationStep {
   const { blocks, hasUnsupported: contentUnsupported } = decompileContent(step.data, resolvers);
   const target = decompileTarget(step.target);
   const placement = decompilePlacement(step.setting, step.type ?? '');
@@ -75,9 +75,9 @@ export function decompileStep(
 export function decompileContent(
   data: unknown,
   resolvers: DecompileResolvers = IDENTITY_RESOLVERS,
-): { blocks: AuthoringBlock[]; hasUnsupported: boolean } {
+): { blocks: RepresentationBlock[]; hasUnsupported: boolean } {
   const roots = Array.isArray(data) ? data : [];
-  const blocks: AuthoringBlock[] = [];
+  const blocks: RepresentationBlock[] = [];
   let hasUnsupported = false;
 
   for (const root of roots) {
@@ -93,13 +93,13 @@ export function decompileContent(
       }
     } else {
       const cols = columns.map((col: any) => {
-        const colBlocks: AuthoringBlock[] = (Array.isArray(col?.children) ? col.children : []).map(
-          (el: unknown) => {
-            const { block, unsupported } = decompileElement(el, resolvers);
-            hasUnsupported = hasUnsupported || unsupported;
-            return block;
-          },
-        );
+        const colBlocks: RepresentationBlock[] = (
+          Array.isArray(col?.children) ? col.children : []
+        ).map((el: unknown) => {
+          const { block, unsupported } = decompileElement(el, resolvers);
+          hasUnsupported = hasUnsupported || unsupported;
+          return block;
+        });
         const width = decompileColumnWidth(col?.element);
         return width ? { width, blocks: colBlocks } : { blocks: colBlocks };
       });
@@ -127,7 +127,7 @@ function decompileColumnWidth(
 function decompileElement(
   wrapper: unknown,
   resolvers: DecompileResolvers,
-): { block: AuthoringBlock; unsupported: boolean } {
+): { block: RepresentationBlock; unsupported: boolean } {
   const id = (wrapper as any)?.id as string | undefined;
   const e = (wrapper as any)?.element ?? {};
   const base = { object: ApiObjectType.BLOCK as const, ...(typeof id === 'string' ? { id } : {}) };
@@ -135,7 +135,7 @@ function decompileElement(
   switch (e.type) {
     case 'text':
       return {
-        block: { ...base, type: 'text', markdown: richTextToMarkdown(e.data) },
+        block: { ...base, type: 'text', markdown: decompileText(e.data) },
         unsupported: false,
       };
     case 'image': {
@@ -208,7 +208,7 @@ function decompileElement(
   }
 }
 
-function decompileQuestion(e: any): AuthoringQuestion | undefined {
+function decompileQuestion(e: any): RepresentationQuestion | undefined {
   const d = e.data ?? {};
   const bind =
     d.bindToAttribute && d.selectedAttribute ? { bindAttribute: d.selectedAttribute } : {};
@@ -289,7 +289,7 @@ function decompileQuestion(e: any): AuthoringQuestion | undefined {
 
 // ── Placement ────────────────────────────────────────────────────────────────
 
-function decompilePlacement(raw: unknown, type: string): AuthoringPlacement | undefined {
+function decompilePlacement(raw: unknown, type: string): RepresentationPlacement | undefined {
   const s = raw as any;
   if (!s || typeof s !== 'object') {
     return undefined;

@@ -2,10 +2,10 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 import {
-  authoringHideRules,
-  authoringStartRules,
-  authoringStepInput,
-} from '../content/authoring.schema';
+  representationHideRules,
+  representationStartRules,
+  representationStepInput,
+} from '../content/representation.schema';
 import { contentVersion } from '../content/content.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
@@ -38,9 +38,9 @@ export class ContentVersionDto extends createZodDto(contentVersion) {}
  * by cvid); `startRules`/`hideRules` set or clear (null) the version's rules.
  */
 export const updateVersionBody = z.object({
-  steps: z.array(authoringStepInput).optional(),
-  startRules: authoringStartRules.nullable().optional(),
-  hideRules: authoringHideRules.nullable().optional(),
+  steps: z.array(representationStepInput).optional(),
+  startRules: representationStartRules.nullable().optional(),
+  hideRules: representationHideRules.nullable().optional(),
 });
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;

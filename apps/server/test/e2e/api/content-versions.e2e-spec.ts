@@ -145,7 +145,7 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(res.body).toHaveProperty('themeId');
   });
 
-  it('decompiles slim authoring steps with expand=steps (ordered by sequence)', async () => {
+  it('decompiles slim representation steps with expand=steps (ordered by sequence)', async () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api(
       'get',

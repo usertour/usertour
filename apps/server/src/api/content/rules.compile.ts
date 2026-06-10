@@ -3,17 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { ParamsError } from '@/common/errors';
 
 import {
-  AuthoringAction,
-  AuthoringCondition,
-  AuthoringHideRules,
-  AuthoringStartRules,
-  AuthoringTrigger,
-} from './authoring.schema';
-import { compileTargetToElementData } from './target.mapper';
+  RepresentationAction,
+  RepresentationCondition,
+  RepresentationHideRules,
+  RepresentationStartRules,
+  RepresentationTrigger,
+} from './representation.schema';
+import { compileTargetToElementData } from './target.compile';
 
 /**
- * Compile the authoring rules model back into internal `RulesCondition[]` /
- * `StepTrigger[]` — the inverse of rules.mapper. References are resolved from
+ * Compile the representation rules model back into internal `RulesCondition[]` /
+ * `StepTrigger[]` — the inverse of rules.decompile. References are resolved from
  * stable code back to internal id (attribute / event); segment / content stay by
  * id. `run_javascript` is rejected (read-only).
  */
@@ -24,7 +24,7 @@ export interface CompileResolvers {
 
 type Rule = { id: string; type: string; data: any; operators?: 'and' | 'or'; conditions?: Rule[] };
 
-// authoring op → internal logic (inverse of the decompile maps).
+// representation op → internal logic (inverse of the decompile maps).
 const ATTR_LOGIC: Record<string, string> = {
   is: 'is',
   not: 'not',
@@ -96,7 +96,7 @@ const rule = (type: string, data: any, extra?: Partial<Rule>): Rule => ({
 });
 
 export function compileConditions(
-  conditions: AuthoringCondition[] | undefined,
+  conditions: RepresentationCondition[] | undefined,
   r: CompileResolvers,
 ): Rule[] {
   return (conditions ?? [])
@@ -104,7 +104,7 @@ export function compileConditions(
     .map((c) => compileCondition(c, r));
 }
 
-function compileCondition(c: AuthoringCondition, r: CompileResolvers): Rule {
+function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule {
   switch (c.type) {
     case 'group':
       return rule(
@@ -174,11 +174,11 @@ function compileCondition(c: AuthoringCondition, r: CompileResolvers): Rule {
   }
 }
 
-export function compileActions(actions: AuthoringAction[] | undefined): Rule[] {
+export function compileActions(actions: RepresentationAction[] | undefined): Rule[] {
   return (actions ?? []).filter((a) => a.type !== 'unsupported').map(compileAction);
 }
 
-function compileAction(a: AuthoringAction): Rule {
+function compileAction(a: RepresentationAction): Rule {
   switch (a.type) {
     case 'goto_step':
       return rule('step-goto', { stepCvid: a.step });
@@ -200,7 +200,7 @@ function compileAction(a: AuthoringAction): Rule {
 }
 
 export function compileTriggers(
-  triggers: AuthoringTrigger[] | undefined,
+  triggers: RepresentationTrigger[] | undefined,
   r: CompileResolvers,
 ): Rule[] {
   return (triggers ?? []).map((t) => ({
@@ -212,7 +212,10 @@ export function compileTriggers(
 }
 
 /** Compile version-level start rules back into config fragments. */
-export function compileStartRules(start: AuthoringStartRules | undefined, r: CompileResolvers) {
+export function compileStartRules(
+  start: RepresentationStartRules | undefined,
+  r: CompileResolvers,
+) {
   if (!start) {
     return { enabledAutoStartRules: false, autoStartRules: [] };
   }
@@ -237,7 +240,10 @@ export function compileStartRules(start: AuthoringStartRules | undefined, r: Com
 }
 
 /** Compile version-level hide rules back into config fragments. */
-export function compileHideRules(hide: AuthoringHideRules | null | undefined, r: CompileResolvers) {
+export function compileHideRules(
+  hide: RepresentationHideRules | null | undefined,
+  r: CompileResolvers,
+) {
   if (!hide) {
     return { enabledHideRules: false, hideRules: [] };
   }

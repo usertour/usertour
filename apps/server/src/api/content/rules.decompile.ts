@@ -1,16 +1,16 @@
 import {
-  AuthoringAction,
-  AuthoringCondition,
-  AuthoringHideRules,
-  AuthoringStartRules,
-  AuthoringTrigger,
+  RepresentationAction,
+  RepresentationCondition,
+  RepresentationHideRules,
+  RepresentationStartRules,
+  RepresentationTrigger,
   StringOp,
-} from './authoring.schema';
-import { richTextToMarkdown } from './rich-text';
-import { decompileTarget } from './target.mapper';
+} from './representation.schema';
+import { decompileText } from './text.decompile';
+import { decompileTarget } from './target.decompile';
 
 /**
- * Resolves internal ids to the stable codes the authoring schema references
+ * Resolves internal ids to the stable codes the representation schema references
  * (attribute / event by codeName). The service builds these from the project's
  * attribute + event definitions; unknown ids fall back to the raw id.
  */
@@ -32,7 +32,7 @@ type RuleNode = {
   conditions?: RuleNode[];
 };
 
-// Internal logic strings → authoring ops.
+// Internal logic strings → representation ops.
 const STRING_OP: Record<string, StringOp> = {
   is: 'is',
   not: 'not',
@@ -106,11 +106,14 @@ const mapAttrOp = (logic: unknown): string =>
 
 // ── Conditions ───────────────────────────────────────────────────────────────
 
-export function decompileConditions(raw: unknown, r: DecompileResolvers): AuthoringCondition[] {
+export function decompileConditions(
+  raw: unknown,
+  r: DecompileResolvers,
+): RepresentationCondition[] {
   return (Array.isArray(raw) ? raw : []).map((c) => decompileCondition(c, r));
 }
 
-export function decompileCondition(c: RuleNode, r: DecompileResolvers): AuthoringCondition {
+export function decompileCondition(c: RuleNode, r: DecompileResolvers): RepresentationCondition {
   const d = c.data ?? {};
   switch (c.type) {
     case 'group':
@@ -181,7 +184,9 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Authorin
   }
 }
 
-function mapCount(d: any): Partial<Pick<Extract<AuthoringCondition, { type: 'event' }>, 'count'>> {
+function mapCount(
+  d: any,
+): Partial<Pick<Extract<RepresentationCondition, { type: 'event' }>, 'count'>> {
   if (typeof d.countLogic !== 'string') {
     return {};
   }
@@ -196,7 +201,7 @@ function mapCount(d: any): Partial<Pick<Extract<AuthoringCondition, { type: 'eve
 
 function mapWithin(
   d: any,
-): Partial<Pick<Extract<AuthoringCondition, { type: 'event' }>, 'within'>> {
+): Partial<Pick<Extract<RepresentationCondition, { type: 'event' }>, 'within'>> {
   if (typeof d.timeLogic !== 'string') {
     return {};
   }
@@ -210,7 +215,7 @@ function mapWithin(
   };
 }
 
-function mapTime(d: any): AuthoringCondition {
+function mapTime(d: any): RepresentationCondition {
   if (typeof d.startTime === 'string' || typeof d.endTime === 'string') {
     return {
       type: 'time_window',
@@ -224,11 +229,11 @@ function mapTime(d: any): AuthoringCondition {
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
-export function decompileActions(raw: unknown): AuthoringAction[] {
+export function decompileActions(raw: unknown): RepresentationAction[] {
   return (Array.isArray(raw) ? raw : []).map(decompileAction);
 }
 
-export function decompileAction(a: RuleNode): AuthoringAction {
+export function decompileAction(a: RuleNode): RepresentationAction {
   const d = a.data ?? {};
   switch (a.type) {
     case 'step-goto':
@@ -242,7 +247,7 @@ export function decompileAction(a: RuleNode): AuthoringAction {
     case 'page-navigate':
       return {
         type: 'navigate',
-        url: typeof d.url === 'string' ? d.url : richTextToMarkdown(d.value),
+        url: typeof d.url === 'string' ? d.url : decompileText(d.value),
         ...(d.openType === 'new' || d.openNewTab ? { newTab: true } : {}),
         ...(d.openNewWindow ? { newWindow: true } : {}),
       };
@@ -260,11 +265,11 @@ export function decompileAction(a: RuleNode): AuthoringAction {
 
 // ── Triggers ─────────────────────────────────────────────────────────────────
 
-export function decompileTriggers(raw: unknown, r: DecompileResolvers): AuthoringTrigger[] {
+export function decompileTriggers(raw: unknown, r: DecompileResolvers): RepresentationTrigger[] {
   return (Array.isArray(raw) ? raw : []).map((t) => decompileTrigger(t, r));
 }
 
-function decompileTrigger(t: any, r: DecompileResolvers): AuthoringTrigger {
+function decompileTrigger(t: any, r: DecompileResolvers): RepresentationTrigger {
   return {
     ...(Array.isArray(t?.conditions) && t.conditions.length
       ? { when: decompileConditions(t.conditions, r) }
@@ -279,7 +284,7 @@ function decompileTrigger(t: any, r: DecompileResolvers): AuthoringTrigger {
 export function decompileStartRules(
   config: any,
   r: DecompileResolvers,
-): AuthoringStartRules | undefined {
+): RepresentationStartRules | undefined {
   if (!config?.enabledAutoStartRules) {
     return undefined;
   }
@@ -298,14 +303,14 @@ export function decompileStartRules(
 export function decompileHideRules(
   config: any,
   r: DecompileResolvers,
-): AuthoringHideRules | undefined {
+): RepresentationHideRules | undefined {
   if (!config?.enabledHideRules) {
     return undefined;
   }
   return { when: decompileConditions(config.hideRules, r) };
 }
 
-function mapFrequency(f: any): AuthoringStartRules['frequency'] {
+function mapFrequency(f: any): RepresentationStartRules['frequency'] {
   return {
     mode: f.frequency ?? 'unlimited',
     ...(f.every

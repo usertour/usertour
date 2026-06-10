@@ -3,23 +3,23 @@ import { z } from 'zod';
 import { ApiObjectType } from '../shared/object-type';
 
 /**
- * The authoring/representation schema — a stable, intent-level view of a step
+ * The representation/representation schema — a stable, intent-level view of a step
  * that the decompiler produces from the internal `ContentEditorRoot[]` + step
  * fields + rules, and (later) the compiler consumes for writes. See
- * AUTHORING_SCHEMA.md for the design + decisions.
+ * REPRESENTATION_SCHEMA.md for the design + decisions.
  */
 
 // ── Targeting ──────────────────────────────────────────────────────────────
 // The internal "auto" selectors fingerprint is NOT authorable; only selector /
 // text are modeled (an auto-only target decompiles to undefined + hasUnsupported).
-export const authoringTarget = z.union([
+export const representationTarget = z.union([
   z.object({ by: z.literal('selector'), selector: z.string(), nth: z.number().optional() }),
   z.object({ by: z.literal('text'), text: z.string() }),
 ]);
-export type AuthoringTarget = z.infer<typeof authoringTarget>;
+export type RepresentationTarget = z.infer<typeof representationTarget>;
 
 // ── Placement (simplified StepSettings) ──────────────────────────────────────
-export const authoringPlacement = z.union([
+export const representationPlacement = z.union([
   z.object({
     side: z.enum(['top', 'right', 'bottom', 'left']),
     align: z.enum(['start', 'center', 'end']),
@@ -34,7 +34,7 @@ export const authoringPlacement = z.union([
     blockTarget: z.boolean().optional(),
   }),
 ]);
-export type AuthoringPlacement = z.infer<typeof authoringPlacement>;
+export type RepresentationPlacement = z.infer<typeof representationPlacement>;
 
 // ── Rules: conditions ────────────────────────────────────────────────────────
 export const stringOp = z.enum([
@@ -52,8 +52,8 @@ export const stringOp = z.enum([
 export type StringOp = z.infer<typeof stringOp>;
 
 // Recursive predicate tree. `operators` and/or → group.match all/any.
-export type AuthoringCondition =
-  | { type: 'group'; match: 'all' | 'any'; conditions: AuthoringCondition[] }
+export type RepresentationCondition =
+  | { type: 'group'; match: 'all' | 'any'; conditions: RepresentationCondition[] }
   | {
       type: 'user_attribute';
       attribute: string;
@@ -66,7 +66,7 @@ export type AuthoringCondition =
   | { type: 'current_url'; includes: string[]; excludes?: string[] }
   | {
       type: 'element';
-      target?: AuthoringTarget;
+      target?: RepresentationTarget;
       state: 'present' | 'hidden' | 'disabled' | 'enabled' | 'clicked' | 'unclicked';
     }
   | {
@@ -85,19 +85,19 @@ export type AuthoringCondition =
         unit?: 'seconds' | 'minutes' | 'hours' | 'days';
       };
       scope?: 'current_user' | 'current_user_in_company' | 'any_user_in_company';
-      where?: AuthoringCondition[];
+      where?: RepresentationCondition[];
     }
-  | { type: 'text_input'; target?: AuthoringTarget; op: StringOp; value?: string }
-  | { type: 'text_filled'; target?: AuthoringTarget }
+  | { type: 'text_input'; target?: RepresentationTarget; op: StringOp; value?: string }
+  | { type: 'text_filled'; target?: RepresentationTarget }
   | { type: 'time_window'; start?: string; end?: string }
   | { type: 'unsupported'; note?: string };
 
-export const authoringCondition = z.lazy(() =>
+export const representationCondition = z.lazy(() =>
   z.union([
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(authoringCondition),
+      conditions: z.array(representationCondition),
     }),
     z.object({
       type: z.literal('user_attribute'),
@@ -115,7 +115,7 @@ export const authoringCondition = z.lazy(() =>
     }),
     z.object({
       type: z.literal('element'),
-      target: authoringTarget.optional(),
+      target: representationTarget.optional(),
       state: z.enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked']),
     }),
     z.object({
@@ -142,15 +142,15 @@ export const authoringCondition = z.lazy(() =>
         })
         .optional(),
       scope: z.enum(['current_user', 'current_user_in_company', 'any_user_in_company']).optional(),
-      where: z.array(authoringCondition).optional(),
+      where: z.array(representationCondition).optional(),
     }),
     z.object({
       type: z.literal('text_input'),
-      target: authoringTarget.optional(),
+      target: representationTarget.optional(),
       op: stringOp,
       value: z.string().optional(),
     }),
-    z.object({ type: z.literal('text_filled'), target: authoringTarget.optional() }),
+    z.object({ type: z.literal('text_filled'), target: representationTarget.optional() }),
     z.object({
       type: z.literal('time_window'),
       start: z.string().optional(),
@@ -158,10 +158,10 @@ export const authoringCondition = z.lazy(() =>
     }),
     z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
   ]),
-) as unknown as z.ZodType<AuthoringCondition>;
+) as unknown as z.ZodType<RepresentationCondition>;
 
 // ── Rules: actions ───────────────────────────────────────────────────────────
-export const authoringAction = z.union([
+export const representationAction = z.union([
   z.object({ type: z.literal('goto_step'), step: z.string() }),
   z.object({ type: z.literal('start_flow'), flow: z.string(), step: z.string().optional() }),
   z.object({
@@ -175,17 +175,17 @@ export const authoringAction = z.union([
   z.object({ type: z.literal('run_javascript'), script: z.string() }),
   z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
 ]);
-export type AuthoringAction = z.infer<typeof authoringAction>;
+export type RepresentationAction = z.infer<typeof representationAction>;
 
-export const authoringTrigger = z.object({
-  when: z.array(authoringCondition).optional(),
-  do: z.array(authoringAction),
+export const representationTrigger = z.object({
+  when: z.array(representationCondition).optional(),
+  do: z.array(representationAction),
   waitMs: z.number().optional(),
 });
-export type AuthoringTrigger = z.infer<typeof authoringTrigger>;
+export type RepresentationTrigger = z.infer<typeof representationTrigger>;
 
 // ── Questions ────────────────────────────────────────────────────────────────
-export const authoringQuestion = z.union([
+export const representationQuestion = z.union([
   z.object({
     kind: z.literal('nps'),
     name: z.string(),
@@ -228,12 +228,12 @@ export const authoringQuestion = z.union([
     bindAttribute: z.string().optional(),
   }),
 ]);
-export type AuthoringQuestion = z.infer<typeof authoringQuestion>;
+export type RepresentationQuestion = z.infer<typeof representationQuestion>;
 
 // ── Content blocks ───────────────────────────────────────────────────────────
 // `id` is the round-trip merge key (maps a block to its internal element so
 // untouched styling survives a write).
-export type AuthoringBlock =
+export type RepresentationBlock =
   | { object: ApiObjectType.BLOCK; id?: string; type: 'text'; markdown: string }
   | {
       object: ApiObjectType.BLOCK;
@@ -248,9 +248,9 @@ export type AuthoringBlock =
       id?: string;
       type: 'button';
       text: string;
-      actions?: AuthoringAction[];
-      disabledWhen?: AuthoringCondition[];
-      hiddenWhen?: AuthoringCondition[];
+      actions?: RepresentationAction[];
+      disabledWhen?: RepresentationCondition[];
+      hiddenWhen?: RepresentationCondition[];
       variant?: 'primary' | 'secondary';
     }
   | { object: ApiObjectType.BLOCK; id?: string; type: 'embed'; url: string }
@@ -258,8 +258,8 @@ export type AuthoringBlock =
       object: ApiObjectType.BLOCK;
       id?: string;
       type: 'question';
-      question: AuthoringQuestion;
-      actions?: AuthoringAction[];
+      question: RepresentationQuestion;
+      actions?: RepresentationAction[];
     }
   | {
       object: ApiObjectType.BLOCK;
@@ -267,7 +267,7 @@ export type AuthoringBlock =
       type: 'columns';
       columns: {
         width?: { unit: 'percent' | 'pixels' | 'fill'; value?: number };
-        blocks: AuthoringBlock[];
+        blocks: RepresentationBlock[];
       }[];
     }
   | { object: ApiObjectType.BLOCK; id?: string; type: 'unsupported'; note?: string };
@@ -277,7 +277,7 @@ const blockBase = {
   object: z.literal(ApiObjectType.BLOCK).default(ApiObjectType.BLOCK),
   id: z.string().optional(),
 };
-export const authoringBlock = z.lazy(() =>
+export const representationBlock = z.lazy(() =>
   z.union([
     z.object({ ...blockBase, type: z.literal('text'), markdown: z.string() }),
     z.object({
@@ -291,17 +291,17 @@ export const authoringBlock = z.lazy(() =>
       ...blockBase,
       type: z.literal('button'),
       text: z.string(),
-      actions: z.array(authoringAction).optional(),
-      disabledWhen: z.array(authoringCondition).optional(),
-      hiddenWhen: z.array(authoringCondition).optional(),
+      actions: z.array(representationAction).optional(),
+      disabledWhen: z.array(representationCondition).optional(),
+      hiddenWhen: z.array(representationCondition).optional(),
       variant: z.enum(['primary', 'secondary']).optional(),
     }),
     z.object({ ...blockBase, type: z.literal('embed'), url: z.string() }),
     z.object({
       ...blockBase,
       type: z.literal('question'),
-      question: authoringQuestion,
-      actions: z.array(authoringAction).optional(),
+      question: representationQuestion,
+      actions: z.array(representationAction).optional(),
     }),
     z.object({
       ...blockBase,
@@ -311,16 +311,16 @@ export const authoringBlock = z.lazy(() =>
           width: z
             .object({ unit: z.enum(['percent', 'pixels', 'fill']), value: z.number().optional() })
             .optional(),
-          blocks: z.array(authoringBlock),
+          blocks: z.array(representationBlock),
         }),
       ),
     }),
     z.object({ ...blockBase, type: z.literal('unsupported'), note: z.string().optional() }),
   ]),
-) as unknown as z.ZodType<AuthoringBlock>;
+) as unknown as z.ZodType<RepresentationBlock>;
 
 // ── Step ─────────────────────────────────────────────────────────────────────
-export const authoringStep = z.object({
+export const representationStep = z.object({
   object: z.literal(ApiObjectType.STEP),
   id: z.string(),
   /** Front-end logical id — the write upsert key. Round-trips on read. */
@@ -329,20 +329,20 @@ export const authoringStep = z.object({
   /** tooltip | modal | bubble | hidden */
   type: z.string(),
   sequence: z.number(),
-  target: authoringTarget.optional(),
-  placement: authoringPlacement.optional(),
+  target: representationTarget.optional(),
+  placement: representationPlacement.optional(),
   width: z.number().optional(),
   skippable: z.boolean().optional(),
-  content: z.array(authoringBlock),
-  triggers: z.array(authoringTrigger).optional(),
+  content: z.array(representationBlock),
+  triggers: z.array(representationTrigger).optional(),
   advanced: z.object({ hasUnsupported: z.boolean() }).optional(),
 });
-export type AuthoringStep = z.infer<typeof authoringStep>;
+export type RepresentationStep = z.infer<typeof representationStep>;
 
 // ── Version-level start / hide rules ─────────────────────────────────────────
 const durationUnit = z.enum(['seconds', 'minutes', 'hours', 'days']);
-export const authoringStartRules = z.object({
-  when: z.array(authoringCondition),
+export const representationStartRules = z.object({
+  when: z.array(representationCondition),
   frequency: z
     .object({
       mode: z.enum(['once', 'multiple', 'unlimited']),
@@ -356,26 +356,26 @@ export const authoringStartRules = z.object({
   waitMs: z.number().optional(),
   startIfNotComplete: z.boolean().optional(),
 });
-export type AuthoringStartRules = z.infer<typeof authoringStartRules>;
+export type RepresentationStartRules = z.infer<typeof representationStartRules>;
 
-export const authoringHideRules = z.object({ when: z.array(authoringCondition) });
-export type AuthoringHideRules = z.infer<typeof authoringHideRules>;
+export const representationHideRules = z.object({ when: z.array(representationCondition) });
+export type RepresentationHideRules = z.infer<typeof representationHideRules>;
 
 // ── Write input ──────────────────────────────────────────────────────────────
 // A lenient step shape for writes: `id` (server-owned) is omitted for new steps,
 // `cvid` is the merge key, `sequence` defaults to the array position, `object` is
 // not required. Compiled by the write path and merged onto the existing step.
-export const authoringStepInput = z.object({
+export const representationStepInput = z.object({
   id: z.string().optional(),
   cvid: z.string().optional(),
   name: z.string(),
   type: z.string(),
   sequence: z.number().optional(),
-  target: authoringTarget.optional(),
-  placement: authoringPlacement.optional(),
+  target: representationTarget.optional(),
+  placement: representationPlacement.optional(),
   width: z.number().optional(),
   skippable: z.boolean().optional(),
-  content: z.array(authoringBlock).default([]),
-  triggers: z.array(authoringTrigger).optional(),
+  content: z.array(representationBlock).default([]),
+  triggers: z.array(representationTrigger).optional(),
 });
-export type AuthoringStepInput = z.infer<typeof authoringStepInput>;
+export type RepresentationStepInput = z.infer<typeof representationStepInput>;

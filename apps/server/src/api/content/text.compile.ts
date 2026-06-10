@@ -1,6 +1,6 @@
 /**
- * Compile markdown (the authoring `text` block) back into a Slate document — the
- * inverse of rich-text.ts. Supports the subset the decompiler emits: paragraph /
+ * Compile markdown (the representation `text` block) back into a Slate document — the
+ * inverse of text.decompile.ts. Supports the subset the decompiler emits: paragraph /
  * h1 / h2 / bulleted + numbered lists / code, bold / italic, links, and the
  * Liquid user-attribute syntax `{{ code | default: "fallback" }}`.
  *
@@ -72,7 +72,7 @@ const listItem = (line: string, marker: RegExp): SlateNode => ({
   children: parseInline(line.replace(marker, '')),
 });
 
-export function markdownToRichText(md: string): SlateNode[] {
+export function compileText(md: string): SlateNode[] {
   const lines = (md ?? '').split('\n');
   const blocks: SlateNode[] = [];
   let i = 0;

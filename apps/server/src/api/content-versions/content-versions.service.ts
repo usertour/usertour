@@ -4,15 +4,15 @@ import { PrismaService } from 'nestjs-prisma';
 import { ContentNotFoundError, ParamsError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 
-import { compileStep } from '../content/authoring.compiler';
-import { decompileStep } from '../content/authoring.mapper';
+import { compileStep } from '../content/representation.compile';
+import { decompileStep } from '../content/representation.decompile';
 import { ContentVersion } from '../content/content.schema';
-import { CompileResolvers, compileHideRules, compileStartRules } from '../content/rules.compiler';
+import { CompileResolvers, compileHideRules, compileStartRules } from '../content/rules.compile';
 import {
   DecompileResolvers,
   decompileHideRules,
   decompileStartRules,
-} from '../content/rules.mapper';
+} from '../content/rules.decompile';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapQuestions, mapVersion } from './content-versions.mapper';
@@ -152,7 +152,7 @@ export class ApiContentVersionsService {
   }
 
   /**
-   * Write a draft version: compile the authoring steps + rules and field-merge
+   * Write a draft version: compile the representation steps + rules and field-merge
    * them onto the existing internal version, then delegate persistence to the
    * domain `updateContentVersion` (the builder's exact path — cvid upsert in a
    * transaction). Only the provided fields are touched.

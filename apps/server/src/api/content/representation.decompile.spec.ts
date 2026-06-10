@@ -1,5 +1,5 @@
-import { decompileContent, decompileStep } from './authoring.mapper';
-import { richTextToMarkdown } from './rich-text';
+import { decompileContent, decompileStep } from './representation.decompile';
+import { decompileText } from './text.decompile';
 
 /** Pure decompiler — testable with plain internal-shape fixtures (no DB/DI). */
 
@@ -33,9 +33,9 @@ const root = (columns: unknown[], id?: string) => ({
   children: columns,
 });
 
-describe('richTextToMarkdown', () => {
+describe('decompileText', () => {
   it('renders bold, links, and user attributes as a Liquid subset', () => {
-    expect(richTextToMarkdown(slate)).toBe(
+    expect(decompileText(slate)).toBe(
       'Hi **there**{{ first_name | default: "friend" }}! See the [docs](https://x.io)',
     );
   });
@@ -51,11 +51,11 @@ describe('richTextToMarkdown', () => {
         ],
       },
     ];
-    expect(richTextToMarkdown(doc)).toBe('# Title\n\n- a\n- b');
+    expect(decompileText(doc)).toBe('# Title\n\n- a\n- b');
   });
 
   it('returns empty string for non-array data', () => {
-    expect(richTextToMarkdown(null)).toBe('');
+    expect(decompileText(null)).toBe('');
   });
 });
 

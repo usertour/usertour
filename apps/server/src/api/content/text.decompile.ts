@@ -92,7 +92,7 @@ function blockToMarkdown(node: SlateNode): string {
 }
 
 /** Slate doc (a `text` element's `data`) → markdown string. */
-export function richTextToMarkdown(data: unknown): string {
+export function decompileText(data: unknown): string {
   if (!Array.isArray(data)) {
     return '';
   }

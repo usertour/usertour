@@ -1,4 +1,4 @@
-# Content authoring schema (v2) — design
+# Content representation schema (v2) — design
 
 > Status: **implemented (v0)** — read (decompiler) + write (compiler + field
 > merge) + MCP tools shipped on `feat/api-token`; decisions locked (§11). Captures
@@ -17,7 +17,7 @@ step content). An API consumer or MCP agent cannot see "what steps a flow has,
 what each targets, what it says."
 
 Goal: expose the step content, as a representation that also works for **future
-writes** (AI/integration authoring), without welding the internal builder model
+writes** (AI/integration representation), without welding the internal builder model
 to a public contract.
 
 ## 2. Non-negotiable facts
@@ -34,12 +34,12 @@ to a public contract.
 
 ## 3. Core principle
 
-A **stable, intent-level authoring schema** sits between consumers and the
+A **stable, intent-level representation schema** sits between consumers and the
 internal model:
 
 ```
                 compile  ┌─────────────────────────┐  decompile
- authoring  ───────────► │  ContentEditorRoot[] +   │ ──────────►  authoring
+ representation  ───────────► │  ContentEditorRoot[] +   │ ──────────►  representation
  (this doc)              │  Step fields (internal)  │              (this doc)
                          └─────────────────────────┘
 ```
@@ -73,28 +73,28 @@ Takeaways:
   passthrough in v0).
 - Writes → never whole-tree blob replace; ops/patch semantics.
 
-## 5. The authoring schema (v0)
+## 5. The representation schema (v0)
 
 Per-step, plus version-level rules (§5.1). All nested objects carry an `object`
 discriminator (A-shape).
 
 ```ts
-AuthoringStep = {
+RepresentationStep = {
   object: "step";
   id?: string;            // server-owned; present on read, absent on write = new
   cvid?: string;          // upsert key (see §8); server-generated for new steps
   name: string;
   type: "tooltip" | "modal" | "bubble" | "hidden";
-  target?: AuthoringTarget;        // tooltip/bubble; n/a for modal
-  placement?: AuthoringPlacement;  // simplified from StepSettings
+  target?: RepresentationTarget;        // tooltip/bubble; n/a for modal
+  placement?: RepresentationPlacement;  // simplified from StepSettings
   width?: number;                  // step width px (omit → theme default)
   skippable?: boolean;
-  content: AuthoringBlock[];       // the body (decompiled ContentEditorRoot[])
-  triggers?: AuthoringTrigger[];   // when conditions met → run actions (§5.1)
+  content: RepresentationBlock[];       // the body (decompiled ContentEditorRoot[])
+  triggers?: RepresentationTrigger[];   // when conditions met → run actions (§5.1)
   advanced?: { hasUnsupported: boolean };
 };
 
-AuthoringTarget =
+RepresentationTarget =
   | { by: "selector"; selector: string; nth?: number }   // internal customSelector + sequence
   | { by: "text"; text: string };                        // internal content match (dynamic content)
   // The internal "auto" selectors fingerprint (a captured DOM parent/sibling tree)
@@ -103,20 +103,20 @@ AuthoringTarget =
   // selector/text are accepted; an untouched fingerprint is preserved by the
   // field-level merge (§8) — only an explicit new target replaces it.
 
-AuthoringPlacement =
+RepresentationPlacement =
   | { side: "top"|"right"|"bottom"|"left"; align: "start"|"center"|"end"; sideOffset?: number; alignOffset?: number }   // tooltip/bubble
   | { position: "center"|"top"|"bottom"|"left"|"right"; offsetX?: number; offsetY?: number; backdrop?: boolean; blockTarget?: boolean }; // modal
 
-AuthoringBlock =
+RepresentationBlock =
   | { object:"block"; type:"text";        markdown: string }   // + Liquid subset, see §6
   | { object:"block"; type:"image";       url: string; alt?: string; link?: { url: string; newTab?: boolean } }
-  | { object:"block"; type:"button";      text: string; actions?: AuthoringAction[]; disabledWhen?: AuthoringCondition[]; hiddenWhen?: AuthoringCondition[]; variant?: "primary"|"secondary" }
+  | { object:"block"; type:"button";      text: string; actions?: RepresentationAction[]; disabledWhen?: RepresentationCondition[]; hiddenWhen?: RepresentationCondition[]; variant?: "primary"|"secondary" }
   | { object:"block"; type:"embed";       url: string }
-  | { object:"block"; type:"question";    question: AuthoringQuestion }
-  | { object:"block"; type:"columns";     columns: { width?: { unit:"percent"|"pixels"|"fill"; value?: number }; blocks: AuthoringBlock[] }[] }  // per-column width is structural
+  | { object:"block"; type:"question";    question: RepresentationQuestion }
+  | { object:"block"; type:"columns";     columns: { width?: { unit:"percent"|"pixels"|"fill"; value?: number }; blocks: RepresentationBlock[] }[] }  // per-column width is structural
   | { object:"block"; type:"unsupported"; note?: string };              // capability gap, read-only
 
-AuthoringQuestion =                          // 6 internal question elements → 4 kinds
+RepresentationQuestion =                          // 6 internal question elements → 4 kinds
   | { kind:"nps";    name: string; cvid?: string; lowLabel?: string; highLabel?: string; bindAttribute?: string }
   | { kind:"rating"; name: string; cvid?: string; style:"star"|"scale"; range:{low:number;high:number}; default?: number; lowLabel?: string; highLabel?: string; bindAttribute?: string }
   | { kind:"text";   name: string; cvid?: string; multiline: boolean; placeholder?: string; buttonText?: string; required?: boolean; bindAttribute?: string }
@@ -125,10 +125,10 @@ AuthoringQuestion =                          // 6 internal question elements →
 ```
 
 - Every block carries an optional `id?: string` — the round-trip merge key (§8)
-  that maps an authoring block to its internal element so untouched styling
+  that maps a representation block to its internal element so untouched styling
   (margins/padding/widths/colors/align) survives a write.
 - `bindAttribute?` collapses internal `bindToAttribute(bool) + selectedAttribute(code)`.
-- Every `question` block may also carry `actions?: AuthoringAction[]` (run on answer).
+- Every `question` block may also carry `actions?: RepresentationAction[]` (run on answer).
 - `content` is a **flat block list** (vertical stack, the 95% case). Side-by-side
   layout uses an explicit `columns` block (per-column width is structural, kept).
   Anything unrepresentable → `unsupported`.
@@ -142,20 +142,20 @@ value, so it is fully modeled, not deferred to `unsupported`.
 
 ```ts
 // Predicate tree. internal `operators` and/or → group `match` all/any.
-AuthoringCondition =
-  | { type:"group";          match:"all"|"any"; conditions: AuthoringCondition[] }
+RepresentationCondition =
+  | { type:"group";          match:"all"|"any"; conditions: RepresentationCondition[] }
   | { type:"user_attribute"; attribute: string; op: AttrOp; value?: string; value2?: string; values?: string[] }
   | { type:"segment";        segment: string; in: boolean }              // segment by id
   | { type:"current_url";    includes: string[]; excludes?: string[] }   // URL glob/regex patterns (NOT op+value)
-  | { type:"element";        target: AuthoringTarget; state:"present"|"hidden"|"disabled"|"enabled"|"clicked"|"unclicked" }
+  | { type:"element";        target: RepresentationTarget; state:"present"|"hidden"|"disabled"|"enabled"|"clicked"|"unclicked" }
   | { type:"flow";           flow: string; state:"seen"|"unseen"|"completed"|"uncompleted"|"active"|"inactive" }
   | { type:"event";          event: string;
                              count?:{ op:"at_least"|"at_most"|"exactly"|"between"; n:number; n2?:number };
                              within?:{ op:"in_the_last"|"more_than"|"between"|"any_time"; value?:number; value2?:number; unit?:"seconds"|"minutes"|"hours"|"days" };
                              scope?:"current_user"|"current_user_in_company"|"any_user_in_company";
-                             where?: AuthoringCondition[] }              // nested filter on the event's attributes
-  | { type:"text_input";     target: AuthoringTarget; op: StringOp; value?: string }
-  | { type:"text_filled";    target: AuthoringTarget }                  // "field was filled" — no op/value
+                             where?: RepresentationCondition[] }              // nested filter on the event's attributes
+  | { type:"text_input";     target: RepresentationTarget; op: StringOp; value?: string }
+  | { type:"text_filled";    target: RepresentationTarget }                  // "field was filled" — no op/value
   | { type:"time_window";    start?: string; end?: string }             // ISO 8601 (legacy MM/dd format → unsupported)
   | { type:"unsupported";    note?: string };                          // auto-target, task-is-clicked (unimplemented), legacy time, unknown types
 
@@ -170,7 +170,7 @@ AttrOp = string;
 StringOp = "is"|"not"|"contains"|"not_contains"|"starts_with"|"ends_with"|"match"|"unmatch"|"any"|"empty";
 
 // Effects.
-AuthoringAction =
+RepresentationAction =
   | { type:"goto_step";       step: string }                  // step key/cvid
   | { type:"start_flow";      flow: string; step?: string }
   | { type:"navigate";        url: string; newTab?: boolean; newWindow?: boolean } // url supports {{ }} (see §6)
@@ -178,17 +178,17 @@ AuthoringAction =
   | { type:"run_javascript";  script: string }               // READ-ONLY: never accepted on write
   | { type:"unsupported";     note?: string };
 
-AuthoringTrigger = { when?: AuthoringCondition[]; do: AuthoringAction[]; waitMs?: number };
+RepresentationTrigger = { when?: RepresentationCondition[]; do: RepresentationAction[]; waitMs?: number };
 ```
 
 Attachment points:
 
 ```ts
 // version-level — the start/hide rules (the system's most important behavior)
-AuthoringVersion = {
+RepresentationVersion = {
   // …id / number / steps / questions(summary)…
   startRules?: {
-    when: AuthoringCondition[];
+    when: RepresentationCondition[];
     frequency?: { mode:"once"|"multiple"|"unlimited";
                   every?:   { times?: number; duration: number; unit:"seconds"|"minutes"|"hours"|"days" };
                   atLeast?: { duration: number; unit:"seconds"|"minutes"|"hours"|"days" } };
@@ -196,9 +196,9 @@ AuthoringVersion = {
     waitMs?: number;
     startIfNotComplete?: boolean;
   };
-  hideRules?:  { when: AuthoringCondition[] };
+  hideRules?:  { when: RepresentationCondition[] };
 };
-// step-level:      triggers?: AuthoringTrigger[]
+// step-level:      triggers?: RepresentationTrigger[]
 // button block:    actions?, disabledWhen?, hiddenWhen?
 // question block:  actions?
 ```
@@ -269,7 +269,7 @@ POST   /v2/projects/:projectId/content                create content
 PATCH  /v2/projects/:projectId/content/:id            update metadata (name…)
 DELETE /v2/projects/:projectId/content/:id            delete/archive
 POST   /v2/projects/:projectId/content-versions       create draft version (body: contentId)
-PATCH  /v2/projects/:projectId/content-versions/:id   write steps/content   ← body authoring blocks
+PATCH  /v2/projects/:projectId/content-versions/:id   write steps/content   ← body representation blocks
 ```
 - Granular step ops, **if needed later**, are a sub-resource under the existing
   tree (not a separate write API):
@@ -280,18 +280,18 @@ PATCH  /v2/projects/:projectId/content-versions/:id   write steps/content   ← 
 ```
 REST POST/PATCH ─┐
                  ├─► ApiContentService.write()       (src/api, thin orchestration)
-MCP write tool ──┘     1. validate authoring (zod + reference & operator validation)
+MCP write tool ──┘     1. validate representation (zod + reference & operator validation)
                        2. read the current version's internal step tree   ← merge base
                        3. FIELD-LEVEL MERGE onto the existing tree:
-                          map each authoring step/block to its internal element by
-                          cvid / block id; overwrite ONLY the fields the authoring
+                          map each representation step/block to its internal element by
+                          cvid / block id; overwrite ONLY the fields the representation
                           schema expresses (text, button, question, target, rules…),
                           leaving styling / "auto" target fingerprint / offsets
                           INTACT. New blocks → theme defaults; missing → deleted.
                        4. ContentService.updateContentVersion(full StepInput[])  ← domain, builder's path
-                       5. decompile result → authoring
+                       5. decompile result → representation
 ```
-- **Why merge, not recompile.** The authoring view is intentionally lossy — it
+- **Why merge, not recompile.** The representation view is intentionally lossy — it
   drops per-element styling and the "auto" target fingerprint (verified
   runtime-critical). Regenerating the whole step from it would silently reset all
   of that on every edit. So compile = *merge deltas onto the existing internal
@@ -309,9 +309,9 @@ MCP write tool ──┘     1. validate authoring (zod + reference & operator v
 
 - **Read**: fully reused — MCP tools return the same decompiled blocks.
 - **Write (Phase 4)**: binds the same `ApiContentService.write`. Decided
-  approach (§11.5): **emit-structured first** (expose the authoring schema as the
+  approach (§11.5): **emit-structured first** (expose the representation schema as the
   tool input — nearly free once REST write exists), **then layer intent tools**
-  ("build a 3-step onboarding for X") that lower intent → authoring and call the
+  ("build a 3-step onboarding for X") that lower intent → representation and call the
   same write service. Either way the **compiler + schema + domain write path are
   shared**.
 
@@ -342,18 +342,18 @@ MCP write tool ──┘     1. validate authoring (zod + reference & operator v
    questions in context.
 4. **Rules (conditions / actions / triggers) are fully modeled, not deferred.**
    They are the system's core value (start/hide rules, step triggers,
-   button/question behavior), so v0 designs them as typed authoring unions
+   button/question behavior), so v0 designs them as typed representation unions
    (§5.1) rather than `unsupported`. Entities are referenced by stable code
    (attribute/event `codeName`, content/flow id, step key, **segment by id**),
    resolved by the compiler/decompiler. **`run_javascript` is read-only** —
    surfaced on read, rejected on write (no AI/API-injected JS). `unsupported`
    now only covers the tail: legacy time format and unknown rule types.
 5. **MCP write (Phase 4): emit-structured first, layer intent later.** The
-   authoring schema is already AI-friendly, so exposing it as the tool input is
+   representation schema is already AI-friendly, so exposing it as the tool input is
    nearly free once the REST write exists; high-value intent tools ("build a
-   3-step onboarding for X") get added on top, lowering intent → authoring and
+   3-step onboarding for X") get added on top, lowering intent → representation and
    calling the same write service. Final call deferred to Phase 4.
-6. **Round-trip fidelity = field-level merge (Phase 4 write).** The authoring view
+6. **Round-trip fidelity = field-level merge (Phase 4 write).** The representation view
    is deliberately lossy (drops per-element styling and the "auto" target
    fingerprint, both verified runtime-critical). Writes therefore **merge deltas
    onto the existing internal step tree** (matched by step `cvid` / block `id`),

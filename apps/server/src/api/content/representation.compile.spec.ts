@@ -1,8 +1,8 @@
-import { compileStep } from './authoring.compiler';
-import { decompileStep } from './authoring.mapper';
-import { markdownToRichText } from './markdown';
-import { richTextToMarkdown } from './rich-text';
-import { CompileResolvers } from './rules.compiler';
+import { compileStep } from './representation.compile';
+import { decompileStep } from './representation.decompile';
+import { compileText } from './text.compile';
+import { decompileText } from './text.decompile';
+import { CompileResolvers } from './rules.compile';
 
 const ids: CompileResolvers = { attributeId: (c) => c, eventId: (c) => c };
 
@@ -14,13 +14,13 @@ describe('markdown round-trip', () => {
     'See [docs](https://x.io)',
     '{{ first_name | default: "friend" }}',
   ])('round-trips %p', (md) => {
-    expect(richTextToMarkdown(markdownToRichText(md))).toBe(md);
+    expect(decompileText(compileText(md))).toBe(md);
   });
 });
 
 describe('compileStep → decompileStep round-trip', () => {
   it('preserves target, placement, width, content, triggers', () => {
-    const authoring = {
+    const representation = {
       object: 'step' as const,
       id: 's1',
       cvid: 'cv1',
@@ -41,7 +41,7 @@ describe('compileStep → decompileStep round-trip', () => {
       ],
       triggers: [{ do: [{ type: 'dismiss' as const }] }],
     };
-    const compiled = compileStep(authoring as any, undefined, ids);
+    const compiled = compileStep(representation as any, undefined, ids);
     const back = decompileStep({
       id: 's1',
       cvid: compiled.cvid,
@@ -89,7 +89,7 @@ describe('field-level merge', () => {
       target: { type: 'auto', selectors: { tag: 'button' } },
       setting: { side: 'top', align: 'start', sideOffset: 99 },
     };
-    const authoring = {
+    const representation = {
       object: 'step' as const,
       id: 's1',
       cvid: 'cv1',
@@ -99,13 +99,13 @@ describe('field-level merge', () => {
       placement: { side: 'bottom' as const, align: 'center' as const },
       content: [{ object: 'block' as const, id: 'b1', type: 'image' as const, url: 'new.png' }],
     };
-    const compiled: any = compileStep(authoring as any, existing, ids);
+    const compiled: any = compileStep(representation as any, existing, ids);
 
     const imageEl = compiled.data[0].children[0].children[0].element;
     expect(imageEl.url).toBe('new.png'); // overwritten
     expect(imageEl.width).toEqual({ type: 'percent', value: 50 }); // preserved styling
 
-    // no authoring target → the internal "auto" fingerprint is preserved
+    // no representation target → the internal "auto" fingerprint is preserved
     expect(compiled.target).toEqual({ type: 'auto', selectors: { tag: 'button' } });
     // setting offset preserved, side/align overwritten
     expect(compiled.setting).toMatchObject({ side: 'bottom', align: 'center', sideOffset: 99 });
@@ -114,7 +114,7 @@ describe('field-level merge', () => {
 
 describe('run_javascript is write-rejected', () => {
   it('throws when an action is run_javascript', () => {
-    const authoring = {
+    const representation = {
       object: 'step' as const,
       id: 's1',
       name: 'X',
@@ -123,6 +123,6 @@ describe('run_javascript is write-rejected', () => {
       content: [],
       triggers: [{ do: [{ type: 'run_javascript' as const, script: 'alert(1)' }] }],
     };
-    expect(() => compileStep(authoring as any, undefined, ids)).toThrow();
+    expect(() => compileStep(representation as any, undefined, ids)).toThrow();
   });
 });

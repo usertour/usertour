@@ -2,10 +2,10 @@ import { Capability } from '@usertour/types';
 import { z } from 'zod';
 
 import {
-  authoringHideRules,
-  authoringStartRules,
-  authoringStepInput,
-} from '@/api/content/authoring.schema';
+  representationHideRules,
+  representationStartRules,
+  representationStepInput,
+} from '@/api/content/representation.schema';
 
 import { McpTool } from '../mcp.types';
 
@@ -78,9 +78,9 @@ export function buildWriteTools(): McpTool[] {
         'Returns the updated version with its decompiled steps.',
       inputSchema: {
         versionId: z.string(),
-        steps: z.array(authoringStepInput).optional(),
-        startRules: authoringStartRules.nullable().optional(),
-        hideRules: authoringHideRules.nullable().optional(),
+        steps: z.array(representationStepInput).optional(),
+        startRules: representationStartRules.nullable().optional(),
+        hideRules: representationHideRules.nullable().optional(),
       },
       handler: (args, ctx) =>
         ctx.services.contentVersions.update(String(args.versionId), ctx.projectId, args as never),

@@ -1,10 +1,10 @@
 import { extractQuestionData } from '@/utils/content-question';
 
 import {
-  AuthoringHideRules,
-  AuthoringStartRules,
-  AuthoringStep,
-} from '../content/authoring.schema';
+  RepresentationHideRules,
+  RepresentationStartRules,
+  RepresentationStep,
+} from '../content/representation.schema';
 import { ContentVersion, Question } from '../content/content.schema';
 import { ApiObjectType } from '../shared/object-type';
 
@@ -42,8 +42,8 @@ export function mapQuestions(steps: { data: unknown }[]): Question[] {
 export function mapVersion(
   version: VersionNode,
   questions: Question[] | null,
-  steps?: AuthoringStep[],
-  rules?: { startRules?: AuthoringStartRules; hideRules?: AuthoringHideRules },
+  steps?: RepresentationStep[],
+  rules?: { startRules?: RepresentationStartRules; hideRules?: RepresentationHideRules },
 ): ContentVersion {
   return {
     id: version.id,
