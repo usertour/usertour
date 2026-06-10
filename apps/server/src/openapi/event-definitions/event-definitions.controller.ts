@@ -8,7 +8,7 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { ListEventDefinitionsQueryDto } from './event-definitions.dto';
 
-@ApiTags('Event Definitions')
+@ApiTags('Event Definitions (v1)')
 @Controller('v1/event-definitions')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

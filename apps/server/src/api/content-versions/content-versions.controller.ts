@@ -29,7 +29,7 @@ import {
   UpdateVersionBodyDto,
 } from './content-versions.schema';
 
-@ApiTags('Content versions (v2)')
+@ApiTags('Content versions')
 @Controller('v2/projects/:projectId/content-versions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

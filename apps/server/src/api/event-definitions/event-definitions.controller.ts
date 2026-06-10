@@ -14,7 +14,7 @@ import {
   ListEventDefinitionsResponseDto,
 } from './event-definitions.schema';
 
-@ApiTags('Event definitions (v2)')
+@ApiTags('Event definitions')
 @Controller('v2/projects/:projectId/event-definitions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

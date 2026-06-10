@@ -7,7 +7,7 @@ import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { DeleteResponseDto } from '@/common/openapi/dtos';
 import { DeleteCompanyMembershipQueryDto } from './company-memberships.dto';
 
-@ApiTags('Company Memberships')
+@ApiTags('Company Memberships (v1)')
 @Controller('v1/company-memberships')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

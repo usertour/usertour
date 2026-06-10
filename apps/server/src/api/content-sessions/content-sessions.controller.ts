@@ -18,7 +18,7 @@ import {
   ListContentSessionsResponseDto,
 } from './content-sessions.schema';
 
-@ApiTags('Content sessions (v2)')
+@ApiTags('Content sessions')
 @Controller('v2/projects/:projectId/environments/:environmentId/content-sessions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

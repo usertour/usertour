@@ -36,7 +36,7 @@ import {
   UpdateContentBodyDto,
 } from './content.schema';
 
-@ApiTags('Content (v2)')
+@ApiTags('Content')
 @Controller('v2/projects/:projectId/content')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

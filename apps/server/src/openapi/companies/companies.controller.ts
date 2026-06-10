@@ -25,7 +25,7 @@ import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { DeleteResponseDto } from '@/common/openapi/dtos';
 
-@ApiTags('Companies')
+@ApiTags('Companies (v1)')
 @Controller('v1/companies')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

@@ -10,7 +10,7 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiThemesService } from './themes.service';
 import { ListThemesResponseDto, ThemeDto } from './themes.schema';
 
-@ApiTags('Themes (v2)')
+@ApiTags('Themes')
 @Controller('v2/projects/:projectId/themes')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

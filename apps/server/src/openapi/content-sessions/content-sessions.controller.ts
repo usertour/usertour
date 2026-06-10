@@ -14,7 +14,7 @@ import { Environment } from '@/environments/models/environment.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { ContentSession } from '../models/content-session.model';
 
-@ApiTags('Content Sessions')
+@ApiTags('Content Sessions (v1)')
 @Controller('v1/content-sessions')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

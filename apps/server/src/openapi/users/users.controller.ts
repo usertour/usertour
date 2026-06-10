@@ -27,7 +27,7 @@ import { EnvironmentDecorator } from '@/common/decorators/environment.decorator'
 import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 
-@ApiTags('Users')
+@ApiTags('Users (v1)')
 @Controller('v1/users')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

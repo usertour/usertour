@@ -12,7 +12,6 @@ import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
 import { normalizeOpenApiParameters } from './common/openapi/normalize-parameters';
-import { stripTagSuffix } from './common/openapi/strip-tag-suffix';
 import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
@@ -96,13 +95,8 @@ async function bootstrap() {
     .setVersion('2.0')
     .addBearerAuth()
     .build();
-  // Drop the " (v2)" tag suffix here only — the combined /api doc keeps it to
-  // separate v1/v2; the v2-only docs nav doesn't need it (anchor + paths say v2).
-  const v2Document = stripTagSuffix(
-    normalizeOpenApiParameters(
-      cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
-    ),
-    ' (v2)',
+  const v2Document = normalizeOpenApiParameters(
+    cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
   );
   SwaggerModule.setup('api-v2', app, v2Document);
 

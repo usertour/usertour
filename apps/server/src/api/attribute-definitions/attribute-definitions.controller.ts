@@ -14,7 +14,7 @@ import {
   ListAttributeDefinitionsResponseDto,
 } from './attribute-definitions.schema';
 
-@ApiTags('Attribute definitions (v2)')
+@ApiTags('Attribute definitions')
 @Controller('v2/projects/:projectId/attribute-definitions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

@@ -18,7 +18,7 @@ import {
   ListCompaniesResponseDto,
 } from './companies.schema';
 
-@ApiTags('Companies (v2)')
+@ApiTags('Companies')
 @Controller('v2/projects/:projectId/environments/:environmentId/companies')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

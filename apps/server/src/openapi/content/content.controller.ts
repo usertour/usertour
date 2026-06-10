@@ -14,7 +14,7 @@ import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 
-@ApiTags('Content')
+@ApiTags('Content (v1)')
 @Controller()
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

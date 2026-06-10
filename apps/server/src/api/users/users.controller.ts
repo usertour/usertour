@@ -13,7 +13,7 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiUsersService } from './users.service';
 import { GetUserQueryDto, ListUsersQueryDto, ListUsersResponseDto, UserDto } from './users.schema';
 
-@ApiTags('Users (v2)')
+@ApiTags('Users')
 @Controller('v2/projects/:projectId/environments/:environmentId/users')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
