@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { ApiObjectType } from '../shared/object-type';
 
 /**
- * The representation/representation schema — a stable, intent-level view of a step
- * that the decompiler produces from the internal `ContentEditorRoot[]` + step
- * fields + rules, and (later) the compiler consumes for writes. See
- * REPRESENTATION_SCHEMA.md for the design + decisions.
+ * The content representation schema — a stable, intent-level view of a step that
+ * the decompiler produces from the internal `ContentEditorRoot[]` + step fields +
+ * rules, and the compiler consumes for writes. See
+ * docs/architecture/content-representation.md for the design + decisions, and
+ * docs/conventions/content-representation-codec.md for the naming convention.
  */
 
 // ── Targeting ──────────────────────────────────────────────────────────────
