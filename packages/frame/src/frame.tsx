@@ -24,11 +24,13 @@ interface FrameContentValue {
   setStyle: (style: string) => void;
 }
 
-type AssetTagType = 'link' | 'script';
+type AssetTagType = 'link' | 'script' | 'style';
 
 /**
  * Asset attributes for loading external resources in iframe
- * Extends both link and script HTML attributes
+ * Extends both link and script HTML attributes. For inline 'style' assets,
+ * pass the CSS text as `children` (and isCheckLoaded: false — inline styles
+ * apply synchronously, there is nothing to wait for).
  */
 export interface AssetAttributes
   extends LinkHTMLAttributes<HTMLElement>,

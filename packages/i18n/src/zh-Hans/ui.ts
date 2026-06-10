@@ -2092,6 +2092,7 @@ const translations = {
       launcherButtons: '启动器按钮',
       backdrop: '遮罩',
       focusHighlight: '焦点高亮',
+      customCss: '自定义 CSS',
     },
     subSections: {
       brandColors: '品牌色',
@@ -2132,6 +2133,10 @@ const translations = {
       },
       font: {
         family: '字体',
+        customFamily: '自定义字体名',
+        customFamilyPlaceholder: '例如 My Brand Sans',
+        customFontHint:
+          '需要开发者配合:在下方「自定义 CSS」区块里添加 @font-face 规则来安装这个字体。',
         bodySize: '正文字号',
         lineHeight: '行高',
         bodyWeight: '正文字重',
@@ -2139,6 +2144,13 @@ const translations = {
         h1Size: 'H1 字号',
         h2Size: 'H2 字号',
         linkColor: '链接颜色',
+      },
+      customCss: {
+        label: 'CSS 规则',
+        placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
+        tooltip:
+          '原样注入每个 widget 的 CSS。可用于声明自定义字体的 @font-face,也可做高级样式覆写。',
+        hint: '这段 CSS 会注入所有 widget(tooltip、modal、checklist、banner、资源中心)。widget 内部结构可能随版本变化,选择器请尽量保持简单。',
       },
       buttons: {
         height: '高度',

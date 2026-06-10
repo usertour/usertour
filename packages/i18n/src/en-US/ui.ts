@@ -2219,6 +2219,7 @@ const translations = {
       launcherButtons: 'Launcher buttons',
       backdrop: 'Backdrop',
       focusHighlight: 'Focus highlight',
+      customCss: 'Custom CSS',
     },
     subSections: {
       brandColors: 'Brand colors',
@@ -2260,6 +2261,10 @@ const translations = {
       },
       font: {
         family: 'Font family',
+        customFamily: 'Custom font family',
+        customFamilyPlaceholder: 'e.g. My Brand Sans',
+        customFontHint:
+          'Your developers must install this custom font in your theme by adding @font-face rules via Custom CSS (see the Custom CSS section below).',
         bodySize: 'Body size',
         lineHeight: 'Line height',
         bodyWeight: 'Body weight',
@@ -2267,6 +2272,13 @@ const translations = {
         h1Size: 'H1 size',
         h2Size: 'H2 size',
         linkColor: 'Link color',
+      },
+      customCss: {
+        label: 'CSS rules',
+        placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
+        tooltip:
+          'Raw CSS injected into every widget. Use it for @font-face rules backing the custom font, or for advanced style overrides.',
+        hint: 'This CSS is injected into all widgets (tooltips, modals, checklists, banners and the resource center). Widget internals may change between releases, so keep selectors as simple as possible.',
       },
       buttons: {
         height: 'Height',

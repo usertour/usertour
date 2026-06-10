@@ -71,6 +71,15 @@ export type FieldDef =
       label: string;
       placeholder?: string;
     })
+  // Multi-line raw-text field rendered in a monospace textarea. Used for
+  // the theme's custom CSS.
+  | (FieldBase & {
+      type: 'textarea';
+      path: string;
+      label: string;
+      placeholder?: string;
+      rows?: number;
+    })
   | (FieldBase & {
       type: 'placement';
       path: string;

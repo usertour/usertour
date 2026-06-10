@@ -14,6 +14,7 @@ import { SelectField } from './select-field';
 import { SliderField } from './slider-field';
 import { SubSection } from './sub-section';
 import { TextField } from './text-field';
+import { TextareaField } from './textarea-field';
 import { TripleColorField } from './triple-color-field';
 
 export interface FieldRendererProps {
@@ -105,6 +106,16 @@ export const FieldRenderer = (props: FieldRendererProps) => {
           label={t(field.label)}
           placeholder={field.placeholder ? t(field.placeholder) : undefined}
           tooltip={tooltip}
+        />
+      );
+    case 'textarea':
+      return (
+        <TextareaField
+          path={field.path}
+          label={t(field.label)}
+          placeholder={field.placeholder ? t(field.placeholder) : undefined}
+          tooltip={tooltip}
+          rows={field.rows}
         />
       );
     case 'placement':
