@@ -25,6 +25,7 @@ describe('API v2 /content-versions (e2e)', () => {
   let contentId: string;
   let versionId: string;
   let writeVersionId: string;
+  let configVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -107,6 +108,11 @@ describe('API v2 /content-versions (e2e)', () => {
     // A dedicated editable (draft) version for write tests, isolated from the reads.
     const writeContent = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
     writeVersionId = (await buildVersion(prisma, { contentId: writeContent.id, sequence: 0 })).id;
+
+    // A separate draft used only by the version-config (start/hide rules) write tests,
+    // so their config merge/clear assertions are not perturbed by the step write tests.
+    const configContent = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    configVersionId = (await buildVersion(prisma, { contentId: configContent.id, sequence: 0 })).id;
   }, 60000);
 
   afterAll(async () => {
@@ -414,5 +420,90 @@ describe('API v2 /content-versions (e2e)', () => {
     );
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
+  });
+
+  // The version config carries the start/hide rule logic (autoStartRules +
+  // autoStartRulesSetting + hideRules). These exercise the full write → independent
+  // read round-trip for that config, plus the partial-merge and null-clear semantics.
+  describe('version config rules (write → read)', () => {
+    const write = (body: object, token: string) =>
+      api('patch', `/v2/projects/${projectId}/content-versions/${configVersionId}`, token).send(
+        body,
+      );
+    const read = (token: string) =>
+      api('get', `/v2/projects/${projectId}/content-versions/${configVersionId}`, token);
+
+    it('round-trips hide rules (write → independent read)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        { hideRules: { when: [{ type: 'current_url', includes: ['/done'] }] } },
+        token,
+      );
+      expect(w.status).toBe(200);
+      expect(w.body.hideRules).toEqual({ when: [{ type: 'current_url', includes: ['/done'] }] });
+
+      const r = await read(token);
+      expect(r.status).toBe(200);
+      expect(r.body.hideRules).toEqual({ when: [{ type: 'current_url', includes: ['/done'] }] });
+    });
+
+    it('round-trips the full start-rule setting (frequency + priority + waitMs + startIfNotComplete)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        {
+          startRules: {
+            when: [{ type: 'current_url', includes: ['/app/*'] }],
+            frequency: { mode: 'multiple', every: { times: 3, duration: 7, unit: 'days' } },
+            priority: 'high',
+            waitMs: 5000,
+            startIfNotComplete: true,
+          },
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const r = await read(token);
+      expect(r.body.startRules).toEqual({
+        when: [{ type: 'current_url', includes: ['/app/*'] }],
+        frequency: { mode: 'multiple', every: { times: 3, duration: 7, unit: 'days' } },
+        priority: 'high',
+        waitMs: 5000,
+        startIfNotComplete: true,
+      });
+    });
+
+    it('merges: writing one rule preserves the other', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      // set start only
+      await write({ startRules: { when: [{ type: 'current_url', includes: ['/a'] }] } }, token);
+      // then set hide only — must NOT clobber the start rule written above
+      await write({ hideRules: { when: [{ type: 'current_url', includes: ['/b'] }] } }, token);
+
+      const r = await read(token);
+      expect(r.body.startRules).toMatchObject({
+        when: [{ type: 'current_url', includes: ['/a'] }],
+      });
+      expect(r.body.hideRules).toEqual({ when: [{ type: 'current_url', includes: ['/b'] }] });
+    });
+
+    it('clears a rule with null, leaving the other intact', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      // establish both
+      await write(
+        {
+          startRules: { when: [{ type: 'current_url', includes: ['/a'] }] },
+          hideRules: { when: [{ type: 'current_url', includes: ['/b'] }] },
+        },
+        token,
+      );
+      // clear start only
+      const w = await write({ startRules: null }, token);
+      expect(w.status).toBe(200);
+
+      const r = await read(token);
+      expect(r.body.startRules).toBeUndefined();
+      expect(r.body.hideRules).toEqual({ when: [{ type: 'current_url', includes: ['/b'] }] });
+    });
   });
 });
