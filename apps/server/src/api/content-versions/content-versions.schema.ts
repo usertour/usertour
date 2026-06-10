@@ -35,12 +35,14 @@ export class ContentVersionDto extends createZodDto(contentVersion) {}
 /**
  * Write body for PATCH content-versions/:id. All fields optional — only the
  * provided ones are written. `steps` replaces the version's step list (merged
- * by cvid); `startRules`/`hideRules` set or clear (null) the version's rules.
+ * by cvid); `startRules`/`hideRules` set or clear (null) the version's rules;
+ * `themeId` sets the theme (or `null` clears it → project default).
  */
 export const updateVersionBody = z.object({
   steps: z.array(representationStepInput).optional(),
   startRules: representationStartRules.nullable().optional(),
   hideRules: representationHideRules.nullable().optional(),
+  themeId: z.string().nullable().optional().describe('Theme to apply, or null to clear.'),
 });
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;

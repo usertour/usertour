@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ContentNotFoundError, ParamsError } from '@/common/errors/errors';
+import { ContentNotFoundError, ParamsError, ThemeNotFoundError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
+import { ThemesService } from '@/themes/themes.service';
 
 import { compileStep } from '../content-representation/representation.compile';
 import { decompileStep } from '../content-representation/representation.decompile';
@@ -54,6 +55,7 @@ export class ApiContentVersionsService {
   constructor(
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
+    private readonly themes: ThemesService,
   ) {}
 
   async get(id: string, projectId: string, query: GetContentVersionQuery): Promise<ContentVersion> {
@@ -195,6 +197,13 @@ export class ApiContentVersionsService {
       content.config = config;
     }
 
+    if (body.themeId !== undefined) {
+      if (body.themeId !== null) {
+        await this.requireTheme(body.themeId, projectId);
+      }
+      content.themeId = body.themeId; // null clears → falls back to project default
+    }
+
     if (Object.keys(content).length > 0) {
       const result = await this.content.updateContentVersion({
         versionId: id,
@@ -206,6 +215,14 @@ export class ApiContentVersionsService {
     }
 
     return this.get(id, projectId, { expand: ['steps'] });
+  }
+
+  /** Assert a theme exists in the project (and is live) before writing it as themeId. */
+  private async requireTheme(themeId: string, projectId: string): Promise<void> {
+    const theme = await this.themes.getTheme(themeId);
+    if (!theme || theme.projectId !== projectId || (theme as { deleted?: boolean }).deleted) {
+      throw new ThemeNotFoundError();
+    }
   }
 
   /** Map stable codes back to internal ids (code→id; fallback: the code itself). */

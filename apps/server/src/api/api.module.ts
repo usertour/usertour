@@ -7,6 +7,7 @@ import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ContentModule } from '@/content/content.module';
 import { EventsModule } from '@/events/events.module';
+import { ThemesModule } from '@/themes/themes.module';
 
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
@@ -20,6 +21,8 @@ import { ApiContentVersionsController } from './content-versions/content-version
 import { ApiContentVersionsService } from './content-versions/content-versions.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
+import { ApiThemesController } from './themes/themes.controller';
+import { ApiThemesService } from './themes/themes.service';
 import { ApiUsersController } from './users/users.controller';
 import { ApiUsersService } from './users/users.service';
 
@@ -37,6 +40,7 @@ import { ApiUsersService } from './users/users.service';
     ContentModule,
     BizModule,
     AnalyticsModule,
+    ThemesModule,
   ],
   controllers: [
     ApiEventDefinitionsController,
@@ -46,6 +50,7 @@ import { ApiUsersService } from './users/users.service';
     ApiUsersController,
     ApiCompaniesController,
     ApiContentSessionsController,
+    ApiThemesController,
   ],
   providers: [
     ApiEventDefinitionsService,
@@ -55,6 +60,7 @@ import { ApiUsersService } from './users/users.service';
     ApiUsersService,
     ApiCompaniesService,
     ApiContentSessionsService,
+    ApiThemesService,
     OpenAPIExceptionFilter,
   ],
   // Exported for the MCP module, which binds these read services as tools.

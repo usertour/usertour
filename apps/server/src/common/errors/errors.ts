@@ -227,6 +227,15 @@ export class EnvironmentProjectMismatchError extends OpenAPIError {
   };
 }
 
+export class ThemeNotFoundError extends OpenAPIError {
+  code = 'E1021';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Theme not found',
+    'zh-CN': '主题未找到',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
