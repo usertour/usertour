@@ -325,8 +325,15 @@ All paths this doc adds, consolidated. `:p` = `:projectId`.
 | `PUT` | `/v2/projects/:p/content/:id/environments/:environmentId` | Publish — set this env's live version (body `{ versionId }`, idempotent) | `content:publish` | 3 |
 | `DELETE` | `/v2/projects/:p/content/:id/environments/:environmentId` | Unpublish — clear this env's live version | `content:publish` | 3 |
 | `POST` | `/v2/projects/:p/content-versions` | Create draft version (fork, body `{ contentId }`) | `content:update` | 6 |
+| `POST` | `/v2/projects/:p/content-versions/:id/restore` | Restore a historical version → forks it forward as the new draft | `content:update` | — |
+| `POST` | `/v2/projects/:p/content/:id/duplicate` | Duplicate content (body `{ name?, environmentId? }`) → new content | `content:create` | — |
 | `GET` | `/v2/projects/:p/themes` | List themes (read-only — makes `themeId` discoverable) | `theme:read` | 4 |
 | `GET` | `/v2/projects/:p/themes/:id` | Get one theme | `theme:read` | 4 |
+
+> `restore` and `duplicate` (and the soft-deleted-content list fix) are post-design
+> follow-ups (the §B increments) — they expose existing builder/admin business
+> interfaces (`restoreContentVersion` / `duplicateContent`) verbatim. MCP:
+> `restore_content_version`, `duplicate_content`.
 
 ### Extensions to existing paths (no new route)
 
