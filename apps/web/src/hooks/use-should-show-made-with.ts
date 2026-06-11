@@ -14,8 +14,12 @@ import { useActiveProject } from './use-active-project';
 // requests, but each useQuery still spun up its own cache watcher
 // chain.
 //
-// Note: the loading branch returns `false` (same as `useSubscription`)
-// to avoid a one-frame badge flash before the config lands. Once
+// Note: the gate is `loading && !projectConfig`, not bare `loading` —
+// SHARED_CACHE is cache-and-network, so every mount refetches and flips
+// `loading` true while the cached config is still present. A bare gate
+// hid the badge until each refetch landed, making it pop in after the
+// widget on every page visit. Only the true first load (empty cache)
+// defaults to hidden, so paid users never get a badge flash. Once
 // resolved, `removeBranding === true` means the user has paid to hide
 // the badge.
 export const useShouldShowMadeWith = (): boolean => {
@@ -24,7 +28,7 @@ export const useShouldShowMadeWith = (): boolean => {
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
   );
-  if (loading) {
+  if (loading && !projectConfig) {
     return false;
   }
   return !(projectConfig?.removeBranding ?? false);
