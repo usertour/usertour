@@ -254,6 +254,15 @@ export class ResourceConflictError extends OpenAPIError {
   };
 }
 
+export class EventDefinitionNotFoundError extends OpenAPIError {
+  code = 'E1024';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Event definition not found',
+    'zh-CN': '事件定义未找到',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
@@ -669,6 +678,7 @@ const errorMap = {
   E1018: SDKAuthenticationError,
   E1022: AttributeDefinitionNotFoundError,
   E1023: ResourceConflictError,
+  E1024: EventDefinitionNotFoundError,
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,

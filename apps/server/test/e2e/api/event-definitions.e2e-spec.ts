@@ -98,6 +98,77 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect(res.body.error.code).toBe('E1012');
   });
 
+  const basePath = () => `/v2/projects/${projectId}/event-definitions`;
+  const send = (method: 'post' | 'patch' | 'delete', path: string, token: string) =>
+    request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
+
+  it('creates → updates → deletes an event definition', async () => {
+    const token = await mint([
+      Capability.EventCreate,
+      Capability.EventUpdate,
+      Capability.EventDelete,
+      Capability.EventRead,
+    ]);
+
+    const created = await send('post', basePath(), token).send({
+      codeName: 'evt_write_x',
+      displayName: 'X',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      object: 'eventDefinition',
+      codeName: 'evt_write_x',
+      displayName: 'X',
+    });
+    const id = created.body.id;
+
+    const updated = await send('patch', `${basePath()}/${id}`, token).send({
+      displayName: 'X2',
+      description: 'desc',
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body).toMatchObject({ displayName: 'X2', description: 'desc' });
+
+    expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
+    const list = await api('get', basePath(), token);
+    expect(list.body.results.map((e: { id: string }) => e.id)).not.toContain(id);
+  });
+
+  it('rejects a duplicate codeName (409 E1023)', async () => {
+    const token = await mint([Capability.EventCreate]);
+    const res = await send('post', basePath(), token).send({
+      codeName: 'evt_spike_other', // seeded
+      displayName: 'dup',
+    });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1023');
+  });
+
+  it('PATCH 404 for an unknown event (E1024)', async () => {
+    const token = await mint([Capability.EventUpdate]);
+    const res = await send('patch', `${basePath()}/nope`, token).send({ displayName: 'x' });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1024');
+  });
+
+  it('cannot modify a predefined event (400 E1017)', async () => {
+    const token = await mint([Capability.EventUpdate]);
+    const predef = await prisma.event.create({
+      data: {
+        projectId,
+        codeName: 'evt_predef',
+        displayName: 'Predef',
+        description: '',
+        predefined: true,
+      },
+    });
+    const res = await send('patch', `${basePath()}/${predef.id}`, token).send({
+      displayName: 'no',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
+
   it('renders into one OpenAPI doc alongside v1 (zod schema via cleanupOpenApiDoc)', () => {
     const config = new DocumentBuilder().setTitle('t').addBearerAuth().build();
     const doc = cleanupOpenApiDoc(

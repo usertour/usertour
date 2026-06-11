@@ -91,6 +91,15 @@ export class EventsService {
     });
   }
 
+  /**
+   * Update only the event's own fields, leaving its attributeOnEvent links
+   * untouched (unlike {@link update}, which rewrites them from `attributeIds`).
+   * Used by the v2 API's partial event-definition update.
+   */
+  async updateInfo(id: string, data: { displayName?: string; description?: string }) {
+    return await this.prisma.event.update({ where: { id }, data });
+  }
+
   async delete(id: string) {
     return await this.prisma.$transaction(async (tx) => {
       await tx.attributeOnEvent.deleteMany({

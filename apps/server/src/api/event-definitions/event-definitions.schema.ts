@@ -22,6 +22,21 @@ export const eventDefinition = z.object({
   displayName: z.string(),
   codeName: z.string(),
 });
+export class EventDefinitionDto extends createZodDto(eventDefinition) {}
+
+export const createEventDefinitionBody = z.object({
+  codeName: z.string().min(1).describe('Stable identifier, unique per project. Immutable.'),
+  displayName: z.string().min(1).describe('Human-readable name.'),
+  description: z.string().optional().describe('Optional description.'),
+});
+export class CreateEventDefinitionBodyDto extends createZodDto(createEventDefinitionBody) {}
+
+// codeName is fixed at creation; only the human-facing fields are mutable.
+export const updateEventDefinitionBody = z.object({
+  displayName: z.string().min(1).optional().describe('Human-readable name.'),
+  description: z.string().optional().describe('Optional description.'),
+});
+export class UpdateEventDefinitionBodyDto extends createZodDto(updateEventDefinitionBody) {}
 
 export const listEventDefinitionsResponse = z.object({
   results: z.array(eventDefinition),
@@ -32,3 +47,5 @@ export class ListEventDefinitionsResponseDto extends createZodDto(listEventDefin
 
 export type EventDefinition = z.infer<typeof eventDefinition>;
 export type ListEventDefinitionsQuery = z.infer<typeof listEventDefinitionsQuery>;
+export type CreateEventDefinitionBody = z.infer<typeof createEventDefinitionBody>;
+export type UpdateEventDefinitionBody = z.infer<typeof updateEventDefinitionBody>;
