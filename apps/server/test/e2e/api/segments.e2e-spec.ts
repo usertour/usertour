@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildBizUser, buildEnvironment, buildProject, buildSegment } from '../factories';
+import {
+  buildBizCompany,
+  buildBizUser,
+  buildEnvironment,
+  buildProject,
+  buildSegment,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -210,6 +216,44 @@ describe('API v2 segments (e2e)', () => {
       token,
     );
     expect(after.body.results.map((u: { id: string }) => u.id)).not.toContain(memberExternalId);
+  });
+
+  it('adds a member on a manual company segment; visible via companies?segmentId', async () => {
+    const token = await mint([
+      Capability.SegmentCreate,
+      Capability.SegmentUpdate,
+      Capability.CompanyRead,
+    ]);
+    const companyExternalId = (
+      await buildBizCompany(prisma, { environmentId, externalId: 'co-seg-acme' })
+    ).externalId;
+    const seg = await send('post', segPath(), token).send({
+      name: 'Manual companies',
+      bizType: 'company',
+      kind: 'manual',
+    });
+    const id = seg.body.id;
+
+    expect((await send('put', `${memberPath(id)}/${companyExternalId}`, token).send()).status).toBe(
+      204,
+    );
+    // membership visible via the env companies filter (the company-segment read path)
+    const inSeg = await api(
+      'get',
+      `/v2/projects/${projectId}/environments/${environmentId}/companies?segmentId=${id}`,
+      token,
+    );
+    expect(inSeg.body.results.map((c: { id: string }) => c.id)).toContain(companyExternalId);
+
+    expect(
+      (await send('delete', `${memberPath(id)}/${companyExternalId}`, token).send()).status,
+    ).toBe(204);
+    const after = await api(
+      'get',
+      `/v2/projects/${projectId}/environments/${environmentId}/companies?segmentId=${id}`,
+      token,
+    );
+    expect(after.body.results.map((c: { id: string }) => c.id)).not.toContain(companyExternalId);
   });
 
   it('rejects adding a member to a condition segment (400)', async () => {

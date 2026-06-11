@@ -29,7 +29,7 @@ import {
   ListContentSessionsResponseDto,
 } from './content-sessions.schema';
 
-@ApiTags('Content sessions')
+@ApiTags('Sessions')
 @Controller('v2/projects/:projectId/environments/:environmentId/sessions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -41,7 +41,7 @@ export class ApiContentSessionsController {
   @Get()
   @RequireCapability(Capability.SessionRead)
   @ApiOperation({
-    summary: 'List content sessions',
+    summary: 'List sessions',
     description: 'Sessions in this environment. Filter by contentId / userId.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
@@ -61,7 +61,7 @@ export class ApiContentSessionsController {
 
   @Get(':id')
   @RequireCapability(Capability.SessionRead)
-  @ApiOperation({ summary: 'Get a content session' })
+  @ApiOperation({ summary: 'Get a session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
@@ -78,7 +78,7 @@ export class ApiContentSessionsController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.SessionManage)
-  @ApiOperation({ summary: 'Delete a content session' })
+  @ApiOperation({ summary: 'Delete a session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
@@ -91,7 +91,7 @@ export class ApiContentSessionsController {
   @Post(':id/end')
   @HttpCode(200)
   @RequireCapability(Capability.SessionManage)
-  @ApiOperation({ summary: 'End a content session' })
+  @ApiOperation({ summary: 'End a session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })

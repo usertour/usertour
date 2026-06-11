@@ -88,6 +88,15 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.body).toMatchObject({ next: null, previous: null });
   });
 
+  it('paginates with limit (next cursor set when more remain)', async () => {
+    const token = await mint([Capability.ThemeRead]);
+    const res = await api('get', `/v2/projects/${projectId}/themes?limit=1`, token);
+    expect(res.status).toBe(200);
+    expect(res.body.results).toHaveLength(1);
+    // at least Default + Brand exist, so a second page is available
+    expect(res.body.next).toEqual(expect.stringContaining('cursor='));
+  });
+
   it('gets a theme by id', async () => {
     const token = await mint([Capability.ThemeRead]);
     const res = await api('get', `/v2/projects/${projectId}/themes/${themeId}`, token);

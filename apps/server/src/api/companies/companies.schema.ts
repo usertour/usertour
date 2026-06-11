@@ -17,6 +17,7 @@ export const listCompaniesQuery = z.object({
   cursor,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   expand: singleOrArray(companyExpand).describe('Inline: users, memberships, memberships.user.'),
+  segmentId: z.string().optional().describe('Filter to companies in this segment.'),
 });
 export class ListCompaniesQueryDto extends createZodDto(listCompaniesQuery) {}
 

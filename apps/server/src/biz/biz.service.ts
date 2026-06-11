@@ -1111,19 +1111,37 @@ export class BizService {
     },
     include?: Prisma.BizCompanyInclude,
     orderBy?: Prisma.BizCompanyOrderByWithRelationInput[],
+    segmentId?: string,
   ) {
-    const baseQuery = {
-      where: {
-        environmentId,
-        deleted: false,
-      },
-      include,
-      orderBy,
+    let where: Prisma.BizCompanyWhereInput = {
+      environmentId,
+      deleted: false,
     };
 
+    if (segmentId) {
+      const segment = await this.prisma.segment.findFirst({ where: { id: segmentId } });
+      if (segment && segment.dataType !== SegmentDataType.ALL) {
+        if (segment.dataType === SegmentDataType.MANUAL) {
+          where.bizCompaniesOnSegment = { some: { segmentId } };
+        }
+        if (segment.dataType === SegmentDataType.CONDITION) {
+          const environment = await this.prisma.environment.findFirst({
+            where: { id: environmentId },
+          });
+          const attributes = await this.prisma.attribute.findMany({
+            where: {
+              projectId: environment?.projectId,
+              bizType: { in: [AttributeBizType.COMPANY] },
+            },
+          });
+          where = { ...where, ...createConditionsFilter(segment.data, attributes) };
+        }
+      }
+    }
+
     return await findManyCursorConnection(
-      (args) => this.prisma.bizCompany.findMany({ ...baseQuery, ...args }),
-      () => this.prisma.bizCompany.count({ where: baseQuery.where }),
+      (args) => this.prisma.bizCompany.findMany({ where, include, orderBy, ...args }),
+      () => this.prisma.bizCompany.count({ where }),
       paginationArgs,
     );
   }

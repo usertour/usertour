@@ -4,6 +4,12 @@ import { z } from 'zod';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
+/** A query param that arrives as a single value or a repeated array. */
+function singleOrArray<T extends z.ZodTypeAny>(item: T) {
+  return z.union([item, z.array(item)]).optional();
+}
+const orderByField = z.enum(['createdAt', '-createdAt']);
+
 /**
  * The single source of truth for the v2 event-definitions endpoint: these zod
  * schemas drive request validation (via ZodValidationPipe), the OpenAPI spec
@@ -11,7 +17,11 @@ import { cursor, limit } from '../shared/pagination.schema';
  * input schema — one definition, every binding.
  */
 
-export const listEventDefinitionsQuery = z.object({ cursor, limit });
+export const listEventDefinitionsQuery = z.object({
+  cursor,
+  limit,
+  orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
+});
 export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefinitionsQuery) {}
 
 export const eventDefinition = z.object({

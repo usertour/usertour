@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma, type Segment as PrismaSegment } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -11,8 +12,12 @@ import {
   ValidationError,
 } from '@/common/errors/errors';
 
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+
 import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { paginate } from '../shared/pagination';
+import { parseOrderBy } from '../shared/sort';
 import { mapSegment } from './segments.mapper';
 import {
   CreateSegmentBody,
@@ -34,21 +39,42 @@ export class ApiSegmentsService {
   ) {}
 
   async list(
+    requestUrl: string,
     projectId: string,
     query: ListSegmentsQuery,
-  ): Promise<{ results: Segment[]; next: null; previous: null }> {
+  ): Promise<{ results: Segment[]; next: string | null; previous: string | null }> {
+    const { bizType: bizTypeFilter, limit, cursor } = query;
     const resolvers = await this.buildDecompileResolvers(projectId);
     const bizType =
-      query.bizType === 'company'
+      bizTypeFilter === 'company'
         ? SegmentBizType.COMPANY
-        : query.bizType === 'user'
+        : bizTypeFilter === 'user'
           ? SegmentBizType.USER
           : undefined;
-    const rows = await this.prisma.segment.findMany({
-      where: { projectId, ...(bizType !== undefined ? { bizType } : {}) },
-      orderBy: { createdAt: 'asc' },
+    const orderByInput = Array.isArray(query.orderBy)
+      ? query.orderBy
+      : query.orderBy
+        ? [query.orderBy]
+        : ['createdAt'];
+    const orderBy = parseOrderBy(orderByInput) as Prisma.SegmentOrderByWithRelationInput[];
+    const where: Prisma.SegmentWhereInput = {
+      projectId,
+      ...(bizType !== undefined ? { bizType } : {}),
+    };
+
+    return paginate({
+      requestUrl,
+      cursor,
+      limit,
+      query: { ...(bizTypeFilter ? { bizType: bizTypeFilter } : {}) },
+      fetch: (params) =>
+        findManyCursorConnection<PrismaSegment, Prisma.SegmentWhereUniqueInput>(
+          (args) => this.prisma.segment.findMany({ where, orderBy, ...args }),
+          () => this.prisma.segment.count({ where }),
+          params,
+        ),
+      map: (row) => mapSegment(row, resolvers),
     });
-    return { results: rows.map((r) => mapSegment(r, resolvers)), next: null, previous: null };
   }
 
   async get(id: string, projectId: string): Promise<Segment> {

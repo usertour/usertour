@@ -54,7 +54,7 @@ export class ApiCompaniesService {
     environmentId: string,
     query: ListCompaniesQuery,
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
-    const { limit, cursor } = query;
+    const { limit, cursor, segmentId } = query;
     const expand = toArray<CompanyExpand>(query.expand);
     // v1: always load the membership rows; load the user only when needed.
     const includeBizUser = expand.includes('memberships.user') || expand.includes('users');
@@ -67,8 +67,9 @@ export class ApiCompaniesService {
       requestUrl,
       cursor,
       limit,
-      query: { ...(expand.length ? { expand } : {}) },
-      fetch: (params) => this.biz.listBizCompanies(environmentId, params, include, orderBy),
+      query: { ...(expand.length ? { expand } : {}), ...(segmentId ? { segmentId } : {}) },
+      fetch: (params) =>
+        this.biz.listBizCompanies(environmentId, params, include, orderBy, segmentId),
       map: (node) => mapCompany(node, expand),
     });
   }

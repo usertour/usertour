@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma, type Theme as PrismaTheme } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { cuid } from '@usertour/helpers';
 import { PrismaService } from 'nestjs-prisma';
+
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
 import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
 import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { paginate } from '../shared/pagination';
+import { parseOrderBy } from '../shared/sort';
 import { mapTheme } from './themes.mapper';
 import {
   CreateThemeBody,
@@ -41,16 +46,34 @@ export class ApiThemesService {
   ) {}
 
   async list(
+    requestUrl: string,
     projectId: string,
     query: ListThemesQuery,
-  ): Promise<{ results: Theme[]; next: null; previous: null }> {
+  ): Promise<{ results: Theme[]; next: string | null; previous: string | null }> {
+    const { limit, cursor } = query;
     const expand = toArray(query.expand);
     const resolvers = await this.buildDecompileResolvers(projectId);
-    const rows = await this.themes.listThemesByProjectId(projectId);
-    const results = rows
-      .filter((t) => !(t as { deleted?: boolean }).deleted)
-      .map((t) => mapTheme(t, expand, resolvers));
-    return { results, next: null, previous: null };
+    const orderByInput = Array.isArray(query.orderBy)
+      ? query.orderBy
+      : query.orderBy
+        ? [query.orderBy]
+        : ['createdAt'];
+    const orderBy = parseOrderBy(orderByInput) as Prisma.ThemeOrderByWithRelationInput[];
+    const where: Prisma.ThemeWhereInput = { projectId, deleted: false };
+
+    return paginate({
+      requestUrl,
+      cursor,
+      limit,
+      query: { ...(expand.length ? { expand } : {}) },
+      fetch: (params) =>
+        findManyCursorConnection<PrismaTheme, Prisma.ThemeWhereUniqueInput>(
+          (args) => this.prisma.theme.findMany({ where, orderBy, ...args }),
+          () => this.prisma.theme.count({ where }),
+          params,
+        ),
+      map: (row) => mapTheme(row, expand, resolvers),
+    });
   }
 
   async get(id: string, projectId: string, query: GetThemeQuery): Promise<Theme> {

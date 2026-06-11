@@ -19,6 +19,7 @@ import { Capability } from '@usertour/types';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { Environment } from '@/environments/models/environment.model';
 
@@ -47,8 +48,12 @@ export class ApiSegmentsController {
   @ApiOperation({ summary: 'List segments' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of segments', type: ListSegmentsResponseDto })
-  async list(@Param('projectId') projectId: string, @Query() query: ListSegmentsQueryDto) {
-    return this.service.list(projectId, query);
+  async list(
+    @RequestUrl() requestUrl: string,
+    @Param('projectId') projectId: string,
+    @Query() query: ListSegmentsQueryDto,
+  ) {
+    return this.service.list(requestUrl, projectId, query);
   }
 
   @Get(':id')

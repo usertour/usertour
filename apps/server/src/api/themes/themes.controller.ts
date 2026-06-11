@@ -17,6 +17,7 @@ import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 import { ApiValidationPipe } from '../shared/validation.pipe';
@@ -44,8 +45,12 @@ export class ApiThemesController {
   @ApiOperation({ summary: 'List themes' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of themes', type: ListThemesResponseDto })
-  async list(@Param('projectId') projectId: string, @Query() query: ListThemesQueryDto) {
-    return this.service.list(projectId, query);
+  async list(
+    @RequestUrl() requestUrl: string,
+    @Param('projectId') projectId: string,
+    @Query() query: ListThemesQueryDto,
+  ) {
+    return this.service.list(requestUrl, projectId, query);
   }
 
   @Get(':id')
