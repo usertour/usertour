@@ -1,0 +1,210 @@
+import { Injectable } from '@nestjs/common';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { PrismaService } from 'nestjs-prisma';
+
+import { BizService } from '@/biz/biz.service';
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import {
+  CompanyNotFoundError,
+  SegmentNotFoundError,
+  UserNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
+
+import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
+import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { mapSegment } from './segments.mapper';
+import {
+  CreateSegmentBody,
+  ListSegmentsQuery,
+  Segment,
+  UpdateSegmentBody,
+} from './segments.schema';
+
+/**
+ * v2 segments handler. Segment definitions are project-level (the row's
+ * environmentId column is legacy/unused); membership is env-level. Condition
+ * segments' `data` is the rule-condition model run through the shared rules codec.
+ */
+@Injectable()
+export class ApiSegmentsService {
+  constructor(
+    private readonly biz: BizService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async list(
+    projectId: string,
+    query: ListSegmentsQuery,
+  ): Promise<{ results: Segment[]; next: null; previous: null }> {
+    const resolvers = await this.buildDecompileResolvers(projectId);
+    const bizType =
+      query.bizType === 'company'
+        ? SegmentBizType.COMPANY
+        : query.bizType === 'user'
+          ? SegmentBizType.USER
+          : undefined;
+    const rows = await this.prisma.segment.findMany({
+      where: { projectId, ...(bizType !== undefined ? { bizType } : {}) },
+      orderBy: { createdAt: 'asc' },
+    });
+    return { results: rows.map((r) => mapSegment(r, resolvers)), next: null, previous: null };
+  }
+
+  async get(id: string, projectId: string): Promise<Segment> {
+    const seg = await this.requireSegment(id, projectId);
+    const resolvers = await this.buildDecompileResolvers(projectId);
+    return mapSegment(seg, resolvers);
+  }
+
+  /** Create a condition or manual segment (project-level; `all` is not creatable). */
+  async create(projectId: string, body: CreateSegmentBody): Promise<Segment> {
+    const bizType = body.bizType === 'company' ? SegmentBizType.COMPANY : SegmentBizType.USER;
+    const dataType = body.kind === 'condition' ? SegmentDataType.CONDITION : SegmentDataType.MANUAL;
+    let data: JsonValue | undefined;
+    if (body.kind === 'condition') {
+      const compileResolvers = await this.buildCompileResolvers(projectId);
+      data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
+    }
+    const created = await this.biz.creatSegment({
+      projectId,
+      name: body.name,
+      bizType,
+      dataType,
+      ...(data !== undefined ? { data } : {}),
+    });
+    const resolvers = await this.buildDecompileResolvers(projectId);
+    return mapSegment(created, resolvers);
+  }
+
+  /** Update name and/or conditions (conditions only on condition segments). */
+  async update(id: string, projectId: string, body: UpdateSegmentBody): Promise<Segment> {
+    const seg = await this.requireSegment(id, projectId);
+    if (seg.dataType === SegmentDataType.ALL) {
+      throw new ValidationError('Cannot modify the built-in "all" segment.');
+    }
+    let data: JsonValue | undefined;
+    if (body.conditions !== undefined) {
+      if (seg.dataType !== SegmentDataType.CONDITION) {
+        throw new ValidationError('Conditions can only be set on a condition segment.');
+      }
+      const compileResolvers = await this.buildCompileResolvers(projectId);
+      data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
+    }
+    await this.biz.updateSegment({
+      id,
+      ...(body.name !== undefined ? { name: body.name } : {}),
+      ...(data !== undefined ? { data } : {}),
+    });
+    const resolvers = await this.buildDecompileResolvers(projectId);
+    return mapSegment(await this.requireSegment(id, projectId), resolvers);
+  }
+
+  /** Delete a segment (not the built-in `all`). Members cascade in the domain. */
+  async delete(id: string, projectId: string): Promise<void> {
+    const seg = await this.requireSegment(id, projectId);
+    if (seg.dataType === SegmentDataType.ALL) {
+      throw new ValidationError('Cannot delete the built-in "all" segment.');
+    }
+    await this.biz.deleteSegment({ id });
+  }
+
+  /** Add an env user/company to a manual segment (idempotent). */
+  async addMember(
+    id: string,
+    projectId: string,
+    environmentId: string,
+    externalId: string,
+  ): Promise<void> {
+    const seg = await this.requireManualSegment(id, projectId);
+    if (seg.bizType === SegmentBizType.COMPANY) {
+      const company = await this.biz.getBizCompany(externalId, environmentId);
+      if (!company) {
+        throw new CompanyNotFoundError();
+      }
+      await this.biz.createBizCompanyOnSegment([
+        { segmentId: id, bizCompanyId: company.id, data: {} },
+      ]);
+    } else {
+      const user = await this.biz.getBizUser(externalId, environmentId);
+      if (!user) {
+        throw new UserNotFoundError();
+      }
+      await this.biz.createBizUserOnSegment([{ segmentId: id, bizUserId: user.id, data: {} }]);
+    }
+  }
+
+  /** Remove an env user/company from a manual segment. */
+  async removeMember(
+    id: string,
+    projectId: string,
+    environmentId: string,
+    externalId: string,
+  ): Promise<void> {
+    const seg = await this.requireManualSegment(id, projectId);
+    if (seg.bizType === SegmentBizType.COMPANY) {
+      const company = await this.biz.getBizCompany(externalId, environmentId);
+      if (!company) {
+        throw new CompanyNotFoundError();
+      }
+      await this.biz.deleteBizCompanyOnSegment({ segmentId: id, bizCompanyIds: [company.id] });
+    } else {
+      const user = await this.biz.getBizUser(externalId, environmentId);
+      if (!user) {
+        throw new UserNotFoundError();
+      }
+      await this.biz.deleteBizUserOnSegment({ segmentId: id, bizUserIds: [user.id] });
+    }
+  }
+
+  /** Load a segment that belongs to this project, or 404. */
+  private async requireSegment(id: string, projectId: string) {
+    const seg = await this.prisma.segment.findUnique({ where: { id } });
+    if (!seg || seg.projectId !== projectId) {
+      throw new SegmentNotFoundError();
+    }
+    return seg;
+  }
+
+  private async requireManualSegment(id: string, projectId: string) {
+    const seg = await this.requireSegment(id, projectId);
+    if (seg.dataType !== SegmentDataType.MANUAL) {
+      throw new ValidationError('Members can only be managed on a manual segment.');
+    }
+    return seg;
+  }
+
+  /** Internal attribute / event ids -> stable codeName (read; fallback: the id). */
+  private async buildDecompileResolvers(projectId: string): Promise<DecompileResolvers> {
+    const [attributes, events] = await Promise.all([
+      this.prisma.attribute.findMany({
+        where: { projectId },
+        select: { id: true, codeName: true },
+      }),
+      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
+    ]);
+    const attrMap = new Map(attributes.map((a) => [a.id, a.codeName]));
+    const eventMap = new Map(events.map((e) => [e.id, e.codeName]));
+    return {
+      attributeCode: (id) => attrMap.get(id) ?? id,
+      eventCode: (id) => eventMap.get(id) ?? id,
+    };
+  }
+
+  /** Stable codeName -> internal attribute / event id (write; fallback: the code). */
+  private async buildCompileResolvers(projectId: string): Promise<CompileResolvers> {
+    const [attributes, events] = await Promise.all([
+      this.prisma.attribute.findMany({
+        where: { projectId },
+        select: { id: true, codeName: true },
+      }),
+      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
+    ]);
+    const attrMap = new Map(attributes.map((a) => [a.codeName, a.id]));
+    const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
+    return {
+      attributeId: (code) => attrMap.get(code) ?? code,
+      eventId: (code) => eventMap.get(code) ?? code,
+    };
+  }
+}

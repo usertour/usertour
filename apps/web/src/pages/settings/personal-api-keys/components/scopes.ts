@@ -52,6 +52,12 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     write: ['session:manage'],
   },
   {
+    key: 'segment',
+    labelKey: 'settings.personalApiKeys.scopeResources.segment',
+    read: ['segment:read'],
+    write: ['segment:create', 'segment:update', 'segment:delete'],
+  },
+  {
     key: 'attribute',
     labelKey: 'settings.personalApiKeys.scopeResources.attribute',
     read: ['attribute:read'],

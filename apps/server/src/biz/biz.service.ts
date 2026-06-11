@@ -106,15 +106,22 @@ export class BizService {
   }
 
   async creatSegment(data: CreatSegment) {
-    const environment = await this.prisma.environment.findFirst({
-      where: { id: data.environmentId },
-    });
-    if (!environment) {
-      throw new ParamsError('Environment not found');
+    // Segments are project-level. `projectId` may be supplied directly; fall back
+    // to deriving it from `environmentId` for the legacy env-first callers (the
+    // segment's own environmentId column is unused — see the v2 segments API).
+    let projectId = data.projectId;
+    if (!projectId) {
+      const environment = await this.prisma.environment.findFirst({
+        where: { id: data.environmentId },
+      });
+      if (!environment) {
+        throw new ParamsError('Environment not found');
+      }
+      projectId = environment.projectId;
     }
 
     // Set default columns if not provided
-    const segmentData = { ...data, projectId: environment.projectId };
+    const segmentData = { ...data, projectId };
     if (!segmentData.columns && segmentData.bizType) {
       segmentData.columns = getDefaultColumns(segmentData.bizType as SegmentBizType);
     } else if (segmentData.columns) {

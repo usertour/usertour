@@ -735,6 +735,7 @@ const translations = {
         user: '用户',
         company: '公司',
         session: '会话',
+        segment: '分群',
         attribute: '属性',
         event: '事件',
         analytics: '分析',

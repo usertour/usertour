@@ -263,6 +263,15 @@ export class EventDefinitionNotFoundError extends OpenAPIError {
   };
 }
 
+export class SegmentNotFoundError extends OpenAPIError {
+  code = 'E1025';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Segment not found',
+    'zh-CN': '分群未找到',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
@@ -695,6 +704,7 @@ const errorMap = {
   E1022: AttributeDefinitionNotFoundError,
   E1023: ResourceConflictError,
   E1024: EventDefinitionNotFoundError,
+  E1025: SegmentNotFoundError,
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,

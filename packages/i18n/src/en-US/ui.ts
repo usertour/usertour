@@ -769,6 +769,7 @@ const translations = {
         user: 'Users',
         company: 'Companies',
         session: 'Sessions',
+        segment: 'Segments',
         attribute: 'Attributes',
         event: 'Events',
         analytics: 'Analytics',
