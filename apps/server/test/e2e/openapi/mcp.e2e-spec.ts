@@ -118,7 +118,7 @@ describe('MCP endpoint (e2e)', () => {
     Capability.ContentRead,
     Capability.AttributeRead,
     Capability.EventRead,
-    Capability.BizdataRead,
+    Capability.UserRead,
   ];
 
   describe('protocol', () => {
@@ -165,8 +165,8 @@ describe('MCP endpoint (e2e)', () => {
       );
     });
 
-    it('a bizdata:read-only token sees only the user tools', async () => {
-      const token = await mint([Capability.BizdataRead], [projectA]);
+    it('a user:read-only token sees only the user tools', async () => {
+      const token = await mint([Capability.UserRead], [projectA]);
       const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
       const result = extractResult(res);
       const names = result.result.tools.map((t: { name: string }) => t.name).sort();
@@ -185,7 +185,7 @@ describe('MCP endpoint (e2e)', () => {
 
   describe('tools/call', () => {
     it('list_users returns the seeded user in the text content', async () => {
-      const token = await mint([Capability.BizdataRead], [projectA]);
+      const token = await mint([Capability.UserRead], [projectA]);
       const res = await rpc(
         {
           jsonrpc: '2.0',

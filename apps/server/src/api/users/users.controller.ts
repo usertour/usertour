@@ -23,7 +23,7 @@ export class ApiUsersController {
   constructor(private readonly service: ApiUsersService) {}
 
   @Get()
-  @RequireCapability(Capability.BizdataRead)
+  @RequireCapability(Capability.UserRead)
   @ApiOperation({ summary: 'List users' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
@@ -37,7 +37,7 @@ export class ApiUsersController {
   }
 
   @Get(':id')
-  @RequireCapability(Capability.BizdataRead)
+  @RequireCapability(Capability.UserRead)
   @ApiOperation({ summary: 'Get a user' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })

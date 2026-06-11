@@ -731,6 +731,8 @@ const translations = {
         contentPublish: '发布内容',
         themes: '读取主题',
         users: '用户',
+        companies: '公司',
+        sessions: '会话',
         attributes: '属性',
         events: '事件',
         analytics: '分析',

@@ -31,7 +31,7 @@ export class BizResolver {
   constructor(private service: BizService) {}
 
   @Query(() => BizUserConnection)
-  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
+  @RequirePermission({ capability: Capability.UserRead, scope: ScopeKind.Environment })
   async queryBizUser(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizQuery,
@@ -41,7 +41,7 @@ export class BizResolver {
   }
 
   @Query(() => BizConnection)
-  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
+  @RequirePermission({ capability: Capability.CompanyRead, scope: ScopeKind.Environment })
   async queryBizCompany(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizQuery,
@@ -51,7 +51,7 @@ export class BizResolver {
   }
 
   @Query(() => BizEventConnection)
-  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
+  @RequirePermission({ capability: Capability.UserRead, scope: ScopeKind.Environment })
   async queryBizUserEvents(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizEventQuery,
@@ -65,7 +65,7 @@ export class BizResolver {
   }
 
   @Query(() => BizEventConnection)
-  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
+  @RequirePermission({ capability: Capability.CompanyRead, scope: ScopeKind.Environment })
   async queryBizCompanyEvents(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizEventQuery,
@@ -118,7 +118,7 @@ export class BizResolver {
   }
 
   @Mutation(() => Common)
-  @RequirePermission({ capability: Capability.BizdataDelete, scope: ScopeKind.Environment })
+  @RequirePermission({ capability: Capability.UserDelete, scope: ScopeKind.Environment })
   async deleteBizUser(@Args('data') data: BizUserOrCompanyIdsInput) {
     const result = await this.service.deleteBizUser(data.ids, data.environmentId);
     return {
@@ -128,7 +128,7 @@ export class BizResolver {
   }
 
   @Mutation(() => Common)
-  @RequirePermission({ capability: Capability.BizdataDelete, scope: ScopeKind.Environment })
+  @RequirePermission({ capability: Capability.CompanyDelete, scope: ScopeKind.Environment })
   async deleteBizCompany(@Args('data') data: BizUserOrCompanyIdsInput) {
     const ret = await this.service.deleteBizCompany(data.ids, data.environmentId);
     return { success: ret.count > 0, count: ret.count };

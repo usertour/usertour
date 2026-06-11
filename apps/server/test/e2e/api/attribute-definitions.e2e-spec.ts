@@ -105,7 +105,7 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const minted = await graphql(app, {
       query: CREATE,
       variables: {
-        input: { name: 'k2', scopes: [Capability.BizdataRead], projectIds: [fx.projectId] },
+        input: { name: 'k2', scopes: [Capability.UserRead], projectIds: [fx.projectId] },
       },
       token: ownerToken,
     });

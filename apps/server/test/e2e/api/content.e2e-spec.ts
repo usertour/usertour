@@ -156,7 +156,7 @@ describe('API v2 /content (e2e)', () => {
   });
 
   it('rejects insufficient scope (403 E1012)', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.UserRead]);
     const res = await api('get', `/v2/projects/${projectId}/content`, token);
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');

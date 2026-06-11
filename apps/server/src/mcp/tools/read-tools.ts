@@ -214,7 +214,7 @@ export function buildReadTools(): McpTool[] {
     {
       name: 'list_users',
       title: 'List users',
-      capability: Capability.BizdataRead,
+      capability: Capability.UserRead,
       description:
         'List end-users (the tracked business users your product onboards) in an environment. ' +
         "Defaults to the project's primary environment; pass `environmentId` to target another. " +
@@ -244,7 +244,7 @@ export function buildReadTools(): McpTool[] {
     {
       name: 'get_user',
       title: 'Get user',
-      capability: Capability.BizdataRead,
+      capability: Capability.UserRead,
       description:
         'Get a single end-user by their external id (the id you sent when identifying the ' +
         'user). Defaults to the primary environment; pass `environmentId` to target another.',

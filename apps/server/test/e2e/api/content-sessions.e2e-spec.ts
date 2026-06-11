@@ -92,7 +92,7 @@ describe('API v2 /content-sessions (e2e)', () => {
   });
 
   it('gets a session by id (embeds null without expand)', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.SessionRead]);
     const res = await api('get', base(`/${sessionId}`), token);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
@@ -107,7 +107,7 @@ describe('API v2 /content-sessions (e2e)', () => {
   });
 
   it('embeds the A-shape content on expand=content (no publish state)', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.SessionRead]);
     const res = await api('get', base(`/${sessionId}?expand=content`), token);
     expect(res.status).toBe(200);
     expect(res.body.content).toMatchObject({ id: contentId, object: 'content', type: 'flow' });
@@ -117,27 +117,27 @@ describe('API v2 /content-sessions (e2e)', () => {
   });
 
   it('embeds the user on expand=user', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.SessionRead]);
     const res = await api('get', base(`/${sessionId}?expand=user`), token);
     expect(res.body.user).toMatchObject({ id: userExternalId, object: 'user' });
   });
 
   it('lists sessions for a content', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.SessionRead]);
     const res = await api('get', base(`?contentId=${contentId}`), token);
     expect(res.status).toBe(200);
     expect(res.body.results.map((s: { id: string }) => s.id)).toContain(sessionId);
   });
 
   it('returns 404 for an unknown session (E1005)', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.SessionRead]);
     const res = await api('get', base('/nope'), token);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1005');
   });
 
   it('returns 404 listing sessions for an unknown content (E1004)', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.SessionRead]);
     const res = await api('get', base('?contentId=nope'), token);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');

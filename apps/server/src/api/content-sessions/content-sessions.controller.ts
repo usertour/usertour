@@ -28,7 +28,7 @@ export class ApiContentSessionsController {
   constructor(private readonly service: ApiContentSessionsService) {}
 
   @Get()
-  @RequireCapability(Capability.BizdataRead)
+  @RequireCapability(Capability.SessionRead)
   @ApiOperation({ summary: 'List content sessions' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
@@ -46,7 +46,7 @@ export class ApiContentSessionsController {
   }
 
   @Get(':id')
-  @RequireCapability(Capability.BizdataRead)
+  @RequireCapability(Capability.SessionRead)
   @ApiOperation({ summary: 'Get a content session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })

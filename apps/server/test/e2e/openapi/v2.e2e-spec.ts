@@ -118,14 +118,14 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
   describe('token management (GraphQL)', () => {
     it('creates a token and returns the plaintext once (utp_ prefix)', async () => {
       const { token, apiToken } = await mint(
-        [Capability.BizdataRead, Capability.ContentRead],
+        [Capability.UserRead, Capability.ContentRead],
         [projectA],
       );
       expect(token.startsWith('utp_')).toBe(true);
       expect((apiToken as any).prefix).toBe('utp_');
       expect((apiToken as any).projectIds).toEqual([projectA]);
       expect((apiToken as any).scopes).toEqual(
-        expect.arrayContaining([Capability.BizdataRead, Capability.ContentRead]),
+        expect.arrayContaining([Capability.UserRead, Capability.ContentRead]),
       );
       expect((apiToken as any).isActive).toBe(true);
     });
@@ -152,7 +152,7 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
       const res = await graphql(app, {
         query: CREATE,
         variables: {
-          input: { name: 'x', scopes: [Capability.BizdataRead], projectIds: [stranger.id] },
+          input: { name: 'x', scopes: [Capability.UserRead], projectIds: [stranger.id] },
         },
         token: ownerToken,
       });
@@ -166,13 +166,13 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
         query: UPDATE,
         variables: {
           id: created.apiToken.id,
-          input: { name: 'renamed', scopes: [Capability.BizdataRead] },
+          input: { name: 'renamed', scopes: [Capability.UserRead] },
         },
         token: ownerToken,
       });
       const updated = gqlData(res).updateApiToken;
       expect(updated.name).toBe('renamed');
-      expect(updated.scopes).toEqual([Capability.BizdataRead]);
+      expect(updated.scopes).toEqual([Capability.UserRead]);
       expect(updated.projectIds).toEqual([projectA]);
     });
 
@@ -207,7 +207,7 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
       full = (
         await mint(
           [
-            Capability.BizdataRead,
+            Capability.UserRead,
             Capability.ContentRead,
             Capability.AttributeRead,
             Capability.EventRead,
@@ -290,8 +290,8 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
     });
 
     it('rejects insufficient scope (403 E1012)', async () => {
-      const bizOnly = (await mint([Capability.BizdataRead], [projectA])).token;
-      const res = await v2('get', `/v2/projects/${projectA}/content`, bizOnly);
+      const userOnly = (await mint([Capability.UserRead], [projectA])).token;
+      const res = await v2('get', `/v2/projects/${projectA}/content`, userOnly);
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe('E1012');
     });

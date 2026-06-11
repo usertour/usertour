@@ -765,6 +765,8 @@ const translations = {
         contentPublish: 'Publish content',
         themes: 'Read themes',
         users: 'Users',
+        companies: 'Companies',
+        sessions: 'Sessions',
         attributes: 'Attributes',
         events: 'Events',
         analytics: 'Analytics',

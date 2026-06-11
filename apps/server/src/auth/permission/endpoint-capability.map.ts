@@ -54,18 +54,18 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.deleteAccessToken': Capability.AccessTokenManage, // O
 
   // biz
-  'biz.queryBizUser': Capability.BizdataRead, // R
-  'biz.queryBizCompany': Capability.BizdataRead, // R
-  'biz.queryBizUserEvents': Capability.BizdataRead, // R
-  'biz.queryBizCompanyEvents': Capability.BizdataRead, // R
+  'biz.queryBizUser': Capability.UserRead, // R
+  'biz.queryBizCompany': Capability.CompanyRead, // R
+  'biz.queryBizUserEvents': Capability.UserRead, // R
+  'biz.queryBizCompanyEvents': Capability.CompanyRead, // R
   'biz.createSegment': Capability.SegmentCreate, // W
   'biz.updateSegment': Capability.SegmentUpdate, // W
   'biz.deleteSegment': Capability.SegmentDelete, // W
   'biz.listSegment': Capability.SegmentRead, // R
   'biz.createBizUserOnSegment': Capability.SegmentUpdate, // W
   'biz.deleteBizUserOnSegment': Capability.SegmentUpdate, // W
-  'biz.deleteBizUser': Capability.BizdataDelete, // W
-  'biz.deleteBizCompany': Capability.BizdataDelete, // W
+  'biz.deleteBizUser': Capability.UserDelete, // W
+  'biz.deleteBizCompany': Capability.CompanyDelete, // W
   'biz.createBizCompanyOnSegment': Capability.SegmentUpdate, // W
   'biz.deleteBizCompanyOnSegment': Capability.SegmentUpdate, // W
 

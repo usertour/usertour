@@ -410,7 +410,7 @@ describe('API v2 /content-versions (e2e)', () => {
   });
 
   it('rejects insufficient scope (403 E1012)', async () => {
-    const token = await mint([Capability.BizdataRead]);
+    const token = await mint([Capability.UserRead]);
     const res = await api(
       'get',
       `/v2/projects/${projectId}/content-versions?contentId=${contentId}`,

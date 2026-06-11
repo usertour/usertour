@@ -28,7 +28,7 @@ export class ApiCompaniesController {
   constructor(private readonly service: ApiCompaniesService) {}
 
   @Get()
-  @RequireCapability(Capability.BizdataRead)
+  @RequireCapability(Capability.CompanyRead)
   @ApiOperation({ summary: 'List companies' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
@@ -42,7 +42,7 @@ export class ApiCompaniesController {
   }
 
   @Get(':id')
-  @RequireCapability(Capability.BizdataRead)
+  @RequireCapability(Capability.CompanyRead)
   @ApiOperation({ summary: 'Get a company' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })

@@ -57,9 +57,14 @@ export enum Capability {
   SegmentCreate = 'segment:create',
   SegmentUpdate = 'segment:update',
   SegmentDelete = 'segment:delete',
-  // business data (end-users / companies / sessions)
-  BizdataRead = 'bizdata:read',
-  BizdataDelete = 'bizdata:delete',
+  // end users (the tracked business users your product onboards)
+  UserRead = 'user:read',
+  UserDelete = 'user:delete',
+  // companies
+  CompanyRead = 'company:read',
+  CompanyDelete = 'company:delete',
+  // content sessions
+  SessionRead = 'session:read',
   SessionManage = 'session:manage',
   // analytics
   AnalyticsRead = 'analytics:read',
