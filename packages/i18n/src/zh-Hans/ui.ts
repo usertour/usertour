@@ -2322,6 +2322,13 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: '加载编辑器中...',
+    versionConflict: {
+      title: '内容已在其他位置更新',
+      description:
+        '同事(或另一个标签页)保存了该内容的更新版本,当前窗口的草稿无法再保存。请刷新加载最新版本——本窗口未保存的修改将丢失。',
+      refresh: '立即刷新',
+      later: '稍后处理',
+    },
     analytics: {
       notAtAllLikely: '完全不可能',
       extremelyLikely: '非常可能',

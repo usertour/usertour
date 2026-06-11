@@ -2450,6 +2450,13 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: 'Loading builder...',
+    versionConflict: {
+      title: 'This content was updated elsewhere',
+      description:
+        "A teammate (or another tab) saved a newer copy of this content, so this window's draft can no longer be saved. Refresh to load the latest version — unsaved changes in this window will be lost.",
+      refresh: 'Refresh now',
+      later: 'Later',
+    },
     analytics: {
       notAtAllLikely: 'Not at all likely',
       extremelyLikely: 'Extremely likely',

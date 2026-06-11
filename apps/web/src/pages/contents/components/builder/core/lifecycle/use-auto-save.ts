@@ -50,6 +50,12 @@ export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
     if (!currentVersion || !backupVersion) {
       return;
     }
+    // A detected version conflict is terminal for this mount — the draft can
+    // never be saved and the conflict dialog owns the exit (refresh). Stop
+    // auto-save from re-firing a doomed request on every further edit.
+    if (store.getState().saveState.status === 'conflict') {
+      return;
+    }
     if (!isEqual(currentVersion, backupVersion)) {
       store
         .getState()

@@ -266,8 +266,14 @@ export const createContentVersion = gql`
 `;
 
 export const updateContentVersion = gql`
-  mutation updateContentVersion($versionId: String!, $content: VersionInput!) {
-    updateContentVersion(data: { versionId: $versionId, content: $content }) {
+  mutation updateContentVersion(
+    $versionId: String!
+    $content: VersionInput!
+    $expectedUpdatedAt: DateTime
+  ) {
+    updateContentVersion(
+      data: { versionId: $versionId, content: $content, expectedUpdatedAt: $expectedUpdatedAt }
+    ) {
       id
       sequence
       contentId

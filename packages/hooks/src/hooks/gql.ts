@@ -476,8 +476,13 @@ export const useUpdateContentVersionMutation = () => {
         // front-end cvid. Server upserts by cvid. detail omits this.
         steps?: unknown[];
       },
+      // Optimistic-lock baseline (the version's updatedAt the caller last
+      // loaded). The builder's whole-version save sends it so a concurrent
+      // save by someone else is rejected instead of silently overwritten;
+      // detail's scalar updates omit it.
+      expectedUpdatedAt?: string,
     ) => {
-      const response = await mutation({ variables: { versionId, content } });
+      const response = await mutation({ variables: { versionId, content, expectedUpdatedAt } });
       return response.data?.updateContentVersion;
     },
     [mutation],

@@ -8,6 +8,7 @@ import {
   createBuilderStore,
 } from '@/pages/contents/components/builder/core/builder-store';
 import { BuilderLeaveGuard } from '@/pages/contents/components/builder/core/lifecycle/leave-guard';
+import { VersionConflictDialog } from '@/pages/contents/components/builder/core/lifecycle/version-conflict-dialog';
 import type {
   BuilderProviderContextValue,
   BuilderProviderProps,
@@ -81,6 +82,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
   return (
     <BuilderProviderContext.Provider value={providerValue}>
       <BuilderLeaveGuard />
+      <VersionConflictDialog />
       {children}
     </BuilderProviderContext.Provider>
   );

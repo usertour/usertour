@@ -8,7 +8,12 @@ import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
-import { ParamsError, UnknownError } from '@/common/errors';
+import {
+  ParamsError,
+  UnknownError,
+  VersionConflictError,
+  VersionNotEditableError,
+} from '@/common/errors';
 import { ContentConfigObject } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
@@ -197,10 +202,23 @@ export class ContentService {
   }
 
   async updateContentVersion(input: VersionUpdateInput) {
-    const { versionId, content } = input;
+    const { versionId, content, expectedUpdatedAt } = input;
     if (!(await this.contentVersionIsEditable(versionId))) {
       return;
     }
+
+    // Optimistic lock, opt-in per call: the builder's whole-version save
+    // sends the updatedAt it last baselined from; a mismatch means someone
+    // else saved this version in the meantime and a blind write would roll
+    // their work back. detail's scalar-only updates omit it (field-level
+    // last-write-wins is acceptable there).
+    if (expectedUpdatedAt) {
+      const version = await this.prisma.version.findUnique({ where: { id: versionId } });
+      if (version && version.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+        throw new VersionConflictError();
+      }
+    }
+
     const { steps, ...versionFields } = content;
 
     // No steps in the payload → scalar-only update (detail's path:
@@ -581,8 +599,11 @@ export class ContentService {
       (env) => env.published && env.publishedVersionId === versionId,
     );
 
+    // Not the content's edited version (someone forked a newer one) or
+    // already live in an environment — either way writes are refused with a
+    // dedicated code so clients can tell "stale editor" apart from bad input.
     if (contentItem.editedVersionId !== versionId || isPublished) {
-      throw new ParamsError();
+      throw new VersionNotEditableError();
     }
 
     return true;

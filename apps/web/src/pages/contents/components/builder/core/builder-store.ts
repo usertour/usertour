@@ -38,7 +38,12 @@ export type SaveState =
   | { status: 'dirty' }
   | { status: 'saving'; saveId: number }
   | { status: 'saved'; savedAt: number }
-  | { status: 'error'; error: Error };
+  | { status: 'error'; error: Error }
+  // Terminal for this mount: the server refused the write because the
+  // version is no longer editable (forked elsewhere) or was saved by
+  // someone else since our baseline. The draft can never be persisted —
+  // the conflict dialog owns the exit (refresh).
+  | { status: 'conflict' };
 
 // Undo / redo history for `currentVersion`. Each entry is a pair of
 // patches captured via immer's produceWithPatches: forward applied
