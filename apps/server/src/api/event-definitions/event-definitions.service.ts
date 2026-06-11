@@ -44,6 +44,11 @@ export class ApiEventDefinitionsService {
     });
   }
 
+  /** Get a single event definition (404 when missing or owned by another project). */
+  async get(id: string, projectId: string): Promise<EventDefinition> {
+    return mapEventDefinition(await this.requireExisting(id, projectId));
+  }
+
   /** Create an event definition. Duplicate (project+codeName) → 409. */
   async create(projectId: string, body: CreateEventDefinitionBody): Promise<EventDefinition> {
     try {
@@ -90,12 +95,18 @@ export class ApiEventDefinitionsService {
    * when missing or owned by another project; rejects predefined/system events.
    */
   private async requireWritable(id: string, projectId: string) {
+    const event = await this.requireExisting(id, projectId);
+    if (event.predefined) {
+      throw new ValidationError('Cannot modify a predefined event definition.');
+    }
+    return event;
+  }
+
+  /** Resolve an event that belongs to this project, or 404 (no cross-project leak). */
+  private async requireExisting(id: string, projectId: string) {
     const event = await this.events.get(id);
     if (!event || event.projectId !== projectId) {
       throw new EventDefinitionNotFoundError();
-    }
-    if (event.predefined) {
-      throw new ValidationError('Cannot modify a predefined event definition.');
     }
     return event;
   }

@@ -28,7 +28,6 @@ import {
   GetCompanyQueryDto,
   ListCompaniesQueryDto,
   ListCompaniesResponseDto,
-  MembershipDto,
   UpsertCompanyBodyDto,
   UpsertMembershipBodyDto,
 } from './companies.schema';
@@ -101,13 +100,14 @@ export class ApiCompaniesController {
   }
 
   @Put(':id/memberships/:userId')
+  @HttpCode(204)
   @RequireCapability(Capability.CompanyWrite)
   @ApiOperation({ summary: 'Add or update a company membership' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiParam({ name: 'userId', description: 'User external ID' })
-  @ApiResponse({ status: 200, description: 'Membership created or updated', type: MembershipDto })
+  @ApiResponse({ status: 204, description: 'Membership created or updated' })
   @ApiResponse({ status: 404, description: 'Company or user not found' })
   async upsertMembership(
     @Param('id') id: string,
@@ -115,7 +115,7 @@ export class ApiCompaniesController {
     @EnvironmentDecorator() environment: Environment,
     @Body() body: UpsertMembershipBodyDto,
   ) {
-    return this.service.upsertMembership(id, userId, environment, body);
+    await this.service.upsertMembership(id, userId, environment, body);
   }
 
   @Delete(':id/memberships/:userId')

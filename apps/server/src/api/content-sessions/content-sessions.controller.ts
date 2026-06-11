@@ -86,6 +86,7 @@ export class ApiContentSessionsController {
   }
 
   @Post(':id/end')
+  @HttpCode(200)
   @RequireCapability(Capability.SessionManage)
   @ApiOperation({ summary: 'End a content session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })

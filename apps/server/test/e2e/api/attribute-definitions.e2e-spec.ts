@@ -194,6 +194,23 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(list.body.results.map((a: { id: string }) => a.id)).not.toContain(id);
   });
 
+  it('gets an attribute definition by id (404 unknown → E1022)', async () => {
+    const token = await mint([Capability.AttributeCreate, Capability.AttributeRead]);
+    const created = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_get_x',
+      displayName: 'G',
+    });
+    const got = await api('get', `${basePath()}/${created.body.id}`, token);
+    expect(got.status).toBe(200);
+    expect(got.body).toMatchObject({ id: created.body.id, codeName: 'attr_get_x' });
+
+    const no = await api('get', `${basePath()}/nope`, token);
+    expect(no.status).toBe(404);
+    expect(no.body.error.code).toBe('E1022');
+  });
+
   it('rejects a duplicate codeName (409 E1023)', async () => {
     const token = await mint([Capability.AttributeCreate]);
     const res = await send('post', basePath(), token).send({

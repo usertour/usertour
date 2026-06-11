@@ -158,20 +158,17 @@ describe('API v2 /companies parity with v1 (e2e)', () => {
     expect((await api('get', v2path('/co-write-x'), token)).status).toBe(404);
   });
 
-  it('PUT then DELETE a company membership (404 once removed)', async () => {
+  it('PUT then DELETE a company membership (204; 404 once removed)', async () => {
     const token = await mint([Capability.CompanyWrite, Capability.CompanyRead]);
     await auth('put', '/co-mem-x', token).send({ attributes: {} });
 
     const m = await auth('put', '/co-mem-x/memberships/bu-parity-jane', token).send({
       attributes: { role: 'member' },
     });
-    expect(m.status).toBe(200);
-    expect(m.body).toMatchObject({
-      object: 'companyMembership',
-      companyId: 'co-mem-x',
-      userId: 'bu-parity-jane',
-    });
-    expect(m.body.attributes).toMatchObject({ role: 'member' });
+    expect(m.status).toBe(204);
+    // membership visible via the company users expand (external ids)
+    const linked = await api('get', v2path('/co-mem-x?expand=users'), token);
+    expect(linked.body.users.map((u: { id: string }) => u.id)).toContain('bu-parity-jane');
 
     expect(
       (await auth('delete', '/co-mem-x/memberships/bu-parity-jane', token).send()).status,

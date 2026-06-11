@@ -72,6 +72,11 @@ export class ApiAttributeDefinitionsService {
     });
   }
 
+  /** Get a single attribute definition (404 when missing or owned by another project). */
+  async get(id: string, projectId: string): Promise<Attribute> {
+    return mapAttribute(await this.requireExisting(id, projectId));
+  }
+
   /** Create an attribute definition. Duplicate (project+scope+codeName) → 409. */
   async create(projectId: string, body: CreateAttributeBody): Promise<Attribute> {
     try {
@@ -118,12 +123,18 @@ export class ApiAttributeDefinitionsService {
    * rejects predefined/system attributes.
    */
   private async requireWritable(id: string, projectId: string) {
+    const attr = await this.requireExisting(id, projectId);
+    if (attr.predefined) {
+      throw new ValidationError('Cannot modify a predefined attribute definition.');
+    }
+    return attr;
+  }
+
+  /** Resolve an attribute that belongs to this project, or 404 (no cross-project leak). */
+  private async requireExisting(id: string, projectId: string) {
     const attr = await this.attributes.get(id);
     if (!attr || attr.projectId !== projectId) {
       throw new AttributeDefinitionNotFoundError();
-    }
-    if (attr.predefined) {
-      throw new ValidationError('Cannot modify a predefined attribute definition.');
     }
     return attr;
   }

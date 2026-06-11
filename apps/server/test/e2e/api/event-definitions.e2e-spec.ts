@@ -134,6 +134,21 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect(list.body.results.map((e: { id: string }) => e.id)).not.toContain(id);
   });
 
+  it('gets an event definition by id (404 unknown → E1024)', async () => {
+    const token = await mint([Capability.EventCreate, Capability.EventRead]);
+    const created = await send('post', basePath(), token).send({
+      codeName: 'evt_get_x',
+      displayName: 'G',
+    });
+    const got = await api('get', `${basePath()}/${created.body.id}`, token);
+    expect(got.status).toBe(200);
+    expect(got.body).toMatchObject({ id: created.body.id, codeName: 'evt_get_x' });
+
+    const no = await api('get', `${basePath()}/nope`, token);
+    expect(no.status).toBe(404);
+    expect(no.body.error.code).toBe('E1024');
+  });
+
   it('rejects a duplicate codeName (409 E1023)', async () => {
     const token = await mint([Capability.EventCreate]);
     const res = await send('post', basePath(), token).send({

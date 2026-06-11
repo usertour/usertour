@@ -56,6 +56,17 @@ export class ApiEventDefinitionsController {
     return this.service.list(requestUrl, projectId, query);
   }
 
+  @Get(':id')
+  @RequireCapability(Capability.EventRead)
+  @ApiOperation({ summary: 'Get an event definition' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Event definition ID' })
+  @ApiResponse({ status: 200, description: 'Event definition found', type: EventDefinitionDto })
+  @ApiResponse({ status: 404, description: 'Event definition not found' })
+  async get(@Param('projectId') projectId: string, @Param('id') id: string) {
+    return this.service.get(id, projectId);
+  }
+
   @Post()
   @RequireCapability(Capability.EventCreate)
   @ApiOperation({ summary: 'Create an event definition' })

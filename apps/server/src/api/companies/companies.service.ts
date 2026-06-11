@@ -8,7 +8,6 @@ import {
 } from '@/common/errors/errors';
 import { Environment } from '@/environments/models/environment.model';
 
-import { ApiObjectType } from '../shared/object-type';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapCompany } from './companies.mapper';
@@ -17,7 +16,6 @@ import {
   CompanyExpand,
   GetCompanyQuery,
   ListCompaniesQuery,
-  Membership,
   UpsertCompanyBody,
   UpsertMembershipBody,
 } from './companies.schema';
@@ -107,7 +105,7 @@ export class ApiCompaniesService {
     userId: string,
     environment: Environment,
     body: UpsertMembershipBody,
-  ): Promise<Membership> {
+  ): Promise<void> {
     const bizCompany = await this.biz.getBizCompany(companyId, environment.id);
     if (!bizCompany) {
       throw new CompanyNotFoundError();
@@ -116,20 +114,12 @@ export class ApiCompaniesService {
     if (!bizUser) {
       throw new UserNotFoundError();
     }
-    const row = await this.biz.upsertBizCompanyMembership(
+    await this.biz.upsertBizCompanyMembership(
       environment.projectId,
       bizCompany.id,
       bizUser.id,
       body.attributes ?? {},
     );
-    return {
-      id: row.id,
-      object: ApiObjectType.COMPANY_MEMBERSHIP,
-      attributes: (row.data as Record<string, any>) ?? {},
-      createdAt: row.createdAt.toISOString(),
-      companyId,
-      userId,
-    };
   }
 
   /** Remove the membership linking a user to a company. 404 when not linked. */

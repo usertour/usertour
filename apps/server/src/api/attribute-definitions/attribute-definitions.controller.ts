@@ -56,6 +56,17 @@ export class ApiAttributeDefinitionsController {
     return this.service.list(requestUrl, projectId, query);
   }
 
+  @Get(':id')
+  @RequireCapability(Capability.AttributeRead)
+  @ApiOperation({ summary: 'Get an attribute definition' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Attribute definition ID' })
+  @ApiResponse({ status: 200, description: 'Attribute definition found', type: AttributeDto })
+  @ApiResponse({ status: 404, description: 'Attribute definition not found' })
+  async get(@Param('projectId') projectId: string, @Param('id') id: string) {
+    return this.service.get(id, projectId);
+  }
+
   @Post()
   @RequireCapability(Capability.AttributeCreate)
   @ApiOperation({ summary: 'Create an attribute definition' })
