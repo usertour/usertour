@@ -1,4 +1,16 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Put,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -11,7 +23,13 @@ import { Environment } from '@/environments/models/environment.model';
 
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiUsersService } from './users.service';
-import { GetUserQueryDto, ListUsersQueryDto, ListUsersResponseDto, UserDto } from './users.schema';
+import {
+  GetUserQueryDto,
+  ListUsersQueryDto,
+  ListUsersResponseDto,
+  UpsertUserBodyDto,
+  UserDto,
+} from './users.schema';
 
 @ApiTags('Users')
 @Controller('v2/projects/:projectId/environments/:environmentId/users')
@@ -50,5 +68,33 @@ export class ApiUsersController {
     @Query() query: GetUserQueryDto,
   ) {
     return this.service.getUser(id, environment.id, query);
+  }
+
+  @Put(':id')
+  @RequireCapability(Capability.UserWrite)
+  @ApiOperation({ summary: 'Create or update a user' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'id', description: 'User external ID' })
+  @ApiResponse({ status: 200, description: 'User created or updated', type: UserDto })
+  async upsert(
+    @Param('id') id: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Body() body: UpsertUserBodyDto,
+  ) {
+    return this.service.upsert(id, environment, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.UserDelete)
+  @ApiOperation({ summary: 'Delete a user' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'id', description: 'User external ID' })
+  @ApiResponse({ status: 204, description: 'User deleted' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    await this.service.delete(id, environment);
   }
 }

@@ -1,4 +1,15 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -59,5 +70,30 @@ export class ApiContentSessionsController {
     @Query() query: GetContentSessionQueryDto,
   ) {
     return this.service.get(id, environment, query);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.SessionManage)
+  @ApiOperation({ summary: 'Delete a content session' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'id', description: 'Content session ID' })
+  @ApiResponse({ status: 204, description: 'Content session deleted' })
+  @ApiResponse({ status: 404, description: 'Content session not found' })
+  async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    await this.service.delete(id, environment);
+  }
+
+  @Post(':id/end')
+  @RequireCapability(Capability.SessionManage)
+  @ApiOperation({ summary: 'End a content session' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'id', description: 'Content session ID' })
+  @ApiResponse({ status: 200, description: 'Content session ended', type: ContentSessionDto })
+  @ApiResponse({ status: 404, description: 'Content session not found' })
+  async end(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    return this.service.end(id, environment);
   }
 }

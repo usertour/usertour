@@ -32,6 +32,14 @@ export const getUserQuery = z.object({
 });
 export class GetUserQueryDto extends createZodDto(getUserQuery) {}
 
+export const upsertUserBody = z.object({
+  attributes: z
+    .record(z.string(), z.any())
+    .optional()
+    .describe('Custom attributes to set on the user (merged into existing attributes).'),
+});
+export class UpsertUserBodyDto extends createZodDto(upsertUserBody) {}
+
 export const company = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.COMPANY),
@@ -71,3 +79,4 @@ export type User = z.infer<typeof user>;
 export type UserExpand = z.infer<typeof userExpand>;
 export type ListUsersQuery = z.infer<typeof listUsersQuery>;
 export type GetUserQuery = z.infer<typeof getUserQuery>;
+export type UpsertUserBody = z.infer<typeof upsertUserBody>;

@@ -25,6 +25,36 @@ export const getCompanyQuery = z.object({
 });
 export class GetCompanyQueryDto extends createZodDto(getCompanyQuery) {}
 
+export const upsertCompanyBody = z.object({
+  attributes: z
+    .record(z.string(), z.any())
+    .optional()
+    .describe('Custom attributes to set on the company (merged into existing attributes).'),
+});
+export class UpsertCompanyBodyDto extends createZodDto(upsertCompanyBody) {}
+
+export const upsertMembershipBody = z.object({
+  attributes: z
+    .record(z.string(), z.any())
+    .optional()
+    .describe("Custom attributes to set on the membership (e.g. the user's role in the company)."),
+});
+export class UpsertMembershipBodyDto extends createZodDto(upsertMembershipBody) {}
+
+/**
+ * Standalone membership response (company-rooted endpoint). `companyId` / `userId`
+ * echo the external ids the caller addressed the membership with.
+ */
+export const membership = z.object({
+  id: z.string(),
+  object: z.literal(ApiObjectType.COMPANY_MEMBERSHIP),
+  attributes: z.record(z.string(), z.any()),
+  createdAt: z.string(),
+  companyId: z.string(),
+  userId: z.string(),
+});
+export class MembershipDto extends createZodDto(membership) {}
+
 const embeddedUser = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.USER),
@@ -64,3 +94,6 @@ export type Company = z.infer<typeof company>;
 export type CompanyExpand = z.infer<typeof companyExpand>;
 export type ListCompaniesQuery = z.infer<typeof listCompaniesQuery>;
 export type GetCompanyQuery = z.infer<typeof getCompanyQuery>;
+export type UpsertCompanyBody = z.infer<typeof upsertCompanyBody>;
+export type UpsertMembershipBody = z.infer<typeof upsertMembershipBody>;
+export type Membership = z.infer<typeof membership>;

@@ -130,4 +130,57 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
+
+  async function mint(scopes: Capability[]): Promise<string> {
+    const minted = await graphql(app, {
+      query: CREATE,
+      variables: { input: { name: 'kw', scopes, projectIds: [fx.projectId] } },
+      token: ownerToken,
+    });
+    return gqlData(minted).createApiToken.token;
+  }
+
+  it('PUT upserts a user (create → merge update), then DELETE removes it (204)', async () => {
+    const token = await mint([Capability.UserWrite, Capability.UserRead, Capability.UserDelete]);
+    const put = (id: string, body: object) =>
+      request(app.getHttpServer())
+        .put(v2path(`/${id}`))
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+
+    const created = await put('bu-write-bob', { attributes: { name: 'Bob' } });
+    expect(created.status).toBe(200);
+    expect(created.body).toMatchObject({ id: 'bu-write-bob', object: 'user' });
+    expect(created.body.attributes).toMatchObject({ name: 'Bob' });
+
+    const updated = await put('bu-write-bob', { attributes: { plan: 'pro' } });
+    expect(updated.status).toBe(200);
+    expect(updated.body.attributes).toMatchObject({ name: 'Bob', plan: 'pro' }); // merged
+
+    const del = await request(app.getHttpServer())
+      .delete(v2path('/bu-write-bob'))
+      .set('Authorization', `Bearer ${token}`);
+    expect(del.status).toBe(204);
+
+    const after = await api('get', v2path('/bu-write-bob'), token);
+    expect(after.status).toBe(404);
+  });
+
+  it('PUT rejects a token without user:write (403 E1012)', async () => {
+    const res = await request(app.getHttpServer())
+      .put(v2path('/whatever'))
+      .set('Authorization', `Bearer ${v2Token}`) // v2Token carries only user:read
+      .send({ attributes: {} });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
+  });
+
+  it('DELETE 404 for an unknown user (E1001)', async () => {
+    const token = await mint([Capability.UserDelete]);
+    const res = await request(app.getHttpServer())
+      .delete(v2path('/nope'))
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1001');
+  });
 });

@@ -149,4 +149,39 @@ describe('API v2 /content-sessions (e2e)', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
+
+  const send = (method: 'post' | 'delete', path: string, token: string) =>
+    request(app.getHttpServer())[method](base(path)).set('Authorization', `Bearer ${token}`);
+
+  it('end rejects a token without session:manage (403 E1012)', async () => {
+    const token = await mint([Capability.SessionRead]);
+    const res = await send('post', `/${sessionId}/end`, token);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
+  });
+
+  // NOTE: happy-path end isn't asserted here — like the v1 suite, ending a flow
+  // session needs the project's default flow event definitions + a prior
+  // step-seen event seeded (endFlowSession reads them), which the bare test
+  // fixture doesn't set up. The guard + not-found paths are covered instead.
+  it('end 404 for an unknown session (E1005)', async () => {
+    const token = await mint([Capability.SessionManage]);
+    const res = await send('post', '/nope/end', token);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1005');
+  });
+
+  it('delete 404 for an unknown session (E1005)', async () => {
+    const token = await mint([Capability.SessionManage]);
+    const res = await send('delete', '/nope', token);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1005');
+  });
+
+  it('deletes a session (204), then it is gone (404)', async () => {
+    const token = await mint([Capability.SessionManage, Capability.SessionRead]);
+    expect((await send('delete', `/${sessionId}`, token)).status).toBe(204);
+    const after = await api('get', base(`/${sessionId}`), token);
+    expect(after.status).toBe(404);
+  });
 });

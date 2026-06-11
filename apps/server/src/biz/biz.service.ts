@@ -1146,6 +1146,22 @@ export class BizService {
     });
   }
 
+  /**
+   * Upsert a single membership (user<->company link) by their already-resolved
+   * internal rows, wrapping the shared {@link upsertBizMembership} in a tx. The
+   * caller resolves the BizUser/BizCompany first (so it can 404 the right one).
+   */
+  async upsertBizCompanyMembership(
+    projectId: string,
+    bizCompanyId: string,
+    bizUserId: string,
+    attributes: Record<string, any>,
+  ): Promise<BizUserOnCompany> {
+    return await this.prisma.$transaction((tx) =>
+      this.upsertBizMembership(tx, projectId, bizCompanyId, bizUserId, attributes),
+    );
+  }
+
   async listBizUsersWithRelations(
     environmentId: string,
     paginationArgs: {

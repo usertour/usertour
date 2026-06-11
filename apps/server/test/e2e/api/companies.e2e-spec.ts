@@ -128,4 +128,73 @@ describe('API v2 /companies parity with v1 (e2e)', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
+
+  async function mint(scopes: Capability[]): Promise<string> {
+    const minted = await graphql(app, {
+      query: CREATE,
+      variables: { input: { name: 'kw', scopes, projectIds: [fx.projectId] } },
+      token: ownerToken,
+    });
+    return gqlData(minted).createApiToken.token;
+  }
+  const auth = (method: 'put' | 'delete', path: string, token: string) =>
+    request(app.getHttpServer())[method](v2path(path)).set('Authorization', `Bearer ${token}`);
+
+  it('PUT upserts a company (create → merge), then DELETE removes it (204)', async () => {
+    const token = await mint([
+      Capability.CompanyWrite,
+      Capability.CompanyRead,
+      Capability.CompanyDelete,
+    ]);
+    const created = await auth('put', '/co-write-x', token).send({ attributes: { plan: 'free' } });
+    expect(created.status).toBe(200);
+    expect(created.body).toMatchObject({ id: 'co-write-x', object: 'company' });
+    expect(created.body.attributes).toMatchObject({ plan: 'free' });
+
+    const updated = await auth('put', '/co-write-x', token).send({ attributes: { seats: 5 } });
+    expect(updated.body.attributes).toMatchObject({ plan: 'free', seats: 5 }); // merged
+
+    expect((await auth('delete', '/co-write-x', token).send()).status).toBe(204);
+    expect((await api('get', v2path('/co-write-x'), token)).status).toBe(404);
+  });
+
+  it('PUT then DELETE a company membership (404 once removed)', async () => {
+    const token = await mint([Capability.CompanyWrite, Capability.CompanyRead]);
+    await auth('put', '/co-mem-x', token).send({ attributes: {} });
+
+    const m = await auth('put', '/co-mem-x/memberships/bu-parity-jane', token).send({
+      attributes: { role: 'member' },
+    });
+    expect(m.status).toBe(200);
+    expect(m.body).toMatchObject({
+      object: 'companyMembership',
+      companyId: 'co-mem-x',
+      userId: 'bu-parity-jane',
+    });
+    expect(m.body.attributes).toMatchObject({ role: 'member' });
+
+    expect(
+      (await auth('delete', '/co-mem-x/memberships/bu-parity-jane', token).send()).status,
+    ).toBe(204);
+    const again = await auth('delete', '/co-mem-x/memberships/bu-parity-jane', token).send();
+    expect(again.status).toBe(404);
+    expect(again.body.error.code).toBe('E1003');
+  });
+
+  it('membership PUT 404s when the user (E1001) or company (E1002) is missing', async () => {
+    const token = await mint([Capability.CompanyWrite]);
+    const noUser = await auth('put', '/co-parity-acme/memberships/no-such-user', token).send({});
+    expect(noUser.status).toBe(404);
+    expect(noUser.body.error.code).toBe('E1001');
+
+    const noCompany = await auth('put', '/no-such-co/memberships/bu-parity-jane', token).send({});
+    expect(noCompany.status).toBe(404);
+    expect(noCompany.body.error.code).toBe('E1002');
+  });
+
+  it('PUT rejects a token without company:write (403 E1012)', async () => {
+    const res = await auth('put', '/whatever', v2Token).send({ attributes: {} }); // v2Token: company:read
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
+  });
 });

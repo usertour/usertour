@@ -7,7 +7,7 @@ import { Environment } from '@/environments/models/environment.model';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapUser } from './users.mapper';
-import { GetUserQuery, ListUsersQuery, User, UserExpand } from './users.schema';
+import { GetUserQuery, ListUsersQuery, UpsertUserBody, User, UserExpand } from './users.schema';
 
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (value === undefined) {
@@ -63,5 +63,20 @@ export class ApiUsersService {
         ),
       map: (node) => mapUser(node, expand),
     });
+  }
+
+  /** Upsert a user by external id (merges attributes), then return it. */
+  async upsert(id: string, environment: Environment, body: UpsertUserBody): Promise<User> {
+    await this.biz.upsertUser(id, environment.id, body.attributes ?? {});
+    return this.getUser(id, environment.id, {});
+  }
+
+  /** Delete a user by external id. 404 when it doesn't exist. */
+  async delete(id: string, environment: Environment): Promise<void> {
+    const bizUser = await this.biz.getBizUser(id, environment.id);
+    if (!bizUser) {
+      throw new UserNotFoundError();
+    }
+    await this.biz.deleteBizUser([bizUser.id], environment.id);
   }
 }

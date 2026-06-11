@@ -95,6 +95,31 @@ export class ApiContentSessionsService {
     });
   }
 
+  /** Delete a session (environment-scoped). 404 when nothing matched. */
+  async delete(id: string, environment: Environment): Promise<void> {
+    const deleted = await this.analytics.deleteContentSessionWithRelations(id, environment.id);
+    if (!deleted) {
+      throw new ContentSessionNotFoundError();
+    }
+  }
+
+  /** End an in-progress session, then return the (now-completed) session. */
+  async end(id: string, environment: Environment): Promise<ContentSession> {
+    const session = await this.analytics.getContentSessionWithRelations(
+      id,
+      environment.id,
+      SESSION_INCLUDE,
+    );
+    if (!session) {
+      throw new ContentSessionNotFoundError();
+    }
+    const success = await this.analytics.endSession(id);
+    if (!success) {
+      throw new ContentSessionNotFoundError();
+    }
+    return this.get(id, environment, {});
+  }
+
   private async computeAnswers(session: any): Promise<ContentSessionAnswer[] | null> {
     if (!session.version) {
       return null;

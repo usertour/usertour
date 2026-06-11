@@ -1,12 +1,26 @@
 import { Injectable } from '@nestjs/common';
 
 import { BizService } from '@/biz/biz.service';
-import { CompanyNotFoundError } from '@/common/errors/errors';
+import {
+  CompanyMembershipNotFoundError,
+  CompanyNotFoundError,
+  UserNotFoundError,
+} from '@/common/errors/errors';
+import { Environment } from '@/environments/models/environment.model';
 
+import { ApiObjectType } from '../shared/object-type';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapCompany } from './companies.mapper';
-import { Company, CompanyExpand, GetCompanyQuery, ListCompaniesQuery } from './companies.schema';
+import {
+  Company,
+  CompanyExpand,
+  GetCompanyQuery,
+  ListCompaniesQuery,
+  Membership,
+  UpsertCompanyBody,
+  UpsertMembershipBody,
+} from './companies.schema';
 
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (value === undefined) {
@@ -59,5 +73,75 @@ export class ApiCompaniesService {
       fetch: (params) => this.biz.listBizCompanies(environmentId, params, include, orderBy),
       map: (node) => mapCompany(node, expand),
     });
+  }
+
+  /** Upsert a company by external id (merges attributes), then return it. */
+  async upsert(id: string, environment: Environment, body: UpsertCompanyBody): Promise<Company> {
+    const company = await this.biz.upsertBizCompany(
+      environment.projectId,
+      environment.id,
+      id,
+      body.attributes ?? {},
+    );
+    if (!company) {
+      throw new CompanyNotFoundError();
+    }
+    return mapCompany(company, []);
+  }
+
+  /** Delete a company by external id. 404 when it doesn't exist. */
+  async delete(id: string, environment: Environment): Promise<void> {
+    const bizCompany = await this.biz.getBizCompany(id, environment.id);
+    if (!bizCompany) {
+      throw new CompanyNotFoundError();
+    }
+    await this.biz.deleteBizCompany([bizCompany.id], environment.id);
+  }
+
+  /**
+   * Upsert the membership linking a user to a company (both must already exist —
+   * entities are created via their own upsert). Merges membership attributes.
+   */
+  async upsertMembership(
+    companyId: string,
+    userId: string,
+    environment: Environment,
+    body: UpsertMembershipBody,
+  ): Promise<Membership> {
+    const bizCompany = await this.biz.getBizCompany(companyId, environment.id);
+    if (!bizCompany) {
+      throw new CompanyNotFoundError();
+    }
+    const bizUser = await this.biz.getBizUser(userId, environment.id);
+    if (!bizUser) {
+      throw new UserNotFoundError();
+    }
+    const row = await this.biz.upsertBizCompanyMembership(
+      environment.projectId,
+      bizCompany.id,
+      bizUser.id,
+      body.attributes ?? {},
+    );
+    return {
+      id: row.id,
+      object: ApiObjectType.COMPANY_MEMBERSHIP,
+      attributes: (row.data as Record<string, any>) ?? {},
+      createdAt: row.createdAt.toISOString(),
+      companyId,
+      userId,
+    };
+  }
+
+  /** Remove the membership linking a user to a company. 404 when not linked. */
+  async deleteMembership(
+    companyId: string,
+    userId: string,
+    environment: Environment,
+  ): Promise<void> {
+    const row = await this.biz.getBizCompanyMembership(userId, companyId, environment.id);
+    if (!row) {
+      throw new CompanyMembershipNotFoundError();
+    }
+    await this.biz.deleteBizCompanyMembership(row.id);
   }
 }
