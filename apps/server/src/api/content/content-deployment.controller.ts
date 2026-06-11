@@ -1,9 +1,9 @@
 import {
   Body,
   Controller,
-  Delete,
+  HttpCode,
   Param,
-  Put,
+  Post,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -22,9 +22,10 @@ import { ContentDto, PublishContentBodyDto } from './content.schema';
 import { ApiContentService } from './content.service';
 
 /**
- * The deployment surface: a content's live version in an environment
- * (ContentOnEnvironment). Env-scoped — `PUT` sets it (publish), `DELETE` clears it
- * (unpublish) — mirroring how sessions hang off `environments/:e/content/:id`.
+ * The deployment surface: publishing a content's live version into an environment.
+ * Env-scoped lifecycle transitions, modeled as POST actions returning the affected
+ * content — the same idiom as `duplicate` / `restore` / session `end`. Read the
+ * resulting live state from `GET content/:id` → `environments[]`.
  */
 @ApiTags('Content')
 @Controller('v2/projects/:projectId/environments/:environmentId/content')
@@ -35,7 +36,8 @@ import { ApiContentService } from './content.service';
 export class ApiContentDeploymentController {
   constructor(private readonly service: ApiContentService) {}
 
-  @Put(':id')
+  @Post(':id/publish')
+  @HttpCode(200)
   @RequireCapability(Capability.ContentPublish)
   @ApiOperation({
     summary: 'Publish a content version to an environment',
@@ -55,7 +57,8 @@ export class ApiContentDeploymentController {
     return this.service.publish(id, projectId, environment.id, body.versionId);
   }
 
-  @Delete(':id')
+  @Post(':id/unpublish')
+  @HttpCode(200)
   @RequireCapability(Capability.ContentPublish)
   @ApiOperation({
     summary: 'Unpublish a content version from an environment',
