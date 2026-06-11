@@ -28,7 +28,6 @@ import {
 } from '@usertour/ui';
 import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
 import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
-import { getErrorMessage } from '@usertour/helpers';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -171,7 +170,7 @@ export const AttributeCreateForm = ({
       } as CreateAttributeMutationVariables;
       const result = await invoke(data);
       if (!result?.id) {
-        showError('Create Attribute failed.');
+        showError(t('settings.attributes.form.createFailed'));
         return;
       }
       onSuccess?.(result);
@@ -180,7 +179,8 @@ export const AttributeCreateForm = ({
         title: t('settings.attributes.form.createSuccess'),
       });
     } catch (error) {
-      showError(getErrorMessage(error));
+      console.error('Create attribute failed:', error);
+      showError(t('settings.attributes.form.createFailed'));
     } finally {
       setIsLoading(false);
     }

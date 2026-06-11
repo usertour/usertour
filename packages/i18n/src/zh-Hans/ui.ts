@@ -336,6 +336,7 @@ const translations = {
         createTitle: '新建属性',
         createSubmit: '创建属性',
         createSuccess: '属性已创建',
+        createFailed: '创建属性失败',
       },
       empty: '暂无属性。',
     },
@@ -1026,6 +1027,8 @@ const translations = {
     unknownEvent: '未知事件',
     reload: '刷新',
     stepN: '步骤 {{number}}',
+    session: '会话',
+    viewSession: '查看会话',
   },
   privacyPage: {
     title: '隐私政策',
@@ -1034,6 +1037,12 @@ const translations = {
     title: '服务条款',
   },
   common: {
+    appTitle: 'Usertour App',
+    selectPlaceholder: '请选择…',
+    table: {
+      selectAll: '全选',
+      selectRow: '选择此行',
+    },
     colorPicker: {
       useThisColor: '使用此颜色',
       removeColor: '移除颜色（使用默认）',
@@ -1207,6 +1216,9 @@ const translations = {
       stepN: '步骤 {{number}}',
       taskClicked: '用户点击了该任务',
       taskHidden: '该任务对用户不可见',
+      unknownContent: '未知内容',
+      reload: '刷新',
+      noSessions: '此用户暂无会话。',
       table: {
         content: '内容',
         status: '状态',
@@ -2367,8 +2379,11 @@ const translations = {
         buttonText: '按钮文字',
         buttonTextHint: '输入按钮文字',
         required: '必填',
+        singleLinePreviewLabel: '单行文本输入预览',
+        multiLinePreviewLabel: '多行文本输入预览',
       },
       question: {
+        limitReached: '每个步骤只能包含一个问题。请新建一个步骤。',
         name: '问题名称',
         namePlaceholder: '问题名称？',
         whenSubmitted: '提交答案时',
@@ -2395,6 +2410,11 @@ const translations = {
       },
       image: {
         width: '图片宽度',
+        previewAlt: '可编辑内容',
+      },
+      errorBoundary: {
+        title: '编辑器加载失败',
+        description: '发生意外错误',
       },
       width: {
         label: '宽度',

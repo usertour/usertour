@@ -6,6 +6,7 @@ import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, useParams } from 'react-router-dom';
 import usertour from 'usertour.js';
 import { AdminLayoutSurface, SURFACE_BODY_CLASSNAMES } from './admin-surface';
@@ -124,11 +125,14 @@ export const AdminProvidersOutlet = () => {
 AdminProvidersOutlet.displayName = 'AdminProvidersOutlet';
 
 // Sets the document body surface class for a leaf route's shell.
-export const ShellHelmet = ({ surface }: { surface: AdminLayoutSurface }) => (
-  <Helmet>
-    <title>Usertour App</title>
-    <body className={SURFACE_BODY_CLASSNAMES[surface]} />
-  </Helmet>
-);
+export const ShellHelmet = ({ surface }: { surface: AdminLayoutSurface }) => {
+  const { t } = useTranslation();
+  return (
+    <Helmet>
+      <title>{t('common.appTitle')}</title>
+      <body className={SURFACE_BODY_CLASSNAMES[surface]} />
+    </Helmet>
+  );
+};
 
 ShellHelmet.displayName = 'ShellHelmet';

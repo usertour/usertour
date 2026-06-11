@@ -354,6 +354,7 @@ const translations = {
         createTitle: 'New attribute',
         createSubmit: 'Create attribute',
         createSuccess: 'The attribute has been successfully created',
+        createFailed: 'Failed to create the attribute',
       },
       empty: 'No attributes yet.',
     },
@@ -1087,6 +1088,8 @@ const translations = {
     unknownEvent: 'Unknown event',
     reload: 'Reload',
     stepN: 'Step {{number}}',
+    session: 'Session',
+    viewSession: 'View session',
   },
   privacyPage: {
     title: 'Privacy Policy',
@@ -1095,6 +1098,12 @@ const translations = {
     title: 'Terms of Service',
   },
   common: {
+    appTitle: 'Usertour App',
+    selectPlaceholder: 'Select…',
+    table: {
+      selectAll: 'Select all',
+      selectRow: 'Select row',
+    },
     colorPicker: {
       useThisColor: 'Use this color',
       removeColor: 'Remove color (use default)',
@@ -1222,11 +1231,6 @@ const translations = {
         moreCount: '+{{count}} more',
         emptyTitle: 'No companies',
       },
-      tabs: {
-        activityFeed: 'Activity feed',
-        sessions: 'Sessions',
-        companies: 'Companies',
-      },
       companies: {
         noCompanies: 'No companies found for this user.',
         loadMore: 'Load More Companies',
@@ -1281,6 +1285,9 @@ const translations = {
       stepN: 'Step {{number}}',
       taskClicked: 'User clicked this task',
       taskHidden: 'Task is hidden for user',
+      unknownContent: 'Unknown content',
+      reload: 'Reload',
+      noSessions: 'No sessions found for this user.',
       table: {
         content: 'Content',
         status: 'Status',
@@ -2495,8 +2502,11 @@ const translations = {
         buttonText: 'Button text',
         buttonTextHint: 'Enter button text',
         required: 'Required',
+        singleLinePreviewLabel: 'Single-line text input preview',
+        multiLinePreviewLabel: 'Multi-line text input preview',
       },
       question: {
+        limitReached: 'Each step can only contain one question. Add a new step instead.',
         name: 'Question name',
         namePlaceholder: 'Question name?',
         whenSubmitted: 'When answer is submitted',
@@ -2524,6 +2534,11 @@ const translations = {
       },
       image: {
         width: 'Image width',
+        previewAlt: 'Editable content',
+      },
+      errorBoundary: {
+        title: 'Editor failed to load',
+        description: 'An unexpected error occurred',
       },
       width: {
         label: 'Width',

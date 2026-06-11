@@ -1,6 +1,7 @@
 import { isRestrictedType, uuidV4 } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type {
   ContentEditorColumnElement,
@@ -71,12 +72,6 @@ export const checkExistingRestrictedType = (
   );
 };
 
-// Extract common error message
-const RESTRICTED_TYPE_ERROR = {
-  variant: 'destructive',
-  title: 'Each step can only contain one question. Add a new step instead.',
-} as const;
-
 // Helper to insert item at index immutably
 const insertAt = <T,>(array: T[], index: number, item: T): T[] => [
   ...array.slice(0, index),
@@ -101,6 +96,7 @@ export const ContentEditorContextProvider = ({
   const [activeId, setActiveId] = useState<string | undefined>();
   const [dropPreview, setDropPreview] = useState<DropPreview | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Use ref to avoid stale closure issues with onValueChange
   const onValueChangeRef = useRef(onValueChange);
@@ -115,12 +111,15 @@ export const ContentEditorContextProvider = ({
   const handleRestrictedTypeCheck = useCallback(
     (currentContents: ContentEditorRoot[], element: ContentEditorElement): boolean => {
       if (!checkExistingRestrictedType(currentContents, element.type)) {
-        toast(RESTRICTED_TYPE_ERROR);
+        toast({
+          variant: 'destructive',
+          title: t('contentBuilder.editor.question.limitReached'),
+        });
         return false;
       }
       return true;
     },
-    [toast],
+    [toast, t],
   );
 
   const insertGroupAtTop = useCallback(

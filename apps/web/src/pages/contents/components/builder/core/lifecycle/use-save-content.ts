@@ -139,9 +139,10 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       }
       const err = error instanceof Error ? error : new Error(getErrorMessage(error));
       store.getState().transitionSaveState({ status: 'error', error: err });
+      console.error('Save failed:', error);
       toast({
         variant: 'destructive',
-        title: getErrorMessage(error),
+        title: t('contentBuilder.common.saveFailed'),
       });
       return false;
     }
