@@ -236,6 +236,24 @@ export class ThemeNotFoundError extends OpenAPIError {
   };
 }
 
+export class AttributeDefinitionNotFoundError extends OpenAPIError {
+  code = 'E1022';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Attribute definition not found',
+    'zh-CN': '属性定义未找到',
+  };
+}
+
+export class ResourceConflictError extends OpenAPIError {
+  code = 'E1023';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'A resource with this identifier already exists',
+    'zh-CN': '该标识的资源已存在',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
@@ -649,6 +667,8 @@ const errorMap = {
   E1016: InvalidOrderByError,
   E1017: ValidationError,
   E1018: SDKAuthenticationError,
+  E1022: AttributeDefinitionNotFoundError,
+  E1023: ResourceConflictError,
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,

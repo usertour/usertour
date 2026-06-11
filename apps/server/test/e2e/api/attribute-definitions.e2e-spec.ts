@@ -145,4 +145,106 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('E1015');
   });
+
+  async function mint(scopes: Capability[]): Promise<string> {
+    const minted = await graphql(app, {
+      query: CREATE,
+      variables: { input: { name: 'kw', scopes, projectIds: [fx.projectId] } },
+      token: ownerToken,
+    });
+    return gqlData(minted).createApiToken.token;
+  }
+  const basePath = () => `/v2/projects/${fx.projectId}/attribute-definitions`;
+  const send = (method: 'post' | 'patch' | 'delete', path: string, token: string) =>
+    request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
+
+  it('creates → updates → deletes an attribute definition', async () => {
+    const token = await mint([
+      Capability.AttributeCreate,
+      Capability.AttributeUpdate,
+      Capability.AttributeDelete,
+      Capability.AttributeRead,
+    ]);
+
+    const created = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_write_x',
+      displayName: 'X',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      object: 'attributeDefinition',
+      codeName: 'attr_write_x',
+      displayName: 'X',
+      dataType: 'string',
+      scope: 'user',
+    });
+    const id = created.body.id;
+
+    const updated = await send('patch', `${basePath()}/${id}`, token).send({
+      displayName: 'X2',
+      description: 'desc',
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body).toMatchObject({ displayName: 'X2', description: 'desc' });
+
+    expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
+    const list = await api('get', basePath(), token);
+    expect(list.body.results.map((a: { id: string }) => a.id)).not.toContain(id);
+  });
+
+  it('rejects a duplicate codeName (409 E1023)', async () => {
+    const token = await mint([Capability.AttributeCreate]);
+    const res = await send('post', basePath(), token).send({
+      scope: 'user', // bizType 1 — same as the seeded attr_parity_signed_up
+      dataType: 'string',
+      codeName: 'attr_parity_signed_up',
+      displayName: 'dup',
+    });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1023');
+  });
+
+  it('POST rejects a token without attribute:create (403 E1012)', async () => {
+    const res = await send('post', basePath(), v2Token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_noscope',
+      displayName: 'no',
+    }); // v2Token: attribute:read only
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
+  });
+
+  it('PATCH 404 for an unknown attribute (E1022)', async () => {
+    const token = await mint([Capability.AttributeUpdate]);
+    const res = await send('patch', `${basePath()}/nope`, token).send({ displayName: 'x' });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1022');
+  });
+
+  it('cannot modify a predefined attribute (400 E1017)', async () => {
+    const token = await mint([Capability.AttributeUpdate, Capability.AttributeDelete]);
+    const predef = await prisma.attribute.create({
+      data: {
+        projectId: fx.projectId,
+        bizType: 1,
+        dataType: 2,
+        codeName: 'attr_predef',
+        displayName: 'Predef',
+        description: '',
+        predefined: true,
+      },
+    });
+    const patched = await send('patch', `${basePath()}/${predef.id}`, token).send({
+      displayName: 'nope',
+    });
+    expect(patched.status).toBe(400);
+    expect(patched.body.error.code).toBe('E1017');
+
+    const deleted = await send('delete', `${basePath()}/${predef.id}`, token).send();
+    expect(deleted.status).toBe(400);
+    expect(deleted.body.error.code).toBe('E1017');
+  });
 });

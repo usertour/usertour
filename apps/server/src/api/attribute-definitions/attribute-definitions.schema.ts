@@ -42,6 +42,42 @@ export const attribute = z.object({
   codeName: z.string(),
   scope: z.nativeEnum(ApiObjectType),
 });
+export class AttributeDto extends createZodDto(attribute) {}
+
+// Scope + data type accepted on create. Scope is limited to the three biz-data
+// objects (event attributes are managed via the events surface); the special
+// random_* data types are system-generated and not creatable via the API.
+const createScope = z.enum([
+  ApiObjectType.USER,
+  ApiObjectType.COMPANY,
+  ApiObjectType.COMPANY_MEMBERSHIP,
+]);
+const createDataType = z.enum([
+  AttributeDataTypeNames.Number,
+  AttributeDataTypeNames.String,
+  AttributeDataTypeNames.Boolean,
+  AttributeDataTypeNames.List,
+  AttributeDataTypeNames.DateTime,
+]);
+
+export const createAttributeBody = z.object({
+  scope: createScope.describe(
+    'Which object the attribute belongs to: user, company, or companyMembership.',
+  ),
+  dataType: createDataType.describe('The attribute value type.'),
+  codeName: z.string().min(1).describe('Stable identifier, unique per project + scope. Immutable.'),
+  displayName: z.string().min(1).describe('Human-readable name.'),
+  description: z.string().optional().describe('Optional description.'),
+});
+export class CreateAttributeBodyDto extends createZodDto(createAttributeBody) {}
+
+// Only the human-facing fields are mutable; dataType / scope / codeName are fixed
+// at creation.
+export const updateAttributeBody = z.object({
+  displayName: z.string().min(1).optional().describe('Human-readable name.'),
+  description: z.string().optional().describe('Optional description.'),
+});
+export class UpdateAttributeBodyDto extends createZodDto(updateAttributeBody) {}
 
 export const listAttributeDefinitionsResponse = z.object({
   results: z.array(attribute),
@@ -54,3 +90,5 @@ export class ListAttributeDefinitionsResponseDto extends createZodDto(
 
 export type Attribute = z.infer<typeof attribute>;
 export type ListAttributeDefinitionsQuery = z.infer<typeof listAttributeDefinitionsQuery>;
+export type CreateAttributeBody = z.infer<typeof createAttributeBody>;
+export type UpdateAttributeBody = z.infer<typeof updateAttributeBody>;

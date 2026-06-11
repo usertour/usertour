@@ -55,7 +55,7 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     key: 'attribute',
     labelKey: 'settings.personalApiKeys.scopeResources.attribute',
     read: ['attribute:read'],
-    write: null,
+    write: ['attribute:create', 'attribute:update', 'attribute:delete'],
   },
   {
     key: 'event',

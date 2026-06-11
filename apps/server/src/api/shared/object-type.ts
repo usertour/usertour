@@ -48,6 +48,28 @@ export function mapDataType(dataType: number): AttributeDataTypeNames {
   }
 }
 
+/** Public type name -> domain attribute `dataType` int (inverse of mapDataType). */
+export function mapDataTypeToInternal(name: AttributeDataTypeNames): number {
+  switch (name) {
+    case AttributeDataTypeNames.Number:
+      return 1;
+    case AttributeDataTypeNames.String:
+      return 2;
+    case AttributeDataTypeNames.Boolean:
+      return 3;
+    case AttributeDataTypeNames.List:
+      return 4;
+    case AttributeDataTypeNames.DateTime:
+      return 5;
+    case AttributeDataTypeNames.RandomAB:
+      return 6;
+    case AttributeDataTypeNames.RandomNumber:
+      return 7;
+    default:
+      return 2;
+  }
+}
+
 /** Domain `bizType` int -> public scope. */
 export function mapBizTypeToScope(bizType: number): ApiObjectType {
   switch (bizType) {

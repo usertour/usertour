@@ -1,4 +1,17 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -10,8 +23,11 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiAttributeDefinitionsService } from './attribute-definitions.service';
 import {
+  AttributeDto,
+  CreateAttributeBodyDto,
   ListAttributeDefinitionsQueryDto,
   ListAttributeDefinitionsResponseDto,
+  UpdateAttributeBodyDto,
 } from './attribute-definitions.schema';
 
 @ApiTags('Attribute definitions')
@@ -38,5 +54,42 @@ export class ApiAttributeDefinitionsController {
     @Query() query: ListAttributeDefinitionsQueryDto,
   ) {
     return this.service.list(requestUrl, projectId, query);
+  }
+
+  @Post()
+  @RequireCapability(Capability.AttributeCreate)
+  @ApiOperation({ summary: 'Create an attribute definition' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Attribute definition created', type: AttributeDto })
+  @ApiResponse({ status: 409, description: 'An attribute with this codeName already exists' })
+  async create(@Param('projectId') projectId: string, @Body() body: CreateAttributeBodyDto) {
+    return this.service.create(projectId, body);
+  }
+
+  @Patch(':id')
+  @RequireCapability(Capability.AttributeUpdate)
+  @ApiOperation({ summary: 'Update an attribute definition' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Attribute definition ID' })
+  @ApiResponse({ status: 200, description: 'Attribute definition updated', type: AttributeDto })
+  @ApiResponse({ status: 404, description: 'Attribute definition not found' })
+  async update(
+    @Param('projectId') projectId: string,
+    @Param('id') id: string,
+    @Body() body: UpdateAttributeBodyDto,
+  ) {
+    return this.service.update(id, projectId, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.AttributeDelete)
+  @ApiOperation({ summary: 'Delete an attribute definition' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Attribute definition ID' })
+  @ApiResponse({ status: 204, description: 'Attribute definition deleted' })
+  @ApiResponse({ status: 404, description: 'Attribute definition not found' })
+  async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
+    await this.service.delete(id, projectId);
   }
 }
