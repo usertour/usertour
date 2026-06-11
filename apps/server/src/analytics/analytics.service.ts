@@ -1932,7 +1932,7 @@ export class AnalyticsService {
 
   async listContentSessionsWithRelations(
     environmentId: string,
-    contentId: string,
+    contentId: string | undefined,
     paginationArgs: {
       first?: number;
       last?: number;

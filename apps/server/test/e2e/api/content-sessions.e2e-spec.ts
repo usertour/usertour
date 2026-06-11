@@ -16,11 +16,13 @@ import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
 /**
- * Shape contract for the v2 content-sessions endpoints. Its embedded content is
- * the A-shape lightweight reference (no publish state), so this is a shape test
- * rather than a v1 parity test.
+ * Shape contract for the v2 content-sessions endpoints. Sessions are an
+ * environment-level collection (a session's owner is the environment); contentId
+ * and userId are optional filters, not path segments. Its embedded content is the
+ * A-shape lightweight reference (no publish state), so this is a shape test rather
+ * than a v1 parity test.
  */
-describe('API v2 /content-sessions (e2e)', () => {
+describe('API v2 /sessions (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
 
@@ -30,6 +32,9 @@ describe('API v2 /content-sessions (e2e)', () => {
   let environmentId: string;
   let contentId: string;
   let sessionId: string;
+  // A second content + session in the same environment, to prove cross-content listing.
+  let otherContentId: string;
+  let otherSessionId: string;
   const userExternalId = 'bu-session-jane';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -46,7 +51,7 @@ describe('API v2 /content-sessions (e2e)', () => {
   }
 
   function base(suffix = ''): string {
-    return `/v2/projects/${projectId}/environments/${environmentId}/content/${contentId}/sessions${suffix}`;
+    return `/v2/projects/${projectId}/environments/${environmentId}/sessions${suffix}`;
   }
   function api(method: 'get', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
@@ -79,6 +84,19 @@ describe('API v2 /content-sessions (e2e)', () => {
       projectId,
     });
     sessionId = session.id;
+
+    const otherContent = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    otherContentId = otherContent.id;
+    const otherVersionId = (await buildVersion(prisma, { contentId: otherContentId, sequence: 0 }))
+      .id;
+    const otherSession = await buildSession(prisma, {
+      bizUserId: bizUser.id,
+      contentId: otherContentId,
+      versionId: otherVersionId,
+      environmentId,
+      projectId,
+    });
+    otherSessionId = otherSession.id;
   }, 60000);
 
   afterAll(async () => {
@@ -122,9 +140,26 @@ describe('API v2 /content-sessions (e2e)', () => {
     expect(res.body.user).toMatchObject({ id: userExternalId, object: 'user' });
   });
 
-  it('lists sessions for a content', async () => {
+  it('lists all sessions in the environment (across content)', async () => {
     const token = await mint([Capability.SessionRead]);
     const res = await api('get', base(), token);
+    expect(res.status).toBe(200);
+    const ids = res.body.results.map((s: { id: string }) => s.id);
+    expect(ids).toEqual(expect.arrayContaining([sessionId, otherSessionId]));
+  });
+
+  it('filters sessions by contentId', async () => {
+    const token = await mint([Capability.SessionRead]);
+    const res = await api('get', base(`?contentId=${contentId}`), token);
+    expect(res.status).toBe(200);
+    const ids = res.body.results.map((s: { id: string }) => s.id);
+    expect(ids).toContain(sessionId);
+    expect(ids).not.toContain(otherSessionId);
+  });
+
+  it('filters sessions by userId', async () => {
+    const token = await mint([Capability.SessionRead]);
+    const res = await api('get', base(`?userId=${userExternalId}`), token);
     expect(res.status).toBe(200);
     expect(res.body.results.map((s: { id: string }) => s.id)).toContain(sessionId);
   });
@@ -136,13 +171,9 @@ describe('API v2 /content-sessions (e2e)', () => {
     expect(res.body.error.code).toBe('E1005');
   });
 
-  it('returns 404 listing sessions for an unknown content (E1004)', async () => {
+  it('returns 404 filtering by an unknown contentId (E1004)', async () => {
     const token = await mint([Capability.SessionRead]);
-    const res = await api(
-      'get',
-      `/v2/projects/${projectId}/environments/${environmentId}/content/nope/sessions`,
-      token,
-    );
+    const res = await api('get', base('?contentId=nope'), token);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
   });

@@ -30,7 +30,7 @@ import {
 } from './content-sessions.schema';
 
 @ApiTags('Content sessions')
-@Controller('v2/projects/:projectId/environments/:environmentId/content/:contentId/sessions')
+@Controller('v2/projects/:projectId/environments/:environmentId/sessions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @UsePipes(ApiValidationPipe)
@@ -40,10 +40,12 @@ export class ApiContentSessionsController {
 
   @Get()
   @RequireCapability(Capability.SessionRead)
-  @ApiOperation({ summary: 'List content sessions' })
+  @ApiOperation({
+    summary: 'List content sessions',
+    description: 'Sessions in this environment. Filter by contentId / userId.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
-  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiResponse({
     status: 200,
     description: 'List of content sessions',
@@ -52,10 +54,9 @@ export class ApiContentSessionsController {
   async list(
     @RequestUrl() requestUrl: string,
     @EnvironmentDecorator() environment: Environment,
-    @Param('contentId') contentId: string,
     @Query() query: ListContentSessionsQueryDto,
   ) {
-    return this.service.list(requestUrl, environment, contentId, query);
+    return this.service.list(requestUrl, environment, query);
   }
 
   @Get(':id')
@@ -63,17 +64,15 @@ export class ApiContentSessionsController {
   @ApiOperation({ summary: 'Get a content session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
-  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session found', type: ContentSessionDto })
   @ApiResponse({ status: 404, description: 'Content session not found' })
   async get(
     @Param('id') id: string,
-    @Param('contentId') contentId: string,
     @EnvironmentDecorator() environment: Environment,
     @Query() query: GetContentSessionQueryDto,
   ) {
-    return this.service.get(id, contentId, environment, query);
+    return this.service.get(id, environment, query);
   }
 
   @Delete(':id')
@@ -82,16 +81,11 @@ export class ApiContentSessionsController {
   @ApiOperation({ summary: 'Delete a content session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
-  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 204, description: 'Content session deleted' })
   @ApiResponse({ status: 404, description: 'Content session not found' })
-  async remove(
-    @Param('id') id: string,
-    @Param('contentId') contentId: string,
-    @EnvironmentDecorator() environment: Environment,
-  ) {
-    await this.service.delete(id, contentId, environment);
+  async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    await this.service.delete(id, environment);
   }
 
   @Post(':id/end')
@@ -100,15 +94,10 @@ export class ApiContentSessionsController {
   @ApiOperation({ summary: 'End a content session' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
-  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session ended', type: ContentSessionDto })
   @ApiResponse({ status: 404, description: 'Content session not found' })
-  async end(
-    @Param('id') id: string,
-    @Param('contentId') contentId: string,
-    @EnvironmentDecorator() environment: Environment,
-  ) {
-    return this.service.end(id, contentId, environment);
+  async end(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    return this.service.end(id, environment);
   }
 }
