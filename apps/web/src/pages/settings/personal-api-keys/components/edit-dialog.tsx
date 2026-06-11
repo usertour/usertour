@@ -78,7 +78,7 @@ export const EditDialog = (props: EditDialogProps) => {
               <DialogTitle>{t('settings.personalApiKeys.editTitle')}</DialogTitle>
             </DialogHeader>
             <TokenFormFields control={form.control} />
-            <DialogFooter>
+            <DialogFooter className="mt-6">
               <Button
                 variant="outline"
                 type="button"

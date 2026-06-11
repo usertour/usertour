@@ -8,12 +8,16 @@ import {
   FormMessage,
   Input,
   Label,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@usertour/ui';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useAppContext } from '@/contexts/app-context';
-import { API_TOKEN_SCOPE_OPTIONS } from './scopes';
+import { SCOPE_RESOURCES, levelOf, setLevel } from './scopes';
 
 /** Shared shape for the create + edit token dialogs. */
 export const tokenFormSchema = z.object({
@@ -99,26 +103,88 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t('settings.personalApiKeys.scopesLabel')}</FormLabel>
-            <div className="space-y-2">
-              {API_TOKEN_SCOPE_OPTIONS.map((scope) => (
-                <div key={scope.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`scope-${scope.value}`}
-                    checked={field.value.includes(scope.value)}
-                    onCheckedChange={(checked) => {
-                      field.onChange(
-                        checked
-                          ? [...field.value, scope.value]
-                          : field.value.filter((value) => value !== scope.value),
-                      );
-                    }}
-                  />
-                  <Label htmlFor={`scope-${scope.value}`} className="font-normal">
-                    {t(scope.labelKey)}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            <TooltipProvider>
+              <div className="space-y-2">
+                {SCOPE_RESOURCES.map((resource) => {
+                  const level = levelOf(field.value, resource);
+                  const readChecked = level !== 'none';
+                  const writeChecked = level === 'write';
+                  const writeUnavailable = resource.write === null;
+                  return (
+                    <div key={resource.key} className="flex items-center justify-between gap-4">
+                      <Label className="font-normal">{t(resource.labelKey)}</Label>
+                      <div className="flex items-center">
+                        <div className="flex w-24 items-center gap-2">
+                          <Checkbox
+                            id={`scope-${resource.key}-read`}
+                            checked={readChecked}
+                            onCheckedChange={(checked) =>
+                              field.onChange(
+                                setLevel(
+                                  field.value,
+                                  resource,
+                                  checked === true ? (level === 'none' ? 'read' : level) : 'none',
+                                ),
+                              )
+                            }
+                          />
+                          <Label
+                            htmlFor={`scope-${resource.key}-read`}
+                            className="cursor-pointer font-normal"
+                          >
+                            {t('settings.personalApiKeys.scopeLevels.read')}
+                          </Label>
+                        </div>
+                        {writeUnavailable ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex w-24 cursor-not-allowed items-center gap-2 opacity-40">
+                                <Checkbox
+                                  id={`scope-${resource.key}-write`}
+                                  checked={false}
+                                  disabled
+                                />
+                                <Label
+                                  htmlFor={`scope-${resource.key}-write`}
+                                  className="font-normal"
+                                >
+                                  {t('settings.personalApiKeys.scopeLevels.write')}
+                                </Label>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t('settings.personalApiKeys.scopeNoWrite')}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <div className="flex w-24 items-center gap-2">
+                            <Checkbox
+                              id={`scope-${resource.key}-write`}
+                              checked={writeChecked}
+                              onCheckedChange={(checked) =>
+                                field.onChange(
+                                  setLevel(
+                                    field.value,
+                                    resource,
+                                    checked === true ? 'write' : 'read',
+                                  ),
+                                )
+                              }
+                            />
+                            <Label
+                              htmlFor={`scope-${resource.key}-write`}
+                              className="cursor-pointer font-normal"
+                            >
+                              {t('settings.personalApiKeys.scopeLevels.write')}
+                            </Label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
             <FormMessage />
           </FormItem>
         )}

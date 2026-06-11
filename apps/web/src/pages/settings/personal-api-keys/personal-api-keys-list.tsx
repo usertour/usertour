@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -17,9 +17,9 @@ import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CreateDialog } from './components/create-dialog';
 import { RowActions } from './components/row-actions';
-import { API_TOKEN_SCOPE_OPTIONS, getScopeLabelKey } from './components/scopes';
+import { SCOPE_RESOURCES, summarizeScopes } from './components/scopes';
 
-const TOTAL_SCOPE_COUNT = API_TOKEN_SCOPE_OPTIONS.length;
+const TOTAL_RESOURCE_COUNT = SCOPE_RESOURCES.length;
 
 const NewKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
@@ -53,23 +53,6 @@ export const PersonalApiKeysList = () => {
     return index;
   }, [projects]);
 
-  // Scope value -> label. Unknown scopes fall back to their raw value.
-  const scopeLabelByValue = useMemo(() => {
-    const index: Record<string, string> = {};
-    for (const scope of API_TOKEN_SCOPE_OPTIONS) {
-      index[scope.value] = t(scope.labelKey);
-    }
-    return index;
-  }, [t]);
-
-  const labelForScope = useCallback(
-    (scope: string) => {
-      const fallbackKey = getScopeLabelKey(scope);
-      return scopeLabelByValue[scope] ?? (fallbackKey ? t(fallbackKey) : scope);
-    },
-    [scopeLabelByValue, t],
-  );
-
   const columns: ResourceTableColumn<ApiToken>[] = [
     {
       header: t('settings.personalApiKeys.columns.name'),
@@ -97,14 +80,14 @@ export const PersonalApiKeysList = () => {
     {
       header: t('settings.personalApiKeys.columns.scopes'),
       headerClassName: 'w-32',
-      // Collapse to a single badge — listing every scope wraps into several
-      // rows and clutters the table. The full list lives in the tooltip.
+      // Collapse to a single badge — the per-resource access levels live in the
+      // tooltip so the table row stays compact.
       cell: (token) => {
-        const count = token.scopes.length;
+        const levels = summarizeScopes(token.scopes);
         const summary =
-          count >= TOTAL_SCOPE_COUNT
+          levels.length >= TOTAL_RESOURCE_COUNT
             ? t('settings.personalApiKeys.scopesAll')
-            : t('settings.personalApiKeys.scopesCount', { count });
+            : t('settings.personalApiKeys.scopesCount', { count: levels.length });
         return (
           <TooltipProvider>
             <Tooltip>
@@ -115,8 +98,10 @@ export const PersonalApiKeysList = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <div className="flex flex-col gap-0.5">
-                  {token.scopes.map((scope) => (
-                    <span key={scope}>{labelForScope(scope)}</span>
+                  {levels.map((s) => (
+                    <span key={s.key}>
+                      {t(s.labelKey)}: {t(`settings.personalApiKeys.scopeLevels.${s.level}`)}
+                    </span>
                   ))}
                 </div>
               </TooltipContent>
