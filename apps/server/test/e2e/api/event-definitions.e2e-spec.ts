@@ -66,7 +66,11 @@ describe('API v2 /event-definitions (e2e)', () => {
       await teardownProject(prisma, projectId);
       await prisma.user.deleteMany({ where: { id: ownerUserId } });
     }
-    await app?.close();
+    // The DB teardown above is fast (~60ms); it's app.close() that can hang on
+    // lingering redis/bullmq/websocket handles (see create-test-app). The process
+    // is reaped by jest --forceExit, so cap the wait instead of letting a stuck
+    // shutdown fail the hook.
+    await Promise.race([app?.close(), new Promise((resolve) => setTimeout(resolve, 5000))]);
   });
 
   it('lists event definitions (200) with the zod response shape', async () => {
