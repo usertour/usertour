@@ -106,7 +106,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
     }
 
     if (type === BuilderType.WEB) {
-      navigate(`/env/${content?.environmentId}/${contentType}/${content?.id}/builder/${versionId}`);
+      navigate(`/env/${content?.environmentId}/${contentType}/${content?.id}/builder`);
       return;
     }
 

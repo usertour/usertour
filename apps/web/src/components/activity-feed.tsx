@@ -156,8 +156,6 @@ function getFallbackSessionAttributeKey(event: BizEvent): EventAttributes | null
   return CATEGORY_SESSION_ATTRIBUTE_KEY[getEventCategory(event)] ?? null;
 }
 
-const SESSION_LINK_LABEL = 'Session';
-
 interface ActivityFeedRowProps {
   event: BizEvent;
   environmentId?: string;
@@ -270,7 +268,7 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
                         className="inline-block max-w-full truncate text-primary hover:underline underline-offset-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        View session
+                        {t('activityFeed.viewSession')}
                       </Link>
                     ) : (
                       <div className="group flex items-start min-w-0 gap-2">
@@ -297,7 +295,7 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
           {hasSessionLink && (
             <div className="flex min-w-0 border-b last:border-b-0">
               <span className="w-1/4 min-w-0 p-2 flex-none font-medium truncate">
-                {SESSION_LINK_LABEL}
+                {t('activityFeed.session')}
               </span>
               <div className="flex-1 min-w-0 overflow-hidden p-2">
                 <Link
@@ -305,7 +303,7 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
                   className="inline-block max-w-full truncate text-primary hover:underline underline-offset-2"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  View session
+                  {t('activityFeed.viewSession')}
                 </Link>
               </div>
             </div>
@@ -365,7 +363,7 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
-        <img src="/images/rocket.png" alt="No events" className="w-16 h-16 mb-4 opacity-50" />
+        <img src="/images/rocket.png" alt="" className="w-16 h-16 mb-4 opacity-50" />
         <p className="text-muted-foreground text-center">
           {emptyMessage || t('activityFeed.noEvents')}
         </p>

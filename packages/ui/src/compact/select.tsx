@@ -110,6 +110,8 @@ export interface CompactSelectProps {
   value: string | undefined;
   onChange: (value: string) => void;
   options: CompactSelectOption[];
+  // Shown when value is empty. No default — pass already-translated copy
+  // whenever the select can render valueless.
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -122,17 +124,8 @@ export interface CompactSelectProps {
 }
 
 export const CompactSelect = (props: CompactSelectProps) => {
-  const {
-    value,
-    onChange,
-    options,
-    placeholder = 'Select…',
-    disabled,
-    className,
-    id,
-    icon,
-    contentStyle,
-  } = props;
+  const { value, onChange, options, placeholder, disabled, className, id, icon, contentStyle } =
+    props;
   return (
     <CompactSelectRoot
       value={value ?? null}

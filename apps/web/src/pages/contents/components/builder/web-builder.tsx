@@ -17,7 +17,6 @@ import { useTranslation } from 'react-i18next';
 export interface WebBuilderProps {
   contentId: string;
   environmentId: string;
-  versionId: string;
   projectId: string;
   onSaved: () => Promise<void>;
   shouldShowMadeWith?: boolean;

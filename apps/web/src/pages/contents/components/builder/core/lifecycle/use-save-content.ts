@@ -15,6 +15,24 @@ export interface UseSaveContentReturn {
   saveContent: BuilderProviderMethods['saveContent'];
 }
 
+// Server codes that mean "this draft can never be saved from this mount":
+// E0049 version no longer editable (forked elsewhere), E0050 optimistic-lock
+// conflict (someone else saved since our baseline).
+const VERSION_CONFLICT_CODES = new Set(['E0049', 'E0050']);
+
+const isVersionConflictError = (error: unknown): boolean => {
+  const graphQLErrors = (error as { graphQLErrors?: { extensions?: { code?: unknown } }[] })
+    ?.graphQLErrors;
+  if (!graphQLErrors) {
+    return false;
+  }
+  return graphQLErrors.some(
+    (gqlError) =>
+      typeof gqlError.extensions?.code === 'string' &&
+      VERSION_CONFLICT_CODES.has(gqlError.extensions.code),
+  );
+};
+
 // Save FSM driver. One round-trip per save:
 //
 //   updateContentVersion persists the WHOLE version — themeId + data + the full
@@ -70,11 +88,18 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       : [];
 
     try {
-      const saved = await updateVersion(currentVersion.id, {
-        themeId: currentVersion.themeId,
-        data: currentVersion.data,
-        steps,
-      });
+      const saved = await updateVersion(
+        currentVersion.id,
+        {
+          themeId: currentVersion.themeId,
+          data: currentVersion.data,
+          steps,
+        },
+        // Optimistic-lock baseline: the server snapshot we're editing on top
+        // of. A concurrent save by someone else bumps the row's updatedAt and
+        // this save is rejected (E0050) instead of rolling their work back.
+        backupVersion.updatedAt,
+      );
       // A newer save started while this one was in flight — it owns the final
       // transition; treat ours as a no-op success.
       if (saveId !== saveCounterRef.current) {
@@ -106,11 +131,18 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       if (saveId !== saveCounterRef.current) {
         return true;
       }
+      // Version conflict is terminal — no toast: the conflict dialog owns
+      // the messaging and the exit (refresh), and auto-save stops retrying.
+      if (isVersionConflictError(error)) {
+        store.getState().transitionSaveState({ status: 'conflict' });
+        return false;
+      }
       const err = error instanceof Error ? error : new Error(getErrorMessage(error));
       store.getState().transitionSaveState({ status: 'error', error: err });
+      console.error('Save failed:', error);
       toast({
         variant: 'destructive',
-        title: getErrorMessage(error),
+        title: t('contentBuilder.common.saveFailed'),
       });
       return false;
     }

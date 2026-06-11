@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';
 import { CompactSelect, type CompactSelectOption } from '@usertour/ui';
 import { FieldRow } from './field-row';
@@ -17,6 +18,7 @@ export interface SelectFieldProps {
 export const SelectField = (props: SelectFieldProps) => {
   const { path, label, options, vertical, valueAsNumber, tooltip } = props;
   const id = useId();
+  const { t } = useTranslation();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const raw = valueAsNumber ? getField<number>(path) : getField<string>(path);
   const value = raw == null ? undefined : String(raw);
@@ -32,6 +34,7 @@ export const SelectField = (props: SelectFieldProps) => {
         disabled={isReadOnly}
         onChange={handleChange}
         options={options}
+        placeholder={t('common.selectPlaceholder')}
       />
     </FieldRow>
   );

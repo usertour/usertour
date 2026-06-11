@@ -5,7 +5,7 @@ import {
   type ResourceCenterBlock,
   ResourceCenterBlockType,
 } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
+import { cuid } from '@usertour/helpers';
 
 const DEFAULT_MESSAGE_BLOCK_CONTENT = [
   {
@@ -35,7 +35,7 @@ const DEFAULT_MESSAGE_BLOCK_CONTENT = [
 // only lands in the tab on save (mirrors flow's defaultStep / checklist's
 // defaultChecklistItem).
 export const createDefaultBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null => {
-  const id = uuidV4();
+  const id = cuid();
   switch (type) {
     case ResourceCenterBlockType.RICH_TEXT:
       return {

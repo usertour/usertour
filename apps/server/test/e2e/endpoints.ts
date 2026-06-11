@@ -141,7 +141,7 @@ export const ENDPOINTS: Endpoint[] = [
   // Step / version-localization ops run BEFORE createContentVersion /
   // restoreContentVersion / publishedContentVersion — those three rewrite
   // content.editedVersionId (or publish the version), after which step ops on
-  // the seeded version cleanly hit ParamsError per production semantics
+  // the seeded version cleanly hit VersionNotEditableError per production semantics
   // ("version is no longer the edit version" / "version is published"). The
   // order here lets the happy path of each step op actually execute.
   //
@@ -196,7 +196,7 @@ export const ENDPOINTS: Endpoint[] = [
   },
   // updateContentVersion runs BEFORE createContentVersion / restoreContentVersion:
   // those two rewrite Content.editedVersionId, after which an update against
-  // the seeded versionId fails `contentVersionIsEditable` with ParamsError.
+  // the seeded versionId fails `contentVersionIsEditable` with VersionNotEditableError.
   // Same invariant the step / version-localization ops above rely on — kept
   // grouped here for clarity.
   {

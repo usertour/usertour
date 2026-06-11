@@ -2,7 +2,6 @@ import {
   Attribute,
   AttributeBizTypes,
   AttributeDataType,
-  ContentActionsItemType,
   ElementSelectorPropsData,
   EventAttrConditionData,
   EventConditionData,
@@ -13,7 +12,11 @@ import {
 } from '@usertour/types';
 import { isTimeConditionDataV2, isTimeConditionDataLegacy } from './conditions/time';
 
-export const isValidSelector = (selector: ElementSelectorPropsData) => {
+// Internal validity predicates backing `hasError`. They only flag whether a
+// condition is incomplete — user-facing messaging lives in the i18n'd
+// validators in @usertour/business-components.
+
+const isValidSelector = (selector: ElementSelectorPropsData) => {
   if (!selector) {
     return false;
   }
@@ -26,29 +29,22 @@ export const isValidSelector = (selector: ElementSelectorPropsData) => {
   return true;
 };
 
-export const getUserAttrError = (
-  data: RulesUserAttributeData | undefined,
-  attributes: Attribute[],
-) => {
-  const ret = { showError: false, errorInfo: '' };
+const getUserAttrError = (data: RulesUserAttributeData | undefined, attributes: Attribute[]) => {
+  const ret = { showError: false };
   const item = attributes.find((item: Attribute) => item.id === data?.attrId);
   if (!data?.attrId || !item) {
     ret.showError = true;
-    ret.errorInfo = 'Please select a attribute';
   } else if (data?.logic === 'between' && (!data?.value || !data?.value2)) {
     ret.showError = true;
-    ret.errorInfo = 'Please enter a value';
   } else if (item?.dataType !== AttributeDataType.Boolean) {
     if (data.logic !== 'any' && data.logic !== 'empty') {
       if (item?.dataType === AttributeDataType.List) {
         if (!data.listValues || data.listValues.length === 0) {
           ret.showError = true;
-          ret.errorInfo = 'Please enter a value';
         }
       } else {
         if (!data.value || data.value === '') {
           ret.showError = true;
-          ret.errorInfo = 'Please enter a value';
         }
       }
     }
@@ -56,25 +52,23 @@ export const getUserAttrError = (
   return ret;
 };
 
-export const getUrlPatternError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getUrlPatternError = (data: any) => {
+  const ret = { showError: false };
   const hasExcludes = data.excludes && data.excludes.length > 0;
   const hasIncludes = data.includes && data.includes.length > 0;
   if (!hasExcludes && !hasIncludes) {
     ret.showError = true;
-    ret.errorInfo = 'Enter at least one URL pattern';
   }
   return ret;
 };
 
-export const getCurrentTimeError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getCurrentTimeError = (data: any) => {
+  const ret = { showError: false };
 
   // Check new format (ISO 8601)
   if (isTimeConditionDataV2(data)) {
     if (!data.startTime && !data.endTime) {
       ret.showError = true;
-      ret.errorInfo = 'Either start or end time be filled in';
     }
     return ret;
   }
@@ -83,7 +77,6 @@ export const getCurrentTimeError = (data: any) => {
   if (isTimeConditionDataLegacy(data)) {
     if (!data.startDate && !data.endDate) {
       ret.showError = true;
-      ret.errorInfo = 'Either start or end time be filled in';
     }
     return ret;
   }
@@ -91,80 +84,69 @@ export const getCurrentTimeError = (data: any) => {
   // Unknown format or empty data
   if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
     ret.showError = true;
-    ret.errorInfo = 'Either start or end time be filled in';
   }
 
   return ret;
 };
 
-export const getWaitError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getWaitError = (data: any) => {
+  const ret = { showError: false };
   if (data.second === undefined) {
     ret.showError = true;
-    ret.errorInfo = 'Enter wait time';
   }
   return ret;
 };
 
-export const getElementError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getElementError = (data: any) => {
+  const ret = { showError: false };
   if (!isValidSelector(data.elementData)) {
     ret.showError = true;
-    ret.errorInfo = 'Please select an element';
   }
   return ret;
 };
 
-export const getTextInputError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getTextInputError = (data: any) => {
+  const ret = { showError: false };
   if (data.logic !== 'any' && data.logic !== 'empty' && data.value === '') {
     ret.showError = true;
-    ret.errorInfo = 'Please enter a value';
   } else if (!isValidSelector(data.elementData)) {
     ret.showError = true;
-    ret.errorInfo = 'Please select an element';
   }
   return ret;
 };
 
-export const getTextFillError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getTextFillError = (data: any) => {
+  const ret = { showError: false };
   if (!isValidSelector(data.elementData)) {
     ret.showError = true;
-    ret.errorInfo = 'Please select an element';
   }
   return ret;
 };
 
-export const getSegmentError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getSegmentError = (data: any) => {
+  const ret = { showError: false };
   if (!data.segmentId) {
     ret.showError = true;
-    ret.errorInfo = 'Please select an segment';
   }
   return ret;
 };
 
-export const getContentError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
+const getContentError = (data: any) => {
+  const ret = { showError: false };
   if (!data.contentId) {
     ret.showError = true;
-    const contentType = data.type === 'checklist' ? 'checklist' : 'flow';
-    ret.errorInfo = `Please select a ${contentType}`;
   }
   return ret;
 };
 
-export const getEventError = (data: EventConditionData | undefined) => {
-  const ret = { showError: false, errorInfo: '' };
+const getEventError = (data: EventConditionData | undefined) => {
+  const ret = { showError: false };
   if (!data?.eventId) {
     ret.showError = true;
-    ret.errorInfo = 'Please select an event';
     return ret;
   }
   if (data.count === undefined || data.count === null) {
     ret.showError = true;
-    ret.errorInfo = 'Please enter a count value';
     return ret;
   }
   if (
@@ -172,7 +154,6 @@ export const getEventError = (data: EventConditionData | undefined) => {
     (data.count2 === undefined || data.count2 === null)
   ) {
     ret.showError = true;
-    ret.errorInfo = 'Please enter the second count value';
     return ret;
   }
   if (
@@ -180,7 +161,6 @@ export const getEventError = (data: EventConditionData | undefined) => {
     (data.windowValue === undefined || data.windowValue === null)
   ) {
     ret.showError = true;
-    ret.errorInfo = 'Please enter a time value';
     return ret;
   }
   if (
@@ -188,67 +168,32 @@ export const getEventError = (data: EventConditionData | undefined) => {
     (data.windowValue2 === undefined || data.windowValue2 === null)
   ) {
     ret.showError = true;
-    ret.errorInfo = 'Please enter the second time value';
     return ret;
   }
   return ret;
 };
 
-export const getEventAttrError = (
-  data: EventAttrConditionData | undefined,
-  attributes: Attribute[],
-) => {
-  const ret = { showError: false, errorInfo: '' };
+const getEventAttrError = (data: EventAttrConditionData | undefined, attributes: Attribute[]) => {
+  const ret = { showError: false };
   const item = attributes.find(
     (attr: Attribute) => attr.id === data?.attrId && attr.bizType === AttributeBizTypes.Event,
   );
   if (!data?.attrId || !item) {
     ret.showError = true;
-    ret.errorInfo = 'Please select an event attribute';
   } else if (data?.logic === 'between' && (!data?.value || !data?.value2)) {
     ret.showError = true;
-    ret.errorInfo = 'Please enter a value';
   } else if (item?.dataType !== AttributeDataType.Boolean) {
     if (data.logic !== 'any' && data.logic !== 'empty') {
       if (item?.dataType === AttributeDataType.List) {
         if (!data.listValues || data.listValues.length === 0) {
           ret.showError = true;
-          ret.errorInfo = 'Please enter a value';
         }
       } else {
         if (!data.value || data.value === '') {
           ret.showError = true;
-          ret.errorInfo = 'Please enter a value';
         }
       }
     }
-  }
-  return ret;
-};
-
-export const getStepError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
-  if (!data.stepCvid) {
-    ret.showError = true;
-    ret.errorInfo = 'Please select a step';
-  }
-  return ret;
-};
-
-export const getNavitateError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
-  if (!data.value || data.value === '') {
-    ret.showError = true;
-    ret.errorInfo = 'Enter the navigator url';
-  }
-  return ret;
-};
-
-export const getCodeError = (data: any) => {
-  const ret = { showError: false, errorInfo: '' };
-  if (!data.value) {
-    ret.showError = true;
-    ret.errorInfo = 'Enter the code ';
   }
   return ret;
 };
@@ -287,32 +232,6 @@ export const hasError = (conds: RulesCondition[], attributes: Attribute[]) => {
       const whereConditions = (cond.data as { whereConditions?: RulesCondition[] } | undefined)
         ?.whereConditions;
       if (whereConditions && hasError(whereConditions, attributes) === true) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-const errorActionHandlerMapping = {
-  [ContentActionsItemType.STEP_GOTO]: getStepError,
-  [ContentActionsItemType.PAGE_NAVIGATE]: getNavitateError,
-  [ContentActionsItemType.FLOW_START]: getContentError,
-  [ContentActionsItemType.JAVASCRIPT_EVALUATE]: getCodeError,
-};
-
-export const hasActionError = (conds: RulesCondition[]) => {
-  for (const cond of conds) {
-    const condType = cond.type as keyof typeof errorActionHandlerMapping;
-    const condErroFn = errorActionHandlerMapping[condType];
-    if (condErroFn) {
-      const { showError } = condErroFn(cond.data);
-      if (showError) {
-        return true;
-      }
-    }
-    if (cond.conditions) {
-      if (hasActionError(cond.conditions) === true) {
         return true;
       }
     }

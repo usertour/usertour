@@ -13,7 +13,7 @@ import {
 } from '@usertour/ui';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { LauncherIconSource } from '@usertour/types';
-import { uuidV4 } from '@usertour/helpers';
+import { cuid } from '@usertour/helpers';
 import { useLayoutEffect } from 'react';
 import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -143,7 +143,7 @@ export const ResourceCenterTabSettings = () => {
   useLayoutEffect(() => {
     if (isNew) {
       setEditingTab({
-        id: uuidV4(),
+        id: cuid(),
         name: '',
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'home-line',

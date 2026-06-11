@@ -1437,6 +1437,7 @@ type VersionOnLocalization {
 
 input VersionUpdateInput {
   content: VersionInput!
+  expectedUpdatedAt: DateTime
   versionId: String
 }
 

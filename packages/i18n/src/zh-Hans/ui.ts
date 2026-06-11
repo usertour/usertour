@@ -337,6 +337,7 @@ const translations = {
         createTitle: '新建属性',
         createSubmit: '创建属性',
         createSuccess: '属性已创建',
+        createFailed: '创建属性失败',
       },
       empty: '暂无属性。',
     },
@@ -1093,6 +1094,8 @@ const translations = {
     unknownEvent: '未知事件',
     reload: '刷新',
     stepN: '步骤 {{number}}',
+    session: '会话',
+    viewSession: '查看会话',
   },
   privacyPage: {
     title: '隐私政策',
@@ -1101,6 +1104,12 @@ const translations = {
     title: '服务条款',
   },
   common: {
+    appTitle: 'Usertour App',
+    selectPlaceholder: '请选择…',
+    table: {
+      selectAll: '全选',
+      selectRow: '选择此行',
+    },
     colorPicker: {
       useThisColor: '使用此颜色',
       removeColor: '移除颜色（使用默认）',
@@ -1274,6 +1283,9 @@ const translations = {
       stepN: '步骤 {{number}}',
       taskClicked: '用户点击了该任务',
       taskHidden: '该任务对用户不可见',
+      unknownContent: '未知内容',
+      reload: '刷新',
+      noSessions: '此用户暂无会话。',
       table: {
         content: '内容',
         status: '状态',
@@ -2202,8 +2214,10 @@ const translations = {
         family: '字体',
         customFamily: '自定义字体名',
         customFamilyPlaceholder: '例如 My Brand Sans',
+        customFamilyTooltip:
+          'widget 实际使用的 font-family。支持逗号分隔的多个字体(如 "Brand Sans, PingFang SC"),按从左到右逐字符匹配,品牌字体可自然回退到中文字体。',
         customFontHint:
-          '需要开发者配合:在下方「自定义 CSS」区块里添加 @font-face 规则来安装这个字体。',
+          '字体不会自动加载——需要在下方「自定义 CSS」区块用 @font-face 声明,否则 widget 会回退到默认字体。',
         bodySize: '正文字号',
         lineHeight: '行高',
         bodyWeight: '正文字重',
@@ -2389,6 +2403,13 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: '加载编辑器中...',
+    versionConflict: {
+      title: '内容已在其他位置更新',
+      description:
+        '同事(或另一个标签页)保存了该内容的更新版本,当前窗口的草稿无法再保存。请刷新加载最新版本——本窗口未保存的修改将丢失。',
+      refresh: '立即刷新',
+      later: '稍后处理',
+    },
     analytics: {
       notAtAllLikely: '完全不可能',
       extremelyLikely: '非常可能',
@@ -2427,8 +2448,11 @@ const translations = {
         buttonText: '按钮文字',
         buttonTextHint: '输入按钮文字',
         required: '必填',
+        singleLinePreviewLabel: '单行文本输入预览',
+        multiLinePreviewLabel: '多行文本输入预览',
       },
       question: {
+        limitReached: '每个步骤只能包含一个问题。请新建一个步骤。',
         name: '问题名称',
         namePlaceholder: '问题名称？',
         whenSubmitted: '提交答案时',
@@ -2455,6 +2479,11 @@ const translations = {
       },
       image: {
         width: '图片宽度',
+        previewAlt: '可编辑内容',
+      },
+      errorBoundary: {
+        title: '编辑器加载失败',
+        description: '发生意外错误',
       },
       width: {
         label: '宽度',

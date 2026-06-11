@@ -22,16 +22,15 @@ export interface UseContentLoaderReturn {
 // store is left untouched). Called by useBuilderInit on initial hydrate;
 // post-save re-baselining lives in useSaveContent (off the save response).
 //
-// `versionId` is the editable version the builder edits — always the
-// content's editedVersionId — so the inline `editedVersion` is exactly
-// the version to load.
+// The builder always edits the content's editedVersion, returned inline by
+// getContent — no version id is needed to pick it.
 export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderReturn => {
   const { store } = args;
   const { invoke: getContent } = useGetContentLazyQuery();
 
   const fetchContentAndVersion = useCallback<BuilderProviderMethods['fetchContentAndVersion']>(
-    async (contentId, versionId) => {
-      if (!contentId || !versionId) {
+    async (contentId) => {
+      if (!contentId) {
         return false;
       }
       const content = (await getContent(contentId)) as Content | null;

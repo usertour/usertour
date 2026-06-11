@@ -199,6 +199,7 @@ export const builderSections: BuilderSection[] = [
         path: 'font.customFontFamily',
         label: 'themeBuilder.fields.font.customFamily',
         placeholder: 'themeBuilder.fields.font.customFamilyPlaceholder',
+        tooltip: 'themeBuilder.fields.font.customFamilyTooltip',
         visibleWhen: (s) => s.font.fontFamily === 'Custom font',
       },
       {

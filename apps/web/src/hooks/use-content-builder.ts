@@ -22,10 +22,11 @@ export const useContentBuilder = () => {
     // resolveEditableVersionId reads contentOnEnvironments (per-env source of
     // truth), not the @deprecated Content.publishedVersionId, which picks the
     // wrong version under multi-env setups (a publish in prod overwrites the
-    // field even when the user is editing a staging-only draft).
-    let versionId: string;
+    // field even when the user is editing a staging-only draft). The fork
+    // updates content.editedVersionId server-side; the builder loads that
+    // via getContent, so the resolved id isn't needed in the URL.
     try {
-      versionId = await resolveEditableVersionId(content, editedVersionId, createVersion);
+      await resolveEditableVersionId(content, editedVersionId, createVersion);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -35,7 +36,7 @@ export const useContentBuilder = () => {
       return false;
     }
 
-    const baseUrl = `/env/${environment?.id}/${contentType}/${content?.id}/builder/${versionId}`;
+    const baseUrl = `/env/${environment?.id}/${contentType}/${content?.id}/builder`;
     // Step is a path segment of the builder's descendant <Routes> (flow.tsx's
     // `step/:stepId`, keyed by the step's stable id), not a query param.
     const url = stepId !== undefined ? `${baseUrl}/step/${stepId}` : baseUrl;

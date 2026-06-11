@@ -56,7 +56,8 @@ export const useIconUpload = ({ onUploadSuccess }: UseIconUploadProps) => {
           }
         } catch (err) {
           const error = err instanceof Error ? err : new Error('Upload failed');
-          toast({ variant: 'destructive', title: error.message });
+          console.error('Icon upload failed:', err);
+          toast({ variant: 'destructive', title: t('contentBuilder.iconPicker.uploadFailed') });
           option.onError?.(error);
         } finally {
           setIsUploading(false);

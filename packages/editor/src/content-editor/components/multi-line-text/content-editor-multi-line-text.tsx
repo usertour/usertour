@@ -3,6 +3,7 @@
 import * as Widget from '@usertour/widget';
 import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ContentEditorMultiLineTextElement } from '../../../types/editor';
 import { BindAttribute } from '../../shared/bind-attribute';
@@ -20,6 +21,7 @@ export interface ContentEditorMultiLineTextProps {
 
 export const ContentEditorMultiLineText = memo((props: ContentEditorMultiLineTextProps) => {
   const { element, id } = props;
+  const { t } = useTranslation();
 
   // Render the display component (trigger for popover)
   const renderDisplay = useCallback(
@@ -28,14 +30,14 @@ export const ContentEditorMultiLineText = memo((props: ContentEditorMultiLineTex
         <Widget.Textarea
           placeholder={localData.placeholder || DEFAULT_PLACEHOLDER}
           disabled
-          aria-label="Multi-line text input preview"
+          aria-label={t('contentBuilder.editor.textInput.multiLinePreviewLabel')}
         />
         <div className="flex justify-end w-full">
           <Widget.Button>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Widget.Button>
         </div>
       </div>
     ),
-    [],
+    [t],
   );
 
   // Render the popover content

@@ -716,7 +716,7 @@ describe('duplicateChecklistData', () => {
     } as unknown as ChecklistData;
 
     const result = duplicateChecklistData(data) as ChecklistData;
-    expect(result.items[0].id).toBe('mock-uuid');
+    expect(result.items[0].id).toBe('mock-cuid');
   });
 
   test('should regenerate clickedActions IDs', () => {
@@ -828,8 +828,8 @@ describe('duplicateChecklistData', () => {
 
     const result = duplicateChecklistData(data) as ChecklistData;
     expect(result.items).toHaveLength(2);
-    expect(result.items[0].id).toBe('mock-uuid');
-    expect(result.items[1].id).toBe('mock-uuid');
+    expect(result.items[0].id).toBe('mock-cuid');
+    expect(result.items[1].id).toBe('mock-cuid');
     expect(result.items[0].clickedActions[0].id).toBe('regenerated-action-1');
     expect(result.items[1].completeConditions[0].id).toBe('regenerated-condition-2');
   });
@@ -845,7 +845,7 @@ describe('duplicateChecklistData', () => {
     } as unknown as ChecklistData;
 
     const result = duplicateChecklistData(data) as ChecklistData;
-    expect(result.items[0].id).toBe('mock-uuid');
+    expect(result.items[0].id).toBe('mock-cuid');
     expect(result.items[0].clickedActions).toBeUndefined();
     expect(result.items[0].completeConditions).toBeUndefined();
     expect(result.items[0].onlyShowTaskConditions).toBeUndefined();
@@ -1146,7 +1146,7 @@ describe('duplicateData', () => {
     } as unknown as ChecklistData;
 
     const result = duplicateData(data, ContentDataType.CHECKLIST) as ChecklistData;
-    expect(result.items[0].id).toBe('mock-uuid');
+    expect(result.items[0].id).toBe('mock-cuid');
   });
 
   test('should process launcher data for LAUNCHER content type', () => {

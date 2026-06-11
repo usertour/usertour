@@ -8,6 +8,7 @@ import {
   createBuilderStore,
 } from '@/pages/contents/components/builder/core/builder-store';
 import { BuilderLeaveGuard } from '@/pages/contents/components/builder/core/lifecycle/leave-guard';
+import { VersionConflictDialog } from '@/pages/contents/components/builder/core/lifecycle/version-conflict-dialog';
 import type {
   BuilderProviderContextValue,
   BuilderProviderProps,
@@ -26,7 +27,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     environmentId,
     projectId,
     contentId,
-    versionId,
   } = props;
 
   // One store per mount — the `useRef + if (!current)` idiom is the
@@ -63,7 +63,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         environmentId,
         projectId,
         contentId,
-        versionId,
       },
       contentRef,
     }),
@@ -77,13 +76,13 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       environmentId,
       projectId,
       contentId,
-      versionId,
     ],
   );
 
   return (
     <BuilderProviderContext.Provider value={providerValue}>
       <BuilderLeaveGuard />
+      <VersionConflictDialog />
       {children}
     </BuilderProviderContext.Provider>
   );

@@ -398,6 +398,48 @@ describe('GraphQL content (e2e)', () => {
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
+
+    it('errors when expectedUpdatedAt is stale (concurrent save)', async () => {
+      const { version } = await seedContent();
+      const stale = new Date(version.updatedAt.getTime() - 1000).toISOString();
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionUpdateInput!) { updateContentVersion(data: $data) { id } }',
+        variables: {
+          data: {
+            versionId: version.id,
+            content: { data: { x: 1 } },
+            expectedUpdatedAt: stale,
+          },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+
+      // The blind write was refused — the row is untouched.
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      expect(row?.data).not.toEqual({ x: 1 });
+    });
+
+    it('saves when expectedUpdatedAt matches the current version', async () => {
+      const { version } = await seedContent();
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionUpdateInput!) { updateContentVersion(data: $data) { id } }',
+        variables: {
+          data: {
+            versionId: version.id,
+            content: { data: { x: 2 } },
+            expectedUpdatedAt: version.updatedAt.toISOString(),
+          },
+        },
+      });
+      expect(res.body.errors).toBeUndefined();
+
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      expect(row?.data).toEqual({ x: 2 });
+    });
   });
 
   // ── restoreContentVersion ────────────────────────────────────────

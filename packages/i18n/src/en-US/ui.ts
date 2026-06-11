@@ -355,6 +355,7 @@ const translations = {
         createTitle: 'New attribute',
         createSubmit: 'Create attribute',
         createSuccess: 'The attribute has been successfully created',
+        createFailed: 'Failed to create the attribute',
       },
       empty: 'No attributes yet.',
     },
@@ -1159,6 +1160,8 @@ const translations = {
     unknownEvent: 'Unknown event',
     reload: 'Reload',
     stepN: 'Step {{number}}',
+    session: 'Session',
+    viewSession: 'View session',
   },
   privacyPage: {
     title: 'Privacy Policy',
@@ -1167,6 +1170,12 @@ const translations = {
     title: 'Terms of Service',
   },
   common: {
+    appTitle: 'Usertour App',
+    selectPlaceholder: 'Select…',
+    table: {
+      selectAll: 'Select all',
+      selectRow: 'Select row',
+    },
     colorPicker: {
       useThisColor: 'Use this color',
       removeColor: 'Remove color (use default)',
@@ -1294,11 +1303,6 @@ const translations = {
         moreCount: '+{{count}} more',
         emptyTitle: 'No companies',
       },
-      tabs: {
-        activityFeed: 'Activity feed',
-        sessions: 'Sessions',
-        companies: 'Companies',
-      },
       companies: {
         noCompanies: 'No companies found for this user.',
         loadMore: 'Load More Companies',
@@ -1353,6 +1357,9 @@ const translations = {
       stepN: 'Step {{number}}',
       taskClicked: 'User clicked this task',
       taskHidden: 'Task is hidden for user',
+      unknownContent: 'Unknown content',
+      reload: 'Reload',
+      noSessions: 'No sessions found for this user.',
       table: {
         content: 'Content',
         status: 'Status',
@@ -2335,8 +2342,10 @@ const translations = {
         family: 'Font family',
         customFamily: 'Custom font family',
         customFamilyPlaceholder: 'e.g. My Brand Sans',
+        customFamilyTooltip:
+          'The exact font-family widgets will use. Accepts a comma-separated list — e.g. "Brand Sans, PingFang SC" — matched left to right per character, so a brand font can fall back to a CJK font.',
         customFontHint:
-          'Your developers must install this custom font in your theme by adding @font-face rules via Custom CSS (see the Custom CSS section below).',
+          "This font won't load on its own — declare it with @font-face rules in the Custom CSS section below, or widgets will fall back to a default font.",
         bodySize: 'Body size',
         lineHeight: 'Line height',
         bodyWeight: 'Body weight',
@@ -2522,6 +2531,13 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: 'Loading builder...',
+    versionConflict: {
+      title: 'This content was updated elsewhere',
+      description:
+        "A teammate (or another tab) saved a newer copy of this content, so this window's draft can no longer be saved. Refresh to load the latest version — unsaved changes in this window will be lost.",
+      refresh: 'Refresh now',
+      later: 'Later',
+    },
     analytics: {
       notAtAllLikely: 'Not at all likely',
       extremelyLikely: 'Extremely likely',
@@ -2560,8 +2576,11 @@ const translations = {
         buttonText: 'Button text',
         buttonTextHint: 'Enter button text',
         required: 'Required',
+        singleLinePreviewLabel: 'Single-line text input preview',
+        multiLinePreviewLabel: 'Multi-line text input preview',
       },
       question: {
+        limitReached: 'Each step can only contain one question. Add a new step instead.',
         name: 'Question name',
         namePlaceholder: 'Question name?',
         whenSubmitted: 'When answer is submitted',
@@ -2589,6 +2608,11 @@ const translations = {
       },
       image: {
         width: 'Image width',
+        previewAlt: 'Editable content',
+      },
+      errorBoundary: {
+        title: 'Editor failed to load',
+        description: 'An unexpected error occurred',
       },
       width: {
         label: 'Width',

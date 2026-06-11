@@ -18,6 +18,9 @@ import { LeaveConfirmDialog } from '@/pages/contents/components/builder/core/lif
 // mutation or the initial load still in flight (isBusy = isLoading + saving),
 // local edits not yet saved (dirty), and a failed save that still holds local
 // state (error). 'idle' / 'saved' are clean and let navigation through.
+// 'conflict' also passes: the draft can never be saved from this mount (the
+// conflict dialog already said so), and blocking would offer a "save and
+// leave" that is guaranteed to fail.
 //
 // Both paths share this one predicate on purpose: they used to live in two
 // files with two slightly different booleans (beforeunload counted isLoading
