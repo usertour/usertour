@@ -164,9 +164,16 @@ const SidebarContent = memo(
                         event.stopPropagation();
                         handleEditTrigger();
                       }}
+                      // Always laid out (grid), shown via opacity — never
+                      // display:none. A hidden anchor has a zero rect, and
+                      // floating-ui occasionally positions the tooltip from
+                      // it before layout settles, flashing the tooltip at the
+                      // viewport's top-left for a frame.
                       className={cn(
-                        'relative size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-foreground',
-                        triggerCount > 0 ? 'grid' : 'hidden group-hover:grid',
+                        'relative grid size-6 place-items-center rounded-md text-muted-foreground transition-opacity hover:bg-surface-raised hover:text-foreground',
+                        triggerCount > 0
+                          ? 'opacity-100'
+                          : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100',
                       )}
                     >
                       <EventIcon2 className="h-4 w-4 opacity-70" />
@@ -195,7 +202,10 @@ const SidebarContent = memo(
                         <button
                           type="button"
                           onClick={(event) => event.stopPropagation()}
-                          className="hidden size-6 place-items-center rounded-md text-muted-foreground hover:bg-surface-raised hover:text-destructive group-hover:grid"
+                          // See the trigger button above: kept laid out and
+                          // toggled via opacity so its tooltip anchor always
+                          // has a real rect (no top-left flash on hover).
+                          className="pointer-events-none grid size-6 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-surface-raised hover:text-destructive group-hover:pointer-events-auto group-hover:opacity-100"
                         >
                           <Delete2Icon className="h-4 w-4 opacity-70" />
                         </button>

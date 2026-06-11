@@ -3342,8 +3342,9 @@ const translations = {
       },
       wait: {
         before: 'Wait',
-        suffix: 'second before starting',
-        tooltip: 'The conditions must keep matching for the entire wait.',
+        suffix: 'seconds',
+        tooltip:
+          'Delay between the conditions matching and the trigger firing. The conditions must keep matching for the entire wait.',
         error: 'Wait time must not be greater than {{max}} seconds ({{minutes}} minutes)',
       },
       frequency: {
