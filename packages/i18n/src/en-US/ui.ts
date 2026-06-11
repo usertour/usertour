@@ -2270,8 +2270,10 @@ const translations = {
         family: 'Font family',
         customFamily: 'Custom font family',
         customFamilyPlaceholder: 'e.g. My Brand Sans',
+        customFamilyTooltip:
+          'The exact font-family widgets will use. Accepts a comma-separated list — e.g. "Brand Sans, PingFang SC" — matched left to right per character, so a brand font can fall back to a CJK font.',
         customFontHint:
-          'Your developers must install this custom font in your theme by adding @font-face rules via Custom CSS (see the Custom CSS section below).',
+          "This font won't load on its own — declare it with @font-face rules in the Custom CSS section below, or widgets will fall back to a default font.",
         bodySize: 'Body size',
         lineHeight: 'Line height',
         bodyWeight: 'Body weight',

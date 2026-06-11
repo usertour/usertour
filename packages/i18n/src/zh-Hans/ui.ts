@@ -2147,8 +2147,10 @@ const translations = {
         family: '字体',
         customFamily: '自定义字体名',
         customFamilyPlaceholder: '例如 My Brand Sans',
+        customFamilyTooltip:
+          'widget 实际使用的 font-family。支持逗号分隔的多个字体(如 "Brand Sans, PingFang SC"),按从左到右逐字符匹配,品牌字体可自然回退到中文字体。',
         customFontHint:
-          '需要开发者配合:在下方「自定义 CSS」区块里添加 @font-face 规则来安装这个字体。',
+          '字体不会自动加载——需要在下方「自定义 CSS」区块用 @font-face 声明,否则 widget 会回退到默认字体。',
         bodySize: '正文字号',
         lineHeight: '行高',
         bodyWeight: '正文字重',
