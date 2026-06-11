@@ -13,7 +13,6 @@ export const sessionExpand = z.enum(['answers', 'content', 'company', 'user', 'v
 const orderByField = z.enum(['createdAt', '-createdAt']);
 
 export const listContentSessionsQuery = z.object({
-  contentId: z.string().describe('The content whose sessions to list.'),
   userId: z.string().optional().describe('Filter to a single end-user.'),
   limit,
   cursor,

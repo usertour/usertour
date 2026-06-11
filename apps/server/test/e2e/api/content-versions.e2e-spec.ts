@@ -24,7 +24,9 @@ describe('API v2 /content-versions (e2e)', () => {
   let projectId: string;
   let contentId: string;
   let versionId: string;
+  let writeContentId: string;
   let writeVersionId: string;
+  let configContentId: string;
   let configVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -107,11 +109,13 @@ describe('API v2 /content-versions (e2e)', () => {
 
     // A dedicated editable (draft) version for write tests, isolated from the reads.
     const writeContent = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    writeContentId = writeContent.id;
     writeVersionId = (await buildVersion(prisma, { contentId: writeContent.id, sequence: 0 })).id;
 
     // A separate draft used only by the version-config (start/hide rules) write tests,
     // so their config merge/clear assertions are not perturbed by the step write tests.
     const configContent = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    configContentId = configContent.id;
     configVersionId = (await buildVersion(prisma, { contentId: configContent.id, sequence: 0 })).id;
   }, 60000);
 
@@ -127,7 +131,11 @@ describe('API v2 /content-versions (e2e)', () => {
 
   it('gets a content version by id (questions null without expand)', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}`,
+      token,
+    );
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: versionId, object: 'contentVersion', number: 0 });
     expect(res.body.questions).toBeNull();
@@ -135,18 +143,18 @@ describe('API v2 /content-versions (e2e)', () => {
 
   it('lists versions for a content', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api(
-      'get',
-      `/v2/projects/${projectId}/content-versions?contentId=${contentId}`,
-      token,
-    );
+    const res = await api('get', `/v2/projects/${projectId}/content/${contentId}/versions`, token);
     expect(res.status).toBe(200);
     expect(res.body.results.map((v: { id: string }) => v.id)).toContain(versionId);
   });
 
   it('exposes themeId on a version (null when no theme)', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}`,
+      token,
+    );
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('themeId');
   });
@@ -155,7 +163,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api(
       'get',
-      `/v2/projects/${projectId}/content-versions/${versionId}?expand=steps`,
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}?expand=steps`,
       token,
     );
     expect(res.status).toBe(200);
@@ -175,7 +183,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api(
       'get',
-      `/v2/projects/${projectId}/content-versions/${versionId}?expand=steps`,
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}?expand=steps`,
       token,
     );
     expect(res.status).toBe(200);
@@ -191,7 +199,11 @@ describe('API v2 /content-versions (e2e)', () => {
 
   it('decompiles version start rules from config', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}`,
+      token,
+    );
     expect(res.status).toBe(200);
     expect(res.body.startRules).toMatchObject({
       when: [{ type: 'current_url', includes: ['/app/*'] }],
@@ -205,7 +217,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api(
       'get',
-      `/v2/projects/${projectId}/content-versions/${versionId}?expand=steps`,
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}?expand=steps`,
       token,
     );
     const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'cv-1');
@@ -214,7 +226,11 @@ describe('API v2 /content-versions (e2e)', () => {
 
   it('omits steps without the expand', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api('get', `/v2/projects/${projectId}/content-versions/${versionId}`, token);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}`,
+      token,
+    );
     expect(res.body.steps).toBeUndefined();
   });
 
@@ -222,7 +238,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api(
       'get',
-      `/v2/projects/${projectId}/content-versions/${versionId}?expand=questions`,
+      `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}?expand=questions`,
       token,
     );
     expect(res.status).toBe(200);
@@ -231,18 +247,18 @@ describe('API v2 /content-versions (e2e)', () => {
 
   it('returns 404 for an unknown version (E1004)', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api('get', `/v2/projects/${projectId}/content-versions/nope`, token);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${contentId}/versions/nope`,
+      token,
+    );
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
   });
 
   it('returns 404 listing versions for an unknown content (E1004)', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api(
-      'get',
-      `/v2/projects/${projectId}/content-versions?contentId=nope`,
-      token,
-    );
+    const res = await api('get', `/v2/projects/${projectId}/content/nope/versions`, token);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
   });
@@ -251,7 +267,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const res = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({
       steps: [
@@ -331,7 +347,7 @@ describe('API v2 /content-versions (e2e)', () => {
     // WRITE
     const w = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send(payload);
     expect(w.status).toBe(200);
@@ -339,7 +355,7 @@ describe('API v2 /content-versions (e2e)', () => {
     // INDEPENDENT READ (a fresh request, re-fetched from the DB)
     const r = await api(
       'get',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}?expand=steps`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}?expand=steps`,
       token,
     );
     expect(r.status).toBe(200);
@@ -383,7 +399,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const res = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({
       steps: [
@@ -402,7 +418,7 @@ describe('API v2 /content-versions (e2e)', () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({ steps: [] });
     expect(res.status).toBe(403);
@@ -411,11 +427,7 @@ describe('API v2 /content-versions (e2e)', () => {
 
   it('rejects insufficient scope (403 E1012)', async () => {
     const token = await mint([Capability.UserRead]);
-    const res = await api(
-      'get',
-      `/v2/projects/${projectId}/content-versions?contentId=${contentId}`,
-      token,
-    );
+    const res = await api('get', `/v2/projects/${projectId}/content/${contentId}/versions`, token);
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
@@ -425,11 +437,17 @@ describe('API v2 /content-versions (e2e)', () => {
   // read round-trip for that config, plus the partial-merge and null-clear semantics.
   describe('version config rules (write → read)', () => {
     const write = (body: object, token: string) =>
-      api('patch', `/v2/projects/${projectId}/content-versions/${configVersionId}`, token).send(
-        body,
-      );
+      api(
+        'patch',
+        `/v2/projects/${projectId}/content/${configContentId}/versions/${configVersionId}`,
+        token,
+      ).send(body);
     const read = (token: string) =>
-      api('get', `/v2/projects/${projectId}/content-versions/${configVersionId}`, token);
+      api(
+        'get',
+        `/v2/projects/${projectId}/content/${configContentId}/versions/${configVersionId}`,
+        token,
+      );
 
     it('round-trips hide rules (write → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
@@ -505,13 +523,15 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
-  // POST content-versions forks the content's edited version into a new draft.
+  // POST .../content/:contentId/versions forks the content's edited version into a new draft.
   describe('create draft version (POST)', () => {
     it('forks the edited version into a new draft (201, copies steps)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({
-        contentId,
-      });
+      const res = await api(
+        'post',
+        `/v2/projects/${projectId}/content/${contentId}/versions`,
+        token,
+      ).send({});
       expect(res.status).toBe(201);
       expect(res.body).toMatchObject({ object: 'contentVersion' });
       expect(res.body.id).not.toBe(versionId); // a new version, not the source
@@ -519,7 +539,7 @@ describe('API v2 /content-versions (e2e)', () => {
       // the fork carries the source version's steps (cv-1, cv-2)
       const read = await api(
         'get',
-        `/v2/projects/${projectId}/content-versions/${res.body.id}?expand=steps`,
+        `/v2/projects/${projectId}/content/${contentId}/versions/${res.body.id}?expand=steps`,
         token,
       );
       expect(read.status).toBe(200);
@@ -532,25 +552,22 @@ describe('API v2 /content-versions (e2e)', () => {
 
     it('returns 404 forking an unknown content (E1004)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({
-        contentId: 'does-not-exist',
-      });
+      const res = await api(
+        'post',
+        `/v2/projects/${projectId}/content/does-not-exist/versions`,
+        token,
+      ).send({});
       expect(res.status).toBe(404);
       expect(res.body.error.code).toBe('E1004');
     });
 
-    it('maps a missing contentId body to E1017 (zod validation)', async () => {
-      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({});
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe('E1017');
-    });
-
     it('rejects create without the update scope (403 E1012)', async () => {
       const token = await mint([Capability.ContentRead]);
-      const res = await api('post', `/v2/projects/${projectId}/content-versions`, token).send({
-        contentId,
-      });
+      const res = await api(
+        'post',
+        `/v2/projects/${projectId}/content/${contentId}/versions`,
+        token,
+      ).send({});
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe('E1012');
     });
@@ -603,7 +620,7 @@ describe('API v2 /content-versions (e2e)', () => {
       // update vB's step by its (globally-unique) id
       const w = await api(
         'patch',
-        `/v2/projects/${projectId}/content-versions/${vB.id}`,
+        `/v2/projects/${projectId}/content/${c.id}/versions/${vB.id}`,
         token,
       ).send({
         steps: [
@@ -619,12 +636,12 @@ describe('API v2 /content-versions (e2e)', () => {
 
       const rB = await api(
         'get',
-        `/v2/projects/${projectId}/content-versions/${vB.id}?expand=steps`,
+        `/v2/projects/${projectId}/content/${c.id}/versions/${vB.id}?expand=steps`,
         token,
       );
       const rA = await api(
         'get',
-        `/v2/projects/${projectId}/content-versions/${vA.id}?expand=steps`,
+        `/v2/projects/${projectId}/content/${c.id}/versions/${vA.id}?expand=steps`,
         token,
       );
       const sB = rB.body.steps.find((s: { id: string }) => s.id === stepB.id);
@@ -675,7 +692,7 @@ describe('API v2 /content-versions (e2e)', () => {
 
       const res = await api(
         'post',
-        `/v2/projects/${projectId}/content-versions/${v0.id}/restore`,
+        `/v2/projects/${projectId}/content/${c.id}/versions/${v0.id}/restore`,
         token,
       );
       expect(res.status).toBe(201);
@@ -686,7 +703,7 @@ describe('API v2 /content-versions (e2e)', () => {
       // the restored version carries v0's step
       const read = await api(
         'get',
-        `/v2/projects/${projectId}/content-versions/${res.body.id}?expand=steps`,
+        `/v2/projects/${projectId}/content/${c.id}/versions/${res.body.id}?expand=steps`,
         token,
       );
       expect(read.body.steps.map((s: { name: string }) => s.name)).toContain('Old step');
@@ -700,7 +717,7 @@ describe('API v2 /content-versions (e2e)', () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const res = await api(
         'post',
-        `/v2/projects/${projectId}/content-versions/nope/restore`,
+        `/v2/projects/${projectId}/content/${contentId}/versions/nope/restore`,
         token,
       );
       expect(res.status).toBe(404);
@@ -711,7 +728,7 @@ describe('API v2 /content-versions (e2e)', () => {
       const token = await mint([Capability.ContentRead]);
       const res = await api(
         'post',
-        `/v2/projects/${projectId}/content-versions/${versionId}/restore`,
+        `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}/restore`,
         token,
       );
       expect(res.status).toBe(403);

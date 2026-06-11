@@ -24,7 +24,6 @@ import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapQuestions, mapVersion } from './content-versions.mapper';
 import {
-  CreateVersionBody,
   GetContentVersionQuery,
   ListContentVersionsQuery,
   UpdateVersionBody,
@@ -63,11 +62,16 @@ export class ApiContentVersionsService {
     private readonly themes: ThemesService,
   ) {}
 
-  async get(id: string, projectId: string, query: GetContentVersionQuery): Promise<ContentVersion> {
+  async get(
+    id: string,
+    contentId: string,
+    projectId: string,
+    query: GetContentVersionQuery,
+  ): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       content: true,
     });
-    if (!version) {
+    if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
     const resolvers = await this.buildResolvers(projectId);
@@ -77,9 +81,10 @@ export class ApiContentVersionsService {
   async list(
     requestUrl: string,
     projectId: string,
+    contentId: string,
     query: ListContentVersionsQuery,
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
-    const { contentId, limit, cursor } = query;
+    const { limit, cursor } = query;
     const expand = toArray(query.expand);
     const orderBy = parseOrderBy(
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
@@ -179,8 +184,8 @@ export class ApiContentVersionsService {
    * builder's "new version" action): the fork becomes the new editedVersion, the
    * previous draft is frozen as a historical version.
    */
-  async create(projectId: string, body: CreateVersionBody): Promise<ContentVersion> {
-    const content = await this.content.findContentWithRelations(body.contentId, projectId, {});
+  async create(projectId: string, contentId: string): Promise<ContentVersion> {
+    const content = await this.content.findContentWithRelations(contentId, projectId, {});
     if (!content || (content as { deleted?: boolean }).deleted) {
       throw new ContentNotFoundError();
     }
@@ -192,7 +197,7 @@ export class ApiContentVersionsService {
     if (!created) {
       throw new ParamsError('Failed to create version');
     }
-    return this.get(created.id, projectId, {});
+    return this.get(created.id, contentId, projectId, {});
   }
 
   /**
@@ -200,26 +205,35 @@ export class ApiContentVersionsService {
    * version — config / data / theme / steps copied from version `id`. Binds the
    * same domain method the builder uses. Returns the new version.
    */
-  async restore(id: string, projectId: string): Promise<ContentVersion> {
+  async restore(id: string, contentId: string, projectId: string): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       content: true,
     });
-    if (!version || (version.content as { deleted?: boolean } | null)?.deleted) {
+    if (
+      !version ||
+      (version as { contentId?: string }).contentId !== contentId ||
+      (version.content as { deleted?: boolean } | null)?.deleted
+    ) {
       throw new ContentNotFoundError();
     }
     const created = await this.content.restoreContentVersion(id);
     if (!created) {
       throw new ParamsError('Failed to restore version');
     }
-    return this.get(created.id, projectId, {});
+    return this.get(created.id, contentId, projectId, {});
   }
 
-  async update(id: string, projectId: string, body: UpdateVersionBody): Promise<ContentVersion> {
+  async update(
+    id: string,
+    contentId: string,
+    projectId: string,
+    body: UpdateVersionBody,
+  ): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       steps: { orderBy: { sequence: 'asc' } },
       content: true,
     });
-    if (!version) {
+    if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
     const resolvers = await this.buildCompileResolvers(projectId);
@@ -289,7 +303,7 @@ export class ApiContentVersionsService {
       }
     }
 
-    return this.get(id, projectId, { expand: ['steps'] });
+    return this.get(id, contentId, projectId, { expand: ['steps'] });
   }
 
   /** Assert a theme exists in the project (and is live) before writing it as themeId. */

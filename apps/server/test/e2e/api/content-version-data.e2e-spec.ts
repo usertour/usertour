@@ -20,6 +20,8 @@ import { createTestApp } from '../create-test-app';
  * read via GET ?expand=data. One version is one content type, so `data` is that
  * type's shape. Covers the write → independent-read round-trip per type.
  */
+type Ver = { contentId: string; id: string };
+
 describe('API v2 version.data codec (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -29,11 +31,11 @@ describe('API v2 version.data codec (e2e)', () => {
   let projectId: string;
   let environmentId: string;
   let eventCode: string;
-  let trackerVersionId: string;
-  let checklistVersionId: string;
-  let launcherVersionId: string;
-  let bannerVersionId: string;
-  let rcVersionId: string;
+  let tracker: Ver;
+  let checklist: Ver;
+  let launcher: Ver;
+  let banner: Ver;
+  let rc: Ver;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -53,9 +55,10 @@ describe('API v2 version.data codec (e2e)', () => {
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
 
-  async function newVersion(type: string): Promise<string> {
+  async function newVersion(type: string): Promise<Ver> {
     const content = await buildContent(prisma, { projectId, environmentId, type });
-    return (await buildVersion(prisma, { contentId: content.id, sequence: 0 })).id;
+    const id = (await buildVersion(prisma, { contentId: content.id, sequence: 0 })).id;
+    return { contentId: content.id, id };
   }
 
   beforeAll(async () => {
@@ -69,11 +72,11 @@ describe('API v2 version.data codec (e2e)', () => {
     ownerUserId = owner.user.id;
 
     eventCode = (await buildEvent(prisma, { projectId, codeName: 'evt_signup' })).codeName;
-    trackerVersionId = await newVersion('tracker');
-    checklistVersionId = await newVersion('checklist');
-    launcherVersionId = await newVersion('launcher');
-    bannerVersionId = await newVersion('banner');
-    rcVersionId = await newVersion('resource-center');
+    tracker = await newVersion('tracker');
+    checklist = await newVersion('checklist');
+    launcher = await newVersion('launcher');
+    banner = await newVersion('banner');
+    rc = await newVersion('resource-center');
   }, 60000);
 
   afterAll(async () => {
@@ -86,38 +89,44 @@ describe('API v2 version.data codec (e2e)', () => {
     await app?.close();
   });
 
-  const write = (versionId: string, body: object, token: string) =>
-    api('patch', `/v2/projects/${projectId}/content-versions/${versionId}`, token).send(body);
-  const readData = (versionId: string, token: string) =>
-    api('get', `/v2/projects/${projectId}/content-versions/${versionId}?expand=data`, token);
+  const write = (v: Ver, body: object, token: string) =>
+    api('patch', `/v2/projects/${projectId}/content/${v.contentId}/versions/${v.id}`, token).send(
+      body,
+    );
+  const readData = (v: Ver, token: string) =>
+    api(
+      'get',
+      `/v2/projects/${projectId}/content/${v.contentId}/versions/${v.id}?expand=data`,
+      token,
+    );
 
   describe('tracker', () => {
     it('round-trips the tracked event (write data → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const w = await write(trackerVersionId, { data: { event: eventCode } }, token);
+      const w = await write(tracker, { data: { event: eventCode } }, token);
       expect(w.status).toBe(200);
 
-      const r = await readData(trackerVersionId, token);
+      const r = await readData(tracker, token);
       expect(r.status).toBe(200);
       expect(r.body.data).toEqual({ event: eventCode });
     });
 
     it('clears the tracked event with null', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      await write(trackerVersionId, { data: { event: eventCode } }, token);
-      const w = await write(trackerVersionId, { data: { event: null } }, token);
+      await write(tracker, { data: { event: eventCode } }, token);
+      const w = await write(tracker, { data: { event: null } }, token);
       expect(w.status).toBe(200);
 
-      const r = await readData(trackerVersionId, token);
+      const r = await readData(tracker, token);
       expect(r.body.data).toEqual({ event: null });
     });
 
     it('omits data without the expand', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      await write(trackerVersionId, { data: { event: eventCode } }, token);
+      await write(tracker, { data: { event: eventCode } }, token);
       const r = await api(
         'get',
-        `/v2/projects/${projectId}/content-versions/${trackerVersionId}`,
+        `/v2/projects/${projectId}/content/${tracker.contentId}/versions/${tracker.id}`,
         token,
       );
       expect(r.body.data).toBeUndefined();
@@ -126,14 +135,14 @@ describe('API v2 version.data codec (e2e)', () => {
     it('rejects a malformed data body (E1017)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       // `event` must be string|null; a number is invalid.
-      const res = await write(trackerVersionId, { data: { event: 42 } }, token);
+      const res = await write(tracker, { data: { event: 42 } }, token);
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1017');
     });
 
     it('rejects a data write without the update scope (403 E1012)', async () => {
       const token = await mint([Capability.ContentRead]);
-      const res = await write(trackerVersionId, { data: { event: eventCode } }, token);
+      const res = await write(tracker, { data: { event: eventCode } }, token);
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe('E1012');
     });
@@ -166,10 +175,10 @@ describe('API v2 version.data codec (e2e)', () => {
 
     it('round-trips the checklist body (write → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const w = await write(checklistVersionId, payload, token);
+      const w = await write(checklist, payload, token);
       expect(w.status).toBe(200);
 
-      const r = await readData(checklistVersionId, token);
+      const r = await readData(checklist, token);
       expect(r.status).toBe(200);
       const d = r.body.data;
       expect(d).toMatchObject({
@@ -198,8 +207,8 @@ describe('API v2 version.data codec (e2e)', () => {
 
     it('keeps item ids stable across a re-write that reuses them', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      await write(checklistVersionId, payload, token);
-      const first = await readData(checklistVersionId, token);
+      await write(checklist, payload, token);
+      const first = await readData(checklist, token);
       const id0 = first.body.data.items[0].id;
 
       // re-send the same first item WITH its id → must reuse, not regenerate
@@ -209,9 +218,9 @@ describe('API v2 version.data codec (e2e)', () => {
           items: [{ id: id0, name: 'Connect your data (renamed)', clickActions: [] }],
         },
       };
-      const w = await write(checklistVersionId, rewrite, token);
+      const w = await write(checklist, rewrite, token);
       expect(w.status).toBe(200);
-      const r = await readData(checklistVersionId, token);
+      const r = await readData(checklist, token);
       expect(r.body.data.items).toHaveLength(1);
       expect(r.body.data.items[0].id).toBe(id0);
       expect(r.body.data.items[0].name).toBe('Connect your data (renamed)');
@@ -220,7 +229,7 @@ describe('API v2 version.data codec (e2e)', () => {
     it('rejects run_javascript in a click action (read-only)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const res = await write(
-        checklistVersionId,
+        checklist,
         {
           data: {
             items: [{ name: 'JS', clickActions: [{ type: 'run_javascript', script: 'alert(1)' }] }],
@@ -236,7 +245,7 @@ describe('API v2 version.data codec (e2e)', () => {
     it('round-trips the launcher body (write → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const w = await write(
-        launcherVersionId,
+        launcher,
         {
           data: {
             style: 'icon',
@@ -264,7 +273,7 @@ describe('API v2 version.data codec (e2e)', () => {
       );
       expect(w.status).toBe(200);
 
-      const d = (await readData(launcherVersionId, token)).body.data;
+      const d = (await readData(launcher, token)).body.data;
       expect(d).toMatchObject({ style: 'icon', icon: { source: 'builtin', type: 'rocket' } });
       expect(d.target).toEqual({ by: 'selector', selector: '.launch-here' });
       expect(d.tooltip).toMatchObject({
@@ -293,7 +302,7 @@ describe('API v2 version.data codec (e2e)', () => {
     it('round-trips the banner body (write → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const w = await write(
-        bannerVersionId,
+        banner,
         {
           data: {
             placement: 'top-of-page',
@@ -315,7 +324,7 @@ describe('API v2 version.data codec (e2e)', () => {
       );
       expect(w.status).toBe(200);
 
-      const d = (await readData(bannerVersionId, token)).body.data;
+      const d = (await readData(banner, token)).body.data;
       expect(d).toMatchObject({
         placement: 'top-of-page',
         settings: {
@@ -335,8 +344,8 @@ describe('API v2 version.data codec (e2e)', () => {
 
     it('rejects a data body on a flow content type (E1017)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const flowVersionId = await newVersion('flow');
-      const res = await write(flowVersionId, { data: { placement: 'top-of-page' } }, token);
+      const flow = await newVersion('flow');
+      const res = await write(flow, { data: { placement: 'top-of-page' } }, token);
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1017');
     });
@@ -346,7 +355,7 @@ describe('API v2 version.data codec (e2e)', () => {
     it('round-trips all six block types (write → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const w = await write(
-        rcVersionId,
+        rc,
         {
           data: {
             buttonText: 'Help',
@@ -386,7 +395,7 @@ describe('API v2 version.data codec (e2e)', () => {
       );
       expect(w.status).toBe(200);
 
-      const d = (await readData(rcVersionId, token)).body.data;
+      const d = (await readData(rc, token)).body.data;
       expect(d).toMatchObject({ buttonText: 'Help', headerText: 'Resources' });
       expect(d.tabs).toHaveLength(1);
       const tab = d.tabs[0];
@@ -422,7 +431,7 @@ describe('API v2 version.data codec (e2e)', () => {
     it('rejects an invalid live-chat provider (E1017)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const res = await write(
-        rcVersionId,
+        rc,
         {
           data: {
             tabs: [{ name: 'T', blocks: [{ type: 'live-chat', name: 'x', provider: 'nope' }] }],

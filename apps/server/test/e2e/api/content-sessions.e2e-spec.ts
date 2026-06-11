@@ -46,7 +46,7 @@ describe('API v2 /content-sessions (e2e)', () => {
   }
 
   function base(suffix = ''): string {
-    return `/v2/projects/${projectId}/environments/${environmentId}/content-sessions${suffix}`;
+    return `/v2/projects/${projectId}/environments/${environmentId}/content/${contentId}/sessions${suffix}`;
   }
   function api(method: 'get', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
@@ -124,7 +124,7 @@ describe('API v2 /content-sessions (e2e)', () => {
 
   it('lists sessions for a content', async () => {
     const token = await mint([Capability.SessionRead]);
-    const res = await api('get', base(`?contentId=${contentId}`), token);
+    const res = await api('get', base(), token);
     expect(res.status).toBe(200);
     expect(res.body.results.map((s: { id: string }) => s.id)).toContain(sessionId);
   });
@@ -138,14 +138,18 @@ describe('API v2 /content-sessions (e2e)', () => {
 
   it('returns 404 listing sessions for an unknown content (E1004)', async () => {
     const token = await mint([Capability.SessionRead]);
-    const res = await api('get', base('?contentId=nope'), token);
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/environments/${environmentId}/content/nope/sessions`,
+      token,
+    );
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
   });
 
   it('rejects insufficient scope (403 E1012)', async () => {
     const token = await mint([Capability.ContentRead]);
-    const res = await api('get', base(`?contentId=${contentId}`), token);
+    const res = await api('get', base(), token);
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });

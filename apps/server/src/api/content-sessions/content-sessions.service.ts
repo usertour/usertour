@@ -39,18 +39,12 @@ export class ApiContentSessionsService {
 
   async get(
     id: string,
+    contentId: string,
     environment: Environment,
     query: GetContentSessionQuery,
   ): Promise<ContentSession> {
     const expand = toArray<SessionExpand>(query.expand);
-    const session = await this.analytics.getContentSessionWithRelations(
-      id,
-      environment.id,
-      SESSION_INCLUDE,
-    );
-    if (!session) {
-      throw new ContentSessionNotFoundError();
-    }
+    const session = await this.requireSession(id, contentId, environment);
     const answers = expand.includes('answers') ? await this.computeAnswers(session) : null;
     return mapContentSession(session, expand, answers);
   }
@@ -58,9 +52,10 @@ export class ApiContentSessionsService {
   async list(
     requestUrl: string,
     environment: Environment,
+    contentId: string,
     query: ListContentSessionsQuery,
   ): Promise<{ results: ContentSession[]; next: string | null; previous: string | null }> {
-    const { contentId, userId, limit, cursor } = query;
+    const { userId, limit, cursor } = query;
     const expand = toArray<SessionExpand>(query.expand);
 
     const content = await this.content.getContentById(contentId);
@@ -95,8 +90,9 @@ export class ApiContentSessionsService {
     });
   }
 
-  /** Delete a session (environment-scoped). 404 when nothing matched. */
-  async delete(id: string, environment: Environment): Promise<void> {
+  /** Delete a session (scoped to the content + environment). 404 when not found. */
+  async delete(id: string, contentId: string, environment: Environment): Promise<void> {
+    await this.requireSession(id, contentId, environment);
     const deleted = await this.analytics.deleteContentSessionWithRelations(id, environment.id);
     if (!deleted) {
       throw new ContentSessionNotFoundError();
@@ -104,20 +100,26 @@ export class ApiContentSessionsService {
   }
 
   /** End an in-progress session, then return the (now-completed) session. */
-  async end(id: string, environment: Environment): Promise<ContentSession> {
+  async end(id: string, contentId: string, environment: Environment): Promise<ContentSession> {
+    await this.requireSession(id, contentId, environment);
+    const success = await this.analytics.endSession(id);
+    if (!success) {
+      throw new ContentSessionNotFoundError();
+    }
+    return this.get(id, contentId, environment, {});
+  }
+
+  /** Load a session that belongs to this content + environment, or 404. */
+  private async requireSession(id: string, contentId: string, environment: Environment) {
     const session = await this.analytics.getContentSessionWithRelations(
       id,
       environment.id,
       SESSION_INCLUDE,
     );
-    if (!session) {
+    if (!session || (session as { contentId?: string }).contentId !== contentId) {
       throw new ContentSessionNotFoundError();
     }
-    const success = await this.analytics.endSession(id);
-    if (!success) {
-      throw new ContentSessionNotFoundError();
-    }
-    return this.get(id, environment, {});
+    return session;
   }
 
   private async computeAnswers(session: any): Promise<ContentSessionAnswer[] | null> {

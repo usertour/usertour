@@ -27,6 +27,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
   let projectId: string;
   let themeId: string;
   let defaultThemeId: string;
+  let writeContentId: string;
   let writeVersionId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -61,6 +62,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     themeId = (await buildTheme(prisma, { projectId, name: 'Brand' })).id;
 
     const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    writeContentId = content.id;
     writeVersionId = (await buildVersion(prisma, { contentId: content.id, sequence: 0 })).id;
   }, 60000);
 
@@ -111,7 +113,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const w = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({ themeId });
     expect(w.status).toBe(200);
@@ -119,7 +121,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
 
     const r = await api(
       'get',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     );
     expect(r.body.themeId).toBe(themeId);
@@ -128,12 +130,16 @@ describe('API v2 themes + version themeId (e2e)', () => {
   it('clears themeId with null', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // ensure set first
-    await api('patch', `/v2/projects/${projectId}/content-versions/${writeVersionId}`, token).send({
+    await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({
       themeId,
     });
     const w = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({ themeId: null });
     expect(w.status).toBe(200);
@@ -144,7 +150,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const res = await api(
       'patch',
-      `/v2/projects/${projectId}/content-versions/${writeVersionId}`,
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({ themeId: 'does-not-exist' });
     expect(res.status).toBe(404);

@@ -79,6 +79,7 @@ export function buildWriteTools(): McpTool[] {
         '`{{ attribute | default: "x" }}` for user attributes. Returns the updated version with ' +
         'its decompiled steps.',
       inputSchema: {
+        contentId: z.string(),
         versionId: z.string(),
         steps: z.array(representationStepInput).optional(),
         startRules: representationStartRules.nullable().optional(),
@@ -93,7 +94,12 @@ export function buildWriteTools(): McpTool[] {
           ),
       },
       handler: (args, ctx) =>
-        ctx.services.contentVersions.update(String(args.versionId), ctx.projectId, args as never),
+        ctx.services.contentVersions.update(
+          String(args.versionId),
+          String(args.contentId),
+          ctx.projectId,
+          args as never,
+        ),
     },
     {
       name: 'create_content_version',
@@ -104,7 +110,7 @@ export function buildWriteTools(): McpTool[] {
         'the previous draft is frozen as history. Returns the new version.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) =>
-        ctx.services.contentVersions.create(ctx.projectId, { contentId: String(args.contentId) }),
+        ctx.services.contentVersions.create(ctx.projectId, String(args.contentId)),
     },
     {
       name: 'restore_content_version',
@@ -113,9 +119,13 @@ export function buildWriteTools(): McpTool[] {
       description:
         'Restore a historical content version by forking it forward as the new draft (config / ' +
         'data / theme / steps copied from it). Returns the new version.',
-      inputSchema: { versionId: z.string() },
+      inputSchema: { contentId: z.string(), versionId: z.string() },
       handler: (args, ctx) =>
-        ctx.services.contentVersions.restore(String(args.versionId), ctx.projectId),
+        ctx.services.contentVersions.restore(
+          String(args.versionId),
+          String(args.contentId),
+          ctx.projectId,
+        ),
     },
     {
       name: 'duplicate_content',

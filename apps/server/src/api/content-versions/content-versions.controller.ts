@@ -22,7 +22,6 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiContentVersionsService } from './content-versions.service';
 import {
   ContentVersionDto,
-  CreateVersionBodyDto,
   GetContentVersionQueryDto,
   ListContentVersionsQueryDto,
   ListContentVersionsResponseDto,
@@ -30,7 +29,7 @@ import {
 } from './content-versions.schema';
 
 @ApiTags('Content versions')
-@Controller('v2/projects/:projectId/content-versions')
+@Controller('v2/projects/:projectId/content/:contentId/versions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
 @UsePipes(ApiValidationPipe)
@@ -42,6 +41,7 @@ export class ApiContentVersionsController {
   @RequireCapability(Capability.ContentRead)
   @ApiOperation({ summary: 'List content versions' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiResponse({
     status: 200,
     description: 'List of content versions',
@@ -50,24 +50,27 @@ export class ApiContentVersionsController {
   async list(
     @RequestUrl() requestUrl: string,
     @Param('projectId') projectId: string,
+    @Param('contentId') contentId: string,
     @Query() query: ListContentVersionsQueryDto,
   ) {
-    return this.service.list(requestUrl, projectId, query);
+    return this.service.list(requestUrl, projectId, contentId, query);
   }
 
   @Get(':id')
   @RequireCapability(Capability.ContentRead)
   @ApiOperation({ summary: 'Get a content version' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Content version found', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content version not found' })
   async get(
     @Param('id') id: string,
+    @Param('contentId') contentId: string,
     @Param('projectId') projectId: string,
     @Query() query: GetContentVersionQueryDto,
   ) {
-    return this.service.get(id, projectId, query);
+    return this.service.get(id, contentId, projectId, query);
   }
 
   @Post()
@@ -77,10 +80,11 @@ export class ApiContentVersionsController {
     description: "Fork the content's current edited version into a new draft.",
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiResponse({ status: 201, description: 'Created content version', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async create(@Param('projectId') projectId: string, @Body() body: CreateVersionBodyDto) {
-    return this.service.create(projectId, body);
+  async create(@Param('projectId') projectId: string, @Param('contentId') contentId: string) {
+    return this.service.create(projectId, contentId);
   }
 
   @Post(':id/restore')
@@ -90,11 +94,16 @@ export class ApiContentVersionsController {
     description: 'Fork a historical version forward as the new draft.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID to restore' })
   @ApiResponse({ status: 201, description: 'New draft version', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content version not found' })
-  async restore(@Param('id') id: string, @Param('projectId') projectId: string) {
-    return this.service.restore(id, projectId);
+  async restore(
+    @Param('id') id: string,
+    @Param('contentId') contentId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.service.restore(id, contentId, projectId);
   }
 
   @Patch(':id')
@@ -105,14 +114,16 @@ export class ApiContentVersionsController {
       'Write steps, start/hide rules, themeId, or type-specific data to a draft version.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Updated content version', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content version not found' })
   async update(
     @Param('id') id: string,
+    @Param('contentId') contentId: string,
     @Param('projectId') projectId: string,
     @Body() body: UpdateVersionBodyDto,
   ) {
-    return this.service.update(id, projectId, body);
+    return this.service.update(id, contentId, projectId, body);
   }
 }
