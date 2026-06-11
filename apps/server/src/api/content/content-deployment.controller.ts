@@ -40,7 +40,7 @@ export class ApiContentDeploymentController {
   @HttpCode(200)
   @RequireCapability(Capability.ContentPublish)
   @ApiOperation({
-    summary: 'Publish a content version to an environment',
+    summary: 'Publish a version',
     description: "Publish a version as this environment's live version (idempotent).",
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
@@ -61,7 +61,7 @@ export class ApiContentDeploymentController {
   @HttpCode(200)
   @RequireCapability(Capability.ContentPublish)
   @ApiOperation({
-    summary: 'Unpublish a content version from an environment',
+    summary: 'Unpublish a version',
     description: "Clear this environment's live version for the content.",
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
