@@ -5,10 +5,12 @@ import { SpinnerIcon } from '@usertour/icons';
 import {
   Button,
   Dialog,
-  DialogContent,
+  DialogContentSimple,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
   Input,
   useToast,
@@ -83,8 +85,8 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
     };
   }, []);
 
-  const requestBuildUrl = useCallback((): Promise<string | null> => {
-    setUrlValue('');
+  const requestBuildUrl = useCallback((initialUrl: string): Promise<string | null> => {
+    setUrlValue(initialUrl);
     setHasUrlError(false);
     setIsUrlDialogOpen(true);
     return new Promise((resolve) => {
@@ -139,17 +141,29 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
 
   const pickElement = useCallback<PickElementFunction>(
     async (options) => {
+      if (!(await openpicker.isAvailable())) {
+        const installed = await waitForExtensionInstall();
+        if (!installed) {
+          return null;
+        }
+      }
       let url = currentContent?.buildUrl;
-      if (!url) {
-        const entered = await requestBuildUrl();
+      // When no target tab is open, this pick will open one — give the user
+      // a chance to adjust the URL first (prefilled with the saved build
+      // URL). With a target tab already open the extension reuses it and
+      // never re-navigates, so the URL is moot and the dialog would only be
+      // in the way. Older extensions without isTargetOpen count as "not
+      // open" and fall back to showing the dialog.
+      const isTargetOpen = await openpicker.isTargetOpen().catch(() => false);
+      if (!isTargetOpen || !url) {
+        const entered = await requestBuildUrl(url ?? '');
         if (!entered) {
           return null;
         }
-        url = entered;
         // Persist as the content's shared build URL so the whole team gets
-        // one-click picking from now on. Best-effort: a failed save must
-        // not block the pick the user just asked for.
-        if (currentContent?.id) {
+        // it prefilled from now on. Best-effort: a failed save must not
+        // block the pick the user just asked for.
+        if (entered !== url && currentContent?.id) {
           try {
             await updateContent(currentContent.id, { buildUrl: entered });
             setCurrentContent({ ...currentContent, buildUrl: entered });
@@ -158,12 +172,7 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
             // on the next pick.
           }
         }
-      }
-      if (!(await openpicker.isAvailable())) {
-        const installed = await waitForExtensionInstall();
-        if (!installed) {
-          return null;
-        }
+        url = entered;
       }
       try {
         const result = await openpicker.pick({
@@ -217,43 +226,49 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
           }
         }}
       >
-        <DialogContent>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleUrlConfirm();
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>{t('contentBuilder.elementPicker.urlDialogTitle')}</DialogTitle>
-              <DialogDescription>
-                {t('contentBuilder.elementPicker.urlDialogDescription')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-1.5 py-4">
-              <Input
-                value={urlValue}
-                onChange={(event) => {
-                  setUrlValue(event.target.value);
-                  setHasUrlError(false);
-                }}
-                placeholder={t('contentBuilder.elementPicker.urlPlaceholder')}
-                autoFocus
-              />
-              {hasUrlError && (
-                <p className="text-sm text-destructive">
-                  {t('contentBuilder.elementPicker.urlInvalid')}
-                </p>
-              )}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => settleUrlDialog(null)}>
-                {t('contentBuilder.elementPicker.urlCancel')}
-              </Button>
-              <Button type="submit">{t('contentBuilder.elementPicker.urlConfirm')}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+        {/* Composed portal + overlay + content (instead of DialogContent)
+            so both layers can sit above the builder's preview widgets
+            (canvas z = 10900); matches AlertDialog's builder-safe tier. */}
+        <DialogPortal>
+          <DialogOverlay className="z-[100000]" />
+          <DialogContentSimple className="z-[100000]">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleUrlConfirm();
+              }}
+            >
+              <DialogHeader>
+                <DialogTitle>{t('contentBuilder.elementPicker.urlDialogTitle')}</DialogTitle>
+                <DialogDescription>
+                  {t('contentBuilder.elementPicker.urlDialogDescription')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-1.5 py-4">
+                <Input
+                  value={urlValue}
+                  onChange={(event) => {
+                    setUrlValue(event.target.value);
+                    setHasUrlError(false);
+                  }}
+                  placeholder={t('contentBuilder.elementPicker.urlPlaceholder')}
+                  autoFocus
+                />
+                {hasUrlError && (
+                  <p className="text-sm text-destructive">
+                    {t('contentBuilder.elementPicker.urlInvalid')}
+                  </p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => settleUrlDialog(null)}>
+                  {t('contentBuilder.elementPicker.urlCancel')}
+                </Button>
+                <Button type="submit">{t('contentBuilder.elementPicker.urlConfirm')}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContentSimple>
+        </DialogPortal>
       </Dialog>
       <Dialog
         open={isInstallDialogOpen}
@@ -263,28 +278,31 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('contentBuilder.elementPicker.installTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('contentBuilder.elementPicker.installDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-            <SpinnerIcon className="h-4 w-4 animate-spin" />
-            {t('contentBuilder.elementPicker.installWaiting')}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => settleInstallDialog(false)}>
-              {t('contentBuilder.elementPicker.installDismiss')}
-            </Button>
-            <Button asChild>
-              <a href={EXTENSION_INSTALL_URL} target="_blank" rel="noreferrer">
-                {t('contentBuilder.elementPicker.installAction')}
-              </a>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        <DialogPortal>
+          <DialogOverlay className="z-[100000]" />
+          <DialogContentSimple className="z-[100000]">
+            <DialogHeader>
+              <DialogTitle>{t('contentBuilder.elementPicker.installTitle')}</DialogTitle>
+              <DialogDescription>
+                {t('contentBuilder.elementPicker.installDescription')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+              <SpinnerIcon className="h-4 w-4 animate-spin" />
+              {t('contentBuilder.elementPicker.installWaiting')}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => settleInstallDialog(false)}>
+                {t('contentBuilder.elementPicker.installDismiss')}
+              </Button>
+              <Button asChild>
+                <a href={EXTENSION_INSTALL_URL} target="_blank" rel="noreferrer">
+                  {t('contentBuilder.elementPicker.installAction')}
+                </a>
+              </Button>
+            </DialogFooter>
+          </DialogContentSimple>
+        </DialogPortal>
       </Dialog>
     </ElementPickerProvider>
   );
