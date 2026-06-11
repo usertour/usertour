@@ -14,6 +14,7 @@ import { ApiAttributeDefinitionsService } from './attribute-definitions/attribut
 import { ApiCompaniesController } from './companies/companies.controller';
 import { ApiCompaniesService } from './companies/companies.service';
 import { ApiContentController } from './content/content.controller';
+import { ApiContentDeploymentController } from './content/content-deployment.controller';
 import { ApiContentService } from './content/content.service';
 import { ApiContentSessionsController } from './content-sessions/content-sessions.controller';
 import { ApiContentSessionsService } from './content-sessions/content-sessions.service';
@@ -48,6 +49,7 @@ import { ApiUsersService } from './users/users.service';
     ApiEventDefinitionsController,
     ApiAttributeDefinitionsController,
     ApiContentController,
+    ApiContentDeploymentController,
     ApiContentVersionsController,
     ApiUsersController,
     ApiCompaniesController,

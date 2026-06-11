@@ -10,8 +10,8 @@ import { createTestApp } from '../create-test-app';
 
 /**
  * Contract test for the v2 publish lifecycle:
- *   PUT    /v2/projects/:p/content/:id/environments/:envId   → publish a version
- *   DELETE /v2/projects/:p/content/:id/environments/:envId   → unpublish
+ *   PUT    /v2/projects/:p/environments/:envId/content/:id   → publish a version
+ *   DELETE /v2/projects/:p/environments/:envId/content/:id   → unpublish
  * Publish state is per-environment (ContentOnEnvironment); both verbs return the
  * content with a refreshed environments[].
  */
@@ -46,7 +46,7 @@ describe('API v2 content publish (e2e)', () => {
   }
 
   const envPath = () =>
-    `/v2/projects/${projectId}/content/${contentId}/environments/${environmentId}`;
+    `/v2/projects/${projectId}/environments/${environmentId}/content/${contentId}`;
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -132,7 +132,7 @@ describe('API v2 content publish (e2e)', () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     const res = await api(
       'put',
-      `/v2/projects/${projectId}/content/does-not-exist/environments/${environmentId}`,
+      `/v2/projects/${projectId}/environments/${environmentId}/content/does-not-exist`,
       token,
     ).send({ versionId });
     expect(res.status).toBe(404);
