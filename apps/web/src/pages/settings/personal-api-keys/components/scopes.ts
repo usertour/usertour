@@ -31,7 +31,7 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     key: 'theme',
     labelKey: 'settings.personalApiKeys.scopeResources.theme',
     read: ['theme:read'],
-    write: null,
+    write: ['theme:create', 'theme:update', 'theme:delete'],
   },
   {
     key: 'user',

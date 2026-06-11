@@ -1,4 +1,17 @@
-import { Controller, Get, Param, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -8,7 +21,14 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiThemesService } from './themes.service';
-import { ListThemesResponseDto, ThemeDto } from './themes.schema';
+import {
+  CreateThemeBodyDto,
+  GetThemeQueryDto,
+  ListThemesQueryDto,
+  ListThemesResponseDto,
+  ThemeDto,
+  UpdateThemeBodyDto,
+} from './themes.schema';
 
 @ApiTags('Themes')
 @Controller('v2/projects/:projectId/themes')
@@ -24,8 +44,8 @@ export class ApiThemesController {
   @ApiOperation({ summary: 'List themes' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of themes', type: ListThemesResponseDto })
-  async list(@Param('projectId') projectId: string) {
-    return this.service.list(projectId);
+  async list(@Param('projectId') projectId: string, @Query() query: ListThemesQueryDto) {
+    return this.service.list(projectId, query);
   }
 
   @Get(':id')
@@ -35,7 +55,47 @@ export class ApiThemesController {
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme found', type: ThemeDto })
   @ApiResponse({ status: 404, description: 'Theme not found' })
-  async get(@Param('id') id: string, @Param('projectId') projectId: string) {
-    return this.service.get(id, projectId);
+  async get(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Query() query: GetThemeQueryDto,
+  ) {
+    return this.service.get(id, projectId, query);
+  }
+
+  @Post()
+  @RequireCapability(Capability.ThemeCreate)
+  @ApiOperation({ summary: 'Create a theme' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Theme created', type: ThemeDto })
+  async create(@Param('projectId') projectId: string, @Body() body: CreateThemeBodyDto) {
+    return this.service.create(projectId, body);
+  }
+
+  @Patch(':id')
+  @RequireCapability(Capability.ThemeUpdate)
+  @ApiOperation({ summary: 'Update a theme' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Theme ID' })
+  @ApiResponse({ status: 200, description: 'Theme updated', type: ThemeDto })
+  @ApiResponse({ status: 404, description: 'Theme not found' })
+  async update(
+    @Param('projectId') projectId: string,
+    @Param('id') id: string,
+    @Body() body: UpdateThemeBodyDto,
+  ) {
+    return this.service.update(id, projectId, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.ThemeDelete)
+  @ApiOperation({ summary: 'Delete a theme' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Theme ID' })
+  @ApiResponse({ status: 204, description: 'Theme deleted' })
+  @ApiResponse({ status: 404, description: 'Theme not found' })
+  async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
+    await this.service.delete(id, projectId);
   }
 }

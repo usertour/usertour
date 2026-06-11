@@ -150,4 +150,92 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1021');
   });
+
+  const basePath = () => `/v2/projects/${projectId}/themes`;
+  const send = (method: 'post' | 'patch' | 'delete', path: string, token: string) =>
+    request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
+
+  it('creates a theme with settings + variations, echoed in the response', async () => {
+    const token = await mint([Capability.ThemeCreate, Capability.ThemeRead]);
+    const res = await send('post', basePath(), token).send({
+      name: 'Created',
+      settings: { primaryColor: '#112233' },
+      // condition id<->code fidelity is covered by the rules codec specs; here we
+      // just verify the variation is wired through (id generated, settings kept).
+      variations: [{ name: 'Mobile', conditions: [], settings: { primaryColor: '#000' } }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      object: 'theme',
+      name: 'Created',
+      settings: { primaryColor: '#112233' },
+    });
+    expect(res.body.variations).toHaveLength(1);
+    expect(res.body.variations[0]).toMatchObject({
+      name: 'Mobile',
+      settings: { primaryColor: '#000' },
+      conditions: [],
+    });
+    expect(res.body.variations[0].id).toBeTruthy(); // server-generated
+  });
+
+  it('omits settings/variations without expand, includes them with expand', async () => {
+    const token = await mint([Capability.ThemeRead]);
+    const bare = await api('get', `${basePath()}/${themeId}`, token);
+    expect(bare.body.settings).toBeUndefined();
+    expect(bare.body.variations).toBeUndefined();
+
+    const expanded = await api(
+      'get',
+      `${basePath()}/${themeId}?expand=settings&expand=variations`,
+      token,
+    );
+    expect(expanded.body).toHaveProperty('settings');
+    expect(expanded.body).toHaveProperty('variations');
+  });
+
+  it('updates name + settings (partial)', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      name: 'ToEdit',
+      settings: { a: 1 },
+    });
+    const id = created.body.id;
+    const upd = await send('patch', `${basePath()}/${id}`, token).send({
+      name: 'Edited',
+      settings: { a: 2, b: 3 },
+    });
+    expect(upd.status).toBe(200);
+    expect(upd.body).toMatchObject({ name: 'Edited', settings: { a: 2, b: 3 } });
+  });
+
+  it('deletes a theme (204), then it is gone (404)', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeDelete,
+      Capability.ThemeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({ name: 'ToDelete', settings: {} });
+    const id = created.body.id;
+    expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
+    expect((await api('get', `${basePath()}/${id}`, token)).status).toBe(404);
+  });
+
+  it('cannot delete the default theme (400 E1017)', async () => {
+    const token = await mint([Capability.ThemeDelete]);
+    const res = await send('delete', `${basePath()}/${defaultThemeId}`, token).send();
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
+
+  it('POST rejects a token without theme:create (403 E1012)', async () => {
+    const token = await mint([Capability.ThemeRead]);
+    const res = await send('post', basePath(), token).send({ name: 'x', settings: {} });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1012');
+  });
 });

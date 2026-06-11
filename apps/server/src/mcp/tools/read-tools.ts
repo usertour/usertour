@@ -273,7 +273,7 @@ export function buildReadTools(): McpTool[] {
       inputSchema: {},
       async handler(_args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
-        const result = await ctx.services.themes.list(ctx.projectId);
+        const result = await ctx.services.themes.list(ctx.projectId, {});
         return { items: result.results };
       },
     },
