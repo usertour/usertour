@@ -3,9 +3,9 @@ import { useBuilderConfig } from '@/pages/contents/components/builder/core/acces
 import { useBuilderMethods } from '@/pages/contents/components/builder/core/access/use-builder-methods';
 import { useBuilderStore } from '@/pages/contents/components/builder/core/access/use-builder-store';
 
-// The whole builder load lifecycle, in one place. contentId / versionId come
-// from config (the Provider's identity); the effect is keyed on them, so a
-// change re-hydrates — defensive, since in the route-mounted web app they're
+// The whole builder load lifecycle, in one place. contentId comes from
+// config (the Provider's identity); the effect is keyed on it, so a
+// change re-hydrates — defensive, since in the route-mounted web app it's
 // stable per mount. Hydration stays controlled one-way (server → store draft
 // via fetchContentAndVersion); the draft model is deliberate, this hook never
 // binds the cache.
@@ -16,8 +16,8 @@ import { useBuilderStore } from '@/pages/contents/components/builder/core/access
 // seeded here — it's URL-driven (each type's router seeds its edit buffer from
 // the route param on mount), so init just fetches, baselines, and unblocks.
 export const useBuilderInit = (): { ready: boolean } => {
-  // contentId / versionId are immutable config — the Provider's identity.
-  const { contentId, versionId } = useBuilderConfig();
+  // contentId is immutable config — the Provider's identity.
+  const { contentId } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
   const clearHistory = useBuilderStore((s) => s.clearHistory);
 
@@ -28,7 +28,7 @@ export const useBuilderInit = (): { ready: boolean } => {
     setReady(false);
 
     (async () => {
-      const loaded = await fetchContentAndVersion(contentId, versionId);
+      const loaded = await fetchContentAndVersion(contentId);
       if (cancelled) {
         return;
       }
@@ -45,7 +45,7 @@ export const useBuilderInit = (): { ready: boolean } => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentId, versionId]);
+  }, [contentId]);
 
   return { ready };
 };

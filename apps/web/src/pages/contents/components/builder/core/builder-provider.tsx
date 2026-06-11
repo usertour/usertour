@@ -26,7 +26,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     environmentId,
     projectId,
     contentId,
-    versionId,
   } = props;
 
   // One store per mount — the `useRef + if (!current)` idiom is the
@@ -63,7 +62,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         environmentId,
         projectId,
         contentId,
-        versionId,
       },
       contentRef,
     }),
@@ -77,7 +75,6 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       environmentId,
       projectId,
       contentId,
-      versionId,
     ],
   );
 

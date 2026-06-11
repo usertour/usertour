@@ -1,7 +1,7 @@
 'use client';
 
 import { BUILDER_Z } from '@usertour/constants';
-import { uuidV4 } from '@usertour/helpers';
+import { cuid } from '@usertour/helpers';
 import {
   Button,
   CardContent,
@@ -232,7 +232,7 @@ export const ChecklistItem = () => {
   // until save.
   useLayoutEffect(() => {
     if (!itemId) {
-      setCurrentItem({ ...defaultChecklistItem, id: uuidV4() } as ChecklistItemType);
+      setCurrentItem({ ...defaultChecklistItem, id: cuid() } as ChecklistItemType);
       return;
     }
     setCurrentItem(existing ? (JSON.parse(JSON.stringify(existing)) as ChecklistItemType) : null);

@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 
 interface ContentDetailBuilderProps {
   contentId: string;
-  versionId: string;
   projectId: string;
   environmentId: string;
   envToken: string;
@@ -17,7 +16,7 @@ interface ContentDetailBuilderProps {
 }
 
 export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
-  const { contentId, versionId, projectId, environmentId, contentType } = props;
+  const { contentId, projectId, environmentId, contentType } = props;
   const navigate = useNavigate();
   const { loading: environmentLoading, environmentList } = useEnvironmentList();
   const { loading: attributeLoading, attributeList } = useAttributeList();
@@ -54,7 +53,6 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   return (
     <WebBuilder
       contentId={contentId}
-      versionId={versionId}
       projectId={projectId}
       environmentId={environmentId}
       onSaved={handleOnSaved}

@@ -21,7 +21,7 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 
-import { cuid, uuidV4 } from './helper';
+import { cuid } from './helper';
 import { regenerateConditionIds } from './conditions';
 import { isArray, isEmptyString, isObject } from './type-utils';
 
@@ -242,7 +242,7 @@ export const duplicateChecklistData = (data: unknown): unknown => {
     content: processQuestionElements(checklistData.content),
     items: checklistData.items.map((item) => ({
       ...item,
-      id: uuidV4(),
+      id: cuid(),
       clickedActions: isArray(item.clickedActions)
         ? regenerateConditionIds(item.clickedActions)
         : item.clickedActions,
@@ -381,7 +381,7 @@ export const createDefaultResourceCenterData = (): ResourceCenterData => ({
   ...DEFAULT_RESOURCE_CENTER_DATA,
   tabs: [
     {
-      id: uuidV4(),
+      id: cuid(),
       name: 'Home',
       iconSource: LauncherIconSource.BUILTIN,
       iconType: 'home-line',
