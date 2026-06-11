@@ -102,7 +102,10 @@ export class ApiCompaniesController {
   @Put(':id/memberships/:userId')
   @HttpCode(204)
   @RequireCapability(Capability.CompanyWrite)
-  @ApiOperation({ summary: 'Add or update a company membership' })
+  @ApiOperation({
+    summary: 'Add a member',
+    description: 'Add a user to the company, or update the membership (idempotent).',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })
@@ -121,7 +124,10 @@ export class ApiCompaniesController {
   @Delete(':id/memberships/:userId')
   @HttpCode(204)
   @RequireCapability(Capability.CompanyWrite)
-  @ApiOperation({ summary: 'Remove a company membership' })
+  @ApiOperation({
+    summary: 'Remove a member',
+    description: 'Remove a user from the company.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })

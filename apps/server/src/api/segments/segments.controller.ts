@@ -115,7 +115,10 @@ export class ApiSegmentMembersController {
 
   @Put(':externalId')
   @RequireCapability(Capability.SegmentUpdate)
-  @ApiOperation({ summary: 'Add a member to a manual segment' })
+  @ApiOperation({
+    summary: 'Add a member',
+    description: "Add a user or company (per the segment's bizType) to a manual segment.",
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Segment ID' })
@@ -138,7 +141,10 @@ export class ApiSegmentMembersController {
   @Delete(':externalId')
   @HttpCode(204)
   @RequireCapability(Capability.SegmentUpdate)
-  @ApiOperation({ summary: 'Remove a member from a manual segment' })
+  @ApiOperation({
+    summary: 'Remove a member',
+    description: "Remove a user or company (per the segment's bizType) from a manual segment.",
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Segment ID' })
