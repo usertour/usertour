@@ -1607,10 +1607,9 @@ const translations = {
     },
     listView: {
       card: {
-        statusLabel: '状态：',
         published: '已发布',
         unpublished: '未发布',
-        createdAt: '创建于 {{time}} 前',
+        updatedAt: '{{time}}前更新',
       },
       loadingMore: '加载中…',
       displayTitle: { published: '已发布的{{title}}', draft: '草稿{{title}}' },

@@ -1695,10 +1695,9 @@ const translations = {
     },
     listView: {
       card: {
-        statusLabel: 'Status:',
         published: 'Published',
         unpublished: 'Unpublished',
-        createdAt: 'Created at {{time}} ago',
+        updatedAt: 'Updated {{time}} ago',
       },
       loadingMore: 'Loading…',
       displayTitle: { published: 'Published {{title}}', draft: 'Draft {{title}}' },
