@@ -2,6 +2,7 @@ import { compileStep } from './representation.compile';
 import { decompileStep } from './representation.decompile';
 import { compileText } from './text.compile';
 import { decompileText } from './text.decompile';
+import { extractLinkUrl } from '@usertour/helpers';
 import { compileActions, CompileResolvers } from './rules.compile';
 import { decompileActions } from './rules.decompile';
 
@@ -36,6 +37,17 @@ describe('navigate action compiles to the builder shape (data.value, not data.ur
     expect(decompileActions(compiled as never)).toEqual([
       { type: 'navigate', url: '/settings/appearance' },
     ]);
+  });
+
+  it('supports {{ attribute }} interpolation in the URL (runtime extractLinkUrl)', () => {
+    const [rule] = compileActions(
+      [{ type: 'navigate', url: '/users/{{ company_id | default: "0" }}' }],
+      ids,
+    );
+    // the runtime resolves data.value against the user's attributes
+    expect(extractLinkUrl((rule as any).data.value, { company_id: '42' })).toBe('/users/42');
+    // falls back when the attribute is missing
+    expect(extractLinkUrl((rule as any).data.value, {})).toBe('/users/0');
   });
 });
 
