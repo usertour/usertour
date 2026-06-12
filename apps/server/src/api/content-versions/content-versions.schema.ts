@@ -60,6 +60,24 @@ export const listContentVersionsResponse = z.object({
 });
 export class ListContentVersionsResponseDto extends createZodDto(listContentVersionsResponse) {}
 
+/** One usability problem found by the dry-run validator. */
+export const usabilityIssue = z.object({
+  severity: z.enum(['error', 'warning']),
+  path: z.string().describe('Where the problem is, e.g. `steps[2] "Sidebar"`.'),
+  message: z.string(),
+});
+
+/**
+ * Dry-run usability report. `ok` is false when there are any errors — those are
+ * exactly what blocks publish. Warnings are advisory (e.g. an unreachable step).
+ */
+export const versionUsabilityReport = z.object({
+  ok: z.boolean().describe('True when there are no errors (i.e. the version is publishable).'),
+  errors: z.array(usabilityIssue),
+  warnings: z.array(usabilityIssue),
+});
+export class VersionUsabilityReportDto extends createZodDto(versionUsabilityReport) {}
+
 export type VersionExpand = z.infer<typeof versionExpand>;
 export type ListContentVersionsQuery = z.infer<typeof listContentVersionsQuery>;
 export type GetContentVersionQuery = z.infer<typeof getContentVersionQuery>;

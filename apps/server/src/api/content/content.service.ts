@@ -2,8 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
+import type { RulesCondition, Step } from '@usertour/types';
+
 import {
   ContentNotFoundError,
+  ContentNotPublishableError,
   ParamsError,
   ThemeNotFoundError,
   ValidationError,
@@ -11,6 +14,7 @@ import {
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
+import { validateVersionUsable } from '../content-representation/usable.validate';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapContent } from './content.mapper';
@@ -96,6 +100,27 @@ export class ApiContentService {
     const version = await this.content.getContentVersionById(versionId);
     if (!version || version.contentId !== id) {
       throw new ContentNotFoundError();
+    }
+    // A version must actually be usable before it can go live. The builder relies
+    // on a live preview for this; the API enforces it so agent-authored content
+    // can't be published into a silent non-render.
+    const content = await this.prisma.content.findUnique({
+      where: { id },
+      select: { type: true },
+    });
+    const report = validateVersionUsable({
+      type: content?.type ?? 'flow',
+      themeId: version.themeId,
+      steps: version.steps as unknown as Step[],
+      data: version.data,
+      config: version.config as { autoStartRules?: RulesCondition[] } | null,
+    });
+    if (!report.ok) {
+      throw new ContentNotPublishableError(
+        `Content is not publishable: ${report.errors
+          .map((e) => `${e.path}: ${e.message}`)
+          .join('; ')}`,
+      );
     }
     await this.content.publishedContentVersion(versionId, environmentId);
     return this.get(id, projectId, {});

@@ -9,6 +9,7 @@ import {
   buildEnvironment,
   buildProject,
   buildStep,
+  buildUsableFlowVersion,
   buildVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
@@ -745,6 +746,45 @@ describe('API v2 /content-versions (e2e)', () => {
       const res = await api(
         'post',
         `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}/restore`,
+        token,
+      );
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1012');
+    });
+  });
+
+  describe('validate (dry-run)', () => {
+    it('reports a usable flow as ok with no errors', async () => {
+      const token = await mint([Capability.ContentRead]);
+      const c = await buildContent(prisma, { projectId, type: 'flow' });
+      const v = await buildUsableFlowVersion(prisma, { contentId: c.id, projectId });
+      const res = await api(
+        'get',
+        `/v2/projects/${projectId}/content/${c.id}/versions/${v.id}/validate`,
+        token,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ ok: true, errors: [] });
+      expect(Array.isArray(res.body.warnings)).toBe(true);
+    });
+
+    it('reports errors for an unusable version (no theme) without mutating', async () => {
+      const token = await mint([Capability.ContentRead]);
+      const res = await api(
+        'get',
+        `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}/validate`,
+        token,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.errors.some((e: { path: string }) => e.path === 'theme')).toBe(true);
+    });
+
+    it('rejects validate without the read scope (403 E1012)', async () => {
+      const token = await mint([Capability.EventRead]);
+      const res = await api(
+        'get',
+        `/v2/projects/${projectId}/content/${contentId}/versions/${versionId}/validate`,
         token,
       );
       expect(res.status).toBe(403);

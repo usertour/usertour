@@ -347,6 +347,30 @@ export function buildReadTools(): McpTool[] {
     },
 
     {
+      name: 'validate_content_version',
+      title: 'Validate a content version',
+      capability: Capability.ContentRead,
+      description:
+        'Dry-run usability check for a draft version — the same rules `publish_content` enforces, ' +
+        'without changing anything. Returns `{ ok, errors, warnings }`; `errors` are what would ' +
+        'block publish (e.g. a tooltip step with no target, an empty checklist, no theme). Run ' +
+        'this after authoring and before `publish_content`.',
+      inputSchema: {
+        contentId: z.string().describe('The content id.'),
+        id: z.string().describe('The content version id.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const contentId = asString(args.contentId);
+        const id = asString(args.id);
+        if (!contentId || !id) {
+          throw new Error('`contentId` and `id` are required.');
+        }
+        return ctx.services.contentVersions.validate(id, contentId, ctx.projectId);
+      },
+    },
+
+    {
       name: 'list_companies',
       title: 'List companies',
       capability: Capability.CompanyRead,

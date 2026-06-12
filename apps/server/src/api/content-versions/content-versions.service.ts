@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import { ContentNotFoundError, ParamsError, ThemeNotFoundError } from '@/common/errors/errors';
@@ -18,6 +19,10 @@ import {
   decompileHideRules,
   decompileStartRules,
 } from '../content-representation/rules.decompile';
+import {
+  type UsabilityReport,
+  validateVersionUsable,
+} from '../content-representation/usable.validate';
 import { compileVersionData } from '../content-representation/version-data.compile';
 import { decompileVersionData } from '../content-representation/version-data.decompile';
 import { paginate } from '../shared/pagination';
@@ -302,6 +307,35 @@ export class ApiContentVersionsService {
     }
 
     return this.get(id, contentId, projectId, { expand: ['steps'] });
+  }
+
+  /**
+   * Dry-run usability check — the same validation `publish` enforces, but
+   * non-mutating, so an agent can confirm a draft is renderable before shipping
+   * (the machine equivalent of the builder's live preview).
+   */
+  async validate(id: string, contentId: string, projectId: string): Promise<UsabilityReport> {
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      steps: { orderBy: { sequence: 'asc' } },
+      content: true,
+    });
+    if (!version || (version as { contentId?: string }).contentId !== contentId) {
+      throw new ContentNotFoundError();
+    }
+    const v = version as {
+      themeId: string | null;
+      steps?: unknown;
+      data?: unknown;
+      config?: unknown;
+      content?: { type?: string };
+    };
+    return validateVersionUsable({
+      type: v.content?.type ?? 'flow',
+      themeId: v.themeId,
+      steps: v.steps as Step[],
+      data: v.data,
+      config: v.config as { autoStartRules?: RulesCondition[] } | null,
+    });
   }
 
   /** Assert a theme exists in the project (and is live) before writing it as themeId. */

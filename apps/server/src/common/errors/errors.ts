@@ -281,6 +281,28 @@ export class EnvironmentNotFoundError extends OpenAPIError {
   };
 }
 
+/**
+ * The content version is structurally valid but not usable — it would not
+ * render or function in the SDK (e.g. a tooltip step with no target, an empty
+ * checklist, content with no theme). Carries the list of issues in the message.
+ */
+export class ContentNotPublishableError extends OpenAPIError {
+  code = 'E1027';
+  statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+  messageDict = {
+    en: 'Content is not publishable',
+    'zh-CN': '内容不可发布',
+  };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
@@ -715,6 +737,7 @@ const errorMap = {
   E1024: EventDefinitionNotFoundError,
   E1025: SegmentNotFoundError,
   E1026: EnvironmentNotFoundError,
+  E1027: ContentNotPublishableError,
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,

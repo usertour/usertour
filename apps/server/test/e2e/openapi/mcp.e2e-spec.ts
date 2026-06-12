@@ -175,6 +175,7 @@ describe('MCP endpoint (e2e)', () => {
           'list_content_versions',
           'list_event_definitions',
           'list_users',
+          'validate_content_version',
         ].sort(),
       );
     });
@@ -396,6 +397,25 @@ describe('MCP endpoint (e2e)', () => {
       const step = updated.steps.find((s: { name: string }) => s.name === 'Welcome');
       expect(step).toMatchObject({ name: 'Welcome', type: 'modal' });
       expect(step.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
+
+      // validate_content_version: the authored version is usable (theme + a step)
+      const report = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 4,
+              method: 'tools/call',
+              params: {
+                name: 'validate_content_version',
+                arguments: { contentId: created.id, id: created.editedVersionId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(report).toMatchObject({ ok: true, errors: [] });
     });
 
     it('publish_content + create_content_version via MCP', async () => {
@@ -424,6 +444,26 @@ describe('MCP endpoint (e2e)', () => {
             token,
           ),
         ),
+      );
+
+      // author a usable step so the version passes the publish validator
+      await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 15,
+          method: 'tools/call',
+          params: {
+            name: 'update_content_version',
+            arguments: {
+              contentId: created.id,
+              versionId: created.editedVersionId,
+              steps: [
+                { name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] },
+              ],
+            },
+          },
+        },
+        token,
       );
 
       // publish the edited version to the (defaulted) environment

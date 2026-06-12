@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildContent, buildEnvironment, buildProject, buildVersion } from '../factories';
+import {
+  buildContent,
+  buildEnvironment,
+  buildProject,
+  buildUsableFlowVersion,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -63,7 +69,8 @@ describe('API v2 content publish (e2e)', () => {
 
     const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
     contentId = content.id;
-    versionId = (await buildVersion(prisma, { contentId, sequence: 0 })).id;
+    // A usable flow (theme + a step) so publish passes the strict validator.
+    versionId = (await buildUsableFlowVersion(prisma, { contentId, projectId, sequence: 0 })).id;
 
     // A version under a different content, to prove cross-content publish is rejected.
     const other = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
@@ -167,5 +174,18 @@ describe('API v2 content publish (e2e)', () => {
     });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('E1017');
+  });
+
+  it('rejects publishing an unusable (empty, themeless) flow (422 E1027)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
+    const empty = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const emptyVersion = await buildVersion(prisma, { contentId: empty.id, sequence: 0 });
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${empty.id}/publish`,
+      token,
+    ).send({ environmentId, versionId: emptyVersion.id });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('E1027');
   });
 });

@@ -26,6 +26,7 @@ import {
   ListContentVersionsQueryDto,
   ListContentVersionsResponseDto,
   UpdateVersionBodyDto,
+  VersionUsabilityReportDto,
 } from './content-versions.schema';
 
 @ApiTags('Content versions')
@@ -71,6 +72,27 @@ export class ApiContentVersionsController {
     @Query() query: GetContentVersionQueryDto,
   ) {
     return this.service.get(id, contentId, projectId, query);
+  }
+
+  @Get(':id/validate')
+  @RequireCapability(Capability.ContentRead)
+  @ApiOperation({
+    summary: 'Validate a content version',
+    description:
+      'Dry-run usability check: the same rules `publish` enforces, without mutating. ' +
+      'Returns errors (these block publish) and advisory warnings.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'contentId', description: 'Content ID' })
+  @ApiParam({ name: 'id', description: 'Content version ID' })
+  @ApiResponse({ status: 200, description: 'Usability report', type: VersionUsabilityReportDto })
+  @ApiResponse({ status: 404, description: 'Content version not found' })
+  async validate(
+    @Param('id') id: string,
+    @Param('contentId') contentId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.service.validate(id, contentId, projectId);
   }
 
   @Post()

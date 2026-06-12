@@ -272,6 +272,34 @@ export async function buildStep(
   });
 }
 
+/** A minimal renderable step body (one text block) — passes the usability validator. */
+export const USABLE_STEP_DATA = [
+  { children: [{ children: [{ element: { type: 'text', data: {} } }] }] },
+];
+
+/**
+ * A flow version that passes the strict usability validator: a project theme +
+ * one modal step with content. Use this when a test needs to actually publish.
+ */
+export async function buildUsableFlowVersion(
+  prisma: PrismaClient,
+  args: { contentId: string; projectId: string; sequence?: number },
+) {
+  const theme = await buildTheme(prisma, { projectId: args.projectId });
+  const version = await buildVersion(prisma, {
+    contentId: args.contentId,
+    sequence: args.sequence ?? 0,
+    themeId: theme.id,
+  });
+  await buildStep(prisma, {
+    versionId: version.id,
+    type: 'modal',
+    sequence: 0,
+    data: USABLE_STEP_DATA as unknown as Prisma.InputJsonValue,
+  });
+  return version;
+}
+
 export async function buildBizUser(
   prisma: PrismaClient,
   overrides: Partial<Prisma.BizUserUncheckedCreateInput> = {},
