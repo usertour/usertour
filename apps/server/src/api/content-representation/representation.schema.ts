@@ -163,7 +163,15 @@ export const representationCondition = z.lazy(() =>
 
 // ── Rules: actions ───────────────────────────────────────────────────────────
 export const representationAction = z.union([
-  z.object({ type: z.literal('goto_step'), step: z.string() }),
+  z.object({
+    type: z.literal('goto_step'),
+    step: z
+      .string()
+      .describe(
+        'Target step: a step `key` declared elsewhere in the same write, or an existing step cvid. ' +
+          'Resolved server-side to the cvid.',
+      ),
+  }),
   z.object({ type: z.literal('start_flow'), flow: z.string(), step: z.string().optional() }),
   z.object({
     type: z.literal('navigate'),
@@ -369,6 +377,14 @@ export type RepresentationHideRules = z.infer<typeof representationHideRules>;
 // generated on create). `sequence` defaults to the array position.
 export const representationStepInput = z.object({
   id: z.string().optional(),
+  key: z
+    .string()
+    .optional()
+    .describe(
+      'Optional author-chosen handle for wiring "go to step" actions within this request ' +
+        '(unique among the steps you send). A button action can set `step` to this key to target ' +
+        'this step even before it exists. Write-only — not stored, not returned on read.',
+    ),
   name: z.string(),
   type: z.string(),
   sequence: z.number().optional(),

@@ -187,7 +187,7 @@ function compileElement(
             ...((keepStyle as any).data ?? {}),
             text: block.text,
             ...(block.variant ? { type: block.variant } : {}),
-            actions: compileActions(block.actions),
+            actions: compileActions(block.actions, r),
             ...(block.disabledWhen
               ? {
                   disableButton: true,
@@ -215,7 +215,7 @@ function compileElement(
           data: {
             ...((keepStyle as any).data ?? {}),
             ...q.data,
-            ...(block.actions ? { actions: compileActions(block.actions) } : {}),
+            ...(block.actions ? { actions: compileActions(block.actions, r) } : {}),
           },
         },
         children: null,

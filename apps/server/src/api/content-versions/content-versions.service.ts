@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { cuid } from '@usertour/helpers';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ContentNotFoundError, ParamsError, ThemeNotFoundError } from '@/common/errors/errors';
+import {
+  ContentNotFoundError,
+  ParamsError,
+  ThemeNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
@@ -246,7 +252,7 @@ export class ApiContentVersionsService {
 
     if (body.steps) {
       // Steps merge by their server-assigned `id` (echo to update, omit to create);
-      // the internal cvid is resolved from the matched step, never from the client.
+      // the internal cvid is server-owned (matched step's cvid, or a fresh one).
       const existingById = new Map(
         (
           (version.steps ?? []) as {
@@ -258,11 +264,57 @@ export class ApiContentVersionsService {
           }[]
         ).map((s) => [s.id, s]),
       );
-      content.steps = body.steps.map((s, i) =>
+
+      // Fix every step's cvid BEFORE compiling any content, so a `goto_step` can
+      // reference a step by the author `key` it carries in this same write (or by
+      // an existing cvid). Those references resolve to the real cvid here — no
+      // read-back round-trip, and forward/cyclic links work in one pass.
+      const planned = body.steps.map((s, i) => {
+        const existing = s.id ? existingById.get(s.id) : undefined;
+        return { input: s, existing, cvid: existing?.cvid ?? cuid(), sequence: s.sequence ?? i };
+      });
+
+      // One handle→cvid table: every step answers to its own cvid; a step with a
+      // `key` also answers to that key (key wins if it ever collides with a cvid).
+      const knownCvids = new Set<string>([
+        ...planned.map((p) => p.cvid),
+        ...((version.steps ?? []) as { cvid?: string }[])
+          .map((s) => s.cvid)
+          .filter((c): c is string => Boolean(c)),
+      ]);
+      const keyToCvid = new Map<string, string>();
+      for (const p of planned) {
+        const key = (p.input as { key?: string }).key;
+        if (!key) continue;
+        if (keyToCvid.has(key)) {
+          throw new ValidationError(`Duplicate step key "${key}" in this request.`);
+        }
+        if (knownCvids.has(key)) {
+          throw new ValidationError(`Step key "${key}" must not equal an existing step id.`);
+        }
+        keyToCvid.set(key, p.cvid);
+      }
+      const stepResolvers: CompileResolvers = {
+        ...resolvers,
+        stepCvid: (ref: string) => {
+          const byKey = keyToCvid.get(ref);
+          if (byKey) {
+            return byKey;
+          }
+          if (knownCvids.has(ref)) {
+            return ref;
+          }
+          throw new ValidationError(
+            `"go to step" references unknown step "${ref}" — use a step \`key\` from this request or an existing step cvid.`,
+          );
+        },
+      };
+
+      content.steps = planned.map((p) =>
         compileStep(
-          { ...s, sequence: s.sequence ?? i, content: s.content ?? [] },
-          s.id ? existingById.get(s.id) : undefined,
-          resolvers,
+          { ...p.input, cvid: p.cvid, sequence: p.sequence, content: p.input.content ?? [] },
+          p.existing,
+          stepResolvers,
         ),
       );
     }

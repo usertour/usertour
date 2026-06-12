@@ -20,6 +20,13 @@ import { compileTargetToElementData } from './target.compile';
 export interface CompileResolvers {
   attributeId: (code: string) => string;
   eventId: (code: string) => string;
+  /**
+   * Resolve a `goto_step` target reference (an author `key` or an existing
+   * `cvid`) to the real step cvid. Present only when compiling flow steps; the
+   * caller builds it from the step list in the same write. Falls back to passing
+   * the reference through unchanged when absent.
+   */
+  stepCvid?: (ref: string) => string;
 }
 
 type Rule = { id: string; type: string; data: any; operators?: 'and' | 'or'; conditions?: Rule[] };
@@ -174,14 +181,17 @@ function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule
   }
 }
 
-export function compileActions(actions: RepresentationAction[] | undefined): Rule[] {
-  return (actions ?? []).filter((a) => a.type !== 'unsupported').map(compileAction);
+export function compileActions(
+  actions: RepresentationAction[] | undefined,
+  r?: CompileResolvers,
+): Rule[] {
+  return (actions ?? []).filter((a) => a.type !== 'unsupported').map((a) => compileAction(a, r));
 }
 
-function compileAction(a: RepresentationAction): Rule {
+function compileAction(a: RepresentationAction, r?: CompileResolvers): Rule {
   switch (a.type) {
     case 'goto_step':
-      return rule('step-goto', { stepCvid: a.step });
+      return rule('step-goto', { stepCvid: r?.stepCvid ? r.stepCvid(a.step) : a.step });
     case 'start_flow':
       return rule('flow-start', { contentId: a.flow, ...(a.step ? { stepCvid: a.step } : {}) });
     case 'navigate':
@@ -206,7 +216,7 @@ export function compileTriggers(
   return (triggers ?? []).map((t) => ({
     id: cuid(),
     conditions: compileConditions(t.when, r),
-    actions: compileActions(t.do),
+    actions: compileActions(t.do, r),
     ...(t.waitMs !== undefined ? { wait: t.waitMs } : {}),
   })) as unknown as Rule[];
 }

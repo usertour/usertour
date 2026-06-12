@@ -300,6 +300,88 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('wires goto_step by step key in a single write (resolves to cvids, cycle ok)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    // Two new steps that reference each other by `key` — a cycle, authored in one
+    // request before either step has a cvid.
+    const w = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        {
+          key: 'welcome',
+          name: 'Welcome',
+          type: 'modal',
+          content: [
+            { type: 'text', markdown: 'Hi' },
+            { type: 'button', text: 'Pricing', actions: [{ type: 'goto_step', step: 'pricing' }] },
+          ],
+        },
+        {
+          key: 'pricing',
+          name: 'Pricing',
+          type: 'tooltip',
+          target: { by: 'selector', selector: '.price' },
+          content: [
+            { type: 'text', markdown: 'Plans' },
+            { type: 'button', text: 'Back', actions: [{ type: 'goto_step', step: 'welcome' }] },
+          ],
+        },
+      ],
+    });
+    expect(w.status).toBe(200);
+
+    const r = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}?expand=steps`,
+      token,
+    );
+    type Block = { type: string; actions?: { type: string; step: string }[] };
+    type StepRow = { name: string; cvid: string; content: Block[] };
+    const welcome = r.body.steps.find((s: StepRow) => s.name === 'Welcome') as StepRow;
+    const pricing = r.body.steps.find((s: StepRow) => s.name === 'Pricing') as StepRow;
+    const gotoOf = (s: StepRow) => s.content.find((b) => b.type === 'button')?.actions?.[0];
+    // keys resolved to the *other* step's real cvid, not the literal key
+    expect(gotoOf(welcome)).toMatchObject({ type: 'goto_step', step: pricing.cvid });
+    expect(gotoOf(pricing)).toMatchObject({ type: 'goto_step', step: welcome.cvid });
+    expect(gotoOf(welcome)?.step).not.toBe('pricing');
+  });
+
+  it('rejects a goto_step to an unknown step reference (400)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'Solo',
+          type: 'modal',
+          content: [{ type: 'button', text: 'Go', actions: [{ type: 'goto_step', step: 'nope' }] }],
+        },
+      ],
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects duplicate step keys in one write (400)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        { key: 'dup', name: 'A', type: 'modal', content: [{ type: 'text', markdown: 'a' }] },
+        { key: 'dup', name: 'B', type: 'modal', content: [{ type: 'text', markdown: 'b' }] },
+      ],
+    });
+    expect(res.status).toBe(400);
+  });
+
   it('round-trips a rich version: write → INDEPENDENT read is consistent', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const payload = {
