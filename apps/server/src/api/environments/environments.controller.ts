@@ -1,4 +1,17 @@
-import { Controller, Get, Param, Query, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -10,9 +23,11 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiEnvironmentsService } from './environments.service';
 import {
+  CreateEnvironmentBodyDto,
   EnvironmentDto,
   ListEnvironmentsQueryDto,
   ListEnvironmentsResponseDto,
+  UpdateEnvironmentBodyDto,
 } from './environments.schema';
 
 /** Environments — project-level read-only metadata (the ids env-scoped routes accept). */
@@ -51,5 +66,47 @@ export class ApiEnvironmentsController {
   @ApiResponse({ status: 404, description: 'Environment not found' })
   async get(@Param('id') id: string, @Param('projectId') projectId: string) {
     return this.service.get(id, projectId);
+  }
+
+  @Post()
+  @RequireCapability(Capability.EnvironmentManage)
+  @ApiOperation({
+    summary: 'Create an environment',
+    description: 'Create an environment in the project. The first one is made primary.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Environment created', type: EnvironmentDto })
+  async create(@Param('projectId') projectId: string, @Body() body: CreateEnvironmentBodyDto) {
+    return this.service.create(projectId, body);
+  }
+
+  @Patch(':id')
+  @RequireCapability(Capability.EnvironmentManage)
+  @ApiOperation({ summary: 'Update an environment', description: 'Rename an environment.' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Environment ID' })
+  @ApiResponse({ status: 200, description: 'Environment updated', type: EnvironmentDto })
+  @ApiResponse({ status: 404, description: 'Environment not found' })
+  async update(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: UpdateEnvironmentBodyDto,
+  ) {
+    return this.service.update(id, projectId, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.EnvironmentManage)
+  @ApiOperation({
+    summary: 'Delete an environment',
+    description: 'Delete an environment. The primary / last environment cannot be deleted.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Environment ID' })
+  @ApiResponse({ status: 204, description: 'Environment deleted' })
+  @ApiResponse({ status: 404, description: 'Environment not found' })
+  async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
+    await this.service.delete(id, projectId);
   }
 }

@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildBizUser, buildContent, buildEnvironment, buildProject } from '../factories';
+import {
+  buildBizUser,
+  buildContent,
+  buildEnvironment,
+  buildProject,
+  buildSubscription,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -95,6 +101,9 @@ describe('MCP endpoint (e2e)', () => {
     prisma = app.get(PrismaService);
 
     projectA = (await buildProject(prisma, { name: 'mcp-a' })).id;
+    // Cloud mode gates env creation on the plan; a BUSINESS subscription clears it
+    // for the create_environment write-tool test.
+    await buildSubscription(prisma, { projectId: projectA });
     // Primary environment so the env-resolution fallback has a target.
     envA = (await buildEnvironment(prisma, { projectId: projectA, isPrimary: true })).id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId: projectA, role: 'OWNER' });
@@ -504,6 +513,31 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
       expect(seg).toMatchObject({ object: 'segment', kind: 'manual', bizType: 'user' });
+    });
+
+    it('create_environment round-trip via MCP (environment:manage)', async () => {
+      const token = await mint([Capability.EnvironmentManage], [projectA]);
+      const names = extractResult(
+        await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token),
+      ).result.tools.map((t: { name: string }) => t.name);
+      expect(names).toEqual(
+        expect.arrayContaining(['create_environment', 'update_environment', 'delete_environment']),
+      );
+
+      const env = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 2,
+              method: 'tools/call',
+              params: { name: 'create_environment', arguments: { name: 'MCP env' } },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(env).toMatchObject({ object: 'environment', name: 'MCP env' });
     });
   });
 });

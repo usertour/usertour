@@ -79,7 +79,7 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     key: 'environment',
     labelKey: 'settings.personalApiKeys.scopeResources.environment',
     read: ['environment:read'],
-    write: null,
+    write: ['environment:manage'],
   },
 ];
 

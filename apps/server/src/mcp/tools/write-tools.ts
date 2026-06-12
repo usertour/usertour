@@ -19,6 +19,12 @@ import {
   representationStepInput,
 } from '@/api/content-representation/representation.schema';
 import {
+  createEnvironmentBody,
+  type CreateEnvironmentBody,
+  updateEnvironmentBody,
+  type UpdateEnvironmentBody,
+} from '@/api/environments/environments.schema';
+import {
   createEventDefinitionBody,
   type CreateEventDefinitionBody,
   updateEventDefinitionBody,
@@ -569,6 +575,44 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         await ctx.services.sessions.delete(String(args.id), await resolveEnvironment(args, ctx));
+        return { success: true };
+      },
+    },
+
+    // ---- Environments (project-level; environment:manage) ----
+    {
+      name: 'create_environment',
+      title: 'Create an environment',
+      capability: Capability.EnvironmentManage,
+      description: 'Create an environment in the project. The first one is made primary.',
+      inputSchema: { ...createEnvironmentBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.environments.create(ctx.projectId, args as unknown as CreateEnvironmentBody),
+    },
+    {
+      name: 'update_environment',
+      title: 'Update an environment',
+      capability: Capability.EnvironmentManage,
+      description: 'Rename an environment.',
+      inputSchema: {
+        id: z.string().describe('The environment id.'),
+        ...updateEnvironmentBody.shape,
+      },
+      handler: (args, ctx) =>
+        ctx.services.environments.update(
+          String(args.id),
+          ctx.projectId,
+          args as unknown as UpdateEnvironmentBody,
+        ),
+    },
+    {
+      name: 'delete_environment',
+      title: 'Delete an environment',
+      capability: Capability.EnvironmentManage,
+      description: 'Delete an environment. The primary / last environment cannot be deleted.',
+      inputSchema: { id: z.string().describe('The environment id.') },
+      handler: async (args, ctx) => {
+        await ctx.services.environments.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
     },

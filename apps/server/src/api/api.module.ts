@@ -6,6 +6,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ContentModule } from '@/content/content.module';
+import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { ThemesModule } from '@/themes/themes.module';
 
@@ -45,6 +46,7 @@ import { ApiUsersService } from './users/users.service';
     BizModule,
     AnalyticsModule,
     ThemesModule,
+    EnvironmentsModule,
   ],
   // Order here drives the OpenAPI tag order (NestJS emits operations per controller),
   // which is what the docs sidebar renders: core content first, audience next,

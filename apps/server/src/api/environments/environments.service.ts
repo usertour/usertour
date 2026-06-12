@@ -3,12 +3,24 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type Environment as PrismaEnvironment } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
-import { EnvironmentNotFoundError } from '@/common/errors/errors';
+import {
+  EnvironmentLimitError,
+  EnvironmentNotFoundError,
+  LastEnvironmentCannotBeDeletedError,
+  PrimaryEnvironmentCannotBeDeletedError,
+  ValidationError,
+} from '@/common/errors/errors';
+import { EnvironmentsService } from '@/environments/environments.service';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapEnvironment } from './environments.mapper';
-import { Environment, ListEnvironmentsQuery } from './environments.schema';
+import {
+  CreateEnvironmentBody,
+  Environment,
+  ListEnvironmentsQuery,
+  UpdateEnvironmentBody,
+} from './environments.schema';
 
 /**
  * v2 environments handler — read-only. Environments are project-level; lists are
@@ -17,7 +29,10 @@ import { Environment, ListEnvironmentsQuery } from './environments.schema';
  */
 @Injectable()
 export class ApiEnvironmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly environments: EnvironmentsService,
+  ) {}
 
   async list(
     requestUrl: string,
@@ -55,5 +70,43 @@ export class ApiEnvironmentsService {
       throw new EnvironmentNotFoundError();
     }
     return mapEnvironment(env);
+  }
+
+  /** Create an environment in the project. The first env is made primary by the domain. */
+  async create(projectId: string, body: CreateEnvironmentBody): Promise<Environment> {
+    try {
+      const env = await this.environments.create({ name: body.name, projectId });
+      return mapEnvironment(env);
+    } catch (error) {
+      // Domain plan-limit error is a BaseError (renders 500); surface it as 400.
+      if (error instanceof EnvironmentLimitError) {
+        throw new ValidationError(error.getMessage('en'));
+      }
+      throw error;
+    }
+  }
+
+  /** Rename an environment (isPrimary is intentionally not settable here). */
+  async update(id: string, projectId: string, body: UpdateEnvironmentBody): Promise<Environment> {
+    await this.get(id, projectId); // 404 if not in this project
+    const env = await this.environments.update({ id, name: body.name });
+    return mapEnvironment(env);
+  }
+
+  /** Delete an environment. The primary / last environment cannot be deleted. */
+  async delete(id: string, projectId: string): Promise<void> {
+    await this.get(id, projectId); // 404 if not in this project
+    try {
+      await this.environments.delete(id);
+    } catch (error) {
+      // Domain guards are BaseErrors (render 500); surface them as 400.
+      if (
+        error instanceof PrimaryEnvironmentCannotBeDeletedError ||
+        error instanceof LastEnvironmentCannotBeDeletedError
+      ) {
+        throw new ValidationError(error.getMessage('en'));
+      }
+      throw error;
+    }
   }
 }
