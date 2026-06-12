@@ -5,6 +5,7 @@ type EnvironmentNode = {
   id: string;
   name: string | null;
   isPrimary: boolean;
+  token: string;
   createdAt: Date | string;
   updatedAt: Date | string;
 };
@@ -16,6 +17,7 @@ export function mapEnvironment(node: EnvironmentNode): Environment {
     object: ApiObjectType.ENVIRONMENT,
     name: node.name,
     isPrimary: node.isPrimary,
+    token: node.token,
     createdAt: new Date(node.createdAt).toISOString(),
     updatedAt: new Date(node.updatedAt).toISOString(),
   };

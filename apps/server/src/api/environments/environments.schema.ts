@@ -20,6 +20,11 @@ export const environment = z.object({
   object: z.literal(ApiObjectType.ENVIRONMENT),
   name: z.string().nullable(),
   isPrimary: z.boolean(),
+  token: z
+    .string()
+    .describe(
+      "The environment's SDK token — pass it to usertour.init() to load this environment's published content.",
+    ),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

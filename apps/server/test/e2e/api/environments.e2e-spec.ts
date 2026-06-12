@@ -87,11 +87,14 @@ describe('API v2 /environments (e2e)', () => {
     expect(res.body.next).toEqual(expect.stringContaining('cursor='));
   });
 
-  it('gets an environment by id', async () => {
+  it('gets an environment by id, exposing the SDK token', async () => {
     const token = await mint([Capability.EnvironmentRead]);
     const res = await api('get', `${base()}/${primaryEnvId}`, token);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: primaryEnvId, object: 'environment', name: 'Production' });
+    // The SDK token (usertour.init()) is part of the response.
+    expect(typeof res.body.token).toBe('string');
+    expect(res.body.token.length).toBeGreaterThan(0);
   });
 
   it('returns 404 for an unknown environment (E1026)', async () => {
