@@ -25,6 +25,10 @@ import {
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 
+// Compact footer strip for the solid-block card, carved out by the divider:
+// name + status pill on one line, last-updated time + row-actions menu on the
+// next. Natural height (flex-none) so the preview takes the slack rather than
+// the footer padding the leftover space and reading tall.
 const ContentPreviewFooter = ({
   content,
   refetch,
@@ -40,8 +44,7 @@ const ContentPreviewFooter = ({
   );
 
   return (
-    <div className="flex flex-1 flex-col justify-center gap-1.5 px-4 py-3">
-      {/* Row 1 — name + status pill */}
+    <div className="flex flex-none flex-col gap-1 px-4 py-3">
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
           {content.name ?? ''}
@@ -60,7 +63,6 @@ const ContentPreviewFooter = ({
           </span>
         </span>
       </div>
-      {/* Row 2 — last-updated time + row actions */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {content?.updatedAt &&
@@ -235,22 +237,23 @@ const ContentTableItem = ({
     <div
       onClick={handleOnClick}
       ref={containerRef}
-      // Content card boundary: light lifts it off the page with a layered
-      // soft shadow (no visible border, per the Cards convention); dark has
-      // no usable shadow and bg-card alone is too close to the page, so it
-      // gets a faint hairline ring instead. Hover deepens the shadow / ring
-      // and nudges up — never recolors a border.
+      // Card surface: light lifts off the page with a layered soft shadow
+      // (no visible border). dark can't use shadow (black on near-black), so
+      // the whole card is a single raised-surface block that reads off the
+      // page on lightness alone (well above it), and body/footer split with
+      // a hairline divider rather than a block-tone difference the near-black
+      // palette is too compressed to render. Hover lifts both modes; light
+      // also deepens the shadow, dark just lifts (its shadow is invisible and
+      // a border/ring is intentionally avoided).
       className={cn(
-        'group flex h-72 cursor-pointer flex-col overflow-hidden rounded-xl bg-card',
-        'shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.06)]',
-        'dark:shadow-none dark:ring-1 dark:ring-white/[0.08]',
+        'group relative flex h-72 cursor-pointer flex-col overflow-hidden rounded-xl bg-card dark:bg-surface-raised',
+        'shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.06)] dark:shadow-none',
         'transition-[box-shadow,transform] duration-200',
-        'hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,24,40,0.12)]',
-        'dark:hover:ring-white/[0.16]',
+        'hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,24,40,0.12)] dark:hover:shadow-none',
       )}
     >
       <div
-        className="flex h-48 flex-none items-center justify-center overflow-hidden bg-muted dark:bg-surface"
+        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted dark:bg-surface-raised dark:border-b dark:border-white/[0.06]"
         {...({ inert: '' } as any)}
       >
         <ContentPreview
