@@ -10,6 +10,7 @@ import {
   buildEnvironment,
   buildProject,
   buildSubscription,
+  buildTheme,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
@@ -39,6 +40,7 @@ describe('MCP endpoint (e2e)', () => {
   let ownerUserId: string;
   let projectA: string;
   let envA: string;
+  let themeId: string;
   const bizUserExternalId = 'mcp-biz-1';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -112,6 +114,7 @@ describe('MCP endpoint (e2e)', () => {
 
     await buildBizUser(prisma, { environmentId: envA, externalId: bizUserExternalId });
     await buildContent(prisma, { projectId: projectA, environmentId: envA, type: 'flow' });
+    themeId = (await buildTheme(prisma, { projectId: projectA })).id;
   }, 60000);
 
   afterAll(async () => {
@@ -353,7 +356,10 @@ describe('MCP endpoint (e2e)', () => {
               jsonrpc: '2.0',
               id: 2,
               method: 'tools/call',
-              params: { name: 'create_content', arguments: { type: 'flow', name: 'MCP flow' } },
+              params: {
+                name: 'create_content',
+                arguments: { type: 'flow', name: 'MCP flow', themeId },
+              },
             },
             token,
           ),
@@ -410,7 +416,10 @@ describe('MCP endpoint (e2e)', () => {
               jsonrpc: '2.0',
               id: 1,
               method: 'tools/call',
-              params: { name: 'create_content', arguments: { type: 'flow', name: 'MCP publish' } },
+              params: {
+                name: 'create_content',
+                arguments: { type: 'flow', name: 'MCP publish', themeId },
+              },
             },
             token,
           ),

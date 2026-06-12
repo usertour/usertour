@@ -274,10 +274,8 @@ export class ApiContentVersionsService {
     }
 
     if (body.themeId !== undefined) {
-      if (body.themeId !== null) {
-        await this.requireTheme(body.themeId, projectId);
-      }
-      content.themeId = body.themeId; // null clears → falls back to project default
+      await this.requireTheme(body.themeId, projectId);
+      content.themeId = body.themeId;
     }
 
     if (body.data !== undefined) {

@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildContent, buildEnvironment, buildProject, buildVersion } from '../factories';
+import {
+  buildContent,
+  buildEnvironment,
+  buildProject,
+  buildTheme,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -25,6 +31,7 @@ describe('API v2 /content (e2e)', () => {
   let flowVersionId: string;
   let publishedId: string;
   let publishedVersionId: string;
+  let themeId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -53,6 +60,7 @@ describe('API v2 /content (e2e)', () => {
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
     ownerUserId = owner.user.id;
+    themeId = (await buildTheme(prisma, { projectId })).id;
 
     const flow = await buildContent(prisma, {
       projectId,
@@ -187,6 +195,7 @@ describe('API v2 /content (e2e)', () => {
     const created = await api('post', `/v2/projects/${projectId}/content`, token).send({
       type: 'flow',
       name: 'Created via API',
+      themeId,
     });
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({
@@ -220,6 +229,26 @@ describe('API v2 /content (e2e)', () => {
     });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
+  });
+
+  it('rejects create without a themeId (400) — a theme is required to render', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const res = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'flow',
+      name: 'No theme',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects create with an unknown themeId (404 E1021)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const res = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'flow',
+      name: 'Bad theme',
+      themeId: 'does-not-exist',
+    });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1021');
   });
 
   it('duplicates content into a fresh content (POST :id/duplicate)', async () => {
@@ -275,6 +304,7 @@ describe('API v2 /content (e2e)', () => {
     const created = await api('post', `/v2/projects/${projectId}/content`, token).send({
       type: 'flow',
       name: 'To be archived',
+      themeId,
     });
     const id = created.body.id;
     // present before delete

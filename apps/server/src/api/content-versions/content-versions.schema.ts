@@ -35,13 +35,14 @@ export class ContentVersionDto extends createZodDto(contentVersion) {}
  * Write body for PATCH content-versions/:id. All fields optional — only the
  * provided ones are written. `steps` replaces the version's step list (merged
  * by cvid); `startRules`/`hideRules` set or clear (null) the version's rules;
- * `themeId` sets the theme (or `null` clears it → project default).
+ * `themeId` switches the theme (a theme is required for the version to render, so
+ * it can be changed but not cleared).
  */
 export const updateVersionBody = z.object({
   steps: z.array(representationStepInput).optional(),
   startRules: representationStartRules.nullable().optional(),
   hideRules: representationHideRules.nullable().optional(),
-  themeId: z.string().nullable().optional().describe('Theme to apply, or null to clear.'),
+  themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
   /**
    * Type-specific body for non-flow content (checklist / launcher / banner /
    * tracker / resource-center). Validated against the content type; field-level

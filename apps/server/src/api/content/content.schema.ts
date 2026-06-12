@@ -65,6 +65,11 @@ export const createContentBody = z.object({
   type: z.string().describe('Content kind: flow, checklist, launcher, banner, survey.'),
   name: z.string().optional(),
   buildUrl: z.string().optional(),
+  themeId: z
+    .string()
+    .describe(
+      'Theme applied to the initial draft version. Required — content has no usable styling without one (the SDK can’t render a themeless version).',
+    ),
 });
 export class CreateContentBodyDto extends createZodDto(createContentBody) {}
 export type CreateContentBody = z.infer<typeof createContentBody>;

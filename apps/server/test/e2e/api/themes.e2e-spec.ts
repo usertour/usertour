@@ -136,7 +136,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(r.body.themeId).toBe(themeId);
   });
 
-  it('clears themeId with null', async () => {
+  it('rejects clearing themeId with null (400) — a theme is required to render', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // ensure set first
     await api(
@@ -151,8 +151,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
       `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
       token,
     ).send({ themeId: null });
-    expect(w.status).toBe(200);
-    expect(w.body.themeId).toBeNull();
+    expect(w.status).toBe(400);
   });
 
   it('rejects writing an unknown themeId (404 E1021)', async () => {

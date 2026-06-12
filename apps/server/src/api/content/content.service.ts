@@ -2,8 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ContentNotFoundError, ParamsError, ValidationError } from '@/common/errors/errors';
+import {
+  ContentNotFoundError,
+  ParamsError,
+  ThemeNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
+import { ThemesService } from '@/themes/themes.service';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -35,16 +41,23 @@ export class ApiContentService {
   constructor(
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
+    private readonly themes: ThemesService,
   ) {}
 
   /** Create content (+ its initial draft version) in the project's primary environment. */
   async create(projectId: string, body: CreateContentBody): Promise<Content> {
     const environment = await this.primaryEnvironment(projectId);
+    // A theme is required: content has no usable styling/dimensions without one,
+    // so the SDK can't render a themeless version (it starts, finds nothing
+    // renderable, and completes at progress 0). The themeId seeds the initial
+    // draft version (theme is version-level); change it later via the version.
+    await this.requireTheme(body.themeId, projectId);
     const created = await this.content.createContent({
       type: body.type,
       name: body.name,
       buildUrl: body.buildUrl,
       environmentId: environment.id,
+      themeId: body.themeId,
     });
     if (!created) {
       throw new ParamsError('Failed to create content');
@@ -127,6 +140,14 @@ export class ApiContentService {
     const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
     if (!node || (node as { deleted?: boolean }).deleted) {
       throw new ContentNotFoundError();
+    }
+  }
+
+  /** Assert a theme exists in the project (and is live) before writing it as themeId. */
+  private async requireTheme(themeId: string, projectId: string): Promise<void> {
+    const theme = await this.themes.getTheme(themeId);
+    if (!theme || theme.projectId !== projectId || (theme as { deleted?: boolean }).deleted) {
+      throw new ThemeNotFoundError();
     }
   }
 

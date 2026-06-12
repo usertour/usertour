@@ -61,17 +61,22 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentCreate,
       description:
         'Create a new piece of Usertour content (flow, checklist, launcher, banner, survey) in ' +
-        'the project, with an empty draft version. Returns the created content (use ' +
-        '`update_content_version` to add steps).',
+        'the project, with a draft version themed by `themeId`. Returns the created content (use ' +
+        '`update_content_version` to add steps; use `list_themes` to pick a themeId).',
       inputSchema: {
         type: z.string().describe('Content kind: flow, checklist, launcher, banner, survey.'),
         name: z.string().optional(),
         buildUrl: z.string().optional(),
+        themeId: z
+          .string()
+          .describe(
+            'Theme for the initial draft version (required — content needs a theme to render).',
+          ),
       },
       handler: (args, ctx) =>
         ctx.services.content.create(
           ctx.projectId,
-          args as { type: string; name?: string; buildUrl?: string },
+          args as { type: string; themeId: string; name?: string; buildUrl?: string },
         ),
     },
     {
@@ -121,7 +126,7 @@ export function buildWriteTools(): McpTool[] {
         steps: z.array(representationStepInput).optional(),
         startRules: representationStartRules.nullable().optional(),
         hideRules: representationHideRules.nullable().optional(),
-        themeId: z.string().nullable().optional().describe('Theme to apply, or null to clear.'),
+        themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
         data: z
           .unknown()
           .optional()
