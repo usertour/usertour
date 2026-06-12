@@ -1,5 +1,6 @@
 import {
   Checkbox,
+  ComboboxSelect,
   FormControl,
   FormDescription,
   FormField,
@@ -13,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour/ui';
+import { useRef } from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -45,6 +47,9 @@ interface TokenFormFieldsProps {
 export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
   const { projects } = useAppContext();
   const { t } = useTranslation();
+  // Portal the combobox popup inside the dialog so it stays clickable/scrollable
+  // (a body-portaled popup is dead under the dialog's react-remove-scroll).
+  const projectPortalRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="space-y-4">
@@ -67,31 +72,28 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
         control={control}
         name="projectIds"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t('settings.personalApiKeys.projectsLabel')}</FormLabel>
-            <div className="space-y-2">
-              {projects.map((project) => {
-                const id = project.id ?? '';
-                return (
-                  <div key={id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`project-${id}`}
-                      checked={field.value.includes(id)}
-                      onCheckedChange={(checked) => {
-                        field.onChange(
-                          checked
-                            ? [...field.value, id]
-                            : field.value.filter((value) => value !== id),
-                        );
-                      }}
-                    />
-                    <Label htmlFor={`project-${id}`} className="font-normal">
-                      {project.name}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
+          // Single project per token: backend ApiTokenOnProject stays 1..N, but the
+          // UI exposes one (required by MCP, smaller blast radius). field.value stays
+          // a 1-element array.
+          <FormItem className="flex flex-col">
+            <FormLabel>{t('settings.personalApiKeys.projectLabel')}</FormLabel>
+            <FormControl>
+              <div ref={projectPortalRef}>
+                <ComboboxSelect
+                  className="w-full"
+                  value={field.value[0] ?? ''}
+                  onValueChange={(value) => field.onChange([value])}
+                  options={projects.map((project) => ({
+                    value: project.id ?? '',
+                    label: project.name ?? '',
+                  }))}
+                  placeholder={t('settings.personalApiKeys.projectPlaceholder')}
+                  searchPlaceholder={t('settings.personalApiKeys.projectSearch')}
+                  emptyText={t('settings.personalApiKeys.projectEmpty')}
+                  container={projectPortalRef}
+                />
+              </div>
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
