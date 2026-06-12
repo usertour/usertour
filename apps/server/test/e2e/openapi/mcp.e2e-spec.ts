@@ -148,7 +148,7 @@ describe('MCP endpoint (e2e)', () => {
   });
 
   describe('tools/list scope-gating', () => {
-    it('a read-all token sees all 6 tools', async () => {
+    it('a read-all token sees the content/attr/event/user read tools', async () => {
       const token = await mint(ALL_READ_SCOPES, [projectA]);
       const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
       const result = extractResult(res);
@@ -156,9 +156,11 @@ describe('MCP endpoint (e2e)', () => {
       expect(names).toEqual(
         [
           'get_content',
+          'get_content_version',
           'get_user',
           'list_attribute_definitions',
           'list_content',
+          'list_content_versions',
           'list_event_definitions',
           'list_users',
         ].sort(),
@@ -239,6 +241,40 @@ describe('MCP endpoint (e2e)', () => {
       const text = result.error ? result.error.message : (result.result.content?.[0]?.text ?? '');
       expect(result.error?.code !== undefined || result.result?.isError === true).toBe(true);
       expect(String(text).toLowerCase()).toContain('list_users');
+    });
+  });
+
+  describe('data-resource read tools', () => {
+    it('exposes + runs companies / segments / sessions read tools', async () => {
+      const token = await mint(
+        [Capability.CompanyRead, Capability.SegmentRead, Capability.SessionRead],
+        [projectA],
+      );
+      const names = extractResult(await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token))
+        .result.tools.map((t: { name: string }) => t.name)
+        .sort();
+      expect(names).toEqual(
+        [
+          'get_company',
+          'get_segment',
+          'get_session',
+          'list_companies',
+          'list_segments',
+          'list_sessions',
+        ].sort(),
+      );
+
+      for (const name of ['list_companies', 'list_segments', 'list_sessions']) {
+        const payload = parseToolContent(
+          extractResult(
+            await rpc(
+              { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name, arguments: {} } },
+              token,
+            ),
+          ),
+        );
+        expect(Array.isArray(payload.items)).toBe(true);
+      }
     });
   });
 

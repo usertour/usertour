@@ -2,7 +2,10 @@ import { Capability } from '@usertour/types';
 import { Environment } from '@prisma/client';
 import { z } from 'zod';
 
+import { CompanyExpand } from '@/api/companies/companies.schema';
 import { ContentExpand } from '@/api/content/content.schema';
+import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
+import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 
 import { McpTool, McpToolContext } from '../mcp.types';
 
@@ -34,6 +37,13 @@ function toListPayload<T>(result: { results: T[]; next: string | null }): {
 /** Coerce an untyped JSON arg into a string, or undefined if absent/blank. */
 function asString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/** Coerce an untyped JSON `expand` arg into a string array, or undefined if absent. */
+function asStringArray(value: unknown): string[] | undefined {
+  return Array.isArray(value)
+    ? (value.filter((v) => typeof v === 'string') as string[])
+    : undefined;
 }
 
 /** Coerce an untyped JSON `limit` arg into a 1..100 integer (default 20). */
@@ -277,6 +287,213 @@ export function buildReadTools(): McpTool[] {
           limit: 100,
         });
         return { items: result.results };
+      },
+    },
+
+    {
+      name: 'list_content_versions',
+      title: 'List content versions',
+      capability: Capability.ContentRead,
+      description:
+        "List a content's versions (newest first). Returns `{ items, nextCursor }`; pass " +
+        '`nextCursor` back as `cursor` to page.',
+      inputSchema: {
+        contentId: z.string().describe('The content id.'),
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const contentId = asString(args.contentId);
+        if (!contentId) {
+          throw new Error('`contentId` is required.');
+        }
+        const result = await ctx.services.contentVersions.list(
+          'mcp://content-versions',
+          ctx.projectId,
+          contentId,
+          { limit: asLimit(args.limit), cursor: asString(args.cursor) },
+        );
+        return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_content_version',
+      title: 'Get a content version',
+      capability: Capability.ContentRead,
+      description:
+        'Get a content version by id. `expand: ["steps"]` inlines the decompiled steps — read ' +
+        'these before calling `update_content_version`. Also supports "data" and "questions".',
+      inputSchema: {
+        contentId: z.string().describe('The content id.'),
+        id: z.string().describe('The content version id.'),
+        expand: z
+          .array(z.enum(['questions', 'steps', 'data']))
+          .optional()
+          .describe('Related data to inline: steps, data, questions.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const contentId = asString(args.contentId);
+        const id = asString(args.id);
+        if (!contentId || !id) {
+          throw new Error('`contentId` and `id` are required.');
+        }
+        return ctx.services.contentVersions.get(id, contentId, ctx.projectId, {
+          expand: asStringArray(args.expand) as VersionExpand[] | undefined,
+        });
+      },
+    },
+
+    {
+      name: 'list_companies',
+      title: 'List companies',
+      capability: Capability.CompanyRead,
+      description:
+        'List companies in an environment. Defaults to the primary environment; pass ' +
+        '`environmentId` to target another. Filter by `segmentId`. Returns `{ items, nextCursor }`.',
+      inputSchema: {
+        environmentId: environmentIdSchema,
+        segmentId: z.string().optional().describe('Filter to companies in this segment.'),
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const environment = await resolveEnvironment(args, ctx);
+        const result = await ctx.services.companies.list('mcp://companies', environment.id, {
+          limit: asLimit(args.limit),
+          cursor: asString(args.cursor),
+          segmentId: asString(args.segmentId),
+        });
+        return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_company',
+      title: 'Get a company',
+      capability: Capability.CompanyRead,
+      description:
+        'Get a company by its external id. `expand` inlines users / memberships. Defaults to the ' +
+        'primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The company external id.'),
+        environmentId: environmentIdSchema,
+        expand: z
+          .array(z.enum(['users', 'memberships', 'memberships.user']))
+          .optional()
+          .describe('Related objects to inline: users, memberships, memberships.user.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.companies.getCompany(id, environment.id, {
+          expand: asStringArray(args.expand) as CompanyExpand[] | undefined,
+        });
+      },
+    },
+
+    {
+      name: 'list_segments',
+      title: 'List segments',
+      capability: Capability.SegmentRead,
+      description:
+        'List the project\'s segments. Filter by `bizType` ("user" or "company"). Returns ' +
+        '`{ items, nextCursor }`.',
+      inputSchema: {
+        bizType: z
+          .enum(['user', 'company'])
+          .optional()
+          .describe('Filter to user or company segments.'),
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const result = await ctx.services.segments.list('mcp://segments', ctx.projectId, {
+          limit: asLimit(args.limit),
+          cursor: asString(args.cursor),
+          bizType: asString(args.bizType) as 'user' | 'company' | undefined,
+        });
+        return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_segment',
+      title: 'Get a segment',
+      capability: Capability.SegmentRead,
+      description: 'Get a segment by id (condition segments inline their conditions).',
+      inputSchema: { id: z.string().describe('The segment id.') },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        return ctx.services.segments.get(id, ctx.projectId);
+      },
+    },
+
+    {
+      name: 'list_sessions',
+      title: 'List sessions',
+      capability: Capability.SessionRead,
+      description:
+        'List content sessions in an environment. Filter by `contentId` / `userId`. Defaults to ' +
+        'the primary environment; pass `environmentId` to target another. Returns ' +
+        '`{ items, nextCursor }`.',
+      inputSchema: {
+        environmentId: environmentIdSchema,
+        contentId: z.string().optional().describe('Filter to a single content.'),
+        userId: z.string().optional().describe('Filter to a single end-user (external id).'),
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const environment = await resolveEnvironment(args, ctx);
+        const result = await ctx.services.sessions.list('mcp://sessions', environment, {
+          limit: asLimit(args.limit),
+          cursor: asString(args.cursor),
+          contentId: asString(args.contentId),
+          userId: asString(args.userId),
+        });
+        return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_session',
+      title: 'Get a session',
+      capability: Capability.SessionRead,
+      description:
+        'Get a content session by id. `expand` inlines content / user / company / version / ' +
+        'answers. Defaults to the primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The session id.'),
+        environmentId: environmentIdSchema,
+        expand: z
+          .array(z.enum(['answers', 'content', 'company', 'user', 'version']))
+          .optional()
+          .describe('Related objects to inline: answers, content, company, user, version.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.sessions.get(id, environment, {
+          expand: asStringArray(args.expand) as SessionExpand[] | undefined,
+        });
       },
     },
   ];
