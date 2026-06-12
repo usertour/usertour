@@ -80,7 +80,11 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
             <FormControl>
               <div ref={projectPortalRef}>
                 <ComboboxSelect
-                  className="w-full"
+                  // bg-transparent + shadow-xs to match the Name <Input> above (the
+                  // composite defaults to bg-muted); content min-w pinned to the
+                  // trigger width (the default adds 1.75rem).
+                  className="w-full bg-transparent shadow-xs hover:bg-transparent"
+                  contentClassName="min-w-[var(--anchor-width)]"
                   value={field.value[0] ?? ''}
                   onValueChange={(value) => field.onChange([value])}
                   options={projects.map((project) => ({
