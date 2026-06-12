@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ContentNotFoundError, ParamsError } from '@/common/errors/errors';
+import { ContentNotFoundError, ParamsError, ValidationError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 
 import { paginate } from '../shared/pagination';
@@ -66,10 +66,11 @@ export class ApiContentService {
   }
 
   /**
-   * Publish a version as the environment's live version (idempotent). The env is
-   * already resolved + project-checked by the guard; here we only assert the
-   * version belongs to this content. Returns the content with refreshed
-   * `environments[]` so the caller sees the new live state in one round-trip.
+   * Publish a version as the environment's live version (idempotent). Content is
+   * project-level, so the target environment is a body parameter (like versionId);
+   * we assert it belongs to this project, and that the version belongs to this
+   * content. Returns the content with refreshed `environments[]` so the caller
+   * sees the new live state in one round-trip.
    */
   async publish(
     id: string,
@@ -78,6 +79,7 @@ export class ApiContentService {
     versionId: string,
   ): Promise<Content> {
     await this.requireContent(id, projectId);
+    await this.requireEnvironment(environmentId, projectId);
     const version = await this.content.getContentVersionById(versionId);
     if (!version || version.contentId !== id) {
       throw new ContentNotFoundError();
@@ -89,6 +91,7 @@ export class ApiContentService {
   /** Unpublish the content from an environment (clear its live version). */
   async unpublish(id: string, projectId: string, environmentId: string): Promise<Content> {
     await this.requireContent(id, projectId);
+    await this.requireEnvironment(environmentId, projectId);
     await this.content.unpublishedContentVersion(id, environmentId);
     return this.get(id, projectId, {});
   }
@@ -110,13 +113,13 @@ export class ApiContentService {
     return this.get(created.id, projectId, {});
   }
 
-  /** Assert an environment exists in the project (for the duplicate target). */
+  /** Assert an environment exists in the project (publish/unpublish target, duplicate target). */
   private async requireEnvironment(environmentId: string, projectId: string): Promise<void> {
     const env = await this.prisma.environment.findFirst({
       where: { id: environmentId, projectId, deleted: false },
     });
     if (!env) {
-      throw new ParamsError('Environment not found in this project');
+      throw new ValidationError('Environment not found in this project');
     }
   }
 

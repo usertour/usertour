@@ -10,9 +10,10 @@ import { createTestApp } from '../create-test-app';
 
 /**
  * Contract test for the v2 publish lifecycle (POST action transitions, like
- * duplicate / restore / session end):
- *   POST /v2/projects/:p/environments/:envId/content/:id/publish    → publish a version
- *   POST /v2/projects/:p/environments/:envId/content/:id/unpublish  → unpublish
+ * duplicate / restore / session end). Content is project-level, so the target
+ * environment is a body parameter (alongside versionId), not a path scope:
+ *   POST /v2/projects/:p/content/:id/publish    { environmentId, versionId }
+ *   POST /v2/projects/:p/content/:id/unpublish  { environmentId }
  * Publish state is per-environment (ContentOnEnvironment); both return the content
  * with a refreshed environments[].
  */
@@ -46,7 +47,7 @@ describe('API v2 content publish (e2e)', () => {
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
 
-  const base = () => `/v2/projects/${projectId}/environments/${environmentId}/content/${contentId}`;
+  const base = () => `/v2/projects/${projectId}/content/${contentId}`;
   const publishPath = () => `${base()}/publish`;
   const unpublishPath = () => `${base()}/unpublish`;
 
@@ -81,7 +82,7 @@ describe('API v2 content publish (e2e)', () => {
 
   it('publishes a version to an environment (POST publish → 200, environments[] updated)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
-    const res = await api('post', publishPath(), token).send({ versionId });
+    const res = await api('post', publishPath(), token).send({ environmentId, versionId });
     expect(res.status).toBe(200);
     expect(res.body.environments).toContainEqual(
       expect.objectContaining({ environmentId, published: true, publishedVersionId: versionId }),
@@ -96,7 +97,7 @@ describe('API v2 content publish (e2e)', () => {
 
   it('is idempotent (re-publishing the same version → 200)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
-    const res = await api('post', publishPath(), token).send({ versionId });
+    const res = await api('post', publishPath(), token).send({ environmentId, versionId });
     expect(res.status).toBe(200);
     expect(res.body.environments).toContainEqual(
       expect.objectContaining({ environmentId, publishedVersionId: versionId }),
@@ -106,9 +107,9 @@ describe('API v2 content publish (e2e)', () => {
   it('unpublishes from an environment (POST unpublish → 200, environments[] cleared)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     // ensure published first
-    await api('post', publishPath(), token).send({ versionId });
+    await api('post', publishPath(), token).send({ environmentId, versionId });
 
-    const res = await api('post', unpublishPath(), token);
+    const res = await api('post', unpublishPath(), token).send({ environmentId });
     expect(res.status).toBe(200);
     expect(res.body.environments).toEqual([]);
 
@@ -118,14 +119,14 @@ describe('API v2 content publish (e2e)', () => {
 
   it('rejects publish without the publish scope (403 E1012)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-    const res = await api('post', publishPath(), token).send({ versionId });
+    const res = await api('post', publishPath(), token).send({ environmentId, versionId });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
 
   it('rejects unpublish without the publish scope (403 E1012)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-    const res = await api('post', unpublishPath(), token);
+    const res = await api('post', unpublishPath(), token).send({ environmentId });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
   });
@@ -134,23 +135,36 @@ describe('API v2 content publish (e2e)', () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     const res = await api(
       'post',
-      `/v2/projects/${projectId}/environments/${environmentId}/content/does-not-exist/publish`,
+      `/v2/projects/${projectId}/content/does-not-exist/publish`,
       token,
-    ).send({ versionId });
+    ).send({ environmentId, versionId });
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
   });
 
   it('returns 404 publishing a version from another content (E1004)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
-    const res = await api('post', publishPath(), token).send({ versionId: otherVersionId });
+    const res = await api('post', publishPath(), token).send({
+      environmentId,
+      versionId: otherVersionId,
+    });
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1004');
   });
 
-  it('maps a missing versionId body to E1017 (zod validation)', async () => {
+  it('maps a missing body to E1017 (zod validation — environmentId + versionId required)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     const res = await api('post', publishPath(), token).send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
+
+  it('rejects an environmentId not in the project (400 E1017)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
+    const res = await api('post', publishPath(), token).send({
+      environmentId: 'not-in-project',
+      versionId,
+    });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('E1017');
   });

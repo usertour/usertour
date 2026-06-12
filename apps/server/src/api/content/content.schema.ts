@@ -79,10 +79,17 @@ export type UpdateContentBody = z.infer<typeof updateContentBody>;
 
 /** Write body for PUT content/:id/environments/:environmentId (publish). */
 export const publishContentBody = z.object({
-  versionId: z.string().describe('The version to publish as this environment’s live version.'),
+  environmentId: z.string().describe('The environment to publish into (its live version is set).'),
+  versionId: z.string().describe('The version to publish as that environment’s live version.'),
 });
 export class PublishContentBodyDto extends createZodDto(publishContentBody) {}
 export type PublishContentBody = z.infer<typeof publishContentBody>;
+
+export const unpublishContentBody = z.object({
+  environmentId: z.string().describe('The environment to clear the live version in.'),
+});
+export class UnpublishContentBodyDto extends createZodDto(unpublishContentBody) {}
+export type UnpublishContentBody = z.infer<typeof unpublishContentBody>;
 
 /** Write body for POST content/:id/duplicate. */
 export const duplicateContentBody = z.object({

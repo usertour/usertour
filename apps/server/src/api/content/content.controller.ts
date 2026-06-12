@@ -29,6 +29,8 @@ import {
   GetContentQueryDto,
   ListContentQueryDto,
   ListContentResponseDto,
+  PublishContentBodyDto,
+  UnpublishContentBodyDto,
   UpdateContentBodyDto,
 } from './content.schema';
 
@@ -125,5 +127,43 @@ export class ApiContentController {
     @Body() body: DuplicateContentBodyDto,
   ) {
     return this.service.duplicate(id, projectId, body);
+  }
+
+  @Post(':id/publish')
+  @HttpCode(200)
+  @RequireCapability(Capability.ContentPublish)
+  @ApiOperation({
+    summary: 'Publish a version',
+    description: 'Set a version as the live version in an environment (idempotent).',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content ID' })
+  @ApiResponse({ status: 200, description: 'Published; returns the content', type: ContentDto })
+  @ApiResponse({ status: 404, description: 'Content or version not found' })
+  async publish(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: PublishContentBodyDto,
+  ) {
+    return this.service.publish(id, projectId, body.environmentId, body.versionId);
+  }
+
+  @Post(':id/unpublish')
+  @HttpCode(200)
+  @RequireCapability(Capability.ContentPublish)
+  @ApiOperation({
+    summary: 'Unpublish a version',
+    description: "Clear an environment's live version for the content.",
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content ID' })
+  @ApiResponse({ status: 200, description: 'Unpublished; returns the content', type: ContentDto })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async unpublish(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: UnpublishContentBodyDto,
+  ) {
+    return this.service.unpublish(id, projectId, body.environmentId);
   }
 }
