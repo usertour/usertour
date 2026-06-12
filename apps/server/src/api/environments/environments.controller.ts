@@ -30,7 +30,7 @@ import {
   UpdateEnvironmentBodyDto,
 } from './environments.schema';
 
-/** Environments — project-level read-only metadata (the ids env-scoped routes accept). */
+/** Environments — project-level. Read (environment:read) + create/rename/delete (environment:manage). */
 @ApiTags('Environments')
 @Controller('v2/projects/:projectId/environments')
 @UseGuards(ApiTokenGuard)
