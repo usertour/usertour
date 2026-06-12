@@ -489,6 +489,22 @@ describe('API v2 /content-versions (e2e)', () => {
       });
     });
 
+    it('defaults `every` for an unlimited frequency authored without it', async () => {
+      // Regression: `multiple` / `unlimited` render the "every N times" control,
+      // which reads `every.times`. A bare `{ mode: 'unlimited' }` must still
+      // compile to a complete `every` or the builder picker crashes and the SDK
+      // can't evaluate the rule.
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      await write({ startRules: { when: [], frequency: { mode: 'unlimited' } } }, token);
+      const r = await read(token);
+      expect(r.body.startRules.frequency.mode).toBe('unlimited');
+      expect(r.body.startRules.frequency.every).toMatchObject({
+        times: expect.any(Number),
+        duration: expect.any(Number),
+        unit: expect.any(String),
+      });
+    });
+
     it('merges: writing one rule preserves the other', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       // set start only

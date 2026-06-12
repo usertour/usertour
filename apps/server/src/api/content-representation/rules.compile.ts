@@ -1,4 +1,4 @@
-import { cuid } from '@usertour/helpers';
+import { DEFAULT_FREQUENCY, cuid } from '@usertour/helpers';
 
 import { ParamsError } from '@/common/errors';
 
@@ -221,9 +221,18 @@ export function compileStartRules(
   }
   const setting: any = {};
   if (start.frequency) {
+    // `multiple` / `unlimited` render the "every N times" control, which reads
+    // `every.times` — so `every` MUST be present for those modes (a bare `{ mode }`
+    // otherwise crashes the builder picker and breaks SDK frequency evaluation).
+    // Default it from DEFAULT_FREQUENCY, merging any caller-provided fields. `once`
+    // doesn't use `every`, and `atLeast` is optional (guarded by the picker), so
+    // neither is synthesized.
+    const needsEvery = start.frequency.mode === 'multiple' || start.frequency.mode === 'unlimited';
     setting.frequency = {
       frequency: start.frequency.mode,
-      ...(start.frequency.every ? { every: start.frequency.every } : {}),
+      ...(start.frequency.every || needsEvery
+        ? { every: { ...DEFAULT_FREQUENCY.every, ...(start.frequency.every ?? {}) } }
+        : {}),
       ...(start.frequency.atLeast ? { atLeast: start.frequency.atLeast } : {}),
     };
   }
