@@ -95,7 +95,7 @@ deviation is a real IDOR.
 1. Add `@RequirePermission` to the new resolver method
 2. Add a row to [`e2e/endpoints.ts`](./e2e/endpoints.ts) (`key`, `tier`, `op`, `doc`, `vars`)
 3. Add an entry to [`../src/auth/permission/endpoint-capability.map.ts`](../src/auth/permission/endpoint-capability.map.ts) (capability oracle)
-4. Update the count assertion in [`permission.e2e-spec.ts`](./e2e/permission.e2e-spec.ts) (`toHaveLength(93)`)
+4. Update the count assertion in [`permission.e2e-spec.ts`](./e2e/permission.e2e-spec.ts) (`toHaveLength(90)`)
 5. Run `pnpm test:e2e --testPathPattern permission` — fix the new row's vars until it passes
 6. Run `pnpm smoke:spot-check-gen` to refresh `spot-check.sh`
 
