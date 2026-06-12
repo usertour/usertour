@@ -68,9 +68,11 @@ export const useSubscription = (): SubscriptionState => {
     [planType, subscription?.overridePlan],
   );
   const totalLimit = features.sessionsLimit;
-  const shouldShowMadeWith = projectConfigLoading
-    ? false
-    : !(projectConfig?.removeBranding ?? false);
+  // `loading && !data` gate (not bare loading): cache-and-network refetches
+  // flip loading true while the cached config is still present — see
+  // useShouldShowMadeWith for the full story.
+  const shouldShowMadeWith =
+    projectConfigLoading && !projectConfig ? false : !(projectConfig?.removeBranding ?? false);
   const loading = projectConfigLoading || subscriptionLoading || usageLoading;
   const refetch = useCallback(() => {
     refetchProjectConfig();

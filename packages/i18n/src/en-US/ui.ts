@@ -1772,10 +1772,9 @@ const translations = {
     },
     listView: {
       card: {
-        statusLabel: 'Status:',
         published: 'Published',
         unpublished: 'Unpublished',
-        createdAt: 'Created at {{time}} ago',
+        updatedAt: 'Updated {{time}} ago',
       },
       loadingMore: 'Loading…',
       displayTitle: { published: 'Published {{title}}', draft: 'Draft {{title}}' },
@@ -3419,8 +3418,9 @@ const translations = {
       },
       wait: {
         before: 'Wait',
-        suffix: 'second before starting',
-        tooltip: 'The conditions must keep matching for the entire wait.',
+        suffix: 'seconds',
+        tooltip:
+          'Delay between the conditions matching and the trigger firing. The conditions must keep matching for the entire wait.',
         error: 'Wait time must not be greater than {{max}} seconds ({{minutes}} minutes)',
       },
       frequency: {

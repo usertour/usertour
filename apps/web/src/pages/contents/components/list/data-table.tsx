@@ -4,7 +4,8 @@ import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { useGetContentVersionQuery } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { CircleIcon, SpinnerIcon } from '@usertour/icons';
+import { SpinnerIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -24,6 +25,10 @@ import {
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 
+// Compact footer strip for the solid-block card, carved out by the divider:
+// name + status pill on one line, last-updated time + row-actions menu on the
+// next. Natural height (flex-none) so the preview takes the slack rather than
+// the footer padding the leftover space and reading tall.
 const ContentPreviewFooter = ({
   content,
   refetch,
@@ -39,12 +44,32 @@ const ContentPreviewFooter = ({
   );
 
   return (
-    <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
-      <div className="flex-none flex flex-row justify-between items-center space-x-4">
-        <span className="grow text-base font-medium text-foreground truncate min-w-0">
+    <div className="flex flex-none flex-col gap-1 px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
           {content.name ?? ''}
         </span>
-
+        <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium">
+          <span
+            className={cn(
+              'size-1.5 rounded-full',
+              isPublished ? 'bg-success' : 'bg-muted-foreground/40',
+            )}
+          />
+          <span className={isPublished ? 'text-foreground' : 'text-muted-foreground'}>
+            {isPublished
+              ? t('contents.listView.card.published')
+              : t('contents.listView.card.unpublished')}
+          </span>
+        </span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          {content?.updatedAt &&
+            t('contents.listView.card.updatedAt', {
+              time: formatDistanceToNow(new Date(content.updatedAt)),
+            })}
+        </span>
         <ContentEditDropdownMenu
           content={content}
           onSubmit={() => {
@@ -55,37 +80,12 @@ const ContentPreviewFooter = ({
           <Button
             variant="ghost"
             size="icon"
-            className="flex-none"
+            className="-mr-1.5 size-7 shrink-0 text-muted-foreground hover:text-foreground"
             onClick={(e) => e.stopPropagation()}
           >
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </ContentEditDropdownMenu>
-      </div>
-      <div className="grow flex flex-row text-sm items-center space-x-1 text-xs">
-        <span>{t('contents.listView.card.statusLabel')}</span>
-        <div className="flex flex-row space-x-1 items-center ">
-          {isPublished && (
-            <>
-              <CircleIcon className="w-3 h-3 text-success" />
-              <span>{t('contents.listView.card.published')}</span>
-            </>
-          )}
-          {!isPublished && (
-            <>
-              <CircleIcon className="w-3 h-3 text-muted-foreground/50" />
-              <span>{t('contents.listView.card.unpublished')}</span>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="flex-none flex flex-row justify-end items-center">
-        <span className="text-xs text-muted-foreground">
-          {content?.createdAt &&
-            t('contents.listView.card.createdAt', {
-              time: formatDistanceToNow(new Date(content?.createdAt)),
-            })}
-        </span>
       </div>
     </div>
   );
@@ -237,21 +237,32 @@ const ContentTableItem = ({
     <div
       onClick={handleOnClick}
       ref={containerRef}
-      className="h-72 min-w-72  flex flex-col bg-card rounded-lg border hover:border-primary hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer"
+      // Card surface: light lifts off the page with a layered soft shadow
+      // (no visible border). dark can't use shadow (black on near-black), so
+      // the whole card is a single raised-surface block that reads off the
+      // page on lightness alone (well above it), and body/footer split with
+      // a hairline divider rather than a block-tone difference the near-black
+      // palette is too compressed to render. Hover lifts both modes; light
+      // also deepens the shadow, dark just lifts (its shadow is invisible and
+      // a border/ring is intentionally avoided).
+      className={cn(
+        'group relative flex h-72 cursor-pointer flex-col overflow-hidden rounded-xl bg-card dark:bg-surface-raised',
+        'shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.06)] dark:shadow-none',
+        'transition-[box-shadow,transform] duration-200',
+        'hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,24,40,0.12)] dark:hover:shadow-none',
+      )}
     >
-      <div className="flex-none bg-muted rounded-t-md">
-        <div
-          className="h-48 flex justify-center items-center overflow-hidden"
-          {...({ inert: '' } as any)}
-        >
-          <ContentPreview
-            currentVersion={currentVersion}
-            currentTheme={currentTheme}
-            currentStep={currentStep}
-            type={content.type}
-            isLoading={isLoading}
-          />
-        </div>
+      <div
+        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted dark:bg-surface-raised dark:border-b dark:border-white/[0.06]"
+        {...({ inert: '' } as any)}
+      >
+        <ContentPreview
+          currentVersion={currentVersion}
+          currentTheme={currentTheme}
+          currentStep={currentStep}
+          type={content.type}
+          isLoading={isLoading}
+        />
       </div>
       <ContentPreviewFooter content={content} refetch={refetch} />
     </div>
