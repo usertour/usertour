@@ -4,9 +4,12 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
+import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';
+import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { OpenAPIError } from '@/common/errors/errors';
@@ -38,6 +41,9 @@ export class McpService {
     eventDefinitionsService: ApiEventDefinitionsService,
     usersService: ApiUsersService,
     themesService: ApiThemesService,
+    companiesService: ApiCompaniesService,
+    segmentsService: ApiSegmentsService,
+    sessionsService: ApiContentSessionsService,
   ) {
     this.services = {
       content: contentService,
@@ -46,6 +52,9 @@ export class McpService {
       eventDefinitions: eventDefinitionsService,
       users: usersService,
       themes: themesService,
+      companies: companiesService,
+      segments: segmentsService,
+      sessions: sessionsService,
     };
     this.tools = [...buildReadTools(), ...buildWriteTools()];
   }

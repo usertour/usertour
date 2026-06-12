@@ -87,10 +87,10 @@ const limitSchema = z
   .optional()
   .describe('Max items per page (1-100, default 20).');
 const cursorSchema = z.string().optional().describe('Pagination cursor from a prior nextCursor.');
-const environmentIdSchema = z
+export const environmentIdSchema = z
   .string()
   .optional()
-  .describe('Environment to query (defaults to the primary environment).');
+  .describe('Environment to target (defaults to the primary environment).');
 
 /**
  * Build the read-only MCP tool registry. Each tool is a thin binding over a v2

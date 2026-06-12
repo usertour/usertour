@@ -303,6 +303,7 @@ describe('MCP endpoint (e2e)', () => {
               params: {
                 name: 'update_content_version',
                 arguments: {
+                  contentId: created.id,
                   versionId: created.editedVersionId,
                   steps: [
                     {
@@ -387,6 +388,63 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(forked).toMatchObject({ object: 'contentVersion' });
       expect(forked.id).not.toBe(created.editedVersionId);
+    });
+
+    it('hides bizdata / config write tools without their scopes', async () => {
+      const token = await mint([Capability.UserRead], [projectA]);
+      const names = extractResult(
+        await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token),
+      ).result.tools.map((t: { name: string }) => t.name);
+      for (const n of ['upsert_user', 'upsert_company', 'create_segment', 'create_theme']) {
+        expect(names).not.toContain(n);
+      }
+    });
+
+    it('upsert_user creates an end-user via MCP (env defaulted)', async () => {
+      const token = await mint([Capability.UserRead, Capability.UserWrite], [projectA]);
+      const names = extractResult(
+        await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token),
+      ).result.tools.map((t: { name: string }) => t.name);
+      expect(names).toContain('upsert_user');
+
+      const user = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 2,
+              method: 'tools/call',
+              params: {
+                name: 'upsert_user',
+                arguments: { id: 'mcp-new-user', attributes: { name: 'Zoe' } },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(user).toMatchObject({ object: 'user', id: 'mcp-new-user' });
+    });
+
+    it('create_segment creates a manual segment via MCP', async () => {
+      const token = await mint([Capability.SegmentCreate], [projectA]);
+      const seg = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_segment',
+                arguments: { name: 'MCP seg', bizType: 'user', kind: 'manual' },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(seg).toMatchObject({ object: 'segment', kind: 'manual', bizType: 'user' });
     });
   });
 });

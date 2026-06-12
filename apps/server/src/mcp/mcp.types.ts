@@ -4,9 +4,12 @@ import { ZodTypeAny } from 'zod';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
+import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';
+import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 
@@ -23,6 +26,9 @@ export interface McpServices {
   eventDefinitions: ApiEventDefinitionsService;
   users: ApiUsersService;
   themes: ApiThemesService;
+  companies: ApiCompaniesService;
+  segments: ApiSegmentsService;
+  sessions: ApiContentSessionsService;
 }
 
 /**

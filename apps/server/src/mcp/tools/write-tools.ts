@@ -2,13 +2,44 @@ import { Capability } from '@usertour/types';
 import { z } from 'zod';
 
 import {
+  createAttributeBody,
+  type CreateAttributeBody,
+  updateAttributeBody,
+  type UpdateAttributeBody,
+} from '@/api/attribute-definitions/attribute-definitions.schema';
+import {
+  upsertCompanyBody,
+  type UpsertCompanyBody,
+  upsertMembershipBody,
+  type UpsertMembershipBody,
+} from '@/api/companies/companies.schema';
+import {
   representationHideRules,
   representationStartRules,
   representationStepInput,
 } from '@/api/content-representation/representation.schema';
+import {
+  createEventDefinitionBody,
+  type CreateEventDefinitionBody,
+  updateEventDefinitionBody,
+  type UpdateEventDefinitionBody,
+} from '@/api/event-definitions/event-definitions.schema';
+import {
+  createSegmentBody,
+  type CreateSegmentBody,
+  updateSegmentBody,
+  type UpdateSegmentBody,
+} from '@/api/segments/segments.schema';
+import {
+  createThemeBody,
+  type CreateThemeBody,
+  updateThemeBody,
+  type UpdateThemeBody,
+} from '@/api/themes/themes.schema';
+import { upsertUserBody, type UpsertUserBody } from '@/api/users/users.schema';
 
 import { McpTool } from '../mcp.types';
-import { resolveEnvironment } from './read-tools';
+import { environmentIdSchema, resolveEnvironment } from './read-tools';
 
 /**
  * Write-side MCP tools — gated by content:create / content:update /
@@ -192,6 +223,353 @@ export function buildWriteTools(): McpTool[] {
           ctx.projectId,
           environment.id,
         );
+      },
+    },
+
+    // ---- Users (env-level, client-keyed) ----
+    {
+      name: 'upsert_user',
+      title: 'Create or update a user',
+      capability: Capability.UserWrite,
+      description:
+        'Create or update an end-user by external id (idempotent). Attributes merge into the ' +
+        'existing ones. Defaults to the primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The user external id.'),
+        environmentId: environmentIdSchema,
+        ...upsertUserBody.shape,
+      },
+      handler: async (args, ctx) =>
+        ctx.services.users.upsert(
+          String(args.id),
+          await resolveEnvironment(args, ctx),
+          args as unknown as UpsertUserBody,
+        ),
+    },
+    {
+      name: 'delete_user',
+      title: 'Delete a user',
+      capability: Capability.UserDelete,
+      description:
+        'Delete an end-user by external id. Defaults to the primary environment; pass ' +
+        '`environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The user external id.'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) => {
+        await ctx.services.users.delete(String(args.id), await resolveEnvironment(args, ctx));
+        return { success: true };
+      },
+    },
+
+    // ---- Companies (env-level, client-keyed) ----
+    {
+      name: 'upsert_company',
+      title: 'Create or update a company',
+      capability: Capability.CompanyWrite,
+      description:
+        'Create or update a company by external id (idempotent). Attributes merge into the ' +
+        'existing ones. Defaults to the primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The company external id.'),
+        environmentId: environmentIdSchema,
+        ...upsertCompanyBody.shape,
+      },
+      handler: async (args, ctx) =>
+        ctx.services.companies.upsert(
+          String(args.id),
+          await resolveEnvironment(args, ctx),
+          args as unknown as UpsertCompanyBody,
+        ),
+    },
+    {
+      name: 'delete_company',
+      title: 'Delete a company',
+      capability: Capability.CompanyDelete,
+      description:
+        'Delete a company by external id. Defaults to the primary environment; pass ' +
+        '`environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The company external id.'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) => {
+        await ctx.services.companies.delete(String(args.id), await resolveEnvironment(args, ctx));
+        return { success: true };
+      },
+    },
+    {
+      name: 'add_company_member',
+      title: 'Add a user to a company',
+      capability: Capability.CompanyWrite,
+      description:
+        'Add a user to a company, or update the membership (idempotent). Optional membership ' +
+        'attributes merge. Defaults to the primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        companyId: z.string().describe('The company external id.'),
+        userId: z.string().describe('The user external id.'),
+        environmentId: environmentIdSchema,
+        ...upsertMembershipBody.shape,
+      },
+      handler: async (args, ctx) => {
+        await ctx.services.companies.upsertMembership(
+          String(args.companyId),
+          String(args.userId),
+          await resolveEnvironment(args, ctx),
+          args as unknown as UpsertMembershipBody,
+        );
+        return { success: true };
+      },
+    },
+    {
+      name: 'remove_company_member',
+      title: 'Remove a user from a company',
+      capability: Capability.CompanyWrite,
+      description:
+        'Remove a user from a company. Defaults to the primary environment; pass `environmentId` ' +
+        'to target another.',
+      inputSchema: {
+        companyId: z.string().describe('The company external id.'),
+        userId: z.string().describe('The user external id.'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) => {
+        await ctx.services.companies.deleteMembership(
+          String(args.companyId),
+          String(args.userId),
+          await resolveEnvironment(args, ctx),
+        );
+        return { success: true };
+      },
+    },
+
+    // ---- Segments (definitions project-level; membership env-level) ----
+    {
+      name: 'create_segment',
+      title: 'Create a segment',
+      capability: Capability.SegmentCreate,
+      description:
+        'Create a user or company segment. `kind: manual` holds an explicit member list; ' +
+        '`kind: condition` carries membership conditions.',
+      inputSchema: { ...createSegmentBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.segments.create(ctx.projectId, args as unknown as CreateSegmentBody),
+    },
+    {
+      name: 'update_segment',
+      title: 'Update a segment',
+      capability: Capability.SegmentUpdate,
+      description: "Update a segment's name, or replace a condition segment's conditions.",
+      inputSchema: { id: z.string().describe('The segment id.'), ...updateSegmentBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.segments.update(
+          String(args.id),
+          ctx.projectId,
+          args as unknown as UpdateSegmentBody,
+        ),
+    },
+    {
+      name: 'delete_segment',
+      title: 'Delete a segment',
+      capability: Capability.SegmentDelete,
+      description: 'Delete a segment.',
+      inputSchema: { id: z.string().describe('The segment id.') },
+      handler: async (args, ctx) => {
+        await ctx.services.segments.delete(String(args.id), ctx.projectId);
+        return { success: true };
+      },
+    },
+    {
+      name: 'add_segment_member',
+      title: 'Add a member to a manual segment',
+      capability: Capability.SegmentUpdate,
+      description:
+        'Add a user or company (per the segment bizType) to a manual segment. Defaults to the ' +
+        'primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The segment id.'),
+        externalId: z.string().describe('User or company external id (per segment bizType).'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) => {
+        const environment = await resolveEnvironment(args, ctx);
+        await ctx.services.segments.addMember(
+          String(args.id),
+          ctx.projectId,
+          environment.id,
+          String(args.externalId),
+        );
+        return { success: true };
+      },
+    },
+    {
+      name: 'remove_segment_member',
+      title: 'Remove a member from a manual segment',
+      capability: Capability.SegmentUpdate,
+      description:
+        'Remove a user or company from a manual segment. Defaults to the primary environment; ' +
+        'pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The segment id.'),
+        externalId: z.string().describe('User or company external id (per segment bizType).'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) => {
+        const environment = await resolveEnvironment(args, ctx);
+        await ctx.services.segments.removeMember(
+          String(args.id),
+          ctx.projectId,
+          environment.id,
+          String(args.externalId),
+        );
+        return { success: true };
+      },
+    },
+
+    // ---- Themes (project-level) ----
+    {
+      name: 'create_theme',
+      title: 'Create a theme',
+      capability: Capability.ThemeCreate,
+      description: 'Create a theme. Settings pass through; variation conditions are compiled.',
+      inputSchema: { ...createThemeBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.themes.create(ctx.projectId, args as unknown as CreateThemeBody),
+    },
+    {
+      name: 'update_theme',
+      title: 'Update a theme',
+      capability: Capability.ThemeUpdate,
+      description: 'Update a theme (partial). Provided settings / variations replace the existing.',
+      inputSchema: { id: z.string().describe('The theme id.'), ...updateThemeBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.themes.update(
+          String(args.id),
+          ctx.projectId,
+          args as unknown as UpdateThemeBody,
+        ),
+    },
+    {
+      name: 'delete_theme',
+      title: 'Delete a theme',
+      capability: Capability.ThemeDelete,
+      description: 'Delete a theme. The project default theme cannot be deleted.',
+      inputSchema: { id: z.string().describe('The theme id.') },
+      handler: async (args, ctx) => {
+        await ctx.services.themes.delete(String(args.id), ctx.projectId);
+        return { success: true };
+      },
+    },
+
+    // ---- Attribute definitions (project-level) ----
+    {
+      name: 'create_attribute_definition',
+      title: 'Create an attribute definition',
+      capability: Capability.AttributeCreate,
+      description:
+        'Define a custom attribute on user / company / companyMembership. codeName is immutable.',
+      inputSchema: { ...createAttributeBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.attributeDefinitions.create(
+          ctx.projectId,
+          args as unknown as CreateAttributeBody,
+        ),
+    },
+    {
+      name: 'update_attribute_definition',
+      title: 'Update an attribute definition',
+      capability: Capability.AttributeUpdate,
+      description: 'Update an attribute definition (displayName / description; codeName is fixed).',
+      inputSchema: { id: z.string().describe('The attribute id.'), ...updateAttributeBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.attributeDefinitions.update(
+          String(args.id),
+          ctx.projectId,
+          args as unknown as UpdateAttributeBody,
+        ),
+    },
+    {
+      name: 'delete_attribute_definition',
+      title: 'Delete an attribute definition',
+      capability: Capability.AttributeDelete,
+      description: 'Delete an attribute definition.',
+      inputSchema: { id: z.string().describe('The attribute id.') },
+      handler: async (args, ctx) => {
+        await ctx.services.attributeDefinitions.delete(String(args.id), ctx.projectId);
+        return { success: true };
+      },
+    },
+
+    // ---- Event definitions (project-level) ----
+    {
+      name: 'create_event_definition',
+      title: 'Create an event definition',
+      capability: Capability.EventCreate,
+      description: 'Define a custom event. codeName is immutable.',
+      inputSchema: { ...createEventDefinitionBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.eventDefinitions.create(
+          ctx.projectId,
+          args as unknown as CreateEventDefinitionBody,
+        ),
+    },
+    {
+      name: 'update_event_definition',
+      title: 'Update an event definition',
+      capability: Capability.EventUpdate,
+      description: 'Update an event definition (displayName / description; codeName is fixed).',
+      inputSchema: {
+        id: z.string().describe('The event id.'),
+        ...updateEventDefinitionBody.shape,
+      },
+      handler: (args, ctx) =>
+        ctx.services.eventDefinitions.update(
+          String(args.id),
+          ctx.projectId,
+          args as unknown as UpdateEventDefinitionBody,
+        ),
+    },
+    {
+      name: 'delete_event_definition',
+      title: 'Delete an event definition',
+      capability: Capability.EventDelete,
+      description: 'Delete an event definition.',
+      inputSchema: { id: z.string().describe('The event id.') },
+      handler: async (args, ctx) => {
+        await ctx.services.eventDefinitions.delete(String(args.id), ctx.projectId);
+        return { success: true };
+      },
+    },
+
+    // ---- Sessions (env-level; session:manage) ----
+    {
+      name: 'end_session',
+      title: 'End a session',
+      capability: Capability.SessionManage,
+      description:
+        'End an in-progress session. Defaults to the primary environment; pass `environmentId` ' +
+        'to target another. Returns the completed session.',
+      inputSchema: {
+        id: z.string().describe('The session id.'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) =>
+        ctx.services.sessions.end(String(args.id), await resolveEnvironment(args, ctx)),
+    },
+    {
+      name: 'delete_session',
+      title: 'Delete a session',
+      capability: Capability.SessionManage,
+      description:
+        'Delete a session. Defaults to the primary environment; pass `environmentId` to target another.',
+      inputSchema: {
+        id: z.string().describe('The session id.'),
+        environmentId: environmentIdSchema,
+      },
+      handler: async (args, ctx) => {
+        await ctx.services.sessions.delete(String(args.id), await resolveEnvironment(args, ctx));
+        return { success: true };
       },
     },
   ];
