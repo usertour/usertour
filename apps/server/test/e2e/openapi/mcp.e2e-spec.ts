@@ -167,6 +167,7 @@ describe('MCP endpoint (e2e)', () => {
       const names = result.result.tools.map((t: { name: string }) => t.name).sort();
       expect(names).toEqual(
         [
+          'get_authoring_guide',
           'get_content',
           'get_content_version',
           'get_user',
@@ -234,6 +235,23 @@ describe('MCP endpoint (e2e)', () => {
       const payload = parseToolContent(result);
       expect(Array.isArray(payload.items)).toBe(true);
       expect(payload.items.length).toBeGreaterThan(0);
+    });
+
+    it('get_authoring_guide returns the guide text', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'get_authoring_guide', arguments: {} },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const payload = parseToolContent(extractResult(res));
+      expect(typeof payload.guide).toBe('string');
+      expect(payload.guide).toContain('goto_step');
     });
 
     it('calling a tool outside the token scope is unknown to the token', async () => {

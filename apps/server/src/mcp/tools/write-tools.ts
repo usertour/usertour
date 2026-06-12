@@ -13,6 +13,7 @@ import {
   upsertMembershipBody,
   type UpsertMembershipBody,
 } from '@/api/companies/companies.schema';
+import type { CreateContentBody } from '@/api/content/content.schema';
 import {
   representationHideRules,
   representationStartRules,
@@ -64,20 +65,20 @@ export function buildWriteTools(): McpTool[] {
         'the project, with a draft version themed by `themeId`. Returns the created content (use ' +
         '`update_content_version` to add steps; use `list_themes` to pick a themeId).',
       inputSchema: {
-        type: z.string().describe('Content kind: flow, checklist, launcher, banner, survey.'),
+        type: z
+          .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
+          .describe('Content kind.'),
         name: z.string().optional(),
         buildUrl: z.string().optional(),
         themeId: z
           .string()
           .describe(
-            'Theme for the initial draft version (required — content needs a theme to render).',
+            'Theme for the initial draft version (required — content needs a theme to render). ' +
+              'Use `list_themes`; pick the one with isDefault if unsure.',
           ),
       },
       handler: (args, ctx) =>
-        ctx.services.content.create(
-          ctx.projectId,
-          args as { type: string; themeId: string; name?: string; buildUrl?: string },
-        ),
+        ctx.services.content.create(ctx.projectId, args as unknown as CreateContentBody),
     },
     {
       name: 'update_content',

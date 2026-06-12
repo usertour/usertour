@@ -62,13 +62,17 @@ export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 
 /** Write body for POST content. */
 export const createContentBody = z.object({
-  type: z.string().describe('Content kind: flow, checklist, launcher, banner, survey.'),
+  type: z
+    .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
+    .describe('Content kind.'),
   name: z.string().optional(),
   buildUrl: z.string().optional(),
   themeId: z
     .string()
     .describe(
-      'Theme applied to the initial draft version. Required — content has no usable styling without one (the SDK can’t render a themeless version).',
+      'Theme applied to the initial draft version. Required — content has no usable styling ' +
+        'without one (the SDK can’t render a themeless version). List options with the themes ' +
+        'endpoint; use the one with isDefault if unsure.',
     ),
 });
 export class CreateContentBodyDto extends createZodDto(createContentBody) {}

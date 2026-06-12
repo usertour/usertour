@@ -288,7 +288,17 @@ const blockBase = {
 };
 export const representationBlock = z.lazy(() =>
   z.union([
-    z.object({ ...blockBase, type: z.literal('text'), markdown: z.string() }),
+    z.object({
+      ...blockBase,
+      type: z.literal('text'),
+      markdown: z
+        .string()
+        .describe(
+          'A small markdown subset: paragraphs, `# `/`## ` headings (h1/h2 only — no h3+), ' +
+            '`-`/`*` and `1.` lists, ``` code fences; inline `**bold**`, `*italic*`, ' +
+            '`[text](url)`, and `{{ attribute_code | default: "x" }}` for user attributes.',
+        ),
+    }),
     z.object({
       ...blockBase,
       type: z.literal('image'),
@@ -354,10 +364,17 @@ export const representationStartRules = z.object({
   when: z.array(representationCondition),
   frequency: z
     .object({
-      mode: z.enum(['once', 'multiple', 'unlimited']),
+      mode: z
+        .enum(['once', 'multiple', 'unlimited'])
+        .describe(
+          'once = show a single time; multiple = up to N times per window; unlimited = every time the conditions match (subject to `every`).',
+        ),
       every: z
         .object({ times: z.number().optional(), duration: z.number(), unit: durationUnit })
-        .optional(),
+        .optional()
+        .describe(
+          'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied.',
+        ),
       atLeast: z.object({ duration: z.number(), unit: durationUnit }).optional(),
     })
     .optional(),
@@ -386,7 +403,9 @@ export const representationStepInput = z.object({
         'this step even before it exists. Write-only — not stored, not returned on read.',
     ),
   name: z.string(),
-  type: z.string(),
+  type: z
+    .enum(['tooltip', 'modal', 'hidden', 'bubble'])
+    .describe('Step kind. Only `tooltip` anchors to a target element; the rest are page-level.'),
   sequence: z.number().optional(),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),

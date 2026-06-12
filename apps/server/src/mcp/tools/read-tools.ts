@@ -8,6 +8,7 @@ import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 
 import { McpTool, McpToolContext } from '../mcp.types';
+import { AUTHORING_GUIDE } from './authoring-guide';
 
 /**
  * Parse the `cursor` query param out of a paginate() `next`/`previous` URL and
@@ -112,6 +113,22 @@ export const environmentIdSchema = z
  */
 export function buildReadTools(): McpTool[] {
   return [
+    {
+      name: 'get_authoring_guide',
+      title: 'How to author content',
+      capability: Capability.ContentRead,
+      description:
+        'Read this BEFORE authoring content. Returns the conventions for building usable ' +
+        'Usertour content: the create→update→validate→publish lifecycle, step types and ' +
+        'targets, wiring goto_step by key, the markdown subset, frequency, and what each ' +
+        'content type needs to be publishable.',
+      inputSchema: {},
+      async handler(_args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        return { guide: AUTHORING_GUIDE };
+      },
+    },
+
     {
       name: 'list_content',
       title: 'List content',
