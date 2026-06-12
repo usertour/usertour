@@ -1976,6 +1976,11 @@ const translations = {
     },
   },
   themeBuilder: {
+    customCssUpsell: {
+      title: '自定义 CSS 是 Growth 功能',
+      descriptionPrefix: '当前套餐不包含此功能。请',
+      upgradeLink: '升级套餐',
+    },
     preview: {
       selectTypePlaceholder: '选择类型...',
       searchTypesPlaceholder: '搜索类型...',
@@ -2149,7 +2154,7 @@ const translations = {
         customFamilyTooltip:
           'widget 实际使用的 font-family。支持逗号分隔的多个字体(如 "Brand Sans, PingFang SC"),按从左到右逐字符匹配,品牌字体可自然回退到中文字体。',
         customFontHint:
-          '字体不会自动加载——需要在下方「自定义 CSS」区块用 @font-face 声明,否则 widget 会回退到默认字体。',
+          '系统字体(用户设备上已安装的)直接填名字即可;web 字体需在下方「自定义 CSS」区块用 @font-face 加载,否则 widget 会回退到默认字体。',
         bodySize: '正文字号',
         lineHeight: '行高',
         bodyWeight: '正文字重',
@@ -2162,8 +2167,7 @@ const translations = {
         label: 'CSS 规则',
         placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
         tooltip:
-          '原样注入每个 widget 的 CSS。可用于声明自定义字体的 @font-face,也可做高级样式覆写。',
-        hint: '这段 CSS 会注入所有 widget(tooltip、modal、checklist、banner、资源中心)。widget 内部结构可能随版本变化,选择器请尽量保持简单。',
+          '原样注入每个 widget(tooltip、modal、checklist、banner、资源中心)的 CSS。可用于声明自定义字体的 @font-face,也可做高级样式覆写。widget 内部结构可能随版本变化,选择器请尽量保持简单。',
       },
       buttons: {
         height: '高度',

@@ -1295,12 +1295,7 @@ export const builderSections: BuilderSection[] = [
         label: 'themeBuilder.fields.customCss.label',
         placeholder: 'themeBuilder.fields.customCss.placeholder',
         tooltip: 'themeBuilder.fields.customCss.tooltip',
-      },
-      {
-        type: 'inline-alert',
-        variant: 'info',
-        message: 'themeBuilder.fields.customCss.hint',
-        visibleWhen: () => true,
+        requiresCustomCss: true,
       },
     ],
   },

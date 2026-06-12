@@ -5,6 +5,7 @@ import type { FieldDef } from '../schema/types';
 import { AvatarTypeField } from './avatar-type-field';
 import { BooleanField } from './boolean-field';
 import { ColorField } from './color-field';
+import { CustomCssUpsell } from './custom-css-upsell';
 import { DynamicNumberField } from './dynamic-number-field';
 import { FontFamilyField } from './font-family-field';
 import { ImageUploadField } from './image-upload-field';
@@ -27,11 +28,19 @@ export interface FieldRendererProps {
 
 export const FieldRenderer = (props: FieldRendererProps) => {
   const { field } = props;
-  const { activeSettings } = useBuilderContext();
+  const { activeSettings, canUseCustomCss } = useBuilderContext();
   const { t } = useTranslation();
 
   if ('visibleWhen' in field && field.visibleWhen && !field.visibleWhen(activeSettings)) {
     return null;
+  }
+
+  // Custom CSS / custom font gate: when the plan doesn't include it, an
+  // editable field renders an upsell in place of its editor; a how-to hint
+  // (inline-alert) just hides — the upsell on its sibling editor carries the
+  // message. The server enforces the gate regardless of this UI.
+  if ('requiresCustomCss' in field && field.requiresCustomCss && !canUseCustomCss) {
+    return field.type === 'inline-alert' ? null : <CustomCssUpsell />;
   }
 
   // `tooltip` (when set) is also a translation key — resolve once here so leaf

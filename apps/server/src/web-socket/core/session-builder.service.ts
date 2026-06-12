@@ -216,8 +216,18 @@ export class SessionBuilderService {
       externalUserId,
       externalCompanyId,
     });
+
+    // Custom CSS gate: when the project's plan doesn't include it, strip
+    // customCss from every theme before it ships in the session. This is the
+    // single enforcement point — it covers the top theme and the per-step
+    // themes (createSessionSteps reuses this same array) — so a downgrade
+    // takes effect immediately and without touching stored data.
+    const sessionThemes = config.customCss
+      ? themes
+      : themes.map((theme) => this.stripThemeCustomCss(theme));
+
     const sessionTheme = await this.createSessionTheme(
-      themes,
+      sessionThemes,
       customContentVersion.themeId,
       environment,
       externalUserId,
@@ -251,7 +261,7 @@ export class SessionBuilderService {
         session,
         customContentVersion,
         socketData,
-        themes,
+        sessionThemes,
         stepCvid,
       );
     }
@@ -634,6 +644,21 @@ export class SessionBuilderService {
    * @param externalCompanyId - The external company ID
    * @returns The theme settings or null if not found
    */
+  /**
+   * Return a copy of the theme with `customCss` removed from its settings,
+   * for plans that don't include the custom CSS feature. Does not mutate the
+   * original (the themes array may be shared / cached); returns the theme
+   * unchanged when there's nothing to strip.
+   */
+  private stripThemeCustomCss(theme: Theme): Theme {
+    const settings = theme.settings as ThemeTypesSetting | null;
+    if (!settings || settings.customCss == null) {
+      return theme;
+    }
+    const { customCss: _customCss, ...rest } = settings;
+    return { ...theme, settings: rest as unknown as Theme['settings'] };
+  }
+
   private async createSessionTheme(
     themes: Theme[],
     themeId: string,

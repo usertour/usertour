@@ -1,4 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
+import { useCanUseCustomCss } from '@/hooks/use-should-show-made-with';
 import { useListAttributesQuery } from '@usertour/hooks';
 import { StorageKeys } from '@usertour/constants';
 import { validateConditions } from '@usertour/business-components';
@@ -52,6 +53,7 @@ export const ThemeBuilder = (props: ThemeBuilderProps) => {
   // current viewer holds the Viewer role. Both gate every write surface
   // (setField, save, rename, variation add/remove/reorder).
   const isReadOnly = !!theme.isSystem || isViewOnly;
+  const canUseCustomCss = useCanUseCustomCss();
 
   const initialBase = useMemo(() => mergeWithDefaults(theme.settings), [theme.settings]);
   const initialVariations = useMemo(() => theme.variations ?? [], [theme.variations]);
@@ -157,8 +159,16 @@ export const ThemeBuilder = (props: ThemeBuilderProps) => {
       getField: draft.getField,
       setField: draft.setField,
       isReadOnly,
+      canUseCustomCss,
     }),
-    [draft.activeSettings, draft.finalSettings, draft.getField, draft.setField, isReadOnly],
+    [
+      draft.activeSettings,
+      draft.finalSettings,
+      draft.getField,
+      draft.setField,
+      isReadOnly,
+      canUseCustomCss,
+    ],
   );
 
   return (

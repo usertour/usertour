@@ -33,3 +33,22 @@ export const useShouldShowMadeWith = (): boolean => {
   }
   return !(projectConfig?.removeBranding ?? false);
 };
+
+// Whether the project may use theme-level custom CSS (and the custom font
+// that depends on it). `getProjectConfig.customCss` is server-resolved off one
+// flag: cloud gates it on the subscription (Growth+); self-hosted forces it on
+// (custom CSS isn't a self-hosted paywall — see getProjectConfig). So the
+// upsell only ever shows for cloud projects below Growth. Defaults to locked
+// (false) until the config lands, so paid users briefly see the upsell rather
+// than free users briefly seeing an editable field.
+export const useCanUseCustomCss = (): boolean => {
+  const project = useActiveProject();
+  const { projectConfig, loading } = useGetProjectConfigQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
+  if (loading && !projectConfig) {
+    return false;
+  }
+  return projectConfig?.customCss ?? false;
+};

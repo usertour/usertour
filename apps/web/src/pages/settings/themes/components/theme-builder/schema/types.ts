@@ -11,6 +11,10 @@ export type ColorResolver = (settings: ThemeTypesSetting) => string | undefined;
 interface FieldBase {
   visibleWhen?: Predicate;
   tooltip?: string;
+  // When true and the project's plan lacks custom CSS, the field renders an
+  // upsell instead of its editor (see field-renderer / CustomCssUpsell). The
+  // server enforces the gate independently — this is only the UI affordance.
+  requiresCustomCss?: boolean;
 }
 
 export type FieldDef =
@@ -139,6 +143,10 @@ export type FieldDef =
       message: string;
       variant?: 'warning' | 'info' | 'destructive';
       visibleWhen: Predicate;
+      // See FieldBase — a how-to hint flagged this just hides when the plan
+      // lacks custom CSS (the upsell on the sibling editor field carries the
+      // message instead).
+      requiresCustomCss?: boolean;
     }
   // NEW: avatar type composite (cartoon / upload / url tabs). Wraps the
   // copied AvatarTypeSelector widget and drives `${basePath}.type/.name/.url`.
