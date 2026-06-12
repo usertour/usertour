@@ -743,6 +743,7 @@ const translations = {
         attribute: '属性',
         event: '事件',
         analytics: '分析',
+        environment: '环境',
       },
       scopeNoWrite: '暂无写入 API',
       revealTitle: '请立即保存您的 API 密钥',

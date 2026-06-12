@@ -75,6 +75,12 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     read: ['analytics:read'],
     write: null,
   },
+  {
+    key: 'environment',
+    labelKey: 'settings.personalApiKeys.scopeResources.environment',
+    read: ['environment:read'],
+    write: null,
+  },
 ];
 
 /** The access level a flat scope list grants for a single resource. */

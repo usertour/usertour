@@ -496,5 +496,42 @@ export function buildReadTools(): McpTool[] {
         });
       },
     },
+
+    {
+      name: 'list_environments',
+      title: 'List environments',
+      capability: Capability.EnvironmentRead,
+      description:
+        "List the project's environments — the environment ids that the env-scoped tools and " +
+        '`publish_content` accept (`isPrimary` marks the default). Returns `{ items, nextCursor }`.',
+      inputSchema: {
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const result = await ctx.services.environments.list('mcp://environments', ctx.projectId, {
+          limit: asLimit(args.limit),
+          cursor: asString(args.cursor),
+        });
+        return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_environment',
+      title: 'Get an environment',
+      capability: Capability.EnvironmentRead,
+      description: 'Get a single environment by id.',
+      inputSchema: { id: z.string().describe('The environment id.') },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        return ctx.services.environments.get(id, ctx.projectId);
+      },
+    },
   ];
 }

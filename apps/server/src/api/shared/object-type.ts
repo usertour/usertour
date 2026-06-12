@@ -21,6 +21,7 @@ export enum ApiObjectType {
   BLOCK = 'block',
   THEME = 'theme',
   SEGMENT = 'segment',
+  ENVIRONMENT = 'environment',
 }
 
 export function isApiObjectType(value: string): value is ApiObjectType {

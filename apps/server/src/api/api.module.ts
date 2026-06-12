@@ -19,6 +19,8 @@ import { ApiContentSessionsController } from './content-sessions/content-session
 import { ApiContentSessionsService } from './content-sessions/content-sessions.service';
 import { ApiContentVersionsController } from './content-versions/content-versions.controller';
 import { ApiContentVersionsService } from './content-versions/content-versions.service';
+import { ApiEnvironmentsController } from './environments/environments.controller';
+import { ApiEnvironmentsService } from './environments/environments.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
 import { ApiSegmentMembersController, ApiSegmentsController } from './segments/segments.controller';
@@ -58,6 +60,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentSessionsController,
     ApiAttributeDefinitionsController,
     ApiEventDefinitionsController,
+    ApiEnvironmentsController,
   ],
   providers: [
     ApiEventDefinitionsService,
@@ -69,6 +72,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentSessionsService,
     ApiThemesService,
     ApiSegmentsService,
+    ApiEnvironmentsService,
     OpenAPIExceptionFilter,
   ],
   // Exported for the MCP module, which binds these read services as tools.
@@ -82,6 +86,7 @@ import { ApiUsersService } from './users/users.service';
     ApiCompaniesService,
     ApiSegmentsService,
     ApiContentSessionsService,
+    ApiEnvironmentsService,
   ],
 })
 export class ApiModule {}

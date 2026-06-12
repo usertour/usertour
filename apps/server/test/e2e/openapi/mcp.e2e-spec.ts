@@ -276,6 +276,29 @@ describe('MCP endpoint (e2e)', () => {
         expect(Array.isArray(payload.items)).toBe(true);
       }
     });
+
+    it('list_environments returns the seeded environment', async () => {
+      const token = await mint([Capability.EnvironmentRead], [projectA]);
+      const names = extractResult(await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token))
+        .result.tools.map((t: { name: string }) => t.name)
+        .sort();
+      expect(names).toEqual(['get_environment', 'list_environments']);
+
+      const payload = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 2,
+              method: 'tools/call',
+              params: { name: 'list_environments', arguments: {} },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(payload.items.map((e: { id: string }) => e.id)).toContain(envA);
+    });
   });
 
   describe('auth guard', () => {

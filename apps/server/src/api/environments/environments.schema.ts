@@ -1,0 +1,43 @@
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
+
+import { ApiObjectType } from '../shared/object-type';
+import { cursor, limit } from '../shared/pagination.schema';
+
+/** A query param that arrives as a single value or a repeated array. */
+function singleOrArray<T extends z.ZodTypeAny>(item: T) {
+  return z.union([item, z.array(item)]).optional();
+}
+const orderByField = z.enum(['createdAt', '-createdAt']);
+
+/**
+ * v2 environments — read-only project metadata. An environment is where content
+ * is published and where users / companies / sessions live; this endpoint lets a
+ * caller discover the environment ids the env-scoped routes (and `publish`) accept.
+ */
+export const environment = z.object({
+  id: z.string(),
+  object: z.literal(ApiObjectType.ENVIRONMENT),
+  name: z.string().nullable(),
+  isPrimary: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export class EnvironmentDto extends createZodDto(environment) {}
+
+export const listEnvironmentsQuery = z.object({
+  limit,
+  cursor,
+  orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
+});
+export class ListEnvironmentsQueryDto extends createZodDto(listEnvironmentsQuery) {}
+
+export const listEnvironmentsResponse = z.object({
+  results: z.array(environment),
+  next: z.string().nullable(),
+  previous: z.string().nullable(),
+});
+export class ListEnvironmentsResponseDto extends createZodDto(listEnvironmentsResponse) {}
+
+export type Environment = z.infer<typeof environment>;
+export type ListEnvironmentsQuery = z.infer<typeof listEnvironmentsQuery>;

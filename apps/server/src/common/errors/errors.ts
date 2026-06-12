@@ -272,6 +272,15 @@ export class SegmentNotFoundError extends OpenAPIError {
   };
 }
 
+export class EnvironmentNotFoundError extends OpenAPIError {
+  code = 'E1026';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Environment not found',
+    'zh-CN': '环境未找到',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
@@ -705,6 +714,7 @@ const errorMap = {
   E1023: ResourceConflictError,
   E1024: EventDefinitionNotFoundError,
   E1025: SegmentNotFoundError,
+  E1026: EnvironmentNotFoundError,
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,

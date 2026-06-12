@@ -777,6 +777,7 @@ const translations = {
         attribute: 'Attributes',
         event: 'Events',
         analytics: 'Analytics',
+        environment: 'Environments',
       },
       scopeNoWrite: 'No write API yet',
       revealTitle: 'Save your API key now',
