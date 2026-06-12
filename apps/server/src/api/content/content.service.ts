@@ -14,7 +14,7 @@ import {
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
-import { validateVersionUsable } from '../content-representation/usable.validate';
+import { requiresTheme, validateVersionUsable } from '../content-representation/usable.validate';
 import { defaultVersionData } from '../content-representation/version-data.defaults';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -52,11 +52,18 @@ export class ApiContentService {
   /** Create content (+ its initial draft version) in the project's primary environment. */
   async create(projectId: string, body: CreateContentBody): Promise<Content> {
     const environment = await this.primaryEnvironment(projectId);
-    // A theme is required: content has no usable styling/dimensions without one,
-    // so the SDK can't render a themeless version (it starts, finds nothing
-    // renderable, and completes at progress 0). The themeId seeds the initial
-    // draft version (theme is version-level); change it later via the version.
-    await this.requireTheme(body.themeId, projectId);
+    // A theme is required for every type that renders UI: without one the SDK
+    // can't render the version (it starts, finds nothing renderable, and
+    // completes at progress 0). Tracker has no UI, so its theme is optional.
+    // The themeId seeds the initial draft version (theme is version-level).
+    if (requiresTheme(body.type)) {
+      if (!body.themeId) {
+        throw new ValidationError(`themeId is required for content type "${body.type}".`);
+      }
+      await this.requireTheme(body.themeId, projectId);
+    } else if (body.themeId) {
+      await this.requireTheme(body.themeId, projectId);
+    }
     const created = await this.content.createContent({
       type: body.type,
       name: body.name,

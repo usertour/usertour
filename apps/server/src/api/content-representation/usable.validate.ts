@@ -65,6 +65,11 @@ const UI_TYPES = new Set<string>([
   ContentDataType.RESOURCE_CENTER,
 ]);
 
+/** Whether a content type renders UI and therefore needs a theme (everything but tracker). */
+export function requiresTheme(type: string): boolean {
+  return UI_TYPES.has(type);
+}
+
 /** A target is usable if it resolves to an element (auto selectors or a manual selector). */
 function hasTarget(target?: ElementSelectorPropsData): boolean {
   return Boolean(target && (target.selectors || (target.customSelector ?? '').trim()));

@@ -240,6 +240,16 @@ describe('API v2 /content (e2e)', () => {
     expect(res.status).toBe(400);
   });
 
+  it('allows creating a tracker without a themeId (it has no UI)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const res = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'tracker',
+      name: 'Signup tracker',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ object: 'content', type: 'tracker' });
+  });
+
   it('rejects create with an unknown themeId (404 E1021)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
     const res = await api('post', `/v2/projects/${projectId}/content`, token).send({

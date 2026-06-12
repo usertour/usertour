@@ -69,10 +69,11 @@ export const createContentBody = z.object({
   buildUrl: z.string().optional(),
   themeId: z
     .string()
+    .optional()
     .describe(
-      'Theme applied to the initial draft version. Required — content has no usable styling ' +
-        'without one (the SDK can’t render a themeless version). List options with the themes ' +
-        'endpoint; use the one with isDefault if unsure.',
+      'Theme applied to the initial draft version. Required for every type except `tracker` ' +
+        '(which has no UI) — content has no usable styling without one. List options with the ' +
+        'themes endpoint; use the one with isDefault if unsure.',
     ),
 });
 export class CreateContentBodyDto extends createZodDto(createContentBody) {}

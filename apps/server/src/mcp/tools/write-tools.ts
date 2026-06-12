@@ -72,9 +72,10 @@ export function buildWriteTools(): McpTool[] {
         buildUrl: z.string().optional(),
         themeId: z
           .string()
+          .optional()
           .describe(
-            'Theme for the initial draft version (required — content needs a theme to render). ' +
-              'Use `list_themes`; pick the one with isDefault if unsure.',
+            'Theme for the initial draft version. Required for every type except `tracker` ' +
+              '(no UI). Use `list_themes`; pick the one with isDefault if unsure.',
           ),
       },
       handler: (args, ctx) =>
@@ -444,7 +445,9 @@ export function buildWriteTools(): McpTool[] {
       name: 'create_theme',
       title: 'Create a theme',
       capability: Capability.ThemeCreate,
-      description: 'Create a theme. Settings pass through; variation conditions are compiled.',
+      description:
+        'Create a theme (metadata only). It is seeded with the default styling; theme ' +
+        'settings/variations are not editable via the API — tune them in the theme builder.',
       inputSchema: { ...createThemeBody.shape },
       handler: (args, ctx) =>
         ctx.services.themes.create(ctx.projectId, args as unknown as CreateThemeBody),
@@ -453,7 +456,9 @@ export function buildWriteTools(): McpTool[] {
       name: 'update_theme',
       title: 'Update a theme',
       capability: Capability.ThemeUpdate,
-      description: 'Update a theme (partial). Provided settings / variations replace the existing.',
+      description:
+        "Update a theme's metadata (name / isDefault). Styling (settings/variations) is not " +
+        'editable via the API — tune it in the theme builder.',
       inputSchema: { id: z.string().describe('The theme id.'), ...updateThemeBody.shape },
       handler: (args, ctx) =>
         ctx.services.themes.update(

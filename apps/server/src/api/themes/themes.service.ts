@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type Theme as PrismaTheme } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { cuid } from '@usertour/helpers';
+import { defaultSettings } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -9,7 +9,6 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
-import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -20,7 +19,6 @@ import {
   ListThemesQuery,
   Theme,
   ThemeExpand,
-  ThemeVariationInput,
   UpdateThemeBody,
 } from './themes.schema';
 
@@ -83,35 +81,33 @@ export class ApiThemesService {
     return mapTheme(theme, expand, resolvers);
   }
 
-  /** Create a theme. Settings pass through; variation conditions are compiled. */
+  /**
+   * Create a theme. `settings` / `variations` are not writable through the API
+   * (see themes.schema) — the theme is seeded with the default settings, which the
+   * caller can then tune in the theme builder.
+   */
   async create(projectId: string, body: CreateThemeBody): Promise<Theme> {
-    const compileResolvers = await this.buildCompileResolvers(projectId);
     const created = await this.themes.createTheme({
       projectId,
       name: body.name,
       isDefault: body.isDefault ?? false,
-      settings: body.settings as unknown as JsonValue,
-      variations: this.compileVariations(body.variations, compileResolvers),
+      settings: defaultSettings as unknown as JsonValue,
+      variations: [] as unknown as JsonValue,
     });
     const resolvers = await this.buildDecompileResolvers(projectId);
     return mapTheme(created, FULL, resolvers);
   }
 
-  /** Update a theme (partial — only provided fields are written). Rejects system themes. */
+  /** Update a theme's metadata (name / isDefault). Rejects system themes. */
   async update(id: string, projectId: string, body: UpdateThemeBody): Promise<Theme> {
     const theme = await this.requireTheme(id, projectId);
     if (theme.isSystem) {
       throw new ValidationError('Cannot modify a system theme.');
     }
-    const compileResolvers = await this.buildCompileResolvers(projectId);
     const updated = await this.themes.updateTheme({
       id,
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.isDefault !== undefined ? { isDefault: body.isDefault } : {}),
-      ...(body.settings !== undefined ? { settings: body.settings as unknown as JsonValue } : {}),
-      ...(body.variations !== undefined
-        ? { variations: this.compileVariations(body.variations, compileResolvers) }
-        : {}),
     });
     const resolvers = await this.buildDecompileResolvers(projectId);
     return mapTheme(updated, FULL, resolvers);
@@ -135,19 +131,6 @@ export class ApiThemesService {
     return theme;
   }
 
-  /** Compile public variations into the internal shape (conditions code -> id). */
-  private compileVariations(
-    variations: ThemeVariationInput[] | undefined,
-    resolvers: CompileResolvers,
-  ): JsonValue {
-    return (variations ?? []).map((v) => ({
-      id: v.id ?? cuid(),
-      name: v.name,
-      conditions: compileConditions(v.conditions, resolvers),
-      settings: v.settings,
-    })) as unknown as JsonValue;
-  }
-
   /** Internal attribute / event ids -> stable codeName (read; fallback: the id). */
   private async buildDecompileResolvers(projectId: string): Promise<DecompileResolvers> {
     const [attributes, events] = await Promise.all([
@@ -162,23 +145,6 @@ export class ApiThemesService {
     return {
       attributeCode: (id) => attrMap.get(id) ?? id,
       eventCode: (id) => eventMap.get(id) ?? id,
-    };
-  }
-
-  /** Stable codeName -> internal attribute / event id (write; fallback: the code). */
-  private async buildCompileResolvers(projectId: string): Promise<CompileResolvers> {
-    const [attributes, events] = await Promise.all([
-      this.prisma.attribute.findMany({
-        where: { projectId },
-        select: { id: true, codeName: true },
-      }),
-      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
-    ]);
-    const attrMap = new Map(attributes.map((a) => [a.codeName, a.id]));
-    const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
-    return {
-      attributeId: (code) => attrMap.get(code) ?? code,
-      eventId: (code) => eventMap.get(code) ?? code,
     };
   }
 }

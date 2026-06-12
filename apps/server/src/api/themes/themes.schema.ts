@@ -35,14 +35,6 @@ const themeVariation = z.object({
   settings: themeSettings,
 });
 
-/** A conditional variation as accepted on write (id optional — echo to keep, omit to create). */
-const themeVariationInput = z.object({
-  id: z.string().optional(),
-  name: z.string(),
-  conditions: z.array(representationCondition).default([]),
-  settings: themeSettings,
-});
-
 export const theme = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.THEME),
@@ -76,28 +68,25 @@ export const listThemesResponse = z.object({
 });
 export class ListThemesResponseDto extends createZodDto(listThemesResponse) {}
 
+// Theme `settings` and `variations` are NOT writable through the API: they are a
+// large, cascaded, visually-tuned structure with no safe machine contract yet, so
+// the API would just be accepting unvalidated data. The write surface is limited
+// to metadata; a created theme is seeded with the default settings, and styling is
+// tuned in the theme builder. `settings` / `variations` remain readable via expand.
 export const createThemeBody = z.object({
   name: z.string().min(1).describe('Theme name.'),
   isDefault: z.boolean().optional().describe('Make this the project default theme.'),
-  settings: themeSettings.describe('Theme settings object.'),
-  variations: z.array(themeVariationInput).optional().describe('Conditional variations.'),
 });
 export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
 
 export const updateThemeBody = z.object({
   name: z.string().min(1).optional(),
   isDefault: z.boolean().optional(),
-  settings: themeSettings.optional().describe('Replaces the theme settings when provided.'),
-  variations: z
-    .array(themeVariationInput)
-    .optional()
-    .describe('Replaces the variations when provided.'),
 });
 export class UpdateThemeBodyDto extends createZodDto(updateThemeBody) {}
 
 export type Theme = z.infer<typeof theme>;
 export type ThemeExpand = z.infer<typeof themeExpand>;
-export type ThemeVariationInput = z.infer<typeof themeVariationInput>;
 export type ListThemesQuery = z.infer<typeof listThemesQuery>;
 export type GetThemeQuery = z.infer<typeof getThemeQuery>;
 export type CreateThemeBody = z.infer<typeof createThemeBody>;

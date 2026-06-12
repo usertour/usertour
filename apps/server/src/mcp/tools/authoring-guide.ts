@@ -15,7 +15,7 @@ export const AUTHORING_GUIDE = `# Authoring Usertour content
 4. \`publish_content\` — goes live. It REJECTS content that wouldn't render (same rules as validate).
 
 ## Themes (required)
-Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\` and pass a \`themeId\` to \`create_content\`; if unsure use the one with \`isDefault: true\`.
+Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\` and pass a \`themeId\` to \`create_content\`; if unsure use the one with \`isDefault: true\`. \`create_theme\` makes a default-styled theme (name/isDefault only) — theme colors/fonts are not editable via the API; tune them in the theme builder.
 
 ## Flow steps
 - Step \`type\`: \`tooltip\` | \`modal\` | \`hidden\` | \`bubble\`. **Only \`tooltip\` needs a \`target\`** (a CSS selector of an element on the page); the rest are page-level.
