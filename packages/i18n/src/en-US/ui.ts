@@ -656,6 +656,7 @@ const translations = {
           noBranding: 'No Usertour-branding',
           teamMembers: 'Team members',
           customTheming: 'Custom theming',
+          customCss: 'Custom CSS',
           customAttributes: 'Custom user attributes',
           flowTriggering: 'Automatic, segmented flow triggering',
           versionHistory: 'Version history',

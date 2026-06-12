@@ -628,6 +628,7 @@ const translations = {
           noBranding: '去除 Usertour 品牌',
           teamMembers: '团队成员',
           customTheming: '自定义主题',
+          customCss: '自定义 CSS',
           customAttributes: '自定义用户属性',
           flowTriggering: '基于分群自动触发流程',
           versionHistory: '版本历史',

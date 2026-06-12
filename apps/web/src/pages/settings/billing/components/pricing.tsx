@@ -498,6 +498,10 @@ const ComparisonTable = ({
           values: [true, true, true, true],
         },
         {
+          name: t('settings.billing.comparison.rows.customCss'),
+          values: matrixRow('customCss', currentPlanType, overridePlan),
+        },
+        {
           name: t('settings.billing.comparison.rows.customAttributes'),
           values: [true, true, true, true],
         },
