@@ -2,7 +2,8 @@ import { compileStep } from './representation.compile';
 import { decompileStep } from './representation.decompile';
 import { compileText } from './text.compile';
 import { decompileText } from './text.decompile';
-import { CompileResolvers } from './rules.compile';
+import { compileActions, CompileResolvers } from './rules.compile';
+import { decompileActions } from './rules.decompile';
 
 const ids: CompileResolvers = { attributeId: (c) => c, eventId: (c) => c };
 
@@ -15,6 +16,26 @@ describe('markdown round-trip', () => {
     '{{ first_name | default: "friend" }}',
   ])('round-trips %p', (md) => {
     expect(decompileText(compileText(md))).toBe(md);
+  });
+});
+
+describe('navigate action compiles to the builder shape (data.value, not data.url)', () => {
+  it('stores the URL as a Slate rich-text `value` the builder/runtime read', () => {
+    const [rule] = compileActions([{ type: 'navigate', url: '/users' }], ids);
+    expect((rule as any).type).toBe('page-navigate');
+    // builder/runtime read data.value (serialized), NOT data.url
+    expect((rule as any).data.value).toBeDefined();
+    expect((rule as any).data.url).toBeUndefined();
+    expect((rule as any).data.openType).toBe('same');
+    // value serializes back to the URL
+    expect(decompileText((rule as any).data.value)).toBe('/users');
+  });
+
+  it('round-trips through compile → decompile', () => {
+    const compiled = compileActions([{ type: 'navigate', url: '/settings/appearance' }], ids);
+    expect(decompileActions(compiled as never)).toEqual([
+      { type: 'navigate', url: '/settings/appearance' },
+    ]);
   });
 });
 

@@ -10,6 +10,7 @@ import {
   RepresentationTrigger,
 } from './representation.schema';
 import { compileTargetToElementData } from './target.compile';
+import { compileText } from './text.compile';
 
 /**
  * Compile the representation rules model back into internal `RulesCondition[]` /
@@ -195,8 +196,12 @@ function compileAction(a: RepresentationAction, r?: CompileResolvers): Rule {
     case 'start_flow':
       return rule('flow-start', { contentId: a.flow, ...(a.step ? { stepCvid: a.step } : {}) });
     case 'navigate':
+      // The URL is stored as a Slate rich-text `value` (the builder + runtime read
+      // `data.value` and serialize it — this is what lets `{{ attribute }}` work in
+      // URLs), NOT a plain `url` string. compileText turns the url into that node
+      // shape; decompile reads it back via decompileText(d.value).
       return rule('page-navigate', {
-        url: a.url,
+        value: compileText(a.url),
         ...(a.newTab ? { openType: 'new', openNewTab: true } : { openType: 'same' }),
         ...(a.newWindow ? { openNewWindow: true } : {}),
       });
