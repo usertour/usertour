@@ -315,4 +315,31 @@ describe('API v2 /content (e2e)', () => {
     list = await api('get', `/v2/projects/${projectId}/content?limit=100`, token);
     expect(list.body.results.map((c: { id: string }) => c.id)).not.toContain(id);
   });
+
+  it('seeds non-flow content with its type default data', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const create = (type: string) =>
+      api('post', `/v2/projects/${projectId}/content`, token).send({ type, name: type, themeId });
+
+    const banner = await create('banner');
+    expect(banner.status).toBe(201);
+    const bv = await prisma.version.findUnique({ where: { id: banner.body.editedVersionId } });
+    // structural default that the runtime needs and a partial update wouldn't fill
+    expect((bv?.data as { embedPlacement?: string })?.embedPlacement).toBe('top-of-page');
+
+    const checklist = await create('checklist');
+    const cv = await prisma.version.findUnique({ where: { id: checklist.body.editedVersionId } });
+    const cd = cv?.data as { initialDisplay?: string; items?: unknown[] };
+    expect(cd?.initialDisplay).toBeDefined();
+    expect(Array.isArray(cd?.items)).toBe(true);
+
+    const launcher = await create('launcher');
+    const lv = await prisma.version.findUnique({ where: { id: launcher.body.editedVersionId } });
+    expect((lv?.data as { behavior?: unknown })?.behavior).toBeDefined();
+
+    // flow gets no data seed (it uses steps)
+    const flow = await create('flow');
+    const fv = await prisma.version.findUnique({ where: { id: flow.body.editedVersionId } });
+    expect(fv?.data ?? null).toBeNull();
+  });
 });

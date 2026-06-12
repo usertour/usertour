@@ -15,6 +15,7 @@ import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
 import { validateVersionUsable } from '../content-representation/usable.validate';
+import { defaultVersionData } from '../content-representation/version-data.defaults';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapContent } from './content.mapper';
@@ -62,6 +63,9 @@ export class ApiContentService {
       buildUrl: body.buildUrl,
       environmentId: environment.id,
       themeId: body.themeId,
+      // Seed the type's default data so a non-flow draft starts complete; a later
+      // update_content_version field-merges onto it rather than a bare object.
+      data: defaultVersionData(body.type),
     });
     if (!created) {
       throw new ParamsError('Failed to create content');
