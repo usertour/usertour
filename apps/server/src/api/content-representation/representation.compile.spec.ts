@@ -4,6 +4,7 @@ import { compileText } from './text.compile';
 import { decompileText } from './text.decompile';
 import { extractLinkUrl } from '@usertour/helpers';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
+import { decompileContent } from './representation.decompile';
 import { decompileActions, decompileWhen, IDENTITY_RESOLVERS } from './rules.decompile';
 
 const ids: CompileResolvers = { attributeId: (c) => c, eventId: (c) => c };
@@ -334,6 +335,69 @@ describe('target field-merge on write-back', () => {
     );
     expect(compiled.target.customSelector).toBe('.new');
     expect(compiled.target.content).toBeUndefined();
+  });
+});
+
+describe('element + column styling round-trip', () => {
+  it('round-trips column justify/align/padding (styled single column stays a columns block)', () => {
+    const rep = [
+      {
+        object: 'block' as const,
+        type: 'columns' as const,
+        columns: [
+          {
+            justify: 'center' as const,
+            align: 'end' as const,
+            padding: { top: 8 },
+            blocks: [{ object: 'block' as const, type: 'text' as const, markdown: 'Hi' }],
+          },
+        ],
+      },
+    ];
+    const internal: any = compileContent(rep as never, undefined, ids);
+    const colEl = internal[0].children[0].element;
+    expect(colEl.justifyContent).toBe('justify-center');
+    expect(colEl.alignItems).toBe('items-end');
+    expect(colEl.padding).toMatchObject({ enabled: true, top: 8 });
+    const back: any = decompileContent(internal).blocks;
+    expect(back[0].type).toBe('columns');
+    expect(back[0].columns[0]).toMatchObject({
+      justify: 'center',
+      align: 'end',
+      padding: { top: 8 },
+    });
+  });
+
+  it('round-trips image width + margin', () => {
+    const rep = [
+      {
+        object: 'block' as const,
+        type: 'image' as const,
+        url: 'x.png',
+        width: { unit: 'pixels' as const, value: 200 },
+        margin: { top: 4, bottom: 4 },
+      },
+    ];
+    const internal: any = compileContent(rep as never, undefined, ids);
+    const img = internal[0].children[0].children[0].element;
+    expect(img.width).toEqual({ type: 'pixels', value: 200 });
+    expect(img.margin).toMatchObject({ enabled: true, top: 4, bottom: 4 });
+    const back: any = decompileContent(internal).blocks;
+    expect(back[0]).toMatchObject({
+      type: 'image',
+      width: { unit: 'pixels', value: 200 },
+      margin: { top: 4, bottom: 4 },
+    });
+  });
+
+  it('still flattens a plain (unstyled) single column to a bare block', () => {
+    const internal: any = compileContent(
+      [{ object: 'block', type: 'text', markdown: 'Hi' }] as never,
+      undefined,
+      ids,
+    );
+    const back: any = decompileContent(internal).blocks;
+    expect(back[0].type).toBe('text'); // not wrapped in a columns block
   });
 });
 

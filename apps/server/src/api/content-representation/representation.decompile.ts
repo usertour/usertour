@@ -85,7 +85,10 @@ export function decompileContent(
 
   for (const root of roots) {
     const columns: unknown[] = Array.isArray(root?.children) ? root.children : [];
-    if (columns.length <= 1) {
+    // Flatten a single column to bare blocks ONLY when it has no non-default
+    // layout styling — otherwise its justify/align/padding would be lost, so
+    // keep it as a one-column `columns` block that carries them.
+    if (columns.length <= 1 && !columnHasLayout((columns[0] as any)?.element)) {
       const elements: unknown[] = Array.isArray((columns[0] as any)?.children)
         ? (columns[0] as any).children
         : [];
@@ -103,8 +106,18 @@ export function decompileContent(
           hasUnsupported = hasUnsupported || unsupported;
           return block;
         });
-        const width = decompileColumnWidth(col?.element);
-        return width ? { width, blocks: colBlocks } : { blocks: colBlocks };
+        const el = col?.element;
+        const width = decompileWidth(el?.width);
+        const justify = decompileJustify(el);
+        const align = decompileAlign(el);
+        const padding = decompileSpacing(el?.padding);
+        return {
+          ...(width ? { width } : {}),
+          ...(justify ? { justify } : {}),
+          ...(align ? { align } : {}),
+          ...(padding ? { padding } : {}),
+          blocks: colBlocks,
+        };
       });
       blocks.push({
         object: ApiObjectType.BLOCK,
@@ -117,15 +130,43 @@ export function decompileContent(
   return { blocks, hasUnsupported };
 }
 
-function decompileColumnWidth(
-  columnElement: unknown,
+// ── Element styling → representation (inverse of the compile helpers) ──────────
+function decompileWidth(
+  w: unknown,
 ): { unit: 'percent' | 'pixels' | 'fill'; value?: number } | undefined {
-  const w = (columnElement as any)?.width;
-  if (!w || (w.type !== 'percent' && w.type !== 'pixels' && w.type !== 'fill')) {
-    return undefined;
-  }
-  return { unit: w.type, ...(typeof w.value === 'number' ? { value: w.value } : {}) };
+  const x = w as { type?: string; value?: unknown } | undefined;
+  if (!x || (x.type !== 'percent' && x.type !== 'pixels' && x.type !== 'fill')) return undefined;
+  return { unit: x.type, ...(typeof x.value === 'number' ? { value: x.value } : {}) };
 }
+/** Spacing (margin/padding) — only emitted when it carries an actual side value. */
+function decompileSpacing(
+  s: unknown,
+): { enabled?: boolean; top?: number; bottom?: number; left?: number; right?: number } | undefined {
+  const x = s as Record<string, unknown> | undefined;
+  if (!x || typeof x !== 'object') return undefined;
+  const sides: Record<string, number> = {};
+  for (const k of ['top', 'bottom', 'left', 'right']) {
+    if (typeof x[k] === 'number') sides[k] = x[k] as number;
+  }
+  if (Object.keys(sides).length === 0) return undefined;
+  return { ...(typeof x.enabled === 'boolean' ? { enabled: x.enabled } : {}), ...sides };
+}
+const decompileJustify = (el: any) => {
+  const j = el?.justifyContent;
+  return typeof j === 'string' && j.startsWith('justify-') && j !== 'justify-start'
+    ? (j.slice('justify-'.length) as 'center' | 'end' | 'between' | 'around' | 'evenly')
+    : undefined;
+};
+const decompileAlign = (el: any) => {
+  const a = el?.alignItems;
+  return typeof a === 'string' && a.startsWith('items-') && a !== 'items-start'
+    ? (a.slice('items-'.length) as 'center' | 'end' | 'baseline')
+    : undefined;
+};
+/** A column "has layout" (so it can't be flattened) if it sets non-default
+ * justify / align / padding. Width is ignored: a lone column always fills. */
+const columnHasLayout = (el: any): boolean =>
+  !!(decompileJustify(el) || decompileAlign(el) || decompileSpacing(el?.padding));
 
 function decompileElement(
   wrapper: unknown,
@@ -146,6 +187,8 @@ function decompileElement(
         e.link && typeof e.link.url === 'string' && e.link.url
           ? { url: e.link.url, ...(e.link.openType === 'new' ? { newTab: true } : {}) }
           : undefined;
+      const width = decompileWidth(e.width);
+      const margin = decompileSpacing(e.margin);
       return {
         block: {
           ...base,
@@ -153,6 +196,8 @@ function decompileElement(
           url: typeof e.url === 'string' ? e.url : '',
           ...(typeof e.alt === 'string' ? { alt: e.alt } : {}),
           ...(link ? { link } : {}),
+          ...(width ? { width } : {}),
+          ...(margin ? { margin } : {}),
         },
         unsupported: false,
       };
@@ -167,6 +212,7 @@ function decompileElement(
       const hideConds = Array.isArray(e.data?.hideButtonConditions)
         ? e.data.hideButtonConditions
         : [];
+      const margin = decompileSpacing(e.margin);
       return {
         block: {
           ...base,
@@ -176,15 +222,27 @@ function decompileElement(
           ...(actions.length ? { actions } : {}),
           ...(disableConds.length ? { disabledWhen: decompileWhen(disableConds, resolvers) } : {}),
           ...(hideConds.length ? { hiddenWhen: decompileWhen(hideConds, resolvers) } : {}),
+          ...(margin ? { margin } : {}),
         },
         unsupported: false,
       };
     }
-    case 'embed':
+    case 'embed': {
+      const width = decompileWidth(e.width);
+      const height = decompileWidth(e.height);
+      const margin = decompileSpacing(e.margin);
       return {
-        block: { ...base, type: 'embed', url: typeof e.url === 'string' ? e.url : '' },
+        block: {
+          ...base,
+          type: 'embed',
+          url: typeof e.url === 'string' ? e.url : '',
+          ...(width ? { width } : {}),
+          ...(height ? { height } : {}),
+          ...(margin ? { margin } : {}),
+        },
         unsupported: false,
       };
+    }
     case 'nps':
     case 'star-rating':
     case 'scale':

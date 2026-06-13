@@ -125,6 +125,27 @@ function indexElements(data: unknown): Map<string, any> {
   return map;
 }
 
+// Representation styling → internal element shapes. width: `unit` → `type`;
+// spacing carries an `enabled` flag (default true when the author set any side);
+// column justify/align are stored as the tailwind classes the renderer applies.
+const toInternalWidth = (w: { unit: string; value?: number }) => ({
+  type: w.unit,
+  ...(w.value !== undefined ? { value: w.value } : {}),
+});
+const toInternalSpacing = (s: {
+  enabled?: boolean;
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+}) => ({
+  enabled: s.enabled ?? true,
+  ...(s.top !== undefined ? { top: s.top } : {}),
+  ...(s.bottom !== undefined ? { bottom: s.bottom } : {}),
+  ...(s.left !== undefined ? { left: s.left } : {}),
+  ...(s.right !== undefined ? { right: s.right } : {}),
+});
+
 export function compileContent(
   blocks: RepresentationBlock[],
   existingData: unknown,
@@ -141,7 +162,10 @@ export function compileContent(
           id: cuid(),
           element: {
             type: 'column',
-            ...(col.width ? { width: { type: col.width.unit, value: col.width.value } } : {}),
+            ...(col.width ? { width: toInternalWidth(col.width) } : {}),
+            ...(col.justify ? { justifyContent: `justify-${col.justify}` } : {}),
+            ...(col.align ? { alignItems: `items-${col.align}` } : {}),
+            ...(col.padding ? { padding: toInternalSpacing(col.padding) } : {}),
           },
           children: col.blocks.map((b) => compileElement(b, byId, r, dismiss)),
         })),
@@ -203,6 +227,8 @@ function compileElement(
           ...(block.link
             ? { link: { url: block.link.url, openType: block.link.newTab ? 'new' : 'same' } }
             : {}),
+          ...(block.width ? { width: toInternalWidth(block.width) } : {}),
+          ...(block.margin ? { margin: toInternalSpacing(block.margin) } : {}),
         },
         children: null,
       };
@@ -212,6 +238,7 @@ function compileElement(
         element: {
           ...keepStyle,
           type: 'button',
+          ...(block.margin ? { margin: toInternalSpacing(block.margin) } : {}),
           data: {
             ...((keepStyle as any).data ?? {}),
             text: block.text,
@@ -231,7 +258,18 @@ function compileElement(
         children: null,
       };
     case 'embed':
-      return { id, element: { ...keepStyle, type: 'embed', url: block.url }, children: null };
+      return {
+        id,
+        element: {
+          ...keepStyle,
+          type: 'embed',
+          url: block.url,
+          ...(block.width ? { width: toInternalWidth(block.width) } : {}),
+          ...(block.height ? { height: toInternalWidth(block.height) } : {}),
+          ...(block.margin ? { margin: toInternalSpacing(block.margin) } : {}),
+        },
+        children: null,
+      };
     case 'question': {
       // The question's cvid is server-owned: preserve the matched element's cvid
       // on update, generate on create — the client-supplied value is ignored.

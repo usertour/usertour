@@ -273,6 +273,8 @@ export type RepresentationBlock =
       url: string;
       alt?: string;
       link?: { url: string; newTab?: boolean };
+      width?: RepresentationWidth;
+      margin?: RepresentationSpacing;
     }
   | {
       object: ApiObjectType.BLOCK;
@@ -283,8 +285,17 @@ export type RepresentationBlock =
       disabledWhen?: RepresentationCondition[];
       hiddenWhen?: RepresentationCondition[];
       variant?: 'primary' | 'secondary';
+      margin?: RepresentationSpacing;
     }
-  | { object: ApiObjectType.BLOCK; id?: string; type: 'embed'; url: string }
+  | {
+      object: ApiObjectType.BLOCK;
+      id?: string;
+      type: 'embed';
+      url: string;
+      width?: RepresentationWidth;
+      height?: RepresentationWidth;
+      margin?: RepresentationSpacing;
+    }
   | {
       object: ApiObjectType.BLOCK;
       id?: string;
@@ -297,17 +308,47 @@ export type RepresentationBlock =
       id?: string;
       type: 'columns';
       columns: {
-        width?: { unit: 'percent' | 'pixels' | 'fill'; value?: number };
+        width?: RepresentationWidth;
+        justify?: ColumnJustify;
+        align?: ColumnAlign;
+        padding?: RepresentationSpacing;
         blocks: RepresentationBlock[];
       }[];
     }
   | { object: ApiObjectType.BLOCK; id?: string; type: 'unsupported'; note?: string };
+
+/** Element/column dimension. `fill` (column only) means flex-grow. */
+export type RepresentationWidth = { unit: 'percent' | 'pixels' | 'fill'; value?: number };
+/** Margin/padding box; omitted sides inherit the theme/default. */
+export type RepresentationSpacing = {
+  enabled?: boolean;
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+};
+export type ColumnJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
+export type ColumnAlign = 'start' | 'center' | 'end' | 'baseline';
 
 const blockBase = {
   // Present on read; optional on write input (defaulted) so clients needn't echo it.
   object: z.literal(ApiObjectType.BLOCK).default(ApiObjectType.BLOCK),
   id: z.string().optional(),
 };
+const widthShape = z
+  .object({ unit: z.enum(['percent', 'pixels', 'fill']), value: z.number().optional() })
+  .optional();
+const spacingShape = z
+  .object({
+    enabled: z.boolean().optional(),
+    top: z.number().optional(),
+    bottom: z.number().optional(),
+    left: z.number().optional(),
+    right: z.number().optional(),
+  })
+  .optional();
+const columnJustify = z.enum(['start', 'center', 'end', 'between', 'around', 'evenly']);
+const columnAlign = z.enum(['start', 'center', 'end', 'baseline']);
 export const representationBlock = z.lazy(() =>
   z.union([
     z.object({
@@ -327,6 +368,8 @@ export const representationBlock = z.lazy(() =>
       url: z.string(),
       alt: z.string().optional(),
       link: z.object({ url: z.string(), newTab: z.boolean().optional() }).optional(),
+      width: widthShape,
+      margin: spacingShape,
     }),
     z.object({
       ...blockBase,
@@ -336,8 +379,16 @@ export const representationBlock = z.lazy(() =>
       disabledWhen: z.array(representationCondition).optional(),
       hiddenWhen: z.array(representationCondition).optional(),
       variant: z.enum(['primary', 'secondary']).optional(),
+      margin: spacingShape,
     }),
-    z.object({ ...blockBase, type: z.literal('embed'), url: z.string() }),
+    z.object({
+      ...blockBase,
+      type: z.literal('embed'),
+      url: z.string(),
+      width: widthShape,
+      height: widthShape,
+      margin: spacingShape,
+    }),
     z.object({
       ...blockBase,
       type: z.literal('question'),
@@ -349,9 +400,10 @@ export const representationBlock = z.lazy(() =>
       type: z.literal('columns'),
       columns: z.array(
         z.object({
-          width: z
-            .object({ unit: z.enum(['percent', 'pixels', 'fill']), value: z.number().optional() })
-            .optional(),
+          width: widthShape,
+          justify: columnJustify.optional(),
+          align: columnAlign.optional(),
+          padding: spacingShape,
           blocks: z.array(representationBlock),
         }),
       ),
