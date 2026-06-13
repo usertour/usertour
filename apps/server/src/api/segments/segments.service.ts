@@ -14,6 +14,8 @@ import {
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
+import { loadConditionContext } from '../content-representation/condition-context';
+import { collectRuleIssues } from '../content-representation/condition-validate';
 import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
 import { paginate } from '../shared/pagination';
@@ -91,6 +93,7 @@ export class ApiSegmentsService {
     if (body.kind === 'condition') {
       const compileResolvers = await this.buildCompileResolvers(projectId);
       data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
+      await this.assertConditionsValid(data, projectId);
     }
     const created = await this.biz.creatSegment({
       projectId,
@@ -116,6 +119,7 @@ export class ApiSegmentsService {
       }
       const compileResolvers = await this.buildCompileResolvers(projectId);
       data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
+      await this.assertConditionsValid(data, projectId);
     }
     await this.biz.updateSegment({
       id,
@@ -124,6 +128,25 @@ export class ApiSegmentsService {
     });
     const resolvers = await this.buildDecompileResolvers(projectId);
     return mapSegment(await this.requireSegment(id, projectId), resolvers);
+  }
+
+  /**
+   * Reject a condition segment whose conditions are semantically broken — a
+   * dangling attribute/segment/content/event reference, an operator the
+   * attribute's data type doesn't support, or a missing required value. The
+   * builder UI prevents these; the API has no such gate, and a broken segment
+   * silently never-matches or match-alls at runtime. Segments have no publish
+   * step, so this runs at write time (the only point of control). Same shared
+   * validator the content publish/dry-run path uses.
+   */
+  private async assertConditionsValid(data: JsonValue, projectId: string): Promise<void> {
+    const ctx = await loadConditionContext(this.prisma, projectId);
+    const issues = collectRuleIssues(data, ctx, 'conditions');
+    if (issues.length) {
+      throw new ValidationError(
+        `Invalid segment conditions: ${issues.map((i) => `${i.path}: ${i.message}`).join('; ')}`,
+      );
+    }
   }
 
   /** Delete a segment (not the built-in `all`). Members cascade in the domain. */

@@ -1,8 +1,5 @@
-import {
-  type ValidateContext,
-  hasMissingRequiredData,
-  validateConditionByType,
-} from '@usertour/helpers';
+import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
+import { collectRuleIssues } from './condition-validate';
 import {
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   type BannerData,
@@ -64,81 +61,6 @@ export interface ValidateUsableInput {
    * skip condition validation (e.g. callers that only care about renderability).
    */
   conditionContext?: ValidateContext;
-}
-
-// Internal `RulesCondition.type` values (leaf predicates + group + event-attr).
-// These only ever appear as a node's OWN top-level `type`; layout elements carry
-// their type under `.element.type`, so walking by top-level `type` never
-// mistakes a content block for a condition.
-const CONDITION_NODE_TYPES = new Set([
-  'user-attr',
-  'current-page',
-  'segment',
-  'content',
-  'element',
-  'event',
-  'event-attr',
-  'text-input',
-  'text-fill',
-  'time',
-]);
-
-// i18n keys → human messages for the API/MCP surface (agents read these).
-const CONDITION_ERROR_MESSAGES: Record<string, string> = {
-  'conditions.errors.userAttr.selectAttribute':
-    'user-attribute condition is missing or references an unknown attribute',
-  'conditions.errors.userAttr.selectOperator': 'user-attribute condition is missing an operator',
-  'conditions.errors.userAttr.invalidOperator':
-    'operator is not valid for this attribute’s data type',
-  'conditions.errors.userAttr.enterValue': 'condition is missing a required value',
-  'conditions.errors.currentPage.enterPattern': 'current-page condition needs a URL pattern',
-  'conditions.errors.segment.selectSegment':
-    'segment condition is missing or references an unknown segment',
-  'conditions.errors.content.selectContent':
-    'flow condition is missing or references unknown content',
-  'conditions.errors.element.selectElement': 'element condition is missing a target element',
-  'conditions.errors.time.enterStart': 'time condition needs a start time',
-  'conditions.errors.event.selectEvent':
-    'event condition is missing or references an unknown event',
-  'conditions.errors.event.enterCount': 'event condition needs a count',
-  'conditions.errors.event.enterSecondCount': 'event “between” count needs a second value',
-  'conditions.errors.event.enterTimeWindow': 'event condition needs a time window',
-  'conditions.errors.event.enterSecondTimeWindow': 'event “between” window needs a second value',
-  'conditions.errors.eventAttr.selectAttribute':
-    'event-attribute condition is missing or references an unknown attribute',
-};
-
-/**
- * Deep-walk any compiled version fragment, validate every condition node against
- * the project reference lists, and push errors. Distinct from the renderability
- * checks above: this catches conditions that compile fine but are semantically
- * broken (dangling attribute/segment/content refs, an operator the attribute
- * type doesn't support, a required value left empty) and would silently
- * never-match or match-all at runtime.
- */
-function collectConditionErrors(
-  value: unknown,
-  ctx: ValidateContext,
-  path: string,
-  err: (path: string, message: string) => void,
-): void {
-  if (Array.isArray(value)) {
-    value.forEach((v, i) => collectConditionErrors(v, ctx, `${path}[${i}]`, err));
-    return;
-  }
-  if (!value || typeof value !== 'object') return;
-  const node = value as Record<string, unknown>;
-  if (typeof node.type === 'string' && CONDITION_NODE_TYPES.has(node.type)) {
-    const issue = validateConditionByType(node as unknown as RulesCondition, ctx);
-    if (issue) {
-      err(path, CONDITION_ERROR_MESSAGES[issue.key] ?? `invalid condition (${issue.key})`);
-    }
-  }
-  // Recurse into every value — conditions nest under group.conditions,
-  // event.whereConditions, button disable/hide conditions, checklist items, etc.
-  for (const key of Object.keys(node)) {
-    collectConditionErrors(node[key], ctx, `${path}.${key}`, err);
-  }
 }
 
 // UI content types that render and therefore require a theme. Tracker is the
@@ -246,14 +168,19 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
   // block conditions in data). Only when the caller supplies the reference lists.
   if (input.conditionContext) {
     const ctx = input.conditionContext;
-    if (input.config) collectConditionErrors(input.config, ctx, 'config', err);
-    if (input.data) collectConditionErrors(input.data, ctx, 'data', err);
-    asArray<Step>(input.steps).forEach((s, i) => {
+    const push = (issues: { path: string; message: string }[]) => {
+      for (const i of issues) err(i.path, i.message);
+    };
+    if (input.config) push(collectRuleIssues(input.config, ctx, 'config'));
+    if (input.data) push(collectRuleIssues(input.data, ctx, 'data'));
+    const steps = asArray<Step>(input.steps);
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
       const label = (s as { name?: string })?.name;
       const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
-      collectConditionErrors((s as { data?: unknown }).data, ctx, `${base}.data`, err);
-      collectConditionErrors((s as { trigger?: unknown }).trigger, ctx, `${base}.trigger`, err);
-    });
+      push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.data`));
+      push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.trigger`));
+    }
   }
 
   return { ok: errors.length === 0, errors, warnings };

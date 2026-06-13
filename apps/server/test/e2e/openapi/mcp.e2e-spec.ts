@@ -653,6 +653,34 @@ describe('MCP endpoint (e2e)', () => {
       expect(seg).toMatchObject({ object: 'segment', kind: 'manual', bizType: 'user' });
     });
 
+    it('create_segment rejects a condition referencing an unknown attribute', async () => {
+      const token = await mint([Capability.SegmentCreate], [projectA]);
+      const result = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'create_segment',
+              arguments: {
+                name: 'MCP bad seg',
+                bizType: 'user',
+                kind: 'condition',
+                conditions: [
+                  { type: 'user_attribute', attribute: 'ghost_attr', op: 'is', value: 'x' },
+                ],
+              },
+            },
+          },
+          token,
+        ),
+      );
+      // Segments have no publish gate, so the bad condition is rejected at write.
+      expect(result.result?.isError).toBe(true);
+      expect(result.result.content[0].text).toMatch(/unknown attribute/i);
+    });
+
     it('create_environment round-trip via MCP (environment:manage)', async () => {
       const token = await mint([Capability.EnvironmentManage], [projectA]);
       const names = extractResult(
