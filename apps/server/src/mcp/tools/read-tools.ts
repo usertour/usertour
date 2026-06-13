@@ -48,6 +48,12 @@ function asString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+/** Coerce an untyped JSON `orderBy` arg into the createdAt sort literal (the value
+ * every v2 list query accepts), or undefined. */
+function asOrderBy(value: unknown): 'createdAt' | '-createdAt' | undefined {
+  return value === 'createdAt' || value === '-createdAt' ? value : undefined;
+}
+
 /** Coerce an untyped JSON `expand` arg into a string array, or undefined if absent. */
 function asStringArray(value: unknown): string[] | undefined {
   return Array.isArray(value)
@@ -106,6 +112,11 @@ const limitSchema = z
   .optional()
   .describe('Max items per page (1-100, default 20).');
 const cursorSchema = z.string().optional().describe('Pagination cursor from a prior nextCursor.');
+// Every v2 list service honors orderBy (createdAt = oldest first, -createdAt = newest first).
+const orderBySchema = z
+  .enum(['createdAt', '-createdAt'])
+  .optional()
+  .describe('Sort order: createdAt (oldest first) or -createdAt (newest first).');
 export const environmentIdSchema = z
   .string()
   .optional()
@@ -186,15 +197,22 @@ export function buildReadTools(): McpTool[] {
           .string()
           .optional()
           .describe('Filter by content kind: flow, checklist, launcher, banner, or survey.'),
+        expand: z
+          .array(z.enum(['editedVersion', 'publishedVersion']))
+          .optional()
+          .describe('Inline editedVersion / publishedVersion on each item (avoids per-item get).'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.content.list('mcp://content', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
           type: asString(args.type),
+          expand: asStringArray(args.expand) as ContentExpand[] | undefined,
         });
         return toListPayload(result);
       },
@@ -243,6 +261,7 @@ export function buildReadTools(): McpTool[] {
           .describe('Filter by which object the attribute belongs to.'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
@@ -252,6 +271,7 @@ export function buildReadTools(): McpTool[] {
           {
             limit: asLimit(args.limit),
             cursor: asString(args.cursor),
+            orderBy: asOrderBy(args.orderBy),
             scope: asString(args.scope),
           },
         );
@@ -269,13 +289,18 @@ export function buildReadTools(): McpTool[] {
       inputSchema: {
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.eventDefinitions.list(
           'mcp://event-definitions',
           ctx.projectId,
-          { limit: asLimit(args.limit), cursor: asString(args.cursor) },
+          {
+            limit: asLimit(args.limit),
+            cursor: asString(args.cursor),
+            orderBy: asOrderBy(args.orderBy),
+          },
         );
         return toListPayload(result);
       },
@@ -296,6 +321,7 @@ export function buildReadTools(): McpTool[] {
         segmentId: z.string().optional().describe('Filter to users in this segment.'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
@@ -303,6 +329,7 @@ export function buildReadTools(): McpTool[] {
         const result = await ctx.services.users.list('mcp://users', environment, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
           email: asString(args.email),
           companyId: asString(args.companyId),
           segmentId: asString(args.segmentId),
@@ -361,6 +388,7 @@ export function buildReadTools(): McpTool[] {
         contentId: z.string().describe('The content id.'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
@@ -372,7 +400,11 @@ export function buildReadTools(): McpTool[] {
           'mcp://content-versions',
           ctx.projectId,
           contentId,
-          { limit: asLimit(args.limit), cursor: asString(args.cursor) },
+          {
+            limit: asLimit(args.limit),
+            cursor: asString(args.cursor),
+            orderBy: asOrderBy(args.orderBy),
+          },
         );
         return toListPayload(result);
       },
@@ -440,8 +472,13 @@ export function buildReadTools(): McpTool[] {
       inputSchema: {
         environmentId: environmentIdSchema,
         segmentId: z.string().optional().describe('Filter to companies in this segment.'),
+        expand: z
+          .array(z.enum(['users', 'memberships', 'memberships.user']))
+          .optional()
+          .describe('Inline users / memberships on each item (avoids per-item get).'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
@@ -449,7 +486,9 @@ export function buildReadTools(): McpTool[] {
         const result = await ctx.services.companies.list('mcp://companies', environment.id, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
           segmentId: asString(args.segmentId),
+          expand: asStringArray(args.expand) as CompanyExpand[] | undefined,
         });
         return toListPayload(result);
       },
@@ -497,12 +536,14 @@ export function buildReadTools(): McpTool[] {
           .describe('Filter to user or company segments.'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.segments.list('mcp://segments', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
           bizType: asString(args.bizType) as 'user' | 'company' | undefined,
         });
         return toListPayload(result);
@@ -537,8 +578,13 @@ export function buildReadTools(): McpTool[] {
         environmentId: environmentIdSchema,
         contentId: z.string().optional().describe('Filter to a single content.'),
         userId: z.string().optional().describe('Filter to a single end-user (external id).'),
+        expand: z
+          .array(z.enum(['answers', 'content', 'company', 'user', 'version']))
+          .optional()
+          .describe('Inline content / user / company / version / answers on each item.'),
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
@@ -546,8 +592,10 @@ export function buildReadTools(): McpTool[] {
         const result = await ctx.services.sessions.list('mcp://sessions', environment, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
           contentId: asString(args.contentId),
           userId: asString(args.userId),
+          expand: asStringArray(args.expand) as SessionExpand[] | undefined,
         });
         return toListPayload(result);
       },
@@ -591,12 +639,14 @@ export function buildReadTools(): McpTool[] {
       inputSchema: {
         limit: limitSchema,
         cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.environments.list('mcp://environments', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
         });
         return toListPayload(result);
       },

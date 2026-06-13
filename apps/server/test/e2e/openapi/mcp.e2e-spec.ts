@@ -238,6 +238,27 @@ describe('MCP endpoint (e2e)', () => {
       expect(payload.items.length).toBeGreaterThan(0);
     });
 
+    it('list_content accepts + forwards orderBy and expand (not just limit/cursor)', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'list_content',
+            arguments: { orderBy: '-createdAt', expand: ['editedVersion', 'publishedVersion'] },
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const rpcResult = extractResult(res);
+      // The richer args reach the service and run (a malformed arg would isError).
+      expect(rpcResult.result.isError).toBeFalsy();
+      expect(Array.isArray(parseToolContent(rpcResult).items)).toBe(true);
+    });
+
     it('get_authoring_guide returns the guide text', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const res = await rpc(
