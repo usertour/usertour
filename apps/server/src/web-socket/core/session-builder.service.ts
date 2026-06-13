@@ -645,18 +645,48 @@ export class SessionBuilderService {
    * @returns The theme settings or null if not found
    */
   /**
-   * Return a copy of the theme with `customCss` removed from its settings,
-   * for plans that don't include the custom CSS feature. Does not mutate the
-   * original (the themes array may be shared / cached); returns the theme
-   * unchanged when there's nothing to strip.
+   * Return a copy of the theme with `customCss` removed — from the base
+   * settings AND from every variation's settings — for plans that don't
+   * include the custom CSS feature. Variations carry a full settings copy
+   * (the builder seeds them with cloneDeep(base)), and the SDK adopts the
+   * matched variation's settings wholesale, so skipping them would let a
+   * theme with variations smuggle customCss past the gate (and re-hide the
+   * Made-with-Usertour badge). Does not mutate the original (the themes array
+   * may be shared / cached); returns it unchanged when there's nothing to
+   * strip.
    */
   private stripThemeCustomCss(theme: Theme): Theme {
+    const stripCss = (settings: ThemeTypesSetting | null): ThemeTypesSetting | null => {
+      if (!settings || settings.customCss == null) {
+        return settings;
+      }
+      const { customCss: _customCss, ...rest } = settings;
+      return rest as ThemeTypesSetting;
+    };
+
     const settings = theme.settings as ThemeTypesSetting | null;
-    if (!settings || settings.customCss == null) {
+    const variations = (theme.variations as ThemeVariation[] | null) ?? null;
+
+    const strippedSettings = stripCss(settings);
+    const variationsHaveCss = !!variations?.some(
+      (variation) => (variation?.settings as ThemeTypesSetting | undefined)?.customCss != null,
+    );
+
+    // Nothing to strip anywhere — return the original untouched.
+    if (strippedSettings === settings && !variationsHaveCss) {
       return theme;
     }
-    const { customCss: _customCss, ...rest } = settings;
-    return { ...theme, settings: rest as unknown as Theme['settings'] };
+
+    return {
+      ...theme,
+      settings: strippedSettings as unknown as Theme['settings'],
+      variations: variationsHaveCss
+        ? (variations!.map((variation) => ({
+            ...variation,
+            settings: stripCss(variation.settings as ThemeTypesSetting),
+          })) as unknown as Theme['variations'])
+        : theme.variations,
+    };
   }
 
   private async createSessionTheme(
