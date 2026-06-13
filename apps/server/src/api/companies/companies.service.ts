@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
 import {
   CompanyMembershipNotFoundError,
@@ -76,6 +77,13 @@ export class ApiCompaniesService {
 
   /** Upsert a company by external id (merges attributes), then return it. */
   async upsert(id: string, environment: Environment, body: UpsertCompanyBody): Promise<Company> {
+    // v2 is strict: a type-mismatched attribute value is rejected, not silently
+    // dropped (the SDK identify path keeps the lenient drop-and-log).
+    await this.biz.assertAttributeValueTypes(
+      environment.id,
+      AttributeBizType.COMPANY,
+      body.attributes,
+    );
     const company = await this.biz.upsertBizCompany(
       environment.projectId,
       environment.id,

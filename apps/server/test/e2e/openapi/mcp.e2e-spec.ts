@@ -632,6 +632,46 @@ describe('MCP endpoint (e2e)', () => {
       expect(user).toMatchObject({ object: 'user', id: 'mcp-new-user' });
     });
 
+    it('upsert_user rejects an attribute value whose type mismatches its definition', async () => {
+      const token = await mint([Capability.AttributeCreate, Capability.UserWrite], [projectA]);
+      // Define a Number attribute on the user object.
+      await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'create_attribute_definition',
+            arguments: {
+              scope: 'user',
+              dataType: 'number',
+              codeName: 'plan_level',
+              displayName: 'Plan Level',
+            },
+          },
+        },
+        token,
+      );
+      // Upsert a user with a string value for the number attribute. v2 rejects
+      // it (the SDK identify path would silently drop it).
+      const result = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 2,
+            method: 'tools/call',
+            params: {
+              name: 'upsert_user',
+              arguments: { id: 'mcp-typed-user', attributes: { plan_level: 'pro' } },
+            },
+          },
+          token,
+        ),
+      );
+      expect(result.result?.isError).toBe(true);
+      expect(result.result.content[0].text).toMatch(/type mismatch/i);
+    });
+
     it('create_segment creates a manual segment via MCP', async () => {
       const token = await mint([Capability.SegmentCreate], [projectA]);
       const seg = parseToolContent(

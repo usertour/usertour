@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
 import { UserNotFoundError } from '@/common/errors/errors';
 import { Environment } from '@/environments/models/environment.model';
@@ -67,6 +68,13 @@ export class ApiUsersService {
 
   /** Upsert a user by external id (merges attributes), then return it. */
   async upsert(id: string, environment: Environment, body: UpsertUserBody): Promise<User> {
+    // v2 is strict: a type-mismatched attribute value is rejected, not silently
+    // dropped (the SDK identify path keeps the lenient drop-and-log).
+    await this.biz.assertAttributeValueTypes(
+      environment.id,
+      AttributeBizType.USER,
+      body.attributes,
+    );
     await this.biz.upsertUser(id, environment.id, body.attributes ?? {});
     return this.getUser(id, environment.id, {});
   }

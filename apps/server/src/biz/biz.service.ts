@@ -22,7 +22,7 @@ import {
   UpdateSegment,
 } from './dto/segment.input';
 import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
-import { ParamsError, UnknownError } from '@/common/errors';
+import { ParamsError, UnknownError, ValidationError } from '@/common/errors';
 import { getDefaultColumns } from '@/common/initialization/initialization';
 import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
 import { IntegrationSource } from '@/common/types/integration';
@@ -943,6 +943,47 @@ export class BizService {
     }
 
     return { outputData, attrMap, createdNewAttribute };
+  }
+
+  /**
+   * Strict pre-check for the v2 REST / MCP write path (NOT the SDK identify
+   * path): reject attribute values whose type doesn't match the attribute's
+   * defined data type. The SDK ingestion path stays lenient — resolveAttributes
+   * drops + logs a bad value so a high-volume identify call never fails on one
+   * messy field. The public API has no UI to constrain types and no human to
+   * notice a dropped value, so here a mismatch throws (per the v2 principle:
+   * fulfill exactly or refuse — never silently discard). Unknown codeNames are
+   * ignored: resolveAttributes auto-creates them with a type inferred from the
+   * value, so no mismatch is possible.
+   */
+  async assertAttributeValueTypes(
+    environmentId: string,
+    bizType: AttributeBizType,
+    attributes: Record<string, any> | undefined,
+  ): Promise<void> {
+    if (!attributes) return;
+    const codeNames = Object.keys(attributes).filter((c) => !isNull(attributes[c]));
+    if (codeNames.length === 0) return;
+    const env = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
+    if (!env) return; // environment validity is enforced by the auth/guard layer
+    const defined = await this.prisma.attribute.findMany({
+      where: { projectId: env.projectId, bizType, codeName: { in: codeNames } },
+    });
+    const failures: string[] = [];
+    for (const attr of defined) {
+      if (!this.validateAttrValue(attr, attributes[attr.codeName]).ok) {
+        const expected = BizAttributeTypes[attr.dataType] ?? String(attr.dataType);
+        failures.push(`"${attr.codeName}" (expected ${expected})`);
+      }
+    }
+    if (failures.length > 0) {
+      throw new ValidationError(
+        `Attribute value type mismatch: ${failures.join(', ')}. Each value must match its attribute's defined data type.`,
+      );
+    }
   }
 
   private validateAttrValue(
