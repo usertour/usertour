@@ -207,18 +207,6 @@ export class ContentService {
       return;
     }
 
-    // Optimistic lock, opt-in per call: the builder's whole-version save
-    // sends the updatedAt it last baselined from; a mismatch means someone
-    // else saved this version in the meantime and a blind write would roll
-    // their work back. detail's scalar-only updates omit it (field-level
-    // last-write-wins is acceptable there).
-    if (expectedUpdatedAt) {
-      const version = await this.prisma.version.findUnique({ where: { id: versionId } });
-      if (version && version.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
-        throw new VersionConflictError();
-      }
-    }
-
     const { steps, ...versionFields } = content;
 
     // No steps in the payload → scalar-only update (detail's path:
@@ -226,6 +214,23 @@ export class ContentService {
     // the shared document requests `steps`, so omitting them here makes Apollo
     // normalize Version.steps to null and wipe the step list from the cache.
     if (!steps) {
+      // Honor the optimistic lock here too: detail's path normally omits
+      // expectedUpdatedAt (field-level last-write-wins), but when it's sent the
+      // same atomic conditional-write applies — a 0-row match means someone
+      // saved meanwhile, so throw instead of overwriting.
+      if (expectedUpdatedAt) {
+        const writeResult = await this.prisma.version.updateMany({
+          where: { id: versionId, updatedAt: expectedUpdatedAt },
+          data: versionFields,
+        });
+        if (writeResult.count === 0) {
+          throw new VersionConflictError();
+        }
+        return await this.prisma.version.findUnique({
+          where: { id: versionId },
+          include: { steps: { orderBy: { sequence: 'asc' } } },
+        });
+      }
       return await this.prisma.version.update({
         where: { id: versionId },
         data: versionFields,
@@ -243,7 +248,25 @@ export class ContentService {
     // list by cvid, in one transaction; return the full version so the client
     // re-baselines from the response (no follow-up fetch).
     return await this.prisma.$transaction(async (tx) => {
-      await tx.version.update({ where: { id: versionId }, data: versionFields });
+      // Optimistic lock, opt-in per call: the builder's whole-version save
+      // sends the updatedAt it last baselined from. Enforce it atomically as a
+      // conditional write — a mismatch (someone else saved meanwhile) makes the
+      // updateMany match 0 rows, so we throw instead of blind-overwriting their
+      // work. Must live inside the transaction and be the write itself; a
+      // separate findUnique check before the write is a TOCTOU race that two
+      // near-simultaneous saves both pass. detail's scalar-only updates omit
+      // expectedUpdatedAt (field-level last-write-wins is acceptable there).
+      if (expectedUpdatedAt) {
+        const writeResult = await tx.version.updateMany({
+          where: { id: versionId, updatedAt: expectedUpdatedAt },
+          data: versionFields,
+        });
+        if (writeResult.count === 0) {
+          throw new VersionConflictError();
+        }
+      } else {
+        await tx.version.update({ where: { id: versionId }, data: versionFields });
+      }
 
       const existing = await tx.step.findMany({ where: { versionId } });
       const incomingCvids = new Set(steps.map((step) => step.cvid));

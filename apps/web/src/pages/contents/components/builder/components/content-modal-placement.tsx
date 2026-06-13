@@ -97,6 +97,7 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
             <InputNumber
               defaultNumber={data.positionOffsetX || 0}
               onValueChange={handleOffsetXChange}
+              allowNegative
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -109,6 +110,7 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
             <InputNumber
               defaultNumber={data.positionOffsetY || 0}
               onValueChange={handleOffsetYChange}
+              allowNegative
             />
           </div>
         </>
