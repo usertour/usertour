@@ -65,6 +65,9 @@ export function decompileStep(
     ...(placement ? { placement } : {}),
     ...(typeof setting.width === 'number' ? { width: setting.width } : {}),
     ...(typeof setting.skippable === 'boolean' ? { skippable: setting.skippable } : {}),
+    ...(typeof setting.explicitCompletionStep === 'boolean'
+      ? { explicitCompletionStep: setting.explicitCompletionStep }
+      : {}),
     content: blocks,
     ...(triggers.length ? { triggers } : {}),
     ...(onClick.length ? { onClick } : {}),

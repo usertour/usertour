@@ -401,6 +401,35 @@ describe('element + column styling round-trip', () => {
   });
 });
 
+describe('step explicitCompletionStep', () => {
+  it('round-trips through setting', () => {
+    const rep = {
+      object: 'step' as const,
+      id: 's1',
+      cvid: 'cv1',
+      name: 'X',
+      type: 'modal',
+      sequence: 0,
+      content: [],
+      explicitCompletionStep: true,
+    };
+    const compiled = compileStep(rep as never, undefined, ids);
+    expect((compiled.setting as any).explicitCompletionStep).toBe(true);
+    const back = decompileStep({
+      id: 's1',
+      cvid: compiled.cvid,
+      name: 'X',
+      type: 'modal',
+      sequence: 0,
+      data: compiled.data,
+      target: compiled.target,
+      setting: compiled.setting,
+      trigger: compiled.trigger,
+    });
+    expect(back.explicitCompletionStep).toBe(true);
+  });
+});
+
 describe('target onClick (click-to-advance)', () => {
   const stepWithOnClick = {
     object: 'step' as const,

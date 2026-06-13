@@ -78,6 +78,7 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
       ...(d.iconType ? { type: d.iconType } : {}),
     },
     ...(typeof d.buttonText === 'string' ? { buttonText: d.buttonText } : {}),
+    ...(typeof d.zIndex === 'number' ? { zIndex: d.zIndex } : {}),
     ...(target ? { target } : {}),
     tooltip: {
       ...(al.side && al.align
@@ -91,6 +92,9 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
           }
         : {}),
       ...(typeof tooltip.width === 'number' ? { width: tooltip.width } : {}),
+      ...(tooltip.reference === 'target' || tooltip.reference === 'launcher'
+        ? { reference: tooltip.reference }
+        : {}),
       content: decompileContent(tooltip.content, r).blocks,
       settings: {
         ...(typeof settings.dismissAfterFirstActivation === 'boolean'
@@ -118,6 +122,7 @@ function decompileBanner(data: unknown, r: DecompileResolvers): RepresentationBa
   const containerTarget = decompileTarget(d.containerElement);
   return {
     ...(d.embedPlacement ? { placement: d.embedPlacement } : {}),
+    ...(typeof d.zIndex === 'number' ? { zIndex: d.zIndex } : {}),
     content: decompileContent(d.contents, r).blocks,
     settings: {
       ...(typeof d.overlayEmbedOverAppContent === 'boolean'

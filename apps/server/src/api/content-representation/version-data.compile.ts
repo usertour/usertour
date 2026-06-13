@@ -125,6 +125,7 @@ function compileLauncher(
     if (rep.icon.type !== undefined) out.iconType = rep.icon.type;
   }
   if (rep.buttonText !== undefined) out.buttonText = rep.buttonText;
+  if (rep.zIndex !== undefined) out.zIndex = rep.zIndex;
   if (rep.target !== undefined) {
     out.target = {
       ...(base.target ?? {}),
@@ -144,6 +145,7 @@ function compileLauncher(
       };
     }
     if (rep.tooltip.width !== undefined) t.width = rep.tooltip.width;
+    if (rep.tooltip.reference !== undefined) t.reference = rep.tooltip.reference;
     if (rep.tooltip.content !== undefined) {
       t.content = compileContent(rep.tooltip.content, base.tooltip?.content, r, 'launcher-dismis');
     }
@@ -179,6 +181,7 @@ function compileBanner(rep: RepresentationBanner, existing: unknown, r: CompileR
   const base = (existing ?? {}) as Record<string, any>;
   const out: Record<string, any> = { ...base };
   if (rep.placement !== undefined) out.embedPlacement = rep.placement;
+  if (rep.zIndex !== undefined) out.zIndex = rep.zIndex;
   if (rep.content !== undefined)
     out.contents = compileContent(rep.content, base.contents, r, 'banner-dismis');
   if (rep.settings !== undefined) {

@@ -73,10 +73,14 @@ export const representationLauncher = z.object({
     .optional(),
   buttonText: z.string().optional(),
   target: representationTarget.optional(),
+  /** Stacking order (CSS z-index). */
+  zIndex: z.number().optional(),
   tooltip: z
     .object({
       placement: launcherPlacement.optional(),
       width: z.number().optional(),
+      /** Whether the tooltip anchors to the target element or to the launcher. */
+      reference: z.enum(['target', 'launcher']).optional(),
       content: z.array(representationBlock).optional(),
       settings: z
         .object({
@@ -113,6 +117,8 @@ export const representationBanner = z.object({
     ])
     .optional(),
   content: z.array(representationBlock).optional(),
+  /** Stacking order (CSS z-index). */
+  zIndex: z.number().optional(),
   settings: z
     .object({
       overlayOverAppContent: z.boolean().optional(),

@@ -426,6 +426,8 @@ export const representationStep = z.object({
   placement: representationPlacement.optional(),
   width: z.number().optional(),
   skippable: z.boolean().optional(),
+  /** Marks this step as an explicit completion point for the flow. */
+  explicitCompletionStep: z.boolean().optional(),
   content: z.array(representationBlock),
   triggers: z.array(representationTrigger).optional(),
   /** Actions run when the user clicks the step's target element (click-to-advance). */

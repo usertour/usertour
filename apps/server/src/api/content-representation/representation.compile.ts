@@ -54,6 +54,7 @@ type StepToCompile = {
   placement?: RepresentationPlacement;
   width?: number;
   skippable?: boolean;
+  explicitCompletionStep?: boolean;
   content: RepresentationBlock[];
   triggers?: RepresentationTrigger[];
   onClick?: RepresentationAction[];
@@ -106,6 +107,9 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
   }
   if (step.width !== undefined) s.width = step.width;
   if (step.skippable !== undefined) s.skippable = step.skippable;
+  if (step.explicitCompletionStep !== undefined) {
+    s.explicitCompletionStep = step.explicitCompletionStep;
+  }
   return s;
 }
 
