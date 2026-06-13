@@ -182,7 +182,11 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
   // no re-fetch.
   const handleSave = useCallback(() => {
     setShowError(false);
-    if (!currentStep || !currentStep.id || !currentStep.trigger || !attributes) {
+    // Don't gate on currentStep.id — a not-yet-saved new step has a cvid but
+    // no server id yet (auto-save backfills it). Requiring id here silently
+    // dropped triggers added to a fresh step during the auto-save round-trip /
+    // error window. Commit into the draft by cvid, same as flow-detail.
+    if (!currentStep || !currentStep.trigger || !attributes) {
       return;
     }
     for (let index = 0; index < currentStep.trigger.length; index++) {

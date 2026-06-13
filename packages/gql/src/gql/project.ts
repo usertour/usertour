@@ -13,6 +13,7 @@ export const getProjectConfig = gql`
   query GetProjectConfig($projectId: String!) {
     getProjectConfig(projectId: $projectId) {
       removeBranding
+      customCss
       planType
     }
   }

@@ -945,6 +945,7 @@ type Project {
 }
 
 type ProjectConfigModel {
+  customCss: Boolean!
   planType: String!
   removeBranding: Boolean!
 }

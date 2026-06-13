@@ -144,10 +144,17 @@ export class ProjectsService {
     // Memoized per request scope: a single EndBatch builds one session per
     // active content type and each session call hits this method once,
     // producing 3+ identical Project + Subscription lookups otherwise.
-    return this.cache.memoize(this.cache.memoKeys.projectConfig(projectId), () => {
+    return this.cache.memoize(this.cache.memoKeys.projectConfig(projectId), async () => {
       const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
       if (isSelfHostedMode) {
-        return this.getSelfHostedConfig(projectId);
+        // Self-hosted doesn't gate custom CSS — like environment limits, it
+        // isn't a paywalled feature here. Self-hosted monetizes the enterprise
+        // features (removeBranding / audit logs / SSO), which the license still
+        // governs; usage and feature limits stay open. Force customCss on
+        // regardless of the license's plan tier — this single override flows
+        // to the session builder (no strip) and the web gate (no upsell).
+        const config = await this.getSelfHostedConfig(projectId);
+        return { ...config, customCss: true };
       }
       return this.getCloudConfig(projectId);
     });
@@ -160,6 +167,7 @@ export class ProjectsService {
   private async getSelfHostedConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
+      customCss: false,
       planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
@@ -218,6 +226,7 @@ export class ProjectsService {
 
     return {
       removeBranding: features.removeBranding,
+      customCss: features.customCss,
       planType,
     };
   }
@@ -258,6 +267,7 @@ export class ProjectsService {
 
     return {
       removeBranding: features.removeBranding,
+      customCss: features.customCss,
       planType,
     };
   }
@@ -270,6 +280,7 @@ export class ProjectsService {
   private async getCloudConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
+      customCss: false,
       planType: PlanType.HOBBY,
     };
 
@@ -294,6 +305,7 @@ export class ProjectsService {
 
     return {
       removeBranding: features.removeBranding,
+      customCss: features.customCss,
       planType: subscription.planType,
     };
   }

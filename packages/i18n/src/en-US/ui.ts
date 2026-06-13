@@ -657,6 +657,7 @@ const translations = {
           noBranding: 'No Usertour-branding',
           teamMembers: 'Team members',
           customTheming: 'Custom theming',
+          customCss: 'Custom CSS',
           customAttributes: 'Custom user attributes',
           flowTriggering: 'Automatic, segmented flow triggering',
           versionHistory: 'Version history',
@@ -2165,6 +2166,11 @@ const translations = {
     },
   },
   themeBuilder: {
+    customCssUpsell: {
+      title: 'Custom CSS is a Growth feature',
+      descriptionPrefix: "It isn't included in your current plan. ",
+      upgradeLink: 'Upgrade your plan',
+    },
     preview: {
       selectTypePlaceholder: 'Select a type...',
       searchTypesPlaceholder: 'Search types...',
@@ -2350,7 +2356,7 @@ const translations = {
         customFamilyTooltip:
           'The exact font-family widgets will use. Accepts a comma-separated list — e.g. "Brand Sans, PingFang SC" — matched left to right per character, so a brand font can fall back to a CJK font.',
         customFontHint:
-          "This font won't load on its own — declare it with @font-face rules in the Custom CSS section below, or widgets will fall back to a default font.",
+          'A system font (already installed on your users’ devices) works by name. A web font must be loaded with @font-face rules in the Custom CSS section below, or widgets fall back to a default font.',
         bodySize: 'Body size',
         lineHeight: 'Line height',
         bodyWeight: 'Body weight',
@@ -2363,8 +2369,7 @@ const translations = {
         label: 'CSS rules',
         placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
         tooltip:
-          'Raw CSS injected into every widget. Use it for @font-face rules backing the custom font, or for advanced style overrides.',
-        hint: 'This CSS is injected into all widgets (tooltips, modals, checklists, banners and the resource center). Widget internals may change between releases, so keep selectors as simple as possible.',
+          'Raw CSS injected into every widget (tooltips, modals, checklists, banners, resource center). Use it for @font-face rules backing the custom font, or for advanced style overrides. Widget internals may change between releases, so keep selectors as simple as possible.',
       },
       buttons: {
         height: 'Height',
