@@ -185,6 +185,24 @@ describe('hasMissingRequiredData', () => {
   test('should return false for empty contents array', () => {
     expect(hasMissingRequiredData([])).toBe(false);
   });
+
+  test('should return true for an image element with an empty url', () => {
+    const element = { type: ContentEditorElementType.IMAGE, url: '' } as ContentEditorElement;
+    expect(hasMissingRequiredData(createContentRoot(element))).toBe(true);
+  });
+
+  test('should return false for an image element with a url', () => {
+    const element = {
+      type: ContentEditorElementType.IMAGE,
+      url: 'https://x.io/a.png',
+    } as ContentEditorElement;
+    expect(hasMissingRequiredData(createContentRoot(element))).toBe(false);
+  });
+
+  test('should return true for an embed element with an empty url', () => {
+    const element = { type: ContentEditorElementType.EMBED, url: '' } as ContentEditorElement;
+    expect(hasMissingRequiredData(createContentRoot(element))).toBe(true);
+  });
 });
 
 describe('isQuestionElement', () => {

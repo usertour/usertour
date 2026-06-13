@@ -124,6 +124,18 @@ describe('validateVersionUsable', () => {
       expect(r.errors.some((e) => e.message.includes('does not exist'))).toBe(true);
     });
 
+    it('errors on an image block with an empty url', () => {
+      const r = flow([
+        {
+          type: StepContentType.MODAL,
+          sequence: 0,
+          cvid: 'a',
+          data: [{ children: [{ children: [{ element: { type: 'image', url: '' } }] }] }],
+        },
+      ]);
+      expect(r.ok).toBe(false);
+    });
+
     it('warns (not errors) on an unreachable non-first step', () => {
       const r = flow([
         { type: StepContentType.MODAL, data: textBlocks, sequence: 0, cvid: 'a' },
