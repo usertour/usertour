@@ -1,4 +1,4 @@
-import { cuid } from '@usertour/helpers';
+import { cuid, defaultStep } from '@usertour/helpers';
 
 import {
   RepresentationAction,
@@ -90,8 +90,21 @@ export function compileStep(
 
 // ── Setting (merge placement / width / skippable into existing) ───────────────
 
+// The builder seeds every new step with a full default setting (position:'center',
+// side/align, alignType:'auto', skippable, offsets, …) and the SDK relies on them
+// — e.g. a modal with no `position` is anchored off-screen (tour.tsx reads
+// `setting.position ?? ''`), and a missing `skippable`/`alignType` drops the close
+// button / collision-avoidance. Mirror how non-flow `data` is seeded at create:
+// seed these defaults (SSOT: `@usertour/helpers`) ONLY on create (no existing), so
+// an API step renders like a builder one while update keeps a faithful round-trip.
+const DEFAULT_STEP_SETTING = defaultStep.setting as Record<string, unknown>;
+
 function compileSetting(step: StepToCompile, existingSetting: unknown): unknown {
-  const s: Record<string, unknown> = { ...((existingSetting as Record<string, unknown>) ?? {}) };
+  const s: Record<string, unknown> = {
+    ...(existingSetting != null
+      ? (existingSetting as Record<string, unknown>)
+      : DEFAULT_STEP_SETTING),
+  };
   const p = step.placement;
   if (p && 'side' in p) {
     s.side = p.side;
@@ -109,6 +122,11 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
   if (step.skippable !== undefined) s.skippable = step.skippable;
   if (step.explicitCompletionStep !== undefined) {
     s.explicitCompletionStep = step.explicitCompletionStep;
+  }
+  // Guarantee a modal renders on-screen even when updating a legacy step whose
+  // existing setting lacks a position (create already gets it from the defaults).
+  if (step.type === 'modal' && s.position === undefined) {
+    s.position = (DEFAULT_STEP_SETTING.position as string) ?? 'center';
   }
   return s;
 }

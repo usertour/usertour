@@ -430,6 +430,56 @@ describe('step explicitCompletionStep', () => {
   });
 });
 
+describe('step setting: builder defaults seeded on create (SDK needs them)', () => {
+  const mk = (type: string, placement?: unknown) => ({
+    object: 'step' as const,
+    id: 's',
+    cvid: 'cv',
+    name: 'X',
+    type,
+    sequence: 0,
+    content: [],
+    ...(placement ? { placement } : {}),
+  });
+
+  it('defaults a modal with no placement to position:center (else SDK anchors it off-screen)', () => {
+    const compiled = compileStep(mk('modal') as never, undefined, ids);
+    expect((compiled.setting as any).position).toBe('center');
+  });
+
+  it('keeps an author-set modal position', () => {
+    const compiled = compileStep(mk('modal', { position: 'top' }) as never, undefined, ids);
+    expect((compiled.setting as any).position).toBe('top');
+  });
+
+  it('seeds builder defaults (skippable close button, alignType collision-avoidance) on create', () => {
+    const compiled = compileStep(
+      mk('tooltip', { side: 'right', align: 'center' }) as never,
+      undefined,
+      ids,
+    );
+    const s = compiled.setting as any;
+    expect(s.side).toBe('right'); // authored value wins
+    expect(s.align).toBe('center');
+    expect(s.skippable).toBe(true); // builder default → close button
+    expect(s.alignType).toBe('auto'); // builder default → collision avoidance
+  });
+
+  it('does NOT reseed defaults on update (existing setting is the faithful base)', () => {
+    // An existing step whose setting lacks `skippable` must stay that way on update.
+    const compiled = compileStep(
+      mk('tooltip', { side: 'top', align: 'start' }) as never,
+      {
+        cvid: 'cv',
+        setting: { side: 'bottom', align: 'center' },
+      } as never,
+      ids,
+    );
+    expect((compiled.setting as any).skippable).toBeUndefined();
+    expect((compiled.setting as any).side).toBe('top'); // authored override still applies
+  });
+});
+
 describe('target onClick (click-to-advance)', () => {
   const stepWithOnClick = {
     object: 'step' as const,
