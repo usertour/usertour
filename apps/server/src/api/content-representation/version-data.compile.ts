@@ -126,7 +126,10 @@ function compileLauncher(
   }
   if (rep.buttonText !== undefined) out.buttonText = rep.buttonText;
   if (rep.target !== undefined) {
-    out.target = { ...(base.target ?? {}), element: compileTargetToElementData(rep.target) };
+    out.target = {
+      ...(base.target ?? {}),
+      element: compileTargetToElementData(rep.target, base.target?.element),
+    };
   }
   if (rep.tooltip !== undefined) {
     const t: Record<string, any> = { ...(base.tooltip ?? {}) };
@@ -187,7 +190,7 @@ function compileBanner(rep: RepresentationBanner, existing: unknown, r: CompileR
     if (s.animateOnAppear !== undefined) out.animateWhenEmbedAppears = s.animateOnAppear;
   }
   if (rep.containerTarget !== undefined) {
-    out.containerElement = compileTargetToElementData(rep.containerTarget);
+    out.containerElement = compileTargetToElementData(rep.containerTarget, base.containerElement);
   }
   if (rep.layout !== undefined) {
     const l = rep.layout;

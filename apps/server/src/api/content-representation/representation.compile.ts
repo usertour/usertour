@@ -16,6 +16,7 @@ import {
   compileTriggers,
 } from './rules.compile';
 import { compileTargetToElementData } from './target.compile';
+import { decompileText } from './text.decompile';
 
 /**
  * Compile a representation step back into the internal step shape the domain
@@ -69,7 +70,9 @@ export function compileStep(
     type: step.type,
     sequence: step.sequence,
     data: compileContent(step.content, existing?.data, r),
-    target: step.target ? compileTargetToElementData(step.target) : (existing?.target ?? {}),
+    target: step.target
+      ? compileTargetToElementData(step.target, existing?.target)
+      : (existing?.target ?? {}),
     trigger: compileTriggers(step.triggers, r),
     setting: compileSetting(step, existing?.setting),
   };
@@ -160,12 +163,26 @@ function compileElement(
   const keepStyle = existing?.element ?? {};
 
   switch (block.type) {
-    case 'text':
+    case 'text': {
+      // Field-merge: markdown can't carry align / color / underline, but those
+      // live on the existing Slate. If the author didn't actually change the text
+      // (its markdown still decompiles to the same string), keep the original
+      // Slate so those marks survive a write-back; only regenerate when the
+      // markdown was rewritten. (Mirrors the keepStyle merge image/button get.)
+      const prevText = existing?.element;
+      const unchanged =
+        prevText?.type === 'text' &&
+        Array.isArray(prevText.data) &&
+        decompileText(prevText.data) === block.markdown;
       return {
         id,
-        element: { type: 'text', data: compileText(block.markdown) },
+        element: {
+          type: 'text',
+          data: unchanged ? prevText.data : compileText(block.markdown),
+        },
         children: null,
       };
+    }
     case 'image':
       return {
         id,

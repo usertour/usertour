@@ -244,6 +244,113 @@ describe('field-level merge', () => {
   });
 });
 
+describe('target field-merge on write-back', () => {
+  const stepRep = (target: unknown) =>
+    ({
+      object: 'step' as const,
+      id: 's1',
+      cvid: 'cv1',
+      name: 'X',
+      type: 'tooltip',
+      sequence: 0,
+      target,
+      content: [{ object: 'block' as const, type: 'text' as const, markdown: 'Hi' }],
+    }) as never;
+
+  it('preserves target.actions (click-to-advance) the representation cannot model', () => {
+    const existing = {
+      cvid: 'cv1',
+      target: {
+        type: 'manual',
+        customSelector: '.cta',
+        actions: [{ type: 'step-goto', data: { stepCvid: 'x' } }],
+        selectors: { tag: 'button' },
+        precision: 'stricter',
+      },
+    };
+    const compiled: any = compileStep(
+      stepRep({ by: 'selector', selector: '.cta' }),
+      existing as never,
+      ids,
+    );
+    expect(compiled.target.actions).toEqual([{ type: 'step-goto', data: { stepCvid: 'x' } }]);
+    expect(compiled.target.customSelector).toBe('.cta');
+    expect(compiled.target.precision).toBe('stricter'); // unused-but-preserved fingerprint
+  });
+
+  it('keeps target.content when the selector is unchanged', () => {
+    const existing = {
+      cvid: 'cv1',
+      target: { type: 'manual', customSelector: '.cta', content: 'Hello' },
+    };
+    const compiled: any = compileStep(
+      stepRep({ by: 'selector', selector: '.cta' }),
+      existing as never,
+      ids,
+    );
+    expect(compiled.target.content).toBe('Hello');
+  });
+
+  it('drops stale target.content when the selector changes (would reject the new element)', () => {
+    const existing = {
+      cvid: 'cv1',
+      target: { type: 'manual', customSelector: '.old', content: 'Old text' },
+    };
+    const compiled: any = compileStep(
+      stepRep({ by: 'selector', selector: '.new' }),
+      existing as never,
+      ids,
+    );
+    expect(compiled.target.customSelector).toBe('.new');
+    expect(compiled.target.content).toBeUndefined();
+  });
+});
+
+describe('text Slate field-merge on write-back', () => {
+  const textStep = (markdown: string) =>
+    ({
+      object: 'step' as const,
+      id: 's1',
+      cvid: 'cv1',
+      name: 'X',
+      type: 'modal',
+      sequence: 0,
+      content: [{ object: 'block' as const, id: 't1', type: 'text' as const, markdown }],
+    }) as never;
+  // existing Slate carries an `align` mark markdown can't express.
+  const slate = compileText('Hi') as any[];
+  (slate[0] as any).align = 'center';
+  const existing = {
+    cvid: 'cv1',
+    data: [
+      {
+        id: 'b1',
+        element: { type: 'group' },
+        children: [
+          {
+            id: 'c1',
+            element: { type: 'column' },
+            children: [{ id: 't1', element: { type: 'text', data: slate } }],
+          },
+        ],
+      },
+    ],
+  };
+
+  it('keeps the original Slate (align/color) when the markdown is unchanged', () => {
+    const compiled: any = compileStep(textStep('Hi'), existing as never, ids);
+    const el = compiled.data[0].children[0].children[0].element;
+    expect(el.data[0].align).toBe('center'); // preserved across write-back
+  });
+
+  it('regenerates the Slate (marks reset) when the markdown was rewritten', () => {
+    const compiled: any = compileStep(textStep('Bye'), existing as never, ids);
+    const el = compiled.data[0].children[0].children[0].element;
+    expect(el.data[0].align).toBeUndefined(); // reset — markdown changed
+    expect(decompileText(el.data)).toBe('Bye');
+  });
+});
+
 describe('run_javascript is write-rejected', () => {
   it('throws when an action is run_javascript', () => {
     const representation = {
