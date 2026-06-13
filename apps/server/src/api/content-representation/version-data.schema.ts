@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  completeWhenCondition,
   representationAction,
   representationBlock,
   representationCondition,
@@ -37,7 +38,10 @@ const checklistItem = z.object({
   id: z.string().optional(),
   name: z.string(),
   description: z.string().optional(),
-  completeWhen: z.array(representationCondition).default([]),
+  // completeWhen also accepts the parameterless `task_clicked` (a task completes
+  // when its item is clicked) — valid only here (incl. nested in OR groups), not
+  // in the general condition set.
+  completeWhen: z.array(completeWhenCondition).default([]),
   clickActions: z.array(representationAction).default([]),
   onlyShowWhen: z.array(representationCondition).optional(),
 });
@@ -73,8 +77,8 @@ export const representationLauncher = z.object({
     .optional(),
   buttonText: z.string().optional(),
   target: representationTarget.optional(),
-  /** Stacking order (CSS z-index). */
-  zIndex: z.number().optional(),
+  /** Stacking order (CSS z-index — must be an integer; may be negative). */
+  zIndex: z.number().int().optional(),
   tooltip: z
     .object({
       placement: launcherPlacement.optional(),
@@ -117,8 +121,8 @@ export const representationBanner = z.object({
     ])
     .optional(),
   content: z.array(representationBlock).optional(),
-  /** Stacking order (CSS z-index). */
-  zIndex: z.number().optional(),
+  /** Stacking order (CSS z-index — must be an integer; may be negative). */
+  zIndex: z.number().int().optional(),
   settings: z
     .object({
       overlayOverAppContent: z.boolean().optional(),

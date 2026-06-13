@@ -1,4 +1,6 @@
 import {
+  CompilableCondition,
+  EventWhereCondition,
   RepresentationAction,
   RepresentationCondition,
   RepresentationHideRules,
@@ -110,7 +112,12 @@ export function decompileConditions(
   raw: unknown,
   r: DecompileResolvers,
 ): RepresentationCondition[] {
-  return (Array.isArray(raw) ? raw : []).map((c) => decompileCondition(c, r));
+  // General slots only ever hold general conditions; the context-restricted
+  // event_attribute / task_clicked appear solely inside event.where / checklist
+  // completeWhen, which carry their own narrower types at the boundary.
+  return (Array.isArray(raw) ? raw : []).map((c) =>
+    decompileCondition(c, r),
+  ) as RepresentationCondition[];
 }
 
 /** The and/or of a flat list lives on its first node's `operators` (the runtime
@@ -131,7 +138,7 @@ export function decompileWhen(raw: unknown, r: DecompileResolvers): Representati
   return [{ type: 'group', match: 'any', conditions: items }];
 }
 
-export function decompileCondition(c: RuleNode, r: DecompileResolvers): RepresentationCondition {
+export function decompileCondition(c: RuleNode, r: DecompileResolvers): CompilableCondition {
   const d = c.data ?? {};
   switch (c.type) {
     case 'group':
@@ -195,7 +202,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Represen
         ...mapWithin(d),
         ...(SCOPE[d.scope] ? { scope: SCOPE[d.scope] as never } : {}),
         ...(Array.isArray(d.whereConditions) && d.whereConditions.length
-          ? { where: decompileWhen(d.whereConditions, r) }
+          ? { where: decompileWhen(d.whereConditions, r) as unknown as EventWhereCondition[] }
           : {}),
       };
     case 'text-input': {

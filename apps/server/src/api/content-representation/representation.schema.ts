@@ -53,21 +53,32 @@ export const stringOp = z.enum([
 export type StringOp = z.infer<typeof stringOp>;
 
 // Recursive predicate tree. `operators` and/or → group.match all/any.
+/**
+ * Attribute condition scoped to an EVENT's own attributes — only valid inside an
+ * `event` condition's `where` (enforced by the schema: it's not in the general
+ * condition union). Same shape as user_attribute, but its `attribute` resolves
+ * against event (bizType) attributes.
+ */
+export type EventAttributeCondition = {
+  type: 'event_attribute';
+  attribute: string;
+  op: string;
+  value?: string;
+  value2?: string;
+  values?: string[];
+};
+/** Parameterless: a checklist task completes when its item is clicked — only
+ * valid in a checklist item's `completeWhen` (not in the general union). */
+export type TaskClickedCondition = { type: 'task_clicked' };
+/** What an event's `where` accepts: event-attribute conditions + groups of them. */
+export type EventWhereCondition =
+  | EventAttributeCondition
+  | { type: 'group'; match: 'all' | 'any'; conditions: EventWhereCondition[] };
+
 export type RepresentationCondition =
   | { type: 'group'; match: 'all' | 'any'; conditions: RepresentationCondition[] }
   | {
       type: 'user_attribute';
-      attribute: string;
-      op: string;
-      value?: string;
-      value2?: string;
-      values?: string[];
-    }
-  | {
-      // Attribute condition scoped to an EVENT's own attributes — only valid
-      // inside an `event` condition's `where`. Same shape as user_attribute but
-      // its `attribute` resolves against event (bizType) attributes.
-      type: 'event_attribute';
       attribute: string;
       op: string;
       value?: string;
@@ -97,14 +108,58 @@ export type RepresentationCondition =
         unit?: 'seconds' | 'minutes' | 'hours' | 'days';
       };
       scope?: 'current_user' | 'current_user_in_company' | 'any_user_in_company';
-      where?: RepresentationCondition[];
+      where?: EventWhereCondition[];
     }
   | { type: 'text_input'; target?: RepresentationTarget; op: StringOp; value?: string }
   | { type: 'text_filled'; target?: RepresentationTarget }
   | { type: 'time_window'; start?: string; end?: string }
-  // Parameterless: a checklist task completes when its item is clicked.
-  | { type: 'task_clicked' }
   | { type: 'unsupported'; note?: string };
+
+/**
+ * A checklist item's completion conditions: any general condition PLUS the
+ * parameterless `task_clicked`, allowed at any nesting — the builder lets a task
+ * complete on "clicked OR <other condition>", so `task_clicked` may sit inside an
+ * (OR) group alongside general conditions, not only at the top level.
+ */
+export type CompletionCondition =
+  | RepresentationCondition
+  | TaskClickedCondition
+  | { type: 'group'; match: 'all' | 'any'; conditions: CompletionCondition[] };
+
+/**
+ * The full set the COMPILER may receive across all slots — the general union
+ * plus the context-restricted `event_attribute` (event.where) and `task_clicked`
+ * (checklist completeWhen, incl. nested in groups). Zod restricts each slot;
+ * compile accepts the union.
+ */
+export type CompilableCondition =
+  | RepresentationCondition
+  | EventAttributeCondition
+  | TaskClickedCondition
+  | CompletionCondition;
+
+// Context-restricted conditions (NOT in the general union — each is only valid
+// in one slot, so misplacing them is a Zod error at the write boundary).
+export const eventAttributeCondition = z.object({
+  type: z.literal('event_attribute'),
+  attribute: z.string(),
+  op: z.string(),
+  value: z.string().optional(),
+  value2: z.string().optional(),
+  values: z.array(z.string()).optional(),
+});
+export const taskClickedCondition = z.object({ type: z.literal('task_clicked') });
+/** An event's `where` accepts only event-attribute conditions + groups of them. */
+export const eventWhereCondition: z.ZodType<EventWhereCondition> = z.lazy(() =>
+  z.union([
+    eventAttributeCondition,
+    z.object({
+      type: z.literal('group'),
+      match: z.enum(['all', 'any']),
+      conditions: z.array(eventWhereCondition),
+    }),
+  ]),
+) as unknown as z.ZodType<EventWhereCondition>;
 
 export const representationCondition = z.lazy(() =>
   z.union([
@@ -115,14 +170,6 @@ export const representationCondition = z.lazy(() =>
     }),
     z.object({
       type: z.literal('user_attribute'),
-      attribute: z.string(),
-      op: z.string(),
-      value: z.string().optional(),
-      value2: z.string().optional(),
-      values: z.array(z.string()).optional(),
-    }),
-    z.object({
-      type: z.literal('event_attribute'),
       attribute: z.string(),
       op: z.string(),
       value: z.string().optional(),
@@ -164,7 +211,7 @@ export const representationCondition = z.lazy(() =>
         })
         .optional(),
       scope: z.enum(['current_user', 'current_user_in_company', 'any_user_in_company']).optional(),
-      where: z.array(representationCondition).optional(),
+      where: z.array(eventWhereCondition).optional(),
     }),
     z.object({
       type: z.literal('text_input'),
@@ -178,10 +225,26 @@ export const representationCondition = z.lazy(() =>
       start: z.string().optional(),
       end: z.string().optional(),
     }),
-    z.object({ type: z.literal('task_clicked') }),
     z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
   ]),
 ) as unknown as z.ZodType<RepresentationCondition>;
+
+/**
+ * Checklist completion conditions: the general union + `task_clicked`, with
+ * `task_clicked` allowed at any nesting (a group's children are themselves
+ * completion conditions, so "clicked OR url-is-X" round-trips).
+ */
+export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =>
+  z.union([
+    taskClickedCondition,
+    z.object({
+      type: z.literal('group'),
+      match: z.enum(['all', 'any']),
+      conditions: z.array(completeWhenCondition),
+    }),
+    representationCondition,
+  ]),
+) as unknown as z.ZodType<CompletionCondition>;
 
 // ── Rules: actions ───────────────────────────────────────────────────────────
 export const representationAction = z.union([
@@ -335,8 +398,15 @@ const blockBase = {
   object: z.literal(ApiObjectType.BLOCK).default(ApiObjectType.BLOCK),
   id: z.string().optional(),
 };
+// A dimension can't be negative (invalid CSS — the renderer ignores it). A
+// percent over 100 IS valid CSS (renders as overflow); the builder clamps it as
+// a UX nicety, but that's not a data-validity rule, so v2 accepts it. `fill`
+// ignores `value`.
 const widthShape = z
-  .object({ unit: z.enum(['percent', 'pixels', 'fill']), value: z.number().optional() })
+  .object({
+    unit: z.enum(['percent', 'pixels', 'fill']),
+    value: z.number().nonnegative().optional(),
+  })
   .optional();
 const spacingShape = z
   .object({

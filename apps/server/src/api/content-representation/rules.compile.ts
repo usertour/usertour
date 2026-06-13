@@ -3,8 +3,8 @@ import { DEFAULT_FREQUENCY, cuid } from '@usertour/helpers';
 import { ParamsError } from '@/common/errors';
 
 import {
+  CompilableCondition,
   RepresentationAction,
-  RepresentationCondition,
   RepresentationHideRules,
   RepresentationStartRules,
   RepresentationTrigger,
@@ -123,7 +123,7 @@ const rule = (type: string, data: any, extra?: Partial<Rule>): Rule => ({
  * the stamp happens here, in the parent's map, rather than inside the group case.
  */
 export function compileConditions(
-  conditions: RepresentationCondition[] | undefined,
+  conditions: CompilableCondition[] | undefined,
   r: CompileResolvers,
   joiner: 'and' | 'or' = 'and',
 ): Rule[] {
@@ -132,7 +132,7 @@ export function compileConditions(
     .map((c) => ({ ...compileCondition(c, r), operators: joiner }));
 }
 
-function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule {
+function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
   switch (c.type) {
     case 'group':
       // The group's `match` governs ITS children's joiner. The group node's own
@@ -196,7 +196,9 @@ function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule
             }
           : {}),
         ...(c.scope ? { scope: SCOPE[c.scope] } : {}),
-        ...(c.where ? { whereConditions: compileConditions(c.where, r) } : {}),
+        ...(c.where
+          ? { whereConditions: compileConditions(c.where as CompilableCondition[], r) }
+          : {}),
       });
     case 'text_input':
       return rule('text-input', {
