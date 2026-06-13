@@ -28,6 +28,7 @@ import { decompileText } from './text.decompile';
  */
 export interface CompiledStep {
   cvid: string;
+  themeId: string | null;
   name: string;
   type: string;
   sequence: number;
@@ -39,6 +40,7 @@ export interface CompiledStep {
 
 type InternalStep = {
   cvid?: string;
+  themeId?: string | null;
   data?: unknown;
   target?: unknown;
   setting?: unknown;
@@ -47,6 +49,7 @@ type InternalStep = {
 /** The fields the compiler reads — satisfied by both the read step and write input. */
 type StepToCompile = {
   cvid?: string | null;
+  themeId?: string | null;
   name: string;
   type: string;
   sequence: number;
@@ -78,6 +81,9 @@ export function compileStep(
     // cvid is server-owned: preserve the matched existing step's cvid on update,
     // generate a fresh one on create. Never taken from client input.
     cvid: step.cvid ?? existing?.cvid ?? cuid(),
+    // Per-step theme override: omit (undefined) preserves the existing value,
+    // explicit null clears it (inherit the version theme), a string sets it.
+    themeId: step.themeId !== undefined ? step.themeId : (existing?.themeId ?? null),
     name: step.name,
     type: step.type,
     sequence: step.sequence,

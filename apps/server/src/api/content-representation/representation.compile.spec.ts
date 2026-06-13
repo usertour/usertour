@@ -273,6 +273,47 @@ describe('compileStep → decompileStep round-trip', () => {
   });
 });
 
+describe('per-step themeId override (set / preserve / clear / inherit)', () => {
+  const parse = (themeId?: string | null) =>
+    representationStepInput.parse({
+      name: 'S',
+      type: 'tooltip',
+      ...(themeId !== undefined ? { themeId } : {}),
+    });
+
+  it('sets a per-step theme on create', () => {
+    const compiled = compileStep(
+      { ...parse('t1'), cvid: 'cv1', sequence: 0, content: [] } as any,
+      undefined,
+      ids,
+    );
+    expect(compiled.themeId).toBe('t1');
+  });
+
+  it('omitting themeId preserves the existing override (field-merge)', () => {
+    const compiled = compileStep(
+      { ...parse(undefined), cvid: 'cv1', sequence: 0, content: [] } as any,
+      { cvid: 'cv1', themeId: 't1' } as any,
+      ids,
+    );
+    expect(compiled.themeId).toBe('t1');
+  });
+
+  it('explicit null clears the override (inherit the version theme)', () => {
+    const compiled = compileStep(
+      { ...parse(null), cvid: 'cv1', sequence: 0, content: [] } as any,
+      { cvid: 'cv1', themeId: 't1' } as any,
+      ids,
+    );
+    expect(compiled.themeId).toBeNull();
+  });
+
+  it('decompile emits themeId (null when the step has no override)', () => {
+    const back = decompileStep({ id: 's1', cvid: 'cv1', name: 'S', type: 'tooltip', sequence: 0 });
+    expect(back.themeId).toBeNull();
+  });
+});
+
 describe('field-level merge', () => {
   it('preserves element styling, target fingerprint, and setting offsets', () => {
     const existing = {

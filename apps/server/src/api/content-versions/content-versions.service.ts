@@ -253,6 +253,14 @@ export class ApiContentVersionsService {
     const content: Record<string, unknown> = {};
 
     if (body.steps) {
+      // Per-step theme overrides must reference a live project theme (a null clears
+      // the override → inherit the version theme, so only validate non-null strings).
+      for (const themeId of new Set(
+        body.steps.map((s) => s.themeId).filter((t): t is string => typeof t === 'string'),
+      )) {
+        await this.requireTheme(themeId, projectId);
+      }
+
       // Steps merge by their server-assigned `id` (echo to update, omit to create);
       // the internal cvid is server-owned (matched step's cvid, or a fresh one).
       const existingById = new Map(

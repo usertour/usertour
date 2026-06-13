@@ -509,6 +509,8 @@ export const representationStep = z.object({
   /** tooltip | modal | bubble | hidden */
   type: z.string(),
   sequence: z.number(),
+  /** Per-step theme override; null = inherit the version (flow) theme. */
+  themeId: z.string().nullable(),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
   width: z.number().optional(),
@@ -572,6 +574,14 @@ export const representationStepInput = z.object({
     .enum(['tooltip', 'modal', 'hidden', 'bubble'])
     .describe('Step kind. Only `tooltip` anchors to a target element; the rest are page-level.'),
   sequence: z.number().optional(),
+  themeId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'Per-step theme override. Omit to keep the current value; set to a theme id ' +
+        '(from list_themes) to override; set to null to clear and inherit the flow theme.',
+    ),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
   width: z.number().optional(),

@@ -23,6 +23,7 @@ type StepNode = {
   cvid: string | null;
   name: string | null;
   type: string | null;
+  themeId?: string | null;
   sequence: number;
   data?: unknown;
   target?: unknown;
@@ -63,6 +64,7 @@ export function decompileStep(
     name: step.name ?? '',
     type: step.type ?? '',
     sequence: step.sequence,
+    themeId: step.themeId ?? null,
     ...(target ? { target } : {}),
     ...(placement ? { placement } : {}),
     ...(typeof setting.width === 'number' ? { width: setting.width } : {}),
