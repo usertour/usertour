@@ -1,5 +1,6 @@
 import { compileContent, compileStep } from './representation.compile';
 import { decompileStep } from './representation.decompile';
+import { representationStepInput } from './representation.schema';
 import { compileText } from './text.compile';
 import { decompileText } from './text.decompile';
 import { extractLinkUrl } from '@usertour/helpers';
@@ -224,6 +225,51 @@ describe('compileStep → decompileStep round-trip', () => {
     expect(back.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
     expect(back.content[1]).toMatchObject({ type: 'button', text: 'Next', variant: 'primary' });
     expect(back.triggers).toEqual([{ do: [{ type: 'dismiss' }] }]);
+  });
+
+  // Regression: both fields are consumed by compileStep and emitted by decompile,
+  // but were absent from the write schema (representationStepInput), so zod silently
+  // stripped them on write — readable yet not writable. They must now survive parse.
+  it('write input keeps onClick + explicitCompletionStep through parse → compile → decompile', () => {
+    const parsed = representationStepInput.parse({
+      name: 'Click the CTA',
+      type: 'tooltip',
+      target: { by: 'selector', selector: '.cta' },
+      explicitCompletionStep: true,
+      onClick: [{ type: 'goto_step', step: 'next' }],
+    });
+
+    // the write boundary must not strip them
+    expect(parsed.explicitCompletionStep).toBe(true);
+    expect(parsed.onClick).toEqual([{ type: 'goto_step', step: 'next' }]);
+
+    const compiled = compileStep(
+      { ...parsed, cvid: 'cv1', sequence: 0, content: parsed.content } as any,
+      undefined,
+      ids,
+    );
+
+    // onClick → target.actions (the SDK reads currentStep.target.actions)
+    expect((compiled.target as any).actions).toHaveLength(1);
+    expect((compiled.target as any).actions[0].type).toBe('step-goto');
+    expect((compiled.target as any).actions[0].data.stepCvid).toBe('next');
+    // explicitCompletionStep → setting
+    expect((compiled.setting as any).explicitCompletionStep).toBe(true);
+
+    // and both round-trip back out on read
+    const back = decompileStep({
+      id: 's1',
+      cvid: compiled.cvid,
+      name: 'Click the CTA',
+      type: 'tooltip',
+      sequence: 0,
+      data: compiled.data,
+      target: compiled.target,
+      setting: compiled.setting,
+      trigger: compiled.trigger,
+    });
+    expect(back.explicitCompletionStep).toBe(true);
+    expect(back.onClick).toEqual([{ type: 'goto_step', step: 'next' }]);
   });
 });
 

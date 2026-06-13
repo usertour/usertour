@@ -576,8 +576,19 @@ export const representationStepInput = z.object({
   placement: representationPlacement.optional(),
   width: z.number().optional(),
   skippable: z.boolean().optional(),
+  explicitCompletionStep: z
+    .boolean()
+    .optional()
+    .describe('Marks this step as an explicit completion point — reaching it completes the flow.'),
   content: z.array(representationBlock).default([]),
   triggers: z.array(representationTrigger).optional(),
+  onClick: z
+    .array(representationAction)
+    .optional()
+    .describe(
+      "Actions to run when the user clicks the step's target element (click-to-advance). " +
+        'Tooltip steps with a `target` only.',
+    ),
 });
 export type RepresentationStepInput = z.infer<typeof representationStepInput>;
 
