@@ -10,8 +10,8 @@ import {
   DecompileResolvers,
   IDENTITY_RESOLVERS,
   decompileActions,
-  decompileConditions,
   decompileTriggers,
+  decompileWhen,
 } from './rules.decompile';
 import { decompileTarget, hasAutoTarget } from './target.decompile';
 
@@ -171,10 +171,8 @@ function decompileElement(
           text: typeof e.data?.text === 'string' ? e.data.text : '',
           ...(variant ? { variant } : {}),
           ...(actions.length ? { actions } : {}),
-          ...(disableConds.length
-            ? { disabledWhen: decompileConditions(disableConds, resolvers) }
-            : {}),
-          ...(hideConds.length ? { hiddenWhen: decompileConditions(hideConds, resolvers) } : {}),
+          ...(disableConds.length ? { disabledWhen: decompileWhen(disableConds, resolvers) } : {}),
+          ...(hideConds.length ? { hiddenWhen: decompileWhen(hideConds, resolvers) } : {}),
         },
         unsupported: false,
       };

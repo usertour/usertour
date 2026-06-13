@@ -85,7 +85,8 @@ function compileChecklist(
   if (rep.completionOrder !== undefined) out.completionOrder = rep.completionOrder;
   if (rep.preventDismiss !== undefined) out.preventDismissChecklist = rep.preventDismiss;
   if (rep.autoDismiss !== undefined) out.autoDismissChecklist = rep.autoDismiss;
-  if (rep.content !== undefined) out.content = compileContent(rep.content, base.content, r);
+  if (rep.content !== undefined)
+    out.content = compileContent(rep.content, base.content, r, 'checklist-dismis');
 
   if (rep.items !== undefined) {
     const prevById = new Map(
@@ -101,7 +102,7 @@ function compileChecklist(
         ...(it.description !== undefined ? { description: it.description } : {}),
         isCompleted: prev?.isCompleted ?? false,
         completeConditions: compileConditions(it.completeWhen ?? [], r),
-        clickedActions: compileActions(it.clickActions ?? []),
+        clickedActions: compileActions(it.clickActions ?? [], r, 'checklist-dismis'),
         onlyShowTask,
         onlyShowTaskConditions: onlyShowTask ? compileConditions(it.onlyShowWhen ?? [], r) : [],
       };
@@ -141,7 +142,7 @@ function compileLauncher(
     }
     if (rep.tooltip.width !== undefined) t.width = rep.tooltip.width;
     if (rep.tooltip.content !== undefined) {
-      t.content = compileContent(rep.tooltip.content, base.tooltip?.content, r);
+      t.content = compileContent(rep.tooltip.content, base.tooltip?.content, r, 'launcher-dismis');
     }
     const s = rep.tooltip.settings;
     if (s !== undefined) {
@@ -164,7 +165,8 @@ function compileLauncher(
     if (rep.behavior.triggerElement !== undefined) b.triggerElement = rep.behavior.triggerElement;
     if (rep.behavior.event !== undefined) b.triggerEvent = rep.behavior.event;
     if (rep.behavior.action !== undefined) b.actionType = rep.behavior.action;
-    if (rep.behavior.actions !== undefined) b.actions = compileActions(rep.behavior.actions);
+    if (rep.behavior.actions !== undefined)
+      b.actions = compileActions(rep.behavior.actions, r, 'launcher-dismis');
     out.behavior = b;
   }
   return out;
@@ -174,7 +176,8 @@ function compileBanner(rep: RepresentationBanner, existing: unknown, r: CompileR
   const base = (existing ?? {}) as Record<string, any>;
   const out: Record<string, any> = { ...base };
   if (rep.placement !== undefined) out.embedPlacement = rep.placement;
-  if (rep.content !== undefined) out.contents = compileContent(rep.content, base.contents, r);
+  if (rep.content !== undefined)
+    out.contents = compileContent(rep.content, base.contents, r, 'banner-dismis');
   if (rep.settings !== undefined) {
     const s = rep.settings;
     if (s.overlayOverAppContent !== undefined)

@@ -1,5 +1,5 @@
 import { decompileContent } from './representation.decompile';
-import { decompileActions, decompileConditions, DecompileResolvers } from './rules.decompile';
+import { decompileActions, decompileWhen, DecompileResolvers } from './rules.decompile';
 import { decompileText } from './text.decompile';
 import {
   RepresentationResourceCenter,
@@ -46,7 +46,7 @@ function decompileBlock(
 ): RepresentationResourceCenterBlock {
   const base = {
     ...(typeof b.id === 'string' ? { id: b.id } : {}),
-    ...(b.onlyShowBlock ? { onlyShowWhen: decompileConditions(b.onlyShowBlockConditions, r) } : {}),
+    ...(b.onlyShowBlock ? { onlyShowWhen: decompileWhen(b.onlyShowBlockConditions, r) } : {}),
   };
   const ic = icon(b.iconSource, b.iconType, b.iconUrl);
   switch (b.type) {
@@ -98,7 +98,7 @@ function decompileBlock(
             ...(it.navigateUrl ? { navigateUrl: decompileText(it.navigateUrl) } : {}),
             ...(it.navigateOpenType ? { navigateOpenType: it.navigateOpenType } : {}),
             ...(it.onlyShowItem
-              ? { onlyShowWhen: decompileConditions(it.onlyShowItemConditions, r) }
+              ? { onlyShowWhen: decompileWhen(it.onlyShowItemConditions, r) }
               : {}),
           }),
         ),

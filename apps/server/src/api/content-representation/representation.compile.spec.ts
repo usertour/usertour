@@ -1,10 +1,10 @@
-import { compileStep } from './representation.compile';
+import { compileContent, compileStep } from './representation.compile';
 import { decompileStep } from './representation.decompile';
 import { compileText } from './text.compile';
 import { decompileText } from './text.decompile';
 import { extractLinkUrl } from '@usertour/helpers';
-import { compileActions, CompileResolvers } from './rules.compile';
-import { decompileActions } from './rules.decompile';
+import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
+import { decompileActions, decompileWhen, IDENTITY_RESOLVERS } from './rules.decompile';
 
 const ids: CompileResolvers = { attributeId: (c) => c, eventId: (c) => c };
 
@@ -48,6 +48,105 @@ describe('navigate action compiles to the builder shape (data.value, not data.ur
     expect(extractLinkUrl((rule as any).data.value, { company_id: '42' })).toBe('/users/42');
     // falls back when the attribute is missing
     expect(extractLinkUrl((rule as any).data.value, {})).toBe('/users/0');
+  });
+});
+
+describe('condition and/or (operators)', () => {
+  // The runtime combines a condition list by reading `conditions[0].operators`
+  // (a missing value falls through to OR). So compile MUST stamp the joiner or
+  // an intended AND silently evaluates as OR.
+  it('stamps operators=and on a top-level list (runtime ANDs, not ORs)', () => {
+    const out = compileConditions(
+      [
+        { type: 'segment', segment: 's1', in: true },
+        { type: 'segment', segment: 's2', in: true },
+      ],
+      ids,
+    );
+    expect(out.map((c: any) => c.operators)).toEqual(['and', 'and']);
+  });
+
+  it('stamps a group node with the parent joiner and its children with its match', () => {
+    const [node]: any = compileConditions(
+      [
+        {
+          type: 'group',
+          match: 'any',
+          conditions: [
+            { type: 'segment', segment: 's1', in: true },
+            { type: 'segment', segment: 's2', in: true },
+          ],
+        },
+      ],
+      ids,
+    );
+    expect(node.operators).toBe('and'); // group node = parent (top-level) joiner
+    expect(node.conditions.map((c: any) => c.operators)).toEqual(['or', 'or']); // match:any → or
+  });
+
+  it('wraps a top-level OR list in an any-group and round-trips the OR', () => {
+    const internalOr = [
+      { type: 'segment', operators: 'or', data: { segmentId: 's1' } },
+      { type: 'segment', operators: 'or', data: { segmentId: 's2' } },
+    ];
+    const when = decompileWhen(internalOr, IDENTITY_RESOLVERS);
+    expect(when).toEqual([
+      {
+        type: 'group',
+        match: 'any',
+        conditions: [
+          { type: 'segment', segment: 's1', in: true },
+          { type: 'segment', segment: 's2', in: true },
+        ],
+      },
+    ]);
+    // compile back: a single top-level group whose children are OR-stamped —
+    // semantically the same "s1 OR s2".
+    const [node]: any = compileConditions(when, ids);
+    expect(node.type).toBe('group');
+    expect(node.conditions.map((c: any) => c.operators)).toEqual(['or', 'or']);
+  });
+
+  it('leaves a top-level AND list flat and a single condition unwrapped', () => {
+    const and = decompileWhen(
+      [
+        { type: 'segment', operators: 'and', data: { segmentId: 's1' } },
+        { type: 'segment', operators: 'and', data: { segmentId: 's2' } },
+      ],
+      IDENTITY_RESOLVERS,
+    );
+    expect(and.every((c) => c.type === 'segment')).toBe(true); // no wrap
+    const single = decompileWhen(
+      [{ type: 'segment', data: { segmentId: 's1' } }],
+      IDENTITY_RESOLVERS,
+    );
+    expect(single).toEqual([{ type: 'segment', segment: 's1', in: true }]);
+  });
+});
+
+describe('dismiss compiles to the host content variant', () => {
+  // Each renderer registers only its own dismiss handler; a mismatched type
+  // finds no handler and silently no-ops. So the variant must follow the host.
+  it('defaults to flow-dismis', () => {
+    expect((compileActions([{ type: 'dismiss' }], ids)[0] as any).type).toBe('flow-dismis');
+  });
+
+  it('uses the supplied variant for checklist / banner / launcher', () => {
+    const variant = (v: any) => (compileActions([{ type: 'dismiss' }], ids, v)[0] as any).type;
+    expect(variant('checklist-dismis')).toBe('checklist-dismis');
+    expect(variant('banner-dismis')).toBe('banner-dismis');
+    expect(variant('launcher-dismis')).toBe('launcher-dismis');
+  });
+
+  it('threads the variant into content-block button actions', () => {
+    const content: any = compileContent(
+      [{ object: 'block', type: 'button', text: 'Close', actions: [{ type: 'dismiss' }] }] as any,
+      undefined,
+      ids,
+      'banner-dismis',
+    );
+    const action = content[0].children[0].children[0].element.data.actions[0];
+    expect(action.type).toBe('banner-dismis');
   });
 });
 

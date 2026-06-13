@@ -13,20 +13,30 @@ const resolvers = {
 };
 
 describe('decompileCondition', () => {
-  it('group → match all/any with nested conditions', () => {
+  it('group → match comes from the children joiner, not the group node', () => {
+    // A group's internal and/or is stored on its CHILDREN's `operators` (the
+    // runtime reads `group.conditions[0].operators`). The group node's own
+    // `operators` is the parent-list joiner and must NOT determine `match` —
+    // here it is 'and' yet the OR children make this an 'any' group.
     expect(
       decompileCondition(
         {
           type: 'group',
-          operators: 'or',
-          conditions: [{ type: 'segment', data: { segmentId: 's1' } }],
+          operators: 'and',
+          conditions: [
+            { type: 'segment', operators: 'or', data: { segmentId: 's1' } },
+            { type: 'segment', operators: 'or', data: { segmentId: 's2' } },
+          ],
         },
         IDENTITY_RESOLVERS,
       ),
     ).toEqual({
       type: 'group',
       match: 'any',
-      conditions: [{ type: 'segment', segment: 's1', in: true }],
+      conditions: [
+        { type: 'segment', segment: 's1', in: true },
+        { type: 'segment', segment: 's2', in: true },
+      ],
     });
   });
 

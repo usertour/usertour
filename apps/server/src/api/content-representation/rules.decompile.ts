@@ -113,13 +113,34 @@ export function decompileConditions(
   return (Array.isArray(raw) ? raw : []).map((c) => decompileCondition(c, r));
 }
 
+/** The and/or of a flat list lives on its first node's `operators` (the runtime
+ * reads `list[0].operators`); a missing/`and` value means AND. */
+const listJoiner = (raw: unknown): 'and' | 'or' =>
+  Array.isArray(raw) && (raw[0] as RuleNode | undefined)?.operators === 'or' ? 'or' : 'and';
+
+/**
+ * Decompile a top-level `when` list. The representation has no field for a flat
+ * list's and/or — a bare `when` array is AND by convention — so an OR list is
+ * wrapped in a single `group{match:'any'}`, the same way OR is expressed at any
+ * other level. (A single condition needs no wrapper: and/or is moot.) This is
+ * the inverse of compileConditions stamping the joiner back onto each node.
+ */
+export function decompileWhen(raw: unknown, r: DecompileResolvers): RepresentationCondition[] {
+  const items = decompileConditions(raw, r);
+  if (items.length <= 1 || listJoiner(raw) !== 'or') return items;
+  return [{ type: 'group', match: 'any', conditions: items }];
+}
+
 export function decompileCondition(c: RuleNode, r: DecompileResolvers): RepresentationCondition {
   const d = c.data ?? {};
   switch (c.type) {
     case 'group':
+      // A group's `match` is its INTERNAL and/or — stored on its children's
+      // `operators` (the runtime reads `group.conditions[0].operators`), NOT on
+      // the group node itself (that carries the parent list's joiner).
       return {
         type: 'group',
-        match: c.operators === 'or' ? 'any' : 'all',
+        match: listJoiner(c.conditions) === 'or' ? 'any' : 'all',
         conditions: decompileConditions(c.conditions, r),
       };
     case 'user-attr':
@@ -161,7 +182,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Represen
         ...mapWithin(d),
         ...(SCOPE[d.scope] ? { scope: SCOPE[d.scope] as never } : {}),
         ...(Array.isArray(d.whereConditions) && d.whereConditions.length
-          ? { where: decompileConditions(d.whereConditions, r) }
+          ? { where: decompileWhen(d.whereConditions, r) }
           : {}),
       };
     case 'text-input': {
@@ -272,7 +293,7 @@ export function decompileTriggers(raw: unknown, r: DecompileResolvers): Represen
 function decompileTrigger(t: any, r: DecompileResolvers): RepresentationTrigger {
   return {
     ...(Array.isArray(t?.conditions) && t.conditions.length
-      ? { when: decompileConditions(t.conditions, r) }
+      ? { when: decompileWhen(t.conditions, r) }
       : {}),
     do: decompileActions(t?.actions),
     ...(typeof t?.wait === 'number' ? { waitMs: t.wait } : {}),
@@ -290,7 +311,7 @@ export function decompileStartRules(
   }
   const setting = config.autoStartRulesSetting ?? {};
   return {
-    when: decompileConditions(config.autoStartRules, r),
+    when: decompileWhen(config.autoStartRules, r),
     ...(setting.frequency ? { frequency: mapFrequency(setting.frequency) } : {}),
     ...(setting.priority ? { priority: setting.priority } : {}),
     ...(typeof setting.wait === 'number' ? { waitMs: setting.wait } : {}),
@@ -307,7 +328,7 @@ export function decompileHideRules(
   if (!config?.enabledHideRules) {
     return undefined;
   }
-  return { when: decompileConditions(config.hideRules, r) };
+  return { when: decompileWhen(config.hideRules, r) };
 }
 
 function mapFrequency(f: any): RepresentationStartRules['frequency'] {

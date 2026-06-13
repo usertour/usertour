@@ -1,6 +1,6 @@
 import { decompileContent } from './representation.decompile';
 import { decompileResourceCenter } from './resource-center.decompile';
-import { decompileActions, decompileConditions, DecompileResolvers } from './rules.decompile';
+import { decompileActions, decompileWhen, DecompileResolvers } from './rules.decompile';
 import { decompileTarget } from './target.decompile';
 import {
   RepresentationBanner,
@@ -56,11 +56,9 @@ function decompileChecklist(data: unknown, r: DecompileResolvers): Representatio
       ...(typeof it.id === 'string' ? { id: it.id } : {}),
       name: typeof it.name === 'string' ? it.name : '',
       ...(it.description ? { description: it.description } : {}),
-      completeWhen: decompileConditions(it.completeConditions, r),
+      completeWhen: decompileWhen(it.completeConditions, r),
       clickActions: decompileActions(it.clickedActions),
-      ...(it.onlyShowTask
-        ? { onlyShowWhen: decompileConditions(it.onlyShowTaskConditions, r) }
-        : {}),
+      ...(it.onlyShowTask ? { onlyShowWhen: decompileWhen(it.onlyShowTaskConditions, r) } : {}),
     })),
   };
 }

@@ -103,24 +103,38 @@ const rule = (type: string, data: any, extra?: Partial<Rule>): Rule => ({
   ...extra,
 });
 
+/**
+ * Compile a flat condition list, stamping each node with the list's and/or
+ * `operators`. The runtime combines a list by reading `conditions[0].operators`
+ * (helpers/conditions/condition.ts) — a missing value falls through to OR — so
+ * every node MUST carry it or an intended AND silently evaluates as OR.
+ *
+ * `joiner` is the connector for THIS list: top-level `when` lists are AND by
+ * convention (OR is expressed by wrapping in a `group`, see decompileWhen), and
+ * a group's children take the group's `match`. A group NODE itself is stamped by
+ * the list it sits in (its parent's joiner), not by its own match — which is why
+ * the stamp happens here, in the parent's map, rather than inside the group case.
+ */
 export function compileConditions(
   conditions: RepresentationCondition[] | undefined,
   r: CompileResolvers,
+  joiner: 'and' | 'or' = 'and',
 ): Rule[] {
   return (conditions ?? [])
     .filter((c) => c.type !== 'unsupported')
-    .map((c) => compileCondition(c, r));
+    .map((c) => ({ ...compileCondition(c, r), operators: joiner }));
 }
 
 function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule {
   switch (c.type) {
     case 'group':
+      // The group's `match` governs ITS children's joiner. The group node's own
+      // `operators` is set by compileConditions above (the parent list's joiner).
       return rule(
         'group',
         {},
         {
-          operators: c.match === 'any' ? 'or' : 'and',
-          conditions: compileConditions(c.conditions, r),
+          conditions: compileConditions(c.conditions, r, c.match === 'any' ? 'or' : 'and'),
         },
       );
     case 'user_attribute':
@@ -182,14 +196,34 @@ function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule
   }
 }
 
+/**
+ * The internal `dismiss` action splits by host content type — each renderer
+ * registers only its own dismiss handler (flow/checklist/banner/launcher), and
+ * a mismatched type finds no handler and silently no-ops. The representation has
+ * one `dismiss`; the host's type is supplied here so it compiles to the right
+ * variant. Defaults to `flow-dismis` (flow steps, the common case).
+ */
+export type DismissVariant =
+  | 'flow-dismis'
+  | 'checklist-dismis'
+  | 'banner-dismis'
+  | 'launcher-dismis';
+
 export function compileActions(
   actions: RepresentationAction[] | undefined,
   r?: CompileResolvers,
+  dismiss: DismissVariant = 'flow-dismis',
 ): Rule[] {
-  return (actions ?? []).filter((a) => a.type !== 'unsupported').map((a) => compileAction(a, r));
+  return (actions ?? [])
+    .filter((a) => a.type !== 'unsupported')
+    .map((a) => compileAction(a, r, dismiss));
 }
 
-function compileAction(a: RepresentationAction, r?: CompileResolvers): Rule {
+function compileAction(
+  a: RepresentationAction,
+  r?: CompileResolvers,
+  dismiss: DismissVariant = 'flow-dismis',
+): Rule {
   switch (a.type) {
     case 'goto_step':
       return rule('step-goto', { stepCvid: r?.stepCvid ? r.stepCvid(a.step) : a.step });
@@ -206,7 +240,7 @@ function compileAction(a: RepresentationAction, r?: CompileResolvers): Rule {
         ...(a.newWindow ? { openNewWindow: true } : {}),
       });
     case 'dismiss':
-      return rule('flow-dismis', {});
+      return rule(dismiss, {});
     case 'run_javascript':
       throw new ParamsError('run_javascript cannot be set via the API');
     default:
@@ -217,11 +251,12 @@ function compileAction(a: RepresentationAction, r?: CompileResolvers): Rule {
 export function compileTriggers(
   triggers: RepresentationTrigger[] | undefined,
   r: CompileResolvers,
+  dismiss: DismissVariant = 'flow-dismis',
 ): Rule[] {
   return (triggers ?? []).map((t) => ({
     id: cuid(),
     conditions: compileConditions(t.when, r),
-    actions: compileActions(t.do, r),
+    actions: compileActions(t.do, r, dismiss),
     ...(t.waitMs !== undefined ? { wait: t.waitMs } : {}),
   })) as unknown as Rule[];
 }

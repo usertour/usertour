@@ -10,6 +10,7 @@ import {
 import { compileText } from './text.compile';
 import {
   CompileResolvers,
+  DismissVariant,
   compileActions,
   compileConditions,
   compileTriggers,
@@ -116,6 +117,7 @@ export function compileContent(
   blocks: RepresentationBlock[],
   existingData: unknown,
   r: CompileResolvers,
+  dismiss: DismissVariant = 'flow-dismis',
 ): unknown {
   const byId = indexElements(existingData);
   return (blocks ?? []).map((block) => {
@@ -129,7 +131,7 @@ export function compileContent(
             type: 'column',
             ...(col.width ? { width: { type: col.width.unit, value: col.width.value } } : {}),
           },
-          children: col.blocks.map((b) => compileElement(b, byId, r)),
+          children: col.blocks.map((b) => compileElement(b, byId, r, dismiss)),
         })),
       };
     }
@@ -140,7 +142,7 @@ export function compileContent(
         {
           id: cuid(),
           element: { type: 'column' },
-          children: [compileElement(block, byId, r)],
+          children: [compileElement(block, byId, r, dismiss)],
         },
       ],
     };
@@ -151,6 +153,7 @@ function compileElement(
   block: RepresentationBlock,
   byId: Map<string, any>,
   r: CompileResolvers,
+  dismiss: DismissVariant = 'flow-dismis',
 ): any {
   const existing = block.id ? byId.get(block.id) : undefined;
   const id = block.id ?? cuid();
@@ -187,7 +190,7 @@ function compileElement(
             ...((keepStyle as any).data ?? {}),
             text: block.text,
             ...(block.variant ? { type: block.variant } : {}),
-            actions: compileActions(block.actions, r),
+            actions: compileActions(block.actions, r, dismiss),
             ...(block.disabledWhen
               ? {
                   disableButton: true,
@@ -215,7 +218,7 @@ function compileElement(
           data: {
             ...((keepStyle as any).data ?? {}),
             ...q.data,
-            ...(block.actions ? { actions: compileActions(block.actions, r) } : {}),
+            ...(block.actions ? { actions: compileActions(block.actions, r, dismiss) } : {}),
           },
         },
         children: null,
