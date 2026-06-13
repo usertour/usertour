@@ -295,4 +295,93 @@ describe('validateVersionUsable', () => {
       expect(r.ok).toBe(true);
     });
   });
+
+  // Semantic condition validation — only runs when the caller supplies the
+  // project reference lists. Catches conditions that compile but are broken
+  // (dangling refs, an operator the attribute type can't use, missing values).
+  describe('semantic conditions (conditionContext)', () => {
+    // a1 = String user attribute (dataType 2).
+    const ctx = {
+      attributes: [{ id: 'a1', dataType: 2, bizType: 1 }],
+      segments: [{ id: 's1' }],
+      contents: [{ id: 'c1' }],
+      events: [{ id: 'e1' }],
+    } as never;
+    const run = (cond: unknown) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: empty,
+        config: { autoStartRules: [cond] as never },
+        conditionContext: ctx,
+      });
+    // Condition errors are pathed under `config.…`; flow's own errors are not.
+    const condErrors = (r: { errors: { path: string; message: string }[] }) =>
+      r.errors.filter((e) => e.path.startsWith('config'));
+
+    it('passes a valid user-attr condition', () => {
+      const r = run({
+        type: 'user-attr',
+        operators: 'and',
+        data: { attrId: 'a1', logic: 'is', value: 'pro' },
+      });
+      expect(condErrors(r)).toHaveLength(0);
+    });
+
+    it('flags a dangling attribute reference (the `?? code` hole)', () => {
+      const r = run({
+        type: 'user-attr',
+        operators: 'and',
+        data: { attrId: 'gone', logic: 'is', value: 'x' },
+      });
+      expect(condErrors(r)[0]?.message).toMatch(/unknown attribute/);
+    });
+
+    it('flags an operator the attribute type does not support', () => {
+      // String attr can't use a List operator.
+      const r = run({
+        type: 'user-attr',
+        operators: 'and',
+        data: { attrId: 'a1', logic: 'includesAll', value: 'x' },
+      });
+      expect(condErrors(r)[0]?.message).toMatch(/not valid/);
+    });
+
+    it('flags a missing required value', () => {
+      const r = run({ type: 'user-attr', operators: 'and', data: { attrId: 'a1', logic: 'is' } });
+      expect(condErrors(r)[0]?.message).toMatch(/missing a required value/);
+    });
+
+    it('flags a dangling segment reference', () => {
+      const r = run({
+        type: 'segment',
+        operators: 'and',
+        data: { segmentId: 'gone', logic: 'is' },
+      });
+      expect(condErrors(r)[0]?.message).toMatch(/unknown segment/);
+    });
+
+    it('validates conditions nested in a group', () => {
+      const r = run({
+        type: 'group',
+        operators: 'and',
+        conditions: [
+          { type: 'segment', operators: 'or', data: { segmentId: 'gone', logic: 'is' } },
+        ],
+      });
+      expect(condErrors(r).some((e) => /unknown segment/.test(e.message))).toBe(true);
+    });
+
+    it('skips condition validation when no context is supplied', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: empty,
+        config: {
+          autoStartRules: [{ type: 'user-attr', data: { attrId: 'gone', logic: 'is' } }] as never,
+        },
+      });
+      expect(r.errors.some((e) => e.path.startsWith('config'))).toBe(false);
+    });
+  });
 });

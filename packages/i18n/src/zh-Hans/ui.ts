@@ -3301,6 +3301,7 @@ const translations = {
       userAttr: {
         selectAttribute: '请选择一个属性',
         selectOperator: '请选择一个条件',
+        invalidOperator: '该运算符不适用于此属性类型',
         enterValue: '请输入一个值',
       },
       currentPage: {

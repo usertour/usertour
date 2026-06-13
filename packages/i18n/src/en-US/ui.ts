@@ -3459,6 +3459,7 @@ const translations = {
       userAttr: {
         selectAttribute: 'Please select an attribute',
         selectOperator: 'Please select a condition',
+        invalidOperator: 'This operator is not valid for the attribute type',
         enterValue: 'Please enter a value',
       },
       currentPage: {

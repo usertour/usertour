@@ -14,6 +14,7 @@ import {
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
+import { loadConditionContext } from '../content-representation/condition-context';
 import { requiresTheme, validateVersionUsable } from '../content-representation/usable.validate';
 import { defaultVersionData } from '../content-representation/version-data.defaults';
 import { paginate } from '../shared/pagination';
@@ -125,6 +126,7 @@ export class ApiContentService {
       steps: version.steps as unknown as Step[],
       data: version.data,
       config: version.config as { autoStartRules?: RulesCondition[] } | null,
+      conditionContext: await loadConditionContext(this.prisma, projectId),
     });
     if (!report.ok) {
       throw new ContentNotPublishableError(

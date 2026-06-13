@@ -12,6 +12,7 @@ import {
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
+import { loadConditionContext } from '../content-representation/condition-context';
 import { compileStep } from '../content-representation/representation.compile';
 import { decompileStep } from '../content-representation/representation.decompile';
 import { ContentVersion } from '../content-representation/representation.schema';
@@ -387,6 +388,7 @@ export class ApiContentVersionsService {
       steps: v.steps as Step[],
       data: v.data,
       config: v.config as { autoStartRules?: RulesCondition[] } | null,
+      conditionContext: await loadConditionContext(this.prisma, projectId),
     });
   }
 

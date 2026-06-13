@@ -1,21 +1,11 @@
-import type { Attribute, Content, Event, RulesCondition, Segment } from '@usertour/types';
+import type { RulesCondition } from '@usertour/types';
 import type { ComponentType } from 'react';
 
-// Validation context — passed to validate() so it can cross-check against the
-// live attribute / segment / content / event lists. Returning a translation
-// key marks the condition invalid; returning undefined means valid.
-
-export interface ValidateContext {
-  attributes?: Attribute[];
-  segments?: Segment[];
-  contents?: Content[];
-  events?: Event[];
-}
-
-export interface ValidationError {
-  key: string;
-  values?: Record<string, unknown>;
-}
+// ValidateContext / ValidationError are the shared validation contract — they
+// now live in @usertour/helpers (single source of truth, also used by the
+// server's write-path validator). Re-exported so existing imports resolve here.
+export type { ValidateContext, ValidationError } from '@usertour/helpers';
+import type { ValidateContext, ValidationError } from '@usertour/helpers';
 
 // Each rule type implements one of these. `TData` parametrizes only the
 // initial data factory — `Summary` and `Editor` receive the whole condition
