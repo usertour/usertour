@@ -112,6 +112,50 @@ function parseData<T>(data: unknown): T | null {
   return data as T;
 }
 
+// Question element types whose range must satisfy the widget's contract
+// (validateScaleRange in @usertour/widget: low ≤ high, low ≥ 0, high ≤ 100).
+const QUESTION_RANGE_TYPES = new Set(['scale', 'star-rating']);
+
+/**
+ * Deep-walk a compiled block tree and flag question elements whose type-specific
+ * config would render broken: a scale/rating range that isn't low ≤ high within
+ * 0–100, or a multiple-choice with no options. The builder's question editors
+ * enforce these; the API has no editor, so an agent can author an unanswerable
+ * question that compiles fine and renders empty.
+ */
+function collectQuestionIssues(
+  value: unknown,
+  path: string,
+  err: (path: string, message: string) => void,
+): void {
+  if (Array.isArray(value)) {
+    for (const item of value) collectQuestionIssues(item, path, err);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  const obj = value as Record<string, unknown>;
+  const el = obj.element as { type?: unknown; data?: Record<string, unknown> } | undefined;
+  if (el && typeof el.type === 'string') {
+    const d = el.data ?? {};
+    if (QUESTION_RANGE_TYPES.has(el.type)) {
+      const low = d.lowRange;
+      const high = d.highRange;
+      if (
+        typeof low === 'number' &&
+        typeof high === 'number' &&
+        !(low <= high && low >= 0 && high <= 100)
+      ) {
+        err(path, 'rating/scale question range must be low ≤ high within 0–100.');
+      }
+    } else if (el.type === 'multiple-choice') {
+      if (!Array.isArray(d.options) || d.options.length === 0) {
+        err(path, 'multiple-choice question needs at least one option.');
+      }
+    }
+  }
+  for (const key of Object.keys(obj)) collectQuestionIssues(obj[key], path, err);
+}
+
 /** Deep-walk any value collecting `step-goto` action targets (stepCvid). */
 function collectGotoTargets(node: unknown, out: string[]): void {
   if (Array.isArray(node)) {
@@ -161,6 +205,18 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       break;
     default:
       break;
+  }
+
+  // Question config (renderability — always checked) across steps + non-flow data.
+  collectQuestionIssues(input.data, 'data', err);
+  {
+    const qSteps = asArray<Step>(input.steps);
+    for (let i = 0; i < qSteps.length; i++) {
+      const s = qSteps[i];
+      const label = (s as { name?: string })?.name;
+      const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
+      collectQuestionIssues((s as { data?: unknown }).data, base, err);
+    }
   }
 
   // Semantic condition validation across every place conditions live (start /

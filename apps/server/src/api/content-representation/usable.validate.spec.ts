@@ -384,4 +384,57 @@ describe('validateVersionUsable', () => {
       expect(r.errors.some((e) => e.path.startsWith('config'))).toBe(false);
     });
   });
+
+  // Question config (renderability) — the builder's question editors enforce
+  // these; the API has no editor, so an agent can author an unanswerable question.
+  describe('question config', () => {
+    const withQuestion = (element: unknown) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            sequence: 0,
+            cvid: 'a',
+            data: [{ children: [{ children: [{ element }] }] }],
+          },
+        ] as never,
+      });
+    const has = (r: { errors: { message: string }[] }, re: RegExp) =>
+      r.errors.some((e) => re.test(e.message));
+
+    it('flags a multiple-choice question with no options', () => {
+      const r = withQuestion({ type: 'multiple-choice', data: { name: 'Q', options: [] } });
+      expect(has(r, /at least one option/)).toBe(true);
+    });
+
+    it('flags a scale question with an invalid range (low > high)', () => {
+      const r = withQuestion({ type: 'scale', data: { name: 'Q', lowRange: 10, highRange: 1 } });
+      expect(has(r, /range must be/)).toBe(true);
+    });
+
+    it('flags a scale range out of bounds (high > 100)', () => {
+      const r = withQuestion({ type: 'scale', data: { name: 'Q', lowRange: 0, highRange: 500 } });
+      expect(has(r, /range must be/)).toBe(true);
+    });
+
+    it('accepts a valid scale and a populated multiple-choice', () => {
+      expect(
+        has(
+          withQuestion({ type: 'scale', data: { name: 'Q', lowRange: 0, highRange: 10 } }),
+          /range/,
+        ),
+      ).toBe(false);
+      expect(
+        has(
+          withQuestion({
+            type: 'multiple-choice',
+            data: { name: 'Q', options: [{ label: 'A', value: 'a' }] },
+          }),
+          /option/,
+        ),
+      ).toBe(false);
+    });
+  });
 });
