@@ -26,9 +26,26 @@ export const representationPlacement = z.union([
     align: z.enum(['start', 'center', 'end']),
     sideOffset: z.number().optional(),
     alignOffset: z.number().optional(),
+    // `auto` (default) lets the tooltip flip to avoid the viewport edge; `fixed`
+    // pins it to the given side/align.
+    alignType: z.enum(['auto', 'fixed']).optional(),
+    // A tooltip may dim the page (backdrop) and block clicks on its target.
+    backdrop: z.boolean().optional(),
+    blockTarget: z.boolean().optional(),
   }),
   z.object({
-    position: z.enum(['center', 'top', 'bottom', 'left', 'right']),
+    // 9-cell grid — matches ModalPosition (@usertour/types).
+    position: z.enum([
+      'leftTop',
+      'centerTop',
+      'rightTop',
+      'leftCenter',
+      'center',
+      'rightCenter',
+      'leftBottom',
+      'centerBottom',
+      'rightBottom',
+    ]),
     offsetX: z.number().optional(),
     offsetY: z.number().optional(),
     backdrop: z.boolean().optional(),

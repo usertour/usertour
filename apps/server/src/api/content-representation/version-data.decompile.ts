@@ -55,7 +55,7 @@ function decompileChecklist(data: unknown, r: DecompileResolvers): Representatio
     items: items.map((it: Record<string, any>) => ({
       ...(typeof it.id === 'string' ? { id: it.id } : {}),
       name: typeof it.name === 'string' ? it.name : '',
-      ...(it.description ? { description: it.description } : {}),
+      ...(typeof it.description === 'string' ? { description: it.description } : {}),
       completeWhen: decompileWhen(it.completeConditions, r),
       clickActions: decompileActions(it.clickedActions),
       ...(it.onlyShowTask ? { onlyShowWhen: decompileWhen(it.onlyShowTaskConditions, r) } : {}),

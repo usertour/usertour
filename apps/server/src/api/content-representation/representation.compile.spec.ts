@@ -447,9 +447,9 @@ describe('step setting: builder defaults seeded on create (SDK needs them)', () 
     expect((compiled.setting as any).position).toBe('center');
   });
 
-  it('keeps an author-set modal position', () => {
-    const compiled = compileStep(mk('modal', { position: 'top' }) as never, undefined, ids);
-    expect((compiled.setting as any).position).toBe('top');
+  it('keeps an author-set modal corner position', () => {
+    const compiled = compileStep(mk('modal', { position: 'rightBottom' }) as never, undefined, ids);
+    expect((compiled.setting as any).position).toBe('rightBottom');
   });
 
   it('seeds builder defaults (skippable close button, alignType collision-avoidance) on create', () => {
@@ -463,6 +463,48 @@ describe('step setting: builder defaults seeded on create (SDK needs them)', () 
     expect(s.align).toBe('center');
     expect(s.skippable).toBe(true); // builder default → close button
     expect(s.alignType).toBe('auto'); // builder default → collision avoidance
+  });
+
+  it('round-trips tooltip backdrop / blockTarget / fixed alignType', () => {
+    const rep = {
+      object: 'step' as const,
+      id: 's',
+      cvid: 'cv',
+      name: 'X',
+      type: 'tooltip',
+      sequence: 0,
+      content: [],
+      placement: {
+        side: 'top',
+        align: 'start',
+        alignType: 'fixed',
+        backdrop: true,
+        blockTarget: true,
+      },
+    };
+    const compiled = compileStep(rep as never, undefined, ids);
+    const s = compiled.setting as any;
+    expect(s.enabledBackdrop).toBe(true);
+    expect(s.enabledBlockTarget).toBe(true);
+    expect(s.alignType).toBe('fixed');
+    const back = decompileStep({
+      id: 's',
+      cvid: compiled.cvid,
+      name: 'X',
+      type: 'tooltip',
+      sequence: 0,
+      data: compiled.data,
+      target: compiled.target,
+      setting: compiled.setting,
+      trigger: compiled.trigger,
+    });
+    expect(back.placement as any).toMatchObject({
+      side: 'top',
+      align: 'start',
+      alignType: 'fixed',
+      backdrop: true,
+      blockTarget: true,
+    });
   });
 
   it('does NOT reseed defaults on update (existing setting is the faithful base)', () => {

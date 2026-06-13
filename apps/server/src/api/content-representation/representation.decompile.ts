@@ -1,3 +1,5 @@
+import { ModalPosition } from '@usertour/types';
+
 import { ApiObjectType } from '../shared/object-type';
 import {
   RepresentationBlock,
@@ -30,7 +32,7 @@ type StepNode = {
 
 const SIDES = new Set(['top', 'right', 'bottom', 'left']);
 const ALIGNS = new Set(['start', 'center', 'end']);
-const POSITIONS = new Set(['center', 'top', 'bottom', 'left', 'right']);
+const POSITIONS = new Set<string>(Object.values(ModalPosition));
 
 /**
  * Decompile an internal step into the representation step: identity + target +
@@ -382,6 +384,9 @@ function decompilePlacement(raw: unknown, type: string): RepresentationPlacement
       align: s.align,
       ...(typeof s.sideOffset === 'number' ? { sideOffset: s.sideOffset } : {}),
       ...(typeof s.alignOffset === 'number' ? { alignOffset: s.alignOffset } : {}),
+      ...(s.alignType === 'auto' || s.alignType === 'fixed' ? { alignType: s.alignType } : {}),
+      ...(typeof s.enabledBackdrop === 'boolean' ? { backdrop: s.enabledBackdrop } : {}),
+      ...(typeof s.enabledBlockTarget === 'boolean' ? { blockTarget: s.enabledBlockTarget } : {}),
     };
   }
   return undefined;

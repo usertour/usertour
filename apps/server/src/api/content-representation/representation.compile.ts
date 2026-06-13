@@ -111,6 +111,9 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
     s.align = p.align;
     if (p.sideOffset !== undefined) s.sideOffset = p.sideOffset;
     if (p.alignOffset !== undefined) s.alignOffset = p.alignOffset;
+    if (p.alignType !== undefined) s.alignType = p.alignType;
+    if (p.backdrop !== undefined) s.enabledBackdrop = p.backdrop;
+    if (p.blockTarget !== undefined) s.enabledBlockTarget = p.blockTarget;
   } else if (p && 'position' in p) {
     s.position = p.position;
     if (p.offsetX !== undefined) s.positionOffsetX = p.offsetX;
