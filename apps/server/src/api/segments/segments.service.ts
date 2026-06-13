@@ -4,6 +4,7 @@ import { JsonValue } from '@prisma/client/runtime/library';
 import { PrismaService } from 'nestjs-prisma';
 
 import { BizService } from '@/biz/biz.service';
+import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {
   CompanyNotFoundError,
@@ -245,15 +246,19 @@ export class ApiSegmentsService {
     const [attributes, events] = await Promise.all([
       this.prisma.attribute.findMany({
         where: { projectId },
-        select: { id: true, codeName: true },
+        select: { id: true, codeName: true, bizType: true },
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
     const attrMap = new Map(attributes.map((a) => [a.codeName, a.id]));
+    const eventAttrMap = new Map(
+      attributes.filter((a) => a.bizType === AttributeBizType.EVENT).map((a) => [a.codeName, a.id]),
+    );
     const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
     return {
       attributeId: (code) => attrMap.get(code) ?? code,
       eventId: (code) => eventMap.get(code) ?? code,
+      eventAttributeId: (code) => eventAttrMap.get(code) ?? code,
     };
   }
 }

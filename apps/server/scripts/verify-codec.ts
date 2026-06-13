@@ -30,6 +30,7 @@ const prisma = new PrismaClient();
 const CONDITION_TYPES = new Set([
   'current-page',
   'user-attr',
+  'event-attr',
   'segment',
   'element',
   'content',
@@ -37,6 +38,7 @@ const CONDITION_TYPES = new Set([
   'text-input',
   'text-fill',
   'time',
+  'task-is-clicked',
   'group',
 ]);
 const ACTION_TYPES = new Set([

@@ -152,6 +152,19 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Represen
         ...(d.value2 != null ? { value2: String(d.value2) } : {}),
         ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
       };
+    case 'event-attr':
+      // attrId → code via the shared attributeCode map (ids are unique, so no
+      // bizType ambiguity on the read side).
+      return {
+        type: 'event_attribute',
+        attribute: r.attributeCode(d.attrId ?? ''),
+        op: mapAttrOp(d.logic),
+        ...(d.value != null ? { value: String(d.value) } : {}),
+        ...(d.value2 != null ? { value2: String(d.value2) } : {}),
+        ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
+      };
+    case 'task-is-clicked':
+      return { type: 'task_clicked' };
     case 'segment':
       return { type: 'segment', segment: d.segmentId ?? '', in: (d.logic ?? 'is') !== 'not' };
     case 'current-page':

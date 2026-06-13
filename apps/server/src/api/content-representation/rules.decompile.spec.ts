@@ -49,6 +49,21 @@ describe('decompileCondition', () => {
     ).toEqual({ type: 'user_attribute', attribute: 'plan', op: 'gt', value: '5' });
   });
 
+  it('event-attr resolves to event_attribute (attrId → code via attributeCode)', () => {
+    expect(
+      decompileCondition(
+        { type: 'event-attr', data: { attrId: 'a1', logic: 'is', value: 'x' } },
+        resolvers,
+      ),
+    ).toEqual({ type: 'event_attribute', attribute: 'plan', op: 'is', value: 'x' });
+  });
+
+  it('task-is-clicked resolves to the parameterless task_clicked', () => {
+    expect(decompileCondition({ type: 'task-is-clicked', data: {} }, resolvers)).toEqual({
+      type: 'task_clicked',
+    });
+  });
+
   it('segment maps logic to in/not', () => {
     expect(
       decompileCondition(

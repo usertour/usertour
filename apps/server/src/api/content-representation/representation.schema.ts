@@ -63,6 +63,17 @@ export type RepresentationCondition =
       value2?: string;
       values?: string[];
     }
+  | {
+      // Attribute condition scoped to an EVENT's own attributes — only valid
+      // inside an `event` condition's `where`. Same shape as user_attribute but
+      // its `attribute` resolves against event (bizType) attributes.
+      type: 'event_attribute';
+      attribute: string;
+      op: string;
+      value?: string;
+      value2?: string;
+      values?: string[];
+    }
   | { type: 'segment'; segment: string; in: boolean }
   | { type: 'current_url'; includes: string[]; excludes?: string[] }
   | {
@@ -91,6 +102,8 @@ export type RepresentationCondition =
   | { type: 'text_input'; target?: RepresentationTarget; op: StringOp; value?: string }
   | { type: 'text_filled'; target?: RepresentationTarget }
   | { type: 'time_window'; start?: string; end?: string }
+  // Parameterless: a checklist task completes when its item is clicked.
+  | { type: 'task_clicked' }
   | { type: 'unsupported'; note?: string };
 
 export const representationCondition = z.lazy(() =>
@@ -102,6 +115,14 @@ export const representationCondition = z.lazy(() =>
     }),
     z.object({
       type: z.literal('user_attribute'),
+      attribute: z.string(),
+      op: z.string(),
+      value: z.string().optional(),
+      value2: z.string().optional(),
+      values: z.array(z.string()).optional(),
+    }),
+    z.object({
+      type: z.literal('event_attribute'),
       attribute: z.string(),
       op: z.string(),
       value: z.string().optional(),
@@ -157,6 +178,7 @@ export const representationCondition = z.lazy(() =>
       start: z.string().optional(),
       end: z.string().optional(),
     }),
+    z.object({ type: z.literal('task_clicked') }),
     z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
   ]),
 ) as unknown as z.ZodType<RepresentationCondition>;

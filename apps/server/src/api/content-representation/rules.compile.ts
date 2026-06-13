@@ -22,6 +22,13 @@ export interface CompileResolvers {
   attributeId: (code: string) => string;
   eventId: (code: string) => string;
   /**
+   * Resolve an EVENT-scoped attribute code → internal id (for `event_attribute`
+   * conditions inside an event's `where`). Event attributes live in their own
+   * bizType namespace, where a codeName may collide with a user attribute, so
+   * this must be a separate map. Falls back to `attributeId` when absent.
+   */
+  eventAttributeId?: (code: string) => string;
+  /**
    * Resolve a `goto_step` target reference (an author `key` or an existing
    * `cvid`) to the real step cvid. Present only when compiling flow steps; the
    * caller builds it from the step list in the same write. Falls back to passing
@@ -145,6 +152,20 @@ function compileCondition(c: RepresentationCondition, r: CompileResolvers): Rule
         ...(c.value2 !== undefined ? { value2: c.value2 } : {}),
         ...(c.values !== undefined ? { listValues: c.values } : {}),
       });
+    case 'event_attribute':
+      // Same shape as user-attr, but the attribute resolves against the event's
+      // own (bizType=event) attributes — a user attribute and an event attribute
+      // can share a codeName, so a distinct resolver is needed to disambiguate.
+      return rule('event-attr', {
+        attrId: (r.eventAttributeId ?? r.attributeId)(c.attribute),
+        logic: ATTR_LOGIC[c.op] ?? c.op,
+        ...(c.value !== undefined ? { value: c.value } : {}),
+        ...(c.value2 !== undefined ? { value2: c.value2 } : {}),
+        ...(c.values !== undefined ? { listValues: c.values } : {}),
+      });
+    case 'task_clicked':
+      // Parameterless: a checklist task completes when its item is clicked.
+      return rule('task-is-clicked', {});
     case 'segment':
       return rule('segment', { segmentId: c.segment, logic: c.in ? 'is' : 'not' });
     case 'current_url':

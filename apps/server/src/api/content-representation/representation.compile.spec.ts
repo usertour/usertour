@@ -124,6 +124,37 @@ describe('condition and/or (operators)', () => {
   });
 });
 
+describe('event_attribute + task_clicked conditions', () => {
+  it('compiles task_clicked → internal task-is-clicked (parameterless)', () => {
+    const [c]: any = compileConditions([{ type: 'task_clicked' }], ids);
+    expect(c.type).toBe('task-is-clicked');
+    expect(c.data).toEqual({});
+  });
+
+  it('compiles event_attribute via the event-scoped resolver (not the user one)', () => {
+    const r = {
+      attributeId: (code: string) => `user:${code}`,
+      eventId: (code: string) => code,
+      eventAttributeId: (code: string) => `event:${code}`,
+    };
+    const [c]: any = compileConditions(
+      [{ type: 'event_attribute', attribute: 'price', op: 'is', value: '10' }],
+      r as never,
+    );
+    expect(c.type).toBe('event-attr');
+    expect(c.data.attrId).toBe('event:price'); // used eventAttributeId, not attributeId
+    expect(c.data.value).toBe('10');
+  });
+
+  it('falls back to attributeId when no event resolver is supplied', () => {
+    const [c]: any = compileConditions(
+      [{ type: 'event_attribute', attribute: 'price', op: 'is' }],
+      ids,
+    );
+    expect(c.data.attrId).toBe('price'); // identity fallback
+  });
+});
+
 describe('dismiss compiles to the host content variant', () => {
   // Each renderer registers only its own dismiss handler; a mismatched type
   // finds no handler and silently no-ops. So the variant must follow the host.
