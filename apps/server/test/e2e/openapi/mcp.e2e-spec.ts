@@ -436,6 +436,77 @@ describe('MCP endpoint (e2e)', () => {
       expect(report).toMatchObject({ ok: true, errors: [] });
     });
 
+    it('validate_content_version flags a start rule referencing an unknown attribute', async () => {
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_content',
+                arguments: { type: 'flow', name: 'MCP bad condition', themeId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+
+      // A renderable step (so the version is otherwise usable) plus a start rule
+      // whose condition points at an attribute code that doesn't exist in the
+      // project. The compile resolver passes the unknown code through unchanged,
+      // so without semantic validation this would publish a silent dead ref.
+      await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'update_content_version',
+            arguments: {
+              contentId: created.id,
+              versionId: created.editedVersionId,
+              steps: [
+                { name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] },
+              ],
+              startRules: {
+                when: [{ type: 'user_attribute', attribute: 'ghost_attr', op: 'is', value: 'x' }],
+              },
+            },
+          },
+        },
+        token,
+      );
+
+      const report = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 3,
+              method: 'tools/call',
+              params: {
+                name: 'validate_content_version',
+                arguments: { contentId: created.id, id: created.editedVersionId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(report.ok).toBe(false);
+      expect(
+        report.errors.some((e: { message: string }) => /unknown attribute/.test(e.message)),
+      ).toBe(true);
+    });
+
     it('publish_content + create_content_version via MCP', async () => {
       const token = await mint(
         [
