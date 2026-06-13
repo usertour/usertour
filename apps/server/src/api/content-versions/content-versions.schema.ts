@@ -7,6 +7,13 @@ import {
   representationStartRules,
   representationStepInput,
 } from '../content-representation/representation.schema';
+import { representationResourceCenter } from '../content-representation/resource-center.schema';
+import {
+  representationBanner,
+  representationChecklist,
+  representationLauncher,
+  representationTracker,
+} from '../content-representation/version-data.schema';
 
 /** A query param that arrives as a single value or a repeated array. */
 function singleOrArray<T extends z.ZodTypeAny>(item: T) {
@@ -44,11 +51,25 @@ export const updateVersionBody = z.object({
   hideRules: representationHideRules.nullable().optional(),
   themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
   /**
-   * Type-specific body for non-flow content (checklist / launcher / banner /
-   * tracker / resource-center). Validated against the content type; field-level
-   * merged onto the existing version data. Not used by `flow` (use `steps`).
+   * Type-specific body for non-flow content — one of the five `*Data` shapes. The
+   * members are `.loose()` so a partial body for the content's actual type is never
+   * stripped at this boundary (the union only documents the shapes; the strict,
+   * type-correct validation happens in `compileVersionData`). Field-level merged
+   * onto the existing version data. Not used by `flow` (use `steps`).
    */
-  data: z.unknown().optional(),
+  data: z
+    .union([
+      representationChecklist.loose(),
+      representationLauncher.loose(),
+      representationBanner.loose(),
+      representationTracker.loose(),
+      representationResourceCenter.loose(),
+    ])
+    .optional()
+    .describe(
+      'Type-specific body for a non-flow content version: checklist / launcher / banner / ' +
+        'tracker / resource-center. Field-level merged onto the existing data.',
+    ),
 });
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;
