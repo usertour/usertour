@@ -4,6 +4,14 @@ import { z } from 'zod';
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
 import { ContentExpand } from '@/api/content/content.schema';
+import { representationStepInput } from '@/api/content-representation/representation.schema';
+import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
+import {
+  representationBanner,
+  representationChecklist,
+  representationLauncher,
+  representationTracker,
+} from '@/api/content-representation/version-data.schema';
 import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 
@@ -126,6 +134,41 @@ export function buildReadTools(): McpTool[] {
       async handler(_args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         return { guide: AUTHORING_GUIDE };
+      },
+    },
+
+    {
+      name: 'get_content_schema',
+      title: 'Get the write schema for a content type',
+      capability: Capability.ContentRead,
+      description:
+        'Return the JSON Schema for the body you write to `update_content_version` for a content ' +
+        'type: `flow` → the `steps` array item; checklist / launcher / banner / tracker / ' +
+        'resource-center → the `data` object. The `data` arg is polymorphic so its schema is NOT ' +
+        'on the tool itself — fetch it here before authoring a non-flow type. Pair with ' +
+        'get_authoring_guide.',
+      inputSchema: {
+        type: z
+          .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
+          .describe('Content kind whose write-body schema to return.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const type = String(args.type);
+        // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
+        // instead of throwing, so the discovery tool never fails.
+        const toJson = (s: z.ZodType) => z.toJSONSchema(s, { unrepresentable: 'any' });
+        if (type === 'flow') {
+          return { type, body: 'steps', schema: toJson(z.array(representationStepInput)) };
+        }
+        const byType: Record<string, z.ZodType> = {
+          checklist: representationChecklist,
+          launcher: representationLauncher,
+          banner: representationBanner,
+          tracker: representationTracker,
+          'resource-center': representationResourceCenter,
+        };
+        return { type, body: 'data', schema: toJson(byType[type]) };
       },
     },
 

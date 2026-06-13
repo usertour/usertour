@@ -169,6 +169,7 @@ describe('MCP endpoint (e2e)', () => {
         [
           'get_authoring_guide',
           'get_content',
+          'get_content_schema',
           'get_content_version',
           'get_user',
           'list_attribute_definitions',
@@ -252,6 +253,47 @@ describe('MCP endpoint (e2e)', () => {
       const payload = parseToolContent(extractResult(res));
       expect(typeof payload.guide).toBe('string');
       expect(payload.guide).toContain('goto_step');
+    });
+
+    it('get_content_schema returns the data JSON Schema for a non-flow type', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'get_content_schema', arguments: { type: 'checklist' } },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const payload = parseToolContent(extractResult(res));
+      expect(payload.body).toBe('data');
+      // The polymorphic `data` arg has no schema on update_content_version itself;
+      // this tool surfaces it — full checklist shape incl. nested item fields.
+      expect(Object.keys(payload.schema.properties)).toEqual(
+        expect.arrayContaining(['buttonText', 'initialDisplay', 'items']),
+      );
+      const item = payload.schema.properties.items.items.properties;
+      expect(Object.keys(item)).toEqual(
+        expect.arrayContaining(['name', 'completeWhen', 'clickActions']),
+      );
+    });
+
+    it('get_content_schema returns the steps schema for flow', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'get_content_schema', arguments: { type: 'flow' } },
+        },
+        token,
+      );
+      const payload = parseToolContent(extractResult(res));
+      expect(payload.body).toBe('steps');
+      expect(payload.schema.type).toBe('array');
     });
 
     it('calling a tool outside the token scope is unknown to the token', async () => {
