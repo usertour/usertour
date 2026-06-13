@@ -1,6 +1,7 @@
 import { cuid } from '@usertour/helpers';
 
 import {
+  RepresentationAction,
   RepresentationBlock,
   RepresentationPlacement,
   RepresentationQuestion,
@@ -55,6 +56,7 @@ type StepToCompile = {
   skippable?: boolean;
   content: RepresentationBlock[];
   triggers?: RepresentationTrigger[];
+  onClick?: RepresentationAction[];
 };
 
 export function compileStep(
@@ -62,6 +64,15 @@ export function compileStep(
   existing: InternalStep | undefined,
   r: CompileResolvers,
 ): CompiledStep {
+  const target: Record<string, unknown> = step.target
+    ? (compileTargetToElementData(step.target, existing?.target) as Record<string, unknown>)
+    : ((existing?.target as Record<string, unknown>) ?? {});
+  // "Click the target element to advance" actions live on target.actions (the SDK
+  // reads currentStep.target.actions). An explicit onClick sets them; when omitted
+  // the target field-merge above already preserved any existing ones.
+  if (step.onClick !== undefined) {
+    target.actions = compileActions(step.onClick, r);
+  }
   return {
     // cvid is server-owned: preserve the matched existing step's cvid on update,
     // generate a fresh one on create. Never taken from client input.
@@ -70,9 +81,7 @@ export function compileStep(
     type: step.type,
     sequence: step.sequence,
     data: compileContent(step.content, existing?.data, r),
-    target: step.target
-      ? compileTargetToElementData(step.target, existing?.target)
-      : (existing?.target ?? {}),
+    target,
     trigger: compileTriggers(step.triggers, r),
     setting: compileSetting(step, existing?.setting),
   };

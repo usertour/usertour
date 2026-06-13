@@ -376,6 +376,8 @@ export const representationStep = z.object({
   skippable: z.boolean().optional(),
   content: z.array(representationBlock),
   triggers: z.array(representationTrigger).optional(),
+  /** Actions run when the user clicks the step's target element (click-to-advance). */
+  onClick: z.array(representationAction).optional(),
   advanced: z.object({ hasUnsupported: z.boolean() }).optional(),
 });
 export type RepresentationStep = z.infer<typeof representationStep>;

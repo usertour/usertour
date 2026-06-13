@@ -337,6 +337,42 @@ describe('target field-merge on write-back', () => {
   });
 });
 
+describe('target onClick (click-to-advance)', () => {
+  const stepWithOnClick = {
+    object: 'step' as const,
+    id: 's1',
+    cvid: 'cv1',
+    name: 'X',
+    type: 'tooltip',
+    sequence: 0,
+    target: { by: 'selector' as const, selector: '.cta' },
+    content: [{ object: 'block' as const, type: 'text' as const, markdown: 'Hi' }],
+    onClick: [{ type: 'goto_step' as const, step: 's2' }],
+  };
+
+  it('compiles step.onClick into target.actions (the SDK click-to-advance field)', () => {
+    const compiled: any = compileStep(stepWithOnClick as never, undefined, ids);
+    expect(compiled.target.actions[0].type).toBe('step-goto');
+    expect(compiled.target.actions[0].data.stepCvid).toBe('s2');
+  });
+
+  it('round-trips onClick (decompile target.actions → onClick)', () => {
+    const compiled: any = compileStep(stepWithOnClick as never, undefined, ids);
+    const back = decompileStep({
+      id: 's1',
+      cvid: compiled.cvid,
+      name: 'X',
+      type: 'tooltip',
+      sequence: 0,
+      data: compiled.data,
+      target: compiled.target,
+      setting: compiled.setting,
+      trigger: compiled.trigger,
+    });
+    expect(back.onClick).toEqual([{ type: 'goto_step', step: 's2' }]);
+  });
+});
+
 describe('text Slate field-merge on write-back', () => {
   const textStep = (markdown: string) =>
     ({

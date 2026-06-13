@@ -46,6 +46,8 @@ export function decompileStep(
   const placement = decompilePlacement(step.setting, step.type ?? '');
   const setting = (step.setting ?? {}) as Record<string, unknown>;
   const triggers = decompileTriggers(step.trigger, resolvers);
+  // "Click the target element to advance" actions live on the target elementData.
+  const onClick = decompileActions((step.target as { actions?: unknown } | undefined)?.actions);
 
   // A tooltip whose only targeting is the internal "auto" fingerprint can't be
   // represented — flag it so consumers know the target is opaque.
@@ -65,6 +67,7 @@ export function decompileStep(
     ...(typeof setting.skippable === 'boolean' ? { skippable: setting.skippable } : {}),
     content: blocks,
     ...(triggers.length ? { triggers } : {}),
+    ...(onClick.length ? { onClick } : {}),
     ...(hasUnsupported ? { advanced: { hasUnsupported: true } } : {}),
   };
 }
