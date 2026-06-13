@@ -343,7 +343,30 @@ All paths this doc adds, consolidated. `:p` = `:projectId`.
 | `PATCH` | `/v2/projects/:p/content-versions/:id` | body `+= data` (checklist / launcher / banner / tracker / resource-center body) | `content:update` | 5 |
 | `GET` | `/v2/projects/:p/content-versions/:id?expand=data` | read `data` (non-flow body; heavy → behind `expand`, symmetric with `steps`) | `content:read` | 5 |
 
+### List query params (all list endpoints)
+
+All v2 list endpoints (+ their MCP `list_*` tools) accept, beyond `limit`/`cursor`:
+
+| Param | On | Notes |
+|---|---|---|
+| `orderBy` | all lists | `createdAt` (oldest first) / `-createdAt` (newest first) |
+| `expand` | content, sessions, companies | inline related objects on each item (avoids N+1) |
+| `createdAfter` / `createdBefore` | users, companies, sessions, content | ISO 8601 `createdAt` range (the "since/until" incremental-sync filter) |
+| `email`, `companyId`, `segmentId` | users | existing |
+| `segmentId` | companies | existing |
+| `contentId`, `userId`, `completed` | sessions | `completed` → `state === 1` |
+| `type`, `published` | content | `published` is the per-env source of truth (`contentOnEnvironments.some/none`), NOT the legacy `Content.published` column |
+
+Shared helpers: `createdAtRangeFields` / `createdAtWhere` (`src/api/shared/filters.ts`).
+
 ### Notes
+
+- **Filtering is intentionally "common params only"** (flat query params, AND-combined,
+  single-value). No request body, no operator DSL, no inline attribute conditions on
+  the public API — that surface is a forward-compat liability and a JSONB-scan footgun.
+  **Attribute-based selection goes through segments**: `create_segment` (condition kind)
+  → filter the list by `segmentId`. Richer needs (`search`, multi-key sort) are
+  deliberately deferred; revisit with a search layer if they become core.
 
 - Non-flow content types add **no new paths** — they ride the version `PATCH`
   (write `data`) and `GET ?expand=data` (read `data`); one version is exactly one

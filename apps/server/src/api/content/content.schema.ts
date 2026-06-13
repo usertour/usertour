@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 import { contentVersion } from '../content-representation/representation.schema';
+import { createdAtRangeFields } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
@@ -20,8 +21,13 @@ export const listContentQuery = z.object({
     .string()
     .optional()
     .describe('Filter by content type: flow, checklist, launcher, banner, survey.'),
+  published: z
+    .stringbool()
+    .optional()
+    .describe('Filter to content published in at least one environment (true) or none (false).'),
   expand: singleOrArray(contentExpand).describe('Inline: editedVersion and/or publishedVersion.'),
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
+  ...createdAtRangeFields,
 });
 export class ListContentQueryDto extends createZodDto(listContentQuery) {}
 

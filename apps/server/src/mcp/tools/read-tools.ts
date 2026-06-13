@@ -117,6 +117,17 @@ const orderBySchema = z
   .enum(['createdAt', '-createdAt'])
   .optional()
   .describe('Sort order: createdAt (oldest first) or -createdAt (newest first).');
+// Shared createdAt range filter shape, spread into list tool inputSchemas.
+const createdRangeShape = {
+  createdAfter: z
+    .string()
+    .optional()
+    .describe('Only items created at or after this ISO 8601 time.'),
+  createdBefore: z
+    .string()
+    .optional()
+    .describe('Only items created at or before this ISO 8601 time.'),
+};
 export const environmentIdSchema = z
   .string()
   .optional()
@@ -189,18 +200,24 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'List Usertour content (flows, checklists, launchers, banners, surveys) in the ' +
-        'project. Filter to a single kind with `type` (e.g. "flow", "checklist", "launcher", ' +
-        '"banner", "survey"). Returns `{ items, nextCursor }`; pass `nextCursor` back as ' +
-        '`cursor` to page.',
+        'project. Filter by `type`, `published`, or a created-at range. Returns ' +
+        '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
         type: z
           .string()
           .optional()
           .describe('Filter by content kind: flow, checklist, launcher, banner, or survey.'),
+        published: z
+          .boolean()
+          .optional()
+          .describe(
+            'Filter to content published in at least one environment (true) or none (false).',
+          ),
         expand: z
           .array(z.enum(['editedVersion', 'publishedVersion']))
           .optional()
           .describe('Inline editedVersion / publishedVersion on each item (avoids per-item get).'),
+        ...createdRangeShape,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -212,7 +229,10 @@ export function buildReadTools(): McpTool[] {
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
           type: asString(args.type),
+          published: typeof args.published === 'boolean' ? args.published : undefined,
           expand: asStringArray(args.expand) as ContentExpand[] | undefined,
+          createdAfter: asString(args.createdAfter),
+          createdBefore: asString(args.createdBefore),
         });
         return toListPayload(result);
       },
@@ -313,12 +333,14 @@ export function buildReadTools(): McpTool[] {
       description:
         'List end-users (the tracked business users your product onboards) in an environment. ' +
         "Defaults to the project's primary environment; pass `environmentId` to target another. " +
-        'Filter by `email`, `companyId`, or `segmentId`. Returns `{ items, nextCursor }`.',
+        'Filter by `email`, `companyId`, `segmentId`, or a created-at range. Returns ' +
+        '`{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,
         email: z.string().optional().describe('Filter to a user with this email.'),
         companyId: z.string().optional().describe('Filter to users in this company.'),
         segmentId: z.string().optional().describe('Filter to users in this segment.'),
+        ...createdRangeShape,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -333,6 +355,8 @@ export function buildReadTools(): McpTool[] {
           email: asString(args.email),
           companyId: asString(args.companyId),
           segmentId: asString(args.segmentId),
+          createdAfter: asString(args.createdAfter),
+          createdBefore: asString(args.createdBefore),
         });
         return toListPayload(result);
       },
@@ -468,7 +492,8 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.CompanyRead,
       description:
         'List companies in an environment. Defaults to the primary environment; pass ' +
-        '`environmentId` to target another. Filter by `segmentId`. Returns `{ items, nextCursor }`.',
+        '`environmentId` to target another. Filter by `segmentId` or a created-at range. ' +
+        'Returns `{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,
         segmentId: z.string().optional().describe('Filter to companies in this segment.'),
@@ -476,6 +501,7 @@ export function buildReadTools(): McpTool[] {
           .array(z.enum(['users', 'memberships', 'memberships.user']))
           .optional()
           .describe('Inline users / memberships on each item (avoids per-item get).'),
+        ...createdRangeShape,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -489,6 +515,8 @@ export function buildReadTools(): McpTool[] {
           orderBy: asOrderBy(args.orderBy),
           segmentId: asString(args.segmentId),
           expand: asStringArray(args.expand) as CompanyExpand[] | undefined,
+          createdAfter: asString(args.createdAfter),
+          createdBefore: asString(args.createdBefore),
         });
         return toListPayload(result);
       },
@@ -571,17 +599,22 @@ export function buildReadTools(): McpTool[] {
       title: 'List sessions',
       capability: Capability.SessionRead,
       description:
-        'List content sessions in an environment. Filter by `contentId` / `userId`. Defaults to ' +
-        'the primary environment; pass `environmentId` to target another. Returns ' +
-        '`{ items, nextCursor }`.',
+        'List content sessions in an environment. Filter by `contentId`, `userId`, `completed`, ' +
+        'or a created-at range. Defaults to the primary environment; pass `environmentId` to ' +
+        'target another. Returns `{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,
         contentId: z.string().optional().describe('Filter to a single content.'),
         userId: z.string().optional().describe('Filter to a single end-user (external id).'),
+        completed: z
+          .boolean()
+          .optional()
+          .describe('Filter to completed (true) or open (false) sessions.'),
         expand: z
           .array(z.enum(['answers', 'content', 'company', 'user', 'version']))
           .optional()
           .describe('Inline content / user / company / version / answers on each item.'),
+        ...createdRangeShape,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -595,7 +628,10 @@ export function buildReadTools(): McpTool[] {
           orderBy: asOrderBy(args.orderBy),
           contentId: asString(args.contentId),
           userId: asString(args.userId),
+          completed: typeof args.completed === 'boolean' ? args.completed : undefined,
           expand: asStringArray(args.expand) as SessionExpand[] | undefined,
+          createdAfter: asString(args.createdAfter),
+          createdBefore: asString(args.createdBefore),
         });
         return toListPayload(result);
       },

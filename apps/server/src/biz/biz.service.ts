@@ -3,6 +3,7 @@ import {
   AttributeBizType,
   AttributeDataType,
 } from '@/attributes/models/attribute.model';
+import { createdAtWhere } from '@/api/shared/filters';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -1153,10 +1154,13 @@ export class BizService {
     include?: Prisma.BizCompanyInclude,
     orderBy?: Prisma.BizCompanyOrderByWithRelationInput[],
     segmentId?: string,
+    createdAfter?: string,
+    createdBefore?: string,
   ) {
     let where: Prisma.BizCompanyWhereInput = {
       environmentId,
       deleted: false,
+      ...createdAtWhere(createdAfter, createdBefore),
     };
 
     if (segmentId) {
@@ -1241,6 +1245,8 @@ export class BizService {
     email?: string,
     companyId?: string,
     segmentId?: string,
+    createdAfter?: string,
+    createdBefore?: string,
   ) {
     const project = await this.prisma.environment.findFirst({
       where: { id: environmentId },
@@ -1249,6 +1255,7 @@ export class BizService {
 
     let where: Prisma.BizUserWhereInput = {
       environmentId,
+      ...createdAtWhere(createdAfter, createdBefore),
       ...(email && {
         data: {
           path: ['email'],

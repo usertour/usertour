@@ -1,3 +1,4 @@
+import { createdAtWhere } from '@/api/shared/filters';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateContentInput } from './dto/content-update.input';
@@ -754,11 +755,28 @@ export class ContentService {
     include?: Prisma.ContentInclude,
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
     type?: string,
+    published?: boolean,
+    createdAfter?: string,
+    createdBefore?: string,
   ) {
     const baseQuery = {
       // Exclude soft-deleted content — the public-API list (v1 + v2) must never
       // surface archived content (the single-get path already guards `deleted`).
-      where: { projectId, deleted: false, ...(type ? { type } : {}) },
+      where: {
+        projectId,
+        deleted: false,
+        ...(type ? { type } : {}),
+        ...createdAtWhere(createdAfter, createdBefore),
+        // "published" is per-environment — ContentOnEnvironment is the source of
+        // truth, NOT the legacy Content.published column.
+        ...(published !== undefined
+          ? {
+              contentOnEnvironments: published
+                ? { some: { published: true } }
+                : { none: { published: true } },
+            }
+          : {}),
+      },
       include,
       orderBy,
     };

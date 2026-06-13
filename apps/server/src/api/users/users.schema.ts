@@ -1,6 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+import { createdAtRangeFields } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
@@ -22,6 +23,7 @@ export const listUsersQuery = z.object({
   email: z.string().email().optional().describe('Filter to a user with this email.'),
   companyId: z.string().optional().describe('Filter to users in this company.'),
   segmentId: z.string().optional().describe('Filter to users in this segment.'),
+  ...createdAtRangeFields,
 });
 export class ListUsersQueryDto extends createZodDto(listUsersQuery) {}
 

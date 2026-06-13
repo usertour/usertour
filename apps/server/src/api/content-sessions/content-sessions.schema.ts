@@ -1,6 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+import { createdAtRangeFields } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
@@ -15,12 +16,17 @@ const orderByField = z.enum(['createdAt', '-createdAt']);
 export const listContentSessionsQuery = z.object({
   contentId: z.string().optional().describe('Filter to a single content.'),
   userId: z.string().optional().describe('Filter to a single end-user.'),
+  completed: z
+    .stringbool()
+    .optional()
+    .describe('Filter to completed (true) or open (false) sessions.'),
   limit,
   cursor,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   expand: singleOrArray(sessionExpand).describe(
     'Inline: answers, content, company, user, version.',
   ),
+  ...createdAtRangeFields,
 });
 export class ListContentSessionsQueryDto extends createZodDto(listContentSessionsQuery) {}
 

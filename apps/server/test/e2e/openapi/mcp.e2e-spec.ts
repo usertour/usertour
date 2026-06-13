@@ -259,6 +259,35 @@ describe('MCP endpoint (e2e)', () => {
       expect(Array.isArray(parseToolContent(rpcResult).items)).toBe(true);
     });
 
+    const listContent = async (args: Record<string, unknown>) => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'list_content', arguments: args },
+        },
+        token,
+      );
+      return parseToolContent(extractResult(res)).items as unknown[];
+    };
+
+    it('list_content filters by createdAt range', async () => {
+      // The seeded flow was created "now", so it falls before a far-future bound…
+      expect(
+        (await listContent({ createdBefore: '2099-01-01T00:00:00.000Z' })).length,
+      ).toBeGreaterThan(0);
+      // …and not after it.
+      expect(await listContent({ createdAfter: '2099-01-01T00:00:00.000Z' })).toHaveLength(0);
+    });
+
+    it('list_content filters by published (per-environment source of truth)', async () => {
+      // The seeded content is not published in any environment.
+      expect((await listContent({ published: false })).length).toBeGreaterThan(0);
+      expect(await listContent({ published: true })).toHaveLength(0);
+    });
+
     it('get_authoring_guide returns the guide text', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const res = await rpc(

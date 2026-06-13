@@ -1,6 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+import { createdAtRangeFields } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
@@ -18,6 +19,7 @@ export const listCompaniesQuery = z.object({
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   expand: singleOrArray(companyExpand).describe('Inline: users, memberships, memberships.user.'),
   segmentId: z.string().optional().describe('Filter to companies in this segment.'),
+  ...createdAtRangeFields,
 });
 export class ListCompaniesQueryDto extends createZodDto(listCompaniesQuery) {}
 

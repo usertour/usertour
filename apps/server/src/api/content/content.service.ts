@@ -205,7 +205,7 @@ export class ApiContentService {
     projectId: string,
     query: ListContentQuery,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, type } = query;
+    const { limit, cursor, type, published, createdAfter, createdBefore } = query;
     const expand = toArray<ContentExpand>(query.expand);
     const orderBy = parseOrderBy(
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
@@ -223,6 +223,9 @@ export class ApiContentService {
           this.include(expand),
           orderBy,
           type,
+          published,
+          createdAfter,
+          createdBefore,
         ),
       map: (node) => mapContent(node, expand),
     });

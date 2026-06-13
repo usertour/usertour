@@ -53,7 +53,7 @@ export class ApiContentSessionsService {
     environment: Environment,
     query: ListContentSessionsQuery,
   ): Promise<{ results: ContentSession[]; next: string | null; previous: string | null }> {
-    const { contentId, userId, limit, cursor } = query;
+    const { contentId, userId, limit, cursor, completed, createdAfter, createdBefore } = query;
     const expand = toArray<SessionExpand>(query.expand);
 
     // contentId is an optional filter; validate it when given so a bad id is a
@@ -86,6 +86,9 @@ export class ApiContentSessionsService {
           userId,
           SESSION_INCLUDE,
           orderBy,
+          completed,
+          createdAfter,
+          createdBefore,
         ),
       map: async (session) =>
         mapContentSession(

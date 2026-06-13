@@ -41,7 +41,7 @@ export class ApiUsersService {
     environment: Environment,
     query: ListUsersQuery,
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, email, companyId, segmentId } = query;
+    const { limit, cursor, email, companyId, segmentId, createdAfter, createdBefore } = query;
     const expand = toArray<UserExpand>(query.expand);
     const orderBy = parseOrderBy(
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
@@ -61,6 +61,8 @@ export class ApiUsersService {
           email,
           companyId,
           segmentId,
+          createdAfter,
+          createdBefore,
         ),
       map: (node) => mapUser(node, expand),
     });

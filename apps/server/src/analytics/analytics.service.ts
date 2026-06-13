@@ -5,6 +5,7 @@ import {
   StepSettings,
   contentEndReason,
 } from '@usertour/types';
+import { createdAtWhere } from '@/api/shared/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -1942,11 +1943,17 @@ export class AnalyticsService {
     userId?: string,
     include?: Prisma.BizSessionInclude,
     orderBy?: Prisma.BizSessionOrderByWithRelationInput[],
+    completed?: boolean,
+    createdAfter?: string,
+    createdBefore?: string,
   ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
     const where: Prisma.BizSessionWhereInput = {
       contentId,
       environmentId,
       bizUser: userId ? { externalId: userId } : undefined,
+      // A session is "completed" when state === 1 (see content-sessions.mapper).
+      ...(completed !== undefined ? { state: completed ? 1 : { not: 1 } } : {}),
+      ...createdAtWhere(createdAfter, createdBefore),
     };
 
     return findManyCursorConnection(
