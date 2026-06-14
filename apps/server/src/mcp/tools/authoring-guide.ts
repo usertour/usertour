@@ -12,7 +12,7 @@ export const AUTHORING_GUIDE = `# Authoring Usertour content
 1. \`create_content\` — pick a \`type\` and a \`themeId\` (see Themes). Returns the content + its draft \`editedVersionId\`. Non-flow types are seeded with their default \`data\`, so you only set the fields you care about.
 2. \`update_content_version\` — write \`steps\` (flow) or \`data\` (other types) to that draft. \`data\` is field-level merged onto what's there, so a partial body is fine. The \`data\` arg is polymorphic (its shape depends on \`type\`), so it carries no schema on the tool itself — call \`get_content_schema(type)\` for the exact \`data\` (or \`steps\`) JSON Schema before authoring.
 3. \`validate_content_version\` — dry-run; returns \`{ ok, errors, warnings }\`. Fix \`errors\` first.
-4. \`publish_content\` — goes live. It REJECTS content that wouldn't render (same rules as validate).
+4. \`publish_content\` — goes live. Requires \`contentId\` + \`versionId\`; \`environmentId\` is optional (defaults to the primary environment). Publishing is **per environment** — to ship to several, call it once per \`environmentId\` (\`list_environments\` lists them). It REJECTS content that wouldn't render (same rules as validate).
 
 ## Themes (required)
 Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\` and pass a \`themeId\` to \`create_content\`; if unsure use the one with \`isDefault: true\`. \`create_theme\` makes a default-styled theme (name/isDefault only) — theme colors/fonts are not editable via the API; tune them in the theme builder.
@@ -35,15 +35,16 @@ A \`target\` is a CSS selector: \`{ "by": "selector", "selector": "[data-tour='x
 **No auto-start ≠ unreachable.** With no \`startRules\` (or when none match) the content won't launch on its own — but it can still be started programmatically from the host app via the SDK \`usertour.start(contentId)\` call. Choose this when you want to trigger content from your own button/route rather than by page conditions.
 
 ## Making it appear (the SDK)
-Authoring + publishing only stores the content — it renders only once the host app loads the Usertour SDK. You author here; the app does these (see https://www.usertour.io/docs/developers/usertourjs-reference/overview):
+Authoring + publishing only stores the content — it renders only once the host app loads the Usertour SDK. You author here; the app does these (see https://docs.usertour.io/developers/usertourjs-reference/overview):
 - **Identify with the SAME id you target.** The app calls \`usertour.identify(userId, attrs)\`; that \`userId\` must equal the \`externalId\` your segments / start-rules / attribute conditions match on. Mismatch = content validates and publishes but never shows for that user (the most common "why isn't it appearing").
 - **SDK token ≠ API token.** \`usertour.init(token)\` takes the **environment token** (a public, client-side key). NEVER put the API token (the secret \`utp_…\` used for this MCP) in client code — it grants full project write access.
+- **Publish env must match the app's token.** Each environment has its own SDK token (\`list_environments\`). Content published to environment X shows only in an app whose \`init()\` used X's token — publishing to one environment while the app runs another's token is another "why isn't it showing".
 
 ## What each type needs to be usable (else publish is rejected)
 - **flow**: ≥1 step; tooltip steps have a target; non-hidden steps have content; goto targets resolve.
 - **checklist**: ≥1 item; each item has a name AND a click action or a completion condition.
 - **launcher**: a target; show-tooltip behavior needs tooltip content; perform-action behavior needs actions.
 - **banner**: content; element-relative placements need a container element.
-- **resource-center**: ≥1 tab; each tab has a name and at least one content block.
-- **tracker**: an event and trigger conditions (no theme needed — it has no UI).
+- **resource-center**: ≥1 tab; each tab has a name and ≥1 block. Tab blocks use their OWN vocabulary (\`richtext\`, \`divider\`, \`action\`, \`sub-page\`, \`content-list\`, \`live-chat\`) — text goes inside a \`richtext\` block: \`{ "type": "richtext", "content": [{ "object": "block", "type": "text", "markdown": "…" }] }\`, NOT a bare text block.
+- **tracker**: a \`data.event\` (an event id from \`list_event_definitions\`) AND \`startRules\` trigger conditions; no theme (it has no UI). Note: a \`current_url\` condition's \`includes\`/\`excludes\` are **arrays** of strings.
 `;
