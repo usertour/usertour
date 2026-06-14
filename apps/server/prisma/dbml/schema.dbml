@@ -716,6 +716,30 @@ Table IntegrationLog {
   data Json [note: 'data of integration log']
 }
 
+Table AuditLog {
+  id String [pk, note: 'Primary key']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  projectId String [not null]
+  environmentId String
+  source String [not null]
+  actorUserId String
+  actorTokenId String
+  action String [not null]
+  operation String [not null]
+  resourceType String [not null]
+  resourceId String [not null]
+  before Json
+  after Json
+  metadata Json
+
+  Note: 'Append-only audit trail for the open write surface (v2 API + MCP).
+Typed columns are the query / filter / forensic axes; JSONB holds variable,
+redacted detail (snapshots, request metadata) that is never used as a filter
+predicate. No foreign keys on purpose: an audit row must outlive the entities
+it references (resources may be hard-deleted, tokens rotated, users removed),
+and `resourceId` is polymorphic across many tables. Rows are append-only.'
+}
+
 Enum Role {
   ADMIN
   VIEWER

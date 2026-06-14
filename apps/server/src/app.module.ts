@@ -36,6 +36,8 @@ import { McpModule } from './mcp/mcp.module';
 import { IntegrationModule } from './integration/integration.module';
 import { LicenseModule } from './license/license.module';
 import { SharedModule } from './shared/shared.module';
+import { AuditModule } from './audit/audit.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { loggingMiddleware } from 'nestjs-prisma';
 import { Logger } from '@nestjs/common';
 
@@ -110,6 +112,7 @@ import { Logger } from '@nestjs/common';
       }),
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot(),
     (StripeModule as any).forRootAsync(StripeModule, {
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -146,6 +149,7 @@ import { Logger } from '@nestjs/common';
     TeamModule,
     SubscriptionModule,
     IntegrationModule,
+    AuditModule,
     LicenseModule,
     OpenAPIModule,
     ApiModule,

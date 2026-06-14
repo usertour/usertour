@@ -8,6 +8,7 @@ import {
 } from './content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { Environment } from '@/environments/models/environment.model';
@@ -51,6 +52,7 @@ export class OpenAPIContentSessionsController {
   }
 
   @Delete(':id')
+  @Audit({ action: 'delete', resourceType: 'session' })
   @ApiOperation({ summary: 'Delete a content session' })
   @ApiParam({ name: 'id', description: 'Content Session ID' })
   @ApiResponse({ status: 200, description: 'Content session deleted successfully' })
@@ -60,6 +62,7 @@ export class OpenAPIContentSessionsController {
   }
 
   @Post(':id/end')
+  @Audit({ action: 'update', resourceType: 'session' })
   @ApiOperation({ summary: 'End a content session' })
   @ApiParam({ name: 'id', description: 'Content Session ID' })
   @ApiResponse({

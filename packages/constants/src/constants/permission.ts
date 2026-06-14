@@ -57,6 +57,7 @@ const WRITE: Capability[] = [
 ];
 
 const OWNER_ONLY: Capability[] = [
+  Capability.AuditRead,
   Capability.ProjectManage,
   Capability.BillingRead,
   Capability.BillingManage,

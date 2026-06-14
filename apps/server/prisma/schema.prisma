@@ -847,3 +847,42 @@ model IntegrationLog {
 
   @@index([integrationId, status])
 }
+
+/// Append-only audit trail for the open write surface (v2 API + MCP).
+/// Typed columns are the query / filter / forensic axes; JSONB holds variable,
+/// redacted detail (snapshots, request metadata) that is never used as a filter
+/// predicate. No foreign keys on purpose: an audit row must outlive the entities
+/// it references (resources may be hard-deleted, tokens rotated, users removed),
+/// and `resourceId` is polymorphic across many tables. Rows are append-only.
+model AuditLog {
+  /// Primary key
+  id            String   @id @default(cuid())
+  /// Create timestamp
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  // Where (filter axes)
+  projectId     String
+  environmentId String?
+
+  // Who / how (filter + forensic axes)
+  source        String // 'api' | 'mcp' | 'web' | 'system'
+  actorUserId   String?
+  actorTokenId  String?
+
+  // What (filter axes)
+  action        String // 'create' | 'update' | 'delete'
+  operation     String // exact tool / route, e.g. 'delete_segment'
+  resourceType  String
+  resourceId    String
+
+  // Variable detail (never filtered on; redacted per resourceType policy)
+  before        Json? @db.JsonB
+  after         Json? @db.JsonB
+  metadata      Json? @db.JsonB
+
+  @@index([projectId, resourceType, resourceId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([projectId, source, createdAt])
+  @@index([actorTokenId, createdAt])
+  @@index([actorUserId, createdAt])
+}

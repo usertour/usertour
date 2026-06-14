@@ -219,6 +219,7 @@ const translations = {
         attributes: '属性',
         events: '事件',
         localizations: '本地化',
+        'audit-log': '审计日志',
         team: '团队',
         billing: '账单',
         subscription: '订阅',
@@ -697,6 +698,26 @@ const translations = {
       headerEnvironment:
         '每个环境有独立的密钥,当前查看的是 <strong>{{environment}}</strong>。切换环境请用左上角的环境菜单。',
       headerDocs: '阅读 API 文档',
+    },
+    auditLog: {
+      title: '审计日志',
+      description: '谁在本项目里改动或删除了什么、何时、来自哪个写入面(API 还是 MCP)。',
+      empty: '暂无审计日志。',
+      columns: {
+        time: '时间',
+        actor: '操作者',
+        source: '来源',
+        action: '动作',
+        resource: '资源',
+        operation: '操作',
+      },
+      detail: {
+        title: '审计详情',
+        before: '变更前',
+        after: '变更后',
+        metadata: '元数据',
+        noSnapshot: '此次变更未记录快照。',
+      },
     },
     personalApiKeys: {
       title: '个人 API 密钥',

@@ -47,6 +47,7 @@ import { upsertUserBody, type UpsertUserBody } from '@/api/users/users.schema';
 
 import { McpTool } from '../mcp.types';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
+import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
 
 /**
  * Write-side MCP tools — gated by content:create / content:update /
@@ -58,6 +59,7 @@ export function buildWriteTools(): McpTool[] {
   return [
     {
       name: 'create_content',
+      audit: auditCreate('content'),
       title: 'Create content',
       capability: Capability.ContentCreate,
       description:
@@ -83,6 +85,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_content',
+      audit: auditUpdate('content', undefined, { idArg: 'contentId' }),
       title: 'Update content',
       capability: Capability.ContentUpdate,
       description: "Update a content's metadata (name / buildUrl).",
@@ -103,6 +106,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_content',
+      audit: auditDelete('content', undefined, { idArg: 'contentId' }),
       title: 'Delete content',
       capability: Capability.ContentDelete,
       description: 'Delete a piece of content.',
@@ -114,6 +118,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_content_version',
+      audit: auditUpdate('content', undefined, { idArg: 'contentId' }),
       title: 'Update a draft content version',
       capability: Capability.ContentUpdate,
       description:
@@ -147,6 +152,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'create_content_version',
+      audit: auditUpdate('content', undefined, { idArg: 'contentId' }),
       title: 'Create a draft content version',
       capability: Capability.ContentUpdate,
       description:
@@ -158,6 +164,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'restore_content_version',
+      audit: auditUpdate('content', undefined, { idArg: 'contentId' }),
       title: 'Restore a historical version',
       capability: Capability.ContentUpdate,
       description:
@@ -173,6 +180,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'duplicate_content',
+      audit: auditCreate('content'),
       title: 'Duplicate content',
       capability: Capability.ContentCreate,
       description:
@@ -191,6 +199,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'publish_content',
+      audit: auditUpdate('content', undefined, { envScoped: true, idArg: 'contentId' }),
       title: 'Publish a version to an environment',
       capability: Capability.ContentPublish,
       description:
@@ -217,6 +226,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'unpublish_content',
+      audit: auditUpdate('content', undefined, { envScoped: true, idArg: 'contentId' }),
       title: 'Unpublish content from an environment',
       capability: Capability.ContentPublish,
       description:
@@ -242,6 +252,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Users (env-level, client-keyed) ----
     {
       name: 'upsert_user',
+      audit: auditUpdate('user', undefined, { envScoped: true }),
       title: 'Create or update a user',
       capability: Capability.UserWrite,
       description:
@@ -261,6 +272,14 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_user',
+      audit: auditDelete(
+        'user',
+        (args, ctx, env) =>
+          ctx.prisma.bizUser.findFirst({
+            where: { externalId: String(args.id), environmentId: env?.id },
+          }),
+        { envScoped: true },
+      ),
       title: 'Delete a user',
       capability: Capability.UserDelete,
       description:
@@ -279,6 +298,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Companies (env-level, client-keyed) ----
     {
       name: 'upsert_company',
+      audit: auditUpdate('company', undefined, { envScoped: true }),
       title: 'Create or update a company',
       capability: Capability.CompanyWrite,
       description:
@@ -298,6 +318,14 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_company',
+      audit: auditDelete(
+        'company',
+        (args, ctx, env) =>
+          ctx.prisma.bizCompany.findFirst({
+            where: { externalId: String(args.id), environmentId: env?.id },
+          }),
+        { envScoped: true },
+      ),
       title: 'Delete a company',
       capability: Capability.CompanyDelete,
       description:
@@ -314,6 +342,12 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'add_company_member',
+      audit: {
+        action: 'update',
+        resourceType: 'companyMember',
+        envScoped: true,
+        resourceId: (args) => `${String(args.userId)}:${String(args.companyId)}`,
+      },
       title: 'Add a user to a company',
       capability: Capability.CompanyWrite,
       description:
@@ -337,6 +371,12 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'remove_company_member',
+      audit: {
+        action: 'delete',
+        resourceType: 'companyMember',
+        envScoped: true,
+        resourceId: (args) => `${String(args.userId)}:${String(args.companyId)}`,
+      },
       title: 'Remove a user from a company',
       capability: Capability.CompanyWrite,
       description:
@@ -360,6 +400,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Segments (definitions project-level; membership env-level) ----
     {
       name: 'create_segment',
+      audit: auditCreate('segment'),
       title: 'Create a segment',
       capability: Capability.SegmentCreate,
       description:
@@ -371,6 +412,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_segment',
+      audit: auditUpdate('segment', (args, ctx) =>
+        ctx.prisma.segment.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Update a segment',
       capability: Capability.SegmentUpdate,
       description: "Update a segment's name, or replace a condition segment's conditions.",
@@ -384,6 +428,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_segment',
+      audit: auditDelete('segment', (args, ctx) =>
+        ctx.prisma.segment.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Delete a segment',
       capability: Capability.SegmentDelete,
       description: 'Delete a segment.',
@@ -395,6 +442,12 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'add_segment_member',
+      audit: {
+        action: 'update',
+        resourceType: 'segmentMember',
+        envScoped: true,
+        resourceId: (args) => `${String(args.id)}:${String(args.externalId)}`,
+      },
       title: 'Add a member to a manual segment',
       capability: Capability.SegmentUpdate,
       description:
@@ -418,6 +471,12 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'remove_segment_member',
+      audit: {
+        action: 'delete',
+        resourceType: 'segmentMember',
+        envScoped: true,
+        resourceId: (args) => `${String(args.id)}:${String(args.externalId)}`,
+      },
       title: 'Remove a member from a manual segment',
       capability: Capability.SegmentUpdate,
       description:
@@ -443,6 +502,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Themes (project-level) ----
     {
       name: 'create_theme',
+      audit: auditCreate('theme'),
       title: 'Create a theme',
       capability: Capability.ThemeCreate,
       description:
@@ -454,6 +514,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_theme',
+      audit: auditUpdate('theme', (args, ctx) =>
+        ctx.prisma.theme.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Update a theme',
       capability: Capability.ThemeUpdate,
       description:
@@ -469,6 +532,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_theme',
+      audit: auditDelete('theme', (args, ctx) =>
+        ctx.prisma.theme.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Delete a theme',
       capability: Capability.ThemeDelete,
       description: 'Delete a theme. The project default theme cannot be deleted.',
@@ -482,6 +548,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Attribute definitions (project-level) ----
     {
       name: 'create_attribute_definition',
+      audit: auditCreate('attribute'),
       title: 'Create an attribute definition',
       capability: Capability.AttributeCreate,
       description:
@@ -495,6 +562,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_attribute_definition',
+      audit: auditUpdate('attribute', (args, ctx) =>
+        ctx.prisma.attribute.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Update an attribute definition',
       capability: Capability.AttributeUpdate,
       description: 'Update an attribute definition (displayName / description; codeName is fixed).',
@@ -508,6 +578,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_attribute_definition',
+      audit: auditDelete('attribute', (args, ctx) =>
+        ctx.prisma.attribute.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Delete an attribute definition',
       capability: Capability.AttributeDelete,
       description: 'Delete an attribute definition.',
@@ -521,6 +594,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Event definitions (project-level) ----
     {
       name: 'create_event_definition',
+      audit: auditCreate('event'),
       title: 'Create an event definition',
       capability: Capability.EventCreate,
       description: 'Define a custom event. codeName is immutable.',
@@ -533,6 +607,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_event_definition',
+      audit: auditUpdate('event', (args, ctx) =>
+        ctx.prisma.event.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Update an event definition',
       capability: Capability.EventUpdate,
       description: 'Update an event definition (displayName / description; codeName is fixed).',
@@ -549,6 +626,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_event_definition',
+      audit: auditDelete('event', (args, ctx) =>
+        ctx.prisma.event.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Delete an event definition',
       capability: Capability.EventDelete,
       description: 'Delete an event definition.',
@@ -562,6 +642,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Sessions (env-level; session:manage) ----
     {
       name: 'end_session',
+      audit: auditUpdate('session', undefined, { envScoped: true }),
       title: 'End a session',
       capability: Capability.SessionManage,
       description:
@@ -576,6 +657,11 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_session',
+      audit: auditDelete(
+        'session',
+        (args, ctx) => ctx.prisma.bizSession.findUnique({ where: { id: String(args.id) } }),
+        { envScoped: true },
+      ),
       title: 'Delete a session',
       capability: Capability.SessionManage,
       description:
@@ -593,6 +679,7 @@ export function buildWriteTools(): McpTool[] {
     // ---- Environments (project-level; environment:manage) ----
     {
       name: 'create_environment',
+      audit: auditCreate('environment'),
       title: 'Create an environment',
       capability: Capability.EnvironmentManage,
       description: 'Create an environment in the project. The first one is made primary.',
@@ -602,6 +689,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_environment',
+      audit: auditUpdate('environment', undefined),
       title: 'Update an environment',
       capability: Capability.EnvironmentManage,
       description: 'Rename an environment.',
@@ -618,6 +706,7 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_environment',
+      audit: auditDelete('environment', undefined),
       title: 'Delete an environment',
       capability: Capability.EnvironmentManage,
       description: 'Delete an environment. The primary / last environment cannot be deleted.',

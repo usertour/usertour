@@ -128,4 +128,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'team.changeTeamMemberRole': Capability.TeamManage, // O
   'team.cancelInvite': Capability.TeamManage, // O
   'team.activeUserProject': Capability.ProjectActivate, // R
+
+  // audit (owner-only)
+  'audit.auditLogs': Capability.AuditRead, // O
 };

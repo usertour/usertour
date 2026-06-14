@@ -20,6 +20,7 @@ import {
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
@@ -58,6 +59,7 @@ export class OpenAPICompaniesController {
   }
 
   @Post()
+  @Audit({ action: 'update', resourceType: 'company' })
   @ApiOperation({ summary: 'Create or update a company' })
   @ApiResponse({ status: 200, description: 'Company created/updated successfully', type: Company })
   async upsertCompany(
@@ -72,6 +74,7 @@ export class OpenAPICompaniesController {
   }
 
   @Delete(':id')
+  @Audit({ action: 'delete', resourceType: 'company' })
   @ApiOperation({ summary: 'Delete a company' })
   @ApiParam({ name: 'id', description: 'Company ID' })
   @ApiResponse({

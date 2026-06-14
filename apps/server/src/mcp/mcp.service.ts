@@ -14,9 +14,11 @@ import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { OpenAPIError } from '@/common/errors/errors';
+import { AuditService } from '@/audit/audit.service';
 
-import { McpServices, McpTool } from './mcp.types';
-import { buildReadTools } from './tools/read-tools';
+import { McpServices, McpTool, McpToolContext } from './mcp.types';
+import { buildMcpAuditEntry } from './tools/audit-meta';
+import { buildReadTools, resolveEnvironment } from './tools/read-tools';
 import { buildWriteTools } from './tools/write-tools';
 
 const SERVER_INFO = { name: 'usertour', version: '1.0.0' };
@@ -36,6 +38,7 @@ export class McpService {
   constructor(
     private readonly auth: ApiTokenAuthService,
     private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
     contentService: ApiContentService,
     contentVersionsService: ApiContentVersionsService,
     attributeDefinitionsService: ApiAttributeDefinitionsService,
@@ -91,13 +94,14 @@ export class McpService {
             // fail for a multi-project token — only the tool call does.
             const projectId = this.resolveProjectId(token);
             await this.auth.authorize(token, projectId, tool.capability);
-            const payload = await tool.handler(args ?? {}, {
+            const ctx: McpToolContext = {
               token,
               projectId,
               auth: this.auth,
               prisma: this.prisma,
               services: this.services,
-            });
+            };
+            const payload = await this.runWithAudit(tool, args ?? {}, ctx);
             return { content: [{ type: 'text' as const, text: JSON.stringify(payload) }] };
           } catch (error) {
             return {
@@ -110,6 +114,29 @@ export class McpService {
     }
 
     return server;
+  }
+
+  /**
+   * Run a tool handler and, for write tools carrying `audit` metadata, capture an
+   * audit entry around it: resolve the environment once (env-scoped resources),
+   * snapshot `before` (delete/update), run the handler, then record the change
+   * with the actor from the token. Auditing is a side-channel — `record` never
+   * throws — so it cannot affect the handler's result.
+   */
+  private async runWithAudit(
+    tool: McpTool,
+    args: Record<string, unknown>,
+    ctx: McpToolContext,
+  ): Promise<unknown> {
+    const meta = tool.audit;
+    if (!meta) {
+      return tool.handler(args, ctx);
+    }
+    const environment = meta.envScoped ? await resolveEnvironment(args, ctx) : undefined;
+    const before = meta.fetchBefore ? await meta.fetchBefore(args, ctx, environment) : undefined;
+    const result = await tool.handler(args, ctx);
+    this.audit.record(buildMcpAuditEntry(tool, ctx, args, result, before, environment));
+    return result;
   }
 
   /**

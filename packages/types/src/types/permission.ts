@@ -70,6 +70,8 @@ export enum Capability {
   SessionManage = 'session:manage',
   // analytics
   AnalyticsRead = 'analytics:read',
+  // audit log (read-only; owner-only)
+  AuditRead = 'audit:read',
   // environment
   EnvironmentRead = 'environment:read',
   EnvironmentManage = 'environment:manage',

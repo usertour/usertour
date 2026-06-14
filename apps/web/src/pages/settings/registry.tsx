@@ -33,6 +33,7 @@ export type SettingsSectionKey =
   | 'attributes'
   | 'events'
   | 'localizations'
+  | 'audit-log'
   | 'team'
   | 'billing'
   | 'subscription'
@@ -162,6 +163,17 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     hideFromSidebar: true,
     component: lazy(() =>
       import('./localizations').then((module) => ({ default: module.SettingsLocalizationList })),
+    ),
+  },
+  {
+    key: 'audit-log',
+    title: 'Audit log',
+    icon: <RiArticleLine className={ICON_CLASS} />,
+    capability: Capability.AuditRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() =>
+      import('./audit-log').then((module) => ({ default: module.AuditLogList })),
     ),
   },
   {

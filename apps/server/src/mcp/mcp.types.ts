@@ -13,6 +13,7 @@ import { ApiEventDefinitionsService } from '@/api/event-definitions/event-defini
 import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
+import type { AuditAction } from '@/audit/audit.types';
 
 /**
  * The v2 API services an MCP tool handler can reach through its context — the
@@ -60,6 +61,26 @@ export type ZodRawShape = Record<string, ZodTypeAny>;
  * scopes) and is re-checked inside the handler. `inputSchema` is a zod raw shape
  * the SDK uses to validate args; handlers therefore receive already-parsed args.
  */
+/**
+ * Co-located audit metadata for a write tool. When present, the dispatch wrapper
+ * captures a `before` snapshot (delete/update) and records the change after a
+ * successful handler call. Read / non-mutating tools omit it.
+ */
+export interface AuditCapture {
+  action: AuditAction;
+  resourceType: string;
+  /** true → the wrapper resolves the environment once and passes it to fetchBefore. */
+  envScoped?: boolean;
+  /** Resource id; `result` is the handler's return value (for create, the id is there). */
+  resourceId(args: Record<string, unknown>, result: unknown): string;
+  /** before-snapshot for delete/update; receives the resolved environment when envScoped. */
+  fetchBefore?(
+    args: Record<string, unknown>,
+    ctx: McpToolContext,
+    environment: { id: string } | undefined,
+  ): Promise<unknown>;
+}
+
 export interface McpTool {
   name: string;
   title: string;
@@ -67,4 +88,6 @@ export interface McpTool {
   capability: Capability;
   inputSchema: ZodRawShape;
   handler(args: Record<string, unknown>, ctx: McpToolContext): Promise<unknown>;
+  /** Optional audit metadata; present on write tools that mutate state. */
+  audit?: AuditCapture;
 }

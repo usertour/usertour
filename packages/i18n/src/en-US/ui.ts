@@ -224,6 +224,7 @@ const translations = {
         attributes: 'Attributes',
         events: 'Events',
         localizations: 'Localization',
+        'audit-log': 'Audit log',
         team: 'Team',
         billing: 'Billing',
         subscription: 'Subscription',
@@ -728,6 +729,27 @@ const translations = {
       headerEnvironment:
         "Each environment has its own keys; you're viewing <strong>{{environment}}</strong>. Switch via the environment menu in the top-left.",
       headerDocs: 'Read the API reference',
+    },
+    auditLog: {
+      title: 'Audit log',
+      description:
+        'Who changed or deleted what in this project, when, and from which surface (API vs MCP).',
+      empty: 'No audit log entries yet.',
+      columns: {
+        time: 'Time',
+        actor: 'Actor',
+        source: 'Source',
+        action: 'Action',
+        resource: 'Resource',
+        operation: 'Operation',
+      },
+      detail: {
+        title: 'Audit detail',
+        before: 'Before',
+        after: 'After',
+        metadata: 'Metadata',
+        noSnapshot: 'No snapshot was captured for this change.',
+      },
     },
     personalApiKeys: {
       title: 'Personal API keys',
