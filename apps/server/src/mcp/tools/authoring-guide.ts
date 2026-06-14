@@ -21,6 +21,7 @@ Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\`
 - Step \`type\`: \`tooltip\` | \`modal\` | \`hidden\` | \`bubble\`. **Only \`tooltip\` needs a \`target\`** (a CSS selector of an element on the page); the rest are page-level.
 - Every non-\`hidden\` step needs content; a \`button\` block needs both text and an action; a \`question\` block needs a name.
 - **Wire navigation by step \`key\`**: give a step \`"key": "pricing"\`, and a button action elsewhere in the SAME write does \`{ "type": "goto_step", "step": "pricing" }\`. Keys are write-only handles; forward and cyclic links work in one call. (You may also target an existing step by its \`cvid\`.)
+- **Advance when the user clicks the targeted element**: set the step's \`onClick\` to an action array, e.g. \`[{ "type": "goto_step", "step": "pricing" }]\`. \`onClick\` fires on the real page element the tooltip points at — distinct from a \`button\` block's action (a button rendered inside the tooltip). Tooltip steps with a \`target\` only.
 
 ## Text (markdown subset)
 Paragraphs; \`# \`/\`## \` headings (h1/h2 only — NO h3+); \`-\`/\`*\` and \`1.\` lists; \`\`\` code fences. Inline: \`**bold**\`, \`*italic*\`, \`[text](url)\`, and \`{{ attribute_code | default: "x" }}\` for user attributes (list codes with \`list_attribute_definitions\`).
@@ -30,6 +31,8 @@ A \`target\` is a CSS selector: \`{ "by": "selector", "selector": "[data-tour='x
 
 ## Start rules & frequency
 \`startRules.frequency.mode\`: \`once\` (single show) | \`multiple\` (up to N per window) | \`unlimited\` (every match). \`multiple\`/\`unlimited\` use an \`every\` window (\`{ times?, duration, unit }\`); \`once\` ignores it.
+
+**No auto-start ≠ unreachable.** With no \`startRules\` (or when none match) the content won't launch on its own — but it can still be started programmatically from the host app via the SDK \`usertour.start(contentId)\` call. Choose this when you want to trigger content from your own button/route rather than by page conditions.
 
 ## What each type needs to be usable (else publish is rejected)
 - **flow**: ≥1 step; tooltip steps have a target; non-hidden steps have content; goto targets resolve.
