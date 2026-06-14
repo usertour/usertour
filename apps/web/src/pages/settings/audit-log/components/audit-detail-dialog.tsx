@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/ui';
 import type { AuditLog } from '@usertour/hooks';
+import { actorLabel } from '../format';
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex flex-col">
@@ -51,16 +52,29 @@ export const AuditDetailDialog = ({
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <Field label={t('settings.auditLog.columns.action')}>{log.action}</Field>
               <Field label={t('settings.auditLog.columns.source')}>
-                <Badge variant="secondary">{log.source}</Badge>
+                <Badge variant="secondary">{log.source.toUpperCase()}</Badge>
               </Field>
               <Field label={t('settings.auditLog.columns.resource')}>
-                {log.resourceType}{' '}
-                <span className="font-mono text-xs text-muted-foreground">{log.resourceId}</span>
+                <div className="flex flex-col">
+                  <span>
+                    {log.resourceType}
+                    {log.resourceName ? ` · ${log.resourceName}` : ''}
+                  </span>
+                  <span className="font-mono text-xs text-muted-foreground">{log.resourceId}</span>
+                </div>
               </Field>
               <Field label={t('settings.auditLog.columns.actor')}>
-                <span className="font-mono text-xs">
-                  {log.actorUserId ?? log.actorTokenId ?? '—'}
-                </span>
+                <div className="flex flex-col">
+                  <span>{actorLabel(log)}</span>
+                  {log.actorUserName && log.actorTokenName && (
+                    <span className="text-xs text-muted-foreground">
+                      {t('settings.auditLog.detail.via')} {log.actorTokenName}
+                    </span>
+                  )}
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {[log.actorUserId, log.actorTokenId].filter(Boolean).join(' · ') || '—'}
+                  </span>
+                </div>
               </Field>
               <Field label={t('settings.auditLog.columns.operation')}>{log.operation}</Field>
               <Field label={t('settings.auditLog.columns.time')}>

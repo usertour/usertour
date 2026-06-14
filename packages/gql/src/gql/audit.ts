@@ -24,10 +24,13 @@ export const ListAuditLogs = gql`
           source
           actorUserId
           actorTokenId
+          actorUserName
+          actorTokenName
           action
           operation
           resourceType
           resourceId
+          resourceName
           environmentId
           before
           after

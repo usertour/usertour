@@ -1,5 +1,9 @@
 import { type QueryHookOptions, useQuery } from '@apollo/client';
+import { useMemo } from 'react';
 import { ListAuditLogs } from '@usertour/gql';
+import { useCursorFetchMore } from './use-cursor-fetch-more';
+
+const AUDIT_LOG_PAGE_SIZE = 50;
 
 export interface AuditLog {
   id: string;
@@ -9,10 +13,16 @@ export interface AuditLog {
   actorUserId: string | null;
   /** The credential used (ApiToken.id, or v1 AccessToken.id). */
   actorTokenId: string | null;
+  /** Best-effort display name resolved at read time (null if the user was deleted). */
+  actorUserName: string | null;
+  /** Best-effort token name resolved at read time (null if the token was deleted). */
+  actorTokenName: string | null;
   action: string;
   operation: string;
   resourceType: string;
   resourceId: string;
+  /** Best-effort resource name/title from the snapshot (null when none). */
+  resourceName: string | null;
   environmentId: string | null;
   before: unknown;
   after: unknown;
@@ -25,25 +35,49 @@ interface AuditLogEdge {
 }
 
 /**
- * Owner-only project audit log (Activity page). Returns the latest page of
- * entries (most recent first). `pageInfo`/`fetchMore` are exposed for future
- * "load more" paging.
+ * Owner-only project audit log (Activity page). Infinite-scroll cursor
+ * pagination: the cache-level merge is owned by the `auditLogs` typePolicy
+ * (apps/web/src/apollo/type-policies) — no `updateQuery` here. Returns the
+ * accumulated list plus `fetchNextPage` for the sentinel to call.
  */
 export const useListAuditLogsQuery = (
   projectId: string | undefined,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, error, refetch, fetchMore } = useQuery(ListAuditLogs, {
-    variables: { projectId, first: 50 },
+  const { data, loading, networkStatus, refetch, fetchMore } = useQuery(ListAuditLogs, {
+    variables: { projectId, first: AUDIT_LOG_PAGE_SIZE },
     skip: !projectId,
     notifyOnNetworkStatusChange: true,
     ...options,
   });
+
   const connection = data?.auditLogs;
-  const auditLogs: AuditLog[] = (connection?.edges ?? []).map((edge: AuditLogEdge) => edge.node);
-  const pageInfo = connection?.pageInfo as
-    | { endCursor: string | null; hasNextPage: boolean }
-    | undefined;
-  const totalCount = connection?.totalCount as number | undefined;
-  return { auditLogs, pageInfo, totalCount, loading, error, refetch, fetchMore };
+  const auditLogs: AuditLog[] = useMemo(
+    () => (connection?.edges ?? []).map((edge: AuditLogEdge) => edge.node),
+    [connection?.edges],
+  );
+  const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
+  const endCursor = connection?.pageInfo?.endCursor ?? null;
+  const totalCount = connection?.totalCount ?? 0;
+
+  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+    loading,
+    networkStatus,
+    hasNextPage,
+    endCursor,
+    fetchMore,
+    buildVariables: (after) => ({ projectId, first: AUDIT_LOG_PAGE_SIZE, after }),
+  });
+
+  return {
+    auditLogs,
+    totalCount,
+    hasNextPage,
+    // Keep the rendered list intact while a page appends (skeleton only on
+    // first load, like version history).
+    loading: loading && !loadingMore,
+    loadingMore,
+    fetchNextPage,
+    refetch,
+  };
 };

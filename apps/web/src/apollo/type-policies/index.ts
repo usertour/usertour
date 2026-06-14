@@ -112,6 +112,9 @@ export const TypePolicy: TypePolicies = {
       queryContent: accumulatorMerge(['query', 'orderBy']),
       queryBizUserEvents: accumulatorMerge(['query', 'orderBy']),
       queryBizCompanyEvents: accumulatorMerge(['query', 'orderBy']),
+      // Audit log is its own page (settings tab); filters/sort live in the
+      // top-level `query`/`orderBy` args, `projectId` scopes the cache cell.
+      auditLogs: accumulatorMerge(['projectId', 'query', 'orderBy']),
     },
   },
 };

@@ -28,6 +28,14 @@ export class AuditLog {
   @Field(() => String, { nullable: true })
   actorTokenId?: string | null;
 
+  /** Resolved at read time (best-effort): the actor's name/email; null if the user was deleted. */
+  @Field(() => String, { nullable: true })
+  actorUserName?: string | null;
+
+  /** Resolved at read time (best-effort): the token's name; null if the token was deleted. */
+  @Field(() => String, { nullable: true })
+  actorTokenName?: string | null;
+
   /** 'create' | 'update' | 'delete'. */
   @Field(() => String)
   action: string;
@@ -41,6 +49,10 @@ export class AuditLog {
 
   @Field(() => String)
   resourceId: string;
+
+  /** Resolved at read time (best-effort): the resource's name/title from the snapshot. */
+  @Field(() => String, { nullable: true })
+  resourceName?: string | null;
 
   @Field(() => GraphQLJSON, { nullable: true })
   before?: unknown;

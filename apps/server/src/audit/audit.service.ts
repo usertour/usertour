@@ -69,14 +69,93 @@ export class AuditService {
     if (query?.actorUserId) where.actorUserId = query.actorUserId;
 
     return findManyCursorConnection(
-      (args) =>
-        this.prisma.auditLog.findMany({
+      async (args) => {
+        const rows = await this.prisma.auditLog.findMany({
           where,
           orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
           ...args,
-        }),
+        });
+        return this.enrichAuditLogs(rows);
+      },
       () => this.prisma.auditLog.count({ where }),
       { first, last, before, after },
     );
   }
+
+  /**
+   * Best-effort, read-time resolution of the opaque ids into human-friendly
+   * labels for display (the stored row stays just ids — an audit row must outlive
+   * the user/token it references, so this is a lookup, not a join/denormalization).
+   * Batched per page; a deleted actor/resource simply falls back to null (the
+   * frontend then shows the id).
+   */
+  private async enrichAuditLogs<
+    T extends {
+      actorUserId: string | null;
+      actorTokenId: string | null;
+      before: Prisma.JsonValue;
+      after: Prisma.JsonValue;
+    },
+  >(
+    rows: T[],
+  ): Promise<
+    (T & {
+      actorUserName: string | null;
+      actorTokenName: string | null;
+      resourceName: string | null;
+    })[]
+  > {
+    const userIds = [...new Set(rows.map((r) => r.actorUserId).filter((id): id is string => !!id))];
+    const tokenIds = [
+      ...new Set(rows.map((r) => r.actorTokenId).filter((id): id is string => !!id)),
+    ];
+
+    const [users, apiTokens, accessTokens] = await Promise.all([
+      userIds.length
+        ? this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, email: true },
+          })
+        : Promise.resolve([]),
+      // actorTokenId is polymorphic: a user ApiToken (utp_) or a v1 env AccessToken (ak_).
+      tokenIds.length
+        ? this.prisma.apiToken.findMany({
+            where: { id: { in: tokenIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      tokenIds.length
+        ? this.prisma.accessToken.findMany({
+            where: { id: { in: tokenIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const userName = new Map(users.map((u) => [u.id, u.name ?? u.email ?? null]));
+    const tokenName = new Map<string, string>();
+    for (const t of accessTokens) tokenName.set(t.id, t.name);
+    for (const t of apiTokens) tokenName.set(t.id, t.name);
+
+    return rows.map((r) => ({
+      ...r,
+      actorUserName: r.actorUserId ? (userName.get(r.actorUserId) ?? null) : null,
+      actorTokenName: r.actorTokenId ? (tokenName.get(r.actorTokenId) ?? null) : null,
+      resourceName: pickResourceName(r.after) ?? pickResourceName(r.before),
+    }));
+  }
+}
+
+/** Pull a display name out of a before/after snapshot (config resources carry `name`/`title`). */
+function pickResourceName(snapshot: Prisma.JsonValue): string | null {
+  if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot)) {
+    const record = snapshot as Record<string, unknown>;
+    for (const key of ['name', 'title']) {
+      const value = record[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value;
+      }
+    }
+  }
+  return null;
 }

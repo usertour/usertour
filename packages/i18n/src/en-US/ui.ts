@@ -735,6 +735,7 @@ const translations = {
       description:
         'Who changed or deleted what in this project, when, and from which surface (API vs MCP).',
       empty: 'No audit log entries yet.',
+      endOfLog: 'End of log.',
       columns: {
         time: 'Time',
         actor: 'Actor',
@@ -745,6 +746,7 @@ const translations = {
       },
       detail: {
         title: 'Audit detail',
+        via: 'via',
         before: 'Before',
         after: 'After',
         metadata: 'Metadata',

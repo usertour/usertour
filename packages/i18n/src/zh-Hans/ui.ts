@@ -703,6 +703,7 @@ const translations = {
       title: '审计日志',
       description: '谁在本项目里改动或删除了什么、何时、来自哪个写入面(API 还是 MCP)。',
       empty: '暂无审计日志。',
+      endOfLog: '没有更多记录了。',
       columns: {
         time: '时间',
         actor: '操作者',
@@ -713,6 +714,7 @@ const translations = {
       },
       detail: {
         title: '审计详情',
+        via: '通过',
         before: '变更前',
         after: '变更后',
         metadata: '元数据',
