@@ -34,6 +34,11 @@ A \`target\` is a CSS selector: \`{ "by": "selector", "selector": "[data-tour='x
 
 **No auto-start ≠ unreachable.** With no \`startRules\` (or when none match) the content won't launch on its own — but it can still be started programmatically from the host app via the SDK \`usertour.start(contentId)\` call. Choose this when you want to trigger content from your own button/route rather than by page conditions.
 
+## Making it appear (the SDK)
+Authoring + publishing only stores the content — it renders only once the host app loads the Usertour SDK. You author here; the app does these (see https://www.usertour.io/docs/developers/usertourjs-reference/overview):
+- **Identify with the SAME id you target.** The app calls \`usertour.identify(userId, attrs)\`; that \`userId\` must equal the \`externalId\` your segments / start-rules / attribute conditions match on. Mismatch = content validates and publishes but never shows for that user (the most common "why isn't it appearing").
+- **SDK token ≠ API token.** \`usertour.init(token)\` takes the **environment token** (a public, client-side key). NEVER put the API token (the secret \`utp_…\` used for this MCP) in client code — it grants full project write access.
+
 ## What each type needs to be usable (else publish is rejected)
 - **flow**: ≥1 step; tooltip steps have a target; non-hidden steps have content; goto targets resolve.
 - **checklist**: ≥1 item; each item has a name AND a click action or a completion condition.
