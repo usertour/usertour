@@ -110,6 +110,9 @@ export enum ServerMessageKind {
 export type ProjectConfig = {
   removeBranding: boolean;
   customCss: boolean;
+  // Audit log viewing is a paid feature (cloud Business+, or self-host license).
+  // Capture is always-on; this gates the read/UI only.
+  auditLogs: boolean;
   planType: string;
 };
 

@@ -1152,6 +1152,7 @@ export const useGetProjectConfigQuery = (
     projectConfig: data?.getProjectConfig as {
       removeBranding: boolean;
       customCss: boolean;
+      auditLogs: boolean;
       planType: string;
     } | null,
     loading,

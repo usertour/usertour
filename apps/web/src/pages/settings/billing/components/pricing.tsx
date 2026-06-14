@@ -502,6 +502,10 @@ const ComparisonTable = ({
           values: matrixRow('customCss', currentPlanType, overridePlan),
         },
         {
+          name: t('settings.billing.comparison.rows.auditLogs'),
+          values: matrixRow('auditLogs', currentPlanType, overridePlan),
+        },
+        {
           name: t('settings.billing.comparison.rows.customAttributes'),
           values: [true, true, true, true],
         },

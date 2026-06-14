@@ -9,5 +9,8 @@ export class ProjectConfigModel {
   customCss: boolean;
 
   @Field()
+  auditLogs: boolean;
+
+  @Field()
   planType: string;
 }

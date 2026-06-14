@@ -631,6 +631,7 @@ const translations = {
           teamMembers: '团队成员',
           customTheming: '自定义主题',
           customCss: '自定义 CSS',
+          auditLogs: '审计日志',
           customAttributes: '自定义用户属性',
           flowTriggering: '基于分群自动触发流程',
           versionHistory: '版本历史',
@@ -719,6 +720,17 @@ const translations = {
         after: '变更后',
         metadata: '元数据',
         noSnapshot: '此次变更未记录快照。',
+      },
+      locked: {
+        cloud: {
+          title: '审计日志是 Business 功能',
+          description: '升级到 Business 套餐,即可追溯项目中谁改动或删除了什么。',
+          upgrade: '升级到 Business',
+        },
+        selfHosted: {
+          title: '审计日志需要 License',
+          description: '在本实例激活 License 后即可启用审计日志。',
+        },
       },
     },
     personalApiKeys: {

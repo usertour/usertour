@@ -659,6 +659,7 @@ const translations = {
           teamMembers: 'Team members',
           customTheming: 'Custom theming',
           customCss: 'Custom CSS',
+          auditLogs: 'Audit log',
           customAttributes: 'Custom user attributes',
           flowTriggering: 'Automatic, segmented flow triggering',
           versionHistory: 'Version history',
@@ -751,6 +752,18 @@ const translations = {
         after: 'After',
         metadata: 'Metadata',
         noSnapshot: 'No snapshot was captured for this change.',
+      },
+      locked: {
+        cloud: {
+          title: 'Audit log is a Business feature',
+          description:
+            'Track who changed or deleted what across your project on the Business plan.',
+          upgrade: 'Upgrade to Business',
+        },
+        selfHosted: {
+          title: 'Audit log requires a license',
+          description: 'Activate a license on this instance to enable audit logging.',
+        },
       },
     },
     personalApiKeys: {

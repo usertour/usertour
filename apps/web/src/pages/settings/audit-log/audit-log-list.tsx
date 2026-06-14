@@ -4,22 +4,33 @@ import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { Badge, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { type AuditLog, useListAuditLogsQuery } from '@usertour/hooks';
+import { type AuditLog, useGetProjectConfigQuery, useListAuditLogsQuery } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { AuditDetailDialog } from './components/audit-detail-dialog';
+import { AuditLogUpsell } from './components/audit-log-upsell';
 import { actorLabel, resourceLabel } from './format';
 
 /**
  * Owner-only Activity / audit-log page: who changed/deleted what, when, and from
  * which surface (mcp vs api). Read-only; the list itself is never audited.
+ *
+ * Paid feature: viewing needs cloud Business+ or a self-host license
+ * (`projectConfig.auditLogs`). Locked → upsell; the read query is also skipped so
+ * the server's independent gate never errors a non-entitled fetch.
  */
 export const AuditLogList = () => {
-  const { project } = useAppContext();
-  const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage } = useListAuditLogsQuery(
+  const { project, globalConfig } = useAppContext();
+  const { projectConfig, loading: configLoading } = useGetProjectConfigQuery(
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
+  );
+  const entitled = projectConfig?.auditLogs ?? false;
+
+  const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage } = useListAuditLogsQuery(
+    project?.id,
+    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !entitled },
   );
   const { t } = useTranslation();
   const [selected, setSelected] = useState<AuditLog | null>(null);
@@ -37,6 +48,14 @@ export const AuditLogList = () => {
   useEffect(() => {
     rootRef(scrollRoot);
   }, [rootRef, scrollRoot]);
+
+  // Config resolved and not entitled → upsell (during first config load, fall
+  // through to the skeleton below rather than flashing the upsell to paid users).
+  if (projectConfig && !entitled) {
+    return (
+      <AuditLogUpsell isSelfHosted={!!globalConfig?.isSelfHostedMode} projectId={project?.id} />
+    );
+  }
 
   const columns: ResourceTableColumn<AuditLog>[] = [
     {
@@ -83,7 +102,7 @@ export const AuditLogList = () => {
         description={t('settings.auditLog.description')}
         columns={columns}
         rows={auditLogs}
-        loading={loading}
+        loading={loading || (configLoading && !projectConfig)}
         empty={t('settings.auditLog.empty')}
         getRowKey={(log) => log.id}
         onRowClick={setSelected}
