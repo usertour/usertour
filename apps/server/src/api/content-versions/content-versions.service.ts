@@ -31,6 +31,7 @@ import {
   type UsabilityReport,
   validateVersionUsable,
 } from '../content-representation/usable.validate';
+import { validateAutoStartForType } from '../content-representation/auto-start.validate';
 import { compileVersionData } from '../content-representation/version-data.compile';
 import { decompileVersionData } from '../content-representation/version-data.decompile';
 import { paginate } from '../shared/pagination';
@@ -330,6 +331,18 @@ export class ApiContentVersionsService {
     }
 
     if (body.startRules !== undefined || body.hideRules !== undefined) {
+      // Enforce the per-type auto-start contract the builder enforces by hiding
+      // controls — the API/MCP must reject settings the content type can't use
+      // (e.g. a frequency on a launcher), not silently accept them.
+      const contentType = (version as { content?: { type?: string | null } | null }).content?.type;
+      const violations = validateAutoStartForType(
+        body.startRules,
+        body.hideRules,
+        contentType ?? undefined,
+      );
+      if (violations.length > 0) {
+        throw new ValidationError(violations.join(' '));
+      }
       const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
       if (body.startRules !== undefined) {
         Object.assign(config, compileStartRules(body.startRules ?? undefined, resolvers));

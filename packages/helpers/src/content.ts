@@ -113,6 +113,76 @@ export const buildConfig = (
 });
 
 /**
+ * Which auto-start settings each content type supports — the single source of
+ * truth shared by the builder (content-detail-settings.tsx shows/hides controls
+ * from this) and the v2/MCP write path (which rejects any setting the matching
+ * capability is false for, so the API can't write what the UI forbids). Keep this
+ * the only place these per-type rules live, or the two surfaces drift.
+ *
+ *   flow            — full control
+ *   checklist       — full, minus the frequency "at least" sub-control
+ *   launcher/banner — "show-only": conditions only, no advanced settings, no hide rules
+ *   resource-center — priority + hide rules only (no frequency / wait / ifComplete)
+ *   tracker         — always-on conditions only (own editor; no advanced settings)
+ */
+export type AutoStartCapabilities = {
+  /** Re-show frequency (mode / every). */
+  frequency: boolean;
+  /** The frequency "at least N" sub-control (flow only). */
+  atLeast: boolean;
+  /** "Only start if not complete". */
+  ifCompleted: boolean;
+  /** Wait N seconds before starting. */
+  wait: boolean;
+  /** Start priority. */
+  priority: boolean;
+  /** The separate hide-rules card. */
+  hideRules: boolean;
+};
+
+const NO_AUTO_START_CAPABILITIES: AutoStartCapabilities = {
+  frequency: false,
+  atLeast: false,
+  ifCompleted: false,
+  wait: false,
+  priority: false,
+  hideRules: false,
+};
+
+export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilities> = {
+  [ContentDataType.FLOW]: {
+    frequency: true,
+    atLeast: true,
+    ifCompleted: true,
+    wait: true,
+    priority: true,
+    hideRules: true,
+  },
+  [ContentDataType.CHECKLIST]: {
+    frequency: true,
+    atLeast: false,
+    ifCompleted: true,
+    wait: true,
+    priority: true,
+    hideRules: true,
+  },
+  [ContentDataType.LAUNCHER]: { ...NO_AUTO_START_CAPABILITIES },
+  [ContentDataType.BANNER]: { ...NO_AUTO_START_CAPABILITIES },
+  [ContentDataType.RESOURCE_CENTER]: {
+    ...NO_AUTO_START_CAPABILITIES,
+    priority: true,
+    hideRules: true,
+  },
+  [ContentDataType.TRACKER]: { ...NO_AUTO_START_CAPABILITIES },
+};
+
+/** Capabilities for a type, defaulting to "nothing supported" for unknown types. */
+export const getAutoStartCapabilities = (
+  contentType: ContentDataType | undefined,
+): AutoStartCapabilities =>
+  (contentType && AUTO_START_CAPABILITIES[contentType]) || NO_AUTO_START_CAPABILITIES;
+
+/**
  * Extract user attribute value with fallback support
  * Returns the attribute value if it exists (including falsy values like false, 0, ''),
  * otherwise returns the fallback value
