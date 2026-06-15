@@ -251,6 +251,9 @@ export const ContentDetailTrackerEditor = () => {
               showPriority={false}
               showAtLeast={false}
               disabled={isViewOnly}
+              // Tracker triggers allow only these condition types. The v2/MCP
+              // write path enforces the same set via TRACKER_CONDITION_TYPES
+              // (@usertour/helpers, in v2 names) — keep the two in sync.
               filterItems={[
                 'user-attr',
                 'current-page',

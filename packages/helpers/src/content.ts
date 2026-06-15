@@ -138,7 +138,28 @@ export type AutoStartCapabilities = {
   priority: boolean;
   /** The separate hide-rules card. */
   hideRules: boolean;
+  /**
+   * Allowed start-condition `type`s (v2 representation names). `undefined` = all
+   * types allowed; only tracker narrows it. Groups are always allowed (structural)
+   * and their children are checked recursively.
+   */
+  conditionTypes?: string[];
 };
+
+// Tracker trigger conditions are limited to these (v2 representation type names).
+// Mirrors the builder's tracker editor `filterItems` (internal names), mapped via
+// the rules codec: user_attribute=user-attr, current_url=current-page,
+// text_filled=text-fill, time_window=time; element / text_input / group unchanged.
+// Excludes segment / flow / event. Keep in sync with content-detail-tracker-editor.tsx.
+const TRACKER_CONDITION_TYPES = [
+  'group',
+  'user_attribute',
+  'current_url',
+  'element',
+  'text_input',
+  'text_filled',
+  'time_window',
+];
 
 const NO_AUTO_START_CAPABILITIES: AutoStartCapabilities = {
   frequency: false,
@@ -173,7 +194,10 @@ export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilit
     priority: true,
     hideRules: true,
   },
-  [ContentDataType.TRACKER]: { ...NO_AUTO_START_CAPABILITIES },
+  [ContentDataType.TRACKER]: {
+    ...NO_AUTO_START_CAPABILITIES,
+    conditionTypes: TRACKER_CONDITION_TYPES,
+  },
 };
 
 /** Capabilities for a type, defaulting to "nothing supported" for unknown types. */

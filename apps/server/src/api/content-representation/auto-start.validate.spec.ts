@@ -87,6 +87,52 @@ describe('validateAutoStartForType', () => {
     expect(errs).toContain('tracker content does not support `hideRules`.');
   });
 
+  it('tracker accepts its whitelisted start-condition types (incl. nested groups)', () => {
+    const start: RepresentationStartRules = {
+      when: [
+        { type: 'element', state: 'present' },
+        { type: 'current_url', includes: ['/app'] },
+        {
+          type: 'group',
+          match: 'all',
+          conditions: [
+            { type: 'user_attribute', attribute: 'plan', op: 'is', value: 'pro' },
+            { type: 'time_window', start: '2026-01-01' },
+          ],
+        },
+      ],
+    };
+    expect(validateAutoStartForType(start, undefined, 'tracker')).toEqual([]);
+  });
+
+  it('tracker rejects start-condition types outside its whitelist (incl. nested)', () => {
+    const start: RepresentationStartRules = {
+      when: [
+        { type: 'element', state: 'present' }, // allowed
+        { type: 'segment', segment: 's1', in: true }, // not allowed
+        {
+          type: 'group',
+          match: 'all',
+          conditions: [{ type: 'flow', flow: 'f1', state: 'completed' }], // not allowed (nested)
+        },
+      ],
+    };
+    const errs = validateAutoStartForType(start, undefined, 'tracker');
+    expect(errs).toContain('tracker content does not support a `segment` start condition.');
+    expect(errs).toContain('tracker content does not support a `flow` start condition.');
+    expect(errs).not.toContain('tracker content does not support a `element` start condition.');
+  });
+
+  it('non-tracker types accept any start-condition type (no whitelist)', () => {
+    const start: RepresentationStartRules = {
+      when: [
+        { type: 'segment', segment: 's1', in: true },
+        { type: 'flow', flow: 'f1', state: 'seen' },
+      ],
+    };
+    expect(validateAutoStartForType(start, undefined, 'flow')).toEqual([]);
+  });
+
   it('clearing rules (null body) is always allowed', () => {
     expect(validateAutoStartForType(null, null, 'launcher')).toEqual([]);
     expect(validateAutoStartForType(undefined, undefined, 'banner')).toEqual([]);

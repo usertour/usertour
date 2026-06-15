@@ -1,7 +1,11 @@
 import { AUTO_START_CAPABILITIES } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 
-import { RepresentationHideRules, RepresentationStartRules } from './representation.schema';
+import {
+  RepresentationCondition,
+  RepresentationHideRules,
+  RepresentationStartRules,
+} from './representation.schema';
 
 /**
  * Reject auto-start settings a content type doesn't support. The builder hides
@@ -11,9 +15,9 @@ import { RepresentationHideRules, RepresentationStartRules } from './representat
  * show) or `hideRules` on a banner. Returns human-readable violation messages
  * (empty = OK). Clearing rules (a null body) is always allowed.
  *
- * Note: only the per-type *settings* are checked here — `when` conditions are
- * always allowed (every type supports targeting conditions). Tracker's narrower
- * condition-type whitelist is not enforced here.
+ * Where a type narrows its allowed start-condition types (tracker), `when`
+ * conditions outside that whitelist are also rejected — recursively, so a banned
+ * type nested in a group is caught too.
  */
 export function validateAutoStartForType(
   startRules: RepresentationStartRules | null | undefined,
@@ -44,6 +48,24 @@ export function validateAutoStartForType(
     }
     if (startRules.startIfNotComplete !== undefined && !caps.ifCompleted) {
       errs.push(unsupported('`startIfNotComplete`'));
+    }
+    if (caps.conditionTypes) {
+      const allowed = new Set(caps.conditionTypes);
+      const offending = new Set<string>();
+      const walk = (conds: RepresentationCondition[] | undefined) => {
+        for (const c of conds ?? []) {
+          // Groups are structural containers — always allowed; check their children.
+          if (c.type === 'group') {
+            walk(c.conditions);
+          } else if (!allowed.has(c.type)) {
+            offending.add(c.type);
+          }
+        }
+      };
+      walk(startRules.when);
+      for (const type of offending) {
+        errs.push(unsupported(`a \`${type}\` start condition`));
+      }
     }
   }
 
