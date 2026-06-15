@@ -24,19 +24,16 @@ setAutoFreeze(false);
 // consumers read them via `useBuilderMethods()`.
 
 // Save FSM — discriminated union tracking the auto-save lifecycle.
-// An explicit FSM, not a boolean. A single `isLoading` overloaded with
-// two semantics (loading initial content vs saving in flight) and no
-// in-flight tracking gives three race classes: edit-during-save (stale
-// snapshot overwrites new edit on response), multiple concurrent saves
-// (no guard), and unmounted-during-save warnings. This FSM separates
-// "saving" out of isLoading and adds a per-save identity check (older
-// responses are ignored when a newer save has started). HTTP-level abort
-// isn't attempted — server writes are idempotent, so letting older
-// requests complete and discarding their responses is the correct semantic.
+// An explicit FSM, not a boolean. A single `isLoading` overloaded with two
+// semantics (loading initial content vs saving in flight) and no in-flight
+// tracking gives two race classes: edit-during-save (stale snapshot overwrites
+// new edit on response) and unmounted-during-save warnings. This FSM separates
+// "saving" out of isLoading. Saves themselves are serialized in useSaveContent
+// (one request in flight at a time), so there's no concurrent-save guard here.
 export type SaveState =
   | { status: 'idle' }
   | { status: 'dirty' }
-  | { status: 'saving'; saveId: number }
+  | { status: 'saving' }
   | { status: 'saved'; savedAt: number }
   | { status: 'error'; error: Error }
   // Terminal for this mount: the server refused the write because the

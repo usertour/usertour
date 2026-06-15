@@ -15,8 +15,9 @@ export interface UseAutoSaveReturn {
 }
 
 // Auto-save driver. Subscribes to currentVersion + backupVersion diff.
-// On dirty → transitions saveState to 'dirty' and triggers a save
-// (race-safe via the per-save identity check inside saveContent).
+// On dirty → transitions saveState to 'dirty' and triggers a save (saves are
+// serialized inside saveContent, so rapid edits never overlap into a request
+// race; see useSaveContent).
 //
 // Per-type editors can register an `autoSaveValidator` predicate that
 // runs before each auto-save cycle. A veto keeps saveState = 'dirty'

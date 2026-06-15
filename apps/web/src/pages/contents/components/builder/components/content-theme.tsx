@@ -2,7 +2,7 @@ import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { BUILDER_Z } from '@usertour/constants';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { Theme } from '@usertour/types';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ContentThemeProps {
@@ -15,7 +15,7 @@ interface ContentThemeProps {
 }
 
 export const ContentTheme = (props: ContentThemeProps) => {
-  const { themeId: initialValue, themeList, onChange, editUrl } = props;
+  const { themeId, themeList, onChange, editUrl } = props;
   const { t } = useTranslation();
 
   const themeOptions = useMemo(() => {
@@ -23,16 +23,11 @@ export const ContentTheme = (props: ContentThemeProps) => {
     return themeList ? [...defaultOption, ...themeList] : defaultOption;
   }, [themeList, t]);
 
-  const [themeId, setThemeId] = useState(initialValue ?? 'same');
-
-  const handleThemeChange = useCallback(
-    (value: string) => {
-      setThemeId(value);
-      onChange(value === 'same' ? undefined : value);
-    },
-    [onChange],
-  );
-
+  // Fully controlled — the select value mirrors the `themeId` prop (the
+  // current step's themeId) every render. No local shadow state: switching
+  // steps reflects the new step's theme instead of keeping the previous one's
+  // (the bug a useState(initialValue) seeded once at mount caused). 'same' is
+  // the sentinel for "inherit the flow theme", stored as undefined.
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
@@ -52,8 +47,8 @@ export const ContentTheme = (props: ContentThemeProps) => {
       <CompactSelect
         icon={<RiPaletteLine className="opacity-70" />}
         options={themeOptions.map(({ id, name }) => ({ value: id, label: name }))}
-        value={themeId}
-        onChange={handleThemeChange}
+        value={themeId ?? 'same'}
+        onChange={(value) => onChange(value === 'same' ? undefined : value)}
         placeholder={t('contentBuilder.shared.theme.sameAsFlow')}
         className="w-full bg-surface dark:bg-surface-raised/50 shadow-none hover:bg-muted"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
