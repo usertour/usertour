@@ -15,7 +15,6 @@ import {
 import { type ApiToken, useListApiTokensQuery } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { ConnectedApps } from './components/connected-apps';
 import { CreateDialog } from './components/create-dialog';
 import { RowActions } from './components/row-actions';
 import { SCOPE_RESOURCES, summarizeScopes } from './components/scopes';
@@ -137,38 +136,35 @@ export const PersonalApiKeysList = () => {
   ];
 
   return (
-    <>
-      <ResourceListPage<ApiToken>
-        title={t('settings.personalApiKeys.title')}
-        actions={<NewKeyButton onSuccess={refetch} />}
-        description={
-          <>
-            {t('settings.personalApiKeys.description')}
-            <br />
-            <Trans
-              i18nKey="settings.personalApiKeys.descriptionOnce"
-              components={{ strong: <span className="font-bold text-foreground" /> }}
-            />
-            <br />
-            <a
-              href="https://docs.usertour.io/api-reference/introduction"
-              className="text-primary"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span>{t('settings.personalApiKeys.headerDocs')}</span>
-              <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
-            </a>
-          </>
-        }
-        columns={columns}
-        rows={apiTokens}
-        loading={loading}
-        empty={t('settings.personalApiKeys.empty')}
-        getRowKey={(token) => token.id}
-      />
-      <ConnectedApps />
-    </>
+    <ResourceListPage<ApiToken>
+      title={t('settings.personalApiKeys.title')}
+      actions={<NewKeyButton onSuccess={refetch} />}
+      description={
+        <>
+          {t('settings.personalApiKeys.description')}
+          <br />
+          <Trans
+            i18nKey="settings.personalApiKeys.descriptionOnce"
+            components={{ strong: <span className="font-bold text-foreground" /> }}
+          />
+          <br />
+          <a
+            href="https://docs.usertour.io/api-reference/introduction"
+            className="text-primary"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span>{t('settings.personalApiKeys.headerDocs')}</span>
+            <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
+          </a>
+        </>
+      }
+      columns={columns}
+      rows={apiTokens}
+      loading={loading}
+      empty={t('settings.personalApiKeys.empty')}
+      getRowKey={(token) => token.id}
+    />
   );
 };
 

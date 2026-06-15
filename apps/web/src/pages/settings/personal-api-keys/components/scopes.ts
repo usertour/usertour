@@ -87,10 +87,14 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
 export const levelOf = (scopes: string[], resource: ScopeResource): ScopeLevel => {
   const has = (cap: string) => scopes.includes(cap);
   const writeCaps = resource.write ?? [];
-  if (writeCaps.length > 0 && resource.read.every(has) && writeCaps.every(has)) {
+  // Any write capability ⇒ "write": personal keys always hold the complete write
+  // set (the picker sets read/write as a unit), but an OAuth grant may hold a
+  // partial set (e.g. only `content:create`) — it can still write, so report it
+  // honestly instead of downgrading to "read".
+  if (writeCaps.some(has)) {
     return 'write';
   }
-  if (resource.read.every(has)) {
+  if (resource.read.some(has)) {
     return 'read';
   }
   return 'none';

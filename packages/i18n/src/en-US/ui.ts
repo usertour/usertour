@@ -243,6 +243,7 @@ const translations = {
         subscription: 'Subscription',
         account: 'Profile',
         'personal-api-keys': 'Personal API keys',
+        'connected-apps': 'Connected apps',
         api: 'API',
         integrations: 'Integrations',
       },

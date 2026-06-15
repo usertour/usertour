@@ -8,6 +8,7 @@ import {
   RiKey2Line,
   RiKeyLine,
   RiPaletteLine,
+  RiPlugLine,
   RiProjectorLine,
   RiPuzzleLine,
   RiTeamLine,
@@ -39,6 +40,7 @@ export type SettingsSectionKey =
   | 'subscription'
   | 'account'
   | 'personal-api-keys'
+  | 'connected-apps'
   | 'api'
   | 'integrations';
 
@@ -220,6 +222,17 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     surface: 'muted',
     component: lazy(() =>
       import('./account').then((module) => ({ default: module.SettingsAccountDetail })),
+    ),
+  },
+  {
+    key: 'connected-apps',
+    title: 'Connected apps',
+    icon: <RiPlugLine className={ICON_CLASS} />,
+    // Account-level OAuth grants (MCP connectors / AI agents) — always visible.
+    group: 'account',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() =>
+      import('./connected-apps').then((m) => ({ default: m.ConnectedAppsList })),
     ),
   },
   {

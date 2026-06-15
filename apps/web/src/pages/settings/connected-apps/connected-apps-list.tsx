@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
-import { summarizeScopes } from './scopes';
+import { summarizeScopes } from '../personal-api-keys/components/scopes';
 
 const RevokeButton = ({ id, name, onDone }: { id: string; name: string; onDone: () => void }) => {
   const { t } = useTranslation();
@@ -43,7 +43,7 @@ const RevokeButton = ({ id, name, onDone }: { id: string; name: string; onDone: 
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+          <AlertDialogCancel>{t('settings.common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             disabled={loading}
             onClick={async () => {
@@ -60,11 +60,12 @@ const RevokeButton = ({ id, name, onDone }: { id: string; name: string; onDone: 
 };
 
 /**
- * Account-level "Connected apps": OAuth grants (MCP connectors) the user has
- * authorized. Each shows the app, the project it can act in, the access granted,
- * and a Revoke that kills its tokens immediately.
+ * Account-level "Connected apps": OAuth grants (MCP connectors / AI agents) the
+ * user has authorized. Each shows the app, the project it can act in, the access
+ * granted, and a Revoke that kills its tokens immediately. Distinct from Personal
+ * API keys (secrets you mint) — these are third-party authorizations.
  */
-export const ConnectedApps = () => {
+export const ConnectedAppsList = () => {
   const { t } = useTranslation();
   const { connections, loading, refetch } = useOAuthConnectionsQuery(SHARED_CACHE_QUERY_OPTIONS);
 
@@ -126,4 +127,4 @@ export const ConnectedApps = () => {
   );
 };
 
-ConnectedApps.displayName = 'ConnectedApps';
+ConnectedAppsList.displayName = 'ConnectedAppsList';

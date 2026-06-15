@@ -238,6 +238,7 @@ const translations = {
         subscription: '订阅',
         account: '个人资料',
         'personal-api-keys': '个人 API 密钥',
+        'connected-apps': '已连接的应用',
         api: 'API',
         integrations: '集成',
       },
