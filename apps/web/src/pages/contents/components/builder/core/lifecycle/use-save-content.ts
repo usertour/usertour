@@ -45,25 +45,30 @@ const isVersionConflictError = (error: unknown): boolean => {
 // when the save failed — callers like the leave guard use this to decide
 // whether it's safe to navigate away.
 //
-// Two race protections:
-//   - In-flight identity: a monotonic saveCounterRef tracks the latest
-//     dispatched save; an older response is discarded once a newer save started.
-//   - Edit-during-save: re-baseline overwrites currentVersion ONLY if the draft
-//     is still the snapshot we dispatched. If edits landed mid-save (notably the
-//     validator-veto path, which doesn't trigger a new save), we keep the draft
-//     and only re-baseline backupVersion — the draft stays dirty vs the new
-//     baseline and auto-save persists it next. (The server id for new steps is
-//     backfilled on that next save, upserted by cvid.)
+// Saves are SERIALIZED (see saveChainRef): never two updateContentVersion
+// requests in flight at once. The save carries backupVersion.updatedAt as the
+// optimistic-lock baseline; two concurrent saves would both carry the same
+// baseline (the second dispatched before the first re-baselines), so the
+// second would be rejected as a self-inflicted version conflict (E0050).
+// Chaining keeps them strictly ordered — each link reads the latest draft +
+// freshly re-baselined updatedAt, so a queued run is either a no-op (draft
+// already equals backup) or a clean save against the new baseline.
+//
+// Edit-during-save: re-baseline overwrites currentVersion ONLY if the draft is
+// still the snapshot we dispatched. If edits landed mid-save, we keep the draft
+// and only re-baseline backupVersion — the draft stays dirty vs the new
+// baseline and auto-save persists it next (server ids for new steps are
+// backfilled on that next save, upserted by cvid).
 export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn => {
   const { store } = args;
   const { toast } = useToast();
   const { t } = useTranslation();
   const { invoke: updateVersion } = useUpdateContentVersionMutation();
 
-  // Monotonic counter for in-flight save identity. Per-Provider-mount.
-  const saveCounterRef = useRef(0);
+  // Tail of the serialized save chain. Per-Provider-mount.
+  const saveChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
 
-  const saveContent = useCallback<BuilderProviderMethods['saveContent']>(async () => {
+  const runSave = useCallback(async (): Promise<boolean> => {
     const { currentVersion, backupVersion } = store.getState();
     if (!currentVersion || !backupVersion || isEqual(currentVersion, backupVersion)) {
       return true; // nothing to save — safe to leave
@@ -75,8 +80,7 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
 
     // Reference snapshot of the dispatched draft (see header comment).
     const dispatched = currentVersion;
-    const saveId = ++saveCounterRef.current;
-    store.getState().transitionSaveState({ status: 'saving', saveId });
+    store.getState().transitionSaveState({ status: 'saving' });
 
     // Keep cvid (the server's upsert key) and id; strip only the server-managed
     // timestamps. A new step has a cvid but no id — the server creates it.
@@ -100,11 +104,6 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
         // this save is rejected (E0050) instead of rolling their work back.
         backupVersion.updatedAt,
       );
-      // A newer save started while this one was in flight — it owns the final
-      // transition; treat ours as a no-op success.
-      if (saveId !== saveCounterRef.current) {
-        return true;
-      }
       if (saved) {
         const state = store.getState();
         // Overwrite the draft only if it wasn't edited during the save — else
@@ -128,9 +127,6 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       });
       return false;
     } catch (error) {
-      if (saveId !== saveCounterRef.current) {
-        return true;
-      }
       // Version conflict is terminal — no toast: the conflict dialog owns
       // the messaging and the exit (refresh), and auto-save stops retrying.
       if (isVersionConflictError(error)) {
@@ -147,6 +143,16 @@ export const useSaveContent = (args: UseSaveContentArgs): UseSaveContentReturn =
       return false;
     }
   }, [updateVersion, store, toast, t]);
+
+  // Queue this save behind any in-flight one so requests never overlap. The
+  // `.catch` keeps a failed/rejected link from breaking the chain for the
+  // next save; runSave already turns failures into `false` + saveState, so the
+  // catch only guards against unexpected throws.
+  const saveContent = useCallback<BuilderProviderMethods['saveContent']>(() => {
+    const next = saveChainRef.current.catch(() => false).then(() => runSave());
+    saveChainRef.current = next;
+    return next;
+  }, [runSave]);
 
   return { saveContent };
 };
