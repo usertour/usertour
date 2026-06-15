@@ -38,9 +38,6 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'content.unpublishedContentVersion': W,
   'content.deleteContent': W,
   'content.listContentVersions': R,
-  'content.addContentSteps': W,
-  'content.addContentStep': W,
-  'content.updateContentStep': W,
   'content.findManyVersionLocations': R,
   'content.updateVersionLocationData': W,
   'content.queryContent': R,
@@ -127,8 +124,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 93 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(93);
+  it('snapshot covers exactly the same 90 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(90);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 
