@@ -203,59 +203,33 @@ export class ContentService {
 
   async updateContentVersion(input: VersionUpdateInput) {
     const { versionId, content, expectedUpdatedAt } = input;
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      return;
-    }
-
     const { steps, ...versionFields } = content;
 
-    // No steps in the payload → scalar-only update (detail's path:
-    // themeId / config / data / scheduledAt). Still return steps via include:
-    // the shared document requests `steps`, so omitting them here makes Apollo
-    // normalize Version.steps to null and wipe the step list from the cache.
-    if (!steps) {
-      // Honor the optimistic lock here too: detail's path normally omits
-      // expectedUpdatedAt (field-level last-write-wins), but when it's sent the
-      // same atomic conditional-write applies — a 0-row match means someone
-      // saved meanwhile, so throw instead of overwriting.
-      if (expectedUpdatedAt) {
-        const writeResult = await this.prisma.version.updateMany({
-          where: { id: versionId, updatedAt: expectedUpdatedAt },
-          data: versionFields,
-        });
-        if (writeResult.count === 0) {
-          throw new VersionConflictError();
-        }
-        return await this.prisma.version.findUnique({
-          where: { id: versionId },
-          include: { steps: { orderBy: { sequence: 'asc' } } },
-        });
-      }
-      return await this.prisma.version.update({
-        where: { id: versionId },
-        data: versionFields,
-        include: { steps: { orderBy: { sequence: 'asc' } } },
-      });
-    }
-
     // Contract: when steps are sent (the builder's whole-version save) each one
-    // must carry a front-end cvid — it's the upsert key.
-    if (steps.some((step) => !step.cvid)) {
+    // must carry a front-end cvid — it's the upsert key. Cheap to validate
+    // before opening the transaction.
+    if (steps?.some((step) => !step.cvid)) {
       throw new ParamsError();
     }
 
-    // Whole-version save: write the scalar fields AND upsert the entire step
-    // list by cvid, in one transaction; return the full version so the client
-    // re-baselines from the response (no follow-up fetch).
     return await this.prisma.$transaction(async (tx) => {
-      // Optimistic lock, opt-in per call: the builder's whole-version save
-      // sends the updatedAt it last baselined from. Enforce it atomically as a
-      // conditional write — a mismatch (someone else saved meanwhile) makes the
-      // updateMany match 0 rows, so we throw instead of blind-overwriting their
-      // work. Must live inside the transaction and be the write itself; a
-      // separate findUnique check before the write is a TOCTOU race that two
-      // near-simultaneous saves both pass. detail's scalar-only updates omit
-      // expectedUpdatedAt (field-level last-write-wins is acceptable there).
+      // Editability guard, atomic with the write. Row-locks the Content row so a
+      // concurrent publish / restore — both mutate that same row — is serialized
+      // against this write; we then read their committed editedVersionId /
+      // per-environment published state rather than a pre-write snapshot. The
+      // version-row optimistic lock below only guards the row's own updatedAt,
+      // never this relational state, so the pre-transaction
+      // contentVersionIsEditable() was a TOCTOU: a publish/restore landing
+      // between check and write slipped through and wrote a published or
+      // already-forked version.
+      await this.assertVersionEditableLocked(tx, versionId);
+
+      // Write the version's scalar fields (themeId / config / data / scheduledAt).
+      // Optimistic lock is opt-in per call: the builder's whole-version save sends
+      // the updatedAt it last baselined from, enforced atomically as a conditional
+      // write — a 0-row match means someone saved meanwhile, so throw instead of
+      // blind-overwriting their work. detail's scalar updates omit it (field-level
+      // last-write-wins is acceptable there).
       if (expectedUpdatedAt) {
         const writeResult = await tx.version.updateMany({
           where: { id: versionId, updatedAt: expectedUpdatedAt },
@@ -268,6 +242,20 @@ export class ContentService {
         await tx.version.update({ where: { id: versionId }, data: versionFields });
       }
 
+      // No steps in the payload → scalar-only update (detail's path). Still
+      // return steps via include: the shared document requests `steps`, so
+      // omitting them makes Apollo normalize Version.steps to null and wipe the
+      // step list from the cache.
+      if (!steps) {
+        return await tx.version.findUnique({
+          where: { id: versionId },
+          include: { steps: { orderBy: { sequence: 'asc' } } },
+        });
+      }
+
+      // Whole-version save: upsert the entire step list by cvid so create /
+      // update / delete / reorder all ride this one call; return the full
+      // version so the client re-baselines from the response (no follow-up fetch).
       const existing = await tx.step.findMany({ where: { versionId } });
       const incomingCvids = new Set(steps.map((step) => step.cvid));
 
@@ -630,6 +618,37 @@ export class ContentService {
     }
 
     return true;
+  }
+
+  // Transaction-scoped twin of contentVersionIsEditable(): same "is this version
+  // still the content's edit version, and not published?" check, but it takes a
+  // FOR UPDATE row lock on the Content row first. publishedContentVersion and
+  // restoreContentVersion both mutate that same Content row inside their own
+  // transactions, so the lock serializes a concurrent save against them — once we
+  // hold it, the editedVersionId / contentOnEnvironments we read are their
+  // committed state, not a stale pre-write snapshot. Use this (not the unlocked
+  // check) for any write that must not land on a published or forked version.
+  private async assertVersionEditableLocked(tx: Prisma.TransactionClient, versionId: string) {
+    const version = await tx.version.findUnique({ where: { id: versionId, deleted: false } });
+    if (!version) {
+      throw new ParamsError();
+    }
+    // The serialization point: FOR UPDATE blocks until any in-flight
+    // publish/restore on this Content row commits (or makes them block on us).
+    await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${version.contentId} FOR UPDATE`;
+    const contentItem = await tx.content.findUnique({
+      where: { id: version.contentId, deleted: false },
+      include: { contentOnEnvironments: true },
+    });
+    if (!contentItem) {
+      throw new ParamsError();
+    }
+    const isPublished = contentItem.contentOnEnvironments?.some(
+      (env) => env.published && env.publishedVersionId === versionId,
+    );
+    if (contentItem.editedVersionId !== versionId || isPublished) {
+      throw new VersionNotEditableError();
+    }
   }
 
   async findManyVersionLocations(versionId: string) {
