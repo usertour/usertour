@@ -189,7 +189,7 @@ describe('API v2 /content-versions (e2e)', () => {
     );
     expect(res.status).toBe(200);
     const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'cv-1');
-    expect(step.target).toEqual({ by: 'selector', selector: '.cta' });
+    expect(step.target).toEqual({ selector: '.cta' });
     expect(step.placement).toMatchObject({ side: 'bottom', align: 'center' });
     expect(step.width).toBe(320);
     expect(step.content).toEqual([
@@ -323,7 +323,7 @@ describe('API v2 /content-versions (e2e)', () => {
           key: 'pricing',
           name: 'Pricing',
           type: 'tooltip',
-          target: { by: 'selector', selector: '.price' },
+          target: { selector: '.price' },
           content: [
             { type: 'text', markdown: 'Plans' },
             { type: 'button', text: 'Back', actions: [{ type: 'goto_step', step: 'welcome' }] },
@@ -389,7 +389,7 @@ describe('API v2 /content-versions (e2e)', () => {
         {
           name: 'Tour step',
           type: 'tooltip',
-          target: { by: 'selector', selector: '.start-btn' },
+          target: { selector: '.start-btn' },
           placement: { side: 'bottom', align: 'center' },
           width: 360,
           content: [
@@ -444,7 +444,7 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(r.status).toBe(200);
 
     const step = r.body.steps.find((s: { name: string }) => s.name === 'Tour step');
-    expect(step.target).toEqual({ by: 'selector', selector: '.start-btn' });
+    expect(step.target).toEqual({ selector: '.start-btn' });
     expect(step.placement).toMatchObject({ side: 'bottom', align: 'center' });
     expect(step.width).toBe(360);
     expect(step.content[0]).toMatchObject({

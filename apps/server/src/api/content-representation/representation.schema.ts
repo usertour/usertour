@@ -11,12 +11,27 @@ import { ApiObjectType } from '../shared/object-type';
  */
 
 // ── Targeting ──────────────────────────────────────────────────────────────
-// The internal "auto" selectors fingerprint is NOT authorable; only selector /
-// text are modeled (an auto-only target decompiles to undefined + hasUnsupported).
-export const representationTarget = z.union([
-  z.object({ by: z.literal('selector'), selector: z.string(), nth: z.number().optional() }),
-  z.object({ by: z.literal('text'), text: z.string() }),
-]);
+// A target is a CSS `selector` (required), optionally narrowed by the element's
+// visible `text`, with `nth` to disambiguate when several elements match. This
+// mirrors the only runtime path that resolves an API-authored target (finderV2's
+// `manual` branch: querySelector + optional innerText check + nth). The internal
+// "auto" selectors fingerprint is NOT authorable — an auto-only target decompiles
+// to undefined + hasUnsupported.
+export const representationTarget = z.object({
+  selector: z.string().min(1).describe('A stable CSS selector for the element in your app.'),
+  text: z
+    .string()
+    .optional()
+    .describe(
+      'Optional visible text the matched element must contain — narrows the selector match (selector + text). Omit to match by selector alone.',
+    ),
+  nth: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe('0-based index of the match to use when the selector resolves to multiple elements.'),
+});
 export type RepresentationTarget = z.infer<typeof representationTarget>;
 
 // ── Placement (simplified StepSettings) ──────────────────────────────────────

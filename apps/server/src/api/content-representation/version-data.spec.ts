@@ -9,7 +9,7 @@ describe('version-data builder settings round-trip', () => {
     const rep = {
       style: 'icon',
       zIndex: 50,
-      target: { by: 'selector', selector: '.x' },
+      target: { selector: '.x' },
       tooltip: { reference: 'launcher', content: [] },
     };
     const internal: any = compileVersionData('launcher', rep, undefined, ids);

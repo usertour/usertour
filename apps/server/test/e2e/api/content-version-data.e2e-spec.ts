@@ -250,7 +250,7 @@ describe('API v2 version.data codec (e2e)', () => {
           data: {
             style: 'icon',
             icon: { source: 'builtin', type: 'rocket' },
-            target: { by: 'selector', selector: '.launch-here' },
+            target: { selector: '.launch-here' },
             tooltip: {
               placement: { side: 'bottom', align: 'center', sideOffset: 8 },
               width: 320,
@@ -275,7 +275,7 @@ describe('API v2 version.data codec (e2e)', () => {
 
       const d = (await readData(launcher, token)).body.data;
       expect(d).toMatchObject({ style: 'icon', icon: { source: 'builtin', type: 'rocket' } });
-      expect(d.target).toEqual({ by: 'selector', selector: '.launch-here' });
+      expect(d.target).toEqual({ selector: '.launch-here' });
       expect(d.tooltip).toMatchObject({
         placement: { side: 'bottom', align: 'center', sideOffset: 8 },
         width: 320,

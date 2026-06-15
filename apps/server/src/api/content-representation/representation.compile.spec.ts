@@ -192,7 +192,7 @@ describe('compileStep → decompileStep round-trip', () => {
       name: 'Welcome',
       type: 'tooltip',
       sequence: 0,
-      target: { by: 'selector' as const, selector: '.cta' },
+      target: { selector: '.cta' },
       placement: { side: 'bottom' as const, align: 'center' as const },
       width: 320,
       content: [
@@ -219,7 +219,7 @@ describe('compileStep → decompileStep round-trip', () => {
       trigger: compiled.trigger,
     });
 
-    expect(back.target).toEqual({ by: 'selector', selector: '.cta' });
+    expect(back.target).toEqual({ selector: '.cta' });
     expect(back.placement).toMatchObject({ side: 'bottom', align: 'center' });
     expect(back.width).toBe(320);
     expect(back.content[0]).toMatchObject({ type: 'text', markdown: 'Hi **there**' });
@@ -234,7 +234,7 @@ describe('compileStep → decompileStep round-trip', () => {
     const parsed = representationStepInput.parse({
       name: 'Click the CTA',
       type: 'tooltip',
-      target: { by: 'selector', selector: '.cta' },
+      target: { selector: '.cta' },
       explicitCompletionStep: true,
       onClick: [{ type: 'goto_step', step: 'next' }],
     });
@@ -387,39 +387,24 @@ describe('target field-merge on write-back', () => {
         precision: 'stricter',
       },
     };
-    const compiled: any = compileStep(
-      stepRep({ by: 'selector', selector: '.cta' }),
-      existing as never,
-      ids,
-    );
+    const compiled: any = compileStep(stepRep({ selector: '.cta' }), existing as never, ids);
     expect(compiled.target.actions).toEqual([{ type: 'step-goto', data: { stepCvid: 'x' } }]);
     expect(compiled.target.customSelector).toBe('.cta');
     expect(compiled.target.precision).toBe('stricter'); // unused-but-preserved fingerprint
   });
 
-  it('keeps target.content when the selector is unchanged', () => {
-    const existing = {
-      cvid: 'cv1',
-      target: { type: 'manual', customSelector: '.cta', content: 'Hello' },
-    };
-    const compiled: any = compileStep(
-      stepRep({ by: 'selector', selector: '.cta' }),
-      existing as never,
-      ids,
-    );
+  it('writes target.content from the representation `text` (selector + text)', () => {
+    const compiled: any = compileStep(stepRep({ selector: '.cta', text: 'Hello' }), undefined, ids);
+    expect(compiled.target.customSelector).toBe('.cta');
     expect(compiled.target.content).toBe('Hello');
   });
 
-  it('drops stale target.content when the selector changes (would reject the new element)', () => {
+  it('drops stale target.content when the representation omits `text`', () => {
     const existing = {
       cvid: 'cv1',
       target: { type: 'manual', customSelector: '.old', content: 'Old text' },
     };
-    const compiled: any = compileStep(
-      stepRep({ by: 'selector', selector: '.new' }),
-      existing as never,
-      ids,
-    );
+    const compiled: any = compileStep(stepRep({ selector: '.new' }), existing as never, ids);
     expect(compiled.target.customSelector).toBe('.new');
     expect(compiled.target.content).toBeUndefined();
   });
@@ -617,7 +602,7 @@ describe('target onClick (click-to-advance)', () => {
     name: 'X',
     type: 'tooltip',
     sequence: 0,
-    target: { by: 'selector' as const, selector: '.cta' },
+    target: { selector: '.cta' },
     content: [{ object: 'block' as const, type: 'text' as const, markdown: 'Hi' }],
     onClick: [{ type: 'goto_step' as const, step: 's2' }],
   };

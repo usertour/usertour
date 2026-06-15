@@ -27,7 +27,7 @@ Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\`
 Paragraphs; \`# \`/\`## \` headings (h1/h2 only — NO h3+); \`-\`/\`*\` and \`1.\` lists; \`\`\` code fences. Inline: \`**bold**\`, \`*italic*\`, \`[text](url)\`, and \`{{ attribute_code | default: "x" }}\` for user attributes (list codes with \`list_attribute_definitions\`).
 
 ## Targets
-A \`target\` is a CSS selector: \`{ "by": "selector", "selector": "[data-tour='x']" }\` (or \`{ "by": "text", "text": "Save" }\`). Pick a stable selector in the customer's app.
+A \`target\` points at an element by CSS selector: \`{ "selector": "[data-tour='x']" }\`. Pick a stable selector in the customer's app. Optionally add \`text\` to require the element's visible text (\`{ "selector": "button", "text": "Save" }\`), and \`nth\` (0-based) to choose among multiple matches.
 
 ## Start rules & frequency
 \`startRules.frequency.mode\`: \`once\` (single show) | \`multiple\` (up to N per window) | \`unlimited\` (every match). \`multiple\`/\`unlimited\` use an \`every\` window (\`{ times?, duration, unit }\`); \`once\` ignores it.

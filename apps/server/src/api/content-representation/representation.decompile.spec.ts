@@ -162,12 +162,27 @@ describe('decompileStep', () => {
       id: 's1',
       cvid: 'cv1',
       type: 'tooltip',
-      target: { by: 'selector', selector: '.cta', nth: 1 },
+      target: { selector: '.cta', nth: 1 },
       placement: { side: 'bottom', align: 'center', sideOffset: 8 },
       width: 320,
       skippable: true,
     });
     expect(out.content).toHaveLength(1);
+  });
+
+  it('decompiles a manual target with a text check into selector + text', () => {
+    const step = {
+      id: 's1b',
+      cvid: 'cv1b',
+      name: 'Save',
+      type: 'tooltip',
+      sequence: 0,
+      data: [],
+      target: { type: 'manual', customSelector: 'button', content: 'Save' },
+      setting: {},
+    };
+    const out = decompileStep(step);
+    expect(out.target).toEqual({ selector: 'button', text: 'Save' });
   });
 
   it('flags a tooltip whose only target is the auto fingerprint as unsupported', () => {
