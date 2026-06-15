@@ -735,7 +735,7 @@ const translations = {
     auditLog: {
       title: 'Audit log',
       description:
-        'Who changed or deleted what in this project, when, and from which surface (API vs MCP).',
+        'Who changed or deleted what in this project, when, and from which surface (web, API, or MCP).',
       empty: 'No audit log entries yet.',
       endOfLog: 'End of log.',
       columns: {

@@ -3,14 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
-import {
-  Alert,
-  AlertDescription,
-  Badge,
-  Button,
-  ResourceListPage,
-  type ResourceTableColumn,
-} from '@usertour/ui';
+import { Badge, Button, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { RiErrorWarningLine, SpinnerIcon } from '@usertour/icons';
 import { type AuditLog, useGetProjectConfigQuery, useListAuditLogsQuery } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
@@ -25,9 +18,9 @@ const RetentionBanner = ({ days, projectId }: { days: number; projectId: string 
   const { t } = useTranslation();
   const navigate = useNavigate();
   return (
-    <Alert className="border-primary/5 bg-primary/10">
-      <RiErrorWarningLine className="h-4 w-4 !text-primary" />
-      <AlertDescription>
+    <div className="flex items-center gap-2 rounded-lg border border-primary/5 bg-primary/10 px-4 py-3 text-sm">
+      <RiErrorWarningLine className="h-4 w-4 shrink-0 text-primary" />
+      <span>
         {t('settings.auditLog.retention.windowed', { days })}{' '}
         <Button
           variant="link"
@@ -36,8 +29,8 @@ const RetentionBanner = ({ days, projectId }: { days: number; projectId: string 
         >
           {t('settings.auditLog.retention.upgrade')}
         </Button>
-      </AlertDescription>
-    </Alert>
+      </span>
+    </div>
   );
 };
 

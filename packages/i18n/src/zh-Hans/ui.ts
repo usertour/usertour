@@ -703,7 +703,7 @@ const translations = {
     },
     auditLog: {
       title: '审计日志',
-      description: '谁在本项目里改动或删除了什么、何时、来自哪个写入面(API 还是 MCP)。',
+      description: '谁在本项目里改动或删除了什么、何时、来自哪个写入面(Web、API 或 MCP)。',
       empty: '暂无审计日志。',
       endOfLog: '没有更多记录了。',
       columns: {
