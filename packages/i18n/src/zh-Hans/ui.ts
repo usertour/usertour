@@ -734,8 +734,7 @@ const translations = {
         },
       },
       retention: {
-        windowed: '仅显示最近 {{days}} 天。',
-        upgrade: '升级 Business 查看完整历史',
+        tooltip: '仅显示最近 {{days}} 天,升级 Business 查看完整历史。',
       },
     },
     personalApiKeys: {

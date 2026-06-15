@@ -1,10 +1,17 @@
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
-import { Badge, Button, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
-import { RiErrorWarningLine, SpinnerIcon } from '@usertour/icons';
+import {
+  Badge,
+  ResourceListPage,
+  type ResourceTableColumn,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour/ui';
+import { RiSparklingFill, SpinnerIcon } from '@usertour/icons';
 import { type AuditLog, useGetProjectConfigQuery, useListAuditLogsQuery } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
@@ -13,24 +20,24 @@ import { AuditDetailDialog } from './components/audit-detail-dialog';
 import { AuditLogUpsell } from './components/audit-log-upsell';
 import { actorLabel, resourceLabel } from './format';
 
-/** Shown above the list on plans with a limited audit window (e.g. Growth = 7 days). */
-const RetentionBanner = ({ days, projectId }: { days: number; projectId: string | undefined }) => {
+/**
+ * Premium marker next to the title on plans with a limited audit window (Growth =
+ * 7 days). Reuses the app's "enterprise feature" sparkle + tooltip (see the 2FA
+ * settings) — informative, not naggy. Business+ (unlimited) shows nothing.
+ */
+const RetentionMarker = ({ days }: { days: number }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-primary/5 bg-primary/10 px-4 py-3 text-sm">
-      <RiErrorWarningLine className="h-4 w-4 shrink-0 text-primary" />
-      <span>
-        {t('settings.auditLog.retention.windowed', { days })}{' '}
-        <Button
-          variant="link"
-          className="inline h-auto p-0 font-normal"
-          onClick={() => navigate(`/project/${projectId}/settings/billing`)}
-        >
-          {t('settings.auditLog.retention.upgrade')}
-        </Button>
-      </span>
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger className="inline-flex cursor-default">
+          <RiSparklingFill className="h-5 w-5 text-indigo-500" aria-hidden="true" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          {t('settings.auditLog.retention.tooltip', { days })}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
@@ -122,7 +129,16 @@ export const AuditLogList = () => {
   return (
     <>
       <ResourceListPage<AuditLog>
-        title={t('settings.auditLog.title')}
+        title={
+          entitled && retentionDays > 0 ? (
+            <span className="inline-flex items-center gap-1.5">
+              {t('settings.auditLog.title')}
+              <RetentionMarker days={retentionDays} />
+            </span>
+          ) : (
+            t('settings.auditLog.title')
+          )
+        }
         description={t('settings.auditLog.description')}
         columns={columns}
         rows={auditLogs}
@@ -130,11 +146,6 @@ export const AuditLogList = () => {
         empty={t('settings.auditLog.empty')}
         getRowKey={(log) => log.id}
         onRowClick={setSelected}
-        toolbar={
-          entitled && retentionDays > 0 ? (
-            <RetentionBanner days={retentionDays} projectId={project?.id} />
-          ) : undefined
-        }
         footer={
           <div ref={sentryRef} className="flex h-10 items-center justify-center">
             {loadingMore && <SpinnerIcon className="h-5 w-5 animate-spin text-primary" />}

@@ -767,8 +767,7 @@ const translations = {
         },
       },
       retention: {
-        windowed: 'Showing the last {{days}} days.',
-        upgrade: 'Upgrade to Business for full history',
+        tooltip: 'Showing the last {{days}} days. Upgrade to Business for full history.',
       },
     },
     personalApiKeys: {
