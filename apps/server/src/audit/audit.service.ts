@@ -68,8 +68,21 @@ export class AuditService {
     if (query?.source) where.source = query.source;
     if (query?.environmentId) where.environmentId = query.environmentId;
     if (query?.actorUserId) where.actorUserId = query.actorUserId;
-    // Plan read-window: only rows newer than the cutoff are visible.
-    if (createdAtCutoff) where.createdAt = { gte: createdAtCutoff };
+    // createdAt bounds: the plan read-window cutoff and the user's "from" filter
+    // are both lower bounds — take the later one (the plan window is a hard
+    // ceiling the filter can't widen past). `to` is the upper bound.
+    const lowerBounds = [createdAtCutoff, query?.createdAtFrom].filter(
+      (d): d is Date => d instanceof Date,
+    );
+    const gte = lowerBounds.length
+      ? new Date(Math.max(...lowerBounds.map((d) => d.getTime())))
+      : undefined;
+    if (gte || query?.createdAtTo) {
+      where.createdAt = {
+        ...(gte ? { gte } : {}),
+        ...(query?.createdAtTo ? { lte: query.createdAtTo } : {}),
+      };
+    }
 
     return findManyCursorConnection(
       async (args) => {

@@ -1,5 +1,5 @@
-import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { endOfDay, format, startOfDay } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import {
@@ -12,11 +12,17 @@ import {
   TooltipTrigger,
 } from '@usertour/ui';
 import { RiSparklingFill, SpinnerIcon } from '@usertour/icons';
-import { type AuditLog, useGetProjectConfigQuery, useListAuditLogsQuery } from '@usertour/hooks';
+import {
+  type AuditLog,
+  type AuditLogFilter,
+  useGetProjectConfigQuery,
+  useListAuditLogsQuery,
+} from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { AuditDetailDialog } from './components/audit-detail-dialog';
+import { AuditLogFilters, type AuditFiltersValue } from './components/audit-log-filters';
 import { AuditLogUpsell } from './components/audit-log-upsell';
 import { actorLabel, resourceLabel } from './format';
 
@@ -59,8 +65,25 @@ export const AuditLogList = () => {
   // -1 = unlimited (Business+), >0 = a limited window (Growth = 7 days).
   const retentionDays = projectConfig?.auditLogRetentionDays ?? -1;
 
+  const [filters, setFilters] = useState<AuditFiltersValue>({});
+  const auditFilter: AuditLogFilter = useMemo(
+    () => ({
+      source: filters.source,
+      action: filters.action,
+      resourceType: filters.resourceType,
+      environmentId: filters.environmentId,
+      actorUserId: filters.actorUserId,
+      createdAtFrom: filters.dateRange?.from
+        ? startOfDay(filters.dateRange.from).toISOString()
+        : undefined,
+      createdAtTo: filters.dateRange?.to ? endOfDay(filters.dateRange.to).toISOString() : undefined,
+    }),
+    [filters],
+  );
+
   const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage } = useListAuditLogsQuery(
     project?.id,
+    auditFilter,
     { ...SHARED_CACHE_QUERY_OPTIONS, skip: !entitled },
   );
   const { t } = useTranslation();
@@ -140,6 +163,7 @@ export const AuditLogList = () => {
           )
         }
         description={t('settings.auditLog.description')}
+        toolbar={<AuditLogFilters value={filters} setValue={setFilters} />}
         columns={columns}
         rows={auditLogs}
         loading={loading || (configLoading && !projectConfig)}

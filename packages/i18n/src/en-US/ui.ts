@@ -769,6 +769,15 @@ const translations = {
       retention: {
         tooltip: 'Showing the last {{days}} days. Upgrade to Business for full history.',
       },
+      filters: {
+        allSources: 'All sources',
+        allActions: 'All actions',
+        allResources: 'All resources',
+        allEnvironments: 'All environments',
+        allActors: 'All actors',
+        environment: 'Environment',
+        clear: 'Clear filters',
+      },
     },
     personalApiKeys: {
       title: 'Personal API keys',

@@ -37,18 +37,33 @@ interface AuditLogEdge {
   node: AuditLog;
 }
 
+/** Optional server-side filters (all combine with AND). Dates are ISO strings. */
+export interface AuditLogFilter {
+  source?: string;
+  action?: string;
+  resourceType?: string;
+  resourceId?: string;
+  environmentId?: string;
+  actorUserId?: string;
+  createdAtFrom?: string;
+  createdAtTo?: string;
+}
+
 /**
  * Owner-only project audit log (Activity page). Infinite-scroll cursor
  * pagination: the cache-level merge is owned by the `auditLogs` typePolicy
  * (apps/web/src/apollo/type-policies) — no `updateQuery` here. Returns the
- * accumulated list plus `fetchNextPage` for the sentinel to call.
+ * accumulated list plus `fetchNextPage` for the sentinel to call. `filter`
+ * changes the `query` arg → a separate accumulator cell (keyArgs include query).
  */
 export const useListAuditLogsQuery = (
   projectId: string | undefined,
+  filter?: AuditLogFilter,
   options?: QueryHookOptions,
 ) => {
+  const query = filter && Object.values(filter).some((v) => v != null) ? filter : undefined;
   const { data, loading, networkStatus, refetch, fetchMore } = useQuery(ListAuditLogs, {
-    variables: { projectId, first: AUDIT_LOG_PAGE_SIZE, orderBy: AUDIT_LOG_ORDER },
+    variables: { projectId, first: AUDIT_LOG_PAGE_SIZE, orderBy: AUDIT_LOG_ORDER, query },
     skip: !projectId,
     notifyOnNetworkStatusChange: true,
     ...options,
@@ -74,6 +89,7 @@ export const useListAuditLogsQuery = (
       first: AUDIT_LOG_PAGE_SIZE,
       after,
       orderBy: AUDIT_LOG_ORDER,
+      query,
     }),
   });
 

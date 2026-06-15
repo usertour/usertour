@@ -736,6 +736,15 @@ const translations = {
       retention: {
         tooltip: '仅显示最近 {{days}} 天,升级 Business 查看完整历史。',
       },
+      filters: {
+        allSources: '全部来源',
+        allActions: '全部动作',
+        allResources: '全部资源',
+        allEnvironments: '全部环境',
+        allActors: '全部操作者',
+        environment: '环境',
+        clear: '清除筛选',
+      },
     },
     personalApiKeys: {
       title: '个人 API 密钥',

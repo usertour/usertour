@@ -20,4 +20,12 @@ export class AuditLogQuery {
 
   @Field(() => String, { nullable: true })
   actorUserId?: string;
+
+  /** Inclusive lower bound on createdAt (merged with the plan retention window). */
+  @Field(() => Date, { nullable: true })
+  createdAtFrom?: Date;
+
+  /** Inclusive upper bound on createdAt. */
+  @Field(() => Date, { nullable: true })
+  createdAtTo?: Date;
 }
