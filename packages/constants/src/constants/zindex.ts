@@ -4,6 +4,13 @@
 // these directly. The production widget has its own scale (WidgetZIndex).
 export const BUILDER_Z = {
   canvas: 10900, // preview widget on the canvas
+  // A backdropped tooltip lifts its surface to canvas+1 to sit above its backdrop
+  // curtain (which masks the preview at the canvas layer). Unlike modal/bubble —
+  // which drop to the page base layer so the editor overlays float above them —
+  // the tooltip can't, since its curtain is anchored to the canvas. So its
+  // in-canvas editor overlays (validation error tooltip, action popover) take a
+  // band just above the lifted surface. Kept below `panel` so the sidebar wins.
+  canvasOverlay: 10905,
   panel: 11000, // floating sidebar / inspector panels
   popover: 11001, // selects / popovers opened from a panel
   rulesDialog: 11002, // rules sub-dialog
