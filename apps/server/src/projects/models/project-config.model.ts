@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class ProjectConfigModel {
@@ -10,6 +10,10 @@ export class ProjectConfigModel {
 
   @Field()
   auditLogs: boolean;
+
+  /** Audit log read window: -1 = unlimited, 0 = none, N = last N days. */
+  @Field(() => Int)
+  auditLogRetentionDays: number;
 
   @Field()
   planType: string;

@@ -58,6 +58,7 @@ export class AuditService {
     query: AuditLogQuery | undefined,
     pagination: PaginationArgs | undefined,
     orderBy: AuditLogOrder | undefined,
+    createdAtCutoff?: Date,
   ) {
     const { first, last, before, after } = pagination ?? {};
     const where: Prisma.AuditLogWhereInput = { projectId };
@@ -67,6 +68,8 @@ export class AuditService {
     if (query?.source) where.source = query.source;
     if (query?.environmentId) where.environmentId = query.environmentId;
     if (query?.actorUserId) where.actorUserId = query.actorUserId;
+    // Plan read-window: only rows newer than the cutoff are visible.
+    if (createdAtCutoff) where.createdAt = { gte: createdAtCutoff };
 
     return findManyCursorConnection(
       async (args) => {

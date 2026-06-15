@@ -1,9 +1,17 @@
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
-import { Badge, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
-import { SpinnerIcon } from '@usertour/icons';
+import {
+  Alert,
+  AlertDescription,
+  Badge,
+  Button,
+  ResourceListPage,
+  type ResourceTableColumn,
+} from '@usertour/ui';
+import { RiErrorWarningLine, SpinnerIcon } from '@usertour/icons';
 import { type AuditLog, useGetProjectConfigQuery, useListAuditLogsQuery } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
@@ -11,6 +19,27 @@ import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { AuditDetailDialog } from './components/audit-detail-dialog';
 import { AuditLogUpsell } from './components/audit-log-upsell';
 import { actorLabel, resourceLabel } from './format';
+
+/** Shown above the list on plans with a limited audit window (e.g. Growth = 7 days). */
+const RetentionBanner = ({ days, projectId }: { days: number; projectId: string | undefined }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  return (
+    <Alert className="border-primary/5 bg-primary/10">
+      <RiErrorWarningLine className="h-4 w-4 !text-primary" />
+      <AlertDescription>
+        {t('settings.auditLog.retention.windowed', { days })}{' '}
+        <Button
+          variant="link"
+          className="inline h-auto p-0 font-normal"
+          onClick={() => navigate(`/project/${projectId}/settings/billing`)}
+        >
+          {t('settings.auditLog.retention.upgrade')}
+        </Button>
+      </AlertDescription>
+    </Alert>
+  );
+};
 
 /**
  * Owner-only Activity / audit-log page: who changed/deleted what, when, and from
@@ -27,6 +56,8 @@ export const AuditLogList = () => {
     SHARED_CACHE_QUERY_OPTIONS,
   );
   const entitled = projectConfig?.auditLogs ?? false;
+  // -1 = unlimited (Business+), >0 = a limited window (Growth = 7 days).
+  const retentionDays = projectConfig?.auditLogRetentionDays ?? -1;
 
   const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage } = useListAuditLogsQuery(
     project?.id,
@@ -106,6 +137,11 @@ export const AuditLogList = () => {
         empty={t('settings.auditLog.empty')}
         getRowKey={(log) => log.id}
         onRowClick={setSelected}
+        toolbar={
+          entitled && retentionDays > 0 ? (
+            <RetentionBanner days={retentionDays} projectId={project?.id} />
+          ) : undefined
+        }
         footer={
           <div ref={sentryRef} className="flex h-10 items-center justify-center">
             {loadingMore && <SpinnerIcon className="h-5 w-5 animate-spin text-primary" />}

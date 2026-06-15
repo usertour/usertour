@@ -41,6 +41,12 @@ export class AuditResolver {
     if (!config.auditLogs) {
       throw new FeatureRequiresLicenseError();
     }
-    return this.auditService.listAuditLogs(projectId, query, pagination, orderBy);
+    // Read-window by plan: -1 = unlimited (no cutoff), N = last N days. Rows are
+    // never deleted; lower tiers just can't read past the window.
+    const cutoff =
+      config.auditLogRetentionDays > 0
+        ? new Date(Date.now() - config.auditLogRetentionDays * 24 * 60 * 60 * 1000)
+        : undefined;
+    return this.auditService.listAuditLogs(projectId, query, pagination, orderBy, cutoff);
   }
 }

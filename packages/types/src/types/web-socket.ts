@@ -110,9 +110,12 @@ export enum ServerMessageKind {
 export type ProjectConfig = {
   removeBranding: boolean;
   customCss: boolean;
-  // Audit log viewing is a paid feature (cloud Business+, or self-host license).
-  // Capture is always-on; this gates the read/UI only.
+  // Audit log viewing is a paid feature (cloud Growth+/Business, or self-host
+  // license). Capture is always-on; this gates the read/UI only.
   auditLogs: boolean;
+  // How far back the audit log is viewable: -1 = unlimited, 0 = none, N = last N
+  // days. Read-window only (rows are never deleted). Growth = 7, Business = -1.
+  auditLogRetentionDays: number;
   planType: string;
 };
 

@@ -1153,6 +1153,7 @@ export const useGetProjectConfigQuery = (
       removeBranding: boolean;
       customCss: boolean;
       auditLogs: boolean;
+      auditLogRetentionDays: number;
       planType: string;
     } | null,
     loading,

@@ -17,6 +17,10 @@ export type PlanFeatures = {
   // Future gates — declared with safe defaults so the type is stable
   // before each consumer is wired.
   auditLogs: boolean;
+  // How far back the audit log is viewable, by plan: 0 = no access, a number =
+  // last N days, 'unlimited' = full history. A read-window only (rows are never
+  // deleted) — lower paid tiers see a recent window, top tier sees everything.
+  auditLogRetentionDays: number | 'unlimited';
   ssoSaml: boolean;
   ssoOidc: boolean;
 

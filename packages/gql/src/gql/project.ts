@@ -15,6 +15,7 @@ export const getProjectConfig = gql`
       removeBranding
       customCss
       auditLogs
+      auditLogRetentionDays
       planType
     }
   }

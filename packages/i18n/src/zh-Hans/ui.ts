@@ -587,6 +587,7 @@ const translations = {
       unlimited: '无限',
       yearOne: '1 年',
       yearsN: '{{value}} 年',
+      auditDays: '{{value}} 天',
       sections: {
         billingPlan: '账单套餐',
         billingPlanDescription: '查看和管理您的账单套餐',
@@ -731,6 +732,10 @@ const translations = {
           title: '审计日志需要 License',
           description: '在本实例激活 License 后即可启用审计日志。',
         },
+      },
+      retention: {
+        windowed: '仅显示最近 {{days}} 天。',
+        upgrade: '升级 Business 查看完整历史',
       },
     },
     personalApiKeys: {

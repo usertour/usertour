@@ -169,6 +169,7 @@ export class ProjectsService {
       removeBranding: false,
       customCss: false,
       auditLogs: false,
+      auditLogRetentionDays: 0,
       planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
@@ -229,6 +230,8 @@ export class ProjectsService {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
       auditLogs: features.auditLogs,
+      auditLogRetentionDays:
+        features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       planType,
     };
   }
@@ -271,6 +274,8 @@ export class ProjectsService {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
       auditLogs: features.auditLogs,
+      auditLogRetentionDays:
+        features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       planType,
     };
   }
@@ -285,6 +290,7 @@ export class ProjectsService {
       removeBranding: false,
       customCss: false,
       auditLogs: false,
+      auditLogRetentionDays: 0,
       planType: PlanType.HOBBY,
     };
 
@@ -311,6 +317,8 @@ export class ProjectsService {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
       auditLogs: features.auditLogs,
+      auditLogRetentionDays:
+        features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       planType: subscription.planType,
     };
   }

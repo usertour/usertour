@@ -614,6 +614,7 @@ const translations = {
       unlimited: 'Unlimited',
       yearOne: '1 Year',
       yearsN: '{{value}} Years',
+      auditDays: '{{value}} days',
       sections: {
         billingPlan: 'Billing plan',
         billingPlanDescription: 'View and manage your billing plan',
@@ -764,6 +765,10 @@ const translations = {
           title: 'Audit log requires a license',
           description: 'Activate a license on this instance to enable audit logging.',
         },
+      },
+      retention: {
+        windowed: 'Showing the last {{days}} days.',
+        upgrade: 'Upgrade to Business for full history',
       },
     },
     personalApiKeys: {
