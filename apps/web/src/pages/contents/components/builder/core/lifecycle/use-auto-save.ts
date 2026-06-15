@@ -14,10 +14,13 @@ export interface UseAutoSaveReturn {
   setAutoSaveValidator: BuilderProviderMethods['setAutoSaveValidator'];
 }
 
-// Auto-save driver. Subscribes to currentVersion + backupVersion diff.
-// On dirty → transitions saveState to 'dirty' and triggers a save (saves are
-// serialized inside saveContent, so rapid edits never overlap into a request
-// race; see useSaveContent).
+// Auto-save driver. Subscribes to currentVersion + backupVersion diff. On a
+// diff it marks saveState 'dirty' immediately, then DEBOUNCES the actual save:
+// each edit resets the timer, so a burst of keystrokes persists once typing
+// pauses rather than firing one whole-version request per character (the
+// data-blob editors — launcher/banner/checklist — write the whole version on
+// every change). Saves are also serialized inside saveContent, so even
+// back-to-back fires never overlap into a request race; see useSaveContent.
 //
 // Per-type editors can register an `autoSaveValidator` predicate that
 // runs before each auto-save cycle. A veto keeps saveState = 'dirty'
@@ -25,6 +28,12 @@ export interface UseAutoSaveReturn {
 // called from a button) bypasses the validator entirely. Used by
 // Launcher to avoid persisting incomplete action chips while the user
 // is mid-edit.
+
+// Pause after the last edit before the network save fires. Long enough to
+// collapse a typing burst into one whole-version save, short enough that a
+// brief stop still persists promptly.
+const AUTO_SAVE_DEBOUNCE_MS = 500;
+
 export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
   const { store, saveContent } = args;
 
@@ -45,6 +54,9 @@ export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
   const saveContentRef = useRef(saveContent);
   saveContentRef.current = saveContent;
 
+  // Pending debounced auto-save timer (per-Provider-mount).
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const currentVersion = useStore(store, (s) => s.currentVersion);
   const backupVersion = useStore(store, (s) => s.backupVersion);
   useEffect(() => {
@@ -57,19 +69,44 @@ export const useAutoSave = (args: UseAutoSaveArgs): UseAutoSaveReturn => {
     if (store.getState().saveState.status === 'conflict') {
       return;
     }
-    if (!isEqual(currentVersion, backupVersion)) {
-      store
-        .getState()
-        .transitionSaveState((prev) =>
-          prev.status === 'dirty' || prev.status === 'saving' ? prev : { status: 'dirty' },
-        );
+    if (isEqual(currentVersion, backupVersion)) {
+      return;
+    }
+    // Reflect the unsaved edit in the UI immediately…
+    store
+      .getState()
+      .transitionSaveState((prev) =>
+        prev.status === 'dirty' || prev.status === 'saving' ? prev : { status: 'dirty' },
+      );
+    // …but debounce the network save: every edit re-runs this effect and resets
+    // the timer, so only a pause in editing actually fires saveContent.
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      // Re-read at fire time: validate the LATEST draft, not the snapshot that
+      // scheduled this timer. A veto keeps saveState 'dirty' and skips this
+      // cycle (the next edit reschedules); explicit Save bypasses the validator.
+      const latest = store.getState().currentVersion;
       const validator = autoSaveValidatorRef.current;
-      if (validator && !validator(currentVersion)) {
+      if (latest && validator && !validator(latest)) {
         return;
       }
       void saveContentRef.current();
-    }
+    }, AUTO_SAVE_DEBOUNCE_MS);
   }, [currentVersion, backupVersion, store]);
+
+  // Drop a pending debounced save on unmount: the leave guard's explicit
+  // saveContent persists the final draft, so this only prevents a fire (and its
+  // setState) from a timer that outlived the Provider.
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
 
   return { setAutoSaveValidator };
 };
