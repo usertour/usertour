@@ -133,7 +133,10 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                 />
               )}
               <ContentEditor
-                zIndex={BUILDER_Z.canvas}
+                // Tooltip keeps its widget at the canvas layer (its backdrop
+                // curtain needs it), so editor overlays must clear the lifted
+                // surface — canvas would tie with it and lose under backdrop.
+                zIndex={BUILDER_Z.canvasOverlay}
                 customUploadRequest={upload}
                 initialValue={data}
                 attributes={attributeList}
