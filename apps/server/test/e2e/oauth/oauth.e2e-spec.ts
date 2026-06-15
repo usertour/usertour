@@ -4,7 +4,9 @@ import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
-import { buildEnvironment, buildProject } from '../factories';
+import { OAUTH_TOKEN_PREFIX, hashApiTokenSecret } from '@/api-token/api-token.crypto';
+
+import { buildEnvironment, buildMembership, buildProject } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -284,5 +286,81 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
       .send({ query: `mutation { revokeOAuthConnection(id: "${id}") }` })
       .expect(200);
     expect(rev.body.data.revokeOAuthConnection).toBe(true);
+  });
+
+  // An OAuth (`uto_`) token is validated by the same guard/authority as a personal
+  // token, so live membership + role∩scope apply identically. These assert it for
+  // the OAuth surface directly (the v2 spec covers it for `utp_`). Uses an isolated
+  // project + a fixture `uto_` token so mutating role/membership can't affect the
+  // other tests.
+  describe('live authority on an OAuth (uto_) token', () => {
+    let secProjectId: string;
+    let utoToken: string;
+
+    beforeAll(async () => {
+      secProjectId = (await buildProject(prisma, { name: 'oauth-authz' })).id;
+      await buildEnvironment(prisma, { projectId: secProjectId });
+      await buildMembership(prisma, {
+        userId: ownerUserId,
+        projectId: secProjectId,
+        role: 'ADMIN' as never,
+      });
+      const secret = randomBytes(32).toString('base64url');
+      await prisma.apiToken.create({
+        data: {
+          userId: ownerUserId,
+          name: 'OAuth authz test',
+          prefix: OAUTH_TOKEN_PREFIX,
+          hashedSecret: hashApiTokenSecret(secret),
+          partialKey: secret.slice(-4),
+          scopes: ['content:read', 'content:create'],
+          clientId: 'authz-test-client',
+          isActive: true,
+          projects: { create: [{ projectId: secProjectId }] },
+        },
+      });
+      utoToken = `${OAUTH_TOKEN_PREFIX}${secret}`;
+    });
+
+    afterAll(async () => {
+      await teardownProject(prisma, secProjectId);
+    });
+
+    it('reads the project as ADMIN', async () => {
+      await http()
+        .get(`/v2/projects/${secProjectId}/content`)
+        .set('Authorization', `Bearer ${utoToken}`)
+        .expect(200);
+    });
+
+    it('respects live role: after downgrade to VIEWER, read works but write is denied', async () => {
+      await prisma.userOnProject.updateMany({
+        where: { userId: ownerUserId, projectId: secProjectId },
+        data: { role: 'VIEWER' as never },
+      });
+      // VIEWER keeps content:read
+      await http()
+        .get(`/v2/projects/${secProjectId}/content`)
+        .set('Authorization', `Bearer ${utoToken}`)
+        .expect(200);
+      // VIEWER lacks content:create — the guard rejects before body validation
+      const write = await http()
+        .post(`/v2/projects/${secProjectId}/content`)
+        .set('Authorization', `Bearer ${utoToken}`)
+        .send({});
+      expect(write.status).toBe(403);
+      expect(write.body.error.code).toBe('E1012');
+    });
+
+    it('is cut off entirely when the user loses project membership', async () => {
+      await prisma.userOnProject.deleteMany({
+        where: { userId: ownerUserId, projectId: secProjectId },
+      });
+      const res = await http()
+        .get(`/v2/projects/${secProjectId}/content`)
+        .set('Authorization', `Bearer ${utoToken}`);
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1011');
+    });
   });
 });
