@@ -201,6 +201,7 @@ Table ApiToken {
   partialKey String [not null, note: 'Trailing characters of the secret, for display only (e.g. "···a1b2").']
   scopes Json [not null, note: 'Capability[] (from @usertour/types) the token may exercise, intersected with the owner\'s role per request.']
   clientId String [note: 'Set when issued via an OAuth grant; null for user-created personal tokens.']
+  oauthGrantId String [note: 'The OAuthGrant that issued this access token; revoking the grant kills it.']
   isActive Boolean [not null, default: true]
   expiresAt DateTime
   lastUsedAt DateTime
@@ -226,6 +227,63 @@ Table ApiTokenOnProject {
   }
 
   Note: 'Join table scoping an ApiToken to one or more projects (mirrors UserOnProject).'
+}
+
+Table OAuthClient {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  clientType String [not null]
+  clientSecretHash String [note: 'bcrypt/SHA-256 hash of the client secret; null for public clients (PKCE).']
+  name String [not null]
+  redirectUris Json [not null, note: 'string[] of exact-match redirect URIs.']
+  grantTypes Json [not null, note: 'string[] of granted grant types.']
+  logoUri String
+  clientUri String
+  registrationAccessTokenHash String [unique, note: 'SHA-256 hash of the RFC 7592 registration access token (manage this client).']
+  createdByUserId String [note: 'The user who registered it interactively; null for pure DCR.']
+  lastUsedAt DateTime
+
+  Note: 'An OAuth 2.1 client (Phase 3). Created via Dynamic Client Registration (RFC
+7591) or seeded; project-agnostic — the project is chosen by the user at
+consent time. Public clients (MCP connectors) have no secret and use PKCE.'
+}
+
+Table OAuthAuthorizationCode {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  hashedCode String [unique, not null, note: 'SHA-256 hash of the code; the plaintext is only in the redirect.']
+  clientId String [not null]
+  userId String [not null]
+  projectId String [not null]
+  scopes Json [not null]
+  redirectUri String [not null]
+  codeChallenge String
+  codeChallengeMethod String
+  grantId String [not null]
+  resource String
+  expiresAt DateTime [not null]
+  consumedAt DateTime
+
+  Note: 'A one-time OAuth authorization code (short TTL). Carries the consent decision
+(chosen project + scopes) and the PKCE challenge until token exchange.'
+}
+
+Table OAuthGrant {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  userId String [not null]
+  clientId String [not null]
+  projectId String [not null]
+  scopes Json [not null]
+  hashedRefreshToken String [unique, note: 'SHA-256 hash of the current refresh token; rotated on each refresh.']
+  refreshExpiresAt DateTime
+  revokedAt DateTime
+
+  Note: 'A durable OAuth grant: the user\'s standing authorization of a client for a
+project, and the current (rotating) refresh token. Revoking it cascade-kills
+the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.'
 }
 
 Table Theme {

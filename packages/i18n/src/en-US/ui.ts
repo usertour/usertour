@@ -1,6 +1,19 @@
 const translations = {
   language: 'English',
   productName: 'Usertour',
+  oauth: {
+    consent: {
+      title: '{{client}} wants to connect',
+      subtitle: 'You will return to {{host}} after approving.',
+      projectLabel: 'Project',
+      permissionsNote: 'It will access the selected project on your behalf, with your permissions.',
+      scopedHint: 'Need read-only or narrower access? Create a Personal API key instead.',
+      allow: 'Allow',
+      deny: 'Deny',
+      errorTitle: 'Authorization error',
+      invalidRequest: 'This authorization request is invalid or has expired.',
+    },
+  },
   admin: {
     common: {
       cancel: 'Cancel',
@@ -777,6 +790,24 @@ const translations = {
         allActors: 'All actors',
         environment: 'Environment',
         clear: 'Clear filters',
+      },
+    },
+    connectedApps: {
+      title: 'Connected apps',
+      description:
+        "Apps you've authorized to access Usertour on your behalf (e.g. MCP connectors).",
+      empty: 'No connected apps yet.',
+      revoke: 'Revoke',
+      revokeTitle: 'Revoke {{name}}?',
+      revokeDescription:
+        'This immediately invalidates its access. The app must be re-authorized to connect again.',
+      never: 'Never',
+      columns: {
+        app: 'App',
+        project: 'Project',
+        access: 'Access',
+        lastUsed: 'Last used',
+        authorized: 'Authorized',
       },
     },
     personalApiKeys: {

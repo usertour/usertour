@@ -11,6 +11,26 @@ import { createHash, randomBytes } from 'node:crypto';
  */
 export const API_TOKEN_PREFIX = 'utp_';
 
+/** Prefix for OAuth-issued access tokens (Phase 3). Same length as `utp_`. */
+export const OAUTH_TOKEN_PREFIX = 'uto_';
+
+/** Token prefixes accepted on inbound requests (personal + OAuth-issued). */
+export const ACCEPTED_TOKEN_PREFIXES = [API_TOKEN_PREFIX, OAUTH_TOKEN_PREFIX] as const;
+
+/**
+ * Strip a recognized token prefix, returning the bare secret — or `null` when the
+ * string carries no known prefix. The stored hash is over the secret only, so the
+ * lookup is prefix-agnostic; `utp_` and `uto_` resolve through the same path.
+ */
+export function stripTokenPrefix(raw: string): string | null {
+  for (const prefix of ACCEPTED_TOKEN_PREFIXES) {
+    if (raw.startsWith(prefix)) {
+      return raw.slice(prefix.length);
+    }
+  }
+  return null;
+}
+
 const SECRET_BYTES = 32;
 
 /**

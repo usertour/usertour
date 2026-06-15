@@ -113,6 +113,12 @@ const config: RouteObject[] = [
             path: '/select-project',
             lazy: lazyComponent(() => import('@/pages/select-project'), 'SelectProject'),
           },
+          {
+            // OAuth consent screen (MCP connector authorization). User-guarded so
+            // an unauthenticated arrival is sent to signin?next= and back.
+            path: '/oauth-consent',
+            lazy: lazyComponent(() => import('@/pages/oauth-consent'), 'OAuthConsent'),
+          },
         ],
       },
       {

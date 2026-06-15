@@ -1,6 +1,19 @@
 const translations = {
   language: '简体中文',
   productName: 'Usertour',
+  oauth: {
+    consent: {
+      title: '{{client}} 请求连接',
+      subtitle: '批准后将返回 {{host}}。',
+      projectLabel: '项目',
+      permissionsNote: '它将代表你访问所选项目,使用你的权限。',
+      scopedHint: '需要只读或更细的权限?请改用个人 API Key。',
+      allow: '允许',
+      deny: '拒绝',
+      errorTitle: '授权出错',
+      invalidRequest: '此授权请求无效或已过期。',
+    },
+  },
   admin: {
     common: {
       cancel: '取消',
@@ -744,6 +757,22 @@ const translations = {
         allActors: '全部操作者',
         environment: '环境',
         clear: '清除筛选',
+      },
+    },
+    connectedApps: {
+      title: '已连接的应用',
+      description: '你已授权代表你访问 Usertour 的应用(例如 MCP 连接器)。',
+      empty: '暂无已连接的应用。',
+      revoke: '撤销',
+      revokeTitle: '撤销 {{name}}?',
+      revokeDescription: '这将立即使其访问失效。该应用需重新授权才能再次连接。',
+      never: '从未',
+      columns: {
+        app: '应用',
+        project: '项目',
+        access: '权限',
+        lastUsed: '最近使用',
+        authorized: '授权时间',
       },
     },
     personalApiKeys: {

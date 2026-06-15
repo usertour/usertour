@@ -33,6 +33,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
 import { McpModule } from './mcp/mcp.module';
+import { OAuthModule } from './oauth/oauth.module';
 import { IntegrationModule } from './integration/integration.module';
 import { LicenseModule } from './license/license.module';
 import { SharedModule } from './shared/shared.module';
@@ -154,6 +155,7 @@ import { Logger } from '@nestjs/common';
     OpenAPIModule,
     ApiModule,
     McpModule,
+    OAuthModule,
     SharedModule,
     AdminModule,
   ],

@@ -253,6 +253,8 @@ model ApiToken {
   scopes       Json                @db.JsonB
   /// Set when issued via an OAuth grant; null for user-created personal tokens.
   clientId     String?
+  /// The OAuthGrant that issued this access token; revoking the grant kills it.
+  oauthGrantId String?
   isActive     Boolean             @default(true)
   expiresAt    DateTime?           @db.Timestamptz(6)
   lastUsedAt   DateTime?           @db.Timestamptz(6)
@@ -263,6 +265,7 @@ model ApiToken {
   @@index([userId])
   @@index([hashedSecret])
   @@index([clientId])
+  @@index([oauthGrantId])
 }
 
 /// Join table scoping an ApiToken to one or more projects (mirrors UserOnProject).
@@ -276,6 +279,74 @@ model ApiTokenOnProject {
   projectId  String?
 
   @@unique([apiTokenId, projectId])
+}
+
+/// An OAuth 2.1 client (Phase 3). Created via Dynamic Client Registration (RFC
+/// 7591) or seeded; project-agnostic — the project is chosen by the user at
+/// consent time. Public clients (MCP connectors) have no secret and use PKCE.
+model OAuthClient {
+  id                          String    @id @default(cuid()) // = client_id
+  createdAt                   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime  @updatedAt @db.Timestamptz(6)
+  clientType                  String // 'public' | 'confidential'
+  /// bcrypt/SHA-256 hash of the client secret; null for public clients (PKCE).
+  clientSecretHash            String?
+  name                        String
+  /// string[] of exact-match redirect URIs.
+  redirectUris                Json      @db.JsonB
+  /// string[] of granted grant types.
+  grantTypes                  Json      @db.JsonB
+  logoUri                     String?
+  clientUri                   String?
+  /// SHA-256 hash of the RFC 7592 registration access token (manage this client).
+  registrationAccessTokenHash String?   @unique
+  /// The user who registered it interactively; null for pure DCR.
+  createdByUserId             String?
+  lastUsedAt                  DateTime? @db.Timestamptz(6)
+
+  @@index([createdByUserId])
+}
+
+/// A one-time OAuth authorization code (short TTL). Carries the consent decision
+/// (chosen project + scopes) and the PKCE challenge until token exchange.
+model OAuthAuthorizationCode {
+  id                  String    @id @default(cuid())
+  createdAt           DateTime  @default(now()) @db.Timestamptz(6)
+  /// SHA-256 hash of the code; the plaintext is only in the redirect.
+  hashedCode          String    @unique
+  clientId            String
+  userId              String
+  projectId           String
+  scopes              Json      @db.JsonB
+  redirectUri         String
+  codeChallenge       String?
+  codeChallengeMethod String? // 'S256'
+  grantId             String
+  resource            String?
+  expiresAt           DateTime  @db.Timestamptz(6)
+  consumedAt          DateTime? @db.Timestamptz(6)
+
+  @@index([clientId])
+}
+
+/// A durable OAuth grant: the user's standing authorization of a client for a
+/// project, and the current (rotating) refresh token. Revoking it cascade-kills
+/// the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.
+model OAuthGrant {
+  id                 String    @id @default(cuid()) // = grantId
+  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
+  userId             String
+  clientId           String
+  projectId          String
+  scopes             Json      @db.JsonB
+  /// SHA-256 hash of the current refresh token; rotated on each refresh.
+  hashedRefreshToken String?   @unique
+  refreshExpiresAt   DateTime? @db.Timestamptz(6)
+  revokedAt          DateTime? @db.Timestamptz(6)
+
+  @@index([userId, clientId])
+  @@index([clientId])
 }
 
 model Theme {

@@ -13,7 +13,7 @@ import {
   ProjectNotInTokenScopeError,
 } from '@/common/errors';
 
-import { API_TOKEN_PREFIX, hashApiTokenSecret } from './api-token.crypto';
+import { hashApiTokenSecret, stripTokenPrefix } from './api-token.crypto';
 
 /** An authenticated ApiToken row with its project scope loaded. */
 export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
@@ -40,10 +40,11 @@ export class ApiTokenAuthService {
     if (!raw) {
       throw new MissingApiKeyError();
     }
-    if (!raw.startsWith(API_TOKEN_PREFIX)) {
+    // Accept both `utp_` (personal) and `uto_` (OAuth-issued) — same hash lookup.
+    const secret = stripTokenPrefix(raw);
+    if (secret === null) {
       throw new InvalidApiKeyError();
     }
-    const secret = raw.slice(API_TOKEN_PREFIX.length);
 
     const token = await this.prisma.apiToken.findUnique({
       where: { hashedSecret: hashApiTokenSecret(secret) },

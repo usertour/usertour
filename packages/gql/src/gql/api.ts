@@ -117,3 +117,25 @@ export const DeleteApiToken = gql`
     deleteApiToken(id: $id)
   }
 `;
+
+// ── OAuth connected apps (Phase 3) ─────────────────────────────────
+
+export const OAuthConnections = gql`
+  query OAuthConnections {
+    oauthConnections {
+      id
+      clientName
+      projectId
+      projectName
+      scopes
+      createdAt
+      lastUsedAt
+    }
+  }
+`;
+
+export const RevokeOAuthConnection = gql`
+  mutation RevokeOAuthConnection($id: String!) {
+    revokeOAuthConnection(id: $id)
+  }
+`;
