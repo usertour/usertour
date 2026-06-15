@@ -1,3 +1,4 @@
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -22,18 +23,33 @@ export class EnvironmentsResolver {
 
   @Mutation(() => Environment)
   @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'environment',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createEnvironments(@Args('data') newData: CreateEnvironmentInput) {
     return this.environmentsService.create(newData);
   }
 
   @Mutation(() => Environment)
   @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'environment',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async updateEnvironments(@Args('data') input: UpdateEnvironmentInput) {
     return this.environmentsService.update(input);
   }
 
   @Mutation(() => Environment)
   @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'environment',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async deleteEnvironments(@Args('data') { id }: DeleteEnvironmentInput) {
     return await this.environmentsService.delete(id);
   }

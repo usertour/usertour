@@ -1,4 +1,5 @@
 import { Common } from '@/auth/models/common.model';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
@@ -80,18 +81,33 @@ export class BizResolver {
 
   @Mutation(() => Segment)
   @RequirePermission({ capability: Capability.SegmentCreate, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'segment',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createSegment(@Args('data') data: CreatSegment) {
     return await this.service.creatSegment(data);
   }
 
   @Mutation(() => Segment)
   @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'segment',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async updateSegment(@Args('data') data: UpdateSegment) {
     return await this.service.updateSegment(data);
   }
 
   @Mutation(() => Common)
   @RequirePermission({ capability: Capability.SegmentDelete, scope: ScopeKind.Segment })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'segment',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async deleteSegment(@Args('data') data: DeleteSegment) {
     const [, , r3] = await this.service.deleteSegment(data);
     return { success: !!r3.id };

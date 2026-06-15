@@ -19,6 +19,7 @@ import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { Capability } from '@usertour/types';
 
 @Resolver()
@@ -47,6 +48,11 @@ export class TeamResolver {
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'member',
+    resourceId: (a) => (a.data as { email: string }).email,
+  })
   @UseGuards(EmailConfigGuard)
   async inviteTeamMember(@UserEntity() user: User, @Args('data') data: InviteTeamMemberInput) {
     this.logger.log(`Inviting team member: ${user.id}`);
@@ -62,6 +68,11 @@ export class TeamResolver {
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'member',
+    resourceId: (a) => (a.data as { userId: string }).userId,
+  })
   async removeTeamMember(@Args('data') data: RemoveTeamMemberInput) {
     await this.teamService.removeTeamMember(data.userId, data.projectId);
     return true;
@@ -69,6 +80,11 @@ export class TeamResolver {
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'member',
+    resourceId: (a) => (a.data as { userId: string }).userId,
+  })
   async changeTeamMemberRole(@Args('data') data: ChangeTeamMemberRoleInput) {
     await this.teamService.changeTeamMemberRole(data.userId, data.projectId, data.role);
     return true;
@@ -76,6 +92,11 @@ export class TeamResolver {
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'member',
+    resourceId: (a) => (a.data as { inviteId: string }).inviteId,
+  })
   async cancelInvite(@Args('data') data: CancelInviteInput) {
     await this.teamService.cancelInvite(data.projectId, data.inviteId);
     return true;

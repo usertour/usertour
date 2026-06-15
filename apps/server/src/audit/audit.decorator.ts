@@ -1,5 +1,5 @@
 import { Reflector } from '@nestjs/core';
-import type { ExplicitAuditMeta } from './audit.types';
+import type { ExplicitAuditMeta, WebAuditMeta } from './audit.types';
 
 /**
  * Explicit audit metadata for write endpoints that don't carry
@@ -10,3 +10,13 @@ import type { ExplicitAuditMeta } from './audit.types';
  *   @Audit({ action: 'delete', resourceType: 'user' })
  */
 export const Audit = Reflector.createDecorator<ExplicitAuditMeta>();
+
+/**
+ * Explicit audit metadata for web-admin GraphQL mutations. Selective opt-in
+ * (only meaningful lifecycle / config mutations carry it); the AuditInterceptor's
+ * GraphQL branch records `source='web'` with the logged-in user as the actor.
+ *
+ *   @AuditWeb({ action: 'delete', resourceType: 'theme' })
+ *   @AuditWeb({ action: 'create', resourceType: 'content', resourceId: (_a, r) => (r as { id: string }).id })
+ */
+export const AuditWeb = Reflector.createDecorator<WebAuditMeta>();

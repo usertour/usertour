@@ -1,6 +1,7 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -20,18 +21,33 @@ export class AttributesResolver {
 
   @Mutation(() => Attribute)
   @RequirePermission({ capability: Capability.AttributeCreate, scope: ScopeKind.Attribute })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'attribute',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createAttribute(@Args('data') data: CreateAttributeInput) {
     return this.service.create(data);
   }
 
   @Mutation(() => Attribute)
   @RequirePermission({ capability: Capability.AttributeUpdate, scope: ScopeKind.Attribute })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'attribute',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async updateAttribute(@Args('data') data: UpdateAttributeInput) {
     return await this.service.update(data);
   }
 
   @Mutation(() => Attribute)
   @RequirePermission({ capability: Capability.AttributeDelete, scope: ScopeKind.Attribute })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'attribute',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async deleteAttribute(@Args('data') { id }: DeleteAttributeInput) {
     return await this.service.delete(id);
   }

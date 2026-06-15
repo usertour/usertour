@@ -72,7 +72,11 @@ export class AuditService {
       async (args) => {
         const rows = await this.prisma.auditLog.findMany({
           where,
-          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+          // Secondary `id` sort: a stable tiebreak so cursor pages don't skip/dupe
+          // rows that share a `createdAt` (default: newest first).
+          orderBy: orderBy
+            ? [{ [orderBy.field]: orderBy.direction }, { id: orderBy.direction }]
+            : [{ createdAt: 'desc' }, { id: 'desc' }],
           ...args,
         });
         return this.enrichAuditLogs(rows);
@@ -93,6 +97,8 @@ export class AuditService {
     T extends {
       actorUserId: string | null;
       actorTokenId: string | null;
+      resourceType: string;
+      resourceId: string;
       before: Prisma.JsonValue;
       after: Prisma.JsonValue;
     },
@@ -109,8 +115,21 @@ export class AuditService {
     const tokenIds = [
       ...new Set(rows.map((r) => r.actorTokenId).filter((id): id is string => !!id)),
     ];
+    // content / environment carry no snapshot (policy 'none') — resolve their name
+    // by id so the row isn't just an opaque id. Both are soft-deleted, so the
+    // lookup still resolves after deletion.
+    const idsOfType = (type: string) => [
+      ...new Set(
+        rows
+          .filter((r) => r.resourceType === type)
+          .map((r) => r.resourceId)
+          .filter(Boolean),
+      ),
+    ];
+    const contentIds = idsOfType('content');
+    const environmentIds = idsOfType('environment');
 
-    const [users, apiTokens, accessTokens] = await Promise.all([
+    const [users, apiTokens, accessTokens, contents, environments] = await Promise.all([
       userIds.length
         ? this.prisma.user.findMany({
             where: { id: { in: userIds } },
@@ -130,18 +149,37 @@ export class AuditService {
             select: { id: true, name: true },
           })
         : Promise.resolve([]),
+      contentIds.length
+        ? this.prisma.content.findMany({
+            where: { id: { in: contentIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      environmentIds.length
+        ? this.prisma.environment.findMany({
+            where: { id: { in: environmentIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const userName = new Map(users.map((u) => [u.id, u.name ?? u.email ?? null]));
     const tokenName = new Map<string, string>();
     for (const t of accessTokens) tokenName.set(t.id, t.name);
     for (const t of apiTokens) tokenName.set(t.id, t.name);
+    const resourceNameById = new Map<string, string>();
+    for (const c of contents) if (c.name) resourceNameById.set(c.id, c.name);
+    for (const e of environments) if (e.name) resourceNameById.set(e.id, e.name);
 
     return rows.map((r) => ({
       ...r,
       actorUserName: r.actorUserId ? (userName.get(r.actorUserId) ?? null) : null,
       actorTokenName: r.actorTokenId ? (tokenName.get(r.actorTokenId) ?? null) : null,
-      resourceName: pickResourceName(r.after) ?? pickResourceName(r.before),
+      resourceName:
+        pickResourceName(r.after) ??
+        pickResourceName(r.before) ??
+        resourceNameById.get(r.resourceId) ??
+        null,
     }));
   }
 }

@@ -113,6 +113,9 @@ export class PermissionGuard implements CanActivate {
     if (!projectId) {
       throw new NoPermissionError();
     }
+    // Stash for the AuditInterceptor (runs after guards) so web-admin audit
+    // doesn't re-resolve the project — see audit.interceptor `interceptWeb`.
+    (req as { auditProjectId?: string }).auditProjectId = projectId;
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roleCan(userProject.role as Role, required.capability)) {

@@ -54,3 +54,27 @@ export interface ExplicitAuditMeta {
   /** Override id resolution (default: params.id ?? params.contentId ?? params.externalId ?? result.id). */
   resourceId?: (req: AuditHttpRequest, result: unknown) => string;
 }
+
+/** Minimal shape of the GraphQL request the AuditInterceptor reads off (web admin). */
+export interface AuditGqlRequest {
+  user?: { id?: string };
+  ip?: string;
+  headers?: Record<string, unknown>;
+  /** projectId resolved + stashed by PermissionGuard (guards run before interceptors). */
+  auditProjectId?: string;
+}
+
+/**
+ * Explicit audit metadata for web-admin GraphQL mutations (`source='web'`, actor
+ * is the logged-in user, no token). Selective opt-in: only meaningful lifecycle /
+ * config mutations carry it — builder draft saves are deliberately NOT audited
+ * (version history already covers content body).
+ */
+export interface WebAuditMeta {
+  action: AuditAction;
+  resourceType: string;
+  /** id from the mutation args / result. Default: args.id ?? args.contentId ?? result.id. */
+  resourceId?: (args: Record<string, unknown>, result: unknown) => string;
+  /** env-scoped resources: extract environmentId from args (default: none → null). */
+  environmentId?: (args: Record<string, unknown>) => string | undefined | null;
+}

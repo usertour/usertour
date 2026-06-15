@@ -1,4 +1,5 @@
 import { UserEntity } from '@/common/decorators/user.decorator';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -23,18 +24,33 @@ export class EventsResolver {
 
   @Mutation(() => Events)
   @RequirePermission({ capability: Capability.EventCreate, scope: ScopeKind.Event })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'event',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createEvent(@UserEntity() @Args('data') data: CreateEventInput) {
     return this.service.create(data);
   }
 
   @Mutation(() => Events)
   @RequirePermission({ capability: Capability.EventUpdate, scope: ScopeKind.Event })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'event',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async updateEvent(@UserEntity() @Args('data') data: UpdateEventInput) {
     return await this.service.update(data);
   }
 
   @Mutation(() => Events)
   @RequirePermission({ capability: Capability.EventDelete, scope: ScopeKind.Event })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'event',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async deleteEvent(@UserEntity() @Args('data') { id }: DeleteEventInput) {
     return await this.service.delete(id);
   }

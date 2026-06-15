@@ -1,4 +1,5 @@
 import { Common } from '@/auth/models/common.model';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
@@ -37,18 +38,33 @@ export class ContentResolver {
 
   @Mutation(() => Content)
   @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'content',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createContent(@Args('data') data: ContentInput) {
     return await this.contentService.createContent(data);
   }
 
   @Mutation(() => Content)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+  })
   async updateContent(@Args('data') data: ContentUpdateInput) {
     return await this.contentService.updateContent(data.contentId, data.content);
   }
 
   @Mutation(() => Content)
   @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'content',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
     return await this.contentService.duplicateContent(
       data.contentId,
@@ -94,12 +110,24 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => (r as { contentId: string }).contentId,
+    environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
+  })
   async publishedContentVersion(@Args('data') { versionId, environmentId }: VersionIdInput) {
     return await this.contentService.publishedContentVersion(versionId, environmentId);
   }
 
   @Mutation(() => Common)
   @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+    environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
+  })
   async unpublishedContentVersion(@Args('data') { contentId, environmentId }: ContentIdInput) {
     await this.contentService.unpublishedContentVersion(contentId, environmentId);
     return { success: true };
@@ -107,6 +135,11 @@ export class ContentResolver {
 
   @Mutation(() => Common)
   @RequirePermission({ capability: Capability.ContentDelete, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+  })
   async deleteContent(@Args('data') { contentId }: ContentIdInput) {
     await this.contentService.deleteContent(contentId);
     return { success: true };

@@ -4,6 +4,9 @@ import { ListAuditLogs } from '@usertour/gql';
 import { useCursorFetchMore } from './use-cursor-fetch-more';
 
 const AUDIT_LOG_PAGE_SIZE = 50;
+// Newest first. Sent explicitly (not relying on the server default) so the order
+// is unambiguous and the accumulator cache key is stable.
+const AUDIT_LOG_ORDER = { field: 'createdAt', direction: 'desc' };
 
 export interface AuditLog {
   id: string;
@@ -45,7 +48,7 @@ export const useListAuditLogsQuery = (
   options?: QueryHookOptions,
 ) => {
   const { data, loading, networkStatus, refetch, fetchMore } = useQuery(ListAuditLogs, {
-    variables: { projectId, first: AUDIT_LOG_PAGE_SIZE },
+    variables: { projectId, first: AUDIT_LOG_PAGE_SIZE, orderBy: AUDIT_LOG_ORDER },
     skip: !projectId,
     notifyOnNetworkStatusChange: true,
     ...options,
@@ -66,7 +69,12 @@ export const useListAuditLogsQuery = (
     hasNextPage,
     endCursor,
     fetchMore,
-    buildVariables: (after) => ({ projectId, first: AUDIT_LOG_PAGE_SIZE, after }),
+    buildVariables: (after) => ({
+      projectId,
+      first: AUDIT_LOG_PAGE_SIZE,
+      after,
+      orderBy: AUDIT_LOG_ORDER,
+    }),
   });
 
   return {

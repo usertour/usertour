@@ -1,4 +1,5 @@
 import { ProjectIdArgs } from '@/environments/args/project-id.args';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -22,30 +23,51 @@ export class ThemesResolver {
 
   @Mutation(() => Theme)
   @RequirePermission({ capability: Capability.ThemeCreate, scope: ScopeKind.Theme })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'theme',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createTheme(@Args('data') data: CreateThemeInput) {
     return this.themesService.createTheme(data);
   }
 
   @Mutation(() => Theme)
   @RequirePermission({ capability: Capability.ThemeUpdate, scope: ScopeKind.Theme })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'theme',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async updateTheme(@Args('data') data: UpdateThemeInput) {
     return await this.themesService.updateTheme(data);
   }
 
   @Mutation(() => Theme)
   @RequirePermission({ capability: Capability.ThemeUpdate, scope: ScopeKind.Theme })
+  @AuditWeb({ action: 'update', resourceType: 'theme', resourceId: (a) => String(a.themeId) })
   async setDefaultTheme(@Args('themeId') themeId: string) {
     return await this.themesService.setDefaultTheme(themeId);
   }
 
   @Mutation(() => Theme)
   @RequirePermission({ capability: Capability.ThemeCreate, scope: ScopeKind.Theme })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'theme',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async copyTheme(@Args('data') data: CopyThemeInput) {
     return await this.themesService.copyTheme(data);
   }
 
   @Mutation(() => Theme)
   @RequirePermission({ capability: Capability.ThemeDelete, scope: ScopeKind.Theme })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'theme',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async deleteTheme(@Args('data') data: DeleteThemeInput) {
     return await this.themesService.deleteTheme(data.id);
   }

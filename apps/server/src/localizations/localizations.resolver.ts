@@ -1,3 +1,4 @@
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -20,24 +21,40 @@ export class LocalizationsResolver {
 
   @Mutation(() => Localization)
   @RequirePermission({ capability: Capability.LocalizationCreate, scope: ScopeKind.Localization })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'localization',
+    resourceId: (_a, r) => (r as { id: string }).id,
+  })
   async createLocalization(@Args('data') data: CreateLocalizationInput) {
     return this.service.create(data);
   }
 
   @Mutation(() => Localization)
   @RequirePermission({ capability: Capability.LocalizationUpdate, scope: ScopeKind.Localization })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'localization',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async updateLocalization(@Args('data') data: UpdateLocalizationInput) {
     return await this.service.update(data);
   }
 
   @Mutation(() => Localization)
   @RequirePermission({ capability: Capability.LocalizationUpdate, scope: ScopeKind.Localization })
+  @AuditWeb({ action: 'update', resourceType: 'localization', resourceId: (a) => String(a.id) })
   async setDefaultLocalization(@Args('id') id: string) {
     return await this.service.setDefault(id);
   }
 
   @Mutation(() => Localization)
   @RequirePermission({ capability: Capability.LocalizationDelete, scope: ScopeKind.Localization })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'localization',
+    resourceId: (a) => (a.data as { id: string }).id,
+  })
   async deleteLocalization(@Args('data') { id }: DeleteLocalizationInput) {
     return await this.service.delete(id);
   }

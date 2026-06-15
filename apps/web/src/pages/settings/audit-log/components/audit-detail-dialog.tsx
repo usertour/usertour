@@ -16,9 +16,9 @@ const JsonBlock = ({ label, value }: { label: string; value: unknown }) => {
     return null;
   }
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <span className="text-sm font-medium">{label}</span>
-      <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs">
+      <pre className="max-h-64 max-w-full overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">
         {JSON.stringify(value, null, 2)}
       </pre>
     </div>
@@ -48,8 +48,8 @@ export const AuditDetailDialog = ({
           <DialogTitle>{t('settings.auditLog.detail.title')}</DialogTitle>
         </DialogHeader>
         {log && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+          <div className="flex min-w-0 flex-col gap-4">
+            <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3">
               <Field label={t('settings.auditLog.columns.action')}>{log.action}</Field>
               <Field label={t('settings.auditLog.columns.source')}>
                 <Badge variant="secondary">{log.source.toUpperCase()}</Badge>
@@ -60,7 +60,9 @@ export const AuditDetailDialog = ({
                     {log.resourceType}
                     {log.resourceName ? ` · ${log.resourceName}` : ''}
                   </span>
-                  <span className="font-mono text-xs text-muted-foreground">{log.resourceId}</span>
+                  <span className="break-all font-mono text-xs text-muted-foreground">
+                    {log.resourceId}
+                  </span>
                 </div>
               </Field>
               <Field label={t('settings.auditLog.columns.actor')}>
@@ -71,7 +73,7 @@ export const AuditDetailDialog = ({
                       {t('settings.auditLog.detail.via')} {log.actorTokenName}
                     </span>
                   )}
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="break-all font-mono text-xs text-muted-foreground">
                     {[log.actorUserId, log.actorTokenId].filter(Boolean).join(' · ') || '—'}
                   </span>
                 </div>

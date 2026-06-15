@@ -6,12 +6,19 @@ import {
   type NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { type GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { type Observable, tap } from 'rxjs';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
-import { Audit } from './audit.decorator';
+import { Audit, AuditWeb } from './audit.decorator';
 import { AuditService } from './audit.service';
-import type { AuditAction, AuditEntry, AuditHttpRequest } from './audit.types';
+import type {
+  AuditAction,
+  AuditEntry,
+  AuditGqlRequest,
+  AuditHttpRequest,
+  WebAuditMeta,
+} from './audit.types';
 
 /**
  * Audits writes through the v2 REST API. Reuses the `@RequireCapability`
@@ -33,10 +40,14 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
-    if (context.getType() !== 'http') {
+    const handler = context.getHandler();
+    const contextType = context.getType<GqlContextType>();
+    if (contextType === 'graphql') {
+      return this.interceptWeb(context, next);
+    }
+    if (contextType !== 'http') {
       return next.handle();
     }
-    const handler = context.getHandler();
     const req = context.switchToHttp().getRequest<AuditHttpRequest>();
 
     // v2 endpoints derive from @RequireCapability; v1 endpoints carry explicit @Audit.
@@ -83,6 +94,105 @@ export class AuditInterceptor implements NestInterceptor {
       }),
     );
   }
+
+  /**
+   * Web-admin GraphQL writes. Selective: only mutations carrying `@AuditWeb` are
+   * recorded (source='web', actor = logged-in user). projectId is reused from the
+   * PermissionGuard (it ran first and stashed `req.auditProjectId`).
+   */
+  private async interceptWeb(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<unknown>> {
+    const handler = context.getHandler();
+    const meta = this.reflector.get(AuditWeb, handler);
+    if (!meta) {
+      return next.handle();
+    }
+    const gqlCtx = GqlExecutionContext.create(context);
+    const req = gqlCtx.getContext()?.req as AuditGqlRequest | undefined;
+    const args = (gqlCtx.getArgs() ?? {}) as Record<string, unknown>;
+    const projectId = req?.auditProjectId;
+    if (!projectId) {
+      // Audited web mutations must also be @RequirePermission-guarded (the guard
+      // resolves + stashes projectId). Surface the wiring bug; don't crash.
+      this.logger.error(
+        `Audit(web): no projectId for ${meta.resourceType}:${meta.action} — missing @RequirePermission?`,
+      );
+      return next.handle();
+    }
+
+    const environmentId = meta.environmentId?.(args) ?? null;
+    let before: unknown;
+    try {
+      // The before-snapshot id comes from the args (delete/update). resourceId
+      // fns that need the result (create/publish) throw on the undefined result —
+      // treat that as "no before" (those policies don't snapshot anyway).
+      let beforeId: string | undefined;
+      if (meta.action !== 'create') {
+        try {
+          const id = meta.resourceId
+            ? meta.resourceId(args, undefined)
+            : resolveResourceId(args, undefined);
+          beforeId = id || undefined;
+        } catch {
+          beforeId = undefined;
+        }
+      }
+      before = await fetchBefore(
+        meta.resourceType,
+        meta.action,
+        { id: beforeId },
+        environmentId,
+        this.prisma,
+      );
+    } catch (error) {
+      this.logger.error('Audit before-fetch failed', error as Error);
+    }
+    const operation = gqlCtx.getInfo()?.fieldName ?? handler.name;
+
+    return next.handle().pipe(
+      tap((result) => {
+        this.audit.record(
+          buildWebAuditEntry(req, args, result, meta, {
+            projectId,
+            environmentId,
+            operation,
+            before,
+          }),
+        );
+      }),
+    );
+  }
+}
+
+/** Map a completed web-admin GraphQL write into an `AuditEntry` (mirror of buildRestAuditEntry). */
+export function buildWebAuditEntry(
+  req: AuditGqlRequest | undefined,
+  args: Record<string, unknown>,
+  result: unknown,
+  meta: WebAuditMeta,
+  ctx: { projectId: string; environmentId: string | null; operation: string; before: unknown },
+): AuditEntry {
+  const userAgent = req?.headers?.['user-agent'];
+  return {
+    source: 'web',
+    projectId: ctx.projectId,
+    environmentId: ctx.environmentId,
+    actorUserId: req?.user?.id ?? null,
+    actorTokenId: null,
+    action: meta.action,
+    operation: ctx.operation,
+    resourceType: meta.resourceType,
+    resourceId: meta.resourceId ? meta.resourceId(args, result) : resolveResourceId(args, result),
+    before: ctx.before,
+    after: result,
+    metadata: {
+      credentialType: 'session',
+      ip: req?.ip,
+      userAgent: typeof userAgent === 'string' ? userAgent : undefined,
+    },
+  };
 }
 
 /**
