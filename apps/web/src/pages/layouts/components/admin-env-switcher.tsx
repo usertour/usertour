@@ -32,7 +32,7 @@ export const AdminEnvSwitcher = () => {
   const { selectEnvironment } = useEnvironmentSelection();
   const { t } = useTranslation();
 
-  const { environmentList, refetch } = useEnvironmentList();
+  const { environmentList } = useEnvironmentList();
 
   const handleItemClick = React.useCallback(
     (env: Environment) => {
@@ -57,9 +57,6 @@ export const AdminEnvSwitcher = () => {
   );
   const handleCreate = () => {
     setShowNewEnvDialog(true);
-  };
-  const handleOnSubmit = () => {
-    refetch();
   };
 
   return (
@@ -121,11 +118,9 @@ export const AdminEnvSwitcher = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <EnvironmentCreateDialog
-        open={showNewEnvDialog}
-        onOpenChange={setShowNewEnvDialog}
-        onSubmit={handleOnSubmit}
-      />
+      {/* createEnvironment carries refetchQueries: ['userEnvironments'], the
+          query backing this switcher list, so no onSubmit refetch is needed. */}
+      <EnvironmentCreateDialog open={showNewEnvDialog} onOpenChange={setShowNewEnvDialog} />
     </>
   );
 };

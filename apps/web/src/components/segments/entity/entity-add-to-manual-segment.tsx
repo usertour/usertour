@@ -19,7 +19,6 @@ import type { EntityConfig } from './entity-config';
 interface EntityAddToManualSegmentProps {
   config: EntityConfig<any>;
   table: Table<any>;
-  refetch: () => Promise<unknown>;
 }
 
 /**
@@ -30,7 +29,7 @@ interface EntityAddToManualSegmentProps {
  * lands in this dropdown without a page refresh.
  */
 export const EntityAddToManualSegment = (props: EntityAddToManualSegmentProps) => {
-  const { config, table, refetch } = props;
+  const { config, table } = props;
   const { t } = useTranslation();
   const { environment } = useAppContext();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
@@ -49,13 +48,11 @@ export const EntityAddToManualSegment = (props: EntityAddToManualSegmentProps) =
       if (!hasSelection()) {
         return;
       }
-      const selectedIds = collectSelectedIds();
-      const success = await add(selectedIds, segment);
-      if (success) {
-        await refetch();
-      }
+      // useAddToManualSegment's mutation carries refetchQueries for the entity
+      // list, so the table refreshes without a manual refetch here.
+      await add(collectSelectedIds(), segment);
     },
-    [collectSelectedIds, hasSelection, add, refetch],
+    [collectSelectedIds, hasSelection, add],
   );
 
   return (

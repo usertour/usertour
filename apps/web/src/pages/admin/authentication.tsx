@@ -28,7 +28,7 @@ import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 export const AdminAuthenticationPage = () => {
   const { t } = useTranslation('ui');
   const { userInfo, project } = useAppContext();
-  const { data, loading, refetch } = useAdminInstanceSettingsQuery();
+  const { data, loading } = useAdminInstanceSettingsQuery();
   const { data: adminSettings, loading: adminSettingsLoading } = useAdminSettingsQuery();
   // Wait for both admin queries to resolve before rendering license-derived
   // UI. Otherwise undefined data falls through `?.` chains to `false`, the
@@ -62,8 +62,9 @@ export const AdminAuthenticationPage = () => {
 
   const handleSave = async () => {
     try {
+      // updateAuthenticationSettings returns the full settings entity (id +
+      // allowUserRegistration), so the normalized cache updates in place.
       await updateAuthenticationSettings(allowUserRegistration);
-      await refetch();
       toast({
         variant: 'success',
         title: t('admin.authentication.settingsUpdated'),
@@ -92,8 +93,11 @@ export const AdminAuthenticationPage = () => {
       return;
     }
     try {
+      // updateRequire2FA returns the full settings entity (id + require2FA),
+      // so the normalized cache updates in place; only the license-scoped
+      // caches (me / globalConfig) need an explicit invalidation.
       await updateRequire2FA(next);
-      await Promise.all([refetch(), invalidateLicenseScopedCache()]);
+      await invalidateLicenseScopedCache();
       toast({
         variant: 'success',
         title: next
