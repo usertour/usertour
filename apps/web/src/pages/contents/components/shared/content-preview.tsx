@@ -43,6 +43,7 @@ import {
   ContentVersion,
   DEFAULT_BANNER_DATA,
   LauncherData,
+  LauncherDataType,
   ProgressBarPosition,
   ProgressBarType,
   ResourceCenterData,
@@ -199,6 +200,18 @@ const LauncherPreview = ({
 }) => {
   const data = currentVersion.data as LauncherData;
   const themeSettings = currentTheme.settings;
+
+  // A hidden launcher has no visible element (it triggers on a target), so
+  // LauncherView renders nothing and the preview looks empty. Show the same
+  // icon placeholder as a hidden flow step. No label: the preview is scaled to
+  // fit, which would blow the text up.
+  if (data.type === LauncherDataType.HIDDEN) {
+    return (
+      <div className="w-40 h-32 flex flex-none items-center justify-center">
+        <EyeNoneIcon className="w-8 h-8" />
+      </div>
+    );
+  }
 
   return (
     <LauncherRoot themeSettings={themeSettings} data={data}>
