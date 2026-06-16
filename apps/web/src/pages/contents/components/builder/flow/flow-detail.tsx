@@ -281,10 +281,24 @@ const FlowBuilderDetailFooter = () => {
       // Locate by cvid (front-end id, always present) not server id — a
       // not-yet-saved new step has a cvid but no id.
       const exists = steps.some((existing) => existing.cvid === step.cvid);
-      const nextSteps = exists
-        ? steps.map((existing) => (existing.cvid === step.cvid ? step : existing))
-        : [...steps, step];
-      return { ...prev, steps: nextSteps };
+      if (exists) {
+        return {
+          ...prev,
+          steps: steps.map((existing) => (existing.cvid === step.cvid ? step : existing)),
+        };
+      }
+      // A brand-new step commits at its recorded sequence (the slot it was
+      // created for), NOT the end. While it sits in the edit buffer, a goto-step
+      // action inside it (e.g. an NPS "go to new step") can spawn later steps
+      // straight into the version; appending here would drop this step BEHIND
+      // them — the reported "new step lands before the current modal" bug.
+      const at = Math.min(step.sequence ?? steps.length, steps.length);
+      const nextSteps = [...steps];
+      nextSteps.splice(at, 0, step);
+      return {
+        ...prev,
+        steps: nextSteps.map((existing, index) => ({ ...existing, sequence: index })),
+      };
     });
     exitToFlow();
   }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow]);
