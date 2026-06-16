@@ -250,10 +250,23 @@ export const extendBase = {
       '0px 6px 8px 0px hsl(var(--foreground) / 0.02)',
       '0px 2px 3px 0px hsl(var(--foreground) / 0.02)',
     ].join(', '),
-    popper: '0 10px 30px 0 rgba(0,0,0,0.1), 0 1px 4px 0 rgba(0,0,0,0.02)',
+    // Leads with a tight 0-offset ambient layer so the popover's TOP edge reads
+    // against a white page (our --background and --popover are both pure white;
+    // the two downward layers below only define the sides/bottom, leaving the
+    // top to dissolve into the page). The ambient is a soft shadow, not a ring.
+    popper:
+      '0 0 4px 0 rgba(0,0,0,0.07), 0 10px 30px 0 rgba(0,0,0,0.1), 0 1px 4px 0 rgba(0,0,0,0.02)',
   },
   dropShadow: {
-    popover: ['0 3px 10px rgba(0, 0, 0, 0.15)', '0 1px 2px rgba(0, 0, 0, 0.1)'],
+    // Filter-shadow twin of boxShadow.popper, for popovers that can't use a
+    // box-shadow because their shape isn't a plain rectangle (arrow'd popovers,
+    // transparent color-picker panels) — drop-shadow follows the real shape.
+    // Mirrors popper's three layers (drop-shadow has no spread; popper's are 0).
+    popover: [
+      '0 0 4px rgba(0,0,0,0.07)',
+      '0 10px 30px rgba(0,0,0,0.10)',
+      '0 1px 4px rgba(0,0,0,0.02)',
+    ],
   },
   // fontFamily: {
   //   sans: ["var(--font-sans)", ...fontFamily.sans],
