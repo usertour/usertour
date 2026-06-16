@@ -391,6 +391,10 @@ export const updateVersionLocationData = gql`
   mutation updateVersionLocationData($data: VersionUpdateLocalizationInput!) {
     updateVersionLocationData(data: $data) {
       id
+      enabled
+      localized
+      backup
+      updatedAt
     }
   }
 `;

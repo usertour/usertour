@@ -25,7 +25,7 @@ interface ContentLocalizationTableProps {
 export const ContentLocalizationTable = (props: ContentLocalizationTableProps) => {
   const { versionId } = props;
   const { t } = useTranslation();
-  const { contentLocalizationList, loading, refetch } = useContentLocalizations(versionId);
+  const { contentLocalizationList, loading } = useContentLocalizations(versionId);
   const { localizationList } = useLocalizationList();
   const { invoke: updateVersionLocation } = useUpdateVersionLocationDataMutation();
   const { toast } = useToast();
@@ -41,7 +41,9 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
         enabled,
       });
       if (success) {
-        await refetch();
+        // updateVersionLocationData returns the row's editable fields (enabled
+        // / localized / backup / updatedAt), so the normalized cache updates
+        // the toggled row in place — no list refetch needed.
         toast({
           variant: 'success',
           title: t('contents.localization.toast.applySuccess'),
