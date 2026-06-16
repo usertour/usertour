@@ -108,7 +108,16 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>((props, ref) => {
       ref={ref}
       {...attributes}
       style={style}
-      onClick={() => onClick?.('select', tab)}
+      // The delete-confirm dialog is portaled to <body>, but React routes its
+      // synthetic events through the JSX tree — so a click on the dialog's
+      // Cancel/Delete/overlay bubbles back into this row and would select the
+      // tab. Only honor clicks that physically landed inside the row; portaled
+      // dialog content is not a DOM descendant, so it's filtered out.
+      onClick={(event) => {
+        if (event.currentTarget.contains(event.target as Node)) {
+          onClick?.('select', tab);
+        }
+      }}
       className={cn(
         'group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors',
         isActive ? 'border-primary/30 bg-accent/50' : 'hover:bg-muted',

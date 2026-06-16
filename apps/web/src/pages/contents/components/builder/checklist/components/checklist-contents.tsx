@@ -87,7 +87,16 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
       ref={ref}
       {...attributes}
       style={style}
-      onClick={() => onClick?.('edit', item)}
+      // The delete-confirm dialog is portaled to <body>, but React routes its
+      // synthetic events through the JSX tree — so a click on the dialog's
+      // Cancel/Delete/overlay bubbles back into this row and would open the
+      // item editor. Only honor clicks that physically landed inside the row;
+      // portaled dialog content is not a DOM descendant, so it's filtered out.
+      onClick={(event) => {
+        if (event.currentTarget.contains(event.target as Node)) {
+          onClick?.('edit', item);
+        }
+      }}
       className="group cursor-pointer rounded-lg border border-transparent px-2 py-2 transition-colors hover:bg-muted"
     >
       <div className="flex min-h-6 items-center gap-2">
