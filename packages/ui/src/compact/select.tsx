@@ -58,7 +58,7 @@ export const CompactSelectContent = (props: CompactSelectContentProps) => {
       >
         <Select.Popup
           className={cn(
-            'max-h-[var(--available-height)] w-[var(--anchor-width)] overflow-y-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-md outline-none',
+            'max-h-[var(--available-height)] w-[var(--anchor-width)] overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-popper dark:shadow-none dark:ring-1 dark:ring-foreground/10 outline-none',
             className,
           )}
         >
