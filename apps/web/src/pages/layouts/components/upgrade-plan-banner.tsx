@@ -39,9 +39,9 @@ export const UpgradePlanBanner = ({ projectId }: { projectId: string }) => {
                 clipRule="evenodd"
               />
             </svg>
-            <span>{t('billing.banner.sessionLimitMessage')}</span>
+            <span>{t('settings.billing.banner.sessionLimitMessage')}</span>
           </div>
-          <Button onClick={handleUpgradeClick}>{t('billing.banner.upgradeButton')}</Button>
+          <Button onClick={handleUpgradeClick}>{t('settings.billing.banner.upgradeButton')}</Button>
         </div>
       </div>
     </div>
