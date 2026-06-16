@@ -192,6 +192,7 @@ export const extendBase = {
     foreground: 'hsl(var(--foreground))',
     surface: 'hsl(var(--surface))',
     'surface-raised': 'hsl(var(--surface-raised))',
+    'surface-raised-hover': 'hsl(var(--surface-raised-hover))',
     success: 'hsl(var(--success))',
     warning: 'hsl(var(--warning))',
     'warning-foreground': 'hsl(var(--warning-foreground))',

@@ -28,7 +28,7 @@ const formatFlowStepDisplay = (
 ): string => {
   const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
   const stepNumberDisplay = hasStepNumber
-    ? t('sessions.stepN', { number: Number(flowStepNumber) + 1 })
+    ? t('users.sessions.stepN', { number: Number(flowStepNumber) + 1 })
     : '';
 
   if (stepNumberDisplay && flowStepName) {
@@ -64,7 +64,7 @@ const LauncherProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.active')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -74,13 +74,15 @@ const LauncherProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.dismissed')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isActivated && <div className="text-muted-foreground">{t('sessions.status.seen')}</div>}
-        {isActivated && <div className="text-success">{t('sessions.status.activated')}</div>}
+        {!isActivated && (
+          <div className="text-muted-foreground">{t('users.sessions.status.seen')}</div>
+        )}
+        {isActivated && <div className="text-success">{t('users.sessions.status.activated')}</div>}
       </div>
     </div>
   );
@@ -112,7 +114,7 @@ const BannerProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.active')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -122,13 +124,17 @@ const BannerProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.dismissed')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isDismissed && <div className="text-muted-foreground">{t('sessions.status.seen')}</div>}
-        {isDismissed && <div className="text-foreground/60">{t('sessions.status.dismissed')}</div>}
+        {!isDismissed && (
+          <div className="text-muted-foreground">{t('users.sessions.status.seen')}</div>
+        )}
+        {isDismissed && (
+          <div className="text-foreground/60">{t('users.sessions.status.dismissed')}</div>
+        )}
       </div>
     </div>
   );
@@ -162,7 +168,7 @@ const ChecklistProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.active')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -172,7 +178,7 @@ const ChecklistProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.dismissed')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -180,7 +186,7 @@ const ChecklistProgressColumn = ({
         {!isComplete && <span>{progress}%</span>}
         {isComplete && (
           <div className="text-success font-bold text-left">
-            {t('sessions.completedIn', { date: completeDate })}
+            {t('users.sessions.completedIn', { date: completeDate })}
           </div>
         )}
       </div>
@@ -247,7 +253,9 @@ const ChecklistItemsColumn = ({
                     <TooltipTrigger className="cursor-default flex-shrink-0">
                       <ClickIcon className="h-4 text-muted-foreground/70" />
                     </TooltipTrigger>
-                    <TooltipContent usePortal={true}>{t('sessions.taskClicked')}</TooltipContent>
+                    <TooltipContent usePortal={true}>
+                      {t('users.sessions.taskClicked')}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -257,7 +265,9 @@ const ChecklistItemsColumn = ({
                     <TooltipTrigger className="cursor-default flex-shrink-0">
                       <EyeNoneIcon className="h-4 text-muted-foreground/70" />
                     </TooltipTrigger>
-                    <TooltipContent usePortal={true}>{t('sessions.taskHidden')}</TooltipContent>
+                    <TooltipContent usePortal={true}>
+                      {t('users.sessions.taskHidden')}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -301,7 +311,7 @@ const FlowProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.active')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -311,7 +321,7 @@ const FlowProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.dismissed')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -319,7 +329,7 @@ const FlowProgressColumn = ({
         {!isComplete && <span>{lastSeenBizEvent?.data?.flow_step_progress ?? 0}%</span>}
         {isComplete && (
           <div className="text-success font-bold text-left">
-            {t('sessions.completedIn', { date: completeDate })}
+            {t('users.sessions.completedIn', { date: completeDate })}
           </div>
         )}
         {lastSeenBizEvent && (
@@ -366,7 +376,7 @@ const ResourceCenterProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.active')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -376,13 +386,15 @@ const ResourceCenterProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>{t('sessions.status.dismissed')}</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isDismissed && <div className="text-success">{t('sessions.status.active')}</div>}
-        {isDismissed && <div className="text-foreground/60">{t('sessions.status.dismissed')}</div>}
+        {!isDismissed && <div className="text-success">{t('users.sessions.status.active')}</div>}
+        {isDismissed && (
+          <div className="text-foreground/60">{t('users.sessions.status.dismissed')}</div>
+        )}
       </div>
     </div>
   );

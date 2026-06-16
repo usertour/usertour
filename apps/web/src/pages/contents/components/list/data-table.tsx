@@ -248,12 +248,12 @@ const ContentTableItem = ({
       className={cn(
         'group relative flex h-72 cursor-pointer flex-col overflow-hidden rounded-xl bg-card dark:bg-surface-raised',
         'shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.06)] dark:shadow-none',
-        'transition-[box-shadow,transform] duration-200',
-        'hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,24,40,0.12)] dark:hover:shadow-none',
+        'transition-[box-shadow,transform,background-color] duration-200',
+        'hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,24,40,0.12)] dark:hover:shadow-none dark:hover:bg-surface-raised-hover',
       )}
     >
       <div
-        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted dark:bg-surface-raised dark:border-b dark:border-white/[0.06]"
+        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted dark:bg-transparent dark:border-b dark:border-white/[0.06]"
         {...({ inert: '' } as any)}
       >
         <ContentPreview

@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 export const AdminGeneralPage = () => {
   const { t } = useTranslation();
-  const { data, loading, refetch } = useAdminInstanceSettingsQuery();
+  const { data, loading } = useAdminInstanceSettingsQuery();
   const { invoke: updateGeneralSettings, loading: updating } =
     useUpdateInstanceGeneralSettingsMutation();
   const { toast } = useToast();
@@ -48,7 +48,8 @@ export const AdminGeneralPage = () => {
         contactEmail.trim() || undefined,
         allowProjectLevelSubscriptionManagement,
       );
-      await refetch();
+      // updateGeneralSettings returns the full settings entity (id + the
+      // edited fields), so the normalized cache updates in place.
       toast({
         variant: 'success',
         title: t('admin.general.settingsUpdated'),

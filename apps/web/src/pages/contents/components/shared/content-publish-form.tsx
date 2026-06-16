@@ -38,7 +38,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { environmentList } = useEnvironmentList();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const { contentId } = useContentDetailUI();
-  const { content, refetch } = useContentDetail(contentId);
+  const { content } = useContentDetail(contentId);
   const contentTypeMeta = getContentTypeMeta(content?.type);
 
   // `skip: !open` so the dialog only pays for this query when it's
@@ -150,7 +150,8 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
           : t('contents.shared.publish.partialFailure'),
       );
 
-      await refetch();
+      // publishVersion's refetchQueries (['getContent', 'queryContent'])
+      // already refreshes the detail content and the list; no manual refetch.
       onSubmit(allSuccess);
       setIsLoading(false);
     } catch (error) {

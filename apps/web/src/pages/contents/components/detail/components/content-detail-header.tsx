@@ -88,7 +88,7 @@ export const ContentDetailHeader = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { contentId, contentType, isSaving } = useContentDetailUI();
-  const { content, refetch, loading } = useContentDetail(contentId);
+  const { content, loading } = useContentDetail(contentId);
   const [openPublish, setOpenPublish] = useState(false);
   const { version } = useContentVersion(content?.editedVersionId);
   const { environment, isViewOnly } = useAppContext();
@@ -124,8 +124,10 @@ export const ContentDetailHeader = () => {
 
   const handleRename = async (name: string) => {
     try {
+      // updateContent returns the full Content entity, so Apollo's normalized
+      // cache writes the new name straight into this header's getContent
+      // observer — no refetch needed.
       await updateContent(content.id, { name });
-      refetch();
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
       throw error;
@@ -209,10 +211,11 @@ export const ContentDetailHeader = () => {
               content={content}
               disabled={isViewOnly || isSaving}
               onSubmit={(action: string) => {
+                // Duplicate / unpublish refresh through their own mutations'
+                // refetchQueries (queryContent / getContent); only delete needs
+                // a manual step here — leave the now-gone detail page.
                 if (action === 'delete') {
                   navigator(`/env/${environment?.id}/${contentType}`);
-                } else {
-                  refetch();
                 }
               }}
             >
@@ -225,9 +228,10 @@ export const ContentDetailHeader = () => {
         versionId={content.editedVersionId || ''}
         open={openPublish}
         onOpenChange={setOpenPublish}
-        onSubmit={async () => {
+        onSubmit={() => {
+          // publishVersion's refetchQueries (['getContent', 'queryContent'])
+          // already refreshes this header's content; just close the dialog.
           setOpenPublish(false);
-          await refetch();
         }}
       />
     </>

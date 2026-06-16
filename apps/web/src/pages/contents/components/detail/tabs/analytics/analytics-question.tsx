@@ -163,7 +163,7 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
   const { contentId } = props;
   const { dateRange, timezone } = useAnalyticsUI();
   const { analyticsData, loading } = useContentAnalytics();
-  const { content, refetch } = useContentDetail(contentId);
+  const { content } = useContentDetail(contentId);
 
   const startDate = dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '';
   const endDate = dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '';
@@ -199,7 +199,9 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
 
   const handleRollingWindowChange = async (success: boolean) => {
     if (success) {
-      await refetch();
+      // updateContent returns the full Content (config holds rollWindowConfig),
+      // so getContent updates via the normalized cache; only the aggregate
+      // question analytics must be recomputed server-side.
       await refetchQuestionAnalytics();
     }
   };

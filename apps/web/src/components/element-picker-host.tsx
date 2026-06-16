@@ -17,7 +17,6 @@ import {
 } from '@usertour/ui';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBuilderStore } from '@/pages/contents/components/builder/core';
 
 const EXTENSION_INSTALL_URL =
   'https://chromewebstore.google.com/detail/openpicker/iflipcihgpkellfpebibkmlklembmjph';
@@ -44,22 +43,34 @@ const normalizeUrl = (raw: string): string | null => {
 
 export interface ElementPickerHostProps {
   children?: ReactNode;
+  // Pick entry URL — the content's buildUrl. A pick opens (or reuses) a tab on
+  // it; the user can navigate before picking, so it only needs to reach the app.
+  buildUrl?: string;
+  // Content id, so a newly entered buildUrl can be persisted as the team-shared
+  // default.
+  contentId?: string;
+  // Reconciles the caller's data source after a buildUrl is saved (the builder's
+  // zustand store; the detail page lets Apollo's normalized cache update itself,
+  // so it can omit this). The updateContent mutation itself runs inside the host.
+  onBuildUrlSaved?: (buildUrl: string) => void;
 }
 
 // The single place that talks to the element-picker browser extension.
-// Provides a PickElementFunction to the builder tree (placement inputs and
-// condition editors render their pick buttons off it) and owns the UX
-// around it: asking for a build URL when the content has none (and saving
-// it back as the team-shared default), the install prompt when the
-// extension is missing, and error toasts. Picking happens in a separate
-// tab on the content's buildUrl; the user can navigate within that tab
-// before picking, so the URL only needs to reach the app.
+// Provides a PickElementFunction to its subtree (placement inputs and condition
+// editors render their pick buttons off it) and owns the UX around it: asking
+// for a build URL when the content has none (and saving it back as the
+// team-shared default), the install prompt when the extension is missing, and
+// error toasts. Picking happens in a separate tab on the content's buildUrl; the
+// user can navigate within that tab before picking, so the URL only needs to
+// reach the app.
+//
+// Content data is INJECTED (buildUrl / contentId / onBuildUrlSaved) rather than
+// read from a store, so both the builder (fed from its zustand store) and the
+// content detail page (fed from the Apollo-cached content) can mount it.
 export const ElementPickerHost = (props: ElementPickerHostProps) => {
-  const { children } = props;
+  const { children, buildUrl, contentId, onBuildUrlSaved } = props;
   const { t } = useTranslation();
   const { toast } = useToast();
-  const currentContent = useBuilderStore((state) => state.currentContent);
-  const setCurrentContent = useBuilderStore((state) => state.setCurrentContent);
   const { invoke: updateContent } = useUpdateContentMutation();
   const [isInstallDialogOpen, setIsInstallDialogOpen] = useState(false);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
@@ -74,8 +85,8 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
   // dialog closes and the original pick resumes; dismissing settles false.
   const installResolverRef = useRef<((installed: boolean) => void) | null>(null);
 
-  // Settle pending pick flows if the builder unmounts mid-dialog so their
-  // poll loops and awaiting callers don't outlive the host.
+  // Settle pending pick flows if the host unmounts mid-dialog so their poll
+  // loops and awaiting callers don't outlive it.
   useEffect(() => {
     return () => {
       urlResolverRef.current?.(null);
@@ -147,7 +158,7 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
           return null;
         }
       }
-      let url = currentContent?.buildUrl;
+      let url = buildUrl;
       // When no target tab is open, this pick will open one — give the user
       // a chance to adjust the URL first (prefilled with the saved build
       // URL). With a target tab already open the extension reuses it and
@@ -163,10 +174,10 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
         // Persist as the content's shared build URL so the whole team gets
         // it prefilled from now on. Best-effort: a failed save must not
         // block the pick the user just asked for.
-        if (entered !== url && currentContent?.id) {
+        if (entered !== url && contentId) {
           try {
-            await updateContent(currentContent.id, { buildUrl: entered });
-            setCurrentContent({ ...currentContent, buildUrl: entered });
+            await updateContent(contentId, { buildUrl: entered });
+            onBuildUrlSaved?.(entered);
           } catch {
             // Keep picking with the entered URL; the save can be retried
             // on the next pick.
@@ -180,7 +191,7 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
           screenshot: 'none',
           mustMatch: options?.mustMatch,
         });
-        // Picking focused the target tab — bring the builder back to front.
+        // Picking focused the target tab — bring the app back to front.
         // Best-effort: older extension versions may not support it.
         await openpicker.activateSelf().catch(() => undefined);
         return { selector: result.selector, matchCount: result.matchCount };
@@ -205,11 +216,12 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
       }
     },
     [
-      currentContent,
+      buildUrl,
+      contentId,
+      onBuildUrlSaved,
       requestBuildUrl,
       waitForExtensionInstall,
       updateContent,
-      setCurrentContent,
       t,
       toast,
     ],

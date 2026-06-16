@@ -3546,6 +3546,10 @@ const translations = {
       randomNumber: '随机',
     },
   },
+  notFound: {
+    description: '我们找不到该页面。',
+    backHome: '返回首页',
+  },
   error: {
     forbidden: '您无权访问此页面。',
     notFound: '您访问的页面不存在。',

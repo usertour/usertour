@@ -97,8 +97,12 @@ const SessionResponse = ({ questions }: SessionResponseProps) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-1/2">{t('sessions.detail.questionTable.question')}</TableHead>
-            <TableHead className="w-1/2">{t('sessions.detail.questionTable.answer')}</TableHead>
+            <TableHead className="w-1/2">
+              {t('users.sessions.detail.questionTable.question')}
+            </TableHead>
+            <TableHead className="w-1/2">
+              {t('users.sessions.detail.questionTable.answer')}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -131,7 +135,7 @@ const SessionResponse = ({ questions }: SessionResponseProps) => {
           ) : (
             <TableRow>
               <TableCell colSpan={2} className="h-24 text-center">
-                {t('sessions.detail.questionTable.noQuestions')}
+                {t('users.sessions.detail.questionTable.noQuestions')}
               </TableCell>
             </TableRow>
           )}

@@ -96,13 +96,6 @@ export const ContentListLayout = memo(
       setOpen(true);
     }, []);
 
-    // Cancel/ESC/click-outside only flips the local state — no refetch.
-    // `onSubmit` fires the refetch on success so adjusting the form
-    // shouldn't kick off network traffic on the list page.
-    const handleSubmitSuccess = useCallback(() => {
-      refetch();
-    }, [refetch]);
-
     const handleGoToDraft = useCallback(() => {
       setSearchParams({ published: '0' }, { replace: false });
     }, [setSearchParams]);
@@ -249,7 +242,10 @@ export const ContentListLayout = memo(
 
         {renderContent}
 
-        {createForm({ open, onOpenChange: setOpen, onSubmit: handleSubmitSuccess })}
+        {/* createContent's refetchQueries (['queryContent']) refreshes the
+            list, and the form navigates to the new content on success — so the
+            list page needs no onSubmit refetch. */}
+        {createForm({ open, onOpenChange: setOpen })}
       </div>
     );
   },

@@ -3710,6 +3710,10 @@ const translations = {
       randomNumber: 'RANDOM',
     },
   },
+  notFound: {
+    description: "We couldn't find that page.",
+    backHome: 'Back to home',
+  },
   error: {
     forbidden: 'You are not authorized to access this page.',
     notFound: 'The page you are trying to visit does not exist.',

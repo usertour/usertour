@@ -9,9 +9,10 @@ import { ChecklistBuilder } from '@/pages/contents/components/builder/checklist'
 import { FlowBuilder } from '@/pages/contents/components/builder/flow';
 import { LauncherBuilder } from '@/pages/contents/components/builder/launcher';
 import { ResourceCenterBuilder } from '@/pages/contents/components/builder/resource-center';
-import { ElementPickerHost } from '@/pages/contents/components/builder/components/element-picker-host';
+import { ElementPickerHost } from '@/components/element-picker-host';
 import { WebBuilderLoading } from '@/pages/contents/components/builder/components/web-builder-loading';
 import { useListsLoading } from '@/pages/contents/components/builder/hooks/use-lists-loading';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface WebBuilderProps {
@@ -54,11 +55,31 @@ function WebBuilderContent() {
   }
 }
 
+// Feeds the store-agnostic ElementPickerHost from the builder's zustand store.
+// Separate component so it runs inside BuilderProvider (where the store lives);
+// the host itself is shared with the content detail page, which feeds it from
+// the Apollo-cached content instead.
+function BuilderElementPickerHost({ children }: { children: ReactNode }) {
+  const currentContent = useBuilderStore((state) => state.currentContent);
+  const setCurrentContent = useBuilderStore((state) => state.setCurrentContent);
+  return (
+    <ElementPickerHost
+      buildUrl={currentContent?.buildUrl}
+      contentId={currentContent?.id}
+      onBuildUrlSaved={(buildUrl) =>
+        currentContent && setCurrentContent({ ...currentContent, buildUrl })
+      }
+    >
+      {children}
+    </ElementPickerHost>
+  );
+}
+
 export const WebBuilder = (props: WebBuilderProps) => (
   <BuilderProvider {...props}>
-    <ElementPickerHost>
+    <BuilderElementPickerHost>
       <WebBuilderContent />
-    </ElementPickerHost>
+    </BuilderElementPickerHost>
   </BuilderProvider>
 );
 

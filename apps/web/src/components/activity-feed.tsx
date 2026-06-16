@@ -114,7 +114,11 @@ function getEventDescriptor(
   switch (category) {
     case 'flow': {
       const primary = str(data[EventAttributes.FLOW_NAME]);
-      const stepNumber = str(data[EventAttributes.FLOW_STEP_NUMBER]);
+      // FLOW_STEP_NUMBER is 0-indexed in event data; display it 1-based to match
+      // the expanded detail (getFieldValue) and the sessions list, which both +1.
+      const rawStep = data[EventAttributes.FLOW_STEP_NUMBER];
+      const stepNumber =
+        rawStep === undefined || rawStep === null ? undefined : String(Number(rawStep) + 1);
       const stepName = str(data[EventAttributes.FLOW_STEP_NAME]);
       const secondary = stepNumber
         ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}`
