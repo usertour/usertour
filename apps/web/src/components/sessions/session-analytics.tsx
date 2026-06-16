@@ -79,7 +79,7 @@ export const SessionStatusBadge = ({
       variant="secondary"
       className={cn('font-medium border-transparent', statusClass[status])}
     >
-      {t(`sessions.status.${status}`)}
+      {t(`users.sessions.status.${status}`)}
     </Badge>
   );
 };
@@ -92,7 +92,7 @@ const formatFlowStepDisplay = (
 ): string => {
   const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
   const stepNumberDisplay = hasStepNumber
-    ? t('sessions.stepN', { number: Number(flowStepNumber) + 1 })
+    ? t('users.sessions.stepN', { number: Number(flowStepNumber) + 1 })
     : '';
 
   if (stepNumberDisplay && flowStepName) {
@@ -133,7 +133,7 @@ export const FlowProgressCell = ({
     <div className="flex flex-col min-w-0">
       {isComplete ? (
         <span className="text-sm text-muted-foreground">
-          {t('sessions.completedIn', { date: completeDate })}
+          {t('users.sessions.completedIn', { date: completeDate })}
         </span>
       ) : (
         <span className="text-sm tabular-nums font-medium">
@@ -166,7 +166,7 @@ export const ChecklistProgressCell = ({
   if (isComplete) {
     return (
       <span className="text-sm text-muted-foreground">
-        {t('sessions.completedIn', { date: completeDate })}
+        {t('users.sessions.completedIn', { date: completeDate })}
       </span>
     );
   }
