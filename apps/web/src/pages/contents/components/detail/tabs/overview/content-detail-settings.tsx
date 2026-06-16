@@ -13,6 +13,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
+import { ElementPickerHost } from '@/components/element-picker-host';
 
 const getContentTypeLabel = (contentType: ContentDataType, t: TFunction): string => {
   if (contentType === ContentDataType.RESOURCE_CENTER) {
@@ -118,48 +119,54 @@ export const ContentDetailSettings = () => {
   const enabledAutoStartRules = !isShowOnly;
 
   return (
-    <div className="flex flex-col space-y-6 flex-none w-[420px]">
-      <Card className="px-4 py-6 space-y-3">
-        <ContentDetailAutoStartRules
-          defaultConditions={config.autoStartRules}
-          defaultEnabled={config.enabledAutoStartRules}
-          setting={config.autoStartRulesSetting}
-          name={getAutoStartRulesName(contentType, t)}
-          onDataChange={handleAutoStartRulesDataChange}
-          content={content}
-          type={ContentDetailAutoStartRulesType.START_RULES}
-          showIfCompleted={showAdvancedOptions}
-          showFrequency={showAdvancedOptions}
-          showAtLeast={contentType !== ContentDataType.CHECKLIST}
-          showWait={showAdvancedOptions}
-          showPriority={showAdvancedOptions || isResourceCenter}
-          disabled={isViewOnly}
-          featureTooltip={AutoStartTooltips(contentType, t)}
-        />
-      </Card>
-
-      {enabledAutoStartRules && (
+    // Element-picker host so the rule conditions' "pick element" buttons work
+    // on the detail page too. No builder store here, so feed it from the
+    // Apollo-cached content; a saved buildUrl flows back via the normalized
+    // cache, so no onBuildUrlSaved callback is needed.
+    <ElementPickerHost buildUrl={content.buildUrl} contentId={content.id}>
+      <div className="flex flex-col space-y-6 flex-none w-[420px]">
         <Card className="px-4 py-6 space-y-3">
           <ContentDetailAutoStartRules
-            defaultConditions={config.hideRules}
-            defaultEnabled={config.enabledHideRules}
-            setting={config.hideRulesSetting}
-            name={t('contents.overview.hideRules.name', {
-              label: getContentTypeLabel(contentType, t),
-            })}
-            onDataChange={handleHideRulesDataChange}
+            defaultConditions={config.autoStartRules}
+            defaultEnabled={config.enabledAutoStartRules}
+            setting={config.autoStartRulesSetting}
+            name={getAutoStartRulesName(contentType, t)}
+            onDataChange={handleAutoStartRulesDataChange}
             content={content}
-            type={ContentDetailAutoStartRulesType.HIDE_RULES}
-            showWait={false}
-            showFrequency={false}
-            showIfCompleted={false}
-            showPriority={false}
+            type={ContentDetailAutoStartRulesType.START_RULES}
+            showIfCompleted={showAdvancedOptions}
+            showFrequency={showAdvancedOptions}
+            showAtLeast={contentType !== ContentDataType.CHECKLIST}
+            showWait={showAdvancedOptions}
+            showPriority={showAdvancedOptions || isResourceCenter}
             disabled={isViewOnly}
-            featureTooltip={HideRulesTooltips(contentType, t)}
+            featureTooltip={AutoStartTooltips(contentType, t)}
           />
         </Card>
-      )}
-    </div>
+
+        {enabledAutoStartRules && (
+          <Card className="px-4 py-6 space-y-3">
+            <ContentDetailAutoStartRules
+              defaultConditions={config.hideRules}
+              defaultEnabled={config.enabledHideRules}
+              setting={config.hideRulesSetting}
+              name={t('contents.overview.hideRules.name', {
+                label: getContentTypeLabel(contentType, t),
+              })}
+              onDataChange={handleHideRulesDataChange}
+              content={content}
+              type={ContentDetailAutoStartRulesType.HIDE_RULES}
+              showWait={false}
+              showFrequency={false}
+              showIfCompleted={false}
+              showPriority={false}
+              disabled={isViewOnly}
+              featureTooltip={HideRulesTooltips(contentType, t)}
+            />
+          </Card>
+        )}
+      </div>
+    </ElementPickerHost>
   );
 };
 
