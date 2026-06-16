@@ -34,7 +34,7 @@ export function ContentListSidebar({ title }: ContentListSidebarProps) {
   return (
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>
-        <h2 className="min-w-0 truncate text-xl font-semibold">{title}</h2>
+        <h2 className="min-w-0 truncate text-lg font-semibold">{title}</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <AdminSidebarBodyTitleTemplate>
