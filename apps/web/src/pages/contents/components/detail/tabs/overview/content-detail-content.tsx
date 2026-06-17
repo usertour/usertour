@@ -75,7 +75,7 @@ const ContentBadge = ({
 };
 
 // Custom hook for theme handling
-const useThemeHandler = (version: ContentVersion, themeId?: string) => {
+const useThemeHandler = (version: ContentVersion, themeId?: string | null) => {
   const { themeList } = useThemeList();
   const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
 

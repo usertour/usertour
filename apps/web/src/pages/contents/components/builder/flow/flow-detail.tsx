@@ -130,7 +130,7 @@ const FlowBuilderDetailBody = () => {
     }));
   };
 
-  const handleThemeChange = (value: string | undefined) => {
+  const handleThemeChange = (value: string | null) => {
     updateCurrentStep((pre) => ({
       ...pre,
       themeId: value,
