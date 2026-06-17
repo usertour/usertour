@@ -55,25 +55,17 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
-          <DropdownMenuItem
-            onClick={handleUnpublishOpen}
-            className="cursor-pointer"
-            disabled={!isPublished || disabled}
-          >
+          <DropdownMenuItem onClick={handleUnpublishOpen} disabled={!isPublished || disabled}>
             <UnPublishIcon className="mr-1" width={14} height={14} />
             {t('contents.shared.menu.unpublish')}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={handleDuplicateOpen}
-            className="cursor-pointer"
-            disabled={disabled}
-          >
+          <DropdownMenuItem onClick={handleDuplicateOpen} disabled={disabled}>
             <CopyIcon className="mr-1" width={15} height={15} />
             {t('contents.shared.menu.duplicate', { type: contentTypeMeta.singular })}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-600 cursor-pointer"
+            variant="destructive"
             onClick={handleOnClick}
             disabled={isPublishedAtLeastOneEnvironment(content) || disabled}
           >

@@ -467,7 +467,6 @@ const MemberAction = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuItem
-            className="cursor-pointer"
             disabled={member.isOwner}
             onClick={() => {
               setSelectedRole(member.role);
@@ -477,17 +476,13 @@ const MemberAction = ({
             <EditIcon className="w-6" width={16} height={16} />
             {t('admin.projects.changeRole')}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            disabled={member.isOwner}
-            onClick={() => setTransferOpen(true)}
-          >
+          <DropdownMenuItem disabled={member.isOwner} onClick={() => setTransferOpen(true)}>
             <ArrowLeftRightIcon className="w-6" height={16} width={16} />
             {t('admin.projects.transferOwnershipAction')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            variant="destructive"
             disabled={member.isOwner}
             onClick={() => setRemoveOpen(true)}
           >
@@ -708,22 +703,15 @@ const ProjectListAction = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[200px]">
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => navigate(`/project/${project.id}/settings/general`)}
-          >
+          <DropdownMenuItem onClick={() => navigate(`/project/${project.id}/settings/general`)}>
             <ExternalLinkIcon className="w-4 h-4 mr-2" />
             {t('admin.projects.openProject')}
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setMembersOpen(true)}>
+          <DropdownMenuItem onClick={() => setMembersOpen(true)}>
             {t('admin.projects.viewMembers')}
           </DropdownMenuItem>
           {!isUnlimitedInstanceLicense && (
-            <DropdownMenuItem
-              className="cursor-pointer"
-              disabled={loading}
-              onClick={handleToggleInstanceLicense}
-            >
+            <DropdownMenuItem disabled={loading} onClick={handleToggleInstanceLicense}>
               {project.usesInstanceLicense
                 ? t('admin.projects.stopUsingInstanceLicense')
                 : t('admin.projects.useInstanceLicense')}

@@ -116,7 +116,7 @@ const DropdownMenuItems = ({
       group: 'view',
       show: showViewDetails,
       render: () => (
-        <DropdownMenuItem onClick={onViewDetailsClick} className="cursor-pointer">
+        <DropdownMenuItem onClick={onViewDetailsClick}>
           <ZoomInIcon className="w-4 h-4 mr-1" />
           {t('sessionActions.menu.viewDetails')}
         </DropdownMenuItem>
@@ -127,7 +127,7 @@ const DropdownMenuItems = ({
       group: 'view',
       show: showViewResponse,
       render: () => (
-        <DropdownMenuItem onClick={onResponseClick} className="cursor-pointer">
+        <DropdownMenuItem onClick={onResponseClick}>
           <QuestionMarkCircledIcon className="w-4 h-4 mr-1" />
           {t('sessionActions.menu.viewResponse')}
         </DropdownMenuItem>
@@ -138,11 +138,7 @@ const DropdownMenuItems = ({
       group: 'action',
       show: showEndSession,
       render: () => (
-        <DropdownMenuItem
-          className="cursor-pointer"
-          disabled={isViewOnly || sessionState === 1}
-          onClick={onEndClick}
-        >
+        <DropdownMenuItem disabled={isViewOnly || sessionState === 1} onClick={onEndClick}>
           <CloseCircleIcon className="w-4 h-4 mr-1" />
           {t('sessionActions.menu.endSession')}
         </DropdownMenuItem>
@@ -153,11 +149,7 @@ const DropdownMenuItems = ({
       group: 'action',
       show: showDeleteSession,
       render: () => (
-        <DropdownMenuItem
-          className="cursor-pointer text-destructive"
-          disabled={isViewOnly}
-          onClick={onDeleteClick}
-        >
+        <DropdownMenuItem variant="destructive" disabled={isViewOnly} onClick={onDeleteClick}>
           <Delete2Icon className="w-4 h-4 mr-1" />
           {t('sessionActions.menu.deleteSession')}
         </DropdownMenuItem>

@@ -67,7 +67,7 @@ export const EntityAddToManualSegment = (props: EntityAddToManualSegmentProps) =
         {manualSegments.map((segment) => (
           <DropdownMenuItem
             key={segment.id}
-            className="cursor-pointer min-w-[180px]"
+            className="min-w-[180px]"
             disabled={isAdding}
             onSelect={() => handleAddManualSegment(segment)}
           >

@@ -6,7 +6,7 @@ import {
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
-import { FileEditLineIcon, BaseStationLineIcon } from '@usertour/icons';
+import { RiEditLine, BaseStationLineIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
@@ -45,7 +45,7 @@ export function ContentListSidebar({ title }: ContentListSidebarProps) {
           variant={!isPublished ? 'secondary' : 'ghost'}
           className={getItemClassName(!isPublished)}
         >
-          <FileEditLineIcon className="w-4 h-4 mr-1" />
+          <RiEditLine className="w-4 h-4 mr-1" />
           {t('contents.shared.sidebar.draft')}
         </AdminSidebarBodyItemTemplate>
         <AdminSidebarBodyItemTemplate

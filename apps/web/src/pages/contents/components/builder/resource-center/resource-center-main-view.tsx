@@ -106,7 +106,7 @@ const ResourceCenterMainViewBody = () => {
                           <DropdownMenuItem
                             key={key}
                             disabled={disabled}
-                            className="cursor-pointer min-w-[220px] gap-2 py-1.5 text-xs"
+                            className="min-w-[220px] gap-2 py-1.5 text-xs"
                             onSelect={() => value && startCreateBlock(value)}
                           >
                             <Icon

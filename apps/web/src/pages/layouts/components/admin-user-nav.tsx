@@ -168,7 +168,7 @@ export const AdminUserNav = () => {
                 {activeProject && (
                   <DropdownMenuItem
                     key={activeProject.id}
-                    className="flex items-center justify-between cursor-pointer "
+                    className="flex items-center justify-between"
                     onClick={() => handleActiveProject(activeProject.id)}
                   >
                     <span className="truncate max-w-[120px]">{activeProject.name}</span>{' '}
@@ -184,7 +184,7 @@ export const AdminUserNav = () => {
                     {otherProjects.map((p) => (
                       <DropdownMenuItem
                         key={p.id}
-                        className="flex items-center justify-between cursor-pointer "
+                        className="flex items-center justify-between"
                         onClick={() => handleActiveProject(p.id)}
                       >
                         <span className="truncate max-w-[120px]">{p.name}</span>{' '}

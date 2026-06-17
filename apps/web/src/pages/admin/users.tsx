@@ -193,18 +193,14 @@ const UserListAction = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[200px]">
-        <DropdownMenuItem className="cursor-pointer" onClick={handleToggleAdmin}>
+        <DropdownMenuItem onClick={handleToggleAdmin}>
           {user.isSystemAdmin
             ? t('admin.users.removeSystemAdmin')
             : t('admin.users.makeSystemAdmin')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className={
-            user.disabled
-              ? 'cursor-pointer'
-              : 'text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer'
-          }
+          variant={user.disabled ? 'default' : 'destructive'}
           onClick={handleToggleDisabled}
         >
           {user.disabled ? t('admin.users.enableUser') : t('admin.users.disableUser')}

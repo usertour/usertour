@@ -59,7 +59,6 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
             onClick={() => {
               setOpenPublish(true);
             }}
-            className="cursor-pointer"
           >
             <PlaneIcon className="w-6" width={16} height={16} />
             {t('contents.versions.action.publish')}
@@ -70,7 +69,6 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
             onClick={() => {
               setOpenRestore(true);
             }}
-            className="cursor-pointer"
           >
             <ResetIcon className="w-6" width={16} height={16} />
             {t('contents.versions.action.restore')}

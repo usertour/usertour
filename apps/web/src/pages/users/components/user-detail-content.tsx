@@ -258,7 +258,7 @@ export const UserDetailContent = (props: UserDetailContentProps) => {
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isViewOnly}
-                className="text-destructive focus:text-destructive"
+                variant="destructive"
               >
                 <Delete2Icon className="mr-2 h-4 w-4" />
                 {t('users.actions.deleteUser')}

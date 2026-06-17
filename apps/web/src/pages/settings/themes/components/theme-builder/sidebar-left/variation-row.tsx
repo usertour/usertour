@@ -167,7 +167,7 @@ export const VariationRow = (props: VariationRowProps) => {
                 </CompactDropdownMenuItem>
               )}
               {onDelete && (
-                <CompactDropdownMenuItem onClick={onDelete} className="text-destructive">
+                <CompactDropdownMenuItem onClick={onDelete} variant="destructive">
                   <RiDeleteBinLine className="h-3.5 w-3.5" />
                   {t('themeBuilder.actions.delete')}
                 </CompactDropdownMenuItem>

@@ -395,9 +395,9 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isViewOnly}
-                className="text-destructive focus:text-destructive"
               >
                 <Delete2Icon className="mr-2 h-4 w-4" />
                 {t('companies.actions.deleteCompany')}

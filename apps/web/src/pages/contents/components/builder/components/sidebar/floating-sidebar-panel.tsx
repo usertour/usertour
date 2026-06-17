@@ -40,7 +40,7 @@ export const FloatingSidebarPanel = (props: FloatingSidebarPanelProps) => {
           collapsed && (isLeft ? '-translate-x-[460px]' : 'translate-x-[460px]'),
         )}
       >
-        <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-[0_18px_50px_rgba(15,23,42,0.14)] dark:bg-card dark:shadow-[0_24px_64px_-8px_rgba(0,0,0,0.7)]">
+        <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-background shadow-[0_18px_50px_rgba(15,23,42,0.14)] dark:bg-card dark:shadow-[0_24px_64px_-8px_rgba(0,0,0,0.7)]">
           <div className="absolute right-3 top-3.5 z-10">
             <SidebarControls
               isLeft={isLeft}
