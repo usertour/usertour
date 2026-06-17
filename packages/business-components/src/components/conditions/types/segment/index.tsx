@@ -61,7 +61,7 @@ function SegmentSummary({ condition }: { condition: RulesCondition }) {
       <span className={summaryTextClass}>
         <span>{labelForBizType(segment, t)}</span>{' '}
         <span className="text-muted-foreground">{operatorLabel}</span>{' '}
-        <span className="font-semibold">{segment.name}</span>
+        <span className="font-medium">{segment.name}</span>
       </span>
     </span>
   );

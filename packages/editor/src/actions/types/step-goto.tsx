@@ -90,7 +90,7 @@ function StepGotoSummary({ condition }: { condition: RulesCondition }) {
       <span className={summaryTextClass}>
         <span className="text-muted-foreground">{t('actions.types.stepGoto.prefix')}</span>{' '}
         {hasStep ? (
-          <span className="font-semibold">{stepText}</span>
+          <span className="font-medium">{stepText}</span>
         ) : (
           <span className="text-muted-foreground">{t('actions.types.stepGoto.placeholder')}</span>
         )}

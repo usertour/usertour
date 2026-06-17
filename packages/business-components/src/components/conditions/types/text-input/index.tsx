@@ -67,7 +67,7 @@ function TextInputSummary({ condition }: { condition: RulesCondition }) {
       <span className={summaryTextClass}>
         <span>{t('conditions.types.textInput.prefix')}</span>{' '}
         {elSelected ? (
-          <span className="font-semibold">
+          <span className="font-medium">
             {data.elementData?.content ||
               data.elementData?.customSelector ||
               t('conditions.types.element.element')}
@@ -79,7 +79,7 @@ function TextInputSummary({ condition }: { condition: RulesCondition }) {
         {!VALUELESS_OPERATORS.has(operator.value) && data.value && (
           <>
             {' '}
-            <span className="font-semibold">{data.value}</span>
+            <span className="font-medium">{data.value}</span>
           </>
         )}
       </span>

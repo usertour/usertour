@@ -68,11 +68,11 @@ function FlowStartSummary({ condition }: { condition: RulesCondition }) {
             <span className="text-muted-foreground">
               {t(`actions.types.flowStart.start.${isFlow ? 'flow' : 'checklist'}`)}
             </span>{' '}
-            <span className="font-semibold">{content.name}</span>
+            <span className="font-medium">{content.name}</span>
             {isFlow && data.stepCvid && stepIndex !== -1 && (
               <>
                 <span className="text-muted-foreground">{t('actions.types.flowStart.atStep')}</span>
-                <span className="font-semibold">{stepIndex + 1}</span>
+                <span className="font-medium">{stepIndex + 1}</span>
               </>
             )}
           </>

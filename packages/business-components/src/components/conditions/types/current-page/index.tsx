@@ -50,7 +50,7 @@ function CurrentPageSummary({ condition }: { condition: RulesCondition }) {
             <span className="text-muted-foreground">
               {t('conditions.types.currentPage.matches')}
             </span>{' '}
-            <span className="font-semibold">{includes.join(', ')}</span>
+            <span className="font-medium">{includes.join(', ')}</span>
           </>
         )}
         {includes.length > 0 && excludes.length > 0 && (
@@ -62,7 +62,7 @@ function CurrentPageSummary({ condition }: { condition: RulesCondition }) {
             <span className="text-muted-foreground">
               {t('conditions.types.currentPage.notMatches')}
             </span>{' '}
-            <span className="font-semibold">{excludes.join(', ')}</span>
+            <span className="font-medium">{excludes.join(', ')}</span>
           </>
         )}
       </span>
