@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { cuid, defaultStep } from '@usertour/helpers';
+import { cuid, defaultStep, generateDefaultStepName } from '@usertour/helpers';
 import type { Step } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { getStepId } from '@/utils/content';
@@ -30,7 +30,10 @@ export const useSeedStepFromRoute = () => {
         cvid: cuid(),
         setting: { ...defaultStep.setting },
         type,
-        name: 'Untitled',
+        name: generateDefaultStepName(
+          type,
+          steps.map((existing) => existing.name),
+        ),
         data: getEmptyDataForType(),
         sequence: steps.length,
       } as Step);

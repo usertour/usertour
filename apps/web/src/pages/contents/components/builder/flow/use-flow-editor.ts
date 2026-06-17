@@ -1,7 +1,13 @@
 import { useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { arrayMove } from '@dnd-kit/sortable';
-import { cuid, defaultStep, duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
+import {
+  cuid,
+  defaultStep,
+  duplicateStep,
+  generateDefaultStepName,
+  generateUniqueCopyName,
+} from '@usertour/helpers';
 import { type ContentVersion, type Step } from '@usertour/types';
 import { useBuilderStore, useIsBusy } from '@/pages/contents/components/builder/core';
 import { getStepId } from '@/utils/content';
@@ -142,7 +148,7 @@ export const useFlowEditor = () => {
           ...defaultStep,
           cvid: cuid(),
           type: finalStepType,
-          name: 'Untitled',
+          name: generateDefaultStepName(finalStepType, existingStepNames),
           data: getEmptyDataForType(),
           sequence,
           setting: { ...defaultStep.setting },
