@@ -33,12 +33,24 @@ const dropdownMenuItemVariants = cva(
   'relative flex cursor-pointer select-none items-center rounded-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
   {
     variants: {
+      // Semantic axis, matching Button / Badge / AlertDialogAction's
+      // `variant="destructive"`: a destructive item stays red on hover and tints
+      // its background red, instead of the base accent hover that would
+      // otherwise override the rest-state color and drop the warning cue exactly
+      // when the user is about to click it.
       variant: {
+        default: '',
+        destructive:
+          'text-destructive focus:bg-destructive/10 focus:text-destructive hover:bg-destructive/10 hover:text-destructive',
+      },
+      // Density axis (was `variant: default | compact`, renamed so `variant` can
+      // carry the standard destructive semantics above).
+      size: {
         default: 'px-2 py-1.5 text-sm',
         compact: 'gap-2 px-2 py-1 text-sm leading-tight',
       },
     },
-    defaultVariants: { variant: 'default' },
+    defaultVariants: { variant: 'default', size: 'default' },
   },
 );
 
@@ -135,10 +147,10 @@ export interface DropdownMenuItemProps
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   DropdownMenuItemProps
->(({ className, inset, variant, ...props }, ref) => (
+>(({ className, inset, variant, size, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
-    className={cn(dropdownMenuItemVariants({ variant }), inset && 'pl-8', className)}
+    className={cn(dropdownMenuItemVariants({ variant, size }), inset && 'pl-8', className)}
     {...props}
   />
 ));

@@ -141,7 +141,7 @@ export const ObjectMappingReadonly = (props: ObjectMappingReadonlyProps) => {
                   {t('settings.integrations.objectMapping.readonly.editAction')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  variant="destructive"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={loading}
                 >

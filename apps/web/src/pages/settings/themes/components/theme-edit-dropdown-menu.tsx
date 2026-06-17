@@ -76,7 +76,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-600"
+            variant="destructive"
             onClick={handleOnClick}
             disabled={theme.isSystem || theme.isDefault}
           >

@@ -73,7 +73,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-600 cursor-pointer"
+            variant="destructive"
             onClick={handleOnClick}
             disabled={isPublishedAtLeastOneEnvironment(content) || disabled}
           >

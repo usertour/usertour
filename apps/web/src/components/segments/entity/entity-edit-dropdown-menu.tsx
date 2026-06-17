@@ -31,10 +31,7 @@ export const EntityEditDropdownMenu = (props: EntityEditDropdownMenuProps) => {
           {children}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
-          <DropdownMenuItem
-            className="text-red-600 cursor-pointer"
-            onClick={() => setOpenDelete(true)}
-          >
+          <DropdownMenuItem variant="destructive" onClick={() => setOpenDelete(true)}>
             <Delete2Icon className="mr-1" />
             {t(config.i18n.deleteSegment)}
           </DropdownMenuItem>

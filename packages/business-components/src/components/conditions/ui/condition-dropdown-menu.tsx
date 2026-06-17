@@ -38,7 +38,5 @@ type ItemProps = React.ComponentPropsWithoutRef<typeof DropdownMenuItem>;
 export const ConditionDropdownMenuItem = forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
   ItemProps
->(({ variant = 'compact', ...props }, ref) => (
-  <DropdownMenuItem ref={ref} variant={variant} {...props} />
-));
+>(({ size = 'compact', ...props }, ref) => <DropdownMenuItem ref={ref} size={size} {...props} />);
 ConditionDropdownMenuItem.displayName = 'ConditionDropdownMenuItem';

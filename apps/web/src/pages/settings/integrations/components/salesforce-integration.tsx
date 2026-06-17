@@ -177,7 +177,7 @@ export const SalesforceIntegration = (props: SalesforceIntegrationProps) => {
                   {t('settings.integrations.salesforce.reconnect')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-red-600 cursor-pointer"
+                  variant="destructive"
                   onClick={handleDisconnect}
                   disabled={isDisconnecting}
                 >

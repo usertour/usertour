@@ -487,7 +487,7 @@ const MemberAction = ({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            variant="destructive"
             disabled={member.isOwner}
             onClick={() => setRemoveOpen(true)}
           >

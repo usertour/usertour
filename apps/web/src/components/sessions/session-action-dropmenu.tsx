@@ -153,11 +153,7 @@ const DropdownMenuItems = ({
       group: 'action',
       show: showDeleteSession,
       render: () => (
-        <DropdownMenuItem
-          className="cursor-pointer text-destructive"
-          disabled={isViewOnly}
-          onClick={onDeleteClick}
-        >
+        <DropdownMenuItem variant="destructive" disabled={isViewOnly} onClick={onDeleteClick}>
           <Delete2Icon className="w-4 h-4 mr-1" />
           {t('sessionActions.menu.deleteSession')}
         </DropdownMenuItem>

@@ -200,11 +200,7 @@ const UserListAction = ({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className={
-            user.disabled
-              ? 'cursor-pointer'
-              : 'text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer'
-          }
+          variant={user.disabled ? 'default' : 'destructive'}
           onClick={handleToggleDisabled}
         >
           {user.disabled ? t('admin.users.enableUser') : t('admin.users.disableUser')}
