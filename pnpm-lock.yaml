@@ -47,7 +47,7 @@ importers:
         version: 7.3.0(@swc/core@1.7.42)(postcss@8.4.47)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))(typescript@5.3.3)
       turbo:
         specifier: latest
-        version: 2.9.16
+        version: 2.9.18
 
   apps/sdk:
     dependencies:
@@ -478,7 +478,7 @@ importers:
         version: 29.6.3
       '@nestjs/cli':
         specifier: 10.3.2
-        version: 10.3.2(@swc/core@1.7.42)
+        version: 10.3.2(@swc/core@1.7.42)(esbuild@0.19.12)
       '@nestjs/schematics':
         specifier: 10.1.1
         version: 10.1.1(chokidar@3.6.0)(typescript@4.9.5)
@@ -544,10 +544,10 @@ importers:
         version: 6.3.3
       ts-jest:
         specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@4.9.5)))(typescript@4.9.5)
+        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@4.9.5)))(typescript@4.9.5)
       ts-loader:
         specifier: 9.4.2
-        version: 9.4.2(typescript@4.9.5)(webpack@5.90.1(@swc/core@1.7.42))
+        version: 9.4.2(typescript@4.9.5)(webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12))
       ts-morph:
         specifier: ^17.0.1
         version: 17.0.1
@@ -836,7 +836,7 @@ importers:
         version: 3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
       ts-jest:
         specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
@@ -1318,7 +1318,7 @@ importers:
         version: 29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
       ts-jest:
         specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
@@ -1722,7 +1722,7 @@ importers:
         version: 29.7.0(@types/node@20.4.2)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3))
       ts-jest:
         specifier: ^29.1.0
-        version: 29.4.6(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.4.2)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.4.6(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest-util@29.7.0)(jest@29.7.0(@types/node@20.4.2)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
@@ -1828,6 +1828,9 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.31.0
         version: 3.36.1(react@18.2.0)
+      '@tanstack/react-virtual':
+        specifier: ^3.14.3
+        version: 3.14.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/constants':
         specifier: workspace:*
         version: link:../constants
@@ -6695,9 +6698,18 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
 
+  '@tanstack/react-virtual@3.14.3':
+    resolution: {integrity: sha512-k/cnHPVaOfn46hSbiY6n4Dzf4QjCGWSF40zR5QIIYUqPAjpA6TN7InfYmcMiDVQGP2iUn9xsRbAl8u1v3UmeVQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   '@tanstack/table-core@8.20.5':
     resolution: {integrity: sha512-P9dF7XbibHph2PFRz8gfBKEXEY/HJPOhym8CHmjF8y3q5mWpKx9xtZapXQUWCgkqvsK0R46Azuz+VaxD4Xl+Tg==}
     engines: {node: '>=12'}
+
+  '@tanstack/virtual-core@3.17.1':
+    resolution: {integrity: sha512-VZyW2Uiml5tmBZwPGrSD3Sz73OxzljQMCmzYHsUTPEuTsERf5xwa+uWb01xEzkz3ZSYTjj8NEb/mKHvgKxyZdA==}
 
   '@testing-library/dom@7.31.2':
     resolution: {integrity: sha512-3UqjCpey6HiTZT92vODYLPxTBWlM8ZOOjr3LX5F37/VRipW2M1kX6I/Cm4VXzteZqfGfagg8yXywpcOgQBlNsQ==}
@@ -6752,33 +6764,33 @@ packages:
     resolution: {integrity: sha512-qaGV9ltJP0EO25YfFUPhxRVK0evXFIAGicsVXuRim4Ed9cjPxYhNnNJ49SFmbeLgtxpslIkX317IgpfcHPVj/A==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
-  '@turbo/darwin-64@2.9.16':
-    resolution: {integrity: sha512-jLjApWTSNd7JZ5JaLYfelW1ytnGQOvB7ivl+2RD1xQvJTbi8I9gBjzcga7tDZVPyaxpl10YTfJt3BrYXR18KDw==}
+  '@turbo/darwin-64@2.9.18':
+    resolution: {integrity: sha512-9f27peFu16ur8c0v9nUFUEyBnbKuuFsUTjHFWfmwGfzySBXbHwzU44QhZon6Mznz0cHsIr3984NQj/bVrnGSRw==}
     cpu: [x64]
     os: [darwin]
 
-  '@turbo/darwin-arm64@2.9.16':
-    resolution: {integrity: sha512-YPgrn+5HIGzrx0O2a631SV4MBQUe4W/DafMFUuBVgaU32PW9/OTT0ehviF0QSxTXuRJlHvW2eUTemddF5/spmw==}
+  '@turbo/darwin-arm64@2.9.18':
+    resolution: {integrity: sha512-9A6TMRq/Ib+QnbhLlgkhOm+624wO4pzSQ/yQviQfWHOlFvaYxdnIAYmu2H6TS6y7kSVL0DvzNe04NbESTOzFVQ==}
     cpu: [arm64]
     os: [darwin]
 
-  '@turbo/linux-64@2.9.16':
-    resolution: {integrity: sha512-vAEf1H6l26lTpl9FJ/peQo1NUB8RC0sbEJJz5mPcUhHA2bPDup2x3CZPgo/bH8S4cUcBLm4FN3UHd5iUO2RAew==}
+  '@turbo/linux-64@2.9.18':
+    resolution: {integrity: sha512-zCdIDtz69AnbYh913elJRRoF3QY5aa2HNnf+4rAkc7bQ+tWujiDkCNV7stazOUPggaDvhKIf2Z87qHftTeXSkw==}
     cpu: [x64]
     os: [linux]
 
-  '@turbo/linux-arm64@2.9.16':
-    resolution: {integrity: sha512-xDBLR2PZg4BrQOchfG6svgpv5FCNJ2TOtT2psLdEJcdKo1BH+pnPs9Xj6pvUjgfkHbuvBOfeE4R6tvxMoQKDHQ==}
+  '@turbo/linux-arm64@2.9.18':
+    resolution: {integrity: sha512-Va1kXI04naMgYwqv/5Dfa36dTDx8015U7oaQAjrXa45ua9OoFjSV4OmvkML4EmXvUclQHCiBRbY8bvd0jV7eAg==}
     cpu: [arm64]
     os: [linux]
 
-  '@turbo/windows-64@2.9.16':
-    resolution: {integrity: sha512-NBAJnaUiGdgkSzQwUIdOvkCkcpTSu58G/sBGa0mvBtzfvFOOgrQwepKOOQ8cp6sWM6OcKDNFj2p1dsZA1OWjPg==}
+  '@turbo/windows-64@2.9.18':
+    resolution: {integrity: sha512-m0kDhZANxSNz9ck1ybogFscHabriAsp4eDFNrN/1H5WrgTF7b3VlcPZnhuO3v2+E2KnCbeAc+UUT10BZZHdDKw==}
     cpu: [x64]
     os: [win32]
 
-  '@turbo/windows-arm64@2.9.16':
-    resolution: {integrity: sha512-Y7SJppD0Z8wjO3Ec0ZGd9KQ4Yv0BMnA8CIowj5Vp+OEVsosXDG2weK6/t1RRLfJmc2Ozrnd6y4DOgQys+mn3WQ==}
+  '@turbo/windows-arm64@2.9.18':
+    resolution: {integrity: sha512-nUdR8WqoomUys9iIQmG45TMiizJ+5BV8egSeLLZba/AWblyp3fVBcIH1kSE58OtK4g2YzbMJEth6Ttv9w5rqMA==}
     cpu: [arm64]
     os: [win32]
 
@@ -13353,8 +13365,8 @@ packages:
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
-  turbo@2.9.16:
-    resolution: {integrity: sha512-NqgRQy6j6dPYcdSdv0q1g9QsZg7SWg87RERM8otw/1AtKU2yTFVClOM7cbwKzOonZr/Ek1blTBucw64L9H0Bwg==}
+  turbo@2.9.18:
+    resolution: {integrity: sha512-bwabv6PupzeavybzEoArBAkwq5fnzwf8OFnRtpHwnviFWuwJPFxtyH+aVp36TmIqK3aYYgtTJ3J0m2ysxxSzQg==}
     hasBin: true
 
   type-check@0.4.0:
@@ -16643,7 +16655,7 @@ snapshots:
       bullmq: 5.40.5
       tslib: 2.8.1
 
-  '@nestjs/cli@10.3.2(@swc/core@1.7.42)':
+  '@nestjs/cli@10.3.2(@swc/core@1.7.42)(esbuild@0.19.12)':
     dependencies:
       '@angular-devkit/core': 17.1.2(chokidar@3.6.0)
       '@angular-devkit/schematics': 17.1.2(chokidar@3.6.0)
@@ -16653,7 +16665,7 @@ snapshots:
       chokidar: 3.6.0
       cli-table3: 0.6.3
       commander: 4.1.1
-      fork-ts-checker-webpack-plugin: 9.0.2(typescript@5.3.3)(webpack@5.90.1(@swc/core@1.7.42))
+      fork-ts-checker-webpack-plugin: 9.0.2(typescript@5.3.3)(webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12))
       glob: 10.3.10
       inquirer: 8.2.6
       node-emoji: 1.11.0
@@ -16665,7 +16677,7 @@ snapshots:
       tsconfig-paths: 4.2.0
       tsconfig-paths-webpack-plugin: 4.1.0
       typescript: 5.3.3
-      webpack: 5.90.1(@swc/core@1.7.42)
+      webpack: 5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)
       webpack-node-externals: 3.0.0
     optionalDependencies:
       '@swc/core': 1.7.42
@@ -19925,7 +19937,15 @@ snapshots:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
+  '@tanstack/react-virtual@3.14.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@tanstack/virtual-core': 3.17.1
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+
   '@tanstack/table-core@8.20.5': {}
+
+  '@tanstack/virtual-core@3.17.1': {}
 
   '@testing-library/dom@7.31.2':
     dependencies:
@@ -19990,22 +20010,22 @@ snapshots:
       '@tufjs/canonical-json': 1.0.0
       minimatch: 9.0.5
 
-  '@turbo/darwin-64@2.9.16':
+  '@turbo/darwin-64@2.9.18':
     optional: true
 
-  '@turbo/darwin-arm64@2.9.16':
+  '@turbo/darwin-arm64@2.9.18':
     optional: true
 
-  '@turbo/linux-64@2.9.16':
+  '@turbo/linux-64@2.9.18':
     optional: true
 
-  '@turbo/linux-arm64@2.9.16':
+  '@turbo/linux-arm64@2.9.18':
     optional: true
 
-  '@turbo/windows-64@2.9.16':
+  '@turbo/windows-64@2.9.18':
     optional: true
 
-  '@turbo/windows-arm64@2.9.16':
+  '@turbo/windows-arm64@2.9.18':
     optional: true
 
   '@types/aria-query@4.2.2': {}
@@ -22904,7 +22924,7 @@ snapshots:
       cross-spawn: 7.0.3
       signal-exit: 4.1.0
 
-  fork-ts-checker-webpack-plugin@9.0.2(typescript@5.3.3)(webpack@5.90.1(@swc/core@1.7.42)):
+  fork-ts-checker-webpack-plugin@9.0.2(typescript@5.3.3)(webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)):
     dependencies:
       '@babel/code-frame': 7.29.0
       chalk: 4.1.2
@@ -22919,7 +22939,7 @@ snapshots:
       semver: 7.7.4
       tapable: 2.2.1
       typescript: 5.3.3
-      webpack: 5.90.1(@swc/core@1.7.42)
+      webpack: 5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)
 
   form-data@4.0.1:
     dependencies:
@@ -27802,16 +27822,17 @@ snapshots:
       ansi-escapes: 4.3.2
       supports-hyperlinks: 2.3.0
 
-  terser-webpack-plugin@5.3.10(@swc/core@1.7.42)(webpack@5.90.1(@swc/core@1.7.42)):
+  terser-webpack-plugin@5.3.10(@swc/core@1.7.42)(esbuild@0.19.12)(webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 3.3.0
       serialize-javascript: 6.0.2
       terser: 5.36.0
-      webpack: 5.90.1(@swc/core@1.7.42)
+      webpack: 5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)
     optionalDependencies:
       '@swc/core': 1.7.42
+      esbuild: 0.19.12
 
   terser@5.36.0:
     dependencies:
@@ -27925,7 +27946,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  ts-jest@29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@4.9.5)))(typescript@4.9.5):
+  ts-jest@29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@4.9.5)))(typescript@4.9.5):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -27941,8 +27962,9 @@ snapshots:
       '@babel/core': 7.26.0
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.26.0)
+      esbuild: 0.19.12
 
-  ts-jest@29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3):
+  ts-jest@29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -27958,6 +27980,7 @@ snapshots:
       '@babel/core': 7.26.0
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.26.0)
+      esbuild: 0.19.12
 
   ts-jest@29.4.6(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest-util@29.7.0)(jest@29.7.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3):
     dependencies:
@@ -27980,7 +28003,7 @@ snapshots:
       esbuild: 0.19.12
       jest-util: 29.7.0
 
-  ts-jest@29.4.6(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.4.2)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3)))(typescript@5.3.3):
+  ts-jest@29.4.6(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(esbuild@0.19.12)(jest-util@29.7.0)(jest@29.7.0(@types/node@20.4.2)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3)))(typescript@5.3.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -27998,16 +28021,17 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.26.0)
+      esbuild: 0.19.12
       jest-util: 29.7.0
 
-  ts-loader@9.4.2(typescript@4.9.5)(webpack@5.90.1(@swc/core@1.7.42)):
+  ts-loader@9.4.2(typescript@4.9.5)(webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)):
     dependencies:
       chalk: 4.1.2
       enhanced-resolve: 5.17.1
       micromatch: 4.0.8
       semver: 7.7.4
       typescript: 4.9.5
-      webpack: 5.90.1(@swc/core@1.7.42)
+      webpack: 5.90.1(@swc/core@1.7.42)(esbuild@0.19.12)
 
   ts-morph@17.0.1:
     dependencies:
@@ -28150,14 +28174,14 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  turbo@2.9.16:
+  turbo@2.9.18:
     optionalDependencies:
-      '@turbo/darwin-64': 2.9.16
-      '@turbo/darwin-arm64': 2.9.16
-      '@turbo/linux-64': 2.9.16
-      '@turbo/linux-arm64': 2.9.16
-      '@turbo/windows-64': 2.9.16
-      '@turbo/windows-arm64': 2.9.16
+      '@turbo/darwin-64': 2.9.18
+      '@turbo/darwin-arm64': 2.9.18
+      '@turbo/linux-64': 2.9.18
+      '@turbo/linux-arm64': 2.9.18
+      '@turbo/windows-64': 2.9.18
+      '@turbo/windows-arm64': 2.9.18
 
   type-check@0.4.0:
     dependencies:
@@ -28504,7 +28528,7 @@ snapshots:
 
   webpack-sources@3.2.3: {}
 
-  webpack@5.90.1(@swc/core@1.7.42):
+  webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.6
@@ -28527,7 +28551,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 3.3.0
       tapable: 2.2.1
-      terser-webpack-plugin: 5.3.10(@swc/core@1.7.42)(webpack@5.90.1(@swc/core@1.7.42))
+      terser-webpack-plugin: 5.3.10(@swc/core@1.7.42)(esbuild@0.19.12)(webpack@5.90.1(@swc/core@1.7.42)(esbuild@0.19.12))
       watchpack: 2.4.2
       webpack-sources: 3.2.3
     transitivePeerDependencies:

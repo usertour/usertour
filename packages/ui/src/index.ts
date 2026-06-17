@@ -63,6 +63,8 @@ export type {
   ComboboxSelectGroup,
   ComboboxSelectProps,
 } from './composites/combobox-select';
+export { VirtualizedComboboxSelect } from './composites/virtualized-combobox-select';
+export type { VirtualizedComboboxSelectProps } from './composites/virtualized-combobox-select';
 export { LoadingContainer } from './composites/loading';
 export { LoadingButton } from './composites/loading-button';
 export type { LoadingButtonProps } from './composites/loading-button';

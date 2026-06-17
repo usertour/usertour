@@ -2316,7 +2316,6 @@ const translations = {
       placeholder: '加载字体…',
       searchPlaceholder: '搜索字体…',
       noItemsFound: '未找到项。',
-      heading: '字体',
       systemFont: '系统字体',
       customFont: '自定义字体',
     },

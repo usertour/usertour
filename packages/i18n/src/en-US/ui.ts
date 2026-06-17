@@ -2439,7 +2439,6 @@ const translations = {
       placeholder: 'Load a font family…',
       searchPlaceholder: 'Search font family…',
       noItemsFound: 'No items found.',
-      heading: 'Font family',
       systemFont: 'System font',
       customFont: 'Custom font',
     },
