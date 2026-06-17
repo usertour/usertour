@@ -20,7 +20,7 @@ const LauncherTargetHeader = () => {
 
   return (
     <CardHeader className="flex-none border-b border-border/50 px-5 py-4">
-      <CardTitle className="flex flex-row space-x-1 text-base font-semibold items-center pr-16">
+      <CardTitle className="flex flex-row space-x-1 text-base font-medium items-center pr-16">
         <Button
           variant="ghost"
           size="icon"

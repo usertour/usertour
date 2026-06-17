@@ -64,7 +64,7 @@ export const SectionsAccordion = (props: SectionsAccordionProps) => {
               // Conditions. A 3px ring around a divider-bottomed row would
               // clip into the section above and read as a form-input
               // affordance, which a header isn't.
-              className="group flex w-full items-center justify-between px-3 py-2.5 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40"
+              className="group flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40"
             >
               <span className="truncate text-left">{t(section.label)}</span>
               <PlusIcon className="h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:hidden" />

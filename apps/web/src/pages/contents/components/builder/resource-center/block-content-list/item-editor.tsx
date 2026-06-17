@@ -43,7 +43,7 @@ export const ItemEditorHeader = (props: ItemEditorHeaderProps) => {
   const { itemName, onBack } = props;
   return (
     <CardHeader className="flex-none border-b border-border/50 px-5 py-4">
-      <CardTitle className="flex flex-row items-center space-x-1 text-base font-semibold">
+      <CardTitle className="flex flex-row items-center space-x-1 text-base font-medium">
         <Button
           variant="ghost"
           size="icon"

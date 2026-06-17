@@ -256,8 +256,8 @@ export const ObjectMappingReadonly = (props: ObjectMappingReadonlyProps) => {
               <Trans
                 i18nKey="settings.integrations.objectMapping.streamSwitch"
                 components={{
-                  user: <span className="font-semibold text-primary" />,
-                  contact: <span className="font-semibold text-blue-500" />,
+                  user: <span className="font-medium text-primary" />,
+                  contact: <span className="font-medium text-blue-500" />,
                 }}
               />
             </span>

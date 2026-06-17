@@ -20,7 +20,7 @@ export const ContentDetailNotFound = (props: ContentDetailNotFoundProps) => {
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-white px-4 text-center dark:bg-card/60">
-      <p className="text-5xl font-semibold tracking-tight">404</p>
+      <p className="text-5xl font-medium tracking-tight">404</p>
       <p className="text-sm text-muted-foreground">{t('contents.notFound.description')}</p>
       {environment?.id && (
         <Button asChild>

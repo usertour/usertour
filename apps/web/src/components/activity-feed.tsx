@@ -379,7 +379,7 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
     <div className="flex flex-col w-full">
       {Array.from(dateGroups.entries()).map(([dateKey, dayEvents]) => (
         <Fragment key={dateKey}>
-          <div className="px-2 py-2 text-xs font-semibold text-muted-foreground bg-muted/40 border-b">
+          <div className="px-2 py-2 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
             {formatDateHeader(dateKey)}
           </div>
           {dayEvents.map((event) => (

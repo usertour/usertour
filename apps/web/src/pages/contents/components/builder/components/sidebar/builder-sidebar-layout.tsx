@@ -23,7 +23,7 @@ export const BuilderSidebarLayout = ({ children, onSave }: BuilderSidebarLayoutP
   return (
     <FloatingSidebarPanel width={320}>
       <CardHeader className="flex-none border-b border-border/50 px-5 py-4">
-        <CardTitle className="flex h-7 items-center pr-16 text-base font-semibold">
+        <CardTitle className="flex h-7 items-center pr-16 text-base font-medium">
           <SidebarHeader title={currentContent?.name ?? ''} />
         </CardTitle>
       </CardHeader>

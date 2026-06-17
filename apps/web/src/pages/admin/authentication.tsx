@@ -112,7 +112,7 @@ export const AdminAuthenticationPage = () => {
   return (
     <SettingsContent>
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight">{t('admin.authentication.title')}</h3>
+        <h3 className="text-xl font-medium tracking-tight">{t('admin.authentication.title')}</h3>
         <p className="text-sm text-muted-foreground">{t('admin.authentication.description')}</p>
       </div>
       <Separator />

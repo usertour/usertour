@@ -117,7 +117,7 @@ const SessionIdentityHeader = ({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <h1
-            className={`text-xl font-semibold truncate ${
+            className={`text-xl font-medium truncate ${
               content?.deleted ? 'text-muted-foreground line-through' : 'text-foreground'
             }`}
           >
@@ -196,9 +196,7 @@ const SessionProgressCard = ({
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-sm font-semibold">
-          {t('users.sessions.detail.progress')}
-        </CardTitle>
+        <CardTitle className="text-sm font-medium">{t('users.sessions.detail.progress')}</CardTitle>
       </CardHeader>
       <CardContent>{renderInner()}</CardContent>
     </Card>
@@ -284,7 +282,7 @@ const SessionActivityFeed = ({ bizEvents, session, attributeList }: SessionActiv
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-sm font-semibold">
+        <CardTitle className="text-sm font-medium">
           {t('users.sessions.detail.activityFeed')}
         </CardTitle>
       </CardHeader>
@@ -292,7 +290,7 @@ const SessionActivityFeed = ({ bizEvents, session, attributeList }: SessionActiv
         <div className="w-full text-sm">
           {Array.from(groupBizEventsByDate(bizEvents).entries()).map(([dateKey, dayEvents]) => (
             <Fragment key={dateKey}>
-              <div className="px-2 py-2 text-xs font-semibold text-muted-foreground bg-muted/40 border-b">
+              <div className="px-2 py-2 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
                 {formatActivityDateHeader(dateKey)}
               </div>
               {dayEvents.map((bizEvent) => (
@@ -353,7 +351,7 @@ const SessionInfoCard = ({
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-sm font-semibold">
+        <CardTitle className="text-sm font-medium">
           {t('users.sessions.detail.sessionInfo')}
         </CardTitle>
       </CardHeader>
@@ -525,7 +523,7 @@ const SessionDetailContentInner = ({
             {questionAnswers && questionAnswers.length > 0 && (
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-sm font-semibold">
+                  <CardTitle className="text-sm font-medium">
                     {t('users.sessions.detail.response')}
                   </CardTitle>
                 </CardHeader>

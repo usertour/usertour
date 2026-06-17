@@ -123,7 +123,7 @@ export const VersionHistoryList = () => {
         <div className="flex flex-col gap-5">
           {groupedHistory.map((group) => (
             <div key={group.key} className="flex flex-col gap-1">
-              <div className="inline-flex w-fit items-center rounded-md bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground/80">
+              <div className="inline-flex w-fit items-center rounded-md bg-muted/60 px-2.5 py-1 text-xs font-medium text-foreground/80">
                 {group.label}
               </div>
               <div className="relative ml-4">

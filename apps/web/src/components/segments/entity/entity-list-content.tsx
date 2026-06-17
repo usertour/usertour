@@ -68,7 +68,7 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
         <div className="flex items-center justify-between ">
           <div className="space-y-1 flex flex-row items-center relative">
-            <h2 className="text-xl font-semibold tracking-tight">{currentSegment?.name}</h2>
+            <h2 className="text-xl font-medium tracking-tight">{currentSegment?.name}</h2>
             {currentSegment && currentSegment.dataType !== 'ALL' && (
               <TooltipProvider>
                 <Tooltip>

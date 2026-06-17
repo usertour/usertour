@@ -72,7 +72,7 @@ export const AdminSettingsPage = () => {
     <SettingsContent>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold tracking-tight">{t('admin.subscription.title')}</h3>
+          <h3 className="text-xl font-medium tracking-tight">{t('admin.subscription.title')}</h3>
         </div>
         <p className="text-sm text-muted-foreground">{t('admin.subscription.description')}</p>
       </div>

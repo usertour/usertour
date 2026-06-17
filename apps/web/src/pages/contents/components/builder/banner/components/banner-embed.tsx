@@ -72,7 +72,7 @@ const ElementPlacementPreview = (props: ElementPlacementPreviewProps) => {
         {placement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT && banner}
         <div className="border-2 border-dashed border-blue-400 bg-blue-50 rounded min-h-[80px] flex flex-col justify-center">
           {placement === BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT && banner}
-          <p className="text-sm font-semibold text-blue-600 p-6 text-center">{targetLabel}</p>
+          <p className="text-sm font-medium text-blue-600 p-6 text-center">{targetLabel}</p>
           {placement === BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT && banner}
         </div>
         {placement === BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT && banner}

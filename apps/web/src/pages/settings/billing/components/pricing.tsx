@@ -307,17 +307,17 @@ const PlanCard = (props: PlanCardProps) => {
       } p-5`}
     >
       {isCurrentPlan && (
-        <div className="absolute right-4 top-4 h-[21px] rounded-md bg-green-600 px-1.5 text-xs font-semibold text-white dark:bg-green-500">
+        <div className="absolute right-4 top-4 h-[21px] rounded-md bg-green-600 px-1.5 text-xs font-medium text-white dark:bg-green-500">
           <p className="translate-y-[3px] uppercase">{t('settings.billing.currentPlanBadge')}</p>
         </div>
       )}
       <div className="flex flex-col gap-5">
         <div className="flex flex-col">
-          <h3 className="flex items-center font-semibold text-zinc-950 dark:text-white">
+          <h3 className="flex items-center font-medium text-zinc-950 dark:text-white">
             {plan.displayName}
           </h3>
           <p className="mt-1.5">
-            <span className="align-baseline text-2xl font-semibold text-zinc-950 dark:text-white">
+            <span className="align-baseline text-2xl font-medium text-zinc-950 dark:text-white">
               {isYearly ? plan.yearlyPrice : plan.price}
             </span>
             <span className="align-baseline text-sm text-zinc-950/50 dark:text-white/50">
@@ -546,7 +546,7 @@ const ComparisonTable = ({
         <div />
         {(['hobby', 'starter', 'growth', 'business'] as const).map((plan) => (
           <div key={plan} className="flex flex-col gap-2 p-4">
-            <p className="text-sm font-semibold">{t(`settings.billing.plans.${plan}`)}</p>
+            <p className="text-sm font-medium">{t(`settings.billing.plans.${plan}`)}</p>
           </div>
         ))}
       </div>

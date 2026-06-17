@@ -222,7 +222,7 @@ export const ContentListLayout = memo(
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
         <div className="flex justify-between">
           <div className="flex flex-col space-y-1">
-            <h3 className="text-xl font-semibold tracking-tight">{displayTitle}</h3>
+            <h3 className="text-xl font-medium tracking-tight">{displayTitle}</h3>
             <div className="flex flex-row space-x-1">
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
