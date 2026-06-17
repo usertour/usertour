@@ -199,7 +199,7 @@ function StepGotoEditor({
             })}
             {createStep && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">
+                <DropdownMenuSubTrigger>
                   {t('actions.types.stepGoto.addNewStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
@@ -224,7 +224,7 @@ function StepGotoEditor({
             )}
             {createStep && (currentVersion?.steps?.length ?? 0) > 0 && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">
+                <DropdownMenuSubTrigger>
                   {t('actions.types.stepGoto.duplicateStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-[240px]">

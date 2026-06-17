@@ -133,10 +133,7 @@ export const ObjectMappingReadonly = (props: ObjectMappingReadonlyProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => setIsEditDialogOpen(true)}
-                >
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                   <EditIcon className="w-4 h-4 mr-2" />
                   {t('settings.integrations.objectMapping.readonly.editAction')}
                 </DropdownMenuItem>

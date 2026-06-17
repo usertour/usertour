@@ -193,7 +193,7 @@ const UserListAction = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[200px]">
-        <DropdownMenuItem className="cursor-pointer" onClick={handleToggleAdmin}>
+        <DropdownMenuItem onClick={handleToggleAdmin}>
           {user.isSystemAdmin
             ? t('admin.users.removeSystemAdmin')
             : t('admin.users.makeSystemAdmin')}

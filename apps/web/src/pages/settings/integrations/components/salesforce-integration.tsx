@@ -172,7 +172,7 @@ export const SalesforceIntegration = (props: SalesforceIntegrationProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem className="cursor-pointer" onClick={handleConnect}>
+                <DropdownMenuItem onClick={handleConnect}>
                   <ConnectIcon className="mr-1 w-4 h-4" />
                   {t('settings.integrations.salesforce.reconnect')}
                 </DropdownMenuItem>

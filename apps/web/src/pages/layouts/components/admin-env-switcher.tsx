@@ -91,7 +91,7 @@ export const AdminEnvSwitcher = () => {
                 onClick={() => {
                   handleItemClick(env);
                 }}
-                className="text-sm cursor-pointer"
+                className="text-sm"
               >
                 <Avatar className="mr-2 h-5 w-5">
                   <AvatarFallback className="bg-blue-800 text-white text-xs">

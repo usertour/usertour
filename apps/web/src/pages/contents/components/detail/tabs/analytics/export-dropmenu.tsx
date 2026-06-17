@@ -140,7 +140,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-[101]">
         <DropdownMenuItem
-          className={`cursor-pointer ${isExporting ? 'opacity-50' : ''}`}
+          className={isExporting ? 'opacity-50' : ''}
           onClick={() => handleExportCSV(false)}
           disabled={isExporting}
         >
@@ -150,7 +150,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
             : t('contents.analytics.export.standardUserAttributes')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          className={`cursor-pointer ${isExporting ? 'opacity-50' : ''}`}
+          className={isExporting ? 'opacity-50' : ''}
           onClick={() => handleExportCSV(true)}
           disabled={isExporting}
         >

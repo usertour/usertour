@@ -70,7 +70,7 @@ export function ConditionSelect({
           <ConditionDropdownMenuItem
             key={opt.value}
             onSelect={() => onChange(opt.value)}
-            className="cursor-pointer pr-8"
+            className="pr-8"
           >
             <span className="flex-1 truncate">{opt.label}</span>
             {value === opt.value && <CheckIcon className="ml-auto h-3.5 w-3.5" />}
