@@ -65,7 +65,7 @@ export const AdminGeneralPage = () => {
   return (
     <SettingsContent>
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight">{t('admin.general.title')}</h3>
+        <h3 className="text-xl font-medium tracking-tight">{t('admin.general.title')}</h3>
         <p className="text-sm text-muted-foreground">{t('admin.general.description')}</p>
       </div>
       <Separator />

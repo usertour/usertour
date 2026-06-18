@@ -45,7 +45,7 @@ export const VersionRow = ({
   const showLabel = showCreatedLabel && createdDisplay !== 'timeOnly';
 
   const versionCell = (
-    <span className="text-sm font-semibold tabular-nums">v{version.sequence + 1}</span>
+    <span className="text-sm font-medium tabular-nums">v{version.sequence + 1}</span>
   );
 
   const timeCell =

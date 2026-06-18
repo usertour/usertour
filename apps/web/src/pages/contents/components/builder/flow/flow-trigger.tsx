@@ -26,7 +26,7 @@ const FlowBuilderTriggerHeader = () => {
 
   return (
     <CardHeader className="flex-none space-y-2 border-b border-border/50 px-5 py-4">
-      <CardTitle className="truncate pr-16 text-sm font-semibold">{currentContent?.name}</CardTitle>
+      <CardTitle className="truncate pr-16 text-sm font-medium">{currentContent?.name}</CardTitle>
       <div className="flex items-center">
         <Button
           variant="ghost"

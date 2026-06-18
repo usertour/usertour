@@ -67,7 +67,7 @@ const FlowBuilderDetailHeader = () => {
 
   return (
     <CardHeader className="flex-none space-y-2 border-b border-border/50 px-5 py-4">
-      <CardTitle className="truncate pr-16 text-sm font-semibold">{currentContent?.name}</CardTitle>
+      <CardTitle className="truncate pr-16 text-sm font-medium">{currentContent?.name}</CardTitle>
       <div className="flex items-center">
         <Button
           variant="ghost"
@@ -80,7 +80,7 @@ const FlowBuilderDetailHeader = () => {
         <EditableTitle
           value={currentStep?.name ?? ''}
           onRename={handleStepRename}
-          className="min-w-0 flex-1 text-base font-semibold"
+          className="min-w-0 flex-1 text-base font-medium"
         />
       </div>
     </CardHeader>
@@ -130,7 +130,7 @@ const FlowBuilderDetailBody = () => {
     }));
   };
 
-  const handleThemeChange = (value: string | undefined) => {
+  const handleThemeChange = (value: string | null) => {
     updateCurrentStep((pre) => ({
       ...pre,
       themeId: value,

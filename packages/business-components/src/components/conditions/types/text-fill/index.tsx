@@ -46,7 +46,7 @@ function TextFillSummary({ condition }: { condition: RulesCondition }) {
       <span className={summaryTextClass}>
         <span>{t('conditions.types.textFill.prefix')}</span>{' '}
         {elSelected ? (
-          <span className="font-semibold">
+          <span className="font-medium">
             {data.elementData?.content ||
               data.elementData?.customSelector ||
               t('conditions.types.element.element')}

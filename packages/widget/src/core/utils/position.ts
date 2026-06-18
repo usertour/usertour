@@ -44,32 +44,36 @@ export const computePositionStyle = (placement: string, offsetX: number, offsetY
       bottom: `${offsetY}px`,
     };
   } else if (placement === 'centerBottom') {
+    // Horizontally centered: fold offsetX into the centering transform so it
+    // isn't dropped (a bare `left:50%` + translateX(-50%) ignores offsetX).
     customStyle = {
       ...customStyle,
       left: '50%',
-      transform: 'translateX(-50%)',
+      transform: `translateX(calc(-50% + ${offsetX}px))`,
       bottom: `${offsetY}px`,
     };
   } else if (placement === 'centerTop') {
     customStyle = {
       ...customStyle,
       left: '50%',
-      transform: 'translateX(-50%)',
+      transform: `translateX(calc(-50% + ${offsetX}px))`,
       top: `${offsetY}px`,
     };
   } else if (placement === 'leftCenter') {
+    // Vertically centered: fold offsetY into the centering transform so it
+    // isn't dropped (a bare `top:50%` + translateY(-50%) ignores offsetY).
     customStyle = {
       ...customStyle,
       left: `${offsetX}px`,
       top: '50%',
-      transform: 'translateY(-50%)',
+      transform: `translateY(calc(-50% + ${offsetY}px))`,
     };
   } else if (placement === 'rightCenter') {
     customStyle = {
       ...customStyle,
       right: `${offsetX}px`,
       top: '50%',
-      transform: 'translateY(-50%)',
+      transform: `translateY(calc(-50% + ${offsetY}px))`,
     };
   }
   return customStyle;

@@ -102,11 +102,11 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
     <span className="inline-flex min-w-0 items-center gap-2">
       <UserIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <span className={summaryTextClass}>
-        <span className="font-semibold">{attribute.displayName || attribute.codeName}</span>{' '}
+        <span className="font-medium">{attribute.displayName || attribute.codeName}</span>{' '}
         {template ? (
           <>
             <span className="text-muted-foreground">{template.prefix}</span>
-            <span className="font-semibold">{valueText}</span>
+            <span className="font-medium">{valueText}</span>
             <span className="text-muted-foreground">{template.suffix}</span>
           </>
         ) : (
@@ -115,7 +115,7 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
             {valueText && (
               <>
                 {' '}
-                <span className="font-semibold">{valueText}</span>
+                <span className="font-medium">{valueText}</span>
               </>
             )}
           </>
@@ -124,7 +124,7 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
           <>
             {' '}
             <span className="text-muted-foreground">{t('conditions.operators.and')}</span>{' '}
-            <span className="font-semibold">{between}</span>
+            <span className="font-medium">{between}</span>
           </>
         )}
       </span>

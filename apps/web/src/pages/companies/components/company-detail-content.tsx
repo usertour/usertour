@@ -236,7 +236,7 @@ const CompanyIdentityHeader = ({ bizCompany }: { bizCompany: BizCompany }) => {
     <div className="flex items-start gap-4 px-1">
       <DefaultAvatar seed={bizCompany.externalId || name || ''} name={name} size="lg" />
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold text-foreground truncate">
+        <h1 className="text-xl font-medium text-foreground truncate">
           {companyDisplayName(bizCompany, t('companies.detail.unnamedCompany'))}
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -278,7 +278,7 @@ const CompanyActivityCard = ({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
-        <CardTitle className="text-sm font-semibold">
+        <CardTitle className="text-sm font-medium">
           {t('companies.detail.activity.title')}
         </CardTitle>
         <ToggleGroup

@@ -70,7 +70,7 @@ export const AnalyticsBlocks = () => {
             {groups.map((group) => (
               <div key={group.tabId}>
                 <div className="flex items-baseline justify-between border-b pb-2 mb-2">
-                  <span className="font-semibold text-sm">{group.tabName}</span>
+                  <span className="font-medium text-sm">{group.tabName}</span>
                   <span className="text-xs text-muted-foreground">
                     {t('contents.analytics.blocks.totalClicks', { count: group.totalClicks })}
                   </span>

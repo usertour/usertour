@@ -127,9 +127,9 @@ const StatItem = ({
   return (
     <div className="flex items-center gap-3">
       {isPercentage ? (
-        <span className={`text-5xl font-semibold ${colorClass}`}>{mainValue}%</span>
+        <span className={`text-5xl font-medium ${colorClass}`}>{mainValue}%</span>
       ) : (
-        <FormattedNumber value={mainValue} className={`text-5xl font-semibold ${colorClass}`} />
+        <FormattedNumber value={mainValue} className={`text-5xl font-medium ${colorClass}`} />
       )}
       <div className="flex flex-col justify-center gap-1">
         <span className="text-base text-muted-foreground leading-tight whitespace-nowrap">

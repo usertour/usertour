@@ -1,6 +1,6 @@
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { cuid, defaultStep } from '@usertour/helpers';
+import { cuid, defaultStep, generateDefaultStepName } from '@usertour/helpers';
 import type { Step } from '@usertour/types';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { getStepId } from '@/utils/content';
@@ -30,7 +30,10 @@ export const useSeedStepFromRoute = () => {
         cvid: cuid(),
         setting: { ...defaultStep.setting },
         type,
-        name: 'Untitled',
+        name: generateDefaultStepName(
+          type,
+          steps.map((existing) => existing.name),
+        ),
         data: getEmptyDataForType(),
         sequence: steps.length,
       } as Step);
@@ -50,4 +53,18 @@ export const useSeedStepFromRoute = () => {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepId, type]);
+
+  // Discard the edit buffer when the step view unmounts — going back to the
+  // overview, switching sub-views, or leaving the builder. The buffer is
+  // scoped to one step-editing session: only Save commits it into
+  // currentVersion, and the back button is a discard. Without this the buffer
+  // outlives the session, so re-opening the SAME step resurrects the previous,
+  // uncommitted edits: the uncontrolled preview editor (keyed by the step id,
+  // which is unchanged) re-mounts and inits from the stale buffer before the
+  // seed layout effect swaps in the fresh clone — e.g. a deleted action stays
+  // gone until a refresh. Clearing to null makes the `!currentStep` guard hold
+  // the editor back until the seed provides fresh data.
+  useEffect(() => {
+    return () => setCurrentStep(null);
+  }, [setCurrentStep]);
 };

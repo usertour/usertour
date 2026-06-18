@@ -22,7 +22,7 @@ function buildSummary(summaryKey: string) {
       <span className="inline-flex min-w-0 items-center gap-2">
         <CloseCircleIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className={summaryTextClass}>
-          <span className="font-semibold">{t(summaryKey)}</span>
+          <span className="font-medium">{t(summaryKey)}</span>
         </span>
       </span>
     );

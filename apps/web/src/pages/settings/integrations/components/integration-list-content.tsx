@@ -136,7 +136,7 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
               />
             </div>
           </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">
+          <div className="mt-4 text-center text-lg/6 font-medium">
             {t('settings.integrations.salesforce.connectTitle', { name: integration.name })}
           </div>
         </DialogTitle>

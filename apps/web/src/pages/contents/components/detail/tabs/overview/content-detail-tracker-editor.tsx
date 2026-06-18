@@ -48,13 +48,18 @@ const TrackerEventSelector = ({
 
   const events: Event[] = eventList ?? [];
 
+  // A tracker only fires custom events, so built-in (predefined) events
+  // aren't pickable here. They stay in `events` so an already-selected one
+  // still resolves to its summary card, but they're excluded from the list.
+  const selectableEvents = useMemo(() => events.filter((e) => !e.predefined), [events]);
+
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
+    if (!searchQuery) return selectableEvents;
     const q = searchQuery.toLowerCase();
-    return events.filter(
+    return selectableEvents.filter(
       (e) => e.displayName.toLowerCase().includes(q) || e.codeName.toLowerCase().includes(q),
     );
-  }, [events, searchQuery]);
+  }, [selectableEvents, searchQuery]);
 
   const selectedEvent = useMemo(
     () => events.find((e) => e.id === selectedEventId),

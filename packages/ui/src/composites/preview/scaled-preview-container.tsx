@@ -142,7 +142,13 @@ const ScaledPreviewContainer = memo(
       <div
         ref={ref}
         style={containerStyle}
-        className={cn('[&_iframe]:pointer-events-none', className)}
+        // Previews are static thumbnails: kill pointer events on the whole
+        // subtree (not just iframes) so DOM-rendered widgets — checklist, RC —
+        // don't fire hover under the mouse. `[&_*]` reaches the descendants that
+        // re-open `pointer-events: all` (the widget's surface frame); no
+        // !important — app styles already win the cascade over the SDK ones, and
+        // this exact class is what the detail-page preview wrapper uses.
+        className={cn('pointer-events-none [&_*]:pointer-events-none', className)}
       >
         <div ref={contentRef}>{children}</div>
       </div>
@@ -213,7 +219,9 @@ const AutoScaledPreviewContainer = memo(
         <div
           ref={ref}
           style={containerStyle}
-          className={cn('[&_iframe]:pointer-events-none', className)}
+          // See ScaledPreviewContainer: `[&_*]:pointer-events-none` overrides
+          // the widget's `pointer-events: all` on .usertour-widget-surface-frame.
+          className={cn('pointer-events-none [&_*]:pointer-events-none', className)}
         >
           <div ref={contentRef}>{children}</div>
         </div>

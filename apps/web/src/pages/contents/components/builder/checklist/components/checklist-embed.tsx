@@ -19,6 +19,7 @@ import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
+import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useAws } from '@usertour/hooks';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 
@@ -32,6 +33,7 @@ export const ChecklistEmbed = () => {
     localData.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );
   const { attributeList } = useAttributeList();
+  const getOembedInfo = useOembedInfo();
 
   // Use shared hook for animation and completion state management
   const { completedItemIds, animatedItemIds, handleItemClick } =
@@ -97,6 +99,7 @@ export const ChecklistEmbed = () => {
                   projectId={projectId}
                   attributes={attributeList}
                   enabledElementTypes={enabledElementTypes}
+                  getOembedInfo={getOembedInfo}
                 />
                 <ChecklistProgress />
                 <ChecklistItems onClick={handleItemClick} disabledUpdate />

@@ -29,7 +29,7 @@ export const AuthCard = ({
   return (
     <Card>
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-semibold tracking-tight">{title}</CardTitle>
+        <CardTitle className="text-2xl font-medium tracking-tight">{title}</CardTitle>
         {description && (
           <CardDescription className="text-sm text-muted-foreground">{description}</CardDescription>
         )}

@@ -19,7 +19,7 @@ export const EmptyPlaceholder = (props: EmptyPlaceholderProps) => {
       <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
         <EmptyContentPreview />
 
-        <h3 className="mt-4 text-lg font-semibold">{name}</h3>
+        <h3 className="mt-4 text-lg font-medium">{name}</h3>
         <p className="mb-4 mt-2 text-sm text-muted-foreground">{description}</p>
         {children}
       </div>

@@ -43,6 +43,7 @@
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.0.6",
     "@tabler/icons-react": "^3.31.0",
+    "@tanstack/react-virtual": "^3.14.3",
     "@usertour/constants": "workspace:*",
     "@usertour/helpers": "workspace:^",
     "@usertour/icons": "workspace:*",

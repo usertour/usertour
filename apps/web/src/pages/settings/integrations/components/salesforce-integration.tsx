@@ -143,7 +143,7 @@ export const SalesforceIntegration = (props: SalesforceIntegrationProps) => {
               className="w-12 h-12"
             />
             <div className="flex flex-col gap-1">
-              <span className="text-lg font-semibold">
+              <span className="text-lg font-medium">
                 {t('settings.integrations.salesforce.connectionTitle', {
                   name: integrationInfo?.name ?? '',
                 })}
@@ -197,7 +197,7 @@ export const SalesforceIntegration = (props: SalesforceIntegrationProps) => {
       {/* Existing Object Mappings */}
       {existingMappings && existingMappings.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">
+          <h3 className="text-lg font-medium mb-4">
             {t('settings.integrations.salesforce.existingMappingsTitle')}
           </h3>
           {existingMappings.map((mapping: IntegrationObjectMappingModel) => (

@@ -32,7 +32,7 @@ export const IntegrationProviderHeader = ({
       <CardTitle className="space-between flex flex-row items-center gap-4">
         <img src={imagePath} alt={`${name} logo`} className="w-12 h-12" />
         <div className="flex flex-col gap-1">
-          <div className="text-lg font-semibold">{name}</div>
+          <div className="text-lg font-medium">{name}</div>
           {description ? (
             <div className="text-sm text-muted-foreground font-normal">
               {description}

@@ -58,7 +58,7 @@ export const AdminPanelSidebarNav = () => {
   return (
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>
-        <h2 className="text-lg font-semibold">{t('admin.nav.title')}</h2>
+        <h2 className="text-lg font-medium">{t('admin.nav.title')}</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <AdminSidebarBodyTitleTemplate>{t('admin.nav.sectionLabel')}</AdminSidebarBodyTitleTemplate>

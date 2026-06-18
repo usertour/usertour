@@ -36,12 +36,12 @@ function TimeSummary({ condition }: { condition: RulesCondition }) {
         <span className="text-muted-foreground">
           {between ? t('conditions.types.time.between') : t('conditions.types.time.after')}
         </span>{' '}
-        <span className="font-semibold">{formatPretty(start)}</span>
+        <span className="font-medium">{formatPretty(start)}</span>
         {between && (
           <>
             {' '}
             <span className="text-muted-foreground">{t('conditions.operators.and')}</span>{' '}
-            <span className="font-semibold">{formatPretty(end)}</span>
+            <span className="font-medium">{formatPretty(end)}</span>
           </>
         )}
       </span>

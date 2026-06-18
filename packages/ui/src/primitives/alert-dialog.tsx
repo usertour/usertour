@@ -82,7 +82,7 @@ const AlertDialogTitle = React.forwardRef<
     // overflowing the dialog. Prefers word boundaries first, falls back
     // to any character — safer than `break-all` which would split
     // ordinary English titles too aggressively.
-    className={cn('text-lg font-semibold [overflow-wrap:anywhere]', className)}
+    className={cn('text-lg font-medium [overflow-wrap:anywhere]', className)}
     {...props}
   />
 ));

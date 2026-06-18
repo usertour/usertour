@@ -115,7 +115,9 @@ export type Step = {
   name: string;
   type: string;
   cvid?: string;
-  themeId?: string;
+  // null = explicitly "inherit the flow theme". Must be null, not undefined:
+  // undefined drops out of the save payload and never clears a saved theme.
+  themeId?: string | null;
   target?: ElementSelectorPropsData;
   screenshot?: StepScreenshot;
   createdAt?: string;

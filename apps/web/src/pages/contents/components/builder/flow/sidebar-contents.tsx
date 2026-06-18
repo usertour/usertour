@@ -132,7 +132,7 @@ const SidebarContent = memo(
               onClick={(event) => event.stopPropagation()}
               className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground/50"
             />
-            <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
+            <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-muted text-[11px] font-medium text-muted-foreground">
               {index + 1}
             </span>
             <TypeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -178,7 +178,7 @@ const SidebarContent = memo(
                     >
                       <EventIcon2 className="h-4 w-4 opacity-70" />
                       {triggerCount > 0 && (
-                        <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
+                        <span className="absolute -right-1 -top-1 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-0.5 text-[10px] font-medium leading-none text-primary-foreground">
                           {triggerCount}
                         </span>
                       )}

@@ -75,7 +75,7 @@ const ContentBadge = ({
 };
 
 // Custom hook for theme handling
-const useThemeHandler = (version: ContentVersion, themeId?: string) => {
+const useThemeHandler = (version: ContentVersion, themeId?: string | null) => {
   const { themeList } = useThemeList();
   const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
 
@@ -316,13 +316,20 @@ const LauncherContentPreview = ({
   const { t } = useTranslation();
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as LauncherData;
+  const { height, setContentRect, setScale } = useScaledPreview();
 
   if (!currentVersion || !currentTheme) return null;
 
   const leftContent = (
-    <div className="w-40 h-32 flex flex-none items-center justify-center">
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
       <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-    </div>
+    </ScaledPreviewWrapper>
   );
 
   const badges = (

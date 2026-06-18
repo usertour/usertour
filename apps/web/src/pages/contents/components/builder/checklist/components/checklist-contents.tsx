@@ -105,7 +105,7 @@ const ChecklistContent = forwardRef<HTMLDivElement, ChecklistContentProps>((prop
           onClick={(event) => event.stopPropagation()}
           className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground/50"
         />
-        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
+        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-muted text-[11px] font-medium text-muted-foreground">
           {index + 1}
         </span>
         <span
