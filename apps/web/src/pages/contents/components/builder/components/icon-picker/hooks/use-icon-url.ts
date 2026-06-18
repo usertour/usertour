@@ -1,0 +1,49 @@
+import { useCallback, useState, useEffect } from 'react';
+import { useToast } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
+import { LauncherIconSource } from '@usertour/types';
+import { validateUrl } from '@/pages/contents/components/builder/components/icon-picker/utils';
+
+interface UseIconUrlProps {
+  iconUrl?: string;
+  iconSource: LauncherIconSource;
+  onUrlSubmit: (url: string) => void;
+}
+
+export const useIconUrl = ({ iconUrl, iconSource, onUrlSubmit }: UseIconUrlProps) => {
+  const [urlInput, setUrlInput] = useState<string>('');
+  const { toast } = useToast();
+  const { t } = useTranslation();
+
+  // Initialize URL input when icon source is URL
+  useEffect(() => {
+    if (iconSource === LauncherIconSource.URL) {
+      setUrlInput(iconUrl ?? '');
+    } else {
+      setUrlInput('');
+    }
+  }, [iconSource, iconUrl]);
+
+  const handleUrlSubmit = useCallback(() => {
+    const trimmedUrl = urlInput.trim();
+    if (!trimmedUrl) {
+      toast({ variant: 'destructive', title: t('contentBuilder.iconPicker.invalidUrl') });
+      return;
+    }
+
+    // Basic URL validation
+    if (!validateUrl(trimmedUrl)) {
+      toast({ variant: 'destructive', title: t('contentBuilder.iconPicker.invalidUrl') });
+      return;
+    }
+
+    onUrlSubmit(trimmedUrl);
+  }, [urlInput, onUrlSubmit, toast, t]);
+
+  return {
+    urlInput,
+    setUrlInput,
+    handleUrlSubmit,
+    isValid: urlInput.trim().length > 0 && validateUrl(urlInput.trim()),
+  };
+};

@@ -10,6 +10,12 @@ export const darkFixture: ThemeTypesSetting = standardDarkSettings;
 // silently disappear from the snapshot).
 export const richFixture: ThemeTypesSetting = {
   ...defaultSettings,
+  font: {
+    ...defaultSettings.font,
+    customFontFamily: 'My Brand Sans',
+  },
+  customCss:
+    '@font-face { font-family: "My Brand Sans"; src: url(https://example.com/font.woff2); }',
   checklist: {
     ...defaultSettings.checklist,
     zIndex: 9999,

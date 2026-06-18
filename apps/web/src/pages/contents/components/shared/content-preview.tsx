@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEventList } from '@/hooks/use-event-list';
 import { EyeNoneIcon, EventTrackerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
@@ -42,6 +43,7 @@ import {
   ContentVersion,
   DEFAULT_BANNER_DATA,
   LauncherData,
+  LauncherDataType,
   ProgressBarPosition,
   ProgressBarType,
   ResourceCenterData,
@@ -199,6 +201,18 @@ const LauncherPreview = ({
   const data = currentVersion.data as LauncherData;
   const themeSettings = currentTheme.settings;
 
+  // A hidden launcher has no visible element (it triggers on a target), so
+  // LauncherView renders nothing and the preview looks empty. Show the same
+  // icon placeholder as a hidden flow step. No label: the preview is scaled to
+  // fit, which would blow the text up.
+  if (data.type === LauncherDataType.HIDDEN) {
+    return (
+      <div className="w-40 h-32 flex flex-none items-center justify-center">
+        <EyeNoneIcon className="w-8 h-8" />
+      </div>
+    );
+  }
+
   return (
     <LauncherRoot themeSettings={themeSettings} data={data}>
       <LauncherContainer>
@@ -305,6 +319,7 @@ const BannerPreviewContent = ({
 
 const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
   const { eventList } = useEventList();
+  const { t } = useTranslation();
 
   const versionData =
     typeof currentVersion.data === 'string' ? JSON.parse(currentVersion.data) : currentVersion.data;
@@ -322,12 +337,14 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
       </div>
       <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
         <span className="text-sm font-medium text-foreground truncate max-w-full">
-          {hasEvent ? eventDisplayName || 'Event configured' : 'No event selected'}
+          {hasEvent
+            ? eventDisplayName || t('contents.shared.trackerPreview.eventConfigured')
+            : t('contents.shared.trackerPreview.noEventSelected')}
         </span>
         <span className="text-xs text-muted-foreground">
           {conditionCount > 0
-            ? `${conditionCount} trigger condition${conditionCount > 1 ? 's' : ''}`
-            : 'No trigger conditions'}
+            ? t('contents.shared.trackerPreview.triggerConditions', { count: conditionCount })
+            : t('contents.shared.trackerPreview.noTriggerConditions')}
         </span>
       </div>
     </div>

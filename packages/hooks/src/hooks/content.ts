@@ -45,13 +45,20 @@ export const useGetContentVersionQuery = (
   versionId: string | undefined,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, refetch, error } = useQuery(getContentVersion, {
+  const { data, previousData, loading, refetch, error } = useQuery(getContentVersion, {
     variables: { versionId },
     skip: !versionId,
     ...options,
   });
 
-  const version: ContentVersion | null = data?.getContentVersion ?? null;
+  // When versionId flips (publish-then-edit forks a new editable version and
+  // content.editedVersionId repoints to it), `data` is briefly undefined while
+  // the new id loads. Hold the previous frame so consumers that gate on
+  // `if (!version) return null` (detail's settings/content panels) don't unmount
+  // and flash the whole content area. The forked version copies the prior
+  // config, so the held-over frame is visually identical until the new one lands.
+  const version: ContentVersion | null =
+    data?.getContentVersion ?? previousData?.getContentVersion ?? null;
 
   return { version, loading, refetch, error };
 };

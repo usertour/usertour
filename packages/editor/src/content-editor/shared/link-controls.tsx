@@ -1,7 +1,8 @@
 // Shared LinkControls component for content editor elements
 
-import { Checkbox, Label } from '@usertour/ui';
-import { memo, useCallback, useId } from 'react';
+import { BooleanField } from '@usertour/ui';
+import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Descendant } from 'slate';
 
 import type { Attribute } from '@usertour/types';
@@ -18,8 +19,7 @@ export interface LinkControlsProps {
 
 export const LinkControls = memo(
   ({ link, onLinkChange, zIndex, attributes }: LinkControlsProps) => {
-    const id = useId();
-    const linkCheckboxId = `${id}-link`;
+    const { t } = useTranslation();
 
     const handleLinkEnabledChange = useCallback(
       (enabled: boolean) => {
@@ -61,14 +61,11 @@ export const LinkControls = memo(
 
     return (
       <>
-        <div className="flex gap-x-2">
-          <Checkbox
-            id={linkCheckboxId}
-            checked={!!link}
-            onCheckedChange={handleLinkEnabledChange}
-          />
-          <Label htmlFor={linkCheckboxId}>Link URL</Label>
-        </div>
+        <BooleanField
+          label={t('contentBuilder.editor.link.url')}
+          checked={!!link}
+          onChange={handleLinkEnabledChange}
+        />
         {link && (
           <LinkEditorPanel
             zIndex={zIndex}

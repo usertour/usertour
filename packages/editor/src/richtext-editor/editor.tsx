@@ -3,6 +3,7 @@
 import { cn } from '@usertour/tailwind';
 import isHotkey from 'is-hotkey';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Editor, Element as SlateElement, Path, Transforms } from 'slate';
 import { Editable, RenderElementProps, RenderLeafProps, Slate } from 'slate-react';
 import { getTextStyles } from '../lib/styles';
@@ -201,6 +202,7 @@ export const PopperEditor = (props: PopperEditorProps) => {
     attributes,
     isInline = false,
   } = props;
+  const { t } = useTranslation();
 
   const {
     editor,
@@ -259,7 +261,7 @@ export const PopperEditor = (props: PopperEditorProps) => {
           <SlashCommandEditableWrapper
             renderElement={renderElement}
             renderLeaf={renderLeaf}
-            placeholder="Write, type '/' for commands…"
+            placeholder={t('contentBuilder.editor.placeholder')}
             spellCheck
             autoFocus={false}
             style={{ outline: 'none' }}
@@ -285,6 +287,7 @@ export const PopperEditorMini = (props: PopperEditorProps) => {
     attributes,
     className,
   } = props;
+  const { t } = useTranslation();
 
   const { editor, setEditorRef, handleSlateChange, contextValue, renderElement, renderLeaf } =
     useSlateEditor({
@@ -318,7 +321,7 @@ export const PopperEditorMini = (props: PopperEditorProps) => {
             renderElement={renderElement}
             renderLeaf={renderLeaf}
             className="grow"
-            placeholder="Write text here…"
+            placeholder={t('contentBuilder.editor.placeholderMini')}
             spellCheck
             autoFocus={true}
             style={{ outline: 'none', minWidth: 0 }}

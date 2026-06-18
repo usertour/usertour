@@ -2,6 +2,7 @@
 
 import { ToggleGroup as ToolbarToggleGroup } from '@radix-ui/react-toolbar';
 import { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Editor, Element as SlateElement } from 'slate';
 import { useSlate } from 'slate-react';
 
@@ -49,6 +50,7 @@ interface AlignmentGroupProps {
  */
 export const AlignmentGroup = memo(({ items }: AlignmentGroupProps) => {
   const editor = useSlate();
+  const { t } = useTranslation();
 
   // Get current alignment from editor selection
   const currentAlignment = useMemo(() => {
@@ -84,7 +86,7 @@ export const AlignmentGroup = memo(({ items }: AlignmentGroupProps) => {
     <ToolbarToggleGroup
       type="single"
       value={currentAlignment}
-      aria-label="Text alignment"
+      aria-label={t('contentBuilder.editor.toolbar.textAlignment')}
       className={TOOLBAR_TOGGLE_GROUP}
     >
       {items.map((item) => (

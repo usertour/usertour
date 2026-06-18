@@ -7,6 +7,13 @@
 export type PlanFeatures = {
   removeBranding: boolean;
 
+  // Theme-level custom CSS (and the Custom font that depends on it).
+  // Gated at/above removeBranding because custom CSS can hide the
+  // "Made with Usertour" badge — see the gate's enforcement in the
+  // session builder (it strips customCss from the theme it ships when
+  // this is false).
+  customCss: boolean;
+
   // Future gates — declared with safe defaults so the type is stable
   // before each consumer is wired.
   auditLogs: boolean;

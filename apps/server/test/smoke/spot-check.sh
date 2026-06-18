@@ -375,7 +375,7 @@ section "R-tier MUTATION — in-project (1 endpoint)"
 run_endpoint 'team.activeUserProject' \
   "{\"query\":\"mutation(\$d:ActiveUserProjectInput!){activeUserProject(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"userId\":\"e2e\"}}}"
 
-section "W-tier MUTATIONS — in-project (42 endpoints, DESTRUCTIVE)"
+section "W-tier MUTATIONS — in-project (39 endpoints, DESTRUCTIVE)"
 run_endpoint 'content.createContent' \
   "{\"query\":\"mutation(\$d:ContentInput!){createContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"flow\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
@@ -384,15 +384,6 @@ run_endpoint 'content.updateContent' \
 
 run_endpoint 'content.duplicateContent' \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
-
-run_endpoint 'content.updateContentStep' \
-  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"name\":\"spot-check-step\"},\"s\":\"${SMOKE_STEP_ID}\"}}"
-
-run_endpoint 'content.addContentSteps' \
-  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_THEME_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
-
-run_endpoint 'content.addContentStep' \
-  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"sequence\":0}}}"
 
 run_endpoint 'content.updateVersionLocationData' \
   "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
@@ -590,7 +581,7 @@ run_endpoint 'team.changeTeamMemberRole' \
 run_endpoint 'team.cancelInvite' \
   "{\"query\":\"mutation(\$d:CancelInviteInput!){cancelInvite(data:\$d)}\",\"variables\":{\"d\":{\"inviteId\":\"${SMOKE_INVITE_ID}\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
 
-section "Cross-project mutual MUTATIONS (56 endpoints × 2 directions)"
+section "Cross-project mutual MUTATIONS (53 endpoints × 2 directions)"
 # If guard works, all of these return E0013 with zero side effects.
 # If guard is broken (IDOR), A→B mutations EXECUTE on B — verify guard before running.
 mutual 'team.activeUserProject' \
@@ -608,18 +599,6 @@ mutual 'content.updateContent' \
 mutual 'content.duplicateContent' \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
-
-mutual 'content.updateContentStep' \
-  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"name\":\"spot-check-step\"},\"s\":\"${SMOKE_B_STEP_ID}\"}}" \
-  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"name\":\"spot-check-step\"},\"s\":\"${SMOKE_STEP_ID}\"}}"
-
-mutual 'content.addContentSteps' \
-  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_B_THEME_ID}\",\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_THEME_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
-
-mutual 'content.addContentStep' \
-  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"sequence\":0}}}" \
-  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"sequence\":0}}}"
 
 mutual 'content.updateVersionLocationData' \
   "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_B_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \

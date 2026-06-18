@@ -50,10 +50,12 @@ export enum ModalPosition {
   LeftTop = 'leftTop',
   CenterTop = 'centerTop',
   RightTop = 'rightTop',
+  LeftCenter = 'leftCenter',
+  Center = 'center',
+  RightCenter = 'rightCenter',
   LeftBottom = 'leftBottom',
   CenterBottom = 'centerBottom',
   RightBottom = 'rightBottom',
-  Center = 'center',
 }
 
 export enum StepContentType {
@@ -113,7 +115,9 @@ export type Step = {
   name: string;
   type: string;
   cvid?: string;
-  themeId?: string;
+  // null = explicitly "inherit the flow theme". Must be null, not undefined:
+  // undefined drops out of the save payload and never clears a saved theme.
+  themeId?: string | null;
   target?: ElementSelectorPropsData;
   screenshot?: StepScreenshot;
   createdAt?: string;

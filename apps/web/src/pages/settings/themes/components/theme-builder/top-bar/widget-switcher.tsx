@@ -5,7 +5,13 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
 } from '@usertour/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/ui';
+import {
+  CompactSelectContent,
+  CompactSelectItem,
+  CompactSelectRoot,
+  CompactSelectTrigger,
+  CompactSelectValue,
+} from '@usertour/ui';
 import { ThemeDetailPreviewType } from '@usertour/types';
 import type { ComponentType } from 'react';
 import { useMemo } from 'react';
@@ -107,30 +113,31 @@ export const WidgetSwitcher = (props: WidgetSwitcherProps) => {
   const selected = options.find((opt) => opt.value === value);
 
   return (
-    <Select value={value} onValueChange={(next) => onChange(next as ThemeDetailPreviewType)}>
-      <SelectTrigger
-        variant="compact-muted"
-        className="h-7 w-52 truncate whitespace-nowrap bg-transparent text-sm shadow-none hover:bg-muted/40 md:text-sm"
-      >
-        {selected ? (
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <selected.Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">{selected.label}</span>
-          </span>
-        ) : (
-          <SelectValue placeholder={t('themeBuilder.placeholders.selectWidget')} />
-        )}
-      </SelectTrigger>
-      <SelectContent>
+    <CompactSelectRoot
+      value={value}
+      onValueChange={(next) => onChange(next as ThemeDetailPreviewType)}
+      modal={false}
+    >
+      <CompactSelectTrigger className="h-7 w-52 bg-transparent shadow-none hover:bg-muted/40">
+        {selected ? <selected.Icon className="h-4 w-4 shrink-0 text-muted-foreground" /> : null}
+        <CompactSelectValue
+          className="min-w-0 flex-1 truncate text-left"
+          placeholder={t('themeBuilder.placeholders.selectWidget')}
+        >
+          {(v) =>
+            options.find((opt) => opt.value === v)?.label ??
+            t('themeBuilder.placeholders.selectWidget')
+          }
+        </CompactSelectValue>
+      </CompactSelectTrigger>
+      <CompactSelectContent className="w-auto min-w-[var(--anchor-width)]">
         {options.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value} className="text-sm">
-            <span className="inline-flex items-center gap-2">
-              <opt.Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span>{opt.label}</span>
-            </span>
-          </SelectItem>
+          <CompactSelectItem key={opt.value} value={opt.value} label={opt.label}>
+            <opt.Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span>{opt.label}</span>
+          </CompactSelectItem>
         ))}
-      </SelectContent>
-    </Select>
+      </CompactSelectContent>
+    </CompactSelectRoot>
   );
 };

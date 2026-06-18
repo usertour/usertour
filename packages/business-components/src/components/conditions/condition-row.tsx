@@ -38,7 +38,7 @@ interface Props {
 // joined by a 1px divider, so the close belongs visually to its condition
 // instead of floating beside it.
 const CHIP_OUTER =
-  'group/condition inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-background text-sm shadow-sm transition-colors hover:border-input';
+  'group/condition inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-card dark:bg-surface-raised/50 text-sm shadow-sm transition-colors hover:border-input';
 
 // Red ring around the chip when validation failed on close — gives a static
 // visual cue that complements the popping error tooltip so the row stays
@@ -139,7 +139,7 @@ export function ConditionRow({
       // rules-group.tsx made the same allowance with pr-6.
       <div
         className={cn(
-          'group/condition relative rounded-lg border border-input/60 bg-background/40 p-2 pr-8 shadow-sm',
+          'group/condition relative rounded-lg border border-input/60 bg-background/40 dark:bg-muted/40 p-2 pr-8 shadow-sm',
           isHorizontal ? 'inline-block max-w-full' : 'w-full',
         )}
       >
@@ -274,7 +274,7 @@ export function ConditionRow({
             <button
               type="button"
               onClick={onRemove}
-              aria-label="Remove condition"
+              aria-label={t('conditions.actions.removeCondition')}
               className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
             >
               <RiCloseLine className="h-3.5 w-3.5" />

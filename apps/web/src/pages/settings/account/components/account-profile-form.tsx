@@ -58,9 +58,12 @@ export const AccountProfileForm = () => {
     successMessage: t('settings.account.profile.successToast'),
   });
 
-  // Guard on loading because `defaultValues` is captured at mount —
-  // rendering before `userInfo` is hydrated would baseline to `''`.
-  if (loading) {
+  // Gate on "loading AND no userInfo yet": `defaultValues` is captured at
+  // mount, so the first load must wait for `userInfo` to hydrate (else the
+  // baseline is `''`). But a background refetch of `getUserInfo` — broadcast
+  // e.g. by 2FA's useRefreshMe on this same page — keeps `userInfo`, and must
+  // NOT unmount this form, or unsaved input is discarded.
+  if (loading && !userInfo) {
     return <AccountProfileFormSkeleton />;
   }
 

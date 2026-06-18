@@ -17,11 +17,13 @@ const SelectPortal = SelectPrimitive.Portal;
 
 // Shared base: the structural / interaction classes every variant needs
 // (border, padding, focus ring, placeholder color, disabled treatment).
-// Variants only carry their *differences* (height, radius, surface, text
-// scale). This matches what the previous CompactSelect / ConditionSelect
+// Variants carry only their *differences* (height, radius, LIGHT surface,
+// text scale) plus a shared dark fill (surface-raised/50, set once in the
+// base) — so every trigger reads consistently on dark panels, matching
+// Input. This mirrors what the previous CompactSelect / ConditionSelect
 // wrappers got from base-class inheritance.
 const selectTriggerVariants = cva(
-  'flex w-full items-center justify-between border border-input shadow-sm px-3 py-2 ring-offset-background placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+  'flex w-full items-center justify-between border border-input dark:bg-surface-raised/50 shadow-sm px-3 py-2 ring-offset-background placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
   {
     variants: {
       variant: {
@@ -81,7 +83,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        'relative z-50 min-w-[8rem] overflow-hidden rounded-md bg-popover text-popover-foreground shadow-popper dark:shadow-none dark:ring-1 dark:ring-foreground/10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
         position === 'popper' &&
           'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
         className,
@@ -111,7 +113,7 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn('px-2 py-1.5 text-sm font-semibold', className)}
+    className={cn('px-2 py-1.5 text-sm font-medium', className)}
     {...props}
   />
 ));

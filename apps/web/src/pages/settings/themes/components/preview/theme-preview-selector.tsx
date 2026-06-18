@@ -2,6 +2,7 @@
 
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Button,
@@ -25,24 +26,25 @@ interface ThemePreviewSelectorProps {
 
 export const ThemePreviewSelector = ({ selectedType, onTypeChange }: ThemePreviewSelectorProps) => {
   const [open, setOpen] = React.useState(false);
+  const { t } = useTranslation();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          aria-label="Select a type..."
+          aria-label={t('themeBuilder.preview.selectTypePlaceholder')}
           aria-expanded={open}
           className="flex-1 justify-between md:max-w-48 lg:max-w-60"
         >
-          {selectedType ? selectedType.name : 'Select a type...'}
+          {selectedType ? selectedType.name : t('themeBuilder.preview.selectTypePlaceholder')}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-60 p-0">
         <Command>
-          <CommandInput placeholder="Search types..." />
-          <CommandEmpty>No types found.</CommandEmpty>
+          <CommandInput placeholder={t('themeBuilder.preview.searchTypesPlaceholder')} />
+          <CommandEmpty>{t('themeBuilder.preview.noTypesFound')}</CommandEmpty>
           <CommandGroup>
             {themeDetailSelectorTypes.map((type, index) => (
               <CommandItem

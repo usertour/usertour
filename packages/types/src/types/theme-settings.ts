@@ -108,6 +108,9 @@ export type ThemeTypesSetting = {
   mainColor: ThemeTypesSettingsColor;
   font: {
     fontFamily: string;
+    // Actual font-family used when fontFamily is 'Custom font'. The font
+    // itself must be declared via @font-face rules in customCss.
+    customFontFamily?: string;
     fontSize: number;
     lineHeight: number;
     fontWeightNormal: number;
@@ -227,6 +230,10 @@ export type ThemeTypesSetting = {
   };
   resourceCenter?: ResourceCenterThemeSettings;
   resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
+  // Raw CSS injected as a <style> tag into every widget iframe. The
+  // sanctioned home for @font-face rules backing 'Custom font' and for
+  // advanced widget style overrides.
+  customCss?: string;
 };
 
 export const defaultSettings: ThemeTypesSetting = {

@@ -47,7 +47,7 @@ function JavascriptEvaluateSummary({ condition }: { condition: RulesCondition })
             <span className="text-muted-foreground">
               {t('actions.types.javascriptEvaluate.prefix')}
             </span>{' '}
-            <span className="font-semibold">{display}</span>
+            <span className="font-medium">{display}</span>
           </>
         ) : (
           <span className="text-muted-foreground">

@@ -1,5 +1,12 @@
 import { gql } from '@apollo/client';
 
+// Cache contract: editedVersion (and getContentVersion) share the Version:id
+// cache entry, and Steps normalize by id across the detail + builder views.
+// Because this document selects editedVersion.steps, the server's editedVersion
+// resolver MUST include steps — otherwise GraphQL returns steps: null and wipes
+// the list from every view on that Version (this regressed the detail step list
+// once). Keep any relation selected here in sync with what its resolver returns;
+// see content.resolver.ts editedVersion ResolveField for the server half.
 export const getContent = gql`
   query getContent($contentId: String!) {
     getContent(contentId: $contentId) {
@@ -25,8 +32,28 @@ export const getContent = gql`
       editedVersion {
         id
         sequence
+        contentId
+        themeId
+        config
+        data
+        scheduledAt
         createdAt
         updatedAt
+        steps {
+          id
+          name
+          type
+          cvid
+          sequence
+          data
+          trigger
+          themeId
+          screenshot
+          target
+          setting
+          createdAt
+          updatedAt
+        }
       }
       steps {
         id
@@ -93,52 +120,6 @@ export const createContent = gql`
       publishedAt
       createdAt
       updatedAt
-    }
-  }
-`;
-
-export const addContentSteps = gql`
-  mutation addContentSteps(
-    $contentId: String!
-    $versionId: String!
-    $themeId: String!
-    $steps: [StepInput!]!
-  ) {
-    addContentSteps(
-      data: {
-        contentId: $contentId
-        versionId: $versionId
-        themeId: $themeId
-        steps: $steps
-      }
-    ) {
-      success
-    }
-  }
-`;
-
-export const addContentStep = gql`
-  mutation addContentStep($data: CreateStepInput!) {
-    addContentStep(data: $data) {
-      id
-      name
-      cvid
-      type
-      sequence
-      data
-      themeId
-      screenshot
-      sequence
-      target
-      setting
-    }
-  }
-`;
-
-export const updateContentStep = gql`
-  mutation updateContentStep($stepId: String!, $data: UpdateStepInput!) {
-    updateContentStep(stepId: $stepId, data: $data) {
-      success
     }
   }
 `;
@@ -285,8 +266,14 @@ export const createContentVersion = gql`
 `;
 
 export const updateContentVersion = gql`
-  mutation updateContentVersion($versionId: String!, $content: VersionInput!) {
-    updateContentVersion(data: { versionId: $versionId, content: $content }) {
+  mutation updateContentVersion(
+    $versionId: String!
+    $content: VersionInput!
+    $expectedUpdatedAt: DateTime
+  ) {
+    updateContentVersion(
+      data: { versionId: $versionId, content: $content, expectedUpdatedAt: $expectedUpdatedAt }
+    ) {
       id
       sequence
       contentId
@@ -294,7 +281,23 @@ export const updateContentVersion = gql`
       config
       data
       scheduledAt
+      createdAt
       updatedAt
+      steps {
+        id
+        name
+        type
+        cvid
+        sequence
+        data
+        trigger
+        themeId
+        screenshot
+        target
+        setting
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
@@ -369,20 +372,6 @@ export const listContentVersions = gql`
   }
 `;
 
-export const addContentVersionSteps = gql`
-  mutation addContentSteps(
-    $contentId: String!
-    $versionId: String!
-    $steps: [StepInput!]!
-  ) {
-    addContentSteps(
-      data: { contentId: $contentId, versionId: $versionId, steps: $steps }
-    ) {
-      success
-    }
-  }
-`;
-
 export const findManyVersionLocations = gql`
   query findManyVersionLocations($versionId: String!) {
     findManyVersionLocations(versionId: $versionId) {
@@ -402,6 +391,10 @@ export const updateVersionLocationData = gql`
   mutation updateVersionLocationData($data: VersionUpdateLocalizationInput!) {
     updateVersionLocationData(data: $data) {
       id
+      enabled
+      localized
+      backup
+      updatedAt
     }
   }
 `;

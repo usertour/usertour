@@ -28,7 +28,7 @@ import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 export const AdminAuthenticationPage = () => {
   const { t } = useTranslation('ui');
   const { userInfo, project } = useAppContext();
-  const { data, loading, refetch } = useAdminInstanceSettingsQuery();
+  const { data, loading } = useAdminInstanceSettingsQuery();
   const { data: adminSettings, loading: adminSettingsLoading } = useAdminSettingsQuery();
   // Wait for both admin queries to resolve before rendering license-derived
   // UI. Otherwise undefined data falls through `?.` chains to `false`, the
@@ -62,11 +62,12 @@ export const AdminAuthenticationPage = () => {
 
   const handleSave = async () => {
     try {
+      // updateAuthenticationSettings returns the full settings entity (id +
+      // allowUserRegistration), so the normalized cache updates in place.
       await updateAuthenticationSettings(allowUserRegistration);
-      await refetch();
       toast({
         variant: 'success',
-        title: 'Authentication settings updated',
+        title: t('admin.authentication.settingsUpdated'),
       });
     } catch (error) {
       toast({
@@ -92,8 +93,11 @@ export const AdminAuthenticationPage = () => {
       return;
     }
     try {
+      // updateRequire2FA returns the full settings entity (id + require2FA),
+      // so the normalized cache updates in place; only the license-scoped
+      // caches (me / globalConfig) need an explicit invalidation.
       await updateRequire2FA(next);
-      await Promise.all([refetch(), invalidateLicenseScopedCache()]);
+      await invalidateLicenseScopedCache();
       toast({
         variant: 'success',
         title: next
@@ -108,20 +112,19 @@ export const AdminAuthenticationPage = () => {
   return (
     <SettingsContent>
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight">Authentication</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure how users can register for this self-hosted instance.
-        </p>
+        <h3 className="text-xl font-medium tracking-tight">{t('admin.authentication.title')}</h3>
+        <p className="text-sm text-muted-foreground">{t('admin.authentication.description')}</p>
       </div>
       <Separator />
 
       <div className="space-y-8">
         <div className="flex items-start justify-between gap-6 rounded-xl border border-border/60 p-5">
           <div className="space-y-1">
-            <div className="text-sm font-medium">Allow new user registration</div>
+            <div className="text-sm font-medium">
+              {t('admin.authentication.allowRegistrationLabel')}
+            </div>
             <div className="text-sm text-muted-foreground">
-              When disabled, only system admins can create new users. Invite-based join flows remain
-              available.
+              {t('admin.authentication.allowRegistrationDescription')}
             </div>
           </div>
           {loading ? (
@@ -194,7 +197,7 @@ export const AdminAuthenticationPage = () => {
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={loading || updating}>
-            Save changes
+            {t('admin.common.saveChanges')}
           </Button>
         </div>
       </div>

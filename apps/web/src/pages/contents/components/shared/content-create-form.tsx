@@ -133,7 +133,7 @@ export const ContentCreateForm = ({
         const path = `/env/${content.environmentId ?? ''}/${contentTypeMeta.builderPathSegment}/${content.id}/detail`;
         navigate(path);
       } else {
-        const path = `/env/${content.environmentId ?? ''}/${contentTypeMeta.builderPathSegment}/${content.id}/builder/${content.editedVersionId}`;
+        const path = `/env/${content.environmentId ?? ''}/${contentTypeMeta.builderPathSegment}/${content.id}/builder`;
         navigate(path);
       }
     } catch (error) {

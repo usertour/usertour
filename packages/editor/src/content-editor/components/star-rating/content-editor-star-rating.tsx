@@ -2,6 +2,7 @@
 
 import { StarRating } from '@usertour/widget';
 import { memo, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ContentEditorStarRatingElement } from '../../../types/editor';
 import { BindAttribute } from '../../shared/bind-attribute';
@@ -24,50 +25,49 @@ const StarRatingPopoverContent = memo(
     localData: ContentEditorStarRatingElement['data'];
     handleDataChange: (data: Partial<ContentEditorStarRatingElement['data']>) => void;
     contextProps: QuestionContextProps;
-  }) => (
-    <div className="flex flex-col gap-2.5">
-      <QuestionNameField
-        id="star-rating-question"
-        value={localData.name}
-        onChange={(name) => handleDataChange({ name })}
-      />
+  }) => {
+    const { t } = useTranslation();
+    return (
+      <div className="flex flex-col gap-2.5">
+        <QuestionNameField value={localData.name} onChange={(name) => handleDataChange({ name })} />
 
-      <ContentActionsField
-        actions={localData.actions}
-        onActionsChange={(actions) => handleDataChange({ actions })}
-        contextProps={contextProps}
-      />
+        <ContentActionsField
+          actions={localData.actions}
+          onActionsChange={(actions) => handleDataChange({ actions })}
+          contextProps={contextProps}
+        />
 
-      <ScaleRangeField
-        lowRange={localData.lowRange}
-        highRange={localData.highRange}
-        onLowRangeChange={(lowRange) => handleDataChange({ lowRange })}
-        onHighRangeChange={(highRange) => handleDataChange({ highRange })}
-        minValue={1}
-        maxValue={10}
-        lowDisabled={true}
-        lowPlaceholder="Default"
-        highPlaceholder="Default"
-        highMinFollowsLow={true}
-      />
+        <ScaleRangeField
+          lowRange={localData.lowRange}
+          highRange={localData.highRange}
+          onLowRangeChange={(lowRange) => handleDataChange({ lowRange })}
+          onHighRangeChange={(highRange) => handleDataChange({ highRange })}
+          minValue={1}
+          maxValue={10}
+          lowDisabled={true}
+          lowPlaceholder={t('contentBuilder.editor.question.defaultPlaceholder')}
+          highPlaceholder={t('contentBuilder.editor.question.defaultPlaceholder')}
+          highMinFollowsLow={true}
+        />
 
-      <LabelsField
-        lowLabel={localData.lowLabel}
-        highLabel={localData.highLabel}
-        onLowLabelChange={(lowLabel) => handleDataChange({ lowLabel })}
-        onHighLabelChange={(highLabel) => handleDataChange({ highLabel })}
-      />
+        <LabelsField
+          lowLabel={localData.lowLabel}
+          highLabel={localData.highLabel}
+          onLowLabelChange={(lowLabel) => handleDataChange({ lowLabel })}
+          onHighLabelChange={(highLabel) => handleDataChange({ highLabel })}
+        />
 
-      <BindAttribute
-        zIndex={contextProps.zIndex}
-        projectId={contextProps.projectId}
-        bindToAttribute={localData.bindToAttribute || false}
-        selectedAttribute={localData.selectedAttribute}
-        onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-        onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-      />
-    </div>
-  ),
+        <BindAttribute
+          zIndex={contextProps.zIndex}
+          projectId={contextProps.projectId}
+          bindToAttribute={localData.bindToAttribute || false}
+          selectedAttribute={localData.selectedAttribute}
+          onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+          onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+        />
+      </div>
+    );
+  },
 );
 
 StarRatingPopoverContent.displayName = 'StarRatingPopoverContent';

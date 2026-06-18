@@ -3,8 +3,9 @@ import './index.css';
 import { getApolloClient } from '@/apollo';
 import App from '@/app/index';
 import { AppProvider } from '@/contexts/app-context';
+import { ThemeProvider } from '@/contexts/theme-context';
+import { ThemedToaster } from '@/components/themed-toaster';
 import { ApolloProvider } from '@apollo/client';
-import { Toaster } from '@usertour/ui';
 import { PostHogProvider } from 'posthog-js/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -24,16 +25,18 @@ async function bootstrap() {
 
   const AppBundle = (
     <React.StrictMode>
-      <PostHogProvider apiKey={posthogKey} options={options}>
-        <ApolloProvider client={client}>
-          <HelmetProvider>
-            <AppProvider>
-              <App />
-              <Toaster />
-            </AppProvider>
-          </HelmetProvider>
-        </ApolloProvider>
-      </PostHogProvider>
+      <ThemeProvider>
+        <PostHogProvider apiKey={posthogKey} options={options}>
+          <ApolloProvider client={client}>
+            <HelmetProvider>
+              <AppProvider>
+                <App />
+                <ThemedToaster />
+              </AppProvider>
+            </HelmetProvider>
+          </ApolloProvider>
+        </PostHogProvider>
+      </ThemeProvider>
     </React.StrictMode>
   );
 

@@ -17,8 +17,10 @@ import {
 } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { DataTableFacetedFilterProps } from './types';
+import { useTranslation } from 'react-i18next';
 
 export function DataTableFacetedFilter({ column, title, options }: DataTableFacetedFilterProps) {
+  const { t } = useTranslation();
   const facets = column?.getFacetedUniqueValues();
   const selectedValues = new Set(column?.getFilterValue() as string[]);
 
@@ -61,7 +63,7 @@ export function DataTableFacetedFilter({ column, title, options }: DataTableFace
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>{t('dataTable.noResults')}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
                 const isSelected = selectedValues.has(option.value);
@@ -107,7 +109,7 @@ export function DataTableFacetedFilter({ column, title, options }: DataTableFace
                     onSelect={() => column?.setFilterValue(undefined)}
                     className="justify-center text-center"
                   >
-                    Clear filters
+                    {t('dataTable.clearFilters')}
                   </CommandItem>
                 </CommandGroup>
               </>

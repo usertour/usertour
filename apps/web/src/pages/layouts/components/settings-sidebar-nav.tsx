@@ -109,7 +109,7 @@ export const SettingsSidebarNav = () => {
   return (
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>
-        <h2 className="text-lg font-semibold">{t('settings.nav.heading')}</h2>
+        <h2 className="text-lg font-medium">{t('settings.nav.heading')}</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <NavSection

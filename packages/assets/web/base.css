@@ -5,10 +5,16 @@
     --success: 142.1 70.6% 45.3%;
     --warning: 38 92% 50%;
     --warning-foreground: 48 96% 89%;
-    --background-400: 212.7 26.8% 83.9%;
-    --background-700: 210 40% 96.1%;
-    --background-800: 210 40% 96.1%;
-    --background-900: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 210 40% 98%;
+    --surface: 210 40% 98%;
+    --surface-raised: 0 0% 100%;
+    /* Raised surfaces lift on hover. Light does it with a deeper shadow, so the
+       bg doesn't change — this token only exists for parity with dark and is
+       kept equal to --surface-raised (it is never read in light). */
+    --surface-raised-hover: 0 0% 100%;
+    --canvas: 220 60% 99%;
+    --canvas-dot: 216 30% 90%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -38,12 +44,6 @@
     --destructive-foreground: 210 40% 98%;
     --destructive-hover: 0 84.2% 60.2%;
 
-    --editor: 210 40% 96.1%;
-    --editor-foreground: 240 10% 3.9%;
-    --editor-hover: 210 40% 96.1%;
-    --editor-toolbar: 205.7 46.7% 97.1%;
-    --editor-border: 203.3 39.1% 91%;
-
     --ring: 215 20.2% 65.1%;
 
     --radius: 0.5rem;
@@ -56,52 +56,71 @@
   }
 
   .dark {
-    --background: 221.5 46.4% 11%;
-    --foreground: 0 0% 98%;
+    /* Dark lightness ladder (deep → light), rebuilt to mirror light's five-step
+       depth so cards lift by lightness alone (no border). Key rule, matching
+       light: a card's inner band/hover sits BELOW the card (recessed), while the
+       divider/border sits ABOVE it. Saturation is kept LOW (~10-14%) so the dark
+       reads as a neutral near-black, not a blue tint — the difference between a
+       cheap-looking dark and a high-end one.
+         background 8  <  surface 12  <  card 17   (card floats off the body)
+         muted 14  (recessed band/hover, darker than the card)
+         popover/surface-raised 21-22  (overlays that float above content)
+         secondary 23  (raised chips/segmented selection)
+         border 26  (hairline divider, the lightest so it stays visible) */
+    --background: 226 22% 8%;
+    --foreground: 225 14% 78%;
     --success: 142.1 70.6% 45.3%;
     --warning: 48 96% 89%;
     --warning-foreground: 38 92% 50%;
+    --info: 217 91% 60%;
+    --info-foreground: 210 40% 98%;
 
-    --background-400: 215 20.2% 65.1%;
-    --background-700: 215.3 25% 26.7%;
-    --background-800: 217.2 33.3% 17.1%;
-    --background-900: 221.5 46.4% 11%;
+    --surface: 224 19% 11%;
+    --surface-raised: 223 18% 22%;
+    /* Whole-card hover lift: dark can't deepen a shadow (invisible on near-black)
+       so a raised card lightens a step instead (+3% L over --surface-raised).
+       This is card elevation, not the inner-band/row hover that recesses. */
+    --surface-raised-hover: 223 18% 25%;
+    /* Builder canvas floor: pushed below --background (8%) so the floating
+       sidebar panel (which lifts to --card) reads as hovering above the
+       canvas instead of sitting flush with it. Dark shadows barely register
+       on a near-black floor, so the lift comes from this lightness gap. */
+    --canvas: 226 28% 5%;
+    --canvas-dot: 223 16% 18%;
 
-    --muted: 215.3 25% 26.7%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 223 16% 14%;
+    --muted-foreground: 225 13% 64%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 223 18% 21%;
+    --popover-foreground: 225 14% 78%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 223 18% 16%;
+    --card-foreground: 225 14% 78%;
 
-    --border: 215.3 25% 26.7%;
-    --input: 215.4 16.3% 46.9%;
+    --border: 222 16% 26%;
+    --input: 222 16% 24%;
 
-    --primary: 250 100% 60%;
+    /* Brand purple lifted for dark: the light value (#5533FF) has very low
+       luminance, so on the dark surfaces text-primary links/icons drop to a
+       ~2.2:1 contrast and look muddy. Lifting L to 66% pulls links/icons to a
+       legible purple while keeping bg-primary buttons' white text above AA. */
+    --primary: 250 95% 66%;
     --primary-foreground: 0 0% 98%;
-    --primary-hover: 250 100% 60%;
+    --primary-hover: 250 95% 70%;
 
-    --secondary: 215.3 25% 26.7%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-hover: 215.3 19.3% 34.5%;
+    --secondary: 223 15% 23%;
+    --secondary-foreground: 225 14% 78%;
+    --secondary-hover: 223 15% 29%;
 
-    --accent: 240 3.7% 15.9%;
+    --accent: 226 32% 33%;
     --accent-foreground: 0 0% 98%;
-    --accent-hover: 229.7 93.5% 81.8%;
+    --accent-hover: 226 36% 37%;
 
     --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 0 85.7% 97.3%;
     --destructive-hover: 0 84.2% 60.2%;
 
-    --editor: 210 40% 96.1%;
-    --editor-foreground: 240 10% 3.9%;
-    --editor-hover: 210 40% 96.1%;
-    --editor-toolbar: 205.7 46.7% 97.1%;
-    --editor-border: 203.3 39.1% 91%;
-
-    --ring: 240 3.7% 15.9%;
+    --ring: 222 16% 48%;
 
     --radius: 0.5rem;
 
@@ -120,5 +139,16 @@
 
   body {
     @apply text-foreground;
+  }
+}
+
+@layer components {
+  /* Admin canvas backdrop: a dotted grid behind the builder. Colors come from
+     tokens so it follows light/dark; the radial-gradient lives here instead of
+     a long arbitrary className. */
+  .bg-dot-grid {
+    background-color: hsl(var(--canvas));
+    background-image: radial-gradient(hsl(var(--canvas-dot)) 1.1px, transparent 1.1px);
+    background-size: 24px 24px;
   }
 }

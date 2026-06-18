@@ -18,22 +18,22 @@ export interface BrowserFrameProps {
 export const BrowserFrame = forwardRef<HTMLDivElement, BrowserFrameProps>((props, ref) => {
   const { children, chromeAction } = props;
   return (
-    <div className="flex h-full w-full min-w-[640px] max-w-[1200px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
+    <div className="flex h-full w-full min-w-[640px] max-w-[1200px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-md">
       {/* Window controls + nav arrows + URL bar */}
-      <div className="flex h-11 flex-none items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
+      <div className="flex h-11 flex-none items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className="h-3 w-3 rounded-full bg-red-500" />
           <div className="h-3 w-3 rounded-full bg-yellow-500" />
           <div className="h-3 w-3 rounded-full bg-green-500" />
         </div>
         <div className="ml-4 flex flex-1 items-center gap-2">
-          <div className="rounded p-1 text-gray-400">
+          <div className="rounded p-1 text-muted-foreground">
             <RiArrowLeftSLine size={18} />
           </div>
-          <div className="rounded p-1 text-gray-400">
+          <div className="rounded p-1 text-muted-foreground">
             <RiArrowRightSLine size={18} />
           </div>
-          <div className="flex-1 rounded bg-gray-100 px-3 py-1 text-center text-sm text-gray-600">
+          <div className="flex-1 rounded bg-muted px-3 py-1 text-center text-sm text-muted-foreground">
             example.com
           </div>
         </div>
@@ -43,8 +43,11 @@ export const BrowserFrame = forwardRef<HTMLDivElement, BrowserFrameProps>((props
           <div className="w-12" />
         )}
       </div>
-      {/* Inner viewport — widgets are rendered into this region. */}
-      <div ref={ref} className="relative flex-1 overflow-hidden bg-white">
+      {/* Inner viewport — the simulated web page widgets render onto. Shares the
+          frame's card surface (white in light, card in dark) so the simulated
+          browser reads as one clean surface; chrome and viewport split only by
+          the header border. */}
+      <div ref={ref} className="relative flex-1 overflow-hidden bg-card">
         {children}
       </div>
     </div>

@@ -57,8 +57,14 @@ export * from './composites/combobox';
 export * from './composites/input-group';
 // Composition UI primitives — twice-composed shadcn-style components,
 // no business knowledge, freely depended on by any consumer.
-export { SelectPopover } from './composites/select-popover';
-export type { SelectPopoverOption, SelectPopoverProps } from './composites/select-popover';
+export { ComboboxSelect } from './composites/combobox-select';
+export type {
+  ComboboxSelectOption,
+  ComboboxSelectGroup,
+  ComboboxSelectProps,
+} from './composites/combobox-select';
+export { VirtualizedComboboxSelect } from './composites/virtualized-combobox-select';
+export type { VirtualizedComboboxSelectProps } from './composites/virtualized-combobox-select';
 export { LoadingContainer } from './composites/loading';
 export { LoadingButton } from './composites/loading-button';
 export type { LoadingButtonProps } from './composites/loading-button';
@@ -79,7 +85,11 @@ export type {
   ErrorTooltipTriggerProps,
 } from './composites/error-tooltip';
 export { ColorPicker, ColorPickerPanel } from './composites/color-picker';
-export type { ColorPickerProps, ColorPickerPanelProps } from './composites/color-picker';
+export type {
+  ColorPickerProps,
+  ColorPickerPanelProps,
+  ColorPickerPanelLabels,
+} from './composites/color-picker';
 export {
   ScaledPreviewContainer,
   AutoScaledPreviewContainer,
@@ -93,6 +103,7 @@ export type {
   UseScaledPreviewResult,
 } from './composites/preview/scaled-preview-container';
 export * from './composites/settings';
+export * from './composites/fields';
 export * from './compact';
 
 // Promoted from apps/web/src/components/molecules (pure UI primitives, no business types).

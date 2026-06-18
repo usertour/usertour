@@ -398,6 +398,48 @@ describe('GraphQL content (e2e)', () => {
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
+
+    it('errors when expectedUpdatedAt is stale (concurrent save)', async () => {
+      const { version } = await seedContent();
+      const stale = new Date(version.updatedAt.getTime() - 1000).toISOString();
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionUpdateInput!) { updateContentVersion(data: $data) { id } }',
+        variables: {
+          data: {
+            versionId: version.id,
+            content: { data: { x: 1 } },
+            expectedUpdatedAt: stale,
+          },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+
+      // The blind write was refused — the row is untouched.
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      expect(row?.data).not.toEqual({ x: 1 });
+    });
+
+    it('saves when expectedUpdatedAt matches the current version', async () => {
+      const { version } = await seedContent();
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionUpdateInput!) { updateContentVersion(data: $data) { id } }',
+        variables: {
+          data: {
+            versionId: version.id,
+            content: { data: { x: 2 } },
+            expectedUpdatedAt: version.updatedAt.toISOString(),
+          },
+        },
+      });
+      expect(res.body.errors).toBeUndefined();
+
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      expect(row?.data).toEqual({ x: 2 });
+    });
   });
 
   // ── restoreContentVersion ────────────────────────────────────────
@@ -557,145 +599,6 @@ describe('GraphQL content (e2e)', () => {
       const conn = gqlData(res).listContentVersions;
       expect(conn.totalCount).toBe(0);
       expect(conn.edges).toEqual([]);
-    });
-  });
-
-  // ── addContentSteps ──────────────────────────────────────────────
-
-  describe('addContentSteps', () => {
-    it('replaces the edited version steps and persists them', async () => {
-      const { content, version } = await seedContent();
-      const themeId = (await buildThemeRow()).id;
-      // Pre-existing step that is NOT in the payload → should be deleted.
-      const stale = await buildStep(prisma, {
-        versionId: version.id,
-        sequence: 9,
-        type: 'tooltip',
-      });
-
-      const res = await graphql(app, {
-        token,
-        query: 'mutation ($data: ContentStepsInput!) { addContentSteps(data: $data) { success } }',
-        variables: {
-          data: {
-            contentId: content.id,
-            versionId: version.id,
-            themeId,
-            steps: [
-              { type: 'tooltip', name: 'New 0', sequence: 0 },
-              { type: 'tooltip', name: 'New 1', sequence: 1 },
-            ],
-          },
-        },
-      });
-      expect(gqlData(res).addContentSteps).toMatchObject({ success: true });
-
-      const steps = await prisma.step.findMany({
-        where: { versionId: version.id },
-        orderBy: { sequence: 'asc' },
-      });
-      expect(steps.map((s) => s.name)).toEqual(['New 0', 'New 1']);
-      expect(steps.find((s) => s.id === stale.id)).toBeUndefined();
-
-      const versionRow = await prisma.version.findUnique({ where: { id: version.id } });
-      expect(versionRow?.themeId).toBe(themeId);
-    });
-
-    it('errors when versionId is not the content edited version', async () => {
-      const { content } = await seedContent();
-      const other = await seedContent();
-      const themeId = (await buildThemeRow()).id;
-      const res = await graphql(app, {
-        token,
-        query: 'mutation ($data: ContentStepsInput!) { addContentSteps(data: $data) { success } }',
-        variables: {
-          data: {
-            contentId: content.id,
-            versionId: other.version.id,
-            themeId,
-            steps: [{ type: 'tooltip', sequence: 0 }],
-          },
-        },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
-    });
-  });
-
-  // ── addContentStep ───────────────────────────────────────────────
-
-  describe('addContentStep', () => {
-    it('appends a step to the edited version', async () => {
-      const { version } = await seedContent();
-      await buildStep(prisma, {
-        versionId: version.id,
-        sequence: 0,
-        type: 'tooltip',
-        name: 'first',
-      });
-
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($data: CreateStepInput!) {
-          addContentStep(data: $data) { id name type versionId sequence }
-        }`,
-        variables: {
-          data: { versionId: version.id, type: 'tooltip', name: 'appended', sequence: 1 },
-        },
-      });
-      const step = gqlData(res).addContentStep;
-      expect(step).toMatchObject({ name: 'appended', type: 'tooltip', versionId: version.id });
-
-      const row = await prisma.step.findUnique({ where: { id: step.id } });
-      expect(row).toMatchObject({ name: 'appended', versionId: version.id });
-
-      const all = await prisma.step.findMany({ where: { versionId: version.id } });
-      expect(all).toHaveLength(2);
-    });
-
-    it('errors adding a step to an unknown version', async () => {
-      const res = await graphql(app, {
-        token,
-        query: 'mutation ($data: CreateStepInput!) { addContentStep(data: $data) { id } }',
-        variables: { data: { versionId: 'does-not-exist', type: 'tooltip', sequence: 0 } },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
-    });
-  });
-
-  // ── updateContentStep ────────────────────────────────────────────
-
-  describe('updateContentStep', () => {
-    it('updates a step on the edited version and persists it', async () => {
-      const { version } = await seedContent();
-      const step = await buildStep(prisma, {
-        versionId: version.id,
-        sequence: 0,
-        type: 'tooltip',
-        name: 'old',
-      });
-
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($stepId: String!, $data: UpdateStepInput!) {
-          updateContentStep(stepId: $stepId, data: $data) { success }
-        }`,
-        variables: { stepId: step.id, data: { name: 'new name' } },
-      });
-      expect(gqlData(res).updateContentStep).toMatchObject({ success: true });
-
-      const row = await prisma.step.findUnique({ where: { id: step.id } });
-      expect(row?.name).toBe('new name');
-    });
-
-    it('errors updating an unknown step', async () => {
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($stepId: String!, $data: UpdateStepInput!) {
-          updateContentStep(stepId: $stepId, data: $data) { success }
-        }`,
-        variables: { stepId: 'does-not-exist', data: { name: 'x' } },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
     });
   });
 
@@ -895,11 +798,4 @@ describe('GraphQL content (e2e)', () => {
       }
     });
   });
-
-  // ── local helper that needs `prisma`/`projectId` in scope ─────────
-  async function buildThemeRow() {
-    return prisma.theme.create({
-      data: { name: `content-theme-${Date.now()}-${Math.random()}`, projectId },
-    });
-  }
 });

@@ -13,19 +13,16 @@ import { VersionIdArgs } from './args/version-id.args';
 import { ContentService } from './content.service';
 import { ContentOrder } from './dto/content-order.input';
 import { ContentQuery } from './dto/content-query.input';
-import { ContentStepsInput } from './dto/content-steps.input';
 import {
   ContentDuplicateInput,
   ContentIdInput,
   ContentUpdateInput,
 } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
-import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionIdInput, VersionUpdateLocalizationInput } from './dto/version.input';
 import { ContentConnection } from './models/content-connection.model';
 import { Content } from './models/content.model';
-import { Step } from './models/step.model';
 import { VersionConnection } from './models/version-connection.model';
 import { VersionOnLocalization } from './models/version-on-localization.model';
 import { Version } from './models/version.model';
@@ -127,26 +124,6 @@ export class ContentResolver {
       before,
       after,
     });
-  }
-
-  @Mutation(() => Common)
-  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async addContentSteps(@Args('data') contentStepsInput: ContentStepsInput) {
-    await this.contentService.addContentSteps(contentStepsInput);
-    return { success: true };
-  }
-
-  @Mutation(() => Step)
-  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async addContentStep(@Args('data') step: CreateStepInput) {
-    return await this.contentService.addContentStep(step);
-  }
-
-  @Mutation(() => Common)
-  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async updateContentStep(@Args('stepId') stepId: string, @Args('data') step: UpdateStepInput) {
-    await this.contentService.updateContentStep(stepId, step);
-    return { success: true };
   }
 
   @Query(() => [VersionOnLocalization])
@@ -269,8 +246,13 @@ export class ContentResolver {
   @ResolveField('editedVersion', () => Version, { nullable: true })
   editedVersion(@Parent() content: Content) {
     if (!content.editedVersionId) return null;
+    // include steps: the getContent document requests editedVersion.steps, and
+    // editedVersion shares the Version:id cache entry with getContentVersion —
+    // returning it without steps normalizes Version.steps to null and wipes the
+    // step list from detail's view.
     return this.prisma.version.findUnique({
       where: { id: content.editedVersionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
   }
 }

@@ -52,6 +52,7 @@ import {
   UserAvatar,
 } from '@usertour/ui';
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SettingsContent } from '@/pages/settings/components/content';
 import { cn } from '@usertour/tailwind';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
@@ -84,6 +85,7 @@ const ProjectFilterButton = ({
   options: Array<{ label: string; value: string }>;
   onChange: (value: string) => void;
 }) => {
+  const { t } = useTranslation();
   const activeOption = options.find((option) => option.value === value);
   const hasSelection = value !== 'all';
 
@@ -106,7 +108,7 @@ const ProjectFilterButton = ({
       <PopoverContent align="start" className="w-[260px] p-0">
         <Command>
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>{t('admin.common.noResults')}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
                 const isSelected = option.value === value;
@@ -140,7 +142,7 @@ const ProjectFilterButton = ({
                     onSelect={() => onChange('all')}
                     className="justify-center text-center cursor-pointer"
                   >
-                    Clear filter
+                    {t('admin.projects.clearFilter')}
                   </CommandItem>
                 </CommandGroup>
               </>
@@ -180,13 +182,18 @@ interface AdminProjectMemberItem {
 }
 
 const LicenseSourceBadge = ({ source }: { source: string }) => {
+  const { t } = useTranslation();
   switch (source) {
     case 'project':
-      return <Badge variant="outline">Project</Badge>;
+      return <Badge variant="outline">{t('admin.projects.licenseSourceProject')}</Badge>;
     case 'instance':
-      return <Badge className="bg-blue-600 hover:bg-blue-700">Instance</Badge>;
+      return (
+        <Badge className="bg-blue-600 hover:bg-blue-700">
+          {t('admin.projects.licenseSourceInstance')}
+        </Badge>
+      );
     default:
-      return <Badge variant="secondary">None</Badge>;
+      return <Badge variant="secondary">{t('admin.projects.licenseSourceNone')}</Badge>;
   }
 };
 
@@ -207,6 +214,7 @@ const AddProjectMemberDialog = ({
   projectId: string;
   existingUserIds: string[];
 }) => {
+  const { t } = useTranslation();
   const [userPickerOpen, setUserPickerOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUserDisplay, setSelectedUserDisplay] = useState('');
@@ -247,12 +255,12 @@ const AddProjectMemberDialog = ({
 
   const handleSubmit = async () => {
     if (!selectedUserId) {
-      toast({ variant: 'destructive', title: 'Please select a user' });
+      toast({ variant: 'destructive', title: t('admin.projects.pleaseSelectUser') });
       return;
     }
     try {
       await addProjectMember(projectId, selectedUserId, selectedRole);
-      toast({ title: 'Member added successfully' });
+      toast({ title: t('admin.projects.memberAddedSuccess') });
       onAdded();
       handleClose();
     } catch (error) {
@@ -264,11 +272,11 @@ const AddProjectMemberDialog = ({
     <Dialog open={isOpen} onOpenChange={(op) => !op && handleClose()}>
       <DialogContent aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Add Member</DialogTitle>
+          <DialogTitle>{t('admin.projects.addMemberTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="project-member-user">User</Label>
+            <Label htmlFor="project-member-user">{t('admin.projects.userLabel')}</Label>
             <Popover
               open={userPickerOpen}
               onOpenChange={(open) => {
@@ -286,7 +294,7 @@ const AddProjectMemberDialog = ({
                   className="w-full justify-between font-normal"
                 >
                   <span className={cn('truncate', !userButtonLabel && 'text-muted-foreground')}>
-                    {userButtonLabel || 'Select a user'}
+                    {userButtonLabel || t('admin.common.selectUser')}
                   </span>
                   <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -294,20 +302,20 @@ const AddProjectMemberDialog = ({
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" withoutPortal>
                 <Command shouldFilter={false}>
                   <CommandInput
-                    placeholder="Search by name or email..."
+                    placeholder={t('admin.common.searchByNameOrEmail')}
                     value={userSearchQuery}
                     onValueChange={setUserSearchQuery}
                   />
                   <CommandList>
                     {usersLoading ? (
                       <div className="py-6 text-center text-sm text-muted-foreground">
-                        Loading...
+                        {t('common.loading')}
                       </div>
                     ) : (
                       <>
                         {userSearchQuery.trim() ? (
                           <>
-                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandEmpty>{t('admin.common.noUserFound')}</CommandEmpty>
                             <CommandGroup>
                               {availableUsers.map((user) => {
                                 const label = user.name || user.email || user.id;
@@ -350,13 +358,13 @@ const AddProjectMemberDialog = ({
                             </CommandGroup>
                             {availableUsers.length >= 20 && (
                               <div className="px-3 py-2 text-xs text-muted-foreground border-t">
-                                Showing top 20 results. Refine your search to narrow it down.
+                                {t('admin.projects.showingTop20')}
                               </div>
                             )}
                           </>
                         ) : (
                           <div className="px-3 py-6 text-sm text-muted-foreground text-center">
-                            Search users by name or email to add them to this project.
+                            {t('admin.projects.searchUsersHintMember')}
                           </div>
                         )}
                       </>
@@ -368,24 +376,24 @@ const AddProjectMemberDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="project-member-role">Role</Label>
+            <Label htmlFor="project-member-role">{t('admin.common.role')}</Label>
             <Select value={selectedRole} onValueChange={setSelectedRole}>
               <SelectTrigger id="project-member-role">
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder={t('admin.common.selectRole')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="VIEWER">Viewer</SelectItem>
+                <SelectItem value="ADMIN">{t('admin.common.roleAdmin')}</SelectItem>
+                <SelectItem value="VIEWER">{t('admin.common.roleViewer')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t('admin.common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Adding...' : 'Add Member'}
+            {loading ? t('admin.projects.addingMember') : t('admin.projects.addMemberButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -402,6 +410,7 @@ const MemberAction = ({
   projectId: string;
   onRefetch: () => void;
 }) => {
+  const { t } = useTranslation();
   const { invoke: changeRole } = useAdminChangeProjectMemberRoleMutation();
   const { invoke: transferOwnership } = useAdminTransferProjectOwnershipMutation();
   const { invoke: removeMember } = useAdminRemoveProjectMemberMutation();
@@ -416,7 +425,7 @@ const MemberAction = ({
     if (!member.userId) return;
     try {
       await changeRole(projectId, member.userId, selectedRole);
-      toast({ title: 'Role changed successfully' });
+      toast({ title: t('admin.projects.roleChangedSuccess') });
       setChangeRoleOpen(false);
       onRefetch();
     } catch (error) {
@@ -428,7 +437,7 @@ const MemberAction = ({
     if (!member.userId) return;
     try {
       await transferOwnership(projectId, member.userId);
-      toast({ title: 'Ownership transferred successfully' });
+      toast({ title: t('admin.projects.ownershipTransferredSuccess') });
       setTransferOpen(false);
       onRefetch();
     } catch (error) {
@@ -440,7 +449,7 @@ const MemberAction = ({
     if (!member.userId) return;
     try {
       await removeMember(projectId, member.userId);
-      toast({ title: 'Member removed successfully' });
+      toast({ title: t('admin.projects.memberRemovedSuccess') });
       setRemoveOpen(false);
       onRefetch();
     } catch (error) {
@@ -458,7 +467,6 @@ const MemberAction = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuItem
-            className="cursor-pointer"
             disabled={member.isOwner}
             onClick={() => {
               setSelectedRole(member.role);
@@ -466,24 +474,20 @@ const MemberAction = ({
             }}
           >
             <EditIcon className="w-6" width={16} height={16} />
-            Change role
+            {t('admin.projects.changeRole')}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            disabled={member.isOwner}
-            onClick={() => setTransferOpen(true)}
-          >
+          <DropdownMenuItem disabled={member.isOwner} onClick={() => setTransferOpen(true)}>
             <ArrowLeftRightIcon className="w-6" height={16} width={16} />
-            Transfer ownership to this user
+            {t('admin.projects.transferOwnershipAction')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            variant="destructive"
             disabled={member.isOwner}
             onClick={() => setRemoveOpen(true)}
           >
             <Delete2Icon className="w-6" width={16} height={16} />
-            Remove member
+            {t('admin.projects.removeMember')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -492,27 +496,27 @@ const MemberAction = ({
       <Dialog open={changeRoleOpen} onOpenChange={(op) => !op && setChangeRoleOpen(false)}>
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Change team member role</DialogTitle>
+            <DialogTitle>{t('admin.projects.changeRoleTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>{t('admin.common.role')}</Label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t('admin.common.selectRole')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="VIEWER">Viewer</SelectItem>
+                  <SelectItem value="ADMIN">{t('admin.common.roleAdmin')}</SelectItem>
+                  <SelectItem value="VIEWER">{t('admin.common.roleViewer')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setChangeRoleOpen(false)}>
-              Cancel
+              {t('admin.common.cancel')}
             </Button>
-            <Button onClick={handleChangeRole}>Change role</Button>
+            <Button onClick={handleChangeRole}>{t('admin.projects.changeRole')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -521,19 +525,19 @@ const MemberAction = ({
       <Dialog open={transferOpen} onOpenChange={(op) => !op && setTransferOpen(false)}>
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Transfer account ownership</DialogTitle>
+            <DialogTitle>{t('admin.projects.transferOwnershipTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Only one user can be the owner of your Usertour account. Once you transfer ownership,
-            you can&apos;t undo it. Confirm transferring account ownership to{' '}
-            {member.name || member.email}?
+            {t('admin.projects.transferOwnershipConfirm', {
+              memberName: member.name || member.email,
+            })}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTransferOpen(false)}>
-              Cancel
+              {t('admin.common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleTransfer}>
-              Transfer account ownership
+              {t('admin.projects.transferOwnershipButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -543,14 +547,16 @@ const MemberAction = ({
       <Dialog open={removeOpen} onOpenChange={(op) => !op && setRemoveOpen(false)}>
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Confirm</DialogTitle>
+            <DialogTitle>{t('admin.projects.confirmTitle')}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Confirm removing member, {member.email}?</p>
+          <p className="text-sm text-muted-foreground">
+            {t('admin.projects.removeMemberConfirm', { email: member.email })}
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRemoveOpen(false)}>
-              Cancel
+              {t('admin.common.cancel')}
             </Button>
-            <Button onClick={handleRemove}>Remove member</Button>
+            <Button onClick={handleRemove}>{t('admin.projects.removeMemberButton')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -569,6 +575,7 @@ const ProjectMembersModal = ({
   projectId: string;
   projectName: string;
 }) => {
+  const { t } = useTranslation();
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const { data: members, loading, refetch } = useAdminProjectMembersQuery(projectId);
   const existingUserIds = (members || [])
@@ -580,29 +587,30 @@ const ProjectMembersModal = ({
       <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
         <DialogContent className="max-w-2xl" aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>{projectName} Members</DialogTitle>
+            <DialogTitle>{t('admin.projects.membersDialogTitle', { projectName })}</DialogTitle>
           </DialogHeader>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-muted-foreground">{t('common.loading')}</div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {members?.length || 0} member
-                  {members && members.length !== 1 ? 's' : ''}
+                  {t('admin.projects.memberCount', { count: members?.length || 0 })}
                 </span>
                 <Button size="sm" onClick={() => setAddMemberOpen(true)}>
                   <PlusIcon className="w-4 h-4" />
-                  Add Member
+                  {t('admin.projects.addMemberButton')}
                 </Button>
               </div>
               <div className="overflow-x-auto max-h-96">
                 <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden sm:table-cell">Email</TableHead>
-                      <TableHead className="w-28">Role</TableHead>
+                      <TableHead>{t('admin.common.name')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        {t('admin.common.email')}
+                      </TableHead>
+                      <TableHead className="w-28">{t('admin.common.role')}</TableHead>
                       <TableHead className="w-20" />
                     </TableRow>
                   </TableHeader>
@@ -630,7 +638,7 @@ const ProjectMembersModal = ({
                     {(!members || members.length === 0) && (
                       <TableRow>
                         <TableCell colSpan={4} className="h-24 text-center">
-                          No members.
+                          {t('admin.projects.noMembers')}
                         </TableCell>
                       </TableRow>
                     )}
@@ -665,6 +673,7 @@ const ProjectListAction = ({
   isUnlimitedInstanceLicense: boolean;
   onRefetch: () => void;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [membersOpen, setMembersOpen] = useState(false);
   const { invoke: updateProjectUsesInstanceLicense, loading } =
@@ -676,8 +685,8 @@ const ProjectListAction = ({
       await updateProjectUsesInstanceLicense(project.id, !project.usesInstanceLicense);
       toast({
         title: project.usesInstanceLicense
-          ? 'Instance license disabled for project'
-          : 'Instance license enabled for project',
+          ? t('admin.projects.instanceLicenseDisabled')
+          : t('admin.projects.instanceLicenseEnabled'),
       });
       onRefetch();
     } catch (error) {
@@ -694,23 +703,18 @@ const ProjectListAction = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[200px]">
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => navigate(`/project/${project.id}/settings/general`)}
-          >
+          <DropdownMenuItem onClick={() => navigate(`/project/${project.id}/settings/general`)}>
             <ExternalLinkIcon className="w-4 h-4 mr-2" />
-            Open
+            {t('admin.projects.openProject')}
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setMembersOpen(true)}>
-            View Members
+          <DropdownMenuItem onClick={() => setMembersOpen(true)}>
+            {t('admin.projects.viewMembers')}
           </DropdownMenuItem>
           {!isUnlimitedInstanceLicense && (
-            <DropdownMenuItem
-              className="cursor-pointer"
-              disabled={loading}
-              onClick={handleToggleInstanceLicense}
-            >
-              {project.usesInstanceLicense ? 'Stop Using Instance License' : 'Use Instance License'}
+            <DropdownMenuItem disabled={loading} onClick={handleToggleInstanceLicense}>
+              {project.usesInstanceLicense
+                ? t('admin.projects.stopUsingInstanceLicense')
+                : t('admin.projects.useInstanceLicense')}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -736,6 +740,7 @@ const CreateProjectDialog = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation();
   const [ownerPickerOpen, setOwnerPickerOpen] = useState(false);
   const [ownerSearchQuery, setOwnerSearchQuery] = useState('');
   const [selectedOwnerDisplay, setSelectedOwnerDisplay] = useState('');
@@ -761,16 +766,16 @@ const CreateProjectDialog = ({
 
   const handleSubmit = async () => {
     if (!projectName.trim()) {
-      toast({ variant: 'destructive', title: 'Please enter a project name' });
+      toast({ variant: 'destructive', title: t('admin.projects.pleaseEnterProjectName') });
       return;
     }
     if (!ownerUserId) {
-      toast({ variant: 'destructive', title: 'Please select an owner' });
+      toast({ variant: 'destructive', title: t('admin.projects.pleaseSelectOwner') });
       return;
     }
     try {
       await createProject(projectName.trim(), ownerUserId);
-      toast({ title: 'Project created successfully' });
+      toast({ title: t('admin.projects.projectCreatedSuccess') });
       setProjectName('');
       setOwnerUserId('');
       setSelectedOwnerDisplay('');
@@ -786,20 +791,20 @@ const CreateProjectDialog = ({
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
       <DialogContent aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>{t('admin.projects.createProjectTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="project-name">Project Name</Label>
+            <Label htmlFor="project-name">{t('admin.projects.projectNameLabel')}</Label>
             <Input
               id="project-name"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Enter project name"
+              placeholder={t('admin.projects.projectNamePlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="owner">Owner</Label>
+            <Label htmlFor="owner">{t('admin.projects.ownerLabel')}</Label>
             <Popover
               open={ownerPickerOpen}
               onOpenChange={(open) => {
@@ -817,7 +822,7 @@ const CreateProjectDialog = ({
                   className="w-full justify-between font-normal"
                 >
                   <span className={cn('truncate', !ownerButtonLabel && 'text-muted-foreground')}>
-                    {ownerButtonLabel || 'Select an owner'}
+                    {ownerButtonLabel || t('admin.projects.selectOwner')}
                   </span>
                   <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -825,20 +830,20 @@ const CreateProjectDialog = ({
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" withoutPortal>
                 <Command shouldFilter={false}>
                   <CommandInput
-                    placeholder="Search by name or email..."
+                    placeholder={t('admin.common.searchByNameOrEmail')}
                     value={ownerSearchQuery}
                     onValueChange={setOwnerSearchQuery}
                   />
                   <CommandList>
                     {usersLoading ? (
                       <div className="py-6 text-center text-sm text-muted-foreground">
-                        Loading...
+                        {t('common.loading')}
                       </div>
                     ) : (
                       <>
                         {ownerSearchQuery.trim() ? (
                           <>
-                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandEmpty>{t('admin.common.noUserFound')}</CommandEmpty>
                             <CommandGroup>
                               {users.map((user) => {
                                 const label = user.name || user.email || user.id;
@@ -881,13 +886,13 @@ const CreateProjectDialog = ({
                             </CommandGroup>
                             {users.length >= 20 && (
                               <div className="px-3 py-2 text-xs text-muted-foreground border-t">
-                                Showing top 20 results. Refine your search to narrow it down.
+                                {t('admin.projects.showingTop20')}
                               </div>
                             )}
                           </>
                         ) : (
                           <div className="px-3 py-6 text-sm text-muted-foreground text-center">
-                            Search users by name or email to select an owner.
+                            {t('admin.projects.searchUsersHintOwner')}
                           </div>
                         )}
                       </>
@@ -900,10 +905,10 @@ const CreateProjectDialog = ({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('admin.common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Creating...' : 'Create'}
+            {loading ? t('admin.projects.creatingProject') : t('admin.projects.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -916,6 +921,7 @@ const CreateProjectDialog = ({
 // ============================================================================
 
 export const AdminProjectsPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -962,30 +968,28 @@ export const AdminProjectsPage = () => {
     <>
       <SettingsContent>
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold tracking-tight">Projects</h3>
-          <p className="text-sm text-muted-foreground">
-            View and manage all projects in this self-hosted instance, including owners and members.
-          </p>
+          <h3 className="text-xl font-medium tracking-tight">{t('admin.projects.pageTitle')}</h3>
+          <p className="text-sm text-muted-foreground">{t('admin.projects.pageDescription')}</p>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
             <div className="relative w-full md:w-[240px]">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Find a project"
+                placeholder={t('admin.projects.findProject')}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="h-8 pl-9 md:w-[240px]"
               />
             </div>
             <ProjectFilterButton
-              label="Assignment"
+              label={t('admin.projects.assignmentFilter')}
               value={assignmentFilter}
               onChange={handleAssignmentFilterChange}
               options={[
-                { label: 'All', value: 'all' },
-                { label: 'Using Instance License', value: 'using' },
-                { label: 'Not Using Instance License', value: 'notUsing' },
+                { label: t('admin.common.all'), value: 'all' },
+                { label: t('admin.projects.usingInstanceLicense'), value: 'using' },
+                { label: t('admin.projects.notUsingInstanceLicense'), value: 'notUsing' },
               ]}
             />
             {hasActiveFilters && (
@@ -995,14 +999,14 @@ export const AdminProjectsPage = () => {
                 onClick={handleResetFilters}
                 className="h-8 px-2 lg:px-3"
               >
-                Reset
+                {t('common.reset')}
                 <XIcon className="h-4 w-4" />
               </Button>
             )}
           </div>
           <Button onClick={() => setIsCreateDialogOpen(true)} size="sm" className="h-8 flex-none">
             <PlusIcon className="w-4 h-4" />
-            Create Project
+            {t('admin.projects.createProject')}
           </Button>
         </div>
         <Separator />
@@ -1010,8 +1014,7 @@ export const AdminProjectsPage = () => {
         {isOverProjectLimit && (
           <div className="py-4">
             <div className="text-sm text-destructive">
-              Project usage exceeds the current instance license limit. Existing assignments still
-              work, but you cannot add more until usage is reduced.
+              {t('admin.projects.overProjectLimitWarning')}
             </div>
           </div>
         )}
@@ -1023,11 +1026,15 @@ export const AdminProjectsPage = () => {
             <Table className="table-fixed min-w-2xl">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead className="w-32 hidden lg:table-cell">Created</TableHead>
-                  <TableHead className="w-24 text-center">Members</TableHead>
-                  <TableHead className="w-28 text-center">License</TableHead>
+                  <TableHead>{t('admin.common.name')}</TableHead>
+                  <TableHead>{t('admin.projects.ownerColumn')}</TableHead>
+                  <TableHead className="w-32 hidden lg:table-cell">
+                    {t('admin.common.created')}
+                  </TableHead>
+                  <TableHead className="w-24 text-center">{t('admin.common.members')}</TableHead>
+                  <TableHead className="w-28 text-center">
+                    {t('admin.projects.licenseColumn')}
+                  </TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
@@ -1070,7 +1077,7 @@ export const AdminProjectsPage = () => {
                 {items.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No projects found.
+                      {t('admin.projects.noProjectsFound')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -1082,7 +1089,7 @@ export const AdminProjectsPage = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4">
             <span className="text-sm text-muted-foreground">
-              {total} project{total !== 1 ? 's' : ''} total
+              {t('admin.projects.totalProjects', { count: total })}
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -1094,7 +1101,7 @@ export const AdminProjectsPage = () => {
                 <ChevronLeftIcon className="h-4 w-4" />
               </Button>
               <span className="text-sm">
-                Page {currentPage} of {totalPages}
+                {t('admin.common.pageOf', { current: currentPage, total: totalPages })}
               </span>
               <Button
                 variant="outline"

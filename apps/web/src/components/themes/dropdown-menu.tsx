@@ -9,11 +9,13 @@ import {
   Separator,
 } from '@usertour/ui';
 import { BackIcon, UnPublishIcon } from '@usertour/icons';
+import { useTranslation } from 'react-i18next';
 
 export const DropdownMenuButton = () => {
+  const { t } = useTranslation();
   return (
     <Button>
-      Push Updates
+      {t('themes.dropdownMenu.pushUpdates')}
       <Separator orientation="vertical" className="h-[14px] mx-2" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -28,11 +30,11 @@ export const DropdownMenuButton = () => {
         >
           <DropdownMenuCheckboxItem className="pl-1 cursor-pointer">
             <BackIcon className="mr-1" width={14} height={14} />
-            Discard Changes
+            {t('themes.dropdownMenu.discardChanges')}
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem className="pl-1 cursor-pointer">
             <UnPublishIcon className="mr-1" width={14} height={14} />
-            Unpublish
+            {t('themes.dropdownMenu.unpublish')}
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
         </DropdownMenuContent>

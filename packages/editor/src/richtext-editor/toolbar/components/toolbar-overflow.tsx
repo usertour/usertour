@@ -10,6 +10,7 @@ import { MoreIcon } from '@usertour/icons';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   TOOLBAR_BUTTON_ACTIVE,
@@ -68,6 +69,7 @@ const renderToolbarItem = (item: ToolbarItemConfig) => {
 export const ToolbarOverflow = memo(
   forwardRef<HTMLDivElement, ToolbarOverflowProps>(({ items, alignmentItems, zIndex }, ref) => {
     const [open, setOpen] = useState(false);
+    const { t } = useTranslation();
 
     return (
       <Popover open={open} onOpenChange={setOpen}>
@@ -90,13 +92,13 @@ export const ToolbarOverflow = memo(
           <ToolbarRoot
             className={TOOLBAR_OVERFLOW_CONTENT}
             style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR }}
-            aria-label="Additional formatting options"
+            aria-label={t('contentBuilder.editor.toolbar.additionalFormattingOptions')}
           >
             {items.length > 0 && (
               <>
                 <ToolbarToggleGroup
                   type="multiple"
-                  aria-label="Additional formatting"
+                  aria-label={t('contentBuilder.editor.toolbar.additionalFormatting')}
                   className={TOOLBAR_TOGGLE_GROUP}
                 >
                   {items.map(renderToolbarItem)}

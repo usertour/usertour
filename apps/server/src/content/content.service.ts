@@ -1,16 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { ContentStepsInput } from './dto/content-steps.input';
 import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
-import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
-import { ParamsError, UnknownError } from '@/common/errors';
+import {
+  ParamsError,
+  UnknownError,
+  VersionConflictError,
+  VersionNotEditableError,
+} from '@/common/errors';
 import { ContentConfigObject } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
@@ -82,117 +85,6 @@ export class ContentService {
       await this.cache.invalidate(envIds.flatMap((envId) => this.cache.envContentKeys(envId)));
     }
     return updated;
-  }
-
-  async addContentSteps(input: ContentStepsInput) {
-    const { contentId, versionId, steps, themeId } = input;
-    // Editable-only: matches addContentStep / updateContentStep /
-    // updateStepsSequence / updateContentVersion. The previous inline check
-    // duplicated the rule and was easy to drift out of sync.
-    await this.contentVersionIsEditable(versionId);
-    // Caller passes contentId explicitly — guard rail (versionId must belong
-    // to this content) since contentVersionIsEditable doesn't see contentId.
-    const content = await this.getContent(contentId);
-    if (!content || content.editedVersionId !== versionId) {
-      throw new ParamsError();
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const versionSteps = await tx.step.findMany({ where: { versionId } });
-        const deleteStepIds = versionSteps
-          .filter((vstep) => !steps.find((pstep) => pstep.id === vstep.id))
-          .map((s) => s.id);
-        //delete steps
-        await tx.step.deleteMany({ where: { id: { in: deleteStepIds } } });
-        //up sequence
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        //update or create step
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { ...step, versionId },
-            });
-          } else {
-            await tx.step.create({ data: { ...step, versionId } });
-          }
-        }
-        //update version
-        await tx.version.update({
-          where: { id: versionId },
-          data: { themeId },
-        });
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
-  async addContentStep(data: CreateStepInput) {
-    const versionId = data.versionId;
-    // Editable-only: must match content.editedVersionId AND not be currently
-    // published. Aligns with addContentSteps / updateStepsSequence /
-    // updateContentVersion (the previous guard let historical published
-    // versions through, breaking the published-immutability contract).
-    await this.contentVersionIsEditable(versionId);
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const versionSteps = await tx.step.findMany({
-          where: { versionId, sequence: { gte: data.sequence } },
-          orderBy: { sequence: 'asc' },
-        });
-        for (const step of versionSteps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        for (const step of versionSteps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 1 },
-            });
-          }
-        }
-
-        // const maxSeq = await tx.step.aggregate({
-        //   where: { versionId },
-        //   _max: {
-        //     sequence: true,
-        //   },
-        // });
-        return await tx.step.create({
-          data: { ...data, versionId },
-        });
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
-  async updateContentStep(stepId: string, data: UpdateStepInput) {
-    const version = await this.prisma.step.findUnique({ where: { id: stepId } }).version();
-    if (!version) {
-      throw new ParamsError();
-    }
-    // Editable-only: see addContentStep.
-    await this.contentVersionIsEditable(version.id);
-    return await this.prisma.step.update({
-      where: { id: stepId },
-      data,
-    });
   }
 
   async getContentByStepId(stepId: string) {
@@ -310,13 +202,98 @@ export class ContentService {
   }
 
   async updateContentVersion(input: VersionUpdateInput) {
-    const { versionId, content } = input;
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      return;
+    const { versionId, content, expectedUpdatedAt } = input;
+    const { steps, ...versionFields } = content;
+
+    // Contract: when steps are sent (the builder's whole-version save) each one
+    // must carry a front-end cvid — it's the upsert key. Cheap to validate
+    // before opening the transaction.
+    if (steps?.some((step) => !step.cvid)) {
+      throw new ParamsError();
     }
-    return await this.prisma.version.update({
-      where: { id: versionId },
-      data: content,
+
+    return await this.prisma.$transaction(async (tx) => {
+      // Editability guard, atomic with the write. Row-locks the Content row so a
+      // concurrent publish / restore — both mutate that same row — is serialized
+      // against this write; we then read their committed editedVersionId /
+      // per-environment published state rather than a pre-write snapshot. The
+      // version-row optimistic lock below only guards the row's own updatedAt,
+      // never this relational state, so the pre-transaction
+      // contentVersionIsEditable() was a TOCTOU: a publish/restore landing
+      // between check and write slipped through and wrote a published or
+      // already-forked version.
+      await this.assertVersionEditableLocked(tx, versionId);
+
+      // Write the version's scalar fields (themeId / config / data / scheduledAt).
+      // Optimistic lock is opt-in per call: the builder's whole-version save sends
+      // the updatedAt it last baselined from, enforced atomically as a conditional
+      // write — a 0-row match means someone saved meanwhile, so throw instead of
+      // blind-overwriting their work. detail's scalar updates omit it (field-level
+      // last-write-wins is acceptable there).
+      if (expectedUpdatedAt) {
+        const writeResult = await tx.version.updateMany({
+          where: { id: versionId, updatedAt: expectedUpdatedAt },
+          data: versionFields,
+        });
+        if (writeResult.count === 0) {
+          throw new VersionConflictError();
+        }
+      } else {
+        await tx.version.update({ where: { id: versionId }, data: versionFields });
+      }
+
+      // No steps in the payload → scalar-only update (detail's path). Still
+      // return steps via include: the shared document requests `steps`, so
+      // omitting them makes Apollo normalize Version.steps to null and wipe the
+      // step list from the cache.
+      if (!steps) {
+        return await tx.version.findUnique({
+          where: { id: versionId },
+          include: { steps: { orderBy: { sequence: 'asc' } } },
+        });
+      }
+
+      // Whole-version save: upsert the entire step list by cvid so create /
+      // update / delete / reorder all ride this one call; return the full
+      // version so the client re-baselines from the response (no follow-up fetch).
+      const existing = await tx.step.findMany({ where: { versionId } });
+      const incomingCvids = new Set(steps.map((step) => step.cvid));
+
+      // Delete steps dropped from the list.
+      const deleteIds = existing
+        .filter((step) => !incomingCvids.has(step.cvid))
+        .map((step) => step.id);
+      if (deleteIds.length > 0) {
+        await tx.step.deleteMany({ where: { id: { in: deleteIds } } });
+      }
+
+      // sequence is unique per version (@@unique([versionId, sequence])), so
+      // park surviving rows out of range before reassigning — otherwise an
+      // in-loop sequence write collides with a not-yet-moved row.
+      for (const step of existing) {
+        if (incomingCvids.has(step.cvid)) {
+          await tx.step.update({
+            where: { versionId_cvid: { versionId, cvid: step.cvid } },
+            data: { sequence: { increment: 10000 } },
+          });
+        }
+      }
+
+      // Upsert by cvid: matching cvid → update; new cvid → create with the
+      // front-end cvid + a server-generated primary id. Final sequence = index.
+      for (let index = 0; index < steps.length; index++) {
+        const { id, cvid, ...rest } = steps[index];
+        await tx.step.upsert({
+          where: { versionId_cvid: { versionId, cvid: cvid as string } },
+          create: { ...rest, cvid, versionId, sequence: index },
+          update: { ...rest, sequence: index },
+        });
+      }
+
+      return await tx.version.findUnique({
+        where: { id: versionId },
+        include: { steps: { orderBy: { sequence: 'asc' } } },
+      });
     });
   }
 
@@ -633,11 +610,45 @@ export class ContentService {
       (env) => env.published && env.publishedVersionId === versionId,
     );
 
+    // Not the content's edited version (someone forked a newer one) or
+    // already live in an environment — either way writes are refused with a
+    // dedicated code so clients can tell "stale editor" apart from bad input.
     if (contentItem.editedVersionId !== versionId || isPublished) {
-      throw new ParamsError();
+      throw new VersionNotEditableError();
     }
 
     return true;
+  }
+
+  // Transaction-scoped twin of contentVersionIsEditable(): same "is this version
+  // still the content's edit version, and not published?" check, but it takes a
+  // FOR UPDATE row lock on the Content row first. publishedContentVersion and
+  // restoreContentVersion both mutate that same Content row inside their own
+  // transactions, so the lock serializes a concurrent save against them — once we
+  // hold it, the editedVersionId / contentOnEnvironments we read are their
+  // committed state, not a stale pre-write snapshot. Use this (not the unlocked
+  // check) for any write that must not land on a published or forked version.
+  private async assertVersionEditableLocked(tx: Prisma.TransactionClient, versionId: string) {
+    const version = await tx.version.findUnique({ where: { id: versionId, deleted: false } });
+    if (!version) {
+      throw new ParamsError();
+    }
+    // The serialization point: FOR UPDATE blocks until any in-flight
+    // publish/restore on this Content row commits (or makes them block on us).
+    await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${version.contentId} FOR UPDATE`;
+    const contentItem = await tx.content.findUnique({
+      where: { id: version.contentId, deleted: false },
+      include: { contentOnEnvironments: true },
+    });
+    if (!contentItem) {
+      throw new ParamsError();
+    }
+    const isPublished = contentItem.contentOnEnvironments?.some(
+      (env) => env.published && env.publishedVersionId === versionId,
+    );
+    if (contentItem.editedVersionId !== versionId || isPublished) {
+      throw new VersionNotEditableError();
+    }
   }
 
   async findManyVersionLocations(versionId: string) {

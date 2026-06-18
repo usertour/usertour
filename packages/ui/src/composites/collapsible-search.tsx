@@ -8,17 +8,21 @@ interface CollapsibleSearchProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /** aria-label for the clear button. Pass t('…') from the consumer — no English default. */
+  clearLabel?: string;
   className?: string;
   expandedWidthClassName?: string;
 }
 
-export const CollapsibleSearch = ({
-  value,
-  onChange,
-  placeholder,
-  className,
-  expandedWidthClassName = 'w-[250px]',
-}: CollapsibleSearchProps) => {
+export const CollapsibleSearch = (props: CollapsibleSearchProps) => {
+  const {
+    value,
+    onChange,
+    placeholder,
+    clearLabel,
+    className,
+    expandedWidthClassName = 'w-[250px]',
+  } = props;
   const [expanded, setExpanded] = useState(value !== '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -78,7 +82,7 @@ export const CollapsibleSearch = ({
         expanded
           ? cn(
               expandedWidthClassName,
-              'border border-input bg-background focus-within:ring-2 focus-within:ring-ring/50',
+              'border border-input bg-background dark:bg-surface-raised/50 focus-within:ring-2 focus-within:ring-ring/50',
             )
           : 'w-8 cursor-pointer hover:bg-accent',
         className,
@@ -104,7 +108,7 @@ export const CollapsibleSearch = ({
         <button
           type="button"
           onClick={handleClear}
-          aria-label="Clear search"
+          aria-label={clearLabel}
           className="mr-2 shrink-0 text-muted-foreground hover:text-foreground"
         >
           <Cross2Icon className="h-4 w-4" />

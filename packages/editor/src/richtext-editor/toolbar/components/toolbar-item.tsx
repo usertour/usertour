@@ -5,6 +5,7 @@ import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour/constants';
 import { cn } from '@usertour/tailwind';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/ui';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { usePopperEditorContext } from '../../editor';
 import {
@@ -21,6 +22,7 @@ import type { ToolbarItemProps } from '../toolbar.types';
 export const ToolbarItem = memo(
   ({ isActive, onToggle, tooltip, ariaLabel, value, children, disabled }: ToolbarItemProps) => {
     const { zIndex } = usePopperEditorContext();
+    const { t } = useTranslation();
 
     return (
       <Tooltip>
@@ -35,7 +37,7 @@ export const ToolbarItem = memo(
                   : TOOLBAR_BUTTON_INACTIVE,
             )}
             value={value}
-            aria-label={ariaLabel}
+            aria-label={t(ariaLabel)}
             disabled={disabled}
             onMouseDown={disabled ? undefined : onToggle}
           >
@@ -47,7 +49,7 @@ export const ToolbarItem = memo(
           usePortal
           style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
         >
-          <p>{tooltip}</p>
+          <p>{t(tooltip)}</p>
         </TooltipContent>
       </Tooltip>
     );

@@ -79,7 +79,7 @@ const LoadMoreButton = ({ loading, hasMore, onLoadMore }: LoadMoreButtonProps) =
       <Button
         onClick={onLoadMore}
         disabled={loading}
-        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-muted border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <div className="flex items-center space-x-2">
@@ -236,7 +236,7 @@ const CompanyIdentityHeader = ({ bizCompany }: { bizCompany: BizCompany }) => {
     <div className="flex items-start gap-4 px-1">
       <DefaultAvatar seed={bizCompany.externalId || name || ''} name={name} size="lg" />
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold text-foreground truncate">
+        <h1 className="text-xl font-medium text-foreground truncate">
           {companyDisplayName(bizCompany, t('companies.detail.unnamedCompany'))}
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -278,7 +278,7 @@ const CompanyActivityCard = ({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
-        <CardTitle className="text-sm font-semibold">
+        <CardTitle className="text-sm font-medium">
           {t('companies.detail.activity.title')}
         </CardTitle>
         <ToggleGroup
@@ -395,9 +395,9 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isViewOnly}
-                className="text-destructive focus:text-destructive"
               >
                 <Delete2Icon className="mr-2 h-4 w-4" />
                 {t('companies.actions.deleteCompany')}

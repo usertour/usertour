@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AdminSidebarBodyItemTemplate,
   AdminSidebarBodyTemplate,
@@ -17,49 +18,50 @@ import { cn } from '@usertour/tailwind';
 import { Link } from 'react-router-dom';
 
 interface NavItem {
-  title: string;
+  titleKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 const navItems: NavItem[] = [
   {
-    title: 'General',
+    titleKey: 'admin.nav.general',
     href: '/admin/general',
     icon: RiSettings2Line,
   },
   {
-    title: 'Authentication',
+    titleKey: 'admin.nav.authentication',
     href: '/admin/authentication',
     icon: KeyIcon,
   },
   {
-    title: 'Subscription',
+    titleKey: 'admin.nav.subscription',
     href: '/admin/subscription',
     icon: BankCardIcon,
   },
   {
-    title: 'Users',
+    titleKey: 'admin.nav.users',
     href: '/admin/users',
     icon: GroupLineIcon,
   },
   {
-    title: 'Projects',
+    titleKey: 'admin.nav.projects',
     href: '/admin/projects',
     icon: ProjectIcon,
   },
 ];
 
 export const AdminPanelSidebarNav = () => {
+  const { t } = useTranslation();
   const location = useLocation();
 
   return (
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>
-        <h2 className="text-lg font-semibold">System Admin</h2>
+        <h2 className="text-lg font-medium">{t('admin.nav.title')}</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
-        <AdminSidebarBodyTitleTemplate>Administration</AdminSidebarBodyTitleTemplate>
+        <AdminSidebarBodyTitleTemplate>{t('admin.nav.sectionLabel')}</AdminSidebarBodyTitleTemplate>
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;
@@ -72,7 +74,7 @@ export const AdminPanelSidebarNav = () => {
                 )}
               >
                 <Icon className="w-4 h-4 mr-2" />
-                {item.title}
+                {t(item.titleKey)}
               </AdminSidebarBodyItemTemplate>
             </Link>
           );

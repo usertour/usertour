@@ -57,11 +57,7 @@ export function ConditionInlineSelect({
       </ConditionDropdownMenuTrigger>
       <ConditionDropdownMenuContent align="start" sideOffset={4}>
         {options.map((opt) => (
-          <ConditionDropdownMenuItem
-            key={opt.value}
-            onSelect={() => onChange(opt.value)}
-            className="cursor-pointer"
-          >
+          <ConditionDropdownMenuItem key={opt.value} onSelect={() => onChange(opt.value)}>
             {opt.label}
           </ConditionDropdownMenuItem>
         ))}

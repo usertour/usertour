@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ListSkeletonCount,
   Button,
+  ComboboxSelect,
   FormControl,
   FormDescription,
   FormField,
@@ -13,7 +14,6 @@ import {
   FormMessage,
   Input,
   QuestionTooltip,
-  SelectPopover,
   SettingsDialogForm,
   useSettingsForm,
   useToast,
@@ -59,6 +59,9 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedAttributeValue, setSelectedAttributeValue] = useState('');
+  // Mount the attribute picker's popup inside the dialog (not body) so it
+  // stays clickable/scrollable under the dialog's react-remove-scroll lock.
+  const attributePortalRef = useRef<HTMLDivElement>(null);
   const { project } = useAppContext();
   const { attributes: attributeList } = useListAttributesQuery(
     project?.id ?? '',
@@ -260,11 +263,12 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
             ))}
 
             {selectMode ? (
-              <div className="flex flex-row">
-                <SelectPopover
+              <div className="flex flex-row" ref={attributePortalRef}>
+                <ComboboxSelect
                   className="w-full"
-                  contentClassName="w-[--radix-popover-trigger-width]"
                   placeholder={t('settings.events.form.attributesPlaceholder')}
+                  searchPlaceholder={t('common.search')}
+                  emptyText={t('common.selectPopover.noItems')}
                   value={selectedAttributeValue}
                   // Hide attributes already associated with this event;
                   // re-picking them is a no-op (with a warning toast),
@@ -276,13 +280,10 @@ export const EventEditDialog = (props: EventEditDialogProps) => {
                     )
                     .map((attr) => ({
                       value: attr.id,
-                      name: attr.displayName,
+                      label: attr.displayName,
                     }))}
                   onValueChange={handleAttributeSelect}
-                  // Render inline (no portal) because this dialog uses
-                  // react-remove-scroll, which kills wheel events on
-                  // body-portaled descendants — see SelectPopoverProps.
-                  withoutPortal
+                  container={attributePortalRef}
                 />
                 <Button
                   variant="ghost"

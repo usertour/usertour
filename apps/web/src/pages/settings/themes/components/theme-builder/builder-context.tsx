@@ -12,6 +12,11 @@ interface BuilderContextValue {
   getField: <T = unknown>(path: string) => T | undefined;
   setField: (path: string, value: unknown) => void;
   isReadOnly: boolean;
+  // Whether the project's plan unlocks custom CSS / custom fonts. When false,
+  // schema fields flagged `requiresCustomCss` render an upsell instead of an
+  // editor. Purely the UI affordance — the server strips customCss when
+  // shipping the theme to the SDK regardless.
+  canUseCustomCss: boolean;
 }
 
 const BuilderContext = createContext<BuilderContextValue | null>(null);

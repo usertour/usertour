@@ -11,6 +11,7 @@ import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@use
 import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { SegmentSidebarSkeleton } from './segment-sidebar-skeleton';
 
 interface SegmentSidebarProps {
@@ -38,6 +39,7 @@ export function SegmentSidebar({
   disabled,
 }: SegmentSidebarProps) {
   const [_, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   // Default to users icon if not provided
   const defaultGroupIcon = useMemo(
@@ -60,7 +62,7 @@ export function SegmentSidebar({
     <>
       <AdminSidebarContainerTemplate>
         <AdminSidebarHeaderTemplate>
-          <h2 className="min-w-0 truncate text-xl font-semibold">{title}</h2>
+          <h2 className="min-w-0 truncate text-lg font-medium">{title}</h2>
           {onCreate && (
             <TooltipProvider>
               <Tooltip>
@@ -71,11 +73,11 @@ export function SegmentSidebar({
                     onClick={onCreate}
                     disabled={disabled}
                   >
-                    <PLUSIcon width={16} height={16} /> New
+                    <PLUSIcon width={16} height={16} /> {t('segments.sidebar.new')}
                   </Button>
                 </TooltipTrigger>
                 {createTooltip && (
-                  <TooltipContent className="max-w-xs bg-slate-700">
+                  <TooltipContent className="max-w-xs">
                     <p>{createTooltip}</p>
                   </TooltipContent>
                 )}
@@ -89,7 +91,9 @@ export function SegmentSidebar({
           <SegmentSidebarSkeleton />
         ) : (
           <AdminSidebarBodyTemplate>
-            <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
+            <AdminSidebarBodyTitleTemplate>
+              {t('segments.sidebar.segments')}
+            </AdminSidebarBodyTitleTemplate>
             {segmentList?.map((segment) => (
               <Fragment key={`${segment.environmentId}-${segment.id}`}>
                 <AdminSidebarBodyItemTemplate

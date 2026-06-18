@@ -1,10 +1,10 @@
 import {
   ContentEditorSerialize,
   LinkDecoratorContext,
+  PopperContentFrame,
   PopperMadeWith,
   LauncherContentWrapper,
   LauncherPopper,
-  LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
 } from '@usertour/widget';
@@ -22,6 +22,7 @@ import { useEventHandlers } from '../hooks/use-event-handlers';
 import { document } from '../utils/globals';
 import { on, off } from '../utils/listener';
 import { UsertourLauncher } from '@/core/usertour-launcher';
+import { AssetAttributes } from '@usertour/frame';
 
 // Types
 type LauncherWidgetProps = {
@@ -40,6 +41,7 @@ type LauncherWidgetCoreProps = {
   onTooltipClose: () => void;
   removeBranding: boolean;
   linkUrlDecorator?: ((url: string) => string) | null;
+  assets?: AssetAttributes[];
 };
 
 type LauncherHandlers = {
@@ -188,14 +190,14 @@ const LauncherTooltip = ({
   popperRef: React.RefObject<HTMLDivElement>;
 }) => (
   <LauncherPopperContentPotal ref={popperRef}>
-    <LauncherPopperContent>
+    <PopperContentFrame>
       <ContentEditorSerialize
         contents={data.tooltip.content}
         onClick={handleOnClick}
         userAttributes={userAttributes}
       />
       {!removeBranding && <PopperMadeWith />}
-    </LauncherPopperContent>
+    </PopperContentFrame>
   </LauncherPopperContentPotal>
 );
 
@@ -211,6 +213,7 @@ const LauncherWidgetCore = ({
   onTooltipClose,
   removeBranding,
   linkUrlDecorator,
+  assets,
 }: LauncherWidgetCoreProps) => {
   const actionType = data?.behavior?.actionType;
   const [open, setOpen] = useState(false);
@@ -255,6 +258,8 @@ const LauncherWidgetCore = ({
           }
           zIndex={zIndex}
           open={open}
+          isIframeMode={true}
+          assets={assets}
         >
           <LauncherTooltip
             data={data}
@@ -291,6 +296,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
     removeBranding,
     triggerRef,
     linkUrlDecorator,
+    assets,
   } = store;
 
   if (!themeSettings || !launcherData || !openState || !userAttributes) {
@@ -310,6 +316,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
       el={triggerRef}
       removeBranding={removeBranding}
       linkUrlDecorator={linkUrlDecorator}
+      assets={assets}
     />
   );
 };

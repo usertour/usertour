@@ -446,13 +446,6 @@ input ContentQuery {
   type: String
 }
 
-input ContentStepsInput {
-  contentId: String!
-  steps: [StepInput!]!
-  themeId: String!
-  versionId: String!
-}
-
 input ContentUpdateInput {
   content: UpdateContentInput!
   contentId: String!
@@ -537,20 +530,6 @@ input CreateLocalizationInput {
 
 input CreateOwnedProjectInput {
   name: String!
-}
-
-input CreateStepInput {
-  contentId: String
-  data: JSON
-  name: String
-  screenshot: JSON
-  sequence: Int
-  setting: JSON
-  target: JSON
-  themeId: String
-  trigger: JSON
-  type: String!
-  versionId: String!
 }
 
 input CreateThemeInput {
@@ -809,8 +788,6 @@ input MagicLinkInput {
 type Mutation {
   acceptInvite(data: AcceptInviteInput!): Auth!
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
-  addContentStep(data: CreateStepInput!): Step!
-  addContentSteps(data: ContentStepsInput!): Common!
   adminAddProjectMember(projectId: String!, role: String!, userId: String!): Boolean!
   adminChangeProjectMemberRole(projectId: String!, role: String!, userId: String!): Boolean!
   adminCreateProject(name: String!, ownerUserId: String!): Project!
@@ -877,7 +854,6 @@ type Mutation {
   unpublishedContentVersion(data: ContentIdInput!): Common!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
   updateContent(data: ContentUpdateInput!): Content!
-  updateContentStep(data: UpdateStepInput!, stepId: String!): Common!
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
@@ -938,6 +914,7 @@ type Project {
 }
 
 type ProjectConfigModel {
+  customCss: Boolean!
   planType: String!
   removeBranding: Boolean!
 }
@@ -1140,6 +1117,7 @@ type StepAnalytics {
 }
 
 input StepInput {
+  cvid: String
   data: JSON
   id: String
   name: String
@@ -1311,20 +1289,6 @@ input UpdateSegment {
   name: String
 }
 
-input UpdateStepInput {
-  contentId: String
-  data: JSON
-  name: String
-  screenshot: JSON
-  sequence: Int
-  setting: JSON
-  target: JSON
-  themeId: String
-  trigger: JSON
-  type: String
-  versionId: String
-}
-
 input UpdateThemeInput {
   id: String!
   isDefault: Boolean
@@ -1415,6 +1379,7 @@ input VersionInput {
   config: JSON
   data: JSON
   scheduledAt: DateTime
+  steps: [StepInput!]
   themeId: String
 }
 
@@ -1435,6 +1400,7 @@ type VersionOnLocalization {
 
 input VersionUpdateInput {
   content: VersionInput!
+  expectedUpdatedAt: DateTime
   versionId: String
 }
 

@@ -85,9 +85,11 @@ export const AccountEmailForm = () => {
 
   resetRef.current = (email) => state.form.reset({ email, password: '' });
 
-  // Guard on loading: `defaultValues` is captured at mount, so rendering
-  // before `userInfo` lands would baseline `email` to `''`.
-  if (loading) {
+  // Gate on "loading AND no userInfo yet": the first load waits for `userInfo`
+  // to hydrate (else `email` baselines to `''`), but a background refetch of
+  // `getUserInfo` — broadcast e.g. by 2FA's useRefreshMe on this same page —
+  // keeps `userInfo`, and must NOT unmount this form and discard unsaved input.
+  if (loading && !userInfo) {
     return <AccountEmailFormSkeleton />;
   }
 

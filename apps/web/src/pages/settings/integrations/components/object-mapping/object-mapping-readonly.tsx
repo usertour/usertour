@@ -133,15 +133,12 @@ export const ObjectMappingReadonly = (props: ObjectMappingReadonlyProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => setIsEditDialogOpen(true)}
-                >
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                   <EditIcon className="w-4 h-4 mr-2" />
                   {t('settings.integrations.objectMapping.readonly.editAction')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  variant="destructive"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={loading}
                 >
@@ -259,8 +256,8 @@ export const ObjectMappingReadonly = (props: ObjectMappingReadonlyProps) => {
               <Trans
                 i18nKey="settings.integrations.objectMapping.streamSwitch"
                 components={{
-                  user: <span className="font-semibold text-primary" />,
-                  contact: <span className="font-semibold text-blue-500" />,
+                  user: <span className="font-medium text-primary" />,
+                  contact: <span className="font-medium text-blue-500" />,
                 }}
               />
             </span>

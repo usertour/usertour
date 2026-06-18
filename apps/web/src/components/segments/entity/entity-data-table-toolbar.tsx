@@ -156,15 +156,17 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
                 <Cross2Icon className="h-3.5 w-3.5" />
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <EntityAddToManualSegment config={config} table={table} refetch={refetch} />
+              <EntityAddToManualSegment config={config} table={table} />
               {currentSegment.dataType === 'MANUAL' && (
                 <EntityRemoveFromSegment
                   config={config}
                   table={table}
                   currentSegment={currentSegment}
-                  refetch={refetch}
                 />
               )}
+              {/* Delete keeps `refetch`: its mutation has no refetchQueries, so
+                  this is the only thing that refreshes the list after a hard
+                  delete (add/remove self-refresh via their mutations). */}
               <EntityDeleteFromSegment config={config} table={table} refetch={refetch} />
             </>
           ) : !showFilterBar ? (
@@ -184,6 +186,7 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
             value={searchValue}
             onChange={handleSearchChange}
             placeholder={t('common.search')}
+            clearLabel={t('common.clearSearch')}
           />
           <DataTableViewOptions
             table={table}

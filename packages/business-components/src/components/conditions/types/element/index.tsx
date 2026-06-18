@@ -58,7 +58,7 @@ function ElementSummary({ condition }: { condition: RulesCondition }) {
       <span className={summaryTextClass}>
         <span>{t('conditions.types.element.prefix')}</span>{' '}
         {selected ? (
-          <span className="font-semibold">
+          <span className="font-medium">
             {data.elementData?.content ||
               data.elementData?.customSelector ||
               t('conditions.types.element.element')}

@@ -20,6 +20,7 @@ export const BusinessSessionLimit = 200000;
 
 const HOBBY: PlanFeatures = {
   removeBranding: false,
+  customCss: false,
   auditLogs: false,
   ssoSaml: false,
   ssoOidc: false,
@@ -43,6 +44,7 @@ const STARTER: PlanFeatures = {
 const GROWTH: PlanFeatures = {
   ...STARTER,
   removeBranding: true,
+  customCss: true,
   sessionsLimit: GrowthSessionLimit,
   teamMemberLimit: 10,
   environmentLimit: 3,

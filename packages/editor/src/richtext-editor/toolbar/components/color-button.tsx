@@ -4,6 +4,7 @@ import { EDITOR_RICH_ACTION_CONTENT } from '@usertour/constants';
 import { PopoverArrow, ColorPickerPanel } from '@usertour/ui';
 import { useCurrentUserId } from '@usertour/hooks';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSlate } from 'slate-react';
 
 import { getTextProps, removeTextProps, setTextProps } from '../../../lib/text';
@@ -29,6 +30,7 @@ export const ColorButton = memo(({ config }: ColorButtonProps) => {
   const { zIndex } = usePopperEditorContext();
   const [open, setOpen] = useState(false);
   const userId = useCurrentUserId();
+  const { t } = useTranslation();
 
   // Get current color from editor marks
   // Note: Don't use useMemo here - editor reference is stable but marks change,
@@ -60,11 +62,21 @@ export const ColorButton = memo(({ config }: ColorButtonProps) => {
           onChange={handleColorChange}
           showAutoButton
           userId={userId}
+          labels={{
+            useThisColor: t('common.colorPicker.useThisColor'),
+            removeColor: t('common.colorPicker.removeColor'),
+            tailwindColors: t('common.colorPicker.tailwindColors'),
+            recentlyUsed: t('common.colorPicker.recentlyUsed'),
+            done: t('common.colorPicker.done'),
+            colorPicker: t('common.colorPicker.colorPicker'),
+            colorPalette: t('common.colorPicker.colorPalette'),
+          }}
         />
         <PopoverArrow className="fill-background" width={20} height={10} />
       </>
     ),
-    [currentColor, handleColorChange, userId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentColor, handleColorChange, userId, t],
   );
 
   return (

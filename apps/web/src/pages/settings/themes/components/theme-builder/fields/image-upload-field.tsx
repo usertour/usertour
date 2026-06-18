@@ -15,7 +15,7 @@ export const ImageUploadField = (props: ImageUploadFieldProps) => {
   const value = getField<string>(path);
   return (
     <div className="space-y-1.5">
-      {label && <h4 className="text-sm font-semibold text-foreground">{label}</h4>}
+      {label && <h4 className="text-sm font-medium text-foreground">{label}</h4>}
       <ImageUploadWidget
         value={value}
         onChange={(url) => setField(path, url)}

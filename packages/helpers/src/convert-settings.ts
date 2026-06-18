@@ -377,6 +377,18 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   // Font family handling
   if (data.font.fontFamily === 'System font') {
     data.font.fontFamily = defaultFontFamily;
+  } else if (data.font.fontFamily === 'Custom font') {
+    // 'Custom font' resolves to the user-provided family name; the font
+    // itself is expected to be declared via @font-face in customCss. With
+    // no name configured, fall back to the system stack.
+    const customFontFamily = data.font.customFontFamily?.trim();
+    if (customFontFamily) {
+      data.font.fontFamily = customFontFamily.includes('sans-serif')
+        ? customFontFamily
+        : `${customFontFamily}, sans-serif`;
+    } else {
+      data.font.fontFamily = defaultFontFamily;
+    }
   } else if (!data.font.fontFamily.includes('sans-serif')) {
     data.font.fontFamily += ', sans-serif;';
   }

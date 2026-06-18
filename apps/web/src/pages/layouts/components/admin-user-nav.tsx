@@ -17,11 +17,37 @@ import {
   DropdownMenuTrigger,
   useToast,
 } from '@usertour/ui';
+import {
+  RiAccountCircle2Line,
+  RiBox1Line,
+  RiComputerLine,
+  RiContrast2Line,
+  RiFlashlightLine,
+  RiLogoutBoxRLine,
+  RiMoonClearLine,
+  RiPaletteLine,
+  RiProjectorLine,
+  RiShieldUserLine,
+  RiSunLine,
+} from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { useActiveUserProjectMutation } from '@usertour/hooks';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useEvent } from 'react-use';
+import { type Theme, useTheme } from '@/contexts/theme-context';
+
+// Theme switcher rendered as a segmented control on one row inside the user
+// menu: three icon buttons (system / light / dark). The active mode stays
+// visible and is switchable in a single click, without a submenu and without
+// closing the menu.
+const APPEARANCE_OPTIONS = [
+  { value: 'system', icon: RiComputerLine, labelKey: 'common.appearance.system' },
+  { value: 'light', icon: RiSunLine, labelKey: 'common.appearance.light' },
+  { value: 'dark', icon: RiMoonClearLine, labelKey: 'common.appearance.dark' },
+] satisfies ReadonlyArray<{ value: Theme; icon: typeof RiSunLine; labelKey: string }>;
 
 export const AdminUserNav = () => {
   const { userInfo: user, signOutAndRedirect, globalConfig } = useAppContext();
@@ -29,6 +55,8 @@ export const AdminUserNav = () => {
   const posthog = usePostHog();
   const { invoke } = useActiveUserProjectMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
 
   const navigate = useNavigate();
 
@@ -67,7 +95,7 @@ export const AdminUserNav = () => {
       } catch (error) {
         toast({
           variant: 'destructive',
-          title: 'Switch project failed',
+          title: t('userNav.switchProjectFailed'),
         });
         console.error(error);
       }
@@ -97,40 +125,50 @@ export const AdminUserNav = () => {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/account`)}>
-            Account
+            <RiAccountCircle2Line className="mr-2 h-4 w-4" />
+            {t('settings.nav.sections.account')}
             <DropdownMenuShortcut>⌘U</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/themes`)}>
-            Themes
+            <RiPaletteLine className="mr-2 h-4 w-4" />
+            {t('settings.nav.sections.themes')}
             <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/project/${project?.id}/settings/events`)}>
-            Events
+            <RiFlashlightLine className="mr-2 h-4 w-4" />
+            {t('settings.nav.sections.events')}
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => navigate(`/project/${project?.id}/settings/environments`)}
           >
-            Environments
+            <RiBox1Line className="mr-2 h-4 w-4" />
+            {t('settings.nav.sections.environments')}
           </DropdownMenuItem>
           {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/admin/general')}>
-                System Admin
+                <RiShieldUserLine className="mr-2 h-4 w-4" />
+                {t('userNav.systemAdmin')}
               </DropdownMenuItem>
             </>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>My Projects</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>
+              <RiProjectorLine className="mr-2 h-4 w-4" />
+              {t('userNav.myProjects')}
+            </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="w-56">
-                <DropdownMenuLabel className="text-xs	">CURRENT PROJECT</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs	">
+                  {t('userNav.currentProject')}
+                </DropdownMenuLabel>
                 {activeProject && (
                   <DropdownMenuItem
                     key={activeProject.id}
-                    className="flex items-center justify-between cursor-pointer "
+                    className="flex items-center justify-between"
                     onClick={() => handleActiveProject(activeProject.id)}
                   >
                     <span className="truncate max-w-[120px]">{activeProject.name}</span>{' '}
@@ -140,11 +178,13 @@ export const AdminUserNav = () => {
                 <DropdownMenuSeparator />
                 {otherProjects.length > 0 && (
                   <>
-                    <DropdownMenuLabel className="text-xs">OTHER PROJECTS</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-xs">
+                      {t('userNav.otherProjects')}
+                    </DropdownMenuLabel>
                     {otherProjects.map((p) => (
                       <DropdownMenuItem
                         key={p.id}
-                        className="flex items-center justify-between cursor-pointer "
+                        className="flex items-center justify-between"
                         onClick={() => handleActiveProject(p.id)}
                       >
                         <span className="truncate max-w-[120px]">{p.name}</span>{' '}
@@ -156,10 +196,43 @@ export const AdminUserNav = () => {
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <div className="flex items-center">
+              <RiContrast2Line className="mr-2 h-4 w-4" />
+              <span className="text-sm">{t('common.appearance.label')}</span>
+            </div>
+            <div className="flex items-center gap-0.5">
+              {APPEARANCE_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const isActive = theme === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-label={t(option.labelKey)}
+                    aria-pressed={isActive}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setTheme(option.value);
+                    }}
+                    className={cn(
+                      'flex h-6 w-6 items-center justify-center rounded transition-colors',
+                      isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logoutHandler}>
-          Log out
+          <RiLogoutBoxRLine className="mr-2 h-4 w-4" />
+          {t('userNav.logout')}
           <DropdownMenuShortcut>⇧⌘K</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

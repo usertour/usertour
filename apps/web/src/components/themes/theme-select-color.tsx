@@ -1,5 +1,6 @@
 import { ColorPicker } from '@usertour/ui';
 import { useCurrentUserId } from '@usertour/hooks';
+import { useTranslation } from 'react-i18next';
 
 type ThemeSelectColorProps = {
   text: string;
@@ -17,6 +18,7 @@ export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
   const { text, name, defaultColor, onChange, autoColor, isAutoColor, showAutoButton, disabled } =
     props;
   const userId = useCurrentUserId();
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-row">
@@ -34,6 +36,16 @@ export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
           showAutoButton={showAutoButton}
           disabled={disabled}
           userId={userId}
+          autoLabel={t('common.colorPicker.auto')}
+          labels={{
+            useThisColor: t('common.colorPicker.useThisColor'),
+            removeColor: t('common.colorPicker.removeColor'),
+            tailwindColors: t('common.colorPicker.tailwindColors'),
+            recentlyUsed: t('common.colorPicker.recentlyUsed'),
+            done: t('common.colorPicker.done'),
+            colorPicker: t('common.colorPicker.colorPicker'),
+            colorPalette: t('common.colorPicker.colorPalette'),
+          }}
         />
       </div>
     </div>

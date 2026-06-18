@@ -42,7 +42,7 @@ export function ListInput({
         // biome-ignore lint/suspicious/noArrayIndexKey: list is positional and short
         <div key={index} className="flex items-center gap-1.5">
           <Input
-            variant="compact"
+            variant="compact-surface"
             value={value}
             placeholder={placeholder}
             onChange={(e) => handleChange(index, e.target.value)}

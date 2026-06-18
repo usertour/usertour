@@ -17,7 +17,7 @@ import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import type { ColorButtonProps, ColorPickerPanelProps } from './types';
+import type { ColorButtonProps, ColorPickerPanelLabels, ColorPickerPanelProps } from './types';
 import {
   formatColorTooltip,
   getRecentColors,
@@ -46,7 +46,7 @@ const IconTooltip = React.memo((props: IconTooltipProps) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent className="max-w-xs bg-foreground">{tooltip}</TooltipContent>
+      <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
     </Tooltip>
   );
 });
@@ -105,6 +105,7 @@ interface ColorInputProps {
   isAuto: boolean;
   showAutoButton: boolean;
   error?: string;
+  labels: Pick<ColorPickerPanelLabels, 'useThisColor' | 'removeColor'>;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
   onRemove: () => void;
@@ -118,6 +119,7 @@ const ColorInput = React.memo((props: ColorInputProps) => {
     isAuto,
     showAutoButton,
     error,
+    labels,
     onInputChange,
     onSubmit,
     onRemove,
@@ -133,13 +135,13 @@ const ColorInput = React.memo((props: ColorInputProps) => {
           onChange={onInputChange}
         />
       </ErrorPopover>
-      <IconTooltip tooltip="Use this color">
+      <IconTooltip tooltip={labels.useThisColor}>
         <Button variant="ghost" size="icon" onClick={onSubmit} className="h-7 w-7 text-primary">
           <CheckboxIcon width={20} height={20} />
         </Button>
       </IconTooltip>
       {showAutoButton && (
-        <IconTooltip tooltip="Remove color(use default)">
+        <IconTooltip tooltip={labels.removeColor}>
           <Button variant="ghost" size="icon" onClick={onRemove} className="h-7 w-7 shrink-0">
             <RemoveColorIcon width={16} height={16} />
           </Button>
@@ -152,15 +154,16 @@ ColorInput.displayName = 'ColorInput';
 
 interface TailwindPaletteProps {
   onColorClick: (color: string) => void;
+  tailwindColorsLabel: string;
 }
 
 // Tailwind color palette grid
 const TailwindPalette = React.memo((props: TailwindPaletteProps) => {
-  const { onColorClick } = props;
+  const { onColorClick, tailwindColorsLabel } = props;
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm">Tailwind CSS colors</span>
+        <span className="text-sm">{tailwindColorsLabel}</span>
         <Button
           variant="ghost"
           size="icon"
@@ -199,17 +202,18 @@ interface RecentColorsProps {
   onEditToggle: (editing: boolean) => void;
   onColorClick: (color: string) => void;
   onColorRemove: (color: string) => void;
+  labels: Pick<ColorPickerPanelLabels, 'recentlyUsed' | 'done'>;
 }
 
 // Recently used colors section
 const RecentColors = React.memo((props: RecentColorsProps) => {
-  const { colors, isEditing, onEditToggle, onColorClick, onColorRemove } = props;
+  const { colors, isEditing, onEditToggle, onColorClick, onColorRemove, labels } = props;
   if (colors.length === 0) return null;
 
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm">Recently used</span>
+        <span className="text-sm">{labels.recentlyUsed}</span>
         <div className="w-10 flex justify-end">
           {isEditing ? (
             <Button
@@ -221,7 +225,7 @@ const RecentColors = React.memo((props: RecentColorsProps) => {
               }}
               className="h-6 p-0"
             >
-              Done
+              {labels.done}
             </Button>
           ) : (
             <Button
@@ -260,7 +264,7 @@ RecentColors.displayName = 'RecentColors';
 // ============================================================================
 
 export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
-  const { color = '', onChange, isAuto = false, showAutoButton = true, userId } = props;
+  const { color = '', onChange, isAuto = false, showAutoButton = true, userId, labels } = props;
   const [inputColor, setInputColor] = useState(!isAuto ? color : '');
   const [recentColors, setRecentColors] = useState<string[]>([]);
   const [isEditingRecent, setIsEditingRecent] = useState(false);
@@ -350,21 +354,22 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
 
   return (
     <TooltipProvider>
-      <div className="bg-background p-4 rounded space-y-3 w-64">
+      <div className="bg-background dark:bg-card p-4 rounded space-y-3 w-64">
         <ColorInput
           inputColor={inputColor}
           displayColor={displayColor}
           isAuto={isAuto}
           showAutoButton={showAutoButton}
           error={inputError}
+          labels={{ useThisColor: labels.useThisColor, removeColor: labels.removeColor }}
           onInputChange={handleInputChange}
           onSubmit={handleSubmit}
           onRemove={handleRemoveColor}
         />
         <Tabs defaultValue="picker">
           <UnderlineTabsList>
-            <UnderlineTabsTrigger value="picker">Color picker</UnderlineTabsTrigger>
-            <UnderlineTabsTrigger value="palette">Color palette</UnderlineTabsTrigger>
+            <UnderlineTabsTrigger value="picker">{labels.colorPicker}</UnderlineTabsTrigger>
+            <UnderlineTabsTrigger value="palette">{labels.colorPalette}</UnderlineTabsTrigger>
           </UnderlineTabsList>
           <UnderlineTabsContent value="picker">
             <div className="h-64 color-picker-panel">
@@ -376,7 +381,10 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
             </div>
           </UnderlineTabsContent>
           <UnderlineTabsContent value="palette">
-            <TailwindPalette onColorClick={handleColorSelect} />
+            <TailwindPalette
+              onColorClick={handleColorSelect}
+              tailwindColorsLabel={labels.tailwindColors}
+            />
           </UnderlineTabsContent>
         </Tabs>
         <RecentColors
@@ -385,6 +393,7 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
           onEditToggle={handleEditToggle}
           onColorClick={handleRecentColorClick}
           onColorRemove={handleRemoveRecentColor}
+          labels={{ recentlyUsed: labels.recentlyUsed, done: labels.done }}
         />
       </div>
     </TooltipProvider>

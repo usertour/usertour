@@ -14,7 +14,7 @@ export interface BulkRemoveFromSegmentDialogProps {
   segment: Segment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (success: boolean) => void;
+  onSubmit?: (success: boolean) => void;
 }
 
 export const BulkRemoveFromSegmentDialog = memo((props: BulkRemoveFromSegmentDialogProps) => {
@@ -34,7 +34,7 @@ export const BulkRemoveFromSegmentDialog = memo((props: BulkRemoveFromSegmentDia
         variant: 'destructive',
         title: t(`${ns}.toast.segments.invalidSegment`),
       });
-      onSubmit(false);
+      onSubmit?.(false);
       return;
     }
     if (!ids || ids.length === 0) {
@@ -46,7 +46,7 @@ export const BulkRemoveFromSegmentDialog = memo((props: BulkRemoveFromSegmentDia
             : `${ns}.toast.segments.noCompaniesSelected`,
         ),
       });
-      onSubmit(false);
+      onSubmit?.(false);
       return;
     }
 
@@ -59,14 +59,14 @@ export const BulkRemoveFromSegmentDialog = memo((props: BulkRemoveFromSegmentDia
         // doesn't get masked by the fallback.
         title: t(`${ns}.toast.segments.${ns}Removed`, { count: result.count ?? ids.length }),
       });
-      onSubmit(true);
+      onSubmit?.(true);
       onOpenChange(false);
     } else {
       toast({
         variant: 'destructive',
         title: result.error ?? t('common.unknownError'),
       });
-      onSubmit(false);
+      onSubmit?.(false);
     }
   }, [entity, ids, segment?.id, removeFn, onSubmit, onOpenChange, toast, t, ns]);
 

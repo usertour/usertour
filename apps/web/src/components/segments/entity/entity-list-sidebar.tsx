@@ -24,7 +24,7 @@ export const EntityListSidebar = (props: EntityListSidebarProps) => {
   return (
     <>
       <SegmentSidebar
-        title={config.i18n.sidebarTitle}
+        title={t(config.i18n.sidebarTitle)}
         segmentList={segmentList}
         currentSegment={currentSegment}
         loading={loading}

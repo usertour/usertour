@@ -89,8 +89,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
   );
 
   const handleButtonTextChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
+    (value: string) => {
       updateElement({ ...element, data: { ...element.data, text: value } }, id);
     },
     [element, id, updateElement],
@@ -221,7 +220,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
           </PopoverTrigger>
         </EditorErrorTooltipTrigger>
         <PopoverContent
-          className="bg-background max-h-[480px] overflow-y-auto"
+          className="bg-card max-h-[480px] overflow-y-auto"
           side="right"
           style={{ zIndex: zIndex }}
           sideOffset={10}

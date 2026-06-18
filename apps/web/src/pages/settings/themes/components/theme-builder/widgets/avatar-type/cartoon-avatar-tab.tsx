@@ -34,7 +34,7 @@ const AvatarButton = memo<AvatarButtonProps>((props) => {
           <Avatar size={40} className="rounded-full object-cover" />
         </Button>
       </TooltipTrigger>
-      <TooltipContent className="max-w-xs bg-foreground">{text}</TooltipContent>
+      <TooltipContent className="max-w-xs">{text}</TooltipContent>
     </Tooltip>
   );
 });

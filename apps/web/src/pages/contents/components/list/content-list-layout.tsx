@@ -8,6 +8,7 @@ import { useContentCount } from '@usertour/hooks';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 interface ContentListLayoutProps {
@@ -65,6 +66,7 @@ export const ContentListLayout = memo(
   }: ContentListLayoutProps) => {
     const [open, setOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
+    const { t } = useTranslation();
     const { isViewOnly, environment } = useAppContext();
     const { contents, hasNextPage, loadingMore, fetchNextPage, refetch, loading } = useContentList(
       environment?.id,
@@ -94,13 +96,6 @@ export const ContentListLayout = memo(
       setOpen(true);
     }, []);
 
-    // Cancel/ESC/click-outside only flips the local state — no refetch.
-    // `onSubmit` fires the refetch on success so adjusting the form
-    // shouldn't kick off network traffic on the list page.
-    const handleSubmitSuccess = useCallback(() => {
-      refetch();
-    }, [refetch]);
-
     const handleGoToDraft = useCallback(() => {
       setSearchParams({ published: '0' }, { replace: false });
     }, [setSearchParams]);
@@ -129,16 +124,21 @@ export const ContentListLayout = memo(
       }
     }, [contentLength, isPublishedView, refetchDraftCount, refetchPublishedCount]);
 
-    const displayTitle = `${isPublishedView ? 'Published' : 'Draft'} ${title.toLowerCase()}`;
+    const lowerTitle = title.toLowerCase();
+    const displayTitle = isPublishedView
+      ? t('contents.listView.displayTitle.published', { title: lowerTitle })
+      : t('contents.listView.displayTitle.draft', { title: lowerTitle });
 
     // Default filtered empty messages based on title
-    const actualFilteredEmptyTitle = filteredEmptyTitle ?? `No published ${title.toLowerCase()}`;
+    const actualFilteredEmptyTitle =
+      filteredEmptyTitle ?? t('contents.listView.filteredEmpty.title', { title: lowerTitle });
     const actualFilteredEmptyDescription =
-      filteredEmptyDescription ?? 'Content exists but none are published yet.';
+      filteredEmptyDescription ?? t('contents.listView.filteredEmpty.description');
     const actualFilteredEmptyDraftTitle =
-      filteredEmptyDraftTitle ?? `No draft ${title.toLowerCase()}`;
+      filteredEmptyDraftTitle ??
+      t('contents.listView.filteredEmptyDraft.title', { title: lowerTitle });
     const actualFilteredEmptyDraftDescription =
-      filteredEmptyDraftDescription ?? 'Content exists but no drafts are available.';
+      filteredEmptyDraftDescription ?? t('contents.listView.filteredEmptyDraft.description');
 
     // Render main content based on state using switch
     const handleGoToPublished = useCallback(() => {
@@ -166,7 +166,7 @@ export const ContentListLayout = memo(
               description={actualFilteredEmptyDescription}
             >
               <Button onClick={handleGoToDraft} variant="outline">
-                Go to Draft
+                {t('contents.listView.goToDraft')}
                 <ArrowRightIcon className="ml-2 h-4 w-4" />
               </Button>
             </EmptyPlaceholder>
@@ -178,7 +178,7 @@ export const ContentListLayout = memo(
               description={actualFilteredEmptyDraftDescription}
             >
               <Button onClick={handleGoToPublished} variant="outline">
-                Go to Published
+                {t('contents.listView.goToPublished')}
                 <ArrowRightIcon className="ml-2 h-4 w-4" />
               </Button>
             </EmptyPlaceholder>
@@ -197,6 +197,7 @@ export const ContentListLayout = memo(
           );
       }
     }, [
+      t,
       contentState,
       emptyTitle,
       emptyDescription,
@@ -221,7 +222,7 @@ export const ContentListLayout = memo(
       <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
         <div className="flex justify-between">
           <div className="flex flex-col space-y-1">
-            <h3 className="text-xl font-semibold tracking-tight">{displayTitle}</h3>
+            <h3 className="text-xl font-medium tracking-tight">{displayTitle}</h3>
             <div className="flex flex-row space-x-1">
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
@@ -241,7 +242,10 @@ export const ContentListLayout = memo(
 
         {renderContent}
 
-        {createForm({ open, onOpenChange: setOpen, onSubmit: handleSubmitSuccess })}
+        {/* createContent's refetchQueries (['queryContent']) refreshes the
+            list, and the form navigates to the new content on success — so the
+            list page needs no onSubmit refetch. */}
+        {createForm({ open, onOpenChange: setOpen })}
       </div>
     );
   },
