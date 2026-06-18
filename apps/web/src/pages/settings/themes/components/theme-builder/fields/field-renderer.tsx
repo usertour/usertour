@@ -126,6 +126,7 @@ export const FieldRenderer = (props: FieldRendererProps) => {
           placeholder={field.placeholder ? t(field.placeholder) : undefined}
           tooltip={tooltip}
           height={field.height}
+          docsHref={field.docsHref}
         />
       );
     case 'placement':

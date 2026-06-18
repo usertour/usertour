@@ -271,6 +271,14 @@ export const ElementPickerHost = (props: ElementPickerHostProps) => {
                     {t('contentBuilder.elementPicker.urlInvalid')}
                   </p>
                 )}
+                <a
+                  href="https://docs.usertour.io/how-to-guides/selecting-elements"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block pt-1 text-sm text-primary hover:underline"
+                >
+                  {t('contentBuilder.elementPicker.learnMore')}
+                </a>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => settleUrlDialog(null)}>
