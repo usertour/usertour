@@ -1,7 +1,7 @@
 'use client';
 
 import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
-import { useBuilderStore, useIsBusy } from '@/pages/contents/components/builder/core';
+import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { SidebarContents } from '@/pages/contents/components/builder/flow/sidebar-contents';
 import { SidebarCreate } from '@/pages/contents/components/builder/flow/sidebar-create';
@@ -14,7 +14,6 @@ import { SidebarTheme } from '@/pages/contents/components/builder/components/sid
 export const BuilderSideBar = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
-  const isLoading = useIsBusy();
 
   const handleSave = useSidebarSave();
 
@@ -39,7 +38,7 @@ export const BuilderSideBar = () => {
         </ScrollArea>
       </CardContent>
       <CardFooter className="flex-none border-t border-border/50 p-4">
-        <SidebarFooter onSave={handleSave} isLoading={isLoading} />
+        <SidebarFooter onSave={handleSave} />
       </CardFooter>
     </>
   );
