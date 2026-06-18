@@ -14,11 +14,9 @@ COPY . .
 
 # Generate config.js for web
 RUN echo "window.ENV = {" > ./apps/web/public/config.js && \
-    cat ./apps/web/.env.example | while read line; do \
-    if [ ! -z "$line" ]; then \
+    grep -E '^[[:space:]]*VITE_' ./apps/web/.env.example | while read line; do \
         var_name=$(echo $line | cut -d'=' -f1 | tr -d ' ' | sed 's/VITE_//'); \
         echo "  $var_name: '\$$var_name'," >> ./apps/web/public/config.js; \
-    fi \
     done && \
     echo "};" >> ./apps/web/public/config.js
 
