@@ -2517,7 +2517,7 @@ const translations = {
         whenSubmitted: 'When answer is submitted',
         labels: 'Labels',
         labelsTooltip:
-          'Below each option, provide labels to clearly convey their meaning, such as "Bad" positioned under the left option and "Good" under the right.',
+          'Add labels under each option so their meaning is clear — for example, "Bad" under the left option and "Good" under the right.',
         defaultLabel: 'Default',
         scaleRange: 'Scale range',
         nameRequired: 'Question name is required',
@@ -2530,7 +2530,7 @@ const translations = {
       embed: {
         url: 'Embed URL',
         urlTooltip:
-          'Enter the URL of any content you want to embed. This could be a YouTube video, a form, documentation, a website, or even a direct link to a video file. We support most embeddable content from the web.',
+          'Paste the URL of whatever you want to embed — a YouTube video, a form, docs, a website, even a direct link to a video file. Most embeddable content from the web works.',
         urlPlaceholder: 'Enter URL',
         load: 'Load',
         loading: 'Loading...',
@@ -2747,16 +2747,16 @@ const translations = {
     shared: {
       width: 'Width',
       widthTooltip: {
-        modal: 'The width in pixels of the modal. Leave empty to use the theme default.',
-        tooltip: 'The width in pixels of the tooltip. Leave empty to use the theme default.',
-        checklist: 'The width in pixels of the checklist. Leave empty to use the theme default.',
-        bubble: 'The width in pixels of the bubble. Leave empty to use the theme default.',
+        modal: 'How wide the modal is, in pixels. Leave it empty to use the theme default.',
+        tooltip: 'How wide the tooltip is, in pixels. Leave it empty to use the theme default.',
+        checklist: 'How wide the checklist is, in pixels. Leave it empty to use the theme default.',
+        bubble: 'How wide the bubble is, in pixels. Leave it empty to use the theme default.',
       },
       widthPlaceholder: 'Default: {{value}}',
       widthCannotBeZero: 'Width cannot be 0',
       alignment: 'Alignment',
       alignmentTooltip:
-        "Customize which side of the target element the tooltip should appear on. By default, tooltips are placed on the optimal side depending on the target's position and your user's screen size.",
+        "Pick which side of the target element the tooltip shows on. By default, it picks the best side based on where the target is and the size of the user's screen.",
       auto: 'Auto',
       fixed: 'Fixed',
       distanceFromElement: 'The distance in pixels from the element',
@@ -2775,13 +2775,13 @@ const translations = {
         end: 'end',
       },
       placement: 'Placement',
-      placementTooltip: 'Controls which corner the {{name}} should be placed at.',
+      placementTooltip: 'Which corner the {{name}} sits in.',
       horizontalOffset: 'The horizontal offset',
       horizontalOffsetTooltip:
-        'How far in pixels from the horizontal edge of the browser window the {{name}} should be positioned.',
+        'How many pixels to keep between the {{name}} and the horizontal edge of the browser window.',
       verticalOffset: 'The vertical offset',
       verticalOffsetTooltip:
-        'How far in pixels from the vertical edge of the browser window the {{name}} should be positioned.',
+        'How many pixels to keep between the {{name}} and the vertical edge of the browser window.',
       position: {
         leftTop: 'Left Top',
         centerTop: 'Center Top',
@@ -2794,17 +2794,17 @@ const translations = {
         rightBottom: 'Right Bottom',
       },
       elementText: 'Element text',
-      elementTextTooltip: 'Usertour will select an element containing the text you write here.',
+      elementTextTooltip: "We'll pick an element that contains the text you type here.",
       cssSelector: 'CSS selector',
       cssSelectorTooltip:
-        'Advanced feature: if possible, we recommend selecting elements using text. If an element does not have text, or the text is very generic, you can select it using a CSS selector instead. If both text and CSS selector are filled in, Usertour will select an element matching both.',
+        "When you can, it's best to target elements by their text. If an element has no text, or its text is too generic, use a CSS selector instead. Fill in both text and a CSS selector and we'll pick an element that matches both.",
       cssSelectorRequired: 'CSS selector is required',
       pickElement: 'Select element in your app',
       pickElementMatches:
         'The selector matches {{count}} elements — choose which one to use below.',
       ifMultipleMatches: 'If multiple matches',
       ifMultipleMatchesTooltip:
-        'If multiple elements match your criteria, you can tell Usertour which of the elements to select. Elements are sorted first by vertical position and second by horizontal position. I.e. an element higher up on the page and more towards the left takes precedence.',
+        "When more than one element matches, you can say which one to pick. Elements are sorted top to bottom first, then left to right — so one that's higher up and further left comes first.",
       selectSequencePlaceholder: 'Select a sequence',
       selectElement: {
         '1': 'select 1st element',
@@ -2818,8 +2818,8 @@ const translations = {
         label: 'Theme',
         edit: 'Edit this theme',
         stepTooltip:
-          'If this step has special requirements, you can use a different theme than the rest of the flow uses. You can design your themes under Settings - Themes.',
-        flowTooltip: 'This is the flow theme that will be used by default in every step',
+          'Need something different for this step? Give it its own theme instead of the one the rest of the flow uses. Design your themes under Settings - Themes.',
+        flowTooltip: 'The theme every step in this flow uses by default',
         sameAsFlow: 'Same as flow theme',
         selectPlaceholder: 'Select',
       },
@@ -2832,7 +2832,7 @@ const translations = {
       addTriggerTooltip: 'Add a trigger',
       editTriggersTooltip: 'Edit triggers ({{total}})',
       triggerTooltipDescription:
-        'Automatically runs an action when its conditions are met — e.g. go to a step, start a flow, or dismiss.',
+        'Runs an action on its own once its conditions are met — like go to a step, start a flow, or dismiss.',
       deleteStepTooltip: 'Delete step',
       deleteConfirmTitle: 'Are you absolutely sure?',
       deleteConfirmDescription:
@@ -2865,7 +2865,7 @@ const translations = {
       skippable: 'Skippable',
       addBackdrop: 'Add backdrop',
       addBackdropTooltipHint:
-        'Adds a semi-transparent layer on top of your app, which only reveals the tooltip and the target element. Use this to force users to interact with the target element.',
+        'Puts a semi-transparent layer over your app that leaves only the tooltip and the target element showing. Use it to make users interact with the target element.',
       addBackdropModalHint:
         'Adds a semi-transparent layer on top of your app, which only reveals the modal.',
       blockTargetClicks: 'Block tooltip target clicks',
@@ -2924,7 +2924,7 @@ const translations = {
     banner: {
       embedPlacement: 'Embed placement',
       embedPlacementTooltip:
-        'Choose where to display the banner: at the top or bottom of the page, or relative to a specific element (inside, before, or after).',
+        'Choose where the banner shows up: at the top or bottom of the page, or next to a specific element (inside, before, or after it).',
       selectPlacement: 'Select placement',
       containerElementSubtitle: 'Container element for banner',
       placement: {
@@ -2939,14 +2939,15 @@ const translations = {
       layout: 'Layout',
       maxEmbedWidth: 'Max. embed width',
       maxEmbedWidthTooltip:
-        'Maximum width of the embed container in pixels. Leave empty for no limit.',
+        'The widest the embed container can get, in pixels. Leave it empty for no limit.',
       maxContentWidth: 'Max. content width',
       maxContentWidthTooltip:
-        'Maximum width of the banner content in pixels. Leave empty for no limit.',
+        'The widest the banner content can get, in pixels. Leave it empty for no limit.',
       borderRadius: 'Border radius',
-      borderRadiusTooltip: 'Corner radius in pixels. Leave empty for default.',
+      borderRadiusTooltip:
+        'How rounded the corners are, in pixels. Leave it empty for the default.',
       outerMargin: 'Outer margin',
-      outerMarginTooltip: 'Margin around the banner (top, right, bottom, left) in pixels.',
+      outerMarginTooltip: 'Space around the banner (top, right, bottom, left), in pixels.',
       none: 'None',
       marginTop: 'Top',
       marginBottom: 'Bottom',
@@ -2956,14 +2957,15 @@ const translations = {
       settingsItems: {
         overlay: 'Overlay over content',
         overlayTooltip:
-          'Controls whether the banner floats above page content or takes up space and pushes it down.',
+          'Whether the banner floats over the page content or takes up its own space and pushes the content down.',
         stickToTop: 'Stick to top',
         stickToTopTooltip:
-          'Makes the banner stay visible at the top while scrolling instead of scrolling away.',
+          'Keeps the banner pinned at the top as you scroll, instead of scrolling away with the page.',
         allowDismiss: 'Allow dismiss',
-        allowDismissTooltip: 'Adds an X button so users can permanently dismiss the banner.',
+        allowDismissTooltip: 'Adds an X button so users can close the banner for good.',
         animate: 'Animate on appear',
-        animateTooltip: 'Slides the banner in with an animation instead of appearing instantly.',
+        animateTooltip:
+          'Slides the banner in with an animation instead of just popping into place.',
       },
       targetElement: 'Target Element',
     },
@@ -2974,7 +2976,7 @@ const translations = {
       addItem: 'Add item',
       initialDisplay: 'Initially show as',
       initialDisplayTooltip:
-        'Whether to show the whole checklist (including its tasks) or just the launcher button when the checklist starts.',
+        'When the checklist starts, show the whole thing (tasks and all) or just the launcher button.',
       expandedChecklist: 'Expanded checklist',
       launcherButton: 'Launcher button',
       selectOption: 'Select an option',
@@ -2982,9 +2984,9 @@ const translations = {
       anyOrder: 'In any order',
       inOrder: 'In order',
       preventDismissal: 'Prevent dismissal',
-      preventDismissalTooltip: 'Prevent users from dismissing the checklist.',
+      preventDismissalTooltip: "Don't let users dismiss the checklist.",
       autoDismiss: 'Auto-dismiss checklist',
-      autoDismissTooltip: 'Automatically dismiss the checklist when all tasks are completed.',
+      autoDismissTooltip: 'Close the checklist on its own once every task is done.',
       item: 'Checklist Item',
       itemName: 'Name',
       itemDescription: 'Optional text below task name',
@@ -3008,7 +3010,7 @@ const translations = {
       blocksOf: '"{{name}}" blocks',
       tabs: 'Tabs',
       tabsTooltip:
-        'If a tab contains only one navigable block (such as Sub-page or List of flows/checklists), its detail view will be displayed directly without requiring a click.',
+        "If a tab has just one navigable block (like a Sub-page or a List of flows/checklists), it opens straight to that block's detail view — no extra click needed.",
       addTab: 'Add tab',
       untitledTab: 'Untitled tab',
       tabSettings: 'Tab settings',
@@ -3046,11 +3048,14 @@ const translations = {
       whenClicked: 'When block is clicked',
       contentListBlock: 'List of flows/checklists',
       defaultFlowIcon: 'Default icon for flows',
-      defaultFlowIconTooltip: 'Icon shown for flow items unless overridden per item.',
+      defaultFlowIconTooltip:
+        'The icon used for flow items, unless you set a different one on an individual item.',
       defaultChecklistIcon: 'Default icon for checklists',
-      defaultChecklistIconTooltip: 'Icon shown for checklist items unless overridden per item.',
+      defaultChecklistIconTooltip:
+        'The icon used for checklist items, unless you set a different one on an individual item.',
       contentLabel: 'Content',
-      contentTooltip: 'Only flows and checklists can be added. Click an item to edit its settings.',
+      contentTooltip:
+        'You can only add flows and checklists here. Click an item to edit its settings.',
       remove: 'Remove',
       add: 'Add',
       searchContentPlaceholder: 'Search flow/checklist...',
@@ -3063,10 +3068,10 @@ const translations = {
       showSearchField: 'Show search field',
       customItemIcon: 'Custom icon for this item',
       customItemIconTooltip:
-        'Override the default icon for this item. Select "Default" to use the block default.',
+        'Use a different icon just for this item. Pick "Default" to fall back to the block\'s icon.',
       navigateUrl: 'Navigate to URL when clicked',
       navigateUrlTooltip:
-        'Navigate the user to this URL when the item is clicked. Supports user attributes.',
+        'Send the user to this URL when they click the item. You can use user attributes here.',
       onlyListItem: 'Only list item if...',
       done: 'Done',
       liveChat: {
