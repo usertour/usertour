@@ -1,5 +1,5 @@
 import { RiCrosshair2Line, SpinnerIcon } from '@usertour/icons';
-import { Button } from '@usertour/ui';
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { useState } from 'react';
 import { type PickElementResult, useElementPicker } from './element-picker-context';
 
@@ -39,21 +39,27 @@ export const PickElementButton = (props: PickElementButtonProps) => {
   };
 
   return (
-    <Button
-      type="button"
-      variant="compact-outline"
-      size="compact-icon-lg"
-      className="shrink-0"
-      onClick={handleClick}
-      disabled={isPicking}
-      title={label}
-      aria-label={label}
-    >
-      {isPicking ? (
-        <SpinnerIcon className="h-4 w-4 animate-spin" />
-      ) : (
-        <RiCrosshair2Line className="h-4 w-4" />
-      )}
-    </Button>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="compact-outline"
+            size="compact-icon-lg"
+            className="shrink-0"
+            onClick={handleClick}
+            disabled={isPicking}
+            aria-label={label}
+          >
+            {isPicking ? (
+              <SpinnerIcon className="h-4 w-4 animate-spin" />
+            ) : (
+              <RiCrosshair2Line className="h-4 w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
