@@ -2452,6 +2452,7 @@ const translations = {
         placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
         tooltip:
           'Raw CSS injected into every widget (tooltips, modals, checklists, banners, resource center). Use it for @font-face rules backing the custom font, or for advanced style overrides. Widget internals may change between releases, so keep selectors as simple as possible.',
+        docsLink: 'Learn about custom fonts & CSS',
       },
       buttons: {
         height: 'Height',
@@ -2648,6 +2649,7 @@ const translations = {
       urlInvalid: 'Enter a valid URL',
       urlCancel: 'Cancel',
       urlConfirm: 'Open and pick',
+      learnMore: 'Learn how to pick stable elements',
     },
     editor: {
       button: {

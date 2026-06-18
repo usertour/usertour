@@ -2320,6 +2320,7 @@ const translations = {
         placeholder: '@font-face {\n  font-family: "My Brand Sans";\n  src: url(...);\n}',
         tooltip:
           '原样注入每个 widget(tooltip、modal、checklist、banner、资源中心)的 CSS。可用于声明自定义字体的 @font-face,也可做高级样式覆写。widget 内部结构可能随版本变化,选择器请尽量保持简单。',
+        docsLink: '了解自定义字体和 CSS',
       },
       buttons: {
         height: '高度',
@@ -2516,6 +2517,7 @@ const translations = {
       urlInvalid: '请输入有效的 URL',
       urlCancel: '取消',
       urlConfirm: '打开并选取',
+      learnMore: '了解如何稳定地选择元素',
     },
     editor: {
       button: {

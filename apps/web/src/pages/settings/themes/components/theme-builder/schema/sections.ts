@@ -1295,6 +1295,7 @@ export const builderSections: BuilderSection[] = [
         label: 'themeBuilder.fields.customCss.label',
         placeholder: 'themeBuilder.fields.customCss.placeholder',
         tooltip: 'themeBuilder.fields.customCss.tooltip',
+        docsHref: 'https://docs.usertour.io/how-to-guides/custom-fonts-and-css',
         requiresCustomCss: true,
       },
     ],
