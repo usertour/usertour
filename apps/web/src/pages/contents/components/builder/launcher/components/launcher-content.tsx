@@ -20,6 +20,7 @@ import {
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
 import { useAttributeList } from '@/hooks/use-attribute-list';
+import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 export interface LauncherContentProps {
   zIndex: number;
   triggerRef?: React.RefObject<any> | undefined;
@@ -37,6 +38,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
     const projectId = useProjectId();
 
     const { attributeList } = useAttributeList();
+    const getOembedInfo = useOembedInfo();
     const triggerReference = useMemo(
       () => (data.tooltip.reference === LauncherPositionType.TARGET ? triggerRef : launcherRef),
       [data.tooltip.reference, triggerRef],
@@ -67,6 +69,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
                       : getEmptyDataForType()
                   }
                   onValueChange={onValueChange}
+                  getOembedInfo={getOembedInfo}
                 />
                 {shouldShowMadeWith && <PopperMadeWith />}
               </LauncherPopperContent>

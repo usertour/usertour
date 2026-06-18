@@ -32,6 +32,7 @@ import {
   useProjectId,
 } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
+import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
 import { useAws } from '@usertour/hooks';
 
@@ -70,6 +71,7 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
   const { upload } = useAws();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
+  const getOembedInfo = useOembedInfo();
 
   // Build subPageEditSlot for the currently active sub-page
   const subPageEditSlot = useMemo(() => {
@@ -97,9 +99,10 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
         projectId={projectId}
         attributes={attributeList}
         enabledElementTypes={ENABLED_ELEMENT_TYPES}
+        getOembedInfo={getOembedInfo}
       />
     );
-  }, [currentPage, localData, upload, updateBlock, projectId, attributeList]);
+  }, [currentPage, localData, upload, updateBlock, projectId, attributeList, getOembedInfo]);
 
   return (
     <>
@@ -125,6 +128,7 @@ export const ResourceCenterEmbed = () => {
   const projectId = useProjectId();
   const environmentId = useEnvironmentId();
   const { attributeList } = useAttributeList();
+  const getOembedInfo = useOembedInfo();
   const { t } = useTranslation();
 
   // Query flows and checklists for content list block preview
@@ -199,13 +203,14 @@ export const ResourceCenterEmbed = () => {
               projectId={projectId}
               attributes={attributeList}
               enabledElementTypes={ENABLED_ELEMENT_TYPES}
+              getOembedInfo={getOembedInfo}
             />
           );
         }
       }
     }
     return slots;
-  }, [localData, upload, updateBlock, projectId, attributeList]);
+  }, [localData, upload, updateBlock, projectId, attributeList, getOembedInfo]);
 
   if (!theme) {
     return null;

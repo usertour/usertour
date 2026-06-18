@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useProjectId } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
+import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useAws } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
 import { BrowserPreview } from '@/pages/contents/components/builder/banner/components/browser-preview';
@@ -88,6 +89,7 @@ export const BannerEmbed = () => {
   const { upload } = useAws();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
+  const getOembedInfo = useOembedInfo();
   const { contents: contentList } = useContentList();
 
   const wrapperRect = useSize(wrapperEl);
@@ -138,6 +140,7 @@ export const BannerEmbed = () => {
         enabledElementTypes={ENABLED_ELEMENT_TYPES}
         actionItems={ACTION_ITEMS}
         contentList={contentList}
+        getOembedInfo={getOembedInfo}
       />
     </BannerPreview>
   );
