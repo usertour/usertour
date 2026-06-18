@@ -1,15 +1,15 @@
 import { lazy, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react';
 import {
-  AccountIcon,
-  AttributeIcon,
-  BankCardIcon,
-  BoxIcon,
-  ColorIcon,
-  FlashlightIcon,
-  KeyIcon,
-  PlugIcon,
-  ProjectIcon,
-  TeamIcon,
+  RiAccountCircle2Line,
+  RiArticleLine,
+  RiBankCardLine,
+  RiBox1Line,
+  RiFlashlightLine,
+  RiKey2Line,
+  RiPaletteLine,
+  RiProjectorLine,
+  RiPuzzleLine,
+  RiTeamLine,
 } from '@usertour/icons';
 import { Capability, type GlobalConfig } from '@usertour/types';
 
@@ -97,7 +97,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'general',
     title: 'Project',
-    icon: <ProjectIcon className={ICON_CLASS} />,
+    icon: <RiProjectorLine className={ICON_CLASS} />,
     capability: Capability.ProjectManage,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -109,7 +109,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'themes',
     title: 'Themes',
-    icon: <ColorIcon className={ICON_CLASS} />,
+    icon: <RiPaletteLine className={ICON_CLASS} />,
     capability: Capability.ThemeRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -120,7 +120,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'environments',
     title: 'Environments',
-    icon: <BoxIcon className={ICON_CLASS} />,
+    icon: <RiBox1Line className={ICON_CLASS} />,
     capability: Capability.EnvironmentRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -131,7 +131,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'attributes',
     title: 'Attributes',
-    icon: <AttributeIcon className={ICON_CLASS} />,
+    icon: <RiArticleLine className={ICON_CLASS} />,
     capability: Capability.AttributeRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -142,7 +142,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'events',
     title: 'Events',
-    icon: <FlashlightIcon className={ICON_CLASS} />,
+    icon: <RiFlashlightLine className={ICON_CLASS} />,
     capability: Capability.EventRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -153,7 +153,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'localizations',
     title: 'Localization',
-    icon: <ColorIcon className={ICON_CLASS} />,
+    icon: <RiPaletteLine className={ICON_CLASS} />,
     capability: Capability.LocalizationRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -165,7 +165,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'team',
     title: 'Team',
-    icon: <TeamIcon className={ICON_CLASS} />,
+    icon: <RiTeamLine className={ICON_CLASS} />,
     capability: Capability.TeamRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -176,7 +176,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'billing',
     title: 'Billing',
-    icon: <BankCardIcon className={ICON_CLASS} />,
+    icon: <RiBankCardLine className={ICON_CLASS} />,
     capability: Capability.BillingRead,
     group: 'general',
     mode: [SettingsMode.CLOUD],
@@ -187,7 +187,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'subscription',
     title: 'Subscription',
-    icon: <BankCardIcon className={ICON_CLASS} />,
+    icon: <RiBankCardLine className={ICON_CLASS} />,
     capability: Capability.BillingRead,
     group: 'general',
     mode: [SettingsMode.SELF_HOSTED],
@@ -199,7 +199,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'account',
     title: 'Account',
-    icon: <AccountIcon className={ICON_CLASS} />,
+    icon: <RiAccountCircle2Line className={ICON_CLASS} />,
     // Personal account settings — not project-scoped, always visible.
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -211,7 +211,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'api',
     title: 'API',
-    icon: <KeyIcon className={ICON_CLASS} />,
+    icon: <RiKey2Line className={ICON_CLASS} />,
     capability: Capability.AccessTokenRead,
     group: 'developer',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
@@ -220,7 +220,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'integrations',
     title: 'Integrations',
-    icon: <PlugIcon className={ICON_CLASS} />,
+    icon: <RiPuzzleLine className={ICON_CLASS} />,
     capability: Capability.IntegrationRead,
     group: 'developer',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],

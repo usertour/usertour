@@ -1,10 +1,11 @@
 // Popover form content for multiple choice editor
 
 import {
+  BooleanField,
   Button,
   Input,
   Label,
-  Switch,
+  TextField,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -66,14 +67,16 @@ export const MultipleChoicePopoverContent = memo(
         localData.options.map((option, index) => (
           <div key={index} className="flex gap-2">
             <Input
+              variant="compact-surface"
               value={option.value ?? ''}
               onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-              placeholder="Value"
+              placeholder={t('contentBuilder.editor.multipleChoice.optionValue')}
             />
             <Input
+              variant="compact-surface"
               value={option.label ?? ''}
               onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-              placeholder="Option label"
+              placeholder={t('contentBuilder.editor.multipleChoice.optionLabel')}
             />
             <TooltipProvider>
               <Tooltip>
@@ -87,27 +90,26 @@ export const MultipleChoicePopoverContent = memo(
                     <DeleteIcon className="fill-destructive" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">Remove option</TooltipContent>
+                <TooltipContent className="max-w-xs">
+                  {t('contentBuilder.editor.multipleChoice.removeOption')}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
         )),
-      [localData.options, handleOptionChange, handleRemoveOption],
+      [localData.options, handleOptionChange, handleRemoveOption, t],
     );
 
     return (
       <div className="flex flex-col gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="question-name">Question name</Label>
-          <Input
-            id="question-name"
-            value={localData.name || ''}
-            onChange={(e) => handleDataChange({ name: e.target.value })}
-            placeholder="Enter question name"
-          />
-        </div>
+        <TextField
+          label={t('contentBuilder.editor.question.name')}
+          value={localData.name || ''}
+          onChange={(value) => handleDataChange({ name: value })}
+          placeholder={t('contentBuilder.editor.multipleChoice.namePlaceholder')}
+        />
 
-        <Label>When answer is submitted</Label>
+        <Label>{t('contentBuilder.editor.question.whenSubmitted')}</Label>
         <Actions
           baseZIndex={zIndex}
           currentStep={currentStep}
@@ -121,86 +123,74 @@ export const MultipleChoicePopoverContent = memo(
         />
 
         <div className="space-y-2">
-          <Label>Options</Label>
+          <Label>{t('contentBuilder.editor.multipleChoice.options')}</Label>
           {optionsList}
           <Button onClick={handleAddOption} size="sm" variant="link" className="hover:no-underline">
             <PlusIcon width={16} height={16} />
-            Add answer option
+            {t('contentBuilder.editor.multipleChoice.addOption')}
           </Button>
         </div>
 
         {localData.allowMultiple && (
           <>
-            <Label className="flex items-center gap-1">Number of options required</Label>
+            <Label className="flex items-center gap-1">
+              {t('contentBuilder.editor.multipleChoice.numberRequired')}
+            </Label>
             <div className="flex flex-row gap-2 items-center">
               <Input
+                variant="compact-surface"
                 type="number"
                 value={localData.lowRange ?? ''}
-                placeholder="Default"
+                placeholder={t('contentBuilder.editor.question.defaultLabel')}
                 onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
               />
               <p>-</p>
               <Input
+                variant="compact-surface"
                 type="number"
                 value={localData.highRange ?? ''}
-                placeholder="Default"
+                placeholder={t('contentBuilder.editor.question.defaultLabel')}
                 onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="button-text">Submit button text</Label>
-              <Input
-                id="button-text"
-                value={localData.buttonText ?? ''}
-                onChange={(e) => handleDataChange({ buttonText: e.target.value })}
-                placeholder="Enter button text"
-              />
-            </div>
+            <TextField
+              label={t('contentBuilder.editor.multipleChoice.submitButton')}
+              value={localData.buttonText ?? ''}
+              onChange={(value) => handleDataChange({ buttonText: value })}
+              placeholder={t('contentBuilder.editor.multipleChoice.submitButtonPlaceholder')}
+            />
           </>
         )}
 
         <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="shuffle"
-              checked={localData.shuffleOptions}
-              className="data-[state=unchecked]:bg-muted"
-              onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
-            />
-            <Label htmlFor="shuffle">Shuffle option order</Label>
-          </div>
+          <BooleanField
+            label={t('contentBuilder.editor.multipleChoice.shuffle')}
+            checked={localData.shuffleOptions}
+            onChange={(checked) => handleDataChange({ shuffleOptions: checked })}
+          />
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="other"
-              checked={localData.enableOther}
-              className="data-[state=unchecked]:bg-muted"
-              onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
-            />
-            <Label htmlFor="other">Enable "Other" option</Label>
-          </div>
+          <BooleanField
+            label={t('contentBuilder.editor.multipleChoice.enableOther')}
+            checked={localData.enableOther}
+            onChange={(checked) => handleDataChange({ enableOther: checked })}
+          />
 
           {localData.enableOther && (
-            <div className="space-y-2 ml-8">
-              <Label htmlFor="other-placeholder">Other option placeholder</Label>
-              <Input
-                id="other-placeholder"
+            <div className="ml-8">
+              <TextField
+                label={t('contentBuilder.editor.multipleChoice.otherPlaceholder')}
                 value={localData.otherPlaceholder || ''}
-                onChange={(e) => handleDataChange({ otherPlaceholder: e.target.value })}
-                placeholder="Other..."
+                onChange={(value) => handleDataChange({ otherPlaceholder: value })}
+                placeholder={t('contentBuilder.editor.multipleChoice.otherPlaceholderHint')}
               />
             </div>
           )}
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="multiple"
-              checked={localData.allowMultiple}
-              className="data-[state=unchecked]:bg-muted"
-              onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
-            />
-            <Label htmlFor="multiple">Allow multiple selection</Label>
-          </div>
+          <BooleanField
+            label={t('contentBuilder.editor.multipleChoice.allowMultiple')}
+            checked={localData.allowMultiple}
+            onChange={(checked) => handleDataChange({ allowMultiple: checked })}
+          />
 
           <BindAttribute
             zIndex={zIndex}

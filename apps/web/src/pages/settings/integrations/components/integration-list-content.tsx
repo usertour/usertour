@@ -53,7 +53,7 @@ const IntegrationCard = ({
   }, [integration.needsConnect, isEnabled, loading, t]);
 
   return (
-    <li className="cursor-default rounded-lg bg-background px-4 py-6 text-sm shadow-sm">
+    <li className="cursor-default rounded-lg bg-background dark:bg-card px-4 py-6 text-sm shadow-sm">
       <div className="flex items-center justify-between">
         <img
           className="bg-accent object-cover data-[loaded]:bg-transparent h-8 w-8 rounded-lg border border-accent-light"
@@ -136,7 +136,7 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
               />
             </div>
           </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">
+          <div className="mt-4 text-center text-lg/6 font-medium">
             {t('settings.integrations.salesforce.connectTitle', { name: integration.name })}
           </div>
         </DialogTitle>

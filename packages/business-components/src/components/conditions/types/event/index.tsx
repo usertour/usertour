@@ -147,14 +147,14 @@ function EventSummary({ condition }: { condition: RulesCondition }) {
     <span className="inline-flex min-w-0 items-center gap-2">
       <EventTrackerIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <span className={summaryTextClass}>
-        <span className="font-semibold">{eventName}</span>{' '}
+        <span className="font-medium">{eventName}</span>{' '}
         <span className="text-muted-foreground">{countLogicLabel}</span>{' '}
-        <span className="font-semibold">{count}</span>
+        <span className="font-medium">{count}</span>
         {data.countLogic === EventCountLogic.BETWEEN && (
           <>
             {' '}
             <span className="text-muted-foreground">{t('conditions.operators.and')}</span>{' '}
-            <span className="font-semibold">{data.count2 ?? 0}</span>
+            <span className="font-medium">{data.count2 ?? 0}</span>
           </>
         )}{' '}
         <span className="text-muted-foreground">{timesLabel},</span>{' '}
@@ -231,7 +231,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
               options={countLogicOptions}
             />
             <Input
-              variant="compact"
+              variant="compact-surface"
               type="number"
               min={0}
               value={data.count ?? ''}
@@ -250,7 +250,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
                   {t('conditions.operators.and')}
                 </span>
                 <Input
-                  variant="compact"
+                  variant="compact-surface"
                   type="number"
                   min={0}
                   value={data.count2 ?? ''}
@@ -281,7 +281,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
             {showTimeInputs && (
               <>
                 <Input
-                  variant="compact"
+                  variant="compact-surface"
                   type="number"
                   min={0}
                   value={data.windowValue ?? ''}
@@ -300,7 +300,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
                       {t('conditions.operators.and')}
                     </span>
                     <Input
-                      variant="compact"
+                      variant="compact-surface"
                       type="number"
                       min={0}
                       value={data.windowValue2 ?? ''}

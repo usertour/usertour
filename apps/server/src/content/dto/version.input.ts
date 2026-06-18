@@ -1,6 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
+import { StepInput } from './step.input';
 
 @InputType()
 export class VersionInput {
@@ -15,6 +16,12 @@ export class VersionInput {
 
   @Field(() => Date, { nullable: true })
   scheduledAt?: Date;
+
+  // Optional. When present, the whole step list is upserted by cvid
+  // (create / update / delete + resequence) — the builder's save path.
+  // detail omits it and only touches the scalar fields above.
+  @Field(() => [StepInput], { nullable: true })
+  steps?: StepInput[];
 }
 
 @InputType()

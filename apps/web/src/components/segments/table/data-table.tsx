@@ -24,6 +24,7 @@ import { cn } from '@usertour/tailwind';
 import { DataTableProps, TableStyles } from './types';
 import { EmptyPlaceholder } from '../ui';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Helper function to build skeleton table
 const renderSkeletonRow = (columns: any[], rowIndex: number) => (
@@ -55,10 +56,13 @@ export function DataTable<TData>({
   columnFilters,
   onColumnFiltersChange,
   onRowClick,
-  emptyMessage = 'No results found',
-  emptyDescription = 'Try adjusting your filters or search terms',
+  emptyMessage,
+  emptyDescription,
   className,
 }: DataTableProps<TData>) {
+  const { t } = useTranslation();
+  const resolvedEmptyMessage = emptyMessage ?? t('dataTable.emptyMessage');
+  const resolvedEmptyDescription = emptyDescription ?? t('dataTable.emptyDescription');
   // Memoize table state to prevent unnecessary re-renders
   const tableState = React.useMemo(
     () => ({
@@ -184,7 +188,10 @@ export function DataTable<TData>({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                <EmptyPlaceholder name={emptyMessage} description={emptyDescription}>
+                <EmptyPlaceholder
+                  name={resolvedEmptyMessage}
+                  description={resolvedEmptyDescription}
+                >
                   <div />
                 </EmptyPlaceholder>
               </TableCell>

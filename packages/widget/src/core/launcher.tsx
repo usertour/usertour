@@ -386,7 +386,12 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     ...floatingStyles,
     zIndex,
     transform: isPositioned ? floatingStyles.transform : 'translate(0, -200%)',
-    opacity: isPositioned ? '1' : '0',
+    // Pre-positioning hide must NOT use opacity: this element is also the
+    // .usertour-widget-launcher--icon, whose theme opacity lives in a class
+    // (`opacity: var(--usertour-widget-launcher-icon-opacity)`). An inline
+    // opacity here would override it and the theme transparency would never
+    // apply. Hide with visibility instead (matches popper.tsx's hide).
+    visibility: (isPositioned ? 'visible' : 'hidden') as 'visible' | 'hidden',
     ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : {}),
   };
 

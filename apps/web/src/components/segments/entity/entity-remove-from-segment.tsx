@@ -12,11 +12,10 @@ interface EntityRemoveFromSegmentProps {
   config: EntityConfig<any>;
   table: Table<any>;
   currentSegment: Segment;
-  refetch: () => Promise<unknown>;
 }
 
 export const EntityRemoveFromSegment = (props: EntityRemoveFromSegmentProps) => {
-  const { config, table, currentSegment, refetch } = props;
+  const { config, table, currentSegment } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
@@ -30,15 +29,8 @@ export const EntityRemoveFromSegment = (props: EntityRemoveFromSegmentProps) => 
     }
   }, [collectSelectedIds, hasSelection]);
 
-  const handleSubmit = useCallback(
-    async (success: boolean) => {
-      if (success) {
-        await refetch();
-      }
-    },
-    [refetch],
-  );
-
+  // The remove-from-segment mutation carries refetchQueries for the entity
+  // list, so the table refreshes without an onSubmit refetch here.
   return (
     <>
       <Button variant="ghost" className="h-8 px-2" onClick={handleOnClick}>
@@ -51,7 +43,6 @@ export const EntityRemoveFromSegment = (props: EntityRemoveFromSegmentProps) => 
         ids={bizIds}
         segment={currentSegment}
         onOpenChange={setOpenDelete}
-        onSubmit={handleSubmit}
       />
     </>
   );

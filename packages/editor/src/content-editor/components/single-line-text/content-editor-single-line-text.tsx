@@ -3,6 +3,7 @@
 import * as Widget from '@usertour/widget';
 import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ContentEditorSingleLineTextElement } from '../../../types/editor';
 import { BindAttribute } from '../../shared/bind-attribute';
@@ -20,6 +21,7 @@ export interface ContentEditorSingleLineTextProps {
 
 export const ContentEditorSingleLineText = memo((props: ContentEditorSingleLineTextProps) => {
   const { element, id } = props;
+  const { t } = useTranslation();
 
   // Render the display component (trigger for popover)
   const renderDisplay = useCallback(
@@ -28,7 +30,7 @@ export const ContentEditorSingleLineText = memo((props: ContentEditorSingleLineT
         <Widget.Input
           placeholder={localData.placeholder || DEFAULT_PLACEHOLDER}
           className="grow h-auto"
-          aria-label="Single-line text input preview"
+          aria-label={t('contentBuilder.editor.textInput.singleLinePreviewLabel')}
           readOnly
         />
         <div className="flex justify-end w-full">
@@ -38,7 +40,7 @@ export const ContentEditorSingleLineText = memo((props: ContentEditorSingleLineT
         </div>
       </div>
     ),
-    [],
+    [t],
   );
 
   // Render the popover content

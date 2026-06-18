@@ -1,8 +1,8 @@
-import { Field, InputType, OmitType, PartialType } from '@nestjs/graphql';
+import { Field, InputType, PartialType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { IsNotEmpty } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
-import { Step, StepSettingModel, TargetModel } from '../models/step.model';
+import { StepSettingModel, TargetModel } from '../models/step.model';
 
 @InputType()
 export class SettingInput extends PartialType(StepSettingModel, InputType) {}
@@ -15,6 +15,12 @@ export class StepInput {
   @Field({ nullable: true })
   @IsNotEmpty()
   id?: string;
+
+  // Front-end-generated logical id (cuid). What triggers/actions reference, and
+  // the upsert key for the whole-version save. Distinct from the DB primary key
+  // `id` (server-generated). Required when steps are sent via updateContentVersion.
+  @Field({ nullable: true })
+  cvid?: string;
 
   @Field({ nullable: true })
   @IsNotEmpty()
@@ -50,15 +56,3 @@ export class StepInput {
   @Field(() => GraphQLJSON, { nullable: true })
   target?: JsonValue;
 }
-
-@InputType()
-export class CreateStepInput extends OmitType(
-  Step,
-  ['id', 'createdAt', 'updatedAt', 'cvid'],
-  InputType,
-) {}
-
-@InputType()
-export class UpdateStepInput extends PartialType(
-  OmitType(Step, ['id', 'createdAt', 'updatedAt', 'cvid'], InputType),
-) {}

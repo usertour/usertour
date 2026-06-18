@@ -8,10 +8,14 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-background text-foreground',
+        default: 'bg-background dark:bg-card text-foreground',
         destructive:
           'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
         warning: 'border-warning/50 text-warning dark:border-warning [&>svg]:text-warning',
+        // Tinted informational note. --info is registered without
+        // <alpha-value> in the tailwind config, so opacity modifiers like
+        // bg-info/10 don't resolve — use arbitrary hsl()/alpha values.
+        info: 'border-transparent bg-[hsl(var(--info)/0.07)] dark:bg-[hsl(var(--info)/0.15)] text-foreground [&>svg]:text-info',
       },
     },
     defaultVariants: {

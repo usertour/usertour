@@ -16,10 +16,17 @@ const ComboboxValue = (props: ComboboxValueProps) => (
   <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
 );
 
-export type ComboboxTriggerProps = ComboboxPrimitive.Trigger.Props;
+export type ComboboxTriggerProps = ComboboxPrimitive.Trigger.Props & {
+  /**
+   * Trailing icon. Defaults to a chevron (the input-trigger affordance);
+   * pass an up/down caret to align a button-trigger select with the rest
+   * of the field controls (CompactSelect / ConditionCombobox).
+   */
+  endIcon?: React.ReactNode;
+};
 
 const ComboboxTrigger = (props: ComboboxTriggerProps) => {
-  const { className, children, ...rest } = props;
+  const { className, children, endIcon, ...rest } = props;
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
@@ -27,10 +34,12 @@ const ComboboxTrigger = (props: ComboboxTriggerProps) => {
       {...rest}
     >
       {children}
-      <IconChevronDown
-        data-slot="combobox-trigger-icon"
-        className="text-muted-foreground pointer-events-none size-4"
-      />
+      {endIcon ?? (
+        <IconChevronDown
+          data-slot="combobox-trigger-icon"
+          className="text-muted-foreground pointer-events-none size-4"
+        />
+      )}
     </ComboboxPrimitive.Trigger>
   );
 };
@@ -95,6 +104,12 @@ export type ComboboxContentProps = ComboboxPrimitive.Popup.Props &
   > & {
     positionerClassName?: string;
     positionerStyle?: React.CSSProperties;
+    /**
+     * Portal mount target. Pass a node inside a Radix Dialog so the popup
+     * lands within react-remove-scroll's allow-tree — a body-portaled popup
+     * is dead to pointer + wheel inside a Dialog. Defaults to document.body.
+     */
+    container?: ComboboxPrimitive.Portal.Props['container'];
   };
 
 const ComboboxContent = (props: ComboboxContentProps) => {
@@ -108,10 +123,11 @@ const ComboboxContent = (props: ComboboxContentProps) => {
     style,
     positionerClassName,
     positionerStyle,
+    container,
     ...rest
   } = props;
   return (
-    <ComboboxPrimitive.Portal>
+    <ComboboxPrimitive.Portal container={container}>
       <ComboboxPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -125,7 +141,7 @@ const ComboboxContent = (props: ComboboxContentProps) => {
           data-slot="combobox-content"
           data-chips={!!anchor}
           className={cn(
-            'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:border-input/30 group/combobox-content relative max-h-96 w-[var(--anchor-width)] max-w-[var(--available-width)] min-w-[calc(var(--anchor-width)+1.75rem)] origin-[var(--transform-origin)] overflow-hidden rounded-md shadow-md ring-1 duration-100 data-[chips=true]:min-w-[var(--anchor-width)] *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:shadow-none',
+            'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:ring-foreground/10 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:border-input/30 group/combobox-content relative max-h-96 w-[var(--anchor-width)] max-w-[var(--available-width)] min-w-[calc(var(--anchor-width)+1.75rem)] origin-[var(--transform-origin)] overflow-hidden rounded-md shadow-popper dark:shadow-none dark:ring-1 duration-100 data-[chips=true]:min-w-[var(--anchor-width)] *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:shadow-none',
             className,
           )}
           style={style}
@@ -245,7 +261,7 @@ const ComboboxChips = (props: ComboboxChipsProps) => {
     <ComboboxPrimitive.Chips
       data-slot="combobox-chips"
       className={cn(
-        'dark:bg-input/30 border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive dark:has-aria-invalid:border-destructive/50 flex min-h-9 flex-wrap gap-1.5 rounded-md border bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] has-aria-invalid:ring-[3px] has-data-[slot=combobox-chip]:px-1.5',
+        'dark:bg-surface-raised/50 border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive dark:has-aria-invalid:border-destructive/50 flex min-h-9 flex-wrap gap-1.5 rounded-md border bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] has-aria-invalid:ring-[3px] has-data-[slot=combobox-chip]:px-1.5',
         className,
       )}
       {...rest}

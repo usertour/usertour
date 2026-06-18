@@ -82,7 +82,7 @@ export const AccountTwoFactor = () => {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <h3 className="flex items-center gap-1.5 text-xl font-semibold tracking-tight">
+          <h3 className="flex items-center gap-1.5 text-xl font-medium tracking-tight">
             {t('twoFactor.title')}
             {!featureAvailable && (
               <TooltipProvider delayDuration={150}>

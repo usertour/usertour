@@ -2,8 +2,17 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SelectPopover, Input, Label, Popover, PopoverArrow, PopoverContent } from '@usertour/ui';
+import {
+  CompactSelect,
+  Input,
+  Label,
+  Popover,
+  PopoverArrow,
+  PopoverContent,
+  SelectField,
+} from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
+import { useTranslation } from 'react-i18next';
 import { useComposedRefs } from '@usertour/react-compose-refs';
 import { cn } from '@usertour/tailwind';
 import { PADDING_KEY_MAPPING } from '@usertour/widget';
@@ -20,12 +29,12 @@ import {
 } from '../../../types/editor';
 import {
   ACTIVE_CLASSES,
-  ALIGN_ITEMS_OPTIONS_LIST,
+  ALIGN_ITEMS_OPTIONS,
   COLUMN_WIDTH_TYPE_OPTIONS,
   DEFAULT_ALIGN_ITEMS,
   DEFAULT_JUSTIFY_CONTENT,
   HOVER_CLASSES,
-  JUSTIFY_CONTENT_OPTIONS_LIST,
+  JUSTIFY_CONTENT_OPTIONS,
   WIDTH_TYPES,
 } from '../../constants';
 import { PaddingControls } from '../../shared';
@@ -49,6 +58,40 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   const { element, children, path, id, className } = props;
   const { zIndex, deleteColumn, insertColumnInGroup, updateElement, activeId } =
     useContentEditorContext();
+  const { t } = useTranslation();
+  // Width-unit options (%, pixels, fill) are bare units, not worth translating,
+  // so COLUMN_WIDTH_TYPE_OPTIONS is passed straight through below. The
+  // distribute/align options are user-facing layout choices, so they get i18n
+  // labels instead.
+  const distributeOptions = [
+    { value: JUSTIFY_CONTENT_OPTIONS.START, label: t('contentBuilder.editor.column.justifyLeft') },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.CENTER,
+      label: t('contentBuilder.editor.column.justifyCenter'),
+    },
+    { value: JUSTIFY_CONTENT_OPTIONS.END, label: t('contentBuilder.editor.column.justifyRight') },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.BETWEEN,
+      label: t('contentBuilder.editor.column.justifyBetween'),
+    },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.EVENLY,
+      label: t('contentBuilder.editor.column.justifyEvenly'),
+    },
+    {
+      value: JUSTIFY_CONTENT_OPTIONS.AROUND,
+      label: t('contentBuilder.editor.column.justifyAround'),
+    },
+  ];
+  const alignOptions = [
+    { value: ALIGN_ITEMS_OPTIONS.START, label: t('contentBuilder.editor.column.alignTop') },
+    { value: ALIGN_ITEMS_OPTIONS.CENTER, label: t('contentBuilder.editor.column.alignCenter') },
+    { value: ALIGN_ITEMS_OPTIONS.END, label: t('contentBuilder.editor.column.alignBottom') },
+    {
+      value: ALIGN_ITEMS_OPTIONS.BASELINE,
+      label: t('contentBuilder.editor.column.alignBaseline'),
+    },
+  ];
   const {
     attributes,
     listeners,
@@ -210,49 +253,48 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
       </div>
       {isActive && (
         <PopoverContent
-          className="shadow-none drop-shadow-popover"
+          className="bg-card shadow-none drop-shadow-popover"
           side="left"
           style={{ zIndex }}
           sideOffset={5}
         >
           <div className="flex flex-col gap-2.5">
-            <Label>Column width</Label>
+            <Label>{t('contentBuilder.editor.column.width')}</Label>
             <div className="flex gap-x-2">
               {width.type !== WIDTH_TYPES.FILL && (
                 <Input
+                  variant="compact-surface"
                   type="number"
                   value={width.value?.toString() ?? ''}
-                  placeholder="Column width"
+                  placeholder={t('contentBuilder.editor.column.width')}
                   onChange={handleWidthValueChange}
-                  className="bg-background flex-none w-[120px]"
+                  className="flex-none w-[120px]"
                 />
               )}
-              <SelectPopover
+              <CompactSelect
                 options={COLUMN_WIDTH_TYPE_OPTIONS}
                 value={width.type}
-                onValueChange={handleWidthTypeChange}
-                placeholder="Select width type"
-                className="shrink"
+                onChange={handleWidthTypeChange}
+                placeholder={t('contentBuilder.editor.width.selectType')}
+                className="shrink bg-surface-raised dark:bg-surface-raised/50"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
             </div>
 
-            <Label>Distribute content</Label>
-            <SelectPopover
-              options={JUSTIFY_CONTENT_OPTIONS_LIST}
+            <SelectField
+              label={t('contentBuilder.editor.column.distribute')}
+              options={distributeOptions}
               value={element.justifyContent ?? DEFAULT_JUSTIFY_CONTENT}
-              onValueChange={handleDistributeValueChange}
-              placeholder="Select a distribute"
-              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              onChange={handleDistributeValueChange}
+              zIndex={zIndex + EDITOR_SELECT}
             />
 
-            <Label>Align Items</Label>
-            <SelectPopover
-              options={ALIGN_ITEMS_OPTIONS_LIST}
+            <SelectField
+              label={t('contentBuilder.editor.column.align')}
+              options={alignOptions}
               value={element.alignItems ?? DEFAULT_ALIGN_ITEMS}
-              onValueChange={handleAlignValueChange}
-              placeholder="Select align items"
-              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              onChange={handleAlignValueChange}
+              zIndex={zIndex + EDITOR_SELECT}
             />
 
             <PaddingControls

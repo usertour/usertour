@@ -99,7 +99,7 @@ function ContentSummary({ condition }: { condition: RulesCondition }) {
       <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <span className={summaryTextClass}>
         <span>{t(contentTypeLabelKey(content))}</span>{' '}
-        <span className="font-semibold">{content.name}</span>{' '}
+        <span className="font-medium">{content.name}</span>{' '}
         <span className="text-muted-foreground">{t(operator.labelKey)}</span>
       </span>
     </span>

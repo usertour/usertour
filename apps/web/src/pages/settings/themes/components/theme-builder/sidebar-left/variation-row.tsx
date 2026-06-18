@@ -121,7 +121,7 @@ export const VariationRow = (props: VariationRowProps) => {
             // while editing the name.
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="h-6 bg-background px-1.5"
+            className="h-6 bg-card px-1.5"
           />
         </div>
       ) : (
@@ -167,7 +167,7 @@ export const VariationRow = (props: VariationRowProps) => {
                 </CompactDropdownMenuItem>
               )}
               {onDelete && (
-                <CompactDropdownMenuItem onClick={onDelete} className="text-destructive">
+                <CompactDropdownMenuItem onClick={onDelete} variant="destructive">
                   <RiDeleteBinLine className="h-3.5 w-3.5" />
                   {t('themeBuilder.actions.delete')}
                 </CompactDropdownMenuItem>

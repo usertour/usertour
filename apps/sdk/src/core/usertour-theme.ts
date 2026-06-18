@@ -17,6 +17,7 @@ import { logger } from '@/utils/logger';
  */
 const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
   const { fontFamily } = themeSettings.font;
+  const customCss = themeSettings.customCss?.trim();
 
   const assets: AssetAttributes[] = [
     {
@@ -27,20 +28,26 @@ const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
       type: 'text/css',
     },
   ];
-  if (!shouldLoadGoogleFont(fontFamily)) {
-    return [...assets];
-  }
-
-  return [
-    ...assets,
-    {
+  if (shouldLoadGoogleFont(fontFamily)) {
+    assets.push({
       tagName: 'link',
       isCheckLoaded: false,
       href: buildGoogleFontUrl(fontFamily),
       rel: 'stylesheet',
       type: 'text/css',
-    },
-  ];
+    });
+  }
+  // Theme-level custom CSS, injected after the base stylesheet so user
+  // rules win ties. This is where @font-face declarations backing the
+  // 'Custom font' family live.
+  if (customCss) {
+    assets.push({
+      tagName: 'style',
+      isCheckLoaded: false,
+      children: customCss,
+    });
+  }
+  return assets;
 };
 
 /**

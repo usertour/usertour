@@ -53,6 +53,7 @@ import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 
@@ -67,6 +68,7 @@ const UserFilterButton = ({
   options: Array<{ label: string; value: string }>;
   onChange: (value: string) => void;
 }) => {
+  const { t } = useTranslation();
   const activeOption = options.find((option) => option.value === value);
   const hasSelection = value !== 'all';
 
@@ -89,7 +91,7 @@ const UserFilterButton = ({
       <PopoverContent align="start" className="w-[220px] p-0">
         <Command>
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>{t('admin.common.noResults')}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
                 const isSelected = option.value === value;
@@ -123,7 +125,7 @@ const UserFilterButton = ({
                     onSelect={() => onChange('all')}
                     className="justify-center text-center cursor-pointer"
                   >
-                    Clear filter
+                    {t('admin.users.clearFilter')}
                   </CommandItem>
                 </CommandGroup>
               </>
@@ -152,6 +154,7 @@ const UserListAction = ({
   user: AdminUserItem;
   onRefetch: () => void;
 }) => {
+  const { t } = useTranslation();
   const { invoke: updateSystemAdmin } = useUpdateUserSystemAdminMutation();
   const { invoke: updateDisabled } = useUpdateUserDisabledMutation();
   const { toast } = useToast();
@@ -160,7 +163,9 @@ const UserListAction = ({
     try {
       await updateSystemAdmin(user.id, !user.isSystemAdmin);
       toast({
-        title: user.isSystemAdmin ? 'System admin removed' : 'System admin granted',
+        title: user.isSystemAdmin
+          ? t('admin.users.systemAdminRemoved')
+          : t('admin.users.systemAdminGranted'),
       });
       onRefetch();
     } catch (error) {
@@ -172,7 +177,7 @@ const UserListAction = ({
     try {
       await updateDisabled(user.id, !user.disabled);
       toast({
-        title: user.disabled ? 'User enabled' : 'User disabled',
+        title: user.disabled ? t('admin.users.userEnabled') : t('admin.users.userDisabled'),
       });
       onRefetch();
     } catch (error) {
@@ -188,19 +193,17 @@ const UserListAction = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[200px]">
-        <DropdownMenuItem className="cursor-pointer" onClick={handleToggleAdmin}>
-          {user.isSystemAdmin ? 'Remove System Admin' : 'Make System Admin'}
+        <DropdownMenuItem onClick={handleToggleAdmin}>
+          {user.isSystemAdmin
+            ? t('admin.users.removeSystemAdmin')
+            : t('admin.users.makeSystemAdmin')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className={
-            user.disabled
-              ? 'cursor-pointer'
-              : 'text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer'
-          }
+          variant={user.disabled ? 'default' : 'destructive'}
           onClick={handleToggleDisabled}
         >
-          {user.disabled ? 'Enable User' : 'Disable User'}
+          {user.disabled ? t('admin.users.enableUser') : t('admin.users.disableUser')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -214,6 +217,7 @@ const AddUserDialog = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation();
   const { invoke: createUser, loading } = useAdminCreateUserMutation();
   const { toast } = useToast();
   const [name, setName] = useState('');
@@ -222,23 +226,23 @@ const AddUserDialog = ({
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      toast({ variant: 'destructive', title: 'Please enter a name' });
+      toast({ variant: 'destructive', title: t('admin.users.validationNameRequired') });
       return;
     }
     if (!email.trim()) {
-      toast({ variant: 'destructive', title: 'Please enter an email' });
+      toast({ variant: 'destructive', title: t('admin.users.validationEmailRequired') });
       return;
     }
     if (password.length < 8) {
       toast({
         variant: 'destructive',
-        title: 'Password must be at least 8 characters',
+        title: t('admin.users.validationPasswordMinLength'),
       });
       return;
     }
     try {
       await createUser(name.trim(), email.trim().toLowerCase(), password);
-      toast({ title: 'User created successfully' });
+      toast({ title: t('admin.users.userCreatedSuccess') });
       setName('');
       setEmail('');
       setPassword('');
@@ -252,45 +256,45 @@ const AddUserDialog = ({
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
       <DialogContent aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Add User</DialogTitle>
+          <DialogTitle>{t('admin.users.addUserTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="user-name">Name</Label>
+            <Label htmlFor="user-name">{t('admin.common.name')}</Label>
             <Input
               id="user-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter name"
+              placeholder={t('admin.users.namePlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="user-email">Email</Label>
+            <Label htmlFor="user-email">{t('admin.common.email')}</Label>
             <Input
               id="user-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter email"
+              placeholder={t('admin.users.emailPlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="user-password">Password</Label>
+            <Label htmlFor="user-password">{t('admin.users.passwordLabel')}</Label>
             <Input
               id="user-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 8 characters"
+              placeholder={t('admin.users.passwordPlaceholder')}
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('admin.common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Creating...' : 'Add User'}
+            {loading ? t('admin.users.creating') : t('admin.users.addUserTitle')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -299,6 +303,7 @@ const AddUserDialog = ({
 };
 
 export const AdminUsersPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -347,40 +352,38 @@ export const AdminUsersPage = () => {
     <>
       <SettingsContent>
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold tracking-tight">Users</h3>
-          <p className="text-sm text-muted-foreground">
-            View and manage all users in this self-hosted instance, including system admin access.
-          </p>
+          <h3 className="text-xl font-medium tracking-tight">{t('admin.users.pageTitle')}</h3>
+          <p className="text-sm text-muted-foreground">{t('admin.users.pageDescription')}</p>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
             <div className="relative w-full md:w-[240px]">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Find a user"
+                placeholder={t('admin.users.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="h-8 pl-9 md:w-[240px]"
               />
             </div>
             <UserFilterButton
-              label="Status"
+              label={t('admin.common.status')}
               value={statusFilter}
               onChange={handleStatusFilterChange}
               options={[
-                { label: 'All', value: 'all' },
-                { label: 'Active', value: 'active' },
-                { label: 'Disabled', value: 'disabled' },
+                { label: t('admin.common.all'), value: 'all' },
+                { label: t('admin.users.statusActive'), value: 'active' },
+                { label: t('admin.users.statusDisabled'), value: 'disabled' },
               ]}
             />
             <UserFilterButton
-              label="Role"
+              label={t('admin.users.filterRole')}
               value={roleFilter}
               onChange={handleRoleFilterChange}
               options={[
-                { label: 'All', value: 'all' },
-                { label: 'System Admin', value: 'systemAdmin' },
-                { label: 'Non-admin', value: 'nonAdmin' },
+                { label: t('admin.common.all'), value: 'all' },
+                { label: t('admin.users.roleSystemAdmin'), value: 'systemAdmin' },
+                { label: t('admin.users.roleNonAdmin'), value: 'nonAdmin' },
               ]}
             />
             {hasActiveFilters && (
@@ -390,14 +393,14 @@ export const AdminUsersPage = () => {
                 onClick={handleResetFilters}
                 className="h-8 px-2 lg:px-3"
               >
-                Reset
+                {t('common.reset')}
                 <XIcon className="h-4 w-4" />
               </Button>
             )}
           </div>
           <Button onClick={() => setIsAddDialogOpen(true)} size="sm" className="h-8 flex-none">
             <PlusIcon className="w-4 h-4" />
-            Add User
+            {t('admin.users.addUserTitle')}
           </Button>
         </div>
         <Separator />
@@ -409,11 +412,13 @@ export const AdminUsersPage = () => {
             <Table className="table-fixed min-w-2xl">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden sm:table-cell">Email</TableHead>
-                  <TableHead className="w-32 hidden lg:table-cell">Created</TableHead>
-                  <TableHead className="w-24 text-center">Projects</TableHead>
-                  <TableHead className="w-28 text-center">Status</TableHead>
+                  <TableHead>{t('admin.common.name')}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t('admin.common.email')}</TableHead>
+                  <TableHead className="w-32 hidden lg:table-cell">
+                    {t('admin.common.created')}
+                  </TableHead>
+                  <TableHead className="w-24 text-center">{t('admin.common.projects')}</TableHead>
+                  <TableHead className="w-28 text-center">{t('admin.common.status')}</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
@@ -425,7 +430,9 @@ export const AdminUsersPage = () => {
                         <UserAvatar email={user.email || ''} name={user.name || undefined} />
                         <span className="truncate max-w-64">{user.name || '-'}</span>
                         {user.isSystemAdmin && (
-                          <Badge className="bg-blue-600 hover:bg-blue-700 text-xs">Admin</Badge>
+                          <Badge className="bg-blue-600 hover:bg-blue-700 text-xs">
+                            {t('admin.common.roleAdmin')}
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -438,9 +445,11 @@ export const AdminUsersPage = () => {
                     <TableCell className="text-center">{user.projectCount}</TableCell>
                     <TableCell className="text-center">
                       {user.disabled ? (
-                        <Badge variant="destructive">Disabled</Badge>
+                        <Badge variant="destructive">{t('admin.users.statusDisabled')}</Badge>
                       ) : (
-                        <Badge className="bg-green-600 hover:bg-green-700">Active</Badge>
+                        <Badge className="bg-green-600 hover:bg-green-700">
+                          {t('admin.users.statusActive')}
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -451,7 +460,7 @@ export const AdminUsersPage = () => {
                 {items.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No users found.
+                      {t('admin.users.noUsersFound')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -463,7 +472,7 @@ export const AdminUsersPage = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4">
             <span className="text-sm text-muted-foreground">
-              {total} user{total !== 1 ? 's' : ''} total
+              {t('admin.users.totalUsers', { count: total })}
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -475,7 +484,7 @@ export const AdminUsersPage = () => {
                 <ChevronLeftIcon className="h-4 w-4" />
               </Button>
               <span className="text-sm">
-                Page {currentPage} of {totalPages}
+                {t('admin.common.pageOf', { current: currentPage, total: totalPages })}
               </span>
               <Button
                 variant="outline"

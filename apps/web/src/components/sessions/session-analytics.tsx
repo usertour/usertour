@@ -9,16 +9,9 @@ import {
 } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
 import { cn } from '@usertour/tailwind';
+import { useTranslation } from 'react-i18next';
 
 type StatusVariant = 'active' | 'completed' | 'dismissed' | 'seen' | 'activated';
-
-const statusLabel: Record<StatusVariant, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  dismissed: 'Dismissed',
-  seen: 'Seen',
-  activated: 'Activated',
-};
 
 const statusClass: Record<StatusVariant, string> = {
   active: 'bg-success/15 text-success hover:bg-success/15',
@@ -77,6 +70,7 @@ export const SessionStatusBadge = ({
   original,
   contentType,
 }: { original: BizSession; contentType: ContentDataType }) => {
+  const { t } = useTranslation();
   const status = deriveStatus(contentType, original.bizEvent);
   if (!status) return null;
 
@@ -85,7 +79,7 @@ export const SessionStatusBadge = ({
       variant="secondary"
       className={cn('font-medium border-transparent', statusClass[status])}
     >
-      {statusLabel[status]}
+      {t(`users.sessions.status.${status}`)}
     </Badge>
   );
 };
@@ -94,9 +88,12 @@ SessionStatusBadge.displayName = 'SessionStatusBadge';
 const formatFlowStepDisplay = (
   flowStepNumber: number | undefined | null,
   flowStepName: string | undefined | null,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ): string => {
   const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
-  const stepNumberDisplay = hasStepNumber ? `Step ${Number(flowStepNumber) + 1}` : '';
+  const stepNumberDisplay = hasStepNumber
+    ? t('users.sessions.stepN', { number: Number(flowStepNumber) + 1 })
+    : '';
 
   if (stepNumberDisplay && flowStepName) {
     return `${stepNumberDisplay}. ${flowStepName}`;
@@ -110,6 +107,7 @@ export const FlowProgressCell = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
   const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) return null;
 
@@ -127,13 +125,16 @@ export const FlowProgressCell = ({
     ? formatFlowStepDisplay(
         lastSeenBizEvent?.data?.flow_step_number,
         lastSeenBizEvent?.data?.flow_step_name,
+        t,
       )
     : '';
 
   return (
     <div className="flex flex-col min-w-0">
       {isComplete ? (
-        <span className="text-sm text-muted-foreground">{`Completed in ${completeDate}`}</span>
+        <span className="text-sm text-muted-foreground">
+          {t('users.sessions.completedIn', { date: completeDate })}
+        </span>
       ) : (
         <span className="text-sm tabular-nums font-medium">
           {lastSeenBizEvent?.data?.flow_step_progress ?? 0}%
@@ -150,6 +151,7 @@ export const ChecklistProgressCell = ({
   eventList,
   version,
 }: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+  const { t } = useTranslation();
   const { bizEvent, progress } = original;
   const data = version?.data as ChecklistData;
 
@@ -162,7 +164,11 @@ export const ChecklistProgressCell = ({
   );
 
   if (isComplete) {
-    return <span className="text-sm text-muted-foreground">{`Completed in ${completeDate}`}</span>;
+    return (
+      <span className="text-sm text-muted-foreground">
+        {t('users.sessions.completedIn', { date: completeDate })}
+      </span>
+    );
   }
   return <span className="text-sm tabular-nums font-medium">{progress}%</span>;
 };

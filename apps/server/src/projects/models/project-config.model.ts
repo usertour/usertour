@@ -6,5 +6,8 @@ export class ProjectConfigModel {
   removeBranding: boolean;
 
   @Field()
+  customCss: boolean;
+
+  @Field()
   planType: string;
 }

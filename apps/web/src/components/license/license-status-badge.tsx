@@ -1,4 +1,5 @@
 import { Badge } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 // Soft status-pill styles — tinted bg + matching ring + dark text. Avoids
 // the saturated "success/destructive" variants used for action buttons,
@@ -20,16 +21,17 @@ interface LicenseStatusBadgeProps {
  * looking at one don't have to re-learn what the colors mean on the other.
  */
 export const LicenseStatusBadge = ({ isValid, isExpired }: LicenseStatusBadgeProps) => {
+  const { t } = useTranslation();
   // Check expired before isValid: an expired license also has isValid=false,
   // and "Expired" is the more useful word for the admin than the generic
   // "Invalid".
   if (isExpired) {
-    return <Badge className={SOFT_ERR_PILL}>Expired</Badge>;
+    return <Badge className={SOFT_ERR_PILL}>{t('license.status.expired')}</Badge>;
   }
   if (!isValid) {
-    return <Badge className={SOFT_ERR_PILL}>Invalid</Badge>;
+    return <Badge className={SOFT_ERR_PILL}>{t('license.status.invalid')}</Badge>;
   }
-  return <Badge className={SOFT_OK_PILL}>Active</Badge>;
+  return <Badge className={SOFT_OK_PILL}>{t('license.status.active')}</Badge>;
 };
 
 /**

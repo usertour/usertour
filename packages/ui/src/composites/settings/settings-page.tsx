@@ -49,7 +49,7 @@ export const SettingsPage = (props: SettingsPageProps) => {
     <div className={cn('flex-1 grow space-y-6 px-4 py-6 lg:px-8', className)}>
       <div className="flex flex-col space-y-2">
         <div className="flex flex-row items-center justify-between gap-4">
-          <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+          <h3 className="text-xl font-medium tracking-tight">{title}</h3>
           {actions ? <div className="flex flex-none items-center gap-2">{actions}</div> : null}
         </div>
         {description ? <div className="text-sm text-muted-foreground">{description}</div> : null}

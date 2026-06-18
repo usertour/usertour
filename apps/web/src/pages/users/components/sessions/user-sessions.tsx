@@ -108,7 +108,9 @@ const ContentCell = ({
 }: { session: BizSession; environmentId: string }) => {
   const { content } = session;
   const { t } = useTranslation();
-  if (!content) return <div className="text-muted-foreground">Unknown content</div>;
+  if (!content) {
+    return <div className="text-muted-foreground">{t('users.sessions.unknownContent')}</div>;
+  }
 
   const Icon = CONTENT_ICON[content.type as ContentDataType];
 
@@ -227,7 +229,7 @@ export const UserSessions = ({ environmentId, externalUserId }: UserSessionsProp
                 <ReloadIcon className={cn('w-4 h-4', effectiveLoading && 'animate-spin')} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reload</TooltipContent>
+            <TooltipContent>{t('users.sessions.reload')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -236,8 +238,8 @@ export const UserSessions = ({ environmentId, externalUserId }: UserSessionsProp
         <ListSkeleton length={5} />
       ) : userSessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8">
-          <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
-          <p className="text-muted-foreground text-center">No sessions found for this user.</p>
+          <img src="/images/rocket.png" alt="" className="w-16 h-16 mb-4 opacity-50" />
+          <p className="text-muted-foreground text-center">{t('users.sessions.noSessions')}</p>
         </div>
       ) : (
         <div className="flex flex-col w-full grow">

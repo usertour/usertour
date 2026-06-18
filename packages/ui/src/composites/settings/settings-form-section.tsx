@@ -38,7 +38,7 @@ export function SettingsFormSection<TValues extends FieldValues>(
   return (
     <div className="space-y-6">
       <div className="flex h-10 flex-row items-center justify-between">
-        <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+        <h3 className="text-xl font-medium tracking-tight">{title}</h3>
       </div>
       {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       <Separator />

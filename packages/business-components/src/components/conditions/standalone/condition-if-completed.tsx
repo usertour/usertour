@@ -28,7 +28,6 @@ export function ConditionIfCompleted({
         id={id}
         checked={defaultValue}
         disabled={disabled}
-        className="data-[state=unchecked]:bg-input"
         onCheckedChange={(checked) => onCheckedChange(checked === true)}
       />
       <Label htmlFor={id} className="cursor-pointer text-sm font-normal">

@@ -31,10 +31,20 @@ export type {
   ValidateContext,
 } from './components/conditions/schema-types';
 export type { ConditionsTranslator } from './components/conditions/conditions-context';
+export {
+  ElementPickerProvider,
+  useElementPicker,
+  PickElementButton,
+} from './components/element-picker';
+export type {
+  PickElementFunction,
+  PickElementOptions,
+  PickElementResult,
+  PickElementButtonProps,
+} from './components/element-picker';
 export { GoogleFontCss } from './components/theme/google-font';
-export { SelectorDialog } from './components/selector/selector-dialog';
 // Generic composition UI primitives live in @usertour/ui —
-// import them from there directly. Examples: SelectPopover, DateTimePicker,
+// import them from there directly. Examples: ComboboxSelect, DateTimePicker,
 // ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.
 
 // Settings-domain components — aware of IntegrationModel and other

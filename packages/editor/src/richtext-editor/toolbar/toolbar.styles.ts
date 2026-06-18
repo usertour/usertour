@@ -30,25 +30,23 @@ export const TOOLBAR_TOGGLE_GROUP = 'flex gap-1';
 export const TOOLBAR_CONTAINER = cn(
   'flex flex-row items-center',
   'p-1 min-w-max',
-  'rounded-xl bg-background',
+  'rounded-xl bg-popover',
   'border border-foreground/5',
   'shadow-toolbar',
   'animate-toolbar-fade-in',
   // Previous style (backup):
   // 'flex flex-row items-center',
   // 'p-1 min-w-max',
-  // 'rounded-lg bg-editor-toolbar',
 );
 
 // Overflow popover content styles
 export const TOOLBAR_OVERFLOW_CONTENT = cn(
   'flex flex-row items-center p-1 w-full min-w-max rounded-xl',
-  'bg-background',
+  'bg-popover',
   'border border-foreground/5',
   'shadow-toolbar',
   // Previous style (backup):
   // 'flex flex-row items-center p-1 w-full min-w-max rounded-lg',
-  // 'bg-editor-toolbar',
 );
 
 // Separator styles (height matches button size)

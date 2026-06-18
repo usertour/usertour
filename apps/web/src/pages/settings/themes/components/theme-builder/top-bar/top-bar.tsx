@@ -55,7 +55,7 @@ export const TopBar = (props: TopBarProps) => {
     // detail pages. Inner panes (variations sidebar, sections accordion,
     // fields) keep the v2 compact chrome — only the outer header reads as
     // shadcn page chrome.
-    <div className="relative flex h-14 flex-none items-center justify-between border-b border-border/50 bg-background px-4">
+    <div className="relative flex h-14 flex-none items-center justify-between border-b border-border/50 bg-card px-4">
       {/* max-w-sm caps how wide the editable title can grow before
           truncating — matches content detail header so long theme names
           don't swallow the header chrome. */}

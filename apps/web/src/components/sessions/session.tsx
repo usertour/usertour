@@ -12,19 +12,24 @@ import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
 import { isUndefined } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Format flow step display text from event data
  * @param flowStepNumber - Step number (0-indexed)
  * @param flowStepName - Step name
+ * @param t - i18n translation function
  * @returns Formatted display string
  */
 const formatFlowStepDisplay = (
   flowStepNumber: number | undefined | null,
   flowStepName: string | undefined | null,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ): string => {
   const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
-  const stepNumberDisplay = hasStepNumber ? `Step ${Number(flowStepNumber) + 1}` : '';
+  const stepNumberDisplay = hasStepNumber
+    ? t('users.sessions.stepN', { number: Number(flowStepNumber) + 1 })
+    : '';
 
   if (stepNumberDisplay && flowStepName) {
     return `${stepNumberDisplay}. ${flowStepName}`;
@@ -42,6 +47,7 @@ const LauncherProgressColumn = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
   const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
@@ -58,7 +64,7 @@ const LauncherProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Active</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -68,13 +74,15 @@ const LauncherProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Dismissed</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isActivated && <div className="text-muted-foreground">Seen</div>}
-        {isActivated && <div className="text-success">Activated</div>}
+        {!isActivated && (
+          <div className="text-muted-foreground">{t('users.sessions.status.seen')}</div>
+        )}
+        {isActivated && <div className="text-success">{t('users.sessions.status.activated')}</div>}
       </div>
     </div>
   );
@@ -85,6 +93,7 @@ const BannerProgressColumn = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
   const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
@@ -105,7 +114,7 @@ const BannerProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Active</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -115,13 +124,17 @@ const BannerProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Dismissed</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isDismissed && <div className="text-muted-foreground">Seen</div>}
-        {isDismissed && <div className="text-foreground/60">Dismissed</div>}
+        {!isDismissed && (
+          <div className="text-muted-foreground">{t('users.sessions.status.seen')}</div>
+        )}
+        {isDismissed && (
+          <div className="text-foreground/60">{t('users.sessions.status.dismissed')}</div>
+        )}
       </div>
     </div>
   );
@@ -133,6 +146,7 @@ const ChecklistProgressColumn = ({
   eventList,
   version,
 }: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+  const { t } = useTranslation();
   const { bizEvent, progress } = original;
   const data = version?.data as ChecklistData;
 
@@ -154,7 +168,7 @@ const ChecklistProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Active</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -164,14 +178,16 @@ const ChecklistProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Dismissed</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
         {!isComplete && <span>{progress}%</span>}
         {isComplete && (
-          <div className="text-success font-bold text-left">{`Completed in ${completeDate}`}</div>
+          <div className="text-success font-bold text-left">
+            {t('users.sessions.completedIn', { date: completeDate })}
+          </div>
         )}
       </div>
     </div>
@@ -184,6 +200,7 @@ const ChecklistItemsColumn = ({
   eventList,
   version,
 }: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+  const { t } = useTranslation();
   const { bizEvent } = original;
   const data = version?.data as ChecklistData;
   const { items: sessionItems } =
@@ -220,7 +237,7 @@ const ChecklistItemsColumn = ({
               'flex-none w-8 h-8 border-2 border-transparent rounded-full flex justify-center items-center mr-3 text-sm text-white',
               checklistItemIds.includes(item.id)
                 ? 'bg-success'
-                : 'border border-foreground/25 bg-background',
+                : 'border border-foreground/25 bg-background dark:bg-muted',
             )}
           >
             {checklistItemIds.includes(item.id) && (
@@ -236,7 +253,9 @@ const ChecklistItemsColumn = ({
                     <TooltipTrigger className="cursor-default flex-shrink-0">
                       <ClickIcon className="h-4 text-muted-foreground/70" />
                     </TooltipTrigger>
-                    <TooltipContent usePortal={true}>User clicked this task</TooltipContent>
+                    <TooltipContent usePortal={true}>
+                      {t('users.sessions.taskClicked')}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -246,7 +265,9 @@ const ChecklistItemsColumn = ({
                     <TooltipTrigger className="cursor-default flex-shrink-0">
                       <EyeNoneIcon className="h-4 text-muted-foreground/70" />
                     </TooltipTrigger>
-                    <TooltipContent usePortal={true}>Task is hidden for user</TooltipContent>
+                    <TooltipContent usePortal={true}>
+                      {t('users.sessions.taskHidden')}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -266,6 +287,7 @@ const FlowProgressColumn = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
   const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
@@ -289,7 +311,7 @@ const FlowProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Active</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -299,20 +321,23 @@ const FlowProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Dismissed</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col min-w-0">
         {!isComplete && <span>{lastSeenBizEvent?.data?.flow_step_progress ?? 0}%</span>}
         {isComplete && (
-          <div className="text-success font-bold text-left">{`Completed in ${completeDate}`}</div>
+          <div className="text-success font-bold text-left">
+            {t('users.sessions.completedIn', { date: completeDate })}
+          </div>
         )}
         {lastSeenBizEvent && (
           <div className="text-left text-muted-foreground truncate">
             {formatFlowStepDisplay(
               lastSeenBizEvent?.data?.flow_step_number,
               lastSeenBizEvent?.data?.flow_step_name,
+              t,
             )}
           </div>
         )}
@@ -326,6 +351,7 @@ const ResourceCenterProgressColumn = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
   const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
@@ -350,7 +376,7 @@ const ResourceCenterProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <PlayIcon className="text-success h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Active</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -360,13 +386,15 @@ const ResourceCenterProgressColumn = ({
             <TooltipTrigger className="cursor-default">
               <CancelIcon className="text-foreground/60 h-5 w-5" />
             </TooltipTrigger>
-            <TooltipContent>Dismissed</TooltipContent>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
       <div className="flex flex-col">
-        {!isDismissed && <div className="text-success">Active</div>}
-        {isDismissed && <div className="text-foreground/60">Dismissed</div>}
+        {!isDismissed && <div className="text-success">{t('users.sessions.status.active')}</div>}
+        {isDismissed && (
+          <div className="text-foreground/60">{t('users.sessions.status.dismissed')}</div>
+        )}
       </div>
     </div>
   );

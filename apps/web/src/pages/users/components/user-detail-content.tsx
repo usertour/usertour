@@ -110,7 +110,7 @@ const UserIdentityHeader = ({
     <div className="flex items-start gap-4 px-1">
       <DefaultAvatar seed={bizUser.externalId || email || ''} name={name} size="lg" />
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold text-foreground truncate">
+        <h1 className="text-xl font-medium text-foreground truncate">
           {userDisplayName(bizUser, t('users.detail.unnamedUser'))}
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -161,7 +161,7 @@ const UserActivityCard = ({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
-        <CardTitle className="text-sm font-semibold">{t('users.detail.activity.title')}</CardTitle>
+        <CardTitle className="text-sm font-medium">{t('users.detail.activity.title')}</CardTitle>
         <ToggleGroup
           type="single"
           value={activityView}
@@ -258,7 +258,7 @@ export const UserDetailContent = (props: UserDetailContentProps) => {
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isViewOnly}
-                className="text-destructive focus:text-destructive"
+                variant="destructive"
               >
                 <Delete2Icon className="mr-2 h-4 w-4" />
                 {t('users.actions.deleteUser')}

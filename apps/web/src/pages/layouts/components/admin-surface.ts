@@ -1,7 +1,9 @@
 export type AdminLayoutSurface = 'canvas' | 'muted' | 'default';
 
 export const SURFACE_BODY_CLASSNAMES: Record<AdminLayoutSurface, string> = {
-  canvas: 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]',
-  muted: 'bg-slate-100 dark:bg-background',
-  default: 'bg-slate-50',
+  canvas: 'bg-dot-grid',
+  // muted and default share the same body surface now; the muted/default split
+  // only affects the inner content area (see admin-layout's surfaceClassName).
+  muted: 'bg-surface',
+  default: 'bg-surface',
 };

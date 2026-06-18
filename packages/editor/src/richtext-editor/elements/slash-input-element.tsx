@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Editor, Element as SlateElement, Transforms, type Path } from 'slate';
 import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
@@ -331,6 +332,7 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
   const element = props.element as SlashInputElementType;
   const editor = useSlateStatic();
   const { zIndex } = usePopperEditorContext();
+  const { t } = useTranslation();
   const anchorRef = useComboboxAnchor();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -384,9 +386,12 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
   /**
    * Extract string value from command for filtering
    */
-  const itemToStringValue = useCallback((command: SlashCommandConfig) => {
-    return command.label;
-  }, []);
+  const itemToStringValue = useCallback(
+    (command: SlashCommandConfig) => {
+      return t(command.label);
+    },
+    [t],
+  );
 
   /**
    * Resolve the slash command that matches the current block type
@@ -458,7 +463,9 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
         >
           <ComboboxEmpty className="items-center justify-center gap-2 pb-0">
             <RiSearchLine className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">No search results</span>
+            <span className="text-sm text-muted-foreground">
+              {t('contentBuilder.editor.toolbar.slashCommand.noResults')}
+            </span>
           </ComboboxEmpty>
           <ComboboxList>
             {(command: SlashCommandConfig) => {
@@ -466,7 +473,7 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
               return (
                 <ComboboxItem key={command.id} value={command} className="group">
                   <Icon className="mr-2 h-4 w-4 flex-shrink-0 group-data-[highlighted]:text-primary" />
-                  <span className="flex-1 truncate">{command.label}</span>
+                  <span className="flex-1 truncate">{t(command.label)}</span>
                 </ComboboxItem>
               );
             }}

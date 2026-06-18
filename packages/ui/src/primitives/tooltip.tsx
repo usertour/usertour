@@ -16,26 +16,41 @@ const TooltipArrow = TooltipPrimitive.Arrow;
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & { usePortal?: boolean }
->(({ className, sideOffset = 4, usePortal = false, ...props }, ref) => {
-  const content = (
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        'z-50 overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-xs text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-        className,
-      )}
-      {...props}
-    />
-  );
-
-  if (!usePortal) {
-    return content;
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
+    usePortal?: boolean;
+    // Skip the close (exit) animation. Use when the trigger can unmount while
+    // the tooltip is closing (e.g. a button revealed only on row hover): the
+    // exit animation keeps the content mounted ~150ms after the anchor is gone,
+    // and floating-ui then reflows it to the top-left corner. Closing instantly
+    // removes that reflow window.
+    disableCloseAnimation?: boolean;
   }
+>(
+  (
+    { className, sideOffset = 4, usePortal = false, disableCloseAnimation = false, ...props },
+    ref,
+  ) => {
+    const content = (
+      <TooltipPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(
+          'z-50 overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-xs text-background animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          !disableCloseAnimation &&
+            'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+          className,
+        )}
+        {...props}
+      />
+    );
 
-  return <TooltipPrimitive.Portal>{content}</TooltipPrimitive.Portal>;
-});
+    if (!usePortal) {
+      return content;
+    }
+
+    return <TooltipPrimitive.Portal>{content}</TooltipPrimitive.Portal>;
+  },
+);
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 interface QuestionTooltipProps {

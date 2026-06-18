@@ -1,5 +1,6 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Button,
@@ -40,6 +41,7 @@ export const ThemeSelectFont = ({
   disabled = false,
   ...props
 }: ThemeSelectFontProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<ThemeSelectFontType>();
 
@@ -68,20 +70,20 @@ export const ThemeSelectFont = ({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          aria-label="Load a font family..."
+          aria-label={t('themes.fontSelect.loadFontFamily')}
           aria-expanded={open}
           className="flex-1 justify-between disabled:opacity-100"
           disabled={disabled}
         >
-          {selectedPreset ? selectedPreset.name : 'Load a font family...'}
+          {selectedPreset ? selectedPreset.name : t('themes.fontSelect.loadFontFamily')}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[310px] p-0">
         <Command>
-          <CommandInput placeholder="Search font family..." />
-          <CommandEmpty>No items found.</CommandEmpty>
-          <CommandGroup heading="Font family">
+          <CommandInput placeholder={t('themes.fontSelect.searchFontFamily')} />
+          <CommandEmpty>{t('themes.fontSelect.noItemsFound')}</CommandEmpty>
+          <CommandGroup heading={t('themes.fontSelect.fontFamilyHeading')}>
             <ScrollArea className="h-72">
               {systemItems.map((item) => (
                 <CommandItem

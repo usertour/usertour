@@ -9,8 +9,9 @@ import { cn } from '@usertour/tailwind';
 // shadowing that breaks consumers that rely on it (e.g. inline-edit titles
 // that auto-size to content length).
 //
-// All variants share the same focus / file / aria / disabled treatments —
-// only height / radius / surface / text scale differ between them. Don't
+// All variants share the same focus / file / aria / disabled treatments and
+// the same dark fill (surface-raised/50, set once in the cva base) — only
+// height / radius / LIGHT surface / text scale differ between them. Don't
 // move shared classes into the cva base; cva's `cx()` strips per-variant
 // duplicates only when they're literally identical, and tailwind-merge
 // later collapses what's left, so keeping the full string per variant
@@ -21,7 +22,7 @@ import { cn } from '@usertour/tailwind';
 // inherited these from base shadcn, so keeping them shared preserves their
 // rendering exactly.
 const inputVariants = cva(
-  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 w-full min-w-0 transition-[color,box-shadow] outline-none file:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-surface-raised/50 w-full min-w-0 transition-[color,box-shadow] outline-none file:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
   {
     variants: {
       variant: {
@@ -38,6 +39,13 @@ const inputVariants = cva(
         // class inheritance). Used in dense settings / inspector panels.
         'compact-muted':
           'h-7.5 rounded-lg border border-input bg-muted px-3 py-1 text-sm shadow-sm md:text-sm',
+        // Compact surface — 30px / 14px / light bg-surface-raised, shadow-none.
+        // The builder editor's "raised control on a surface card" look; pairs
+        // with the surface select triggers (CompactSelect / ComboboxSelect).
+        // Only the light surface sets it apart — the dark fill is the shared
+        // base surface-raised/50.
+        'compact-surface':
+          'h-7.5 rounded-lg border border-input bg-surface-raised px-3 py-1 text-sm shadow-none md:text-sm',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -70,7 +78,7 @@ const OutlineInput = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         data-slot="input"
         className={cn(
-          'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 h-9 w-full min-w-0 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+          'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-muted h-9 w-full min-w-0 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
           'focus-visible:outline-none',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
           'bg-transparent border-transparent focus:border-input border-b',

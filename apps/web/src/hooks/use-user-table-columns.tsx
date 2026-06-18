@@ -29,7 +29,7 @@ export const useUserTableColumns = (
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
+          aria-label={t('common.table.selectAll')}
           className="translate-y-[2px]"
         />
       ),
@@ -37,7 +37,7 @@ export const useUserTableColumns = (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label={t('common.table.selectRow')}
           className="translate-y-[2px]"
         />
       ),

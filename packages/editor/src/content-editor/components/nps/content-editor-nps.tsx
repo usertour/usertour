@@ -26,7 +26,6 @@ const NPSPopoverContent = memo(
   }) => (
     <div className="flex flex-col gap-2.5">
       <QuestionNameField
-        id="nps-question"
         value={localData.name || ''}
         onChange={(name) => handleDataChange({ name })}
       />

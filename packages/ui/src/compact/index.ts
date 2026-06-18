@@ -12,7 +12,19 @@
 // don't fit any atomic shelf (CompactPanel, ResizeHandle, InlineAlert,
 // CompactColorButton).
 
-export { CompactSelect, type CompactSelectOption } from './select';
+export {
+  CompactSelect,
+  type CompactSelectOption,
+  CompactSelectRoot,
+  CompactSelectTrigger,
+  type CompactSelectTriggerProps,
+  CompactSelectValue,
+  CompactSelectContent,
+  type CompactSelectContentProps,
+  CompactSelectItem,
+  type CompactSelectItemProps,
+  CompactSelectItemIndicator,
+} from './select';
 export { CompactColorButton } from './color-button';
 export {
   CompactPopoverTrigger,

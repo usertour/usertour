@@ -74,7 +74,7 @@ export const ResourceRowActions = (props: ResourceRowActionsProps) => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-          <TooltipContent className="max-w-xs bg-slate-700">{disabledHint}</TooltipContent>
+          <TooltipContent className="max-w-xs">{disabledHint}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );

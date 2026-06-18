@@ -180,7 +180,7 @@ const config: RouteObject[] = [
             element: <AdminBuilderLayout />,
             children: [
               {
-                path: '/env/:envId/:contentType/:contentId/builder/:versionId',
+                path: '/env/:envId/:contentType/:contentId/builder/*',
                 lazy: lazyComponent(() => import('@/pages/contents'), 'ContentBuilder'),
               },
             ],

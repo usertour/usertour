@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface EditorErrorBoundaryProps {
   children: ReactNode;
@@ -10,6 +11,20 @@ interface EditorErrorBoundaryState {
   hasError: boolean;
   error?: Error;
 }
+
+// Default fallback lives in a function component so it can use the
+// translation hook — the class boundary itself cannot.
+const EditorErrorFallback = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md">
+      <p className="font-medium">{t('contentBuilder.editor.errorBoundary.title')}</p>
+      <p className="text-xs mt-1 opacity-80">
+        {t('contentBuilder.editor.errorBoundary.description')}
+      </p>
+    </div>
+  );
+};
 
 /**
  * Error boundary for Slate editor to handle crashes gracefully
@@ -39,16 +54,7 @@ export class EditorErrorBoundary extends Component<
   render(): ReactNode {
     if (this.state.hasError) {
       // Render fallback UI if provided, otherwise show default error message
-      return (
-        this.props.fallback ?? (
-          <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md">
-            <p className="font-medium">Editor failed to load</p>
-            <p className="text-xs mt-1 opacity-80">
-              {this.state.error?.message ?? 'An unexpected error occurred'}
-            </p>
-          </div>
-        )
-      );
+      return this.props.fallback ?? <EditorErrorFallback />;
     }
 
     return this.props.children;

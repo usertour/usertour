@@ -123,4 +123,5 @@ Delay this until a future version where it can have a dedicated sprint.
 - `apps/web/src/apollo/cache/index.ts` — addTypename flip + persist key.
 - `apps/web/src/apollo/type-policies/index.ts` — typePolicies for normalized cache + paginated lists.
 - `packages/hooks/src/hooks/*.ts` — mutation wrappers carrying their `update` callbacks.
+- [Apollo cache: mutations and refetch](../conventions/apollo-cache-mutations.md) — the living convention derived from this ADR: edit mutations return their changed fields (no refetch), and the exceptions where the cache still can't propagate alone.
 - ADR 0005 — preserved as `Superseded by 0006`.

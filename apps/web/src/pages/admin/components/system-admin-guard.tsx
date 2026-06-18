@@ -1,6 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useToast } from '@usertour/ui';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 interface SystemAdminGuardProps {
@@ -8,6 +9,7 @@ interface SystemAdminGuardProps {
 }
 
 export const SystemAdminGuard = ({ children }: SystemAdminGuardProps) => {
+  const { t } = useTranslation();
   const { globalConfig, userInfo, project, loading } = useAppContext();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -23,8 +25,8 @@ export const SystemAdminGuard = ({ children }: SystemAdminGuardProps) => {
     if (userInfo && !userInfo.isSystemAdmin) {
       toast({
         variant: 'destructive',
-        title: 'Access denied',
-        description: 'You must be a system admin to access this page.',
+        title: t('admin.guard.accessDeniedTitle'),
+        description: t('admin.guard.accessDeniedDescription'),
       });
       const projectHome = project?.id ? `/project/${project.id}/settings/account` : '/';
       navigate(projectHome, { replace: true });

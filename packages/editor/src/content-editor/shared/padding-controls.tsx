@@ -1,9 +1,10 @@
 // Shared PaddingControls component for content editor elements
 
-import { Checkbox, Input, Label } from '@usertour/ui';
+import { BooleanField, Input } from '@usertour/ui';
 import type { ContentEditorPadding } from '@usertour/types';
 import { PADDING_KEY_MAPPING } from '@usertour/widget';
-import { memo, useCallback, useId } from 'react';
+import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type PaddingPosition = keyof typeof PADDING_KEY_MAPPING;
 
@@ -15,8 +16,7 @@ export interface PaddingControlsProps {
 
 export const PaddingControls = memo(
   ({ padding, onPaddingChange, onPaddingEnabledChange }: PaddingControlsProps) => {
-    const id = useId();
-    const paddingCheckboxId = `${id}-padding`;
+    const { t } = useTranslation();
 
     const handleLeftChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => onPaddingChange('left', e.target.value),
@@ -40,44 +40,45 @@ export const PaddingControls = memo(
 
     return (
       <>
-        <div className="flex gap-x-2">
-          <Checkbox
-            id={paddingCheckboxId}
-            checked={padding?.enabled ?? false}
-            onCheckedChange={onPaddingEnabledChange}
-          />
-          <Label htmlFor={paddingCheckboxId}>Padding</Label>
-        </div>
+        <BooleanField
+          label={t('contentBuilder.editor.padding.label')}
+          checked={padding?.enabled ?? false}
+          onChange={onPaddingEnabledChange}
+        />
         {padding?.enabled && (
           <div className="flex gap-x-2">
             <div className="flex flex-col justify-center">
               <Input
+                variant="compact-surface"
                 value={padding?.left ?? ''}
-                placeholder="Left"
+                placeholder={t('contentBuilder.editor.common.left')}
                 onChange={handleLeftChange}
-                className="bg-background flex-none w-20"
+                className="flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center gap-y-2">
               <Input
+                variant="compact-surface"
                 value={padding?.top ?? ''}
                 onChange={handleTopChange}
-                placeholder="Top"
-                className="bg-background flex-none w-20"
+                placeholder={t('contentBuilder.editor.common.top')}
+                className="flex-none w-20"
               />
               <Input
+                variant="compact-surface"
                 value={padding?.bottom ?? ''}
                 onChange={handleBottomChange}
-                placeholder="Bottom"
-                className="bg-background flex-none w-20"
+                placeholder={t('contentBuilder.editor.common.bottom')}
+                className="flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center">
               <Input
+                variant="compact-surface"
                 value={padding?.right ?? ''}
-                placeholder="Right"
+                placeholder={t('contentBuilder.editor.common.right')}
                 onChange={handleRightChange}
-                className="bg-background flex-none w-20"
+                className="flex-none w-20"
               />
             </div>
           </div>

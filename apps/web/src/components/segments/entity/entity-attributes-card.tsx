@@ -19,7 +19,7 @@ export const EntityAttributesCard = ({ title, attributes }: EntityAttributesCard
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {attributes.map(({ name, value, dataType }, key) => {

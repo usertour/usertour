@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import {
   Button,
+  ComboboxSelect,
   FormControl,
   FormDescription,
   FormField,
@@ -13,7 +14,6 @@ import {
   FormMessage,
   Input,
   QuestionTooltip,
-  SelectPopover,
   SettingsDialogForm,
   useSettingsForm,
   useToast,
@@ -65,6 +65,9 @@ export const EventCreateDialog = ({
   const { project } = useAppContext();
   const { toast } = useToast();
   const { t } = useTranslation();
+  // Mount the attribute picker's popup inside the dialog (not body) so it
+  // stays clickable/scrollable under the dialog's react-remove-scroll lock.
+  const attributePortalRef = useRef<HTMLDivElement>(null);
 
   // Only fetch when the dialog is open — closing the dialog should not
   // keep a live subscription against the attributes query.
@@ -238,11 +241,12 @@ export const EventCreateDialog = ({
             ))}
 
             {selectMode ? (
-              <div className="flex flex-row">
-                <SelectPopover
+              <div className="flex flex-row" ref={attributePortalRef}>
+                <ComboboxSelect
                   className="w-full"
-                  contentClassName="w-[--radix-popover-trigger-width]"
                   placeholder={t('settings.events.form.attributesPlaceholder')}
+                  searchPlaceholder={t('common.search')}
+                  emptyText={t('common.selectPopover.noItems')}
                   value={selectedAttributeValue}
                   // Hide attributes already added to this new event so
                   // the dropdown only shows still-pickable options.
@@ -252,13 +256,10 @@ export const EventCreateDialog = ({
                     )
                     .map((attr) => ({
                       value: attr.id,
-                      name: attr.displayName,
+                      label: attr.displayName,
                     }))}
                   onValueChange={handleAttributeSelect}
-                  // Render inline (no portal) because this dialog uses
-                  // react-remove-scroll, which kills wheel events on
-                  // body-portaled descendants — see SelectPopoverProps.
-                  withoutPortal
+                  container={attributePortalRef}
                 />
                 <Button
                   type="button"

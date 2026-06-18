@@ -4,6 +4,7 @@ import * as SharedPopper from '@usertour/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
 import { GoogleFontCss } from '@usertour/business-components';
 import { ScaledPreviewContainer, Button } from '@usertour/ui';
+import { cn } from '@usertour/tailwind';
 import { Theme } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour/constants';
 import { memo, MouseEvent, useCallback, useRef } from 'react';
@@ -37,30 +38,57 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
   return (
     <>
       <GoogleFontCss settings={themeSetting} />
+      {/* Visual language matches the content list card (see data-table.tsx):
+          light lifts off the page with a soft shadow (no border), dark is a
+          solid raised-surface block split by a hairline divider. Hover deepens
+          the drop shadow in light; dark can't (shadow is invisible on
+          near-black) so it lightens the surface a step instead — neither lifts.
+          The preview area is dark:bg-transparent (it would otherwise re-declare
+          surface-raised) so the dark hover-lighten shows through the whole card,
+          not just the header. Layout keeps theme's name-on-top header — every
+          preview renders the same sample content (only the styling differs), so
+          the name, not the preview, is how you tell themes apart; it leads.
+
+          The resting shadow leads with a tight, 0-offset ambient layer: the
+          header is white on a white page, so a purely downward drop shadow
+          leaves the card's TOP edge undefined and the header dissolves into the
+          page. The ambient layer wraps all four edges (including the top) so
+          the card reads as a block; low blur keeps it from haloing outward. The
+          hover shadow keeps this ambient layer too, so the top edge holds while
+          the drop deepens. */}
       <div
-        className="h-52 min-w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
         ref={containerRef}
         onClick={handleOnClick}
+        className={cn(
+          'relative flex h-52 cursor-pointer flex-col overflow-hidden rounded-xl bg-card dark:bg-surface-raised',
+          'shadow-[0_0_3px_rgba(16,24,40,0.07),0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.06)] dark:shadow-none',
+          'transition-[box-shadow,background-color] duration-200',
+          'hover:shadow-[0_0_3px_rgba(16,24,40,0.07),0_6px_20px_rgba(16,24,40,0.12)] dark:hover:shadow-none',
+          'dark:hover:bg-surface-raised-hover',
+        )}
       >
-        <div className="bg-slate-50 dark:bg-gray-800 rounded-t-md py-2.5 px-5 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-row grow space-x-2">
-            <span className="text-base font-medium text-gray-900 dark:text-white max-w-40	truncate ...">
-              {theme.name}
-            </span>
+        <div className="flex flex-none items-center justify-between gap-2 px-4 py-3 dark:border-b dark:border-white/[0.06]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-medium text-foreground">{theme.name}</span>
             {theme.isDefault && (
-              <span className="bg-primary px-1.5 py-0.5 rounded text-sm font-normal text-primary-foreground">
+              <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-xs font-medium text-primary">
                 {t('settings.themes.defaultBadge')}
               </span>
             )}
           </div>
           <ThemeEditDropdownMenu theme={theme} onSubmit={() => {}} disabled={isViewOnly}>
-            <Button variant={'ghost'} size={'icon'}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-mr-1.5 size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+            >
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>
           </ThemeEditDropdownMenu>
         </div>
         <div
-          className="flex justify-center items-center h-40 flex-col overflow-hidden"
+          className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden bg-muted dark:bg-transparent"
           {...({ inert: '' } as any)}
         >
           <ScaledPreviewContainer className="origin-[center_center]" maxWidth={260} maxHeight={140}>

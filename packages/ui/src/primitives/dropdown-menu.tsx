@@ -8,7 +8,7 @@ import * as React from 'react';
 import { cn } from '@usertour/tailwind';
 
 const dropdownMenuContentVariants = cva(
-  'z-50 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+  'z-50 overflow-hidden rounded-md bg-popover text-popover-foreground shadow-popper dark:shadow-none dark:ring-1 dark:ring-foreground/10 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
   {
     variants: {
       variant: {
@@ -33,12 +33,24 @@ const dropdownMenuItemVariants = cva(
   'relative flex cursor-pointer select-none items-center rounded-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
   {
     variants: {
+      // Semantic axis, matching Button / Badge / AlertDialogAction's
+      // `variant="destructive"`: a destructive item stays red on hover and tints
+      // its background red, instead of the base accent hover that would
+      // otherwise override the rest-state color and drop the warning cue exactly
+      // when the user is about to click it.
       variant: {
+        default: '',
+        destructive:
+          'text-destructive focus:bg-destructive/10 focus:text-destructive hover:bg-destructive/10 hover:text-destructive',
+      },
+      // Density axis (was `variant: default | compact`, renamed so `variant` can
+      // carry the standard destructive semantics above).
+      size: {
         default: 'px-2 py-1.5 text-sm',
         compact: 'gap-2 px-2 py-1 text-sm leading-tight',
       },
     },
-    defaultVariants: { variant: 'default' },
+    defaultVariants: { variant: 'default', size: 'default' },
   },
 );
 
@@ -99,7 +111,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+      'z-50 min-w-[8rem] overflow-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-popper dark:shadow-none dark:ring-1 dark:ring-foreground/10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
       className,
     )}
     {...props}
@@ -135,10 +147,10 @@ export interface DropdownMenuItemProps
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   DropdownMenuItemProps
->(({ className, inset, variant, ...props }, ref) => (
+>(({ className, inset, variant, size, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
-    className={cn(dropdownMenuItemVariants({ variant }), inset && 'pl-8', className)}
+    className={cn(dropdownMenuItemVariants({ variant, size }), inset && 'pl-8', className)}
     {...props}
   />
 ));
@@ -219,7 +231,7 @@ const DropdownMenuLabel = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
-    className={cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)}
+    className={cn('px-2 py-1.5 text-sm font-medium', inset && 'pl-8', className)}
     {...props}
   />
 ));

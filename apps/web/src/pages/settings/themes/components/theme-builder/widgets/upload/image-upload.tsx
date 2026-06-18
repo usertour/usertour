@@ -41,18 +41,21 @@ export const ImageUploadWidget = (props: ImageUploadWidgetProps) => {
     (option: UploadOption) => {
       const file = option.file;
       if (!(file instanceof File)) {
-        toast({ variant: 'destructive', title: 'Please select a valid image file.' });
+        toast({ variant: 'destructive', title: t('settings.themes.upload.invalidImageFile') });
         option.onError?.(new Error('Invalid file type'));
         return;
       }
       if (!['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)) {
-        toast({ variant: 'destructive', title: 'Only PNG, JPG, or SVG files are supported.' });
+        toast({ variant: 'destructive', title: t('settings.themes.upload.unsupportedImageType') });
         option.onError?.(new Error('Unsupported file type'));
         return;
       }
       if (maxSizeBytes && file.size > maxSizeBytes) {
         const mb = Math.round(maxSizeBytes / 1024 / 1024);
-        toast({ variant: 'destructive', title: `Max file size is ${mb}MB.` });
+        toast({
+          variant: 'destructive',
+          title: t('settings.themes.upload.maxFileSizeExceeded', { mb }),
+        });
         option.onError?.(new Error('File too large'));
         return;
       }
@@ -64,7 +67,7 @@ export const ImageUploadWidget = (props: ImageUploadWidgetProps) => {
   const previewSizeClass = previewAspect === 'wide' ? 'h-12 w-24' : 'h-12 w-12';
 
   return (
-    <div className="rounded-lg border bg-background p-4">
+    <div className="rounded-lg border bg-card p-4">
       {description && <p className="mb-3 text-sm text-muted-foreground">{description}</p>}
       <Upload
         accept={ACCEPT_IMAGE_TYPES}

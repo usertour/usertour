@@ -6,6 +6,7 @@ import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, useParams } from 'react-router-dom';
 import usertour from 'usertour.js';
 import { AdminLayoutSurface, SURFACE_BODY_CLASSNAMES } from './admin-surface';
@@ -44,7 +45,7 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
     : isNonPrimary;
 
   const surfaceClassName =
-    surface === 'muted' ? 'bg-slate-100 dark:bg-background' : 'bg-white dark:bg-card/60';
+    surface === 'muted' ? 'bg-muted dark:bg-surface' : 'bg-background dark:bg-card';
 
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
@@ -100,8 +101,7 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
 // attribute / theme lists are all hook-based now (`useEnvironmentList`,
 // `useSubscription`, `useEventList`, `useAttributeList`, `useThemeList`)
 // — they dedupe via Apollo's shared cache without needing a Provider
-// at this layer. `packages/contexts/.../{attribute,theme}-list-context`
-// still exists for `packages/builder` consumers; v0.8.6 retires those.
+// at this layer.
 export const AdminProvidersOutlet = () => {
   const { project, userInfo } = useAppContext();
   useUserTracking(userInfo);
@@ -125,11 +125,14 @@ export const AdminProvidersOutlet = () => {
 AdminProvidersOutlet.displayName = 'AdminProvidersOutlet';
 
 // Sets the document body surface class for a leaf route's shell.
-export const ShellHelmet = ({ surface }: { surface: AdminLayoutSurface }) => (
-  <Helmet>
-    <title>Usertour App</title>
-    <body className={SURFACE_BODY_CLASSNAMES[surface]} />
-  </Helmet>
-);
+export const ShellHelmet = ({ surface }: { surface: AdminLayoutSurface }) => {
+  const { t } = useTranslation();
+  return (
+    <Helmet>
+      <title>{t('common.appTitle')}</title>
+      <body className={SURFACE_BODY_CLASSNAMES[surface]} />
+    </Helmet>
+  );
+};
 
 ShellHelmet.displayName = 'ShellHelmet';

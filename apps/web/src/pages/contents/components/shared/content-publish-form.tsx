@@ -17,6 +17,7 @@ import { useGetContentVersionQuery, usePublishContentVersionMutation } from '@us
 import { getErrorMessage } from '@usertour/helpers';
 import * as React from 'react';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { getContentTypeMeta } from './content-type-meta';
@@ -33,10 +34,11 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { invoke: publishVersion } = usePublishContentVersionMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { environmentList } = useEnvironmentList();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const { contentId } = useContentDetailUI();
-  const { content, refetch } = useContentDetail(contentId);
+  const { content } = useContentDetail(contentId);
   const contentTypeMeta = getContentTypeMeta(content?.type);
 
   // `skip: !open` so the dialog only pays for this query when it's
@@ -73,8 +75,8 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const showToast = (isSuccess: boolean, message?: string) => {
     const variant = isSuccess ? 'success' : 'destructive';
     const title = isSuccess
-      ? `The ${contentTypeMeta.singular} published successfully.`
-      : `The ${contentTypeMeta.singular} failed to publish.`;
+      ? t('contents.shared.publish.successToast', { type: contentTypeMeta.singular })
+      : t('contents.shared.publish.failureToast', { type: contentTypeMeta.singular });
     toast({ variant, title: message || title });
   };
 
@@ -86,13 +88,19 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
 
   const getPublishButtonText = () => {
     const count = selectedEnvironments.length;
-    if (count === 0) return 'Publish';
-    if (count === environmentList?.length) return 'Publish to all environments';
+    if (count === 0) {
+      return t('contents.shared.publish.button');
+    }
+    if (count === environmentList?.length) {
+      return t('contents.shared.publish.buttonAll');
+    }
     if (count === 1) {
       const name = environmentList?.find((env) => env.id === selectedEnvironments[0])?.name;
-      return name ? `Publish to ${name}` : 'Publish';
+      return name
+        ? t('contents.shared.publish.buttonToEnvironment', { name })
+        : t('contents.shared.publish.button');
     }
-    return `Publish to ${count} environments`;
+    return t('contents.shared.publish.buttonToCount', { count });
   };
 
   const allEnvironmentsUpToDate = React.useMemo(() => {
@@ -107,7 +115,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     if (!environmentList) {
       toast({
         variant: 'destructive',
-        title: 'No environments available.',
+        title: t('contents.shared.publish.noEnvironments'),
       });
       return;
     }
@@ -115,7 +123,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     if (selectedEnvironments.length === 0) {
       toast({
         variant: 'destructive',
-        title: 'Please select at least one environment to publish to.',
+        title: t('contents.shared.publish.selectEnvironment'),
       });
       return;
     }
@@ -135,18 +143,22 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       showToast(
         allSuccess,
         allSuccess
-          ? `The ${contentTypeMeta.singular} published successfully to ${envNames}.`
-          : 'Some environments failed to publish.',
+          ? t('contents.shared.publish.successToastEnvironments', {
+              type: contentTypeMeta.singular,
+              envNames,
+            })
+          : t('contents.shared.publish.partialFailure'),
       );
 
-      await refetch();
+      // publishVersion's refetchQueries (['getContent', 'queryContent'])
+      // already refreshes the detail content and the list; no manual refetch.
       onSubmit(allSuccess);
       setIsLoading(false);
     } catch (error) {
       showToast(false, getErrorMessage(error));
       setIsLoading(false);
     }
-  }, [environmentList, publishVersion, onSubmit, selectedEnvironments, toast, versionId]);
+  }, [environmentList, publishVersion, onSubmit, selectedEnvironments, toast, versionId, t]);
 
   if (!version) {
     return null;
@@ -156,11 +168,13 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Publish {contentTypeMeta.singular}</DialogTitle>
+          <DialogTitle>
+            {t('contents.shared.publish.title', { type: contentTypeMeta.singular })}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Environments to publish to :</Label>
+            <Label>{t('contents.shared.publish.environmentsLabel')}</Label>
             {environmentList?.map((env) => {
               const publishedVersion = getPublishedVersionInfo(env.id);
               const isAlreadyPublished = publishedVersion?.id === version?.id;
@@ -177,15 +191,20 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
                   <div className="flex items-center space-x-2">
                     <Label htmlFor={`env-${env.id}`}>{env.name}</Label>
                     {isAlreadyPublished ? (
-                      <span className="text-sm text-gray-500">
-                        ({env.name} is already on v{version.sequence + 1})
+                      <span className="text-sm text-muted-foreground">
+                        {t('contents.shared.publish.alreadyOnVersion', {
+                          name: env.name,
+                          version: version.sequence + 1,
+                        })}
                       </span>
                     ) : publishedVersion ? (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         (v{publishedVersion.sequence + 1} → v{version.sequence + 1})
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-500">Unpublished</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t('contents.shared.publish.unpublished')}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -196,7 +215,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" type="button">
-              Cancel
+              {t('contents.shared.common.cancel')}
             </Button>
           </DialogClose>
           <Button

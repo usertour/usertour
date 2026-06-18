@@ -27,8 +27,9 @@ export interface ResourceTableProps<T> {
    */
   onRowClick?: (item: T) => void;
   /**
-   * Rendered when `rows` is empty. Defaults to a single centred
-   * "No results." cell spanning every column.
+   * Rendered when `rows` is empty. When omitted, the empty-state cell is
+   * still shown but with no content — pass a translated string from the
+   * consumer (e.g. `t('...')`).
    */
   empty?: ReactNode;
   className?: string;
@@ -59,7 +60,7 @@ export function ResourceTable<T>(props: ResourceTableProps<T>) {
           {isEmpty ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                {empty ?? 'No results.'}
+                {empty}
               </TableCell>
             </TableRow>
           ) : (

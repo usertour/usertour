@@ -109,6 +109,7 @@ export enum ServerMessageKind {
  */
 export type ProjectConfig = {
   removeBranding: boolean;
+  customCss: boolean;
   planType: string;
 };
 

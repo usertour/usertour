@@ -54,11 +54,12 @@ function formatDateHeader(dateKey: string): string {
   return format(new Date(`${dateKey}T00:00:00`), 'MMM d, yyyy');
 }
 
-// Get event display name
-function getEventDisplayName(event: BizEvent): string {
+// Get event display name; returns null when no name is available so the
+// caller can substitute a translated fallback.
+function getEventDisplayName(event: BizEvent): string | null {
   if (event.event?.displayName) return event.event.displayName;
   if (event.event?.codeName) return event.event.codeName;
-  return 'Unknown event';
+  return null;
 }
 
 type EventCategory =
@@ -97,8 +98,13 @@ const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: str
 
 const CATEGORY_ICON_COLOR = 'text-muted-foreground';
 
-// Extract inline descriptor: content name + sub-context (step/task/url)
-function getEventDescriptor(event: BizEvent): { primary?: string; secondary?: string } {
+// Extract inline descriptor: content name + sub-context (step/task/url).
+// `formatStep` receives the step number string and returns a localised label
+// (e.g. "Step 3"); the caller passes `(n) => t('activityFeed.stepN', { number: n })`.
+function getEventDescriptor(
+  event: BizEvent,
+  formatStep: (number: string) => string,
+): { primary?: string; secondary?: string } {
   const data = (event.data || {}) as Record<string, unknown>;
   const category = getEventCategory(event);
 
@@ -108,10 +114,14 @@ function getEventDescriptor(event: BizEvent): { primary?: string; secondary?: st
   switch (category) {
     case 'flow': {
       const primary = str(data[EventAttributes.FLOW_NAME]);
-      const stepNumber = str(data[EventAttributes.FLOW_STEP_NUMBER]);
+      // FLOW_STEP_NUMBER is 0-indexed in event data; display it 1-based to match
+      // the expanded detail (getFieldValue) and the sessions list, which both +1.
+      const rawStep = data[EventAttributes.FLOW_STEP_NUMBER];
+      const stepNumber =
+        rawStep === undefined || rawStep === null ? undefined : String(Number(rawStep) + 1);
       const stepName = str(data[EventAttributes.FLOW_STEP_NAME]);
       const secondary = stepNumber
-        ? `Step ${stepNumber}${stepName ? `: ${stepName}` : ''}`
+        ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}`
         : stepName;
       return { primary, secondary };
     }
@@ -150,8 +160,6 @@ function getFallbackSessionAttributeKey(event: BizEvent): EventAttributes | null
   return CATEGORY_SESSION_ATTRIBUTE_KEY[getEventCategory(event)] ?? null;
 }
 
-const SESSION_LINK_LABEL = 'Session';
-
 interface ActivityFeedRowProps {
   event: BizEvent;
   environmentId?: string;
@@ -188,11 +196,15 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
     attributeList,
     copyWithToast,
   } = props;
+  const { t } = useTranslation();
   const time = format(new Date(event.createdAt), 'hh:mm a');
-  const displayName = getEventDisplayName(event);
+  const displayName = getEventDisplayName(event) ?? t('activityFeed.unknownEvent');
   const category = getEventCategory(event);
   const CategoryIcon = CATEGORY_ICON[category];
-  const { primary: descriptorPrimary, secondary: descriptorSecondary } = getEventDescriptor(event);
+  const { primary: descriptorPrimary, secondary: descriptorSecondary } = getEventDescriptor(
+    event,
+    (number) => t('activityFeed.stepN', { number }),
+  );
   const hasDescriptor = !!(descriptorPrimary || descriptorSecondary);
   const hasEventData = !!(event.data && Object.keys(event.data).length > 0);
   const fallbackSessionAttributeKey =
@@ -260,7 +272,7 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
                         className="inline-block max-w-full truncate text-primary hover:underline underline-offset-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        View session
+                        {t('activityFeed.viewSession')}
                       </Link>
                     ) : (
                       <div className="group flex items-start min-w-0 gap-2">
@@ -287,7 +299,7 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
           {hasSessionLink && (
             <div className="flex min-w-0 border-b last:border-b-0">
               <span className="w-1/4 min-w-0 p-2 flex-none font-medium truncate">
-                {SESSION_LINK_LABEL}
+                {t('activityFeed.session')}
               </span>
               <div className="flex-1 min-w-0 overflow-hidden p-2">
                 <Link
@@ -295,7 +307,7 @@ const ActivityFeedRowBase = (props: ActivityFeedRowProps) => {
                   className="inline-block max-w-full truncate text-primary hover:underline underline-offset-2"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  View session
+                  {t('activityFeed.viewSession')}
                 </Link>
               </div>
             </div>
@@ -355,7 +367,7 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
-        <img src="/images/rocket.png" alt="No events" className="w-16 h-16 mb-4 opacity-50" />
+        <img src="/images/rocket.png" alt="" className="w-16 h-16 mb-4 opacity-50" />
         <p className="text-muted-foreground text-center">
           {emptyMessage || t('activityFeed.noEvents')}
         </p>
@@ -367,7 +379,7 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
     <div className="flex flex-col w-full">
       {Array.from(dateGroups.entries()).map(([dateKey, dayEvents]) => (
         <Fragment key={dateKey}>
-          <div className="px-2 py-2 text-xs font-semibold text-muted-foreground bg-muted/40 border-b">
+          <div className="px-2 py-2 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
             {formatDateHeader(dateKey)}
           </div>
           {dayEvents.map((event) => (
@@ -390,7 +402,7 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
           <Button
             onClick={loadMore}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-muted border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="flex items-center space-x-2">
@@ -456,7 +468,7 @@ export const ActivityFeed = ({
                 <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reload</TooltipContent>
+            <TooltipContent>{t('activityFeed.reload')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

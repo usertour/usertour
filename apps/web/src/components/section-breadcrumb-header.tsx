@@ -26,7 +26,7 @@ interface SectionBreadcrumbHeaderProps {
 // treatment.
 export function SectionBreadcrumbHeader({ items, menu, className }: SectionBreadcrumbHeaderProps) {
   return (
-    <div className={cn('sticky top-0 z-10 border-b border-border/50 bg-background', className)}>
+    <div className={cn('sticky top-0 z-10 border-b border-border/50 bg-card', className)}>
       <div className="flex h-14 w-full min-w-0 items-center gap-2 px-4">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;

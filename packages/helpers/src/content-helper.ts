@@ -21,7 +21,7 @@ import {
   ResourceCenterBlockType,
 } from '@usertour/types';
 
-import { cuid, uuidV4 } from './helper';
+import { cuid } from './helper';
 import { regenerateConditionIds } from './conditions';
 import { isArray, isEmptyString, isObject } from './type-utils';
 
@@ -183,6 +183,31 @@ export const generateUniqueCopyName = (originalName: string, existingNames?: str
   return name;
 };
 
+// Type labels for default step names. Keys are StepContentType values, kept as
+// string literals so this stays a pure helper without importing the enum.
+const STEP_TYPE_LABELS: Record<string, string> = {
+  tooltip: 'Tooltip',
+  modal: 'Modal',
+  bubble: 'Bubble',
+  hidden: 'Hidden step',
+};
+
+/**
+ * Default name for a newly created flow step: a type label plus the smallest
+ * number that keeps it unique among the existing step names — e.g. "Tooltip 1",
+ * "Modal 1", "Tooltip 2". English literal, like generateUniqueCopyName's
+ * "(copy)": it's a stored value the user can rename, not display-only copy.
+ */
+export const generateDefaultStepName = (type: string, existingNames?: string[]): string => {
+  const label = STEP_TYPE_LABELS[type] ?? 'Step';
+  const taken = new Set(existingNames ?? []);
+  let number = 1;
+  while (taken.has(`${label} ${number}`)) {
+    number += 1;
+  }
+  return `${label} ${number}`;
+};
+
 /**
  * Regenerate IDs for step triggers and their nested actions/conditions
  * @param triggers - Array of step triggers to process
@@ -242,7 +267,7 @@ export const duplicateChecklistData = (data: unknown): unknown => {
     content: processQuestionElements(checklistData.content),
     items: checklistData.items.map((item) => ({
       ...item,
-      id: uuidV4(),
+      id: cuid(),
       clickedActions: isArray(item.clickedActions)
         ? regenerateConditionIds(item.clickedActions)
         : item.clickedActions,
@@ -381,7 +406,7 @@ export const createDefaultResourceCenterData = (): ResourceCenterData => ({
   ...DEFAULT_RESOURCE_CENTER_DATA,
   tabs: [
     {
-      id: uuidV4(),
+      id: cuid(),
       name: 'Home',
       iconSource: LauncherIconSource.BUILTIN,
       iconType: 'home-line',

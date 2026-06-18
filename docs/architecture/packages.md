@@ -28,7 +28,7 @@ doesn't relitigate the basics.
                                 │
                        ┌────────▼─────────┐
                        │     L4 Pages     │
-                       │     builder      │
+                       │  (in apps/web)   │
                        └────────┬─────────┘
                                 │
                        ┌────────▼─────────┐
@@ -39,9 +39,9 @@ doesn't relitigate the basics.
                                 │
                        ┌────────▼─────────┐
                        │ L2 Infrastructure│
-                       │  hooks · contexts│
-                       │   gql · i18n     │
-                       │  finder · widget │
+                       │   hooks · gql    │
+                       │  i18n · finder   │
+                       │     widget       │
                        └────────┬─────────┘
                                 │
                        ┌────────▼─────────┐
@@ -182,15 +182,14 @@ React components with no business knowledge:
 without knowing what context that is. It accepts data via props, never
 reaches for app state, never queries the data layer.
 
-**Counter-example**: `SelectorDialog` knows about the live-document
-element selector handshake — it belongs in L3, not L1.
+**Counter-example**: the `Conditions` chip editor knows about rules /
+segments and reaches the data layer — it belongs in L3, not L1.
 
 ## L2 — Infrastructure (cross-cutting concerns)
 
-Data access, shared contexts, internationalization, runtime engines.
+Data access, internationalization, runtime engines.
 
 - `@usertour/hooks` — Apollo / React hooks
-- `@usertour/contexts` — React context providers
 - `@usertour/gql` — GraphQL operations and generated types
 - `@usertour/i18n` — translation bundles
 - `@usertour/finder` — element finder utility
@@ -212,9 +211,8 @@ page or flow.
   star-rating). **ContentEditor and rich editor are an integral unit; they
   do not split into smaller packages.**
 - `@usertour/business-components` — hosts the Conditions chip
-  editor (L3) plus a handful of business components (SelectorDialog,
-  ElementSelector, GoogleFontCss, AttributeCreateForm — closer to L4).
-  See "Known drift" below.
+  editor (L3) plus a handful of business components (GoogleFontCss and the
+  settings-domain components — closer to L4). See "Known drift" below.
 
 **Rule of thumb**: knows about content elements, rules, segments,
 attributes — but does not know which page is rendering it.
@@ -222,12 +220,12 @@ attributes — but does not know which page is rendering it.
 ## L4 — Page-level / business composition
 
 Pages and high-level business compositions bound to specific UI flows.
+This layer has no standalone package today: the builder (flow / launcher
+/ checklist / resource-center / banner editors) lives inside `apps/web`
+— it was previously the `@usertour/builder` package.
 
-- `@usertour/builder` — flow / launcher / checklist /
-  resource-center / banner builder pages
-
-**Rule of thumb**: deleting this package would break a specific UI
-workflow but leave the rest of the system intact.
+**Rule of thumb**: code here would break a specific UI workflow but leave
+the rest of the system intact.
 
 ## L5 — Apps
 
@@ -243,7 +241,7 @@ The layering above is the target. Current state has a few honest gaps:
 
 | Package | Drift | Resolution path |
 |---|---|---|
-| `@usertour/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
+| `@usertour/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (GoogleFontCss, settings-domain components). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `settings/` / `theme/`) already segment by concern. |
 | `@usertour/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
 | L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour/hooks` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 

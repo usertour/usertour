@@ -8,6 +8,7 @@ import {
 import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour/icons';
 import { Content } from '@usertour/types';
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
@@ -22,6 +23,7 @@ type ContentEditDropdownMenuProps = {
 };
 export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => {
   const { content, children, onSubmit, disabled } = props;
+  const { t } = useTranslation();
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
   const [openUnpublish, setOpenUnpublish] = useState(false);
@@ -53,30 +55,22 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
-          <DropdownMenuItem
-            onClick={handleUnpublishOpen}
-            className="cursor-pointer"
-            disabled={!isPublished || disabled}
-          >
+          <DropdownMenuItem onClick={handleUnpublishOpen} disabled={!isPublished || disabled}>
             <UnPublishIcon className="mr-1" width={14} height={14} />
-            Unpublish
+            {t('contents.shared.menu.unpublish')}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={handleDuplicateOpen}
-            className="cursor-pointer"
-            disabled={disabled}
-          >
+          <DropdownMenuItem onClick={handleDuplicateOpen} disabled={disabled}>
             <CopyIcon className="mr-1" width={15} height={15} />
-            Duplicate {contentTypeMeta.singular}
+            {t('contents.shared.menu.duplicate', { type: contentTypeMeta.singular })}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-600 cursor-pointer"
+            variant="destructive"
             onClick={handleOnClick}
             disabled={isPublishedAtLeastOneEnvironment(content) || disabled}
           >
             <Delete2Icon className="mr-1" />
-            Delete {contentTypeMeta.singular}
+            {t('contents.shared.menu.delete', { type: contentTypeMeta.singular })}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

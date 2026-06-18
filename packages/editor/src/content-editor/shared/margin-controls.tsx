@@ -1,7 +1,8 @@
 // Shared MarginControls component for content editor elements
 
-import { Checkbox, Input, Label } from '@usertour/ui';
-import { memo, useCallback, useId } from 'react';
+import { BooleanField, Input } from '@usertour/ui';
+import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { MarginConfig, MarginPosition } from '../types/margin';
 
@@ -13,8 +14,7 @@ export interface MarginControlsProps {
 
 export const MarginControls = memo(
   ({ margin, onMarginChange, onMarginEnabledChange }: MarginControlsProps) => {
-    const id = useId();
-    const marginCheckboxId = `${id}-margin`;
+    const { t } = useTranslation();
 
     const handleLeftChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => onMarginChange('left', e.target.value),
@@ -38,44 +38,45 @@ export const MarginControls = memo(
 
     return (
       <>
-        <div className="flex gap-x-2">
-          <Checkbox
-            id={marginCheckboxId}
-            checked={margin?.enabled ?? false}
-            onCheckedChange={onMarginEnabledChange}
-          />
-          <Label htmlFor={marginCheckboxId}>Margin</Label>
-        </div>
+        <BooleanField
+          label={t('contentBuilder.editor.margin.label')}
+          checked={margin?.enabled ?? false}
+          onChange={onMarginEnabledChange}
+        />
         {margin?.enabled && (
           <div className="flex gap-x-2">
             <div className="flex flex-col justify-center">
               <Input
+                variant="compact-surface"
                 value={margin?.left ?? ''}
-                placeholder="Left"
+                placeholder={t('contentBuilder.editor.common.left')}
                 onChange={handleLeftChange}
-                className="bg-background flex-none w-20"
+                className="flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center gap-y-2">
               <Input
+                variant="compact-surface"
                 value={margin?.top ?? ''}
                 onChange={handleTopChange}
-                placeholder="Top"
-                className="bg-background flex-none w-20"
+                placeholder={t('contentBuilder.editor.common.top')}
+                className="flex-none w-20"
               />
               <Input
+                variant="compact-surface"
                 value={margin?.bottom ?? ''}
                 onChange={handleBottomChange}
-                placeholder="Bottom"
-                className="bg-background flex-none w-20"
+                placeholder={t('contentBuilder.editor.common.bottom')}
+                className="flex-none w-20"
               />
             </div>
             <div className="flex flex-col justify-center">
               <Input
+                variant="compact-surface"
                 value={margin?.right ?? ''}
-                placeholder="Right"
+                placeholder={t('contentBuilder.editor.common.right')}
                 onChange={handleRightChange}
-                className="bg-background flex-none w-20"
+                className="flex-none w-20"
               />
             </div>
           </div>

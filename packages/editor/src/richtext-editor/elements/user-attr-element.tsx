@@ -1,5 +1,6 @@
-import type { ChangeEvent, MouseEvent, ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Transforms } from 'slate';
 import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
@@ -7,9 +8,9 @@ import { ReactEditor, useSlateStatic } from 'slate-react';
 import type { Attribute } from '@usertour/types';
 import {
   Button,
-  SelectPopover,
-  Input,
+  ComboboxSelect,
   Label,
+  TextField,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -39,7 +40,7 @@ interface DeleteUserAttrButtonProps {
 
 interface UserAttrOption {
   value: string;
-  name: string;
+  label: string;
 }
 
 interface UserAttrPopoverContentProps {
@@ -48,7 +49,7 @@ interface UserAttrPopoverContentProps {
   attrCode?: string;
   fallback: string;
   onAttrChange: (attrCode: string) => void;
-  onFallbackChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onFallbackChange: (value: string) => void;
   onDelete: () => void;
 }
 
@@ -63,6 +64,7 @@ interface UserAttributeElementSerializeProps {
  * Provides a button to remove user attribute element
  */
 const DeleteUserAttrButton = memo(({ onDelete }: DeleteUserAttrButtonProps) => {
+  const { t } = useTranslation();
   return (
     <TooltipProvider>
       <Tooltip>
@@ -77,7 +79,7 @@ const DeleteUserAttrButton = memo(({ onDelete }: DeleteUserAttrButtonProps) => {
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
-          <p>Delete user attribute</p>
+          <p>{t('contentBuilder.editor.userAttr.deleteTooltip')}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -100,6 +102,7 @@ const UserAttrPopoverContent = memo(
     onFallbackChange,
     onDelete,
   }: UserAttrPopoverContentProps) => {
+    const { t } = useTranslation();
     return (
       <PopoverContent
         className="w-72"
@@ -109,22 +112,26 @@ const UserAttrPopoverContent = memo(
         sideOffset={5}
         alignOffset={-2}
       >
-        <div className="flex flex-col gap-2.5">
-          <SelectPopover
-            options={options}
-            value={attrCode}
-            onValueChange={onAttrChange}
-            placeholder="Select an attribute"
-            contentStyle={{ zIndex: zIndex + 2 }}
-          />
-          <Label htmlFor="fallback-text">Fallback</Label>
-          <Input
-            type="text"
-            className="bg-background"
-            id="fallback-text"
+        <div className="flex flex-col space-y-3">
+          <div className="flex flex-col space-y-2">
+            <Label>{t('contentBuilder.editor.userAttr.attributeLabel')}</Label>
+            <ComboboxSelect
+              options={options}
+              value={attrCode}
+              onValueChange={onAttrChange}
+              placeholder={t('contentBuilder.editor.userAttr.selectPlaceholder')}
+              searchPlaceholder={t('common.search')}
+              emptyText={t('common.selectPopover.noItems')}
+              size="compact"
+              surface="raised"
+              contentStyle={{ zIndex: zIndex + 2 }}
+            />
+          </div>
+          <TextField
+            label={t('contentBuilder.editor.userAttr.fallbackLabel')}
             value={fallback}
-            placeholder="Enter fallback text"
             onChange={onFallbackChange}
+            placeholder={t('contentBuilder.editor.userAttr.fallbackPlaceholder')}
           />
           <DeleteUserAttrButton onDelete={onDelete} />
         </div>
@@ -156,7 +163,7 @@ export const UserAttributeElement = memo((props: RenderElementProps) => {
         ?.filter((attr: Attribute) => attr.bizType === USER_ATTR_BIZ_TYPE)
         ?.map((attr: Attribute) => ({
           value: attr.codeName,
-          name: attr.displayName,
+          label: attr.displayName,
         })) ?? []
     );
   }, [editorAttributes]);
@@ -183,8 +190,8 @@ export const UserAttributeElement = memo((props: RenderElementProps) => {
   );
 
   // Handle fallback text change
-  const handleFallbackChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setFallback(e.target.value);
+  const handleFallbackChange = useCallback((value: string) => {
+    setFallback(value);
   }, []);
 
   // Handle popover open/close and save fallback on close

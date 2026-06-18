@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { LauncherIconSource } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
-import { RiHomeFill } from '@usertour/icons';
 import { useResourceCenterContext } from './context';
 import type { ResourceCenterTab } from '@usertour/types';
 import { IconsList } from '../launcher';
@@ -60,11 +59,8 @@ export const ResourceCenterTabBar = memo(() => {
 
   if (!showTabBar) return null;
 
-  const homeTab = visibleTabs[0];
-  const otherTabs = visibleTabs.slice(1);
-
   // If there's only one tab (Home), no tab bar needed
-  if (otherTabs.length === 0) return null;
+  if (visibleTabs.length <= 1) return null;
 
   return (
     <div
@@ -76,25 +72,10 @@ export const ResourceCenterTabBar = memo(() => {
       )}
     >
       <div className={cn('flex h-[60px] flex-row items-stretch justify-between', 'px-1')}>
-        {/* Home tab */}
-        {homeTab && (
-          <button
-            type="button"
-            className={cn(
-              tabItemBase,
-              nav.activeTabId === homeTab.id
-                ? 'text-sdk-brand-background'
-                : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
-            )}
-            onClick={() => actions.switchTab(homeTab.id)}
-          >
-            <RiHomeFill size={20} className="flex-shrink-0" />
-            <span className="truncate max-w-full text-sm">Home</span>
-          </button>
-        )}
-
-        {/* Other tabs */}
-        {otherTabs.map((tab) => (
+        {/* All tabs render from their own data — the Home tab (first) is no
+            special case beyond its fallback label, so the name/icon set in
+            the builder show up here. */}
+        {visibleTabs.map((tab, index) => (
           <button
             key={tab.id}
             type="button"
@@ -107,7 +88,9 @@ export const ResourceCenterTabBar = memo(() => {
             onClick={() => actions.switchTab(tab.id)}
           >
             <TabBarIcon tab={tab} isActive={nav.activeTabId === tab.id} />
-            <span className="truncate max-w-full text-sm">{tab.name || 'Untitled'}</span>
+            <span className="truncate max-w-full text-sm">
+              {tab.name || (index === 0 ? 'Home' : 'Untitled')}
+            </span>
           </button>
         ))}
       </div>

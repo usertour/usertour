@@ -9,11 +9,10 @@ import {
 } from '@usertour/ui';
 import {
   ArrowRightIcon,
-  EyeNoneIcon,
-  ModelIcon,
-  RiMessageFill,
-  SpinnerIcon,
-  TooltipIcon,
+  RiChat2Line,
+  RiEyeOffLine,
+  RiMessage2Line,
+  RiWindow2Line,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -53,13 +52,13 @@ const writeData = (condition: RulesCondition, patch: Partial<StepGotoData>): Rul
 const getStepTypeIcon = (type: string) => {
   switch (type) {
     case StepContentType.BUBBLE:
-      return <RiMessageFill className="h-4 w-4 shrink-0" />;
+      return <RiMessage2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.TOOLTIP:
-      return <TooltipIcon className="h-4 w-4 shrink-0" />;
+      return <RiChat2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.MODAL:
-      return <ModelIcon className="h-4 w-4 shrink-0" />;
+      return <RiWindow2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.HIDDEN:
-      return <EyeNoneIcon className="h-4 w-4 shrink-0" />;
+      return <RiEyeOffLine className="h-4 w-4 shrink-0" />;
     default:
       return null;
   }
@@ -91,7 +90,7 @@ function StepGotoSummary({ condition }: { condition: RulesCondition }) {
       <span className={summaryTextClass}>
         <span className="text-muted-foreground">{t('actions.types.stepGoto.prefix')}</span>{' '}
         {hasStep ? (
-          <span className="font-semibold">{stepText}</span>
+          <span className="font-medium">{stepText}</span>
         ) : (
           <span className="text-muted-foreground">{t('actions.types.stepGoto.placeholder')}</span>
         )}
@@ -112,7 +111,6 @@ function StepGotoEditor({
   const t = useActionsT();
   const { currentVersion, currentStep, createStep } = useActionsContext();
   const data = readData(condition);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Open this editor as a controlled dropdown — distinct from ActionRow's
   // chip popover. ActionRow's popover renders the dropdown trigger; the
@@ -136,10 +134,8 @@ function StepGotoEditor({
   const handleCreate = useCallback(
     async (stepType?: string) => {
       if (!createStep || !currentVersion) return;
-      setIsLoading(true);
       const seq = currentStep?.sequence ?? 0;
       const newStep = await createStep(currentVersion, seq + 1, stepType);
-      setIsLoading(false);
       if (newStep?.cvid) {
         handleSelect(newStep.cvid);
       }
@@ -152,10 +148,8 @@ function StepGotoEditor({
       if (!createStep || !currentVersion?.steps) return;
       const source = currentVersion.steps.find((step) => step.cvid === cvid);
       if (!source) return;
-      setIsLoading(true);
       const seq = currentStep?.sequence ?? 0;
       const newStep = await createStep(currentVersion, seq + 1, undefined, source);
-      setIsLoading(false);
       if (newStep?.cvid) {
         handleSelect(newStep.cvid);
       }
@@ -174,13 +168,12 @@ function StepGotoEditor({
       <ActionDropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-full items-center justify-between rounded-md border border-input/60 bg-background px-2 text-sm shadow-sm"
+          className="flex h-9 w-full items-center justify-between rounded-md border border-input/60 bg-background dark:bg-surface-raised/50 px-2 text-sm shadow-sm"
         >
           <span className="flex items-center gap-2">
             <ArrowRightIcon className="h-3.5 w-3.5" />
             <span>{t('actions.types.stepGoto.prefix')}</span>
           </span>
-          {isLoading && <SpinnerIcon className="h-4 w-4 animate-spin" />}
         </button>
       </ActionDropdownMenuTrigger>
       <ActionDropdownMenuContent align="start" className="w-[var(--radix-popper-anchor-width)]">
@@ -206,24 +199,24 @@ function StepGotoEditor({
             })}
             {createStep && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">
+                <DropdownMenuSubTrigger>
                   {t('actions.types.stepGoto.addNewStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.BUBBLE)}>
-                    <RiMessageFill className="h-4 w-4 shrink-0" />
+                    <RiMessage2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.bubble')}
                   </ActionDropdownMenuItem>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.TOOLTIP)}>
-                    <TooltipIcon className="h-4 w-4 shrink-0" />
+                    <RiChat2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.tooltip')}
                   </ActionDropdownMenuItem>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.MODAL)}>
-                    <ModelIcon className="h-4 w-4 shrink-0" />
+                    <RiWindow2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.modal')}
                   </ActionDropdownMenuItem>
                   <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.HIDDEN)}>
-                    <EyeNoneIcon className="h-4 w-4 shrink-0" />
+                    <RiEyeOffLine className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.hidden')}
                   </ActionDropdownMenuItem>
                 </DropdownMenuSubContent>
@@ -231,7 +224,7 @@ function StepGotoEditor({
             )}
             {createStep && (currentVersion?.steps?.length ?? 0) > 0 && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">
+                <DropdownMenuSubTrigger>
                   {t('actions.types.stepGoto.duplicateStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-[240px]">

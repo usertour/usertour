@@ -1,5 +1,6 @@
 import { Button } from '@usertour/ui';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useAppContext } from '@/contexts/app-context';
 
@@ -7,6 +8,7 @@ export const UpgradePlanBanner = ({ projectId }: { projectId: string }) => {
   const navigate = useNavigate();
   const { currentUsage, totalLimit, loading } = useSubscription();
   const { globalConfig } = useAppContext();
+  const { t } = useTranslation();
 
   if (globalConfig?.isSelfHostedMode) {
     return null;
@@ -37,11 +39,9 @@ export const UpgradePlanBanner = ({ projectId }: { projectId: string }) => {
                 clipRule="evenodd"
               />
             </svg>
-            <span>
-              You've reached your session limit. Upgrade your plan to create more sessions.
-            </span>
+            <span>{t('settings.billing.banner.sessionLimitMessage')}</span>
           </div>
-          <Button onClick={handleUpgradeClick}>Upgrade Plan</Button>
+          <Button onClick={handleUpgradeClick}>{t('settings.billing.banner.upgradeButton')}</Button>
         </div>
       </div>
     </div>

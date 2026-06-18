@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom';
 import { Transforms } from 'slate';
 import { useSlate } from 'slate-react';
 
+import { useTranslation } from 'react-i18next';
 import { usePopperEditorContext } from '../editor';
 import {
   AlignmentGroup,
@@ -66,6 +67,7 @@ const renderToolbarItem = (item: ToolbarItemConfig) => {
 export const EditorToolbar = memo(() => {
   const { zIndex, container } = usePopperEditorContext();
   const editor = useSlate();
+  const { t } = useTranslation();
   const overflowRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLElement | null>(null);
   // Local ref for synchronous click detection
@@ -124,7 +126,7 @@ export const EditorToolbar = memo(() => {
     <TooltipProvider>
       <ToolbarRoot
         ref={combinedRef}
-        aria-label="Formatting options"
+        aria-label={t('contentBuilder.editor.toolbar.formattingOptions')}
         className={TOOLBAR_CONTAINER}
         onMouseDown={(e) => e.preventDefault()}
         style={{
@@ -134,7 +136,7 @@ export const EditorToolbar = memo(() => {
       >
         <ToolbarToggleGroup
           type="multiple"
-          aria-label="Text formatting"
+          aria-label={t('contentBuilder.editor.toolbar.textFormatting')}
           className={TOOLBAR_TOGGLE_GROUP}
         >
           {visibleItems.map(renderToolbarItem)}
