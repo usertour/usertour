@@ -84,6 +84,7 @@ export type FieldDef =
       language: 'css' | 'javascript';
       placeholder?: string;
       height?: string;
+      docsHref?: string;
     })
   | (FieldBase & {
       type: 'placement';
