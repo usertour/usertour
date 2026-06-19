@@ -5,7 +5,13 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { SsoOidcService } from '@/sso/sso-oidc.service';
 import { ACCESS_TOKEN_COOKIE, SSO_TX_COOKIE } from '@/utils/cookie';
-import { buildMembership, buildProject, buildSubscription, buildUser } from './factories';
+import {
+  buildInvite,
+  buildMembership,
+  buildProject,
+  buildSubscription,
+  buildUser,
+} from './factories';
 import { teardownProject } from './gql/_support';
 
 /**
@@ -27,7 +33,9 @@ process.env.IS_SELF_HOSTED_MODE = 'false';
 const TAG = Date.now().toString(36);
 const EMAILS = {
   jit: `jit-${TAG}@acme.com`,
+  jitInvited: `jit-invited-${TAG}@acme.com`,
   member: `member-${TAG}@acme.com`,
+  invited: `invited-${TAG}@acme.com`,
   outsider: `outsider-${TAG}@acme.com`,
   intruder: `intruder-${TAG}@evil.com`,
   unverified: `unverified-${TAG}@acme.com`,
@@ -171,6 +179,31 @@ describe('SSO OIDC login flow (e2e)', () => {
       expect(account?.userId).toBe(user!.id);
     });
 
+    it('JIT-provisions a brand-new invited user with the invite role (consumes the invite)', async () => {
+      const email = EMAILS.jitInvited;
+      jitEmails.push(email);
+      const invite = await buildInvite(prisma, {
+        projectId,
+        email,
+        role: 'VIEWER' as never, // differs from the project default (ADMIN)
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+      userIds.push(invite.userId);
+      currentClaims = { sub: 'sub-jit-invited', email, email_verified: true, name: 'Invited New' };
+
+      const res = await callback(signTx());
+      expect(res.status).toBe(302);
+      expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(true);
+
+      const user = await prisma.user.findUnique({ where: { email } });
+      const membership = await prisma.userOnProject.findFirst({
+        where: { projectId, userId: user!.id },
+      });
+      expect(membership?.role).toBe('VIEWER'); // invite role wins over the default
+      const inviteRow = await prisma.invite.findUnique({ where: { id: invite.id } });
+      expect(inviteRow?.deleted).toBe(true);
+    });
+
     it('links an existing member without creating a duplicate user', async () => {
       const member = await buildUser(prisma, { email: EMAILS.member });
       userIds.push(member.id);
@@ -205,6 +238,43 @@ describe('SSO OIDC login flow (e2e)', () => {
         where: { projectId, userId: outsider.id },
       });
       expect(membership).toBeNull(); // not pulled into the project
+    });
+
+    it('consumes a pending invite for an existing non-member (joins + links)', async () => {
+      const invited = await buildUser(prisma, { email: EMAILS.invited });
+      userIds.push(invited.id);
+      const invite = await buildInvite(prisma, {
+        projectId,
+        email: EMAILS.invited,
+        role: 'ADMIN' as never,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+      userIds.push(invite.userId); // the invite's creator
+      currentClaims = { sub: 'sub-invited-1', email: EMAILS.invited, email_verified: true };
+
+      const res = await callback(signTx());
+      expect(res.status).toBe(302);
+      expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(true);
+
+      // Joined with the invite's role — no duplicate user.
+      const membership = await prisma.userOnProject.findFirst({
+        where: { projectId, userId: invited.id },
+      });
+      expect(membership?.role).toBe('ADMIN');
+      expect(await prisma.user.findMany({ where: { email: EMAILS.invited } })).toHaveLength(1);
+
+      // Invite consumed (soft-deleted) and the SSO identity linked.
+      const inviteRow = await prisma.invite.findUnique({ where: { id: invite.id } });
+      expect(inviteRow?.deleted).toBe(true);
+      const account = await prisma.account.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider: `oidc:${providerId}`,
+            providerAccountId: 'sub-invited-1',
+          },
+        },
+      });
+      expect(account?.userId).toBe(invited.id);
     });
 
     it('rejects when the email domain is not in the allow-list', async () => {

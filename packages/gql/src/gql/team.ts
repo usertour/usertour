@@ -70,6 +70,7 @@ export const getInvite = gql`
         name
       }
       project {
+        id
         name
       }
     }

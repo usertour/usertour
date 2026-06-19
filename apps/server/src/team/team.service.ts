@@ -342,6 +342,20 @@ export class TeamService {
     });
   }
 
+  // Accept-time lookup for the SSO flow: a still-acceptable invite for this
+  // email + project. Email is matched case-insensitively (invite emails are
+  // stored as typed). activeInviteWhere() supplies the top-level OR, so callers
+  // must not add their own.
+  async getValidInviteForEmailAndProject(email: string, projectId: string) {
+    return await this.prisma.invite.findFirst({
+      where: {
+        projectId,
+        email: { equals: email, mode: 'insensitive' },
+        ...activeInviteWhere(),
+      },
+    });
+  }
+
   async getUserOnProject(userId: string, projectId: string) {
     if (!userId || !projectId) {
       return null;

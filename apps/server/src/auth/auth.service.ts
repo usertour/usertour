@@ -244,8 +244,9 @@ export class AuthService implements OnModuleInit {
     providerAccountId: string,
     accessToken: string,
     refreshToken: string,
+    client: Prisma.TransactionClient = this.prisma,
   ) {
-    await this.prisma.account.upsert({
+    await client.account.upsert({
       where: { provider_providerAccountId: { provider, providerAccountId } },
       create: { type: 'oauth', userId, provider, providerAccountId, accessToken, refreshToken },
       update: { accessToken, refreshToken },
@@ -448,18 +449,48 @@ export class AuthService implements OnModuleInit {
       const membership = await this.prisma.userOnProject.findFirst({
         where: { projectId: ssoContext.projectId, userId: existingUser.id },
       });
-      if (!membership) {
-        this.logger.warn(
-          `SSO rejected: ${email} is not a member of project ${ssoContext.projectId}`,
-        );
-        throw new OAuthError();
+      if (membership) {
+        await this.linkOAuthAccount(existingUser.id, provider, id, '', '');
+        return existingUser;
       }
-      await this.linkOAuthAccount(existingUser.id, provider, id, '', '');
-      return existingUser;
+
+      // Not a member yet, but a still-valid invite for this project authorizes
+      // joining — consume it (membership + link) instead of rejecting, so an
+      // SSO-only user can accept an invite simply by signing in through SSO.
+      const invite = await this.teamService.getValidInviteForEmailAndProject(
+        email,
+        ssoContext.projectId,
+      );
+      if (invite) {
+        await this.prisma.$transaction(async (tx) => {
+          // Delete the invite before assignUserToProject so its seat re-check
+          // does not count this very invite as still pending.
+          await this.teamService.deleteInvite(tx, invite.code);
+          await this.teamService.assignUserToProject(
+            tx,
+            existingUser.id,
+            ssoContext.projectId,
+            invite.role,
+          );
+          await this.linkOAuthAccount(existingUser.id, provider, id, '', '', tx);
+        });
+        return existingUser;
+      }
+
+      this.logger.warn(
+        `SSO rejected: ${email} is not a member of project ${ssoContext.projectId} and has no pending invite`,
+      );
+      throw new OAuthError();
     }
 
-    // New user: optional unverified email-domain allow-list gates JIT.
-    if (ssoContext.allowedDomains.length > 0) {
+    // New user (no existing global user). An explicit invite for this email +
+    // project authorizes joining with the invite's role and bypasses the
+    // unverified domain allow-list (the admin already vouched for this address).
+    const invite = await this.teamService.getValidInviteForEmailAndProject(
+      email,
+      ssoContext.projectId,
+    );
+    if (!invite && ssoContext.allowedDomains.length > 0) {
       const domain = email.split('@')[1];
       if (!domain || !ssoContext.allowedDomains.includes(domain.toLowerCase())) {
         this.logger.warn(`SSO rejected: domain of ${email} not in allow-list`);
@@ -479,12 +510,17 @@ export class AuthService implements OnModuleInit {
       await tx.account.create({
         data: { type: 'oauth', userId: newUser.id, provider, providerAccountId: id },
       });
+      // Consume the invite before assignUserToProject so its seat re-check
+      // does not count this very invite as still pending.
+      if (invite) {
+        await this.teamService.deleteInvite(tx, invite.code);
+      }
       // assignUserToProject re-checks the seat limit inside the transaction.
       await this.teamService.assignUserToProject(
         tx,
         newUser.id,
         ssoContext.projectId,
-        ssoContext.defaultRole,
+        invite ? invite.role : ssoContext.defaultRole,
       );
       return newUser;
     });

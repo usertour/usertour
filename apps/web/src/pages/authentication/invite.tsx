@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { useGetInviteQuery, useGlobalConfigQuery } from '@usertour/hooks';
+import {
+  useGetInviteQuery,
+  useGetProjectSsoProvidersQuery,
+  useGlobalConfigQuery,
+} from '@usertour/hooks';
+import { Button } from '@usertour/ui';
+import { RiShieldKeyholeLine } from '@usertour/icons';
+import { apiUrl } from '@/utils/env';
 import { NotFound } from '@/routes/not-found';
 import { AuthCard } from './components/auth-card';
 import { SignInForm } from './components/sign-in-form';
@@ -16,6 +23,10 @@ export const Invite = () => {
   const { inviteCode } = useParams();
   const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
   const { data: invite, loading } = useGetInviteQuery(inviteCode ?? '');
+  // Active SSO providers of the inviting project. Signing in through one
+  // consumes the pending invite server-side (AuthService.ssoValidate), so an
+  // SSO-only user can accept without a password.
+  const { providers: ssoProviders } = useGetProjectSsoProvidersQuery(invite?.project?.id);
   const [view, setView] = useState<View>('main');
 
   // Route `/auth/invite/:inviteCode` guarantees the path param; fall
@@ -85,6 +96,36 @@ export const Invite = () => {
 
   return (
     <AuthCard title={title}>
+      {ssoProviders.length > 0 && (
+        <div className="grid gap-4">
+          <div className="flex flex-col gap-2">
+            {ssoProviders.map((provider) => (
+              <Button
+                key={provider.id}
+                variant="outline"
+                className="w-full"
+                type="button"
+                onClick={() => {
+                  window.location.href = `${apiUrl}/api/auth/sso/${provider.id}`;
+                }}
+              >
+                <RiShieldKeyholeLine className="mr-2 h-4 w-4" />
+                {t('auth.sso.continueWith', { name: provider.name })}
+              </Button>
+            ))}
+          </div>
+          <div className="relative w-full">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-sm leading-5">
+              <span className="px-2 font-medium bg-white text-background-accent dark:text-foreground/60 dark:bg-background">
+                {t('auth.social.divider')}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
       {invite.recipientExists ? (
         <SignInForm
           globalConfig={globalConfig}
