@@ -433,5 +433,23 @@ describe('GraphQL sso (e2e)', () => {
       });
       await prisma.projectSSOIdentityProvider.delete({ where: { id: provider.id } });
     });
+
+    it('lets an un-entitled project turn requireSso off without entitlement (recovery)', async () => {
+      // Simulate a project that enabled enforcement and then lost entitlement:
+      // seed requireSso directly on the un-entitled project (enabling via the
+      // API would require entitlement, but disabling must not).
+      await prisma.projectSsoSettings.upsert({
+        where: { projectId: otherProjectId },
+        create: { projectId: otherProjectId, requireSso: true },
+        update: { requireSso: true },
+      });
+
+      const res = await graphql(app, {
+        token: otherOwnerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId: otherProjectId, input: { requireSso: false } },
+      });
+      expect(gqlData(res).updateProjectSsoSettings.requireSso).toBe(false);
+    });
   });
 });

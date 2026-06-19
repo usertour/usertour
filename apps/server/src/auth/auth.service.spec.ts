@@ -17,6 +17,7 @@ import {
 } from '@/common/consts/queen';
 import { RedisService } from '@/shared/redis.service';
 import { TeamService } from '@/team/team.service';
+import { ProjectsService } from '@/projects/projects.service';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { TwoFactorService } from './two-factor.service';
@@ -28,6 +29,7 @@ describe('AuthService', () => {
   let redis: any;
   let twoFactor: jest.Mocked<TwoFactorService>;
   let config: { get: jest.Mock };
+  let projects: { getProjectConfig: jest.Mock };
 
   const buildUser = (overrides: Partial<any> = {}) => ({
     id: 'user-1',
@@ -51,7 +53,7 @@ describe('AuthService', () => {
         updateMany: jest.fn(),
       },
       // Force-SSO gate lookup — default to "not a member of any enforced project".
-      userOnProject: { findFirst: jest.fn().mockResolvedValue(null) },
+      userOnProject: { findMany: jest.fn().mockResolvedValue([]) },
       $transaction: jest.fn((cb: any) => cb(prisma)),
     };
 
@@ -85,6 +87,9 @@ describe('AuthService', () => {
       }),
     };
 
+    // Entitlement resolver used by the force-SSO gate — default to entitled.
+    projects = { getProjectConfig: jest.fn().mockResolvedValue({ ssoOidc: true }) };
+
     const noopQueue = { add: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -101,6 +106,7 @@ describe('AuthService', () => {
           provide: TeamService,
           useValue: { assignUserToProject: jest.fn(), deleteInvite: jest.fn() },
         },
+        { provide: ProjectsService, useValue: projects },
         { provide: RedisService, useValue: redis },
         { provide: TwoFactorService, useValue: twoFactor },
         { provide: getQueueToken(QUEUE_SEND_MAGIC_LINK_EMAIL), useValue: noopQueue },
@@ -238,18 +244,33 @@ describe('AuthService', () => {
   // ===========================================================================
 
   describe('force-SSO enforcement', () => {
-    it('rejects a non-owner member of an enforced project with SsoRequiredError', async () => {
+    it('rejects a non-owner member of an enforced, entitled project with SsoRequiredError', async () => {
       prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         twoFactorEnabled: false,
         isSystemAdmin: false,
       });
-      prisma.userOnProject.findFirst.mockResolvedValue({ projectId: 'proj-enforced' });
+      prisma.userOnProject.findMany.mockResolvedValue([{ projectId: 'proj-enforced' }]);
+      projects.getProjectConfig.mockResolvedValue({ ssoOidc: true });
 
       const error = await service.issueTokensOrChallenge('user-1').catch((e) => e);
       expect(error).toBeInstanceOf(SsoRequiredError);
       // Carries the enforcing project so the client can route to its SSO entry.
       expect((error as SsoRequiredError).details).toEqual({ projectId: 'proj-enforced' });
+    });
+
+    it('drops the gate when the enforced project can no longer use SSO (entitlement lapsed)', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        twoFactorEnabled: false,
+        isSystemAdmin: false,
+      });
+      prisma.userOnProject.findMany.mockResolvedValue([{ projectId: 'proj-lapsed' }]);
+      projects.getProjectConfig.mockResolvedValue({ ssoOidc: false });
+
+      // Not locked out — without this, the member can neither password-login nor SSO.
+      const result = await service.issueTokensOrChallenge('user-1');
+      expect(result.kind).toBe('tokens');
     });
 
     it('exempts a system admin (break-glass)', async () => {
@@ -259,11 +280,11 @@ describe('AuthService', () => {
         isSystemAdmin: true,
       });
       // Even if the lookup would match, an admin never reaches it.
-      prisma.userOnProject.findFirst.mockResolvedValue({ projectId: 'proj-enforced' });
+      prisma.userOnProject.findMany.mockResolvedValue([{ projectId: 'proj-enforced' }]);
 
       const result = await service.issueTokensOrChallenge('user-1');
       expect(result.kind).toBe('tokens');
-      expect(prisma.userOnProject.findFirst).not.toHaveBeenCalled();
+      expect(prisma.userOnProject.findMany).not.toHaveBeenCalled();
     });
 
     it('skips the gate entirely on the SSO path (viaSso=true)', async () => {
@@ -272,11 +293,11 @@ describe('AuthService', () => {
         twoFactorEnabled: false,
         isSystemAdmin: false,
       });
-      prisma.userOnProject.findFirst.mockResolvedValue({ projectId: 'proj-enforced' });
+      prisma.userOnProject.findMany.mockResolvedValue([{ projectId: 'proj-enforced' }]);
 
       const result = await service.issueTokensOrChallenge('user-1', true);
       expect(result.kind).toBe('tokens');
-      expect(prisma.userOnProject.findFirst).not.toHaveBeenCalled();
+      expect(prisma.userOnProject.findMany).not.toHaveBeenCalled();
     });
   });
 });

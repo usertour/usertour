@@ -17,6 +17,7 @@ import { TwoFactorResolver } from './two-factor.resolver';
 import { TeamModule } from '@/team/team.module';
 import { SharedModule } from '@/shared/shared.module';
 import { LicenseModule } from '@/license/license.module';
+import { ProjectsModule } from '@/projects/projects.module';
 import { BullModule } from '@nestjs/bullmq';
 import {
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
@@ -53,6 +54,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     TeamModule,
     SharedModule,
     LicenseModule,
+    ProjectsModule,
     (StripeModule as any).externallyConfigured(StripeModule, 0),
   ],
   providers: [

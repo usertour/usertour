@@ -3,8 +3,7 @@ import * as argon2 from 'argon2';
 import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
-import { createTestApp } from '../create-test-app';
-import { buildMembership, buildProject, buildUser } from '../factories';
+import { buildMembership, buildProject, buildSubscription, buildUser } from '../factories';
 import { teardownProject } from './_support';
 
 /**
@@ -16,14 +15,23 @@ import { teardownProject } from './_support';
  * code, the `projectId` carried in the error extensions (so the client can route
  * to SSO), and the absence of an issued session.
  *
- * Enforcement is independent of plan entitlement, so `requireSso` is seeded
- * directly — no subscription / SaaS-mode dance needed.
+ * Enforcement is only effective while the project can actually use SSO, so the
+ * enforced project carries a BUSINESS subscription (ssoOidc entitled). The gate
+ * resolves entitlement via subscription only in SaaS mode, and config.ts reads
+ * IS_SELF_HOSTED_MODE at import time — force it before AppModule loads (lazy
+ * require below).
  */
+const prevSelfHosted = process.env.IS_SELF_HOSTED_MODE;
+process.env.IS_SELF_HOSTED_MODE = 'false';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { createTestApp } = require('../create-test-app') as typeof import('../create-test-app');
+
 describe('GraphQL force-SSO login (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let enforcedProjectId: string;
-  let openProjectId: string;
+  let enforcedProjectId: string; // requireSso + entitled
+  let lapsedProjectId: string; // requireSso but no longer entitled
+  let openProjectId: string; // no enforcement
   const userIds: string[] = [];
   const PASSWORD = 'ForceSso123!';
 
@@ -63,8 +71,16 @@ describe('GraphQL force-SSO login (e2e)', () => {
 
     const enforced = await buildProject(prisma, { name: 'force-sso-on' });
     enforcedProjectId = enforced.id;
+    await buildSubscription(prisma, { projectId: enforcedProjectId }); // BUSINESS → ssoOidc
     await prisma.projectSsoSettings.create({
       data: { projectId: enforcedProjectId, requireSso: true },
+    });
+
+    // requireSso left on, but no subscription → ssoOidc is false (plan lapsed).
+    const lapsed = await buildProject(prisma, { name: 'force-sso-lapsed' });
+    lapsedProjectId = lapsed.id;
+    await prisma.projectSsoSettings.create({
+      data: { projectId: lapsedProjectId, requireSso: true },
     });
 
     const open = await buildProject(prisma, { name: 'force-sso-off' });
@@ -77,15 +93,17 @@ describe('GraphQL force-SSO login (e2e)', () => {
       await prisma.account.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.userOnProject.deleteMany({ where: { userId: { in: userIds } } });
       await teardownProject(prisma, enforcedProjectId);
+      await teardownProject(prisma, lapsedProjectId);
       await teardownProject(prisma, openProjectId);
       if (userIds.length) {
         await prisma.user.deleteMany({ where: { id: { in: userIds } } });
       }
     }
     await app?.close();
+    process.env.IS_SELF_HOSTED_MODE = prevSelfHosted ?? '';
   });
 
-  it('blocks a non-owner member (E0051 + the enforcing projectId)', async () => {
+  it('blocks a non-owner member of an enforced, entitled project (E0051 + projectId)', async () => {
     const member = await seedMember('member', enforcedProjectId, 'VIEWER');
 
     const res = await login(member.email!, PASSWORD);
@@ -109,6 +127,14 @@ describe('GraphQL force-SSO login (e2e)', () => {
       isSystemAdmin: true,
     });
     const auth = gqlData(await login(admin.email!, PASSWORD)).login;
+    expect(typeof auth.accessToken).toBe('string');
+  });
+
+  it('drops enforcement when the project can no longer use SSO (entitlement lapsed)', async () => {
+    // Without the entitlement re-check this member is locked out entirely:
+    // blocked here AND rejected by the SSO flow's own entitlement gate.
+    const member = await seedMember('lapsed', lapsedProjectId, 'VIEWER');
+    const auth = gqlData(await login(member.email!, PASSWORD)).login;
     expect(typeof auth.accessToken).toBe('string');
   });
 

@@ -168,7 +168,17 @@ export class SsoService {
     projectId: string,
     input: UpdateProjectSsoSettingsInput,
   ): Promise<ResolvedSsoSettings> {
-    await this.assertOidcEntitled(projectId);
+    // Only enabling SSO usage requires the entitlement. Turning enforcement off
+    // (or otherwise relaxing) must work even after a plan lapse, so a downgraded
+    // project can lift its own lockout — same spirit as deleteProvider being
+    // allowed regardless of entitlement.
+    const enablesSsoUsage =
+      input.requireSso === true ||
+      input.defaultRole !== undefined ||
+      input.allowedDomains !== undefined;
+    if (enablesSsoUsage) {
+      await this.assertOidcEntitled(projectId);
+    }
     if (input.defaultRole !== undefined) {
       this.assertJitRole(input.defaultRole);
     }

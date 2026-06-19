@@ -44,6 +44,7 @@ import {
   WrongInviteAccountError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
+import { ProjectsService } from '@/projects/projects.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
@@ -81,6 +82,7 @@ export class AuthService implements OnModuleInit {
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
     private readonly teamService: TeamService,
+    private readonly projectsService: ProjectsService,
     private readonly redisService: RedisService,
     private readonly twoFactorService: TwoFactorService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
@@ -655,11 +657,12 @@ export class AuthService implements OnModuleInit {
   }
 
   // Throws SsoRequiredError when the user is a non-owner member of any project
-  // that enforces SSO. A single indexed lookup on every non-SSO login; callers
-  // already skip it for system admins (see issueTokensOrChallenge). Carries the
-  // enforcing project's id so the client can route to its SSO entry.
+  // that enforces SSO *and can still use it*. The indexed lookup returns nothing
+  // for the vast majority of users (so no entitlement work runs); callers skip
+  // this for system admins (see issueTokensOrChallenge). Carries the enforcing
+  // project's id so the client can route to its SSO entry.
   private async assertNotSsoLocked(userId: string): Promise<void> {
-    const locked = await this.prisma.userOnProject.findFirst({
+    const enforced = await this.prisma.userOnProject.findMany({
       where: {
         userId,
         role: { not: Role.OWNER },
@@ -667,8 +670,15 @@ export class AuthService implements OnModuleInit {
       },
       select: { projectId: true },
     });
-    if (locked) {
-      throw new SsoRequiredError(locked.projectId);
+    for (const { projectId } of enforced) {
+      // Mirror the 2FA "license lapse -> drop the gate" rule: if the project can
+      // no longer use SSO (entitlement lapsed), its enforcement is inert.
+      // Otherwise the member is locked out entirely — blocked here AND rejected
+      // by the SSO flow's own entitlement check.
+      const config = await this.projectsService.getProjectConfig(projectId);
+      if (config.ssoOidc) {
+        throw new SsoRequiredError(projectId);
+      }
     }
   }
 
