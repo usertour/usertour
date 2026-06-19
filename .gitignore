@@ -18,6 +18,9 @@ build
 # other
 dist
 
+# generated (code-first GraphQL schema; emitted by the server at runtime, read by nothing in-repo)
+apps/server/src/schema.graphql
+
 # misc
 .DS_Store
 *.pem
