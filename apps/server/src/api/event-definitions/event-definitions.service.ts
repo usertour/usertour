@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
 
+import { AttributeBizType } from '@/attributes/models/attribute.model';
 import {
   EventDefinitionNotFoundError,
   ResourceAlreadyExistsError,
@@ -25,7 +27,10 @@ import {
  */
 @Injectable()
 export class ApiEventDefinitionsService {
-  constructor(private readonly events: EventsService) {}
+  constructor(
+    private readonly events: EventsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async list(
     requestUrl: string,
@@ -51,17 +56,17 @@ export class ApiEventDefinitionsService {
 
   /** Create an event definition. Duplicate (project+codeName) → 409. */
   async create(projectId: string, body: CreateEventDefinitionBody): Promise<EventDefinition> {
+    const attributeIds = await this.resolveAttributeIds(projectId, body.attributes ?? []);
     try {
       const created = await this.events.create({
         projectId,
         codeName: body.codeName,
         displayName: body.displayName,
         description: body.description ?? '',
-        // The domain create rewrites the event's attribute links from this list;
-        // a new event has none. (Event<->attribute management is out of scope.)
-        attributeIds: [],
+        attributeIds,
       });
-      return mapEventDefinition(created);
+      // Re-read so the response carries the attached attribute codeNames.
+      return mapEventDefinition((await this.events.get(created.id)) ?? created);
     } catch (err) {
       if (err instanceof ResourceAlreadyExistsError) {
         throw new ResourceConflictError();
@@ -70,18 +75,50 @@ export class ApiEventDefinitionsService {
     }
   }
 
-  /** Update the human-facing fields (codeName is fixed; attribute links untouched). */
+  /** Update the human-facing fields and/or replace the attached attributes (codeName is fixed). */
   async update(
     id: string,
     projectId: string,
     body: UpdateEventDefinitionBody,
   ): Promise<EventDefinition> {
     await this.requireWritable(id, projectId);
-    const updated = await this.events.updateInfo(id, {
+    await this.events.updateInfo(id, {
       ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
       ...(body.description !== undefined ? { description: body.description } : {}),
     });
-    return mapEventDefinition(updated);
+    if (body.attributes !== undefined) {
+      const attributeIds = await this.resolveAttributeIds(projectId, body.attributes);
+      await this.events.setAttributes(id, attributeIds);
+    }
+    // Re-read (with attribute links) for the response.
+    return mapEventDefinition(await this.requireExisting(id, projectId));
+  }
+
+  /**
+   * Resolve event-attribute codeNames to attribute ids. Event attributes are
+   * the EVENT-scoped attributes (bizType EVENT), where codeName is unique per
+   * project — so a codeName maps to exactly one id. Unknown codeNames → E1017.
+   */
+  private async resolveAttributeIds(projectId: string, codeNames: string[]): Promise<string[]> {
+    const unique = [...new Set(codeNames)];
+    if (unique.length === 0) {
+      return [];
+    }
+    const rows = await this.prisma.attribute.findMany({
+      where: {
+        projectId,
+        bizType: AttributeBizType.EVENT,
+        deleted: false,
+        codeName: { in: unique },
+      },
+      select: { id: true, codeName: true },
+    });
+    const idByCode = new Map(rows.map((r) => [r.codeName, r.id]));
+    const missing = unique.filter((code) => !idByCode.has(code));
+    if (missing.length) {
+      throw new ValidationError(`Unknown event attribute codeName(s): ${missing.join(', ')}`);
+    }
+    return unique.map((code) => idByCode.get(code) as string);
   }
 
   /** Delete an event definition. */

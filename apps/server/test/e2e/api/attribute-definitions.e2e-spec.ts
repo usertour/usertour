@@ -23,7 +23,7 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
   let ownerToken: string; // JWT for minting the v2 token
   let ownerUserId: string;
   let v2Token: string;
-  const codeName = 'attr_parity_signed_up';
+  const codeName = 'attr_parity_signup';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -214,9 +214,9 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
   it('rejects a duplicate codeName (409 E1023)', async () => {
     const token = await mint([Capability.AttributeCreate]);
     const res = await send('post', basePath(), token).send({
-      scope: 'user', // bizType 1 — same as the seeded attr_parity_signed_up
+      scope: 'user', // bizType 1 — same as the seeded attr_parity_signup
       dataType: 'string',
-      codeName: 'attr_parity_signed_up',
+      codeName,
       displayName: 'dup',
     });
     expect(res.status).toBe(409);

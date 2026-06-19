@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
 
+import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
@@ -28,20 +29,33 @@ export const eventDefinition = z.object({
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
+  attributes: z
+    .array(z.string())
+    .describe('codeNames of the event-scoped attributes attached to this event.'),
 });
 export class EventDefinitionDto extends createZodDto(eventDefinition) {}
 
+// Attributes attached to an event are referenced by their event-scoped codeName
+// (a reference to an existing attribute — NOT validated as a new codeName).
+const eventAttributes = z
+  .array(z.string())
+  .describe('codeNames of event-scoped attributes to attach. Unknown codeNames are rejected.');
+
 export const createEventDefinitionBody = z.object({
-  codeName: z.string().min(1).describe('Stable identifier, unique per project. Immutable.'),
+  codeName: codeNameSchema.describe('Stable identifier, unique per project. Immutable.'),
   displayName: z.string().min(1).describe('Human-readable name.'),
   description: z.string().optional().describe('Optional description.'),
+  attributes: eventAttributes.optional(),
 });
 export class CreateEventDefinitionBodyDto extends createZodDto(createEventDefinitionBody) {}
 
-// codeName is fixed at creation; only the human-facing fields are mutable.
+// codeName is fixed at creation; only the human-facing fields + attributes are mutable.
 export const updateEventDefinitionBody = z.object({
   displayName: z.string().min(1).optional().describe('Human-readable name.'),
   description: z.string().optional().describe('Optional description.'),
+  attributes: eventAttributes
+    .optional()
+    .describe('Replace the attached attributes with these codeNames. Omit to leave unchanged.'),
 });
 export class UpdateEventDefinitionBodyDto extends createZodDto(updateEventDefinitionBody) {}
 

@@ -10,7 +10,7 @@ import { normalizeOpenApiParameters } from '@/common/openapi/normalize-parameter
 import { OpenAPIModule } from '@/openapi/openapi.module';
 
 import { gqlData, graphql } from '../auth';
-import { buildEnvironment, buildEvent, buildProject } from '../factories';
+import { buildAttribute, buildEnvironment, buildEvent, buildProject } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -136,6 +136,55 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
     const list = await api('get', basePath(), token);
     expect(list.body.results.map((e: { id: string }) => e.id)).not.toContain(id);
+  });
+
+  it('attaches / reads / replaces event attributes by codeName', async () => {
+    const token = await mint([
+      Capability.EventCreate,
+      Capability.EventUpdate,
+      Capability.EventRead,
+    ]);
+    // Two EVENT-scoped attributes (bizType 4) to attach.
+    await buildAttribute(prisma, { projectId, bizType: 4, codeName: 'evt_amount' });
+    await buildAttribute(prisma, { projectId, bizType: 4, codeName: 'evt_currency' });
+
+    const created = await send('post', basePath(), token).send({
+      codeName: 'evt_purchase',
+      displayName: 'Purchase',
+      attributes: ['evt_amount'],
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.attributes).toEqual(['evt_amount']);
+
+    // Replace the attached set.
+    const updated = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      attributes: ['evt_amount', 'evt_currency'],
+    });
+    expect(updated.status).toBe(200);
+    expect([...updated.body.attributes].sort()).toEqual(['evt_amount', 'evt_currency']);
+
+    // Read back carries the links.
+    const got = await api('get', `${basePath()}/${created.body.id}`, token);
+    expect([...got.body.attributes].sort()).toEqual(['evt_amount', 'evt_currency']);
+
+    // Unknown attribute codeName → E1017.
+    const bad = await send('post', basePath(), token).send({
+      codeName: 'evt_bad_attr',
+      displayName: 'B',
+      attributes: ['nope_missing'],
+    });
+    expect(bad.status).toBe(400);
+    expect(bad.body.error.code).toBe('E1017');
+  });
+
+  it('rejects an invalid codeName charset (400 E1017)', async () => {
+    const token = await mint([Capability.EventCreate]);
+    const res = await send('post', basePath(), token).send({
+      codeName: 'bad name', // space is not allowed by the codeName charset rule
+      displayName: 'X',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
   });
 
   it('gets an event definition by id (404 unknown → E1024)', async () => {

@@ -117,6 +117,8 @@ export class EventsService {
   async get(id: string) {
     return await this.prisma.event.findUnique({
       where: { id },
+      // Include the attribute links so the v2 read shape can expose codeNames.
+      include: { attributeOnEvent: { include: { attribute: { select: { codeName: true } } } } },
     });
   }
 
@@ -146,21 +148,36 @@ export class EventsService {
     name?: string,
   ): Promise<PaginationConnection<Event>> {
     const nameFilter = nameContains(name);
-    const baseQuery = {
-      where: { projectId, deleted: false, ...(nameFilter ? { displayName: nameFilter } : {}) },
-      orderBy,
+    const where = {
+      projectId,
+      deleted: false,
+      ...(nameFilter ? { displayName: nameFilter } : {}),
+    };
+    // Include the attribute links (codeNames) for the v2 read shape; kept off the
+    // count() call, which doesn't accept `include`.
+    const include = {
+      attributeOnEvent: { include: { attribute: { select: { codeName: true } } } },
     };
     return findManyCursorConnection(
-      (args) =>
-        this.prisma.event.findMany({
-          ...baseQuery,
-          ...args,
-        }),
-      () =>
-        this.prisma.event.count({
-          ...baseQuery,
-        }),
+      (args) => this.prisma.event.findMany({ where, orderBy, include, ...args }),
+      () => this.prisma.event.count({ where }),
       paginationArgs,
     );
+  }
+
+  /**
+   * Replace an event's attribute links with exactly `attributeIds` (link-only —
+   * leaves the event's own fields untouched, unlike {@link update}). Used by the
+   * v2 API to set event attributes without clobbering displayName/codeName.
+   */
+  async setAttributes(eventId: string, attributeIds: string[]) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.attributeOnEvent.deleteMany({ where: { eventId } });
+      if (attributeIds.length) {
+        await tx.attributeOnEvent.createMany({
+          data: attributeIds.map((attributeId) => ({ eventId, attributeId })),
+        });
+      }
+    });
   }
 }

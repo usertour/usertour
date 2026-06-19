@@ -4,6 +4,7 @@ import { singleOrArray } from '../shared/query';
 
 import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
 
+import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
@@ -63,7 +64,7 @@ export const createAttributeBody = z.object({
     'Which object the attribute belongs to: user, company, or companyMembership.',
   ),
   dataType: createDataType.describe('The attribute value type.'),
-  codeName: z.string().min(1).describe('Stable identifier, unique per project + scope. Immutable.'),
+  codeName: codeNameSchema.describe('Stable identifier, unique per project + scope. Immutable.'),
   displayName: z.string().min(1).describe('Human-readable name.'),
   description: z.string().optional().describe('Optional description.'),
 });
