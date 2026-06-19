@@ -20,13 +20,14 @@ const { createTestApp } = require('../create-test-app') as typeof import('../cre
  * wiring that unit tests with mocks would skip: PermissionGuard +
  * `ScopeKind.Sso` resolution, the `SsoManage`/`SsoRead` capabilities, the
  * plan-entitlement gate (BUSINESS via subscription, e2e runs in SaaS mode),
- * and the `@Public` pre-auth provider query. Effects are asserted in the DB,
- * not just the response.
+ * the `@Public` pre-auth provider query, and the project-level settings
+ * (force-SSO enforcement + provisioning, with the anti-lockout guard). Effects
+ * are asserted in the DB, not just the response.
  */
 const CREATE = `
   mutation ($projectId: String!, $input: CreateOidcSsoProviderInput!) {
     createOidcSsoProvider(projectId: $projectId, input: $input) {
-      id name issuer clientId defaultRole status allowedDomains
+      id name issuer clientId status
     }
   }
 `;
@@ -46,14 +47,26 @@ const UPDATE = `
   }
 `;
 const DELETE = 'mutation ($id: String!) { deleteSsoProvider(id: $id) }';
+const GET_SETTINGS = `
+  query ($projectId: String!) {
+    getProjectSsoSettings(projectId: $projectId) {
+      projectId requireSso defaultRole allowedDomains
+    }
+  }
+`;
+const UPDATE_SETTINGS = `
+  mutation ($projectId: String!, $input: UpdateProjectSsoSettingsInput!) {
+    updateProjectSsoSettings(projectId: $projectId, input: $input) {
+      requireSso defaultRole allowedDomains
+    }
+  }
+`;
 
 const validInput = (overrides: Record<string, unknown> = {}) => ({
   name: 'Okta',
-  defaultRole: 'ADMIN',
   issuer: 'https://example.okta.com',
   clientId: 'client-123',
   clientSecret: 'secret-abc',
-  allowedDomains: ['acme.com'],
   ...overrides,
 });
 
@@ -121,9 +134,7 @@ describe('GraphQL sso (e2e)', () => {
         name: 'Okta Prod',
         issuer: 'https://example.okta.com',
         clientId: 'client-123',
-        defaultRole: 'ADMIN',
         status: 'active',
-        allowedDomains: ['acme.com'],
       });
 
       const row = await prisma.projectSSOIdentityProvider.findUnique({
@@ -150,15 +161,6 @@ describe('GraphQL sso (e2e)', () => {
       expect(count).toBe(0);
     });
 
-    it('rejects an invalid default role (OWNER)', async () => {
-      const res = await graphql(app, {
-        token: ownerToken,
-        query: CREATE,
-        variables: { projectId, input: validInput({ defaultRole: 'OWNER' }) },
-      });
-      expect(res.body?.errors?.length ?? 0).toBeGreaterThan(0);
-    });
-
     it('denies a non-owner (admin) — SsoManage is owner-only', async () => {
       const res = await graphql(app, {
         token: adminToken,
@@ -176,7 +178,6 @@ describe('GraphQL sso (e2e)', () => {
           projectId,
           type: 'OIDC',
           name: 'List Me',
-          defaultRole: 'VIEWER',
           issuer: 'https://idp.test',
           clientId: 'c',
           clientSecret: 's',
@@ -210,7 +211,6 @@ describe('GraphQL sso (e2e)', () => {
           type: 'OIDC',
           name: 'Public IdP',
           status: 'active',
-          defaultRole: 'ADMIN',
           issuer: 'https://idp.test',
           clientId: 'c',
           clientSecret: 's',
@@ -244,7 +244,6 @@ describe('GraphQL sso (e2e)', () => {
           projectId,
           type: 'OIDC',
           name: 'Before',
-          defaultRole: 'ADMIN',
           issuer: 'https://idp.test',
           clientId: 'c',
           clientSecret: 'keep-me',
@@ -273,7 +272,6 @@ describe('GraphQL sso (e2e)', () => {
           projectId, // belongs to the entitled project
           type: 'OIDC',
           name: 'Guarded',
-          defaultRole: 'ADMIN',
           issuer: 'https://idp.test',
           clientId: 'c',
           clientSecret: 's',
@@ -301,7 +299,6 @@ describe('GraphQL sso (e2e)', () => {
           projectId,
           type: 'OIDC',
           name: 'Delete Me',
-          defaultRole: 'ADMIN',
           issuer: 'https://idp.test',
           clientId: 'c',
           clientSecret: 's',
@@ -318,6 +315,123 @@ describe('GraphQL sso (e2e)', () => {
         where: { id: provider.id },
       });
       expect(row).toBeNull();
+    });
+  });
+
+  describe('project SSO settings (enforcement + provisioning)', () => {
+    it('returns defaults for the owner and denies a viewer (SsoRead)', async () => {
+      const res = await graphql(app, {
+        token: ownerToken,
+        query: GET_SETTINGS,
+        variables: { projectId },
+      });
+      expect(gqlData(res).getProjectSsoSettings).toMatchObject({
+        requireSso: false,
+        defaultRole: 'ADMIN',
+        allowedDomains: [],
+      });
+
+      const viewerRes = await graphql(app, {
+        token: viewerToken,
+        query: GET_SETTINGS,
+        variables: { projectId },
+      });
+      expect(isPermissionDenied(viewerRes)).toBe(true);
+    });
+
+    it('updates provisioning (owner) and denies an admin (SsoManage)', async () => {
+      const res = await graphql(app, {
+        token: ownerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { defaultRole: 'VIEWER', allowedDomains: ['acme.com'] } },
+      });
+      expect(gqlData(res).updateProjectSsoSettings).toMatchObject({
+        defaultRole: 'VIEWER',
+        allowedDomains: ['acme.com'],
+      });
+
+      const adminRes = await graphql(app, {
+        token: adminToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { defaultRole: 'ADMIN' } },
+      });
+      expect(isPermissionDenied(adminRes)).toBe(true);
+
+      // Reset provisioning back to defaults for the following tests.
+      await graphql(app, {
+        token: ownerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { defaultRole: 'ADMIN', allowedDomains: [] } },
+      });
+    });
+
+    it('rejects an invalid default role (OWNER)', async () => {
+      const res = await graphql(app, {
+        token: ownerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { defaultRole: 'OWNER' } },
+      });
+      expect(res.body?.errors?.length ?? 0).toBeGreaterThan(0);
+    });
+
+    it('refuses to require SSO without an active provider (E0052)', async () => {
+      // Make sure the project has no active provider to fall back on.
+      await prisma.projectSSOIdentityProvider.deleteMany({ where: { projectId } });
+
+      const res = await graphql(app, {
+        token: ownerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { requireSso: true } },
+      });
+      expect(gqlErrorCode(res)).toBe('E0052');
+
+      const settings = await prisma.projectSsoSettings.findUnique({ where: { projectId } });
+      expect(settings?.requireSso ?? false).toBe(false);
+    });
+
+    it('requires SSO with an active provider, then guards the last one (E0052)', async () => {
+      const provider = await prisma.projectSSOIdentityProvider.create({
+        data: {
+          projectId,
+          type: 'OIDC',
+          name: 'Active',
+          status: 'active',
+          issuer: 'https://idp.test',
+          clientId: 'c',
+          clientSecret: 's',
+        },
+      });
+
+      const enable = await graphql(app, {
+        token: ownerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { requireSso: true } },
+      });
+      expect(gqlData(enable).updateProjectSsoSettings.requireSso).toBe(true);
+
+      // Deleting the last active provider would strand members — rejected.
+      const del = await graphql(app, {
+        token: ownerToken,
+        query: DELETE,
+        variables: { id: provider.id },
+      });
+      expect(gqlErrorCode(del)).toBe('E0052');
+
+      // Deactivating it is blocked for the same reason.
+      const deactivate = await graphql(app, {
+        token: ownerToken,
+        query: UPDATE,
+        variables: { id: provider.id, input: { status: 'inactive' } },
+      });
+      expect(gqlErrorCode(deactivate)).toBe('E0052');
+
+      // Turn enforcement off — now cleanup is allowed again.
+      await graphql(app, {
+        token: ownerToken,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { requireSso: false } },
+      });
+      await prisma.projectSSOIdentityProvider.delete({ where: { id: provider.id } });
     });
   });
 });

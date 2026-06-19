@@ -689,6 +689,21 @@ const translations = {
         admin: '成员（可编辑）',
         viewer: '查看者（只读）',
       },
+      settings: {
+        requireTitle: '强制 SSO',
+        requireDescription:
+          '开启后，成员必须通过 SSO 登录；除项目所有者外，密码与第三方登录都会被禁用。',
+        requireNeedsProvider: '请先添加并启用一个 SSO 提供商，才能强制 SSO。',
+        provisioningTitle: '用户开通',
+        provisioningDescription: '对本项目下所有 SSO 提供商生效。',
+        enabledToast: '已开启强制 SSO',
+        disabledToast: '已关闭强制 SSO',
+        savedToast: '开通设置已保存',
+        enableConfirmTitle: '确认强制 SSO？',
+        enableConfirmDescription:
+          '成员将只能通过 SSO 登录，密码与第三方登录对他们停止生效；项目所有者仍保留密码登录作为兜底。',
+        enableConfirmAction: '强制 SSO',
+      },
       locked: {
         cloud: {
           title: '单点登录是 Business 套餐功能',
@@ -706,7 +721,6 @@ const translations = {
         create: '添加提供商',
         idpSection: '身份提供商',
         spSection: '服务提供方',
-        provisioningSection: '用户开通',
         nameLabel: '显示名称',
         namePlaceholder: '例如 Okta',
         issuerLabel: 'Issuer 地址',

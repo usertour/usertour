@@ -8,7 +8,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { AcceptInviteInput } from './dto/accept-invite.input';
@@ -33,6 +33,7 @@ import {
   OAuthOnlyAccountError,
   ParamsError,
   PasswordIncorrect,
+  SsoRequiredError,
   TooManyLoginAttemptsError,
   UnknownError,
   UserDisabledError,
@@ -575,13 +576,21 @@ export class AuthService implements OnModuleInit {
    *   - otherwise                  → issue real access/refresh tokens
    * Callers (login/signup/oauth) must NOT setAuthCookie when kind === 'challenge'.
    */
-  async issueTokensOrChallenge(userId: string): Promise<AuthResult> {
+  async issueTokensOrChallenge(userId: string, viaSso = false): Promise<AuthResult> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, twoFactorEnabled: true },
+      select: { id: true, twoFactorEnabled: true, isSystemAdmin: true },
     });
     if (!user) {
       throw new AccountNotFoundError();
+    }
+
+    // Force-SSO: a non-SSO sign-in (password / social / magic-link) is rejected
+    // when the user is a non-owner member of any project that enforces SSO.
+    // System admins and project owners are exempt — break-glass so an IdP
+    // outage cannot lock out the people who can fix it.
+    if (!viaSso && !user.isSystemAdmin) {
+      await this.assertNotSsoLocked(userId);
     }
 
     // If 2FA is unavailable (self-host + missing/invalid license, considering
@@ -607,6 +616,24 @@ export class AuthService implements OnModuleInit {
 
     const tokens = await this.login(userId);
     return { kind: 'tokens', tokens };
+  }
+
+  // Throws SsoRequiredError when the user is a non-owner member of any project
+  // that enforces SSO. A single indexed lookup on every non-SSO login; callers
+  // already skip it for system admins (see issueTokensOrChallenge). Carries the
+  // enforcing project's id so the client can route to its SSO entry.
+  private async assertNotSsoLocked(userId: string): Promise<void> {
+    const locked = await this.prisma.userOnProject.findFirst({
+      where: {
+        userId,
+        role: { not: Role.OWNER },
+        project: { ssoSettings: { is: { requireSso: true } } },
+      },
+      select: { projectId: true },
+    });
+    if (locked) {
+      throw new SsoRequiredError(locked.projectId);
+    }
   }
 
   // Revoke a single session's refresh token (per-device logout). The jti is

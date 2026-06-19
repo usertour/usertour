@@ -582,6 +582,34 @@ export class VersionConflictError extends BaseError {
   };
 }
 
+/**
+ * Raised at login when the user's project enforces SSO and this is not an SSO
+ * sign-in (password / social / magic-link). Carries the enforcing project's id
+ * in `details` so the client can route the user to that project's SSO entry.
+ * Only thrown after the password is verified, so surfacing the id leaks nothing.
+ */
+export class SsoRequiredError extends BaseError {
+  code = 'E0051';
+  messageDict = {
+    en: 'Your organization requires single sign-on. Please sign in through SSO.',
+    'zh-CN': '你的组织已强制使用单点登录，请通过 SSO 登录。',
+  };
+  constructor(projectId?: string) {
+    super();
+    if (projectId) {
+      this.details = { projectId };
+    }
+  }
+}
+
+export class SsoRequiresActiveProviderError extends BaseError {
+  code = 'E0052';
+  messageDict = {
+    en: 'An active SSO provider is required while SSO is enforced for this project.',
+    'zh-CN': '该项目已强制 SSO，需保留至少一个启用中的 SSO 提供方。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -651,6 +679,8 @@ const errorMap = {
   E0048: ResourceAlreadyExistsError,
   E0049: VersionNotEditableError,
   E0050: VersionConflictError,
+  E0051: SsoRequiredError,
+  E0052: SsoRequiresActiveProviderError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

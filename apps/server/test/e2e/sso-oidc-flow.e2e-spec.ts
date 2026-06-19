@@ -99,7 +99,6 @@ describe('SSO OIDC login flow (e2e)', () => {
         type: 'OIDC',
         name: 'Okta',
         status: 'active',
-        defaultRole: 'ADMIN',
         issuer: 'https://idp.test',
         clientId: 'c',
         clientSecret: 's',
@@ -209,35 +208,25 @@ describe('SSO OIDC login flow (e2e)', () => {
     });
 
     it('rejects when the email domain is not in the allow-list', async () => {
-      const gated = await prisma.projectSSOIdentityProvider.create({
-        data: {
-          projectId,
-          type: 'OIDC',
-          name: 'Domain-gated',
-          status: 'active',
-          defaultRole: 'ADMIN',
-          allowedDomains: ['acme.com'],
-          issuer: 'https://idp.test',
-          clientId: 'c',
-          clientSecret: 's',
-        },
+      // The allow-list is project-level now, not per-provider.
+      await prisma.projectSsoSettings.upsert({
+        where: { projectId },
+        create: { projectId, allowedDomains: ['acme.com'] },
+        update: { allowedDomains: ['acme.com'] },
       });
-      const email = EMAILS.intruder;
+      const email = EMAILS.intruder; // @evil.com — not in the allow-list
       jitEmails.push(email);
       currentClaims = { sub: 'sub-intruder', email, email_verified: true };
 
-      const tx = jwt.sign({
-        tokenType: 'sso-tx',
-        providerId: gated.id,
-        state: 'state-1',
-        nonce: 'nonce-1',
-        codeVerifier: 'verifier-1',
-      });
-      const res = await callback(tx);
+      const res = await callback(signTx());
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
 
-      await prisma.projectSSOIdentityProvider.delete({ where: { id: gated.id } });
+      // Reset so later tests trust the IdP again.
+      await prisma.projectSsoSettings.update({
+        where: { projectId },
+        data: { allowedDomains: [] },
+      });
     });
 
     it('rejects when the IdP reports the email as unverified', async () => {

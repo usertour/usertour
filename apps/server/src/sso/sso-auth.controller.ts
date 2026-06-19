@@ -56,6 +56,8 @@ export class SsoAuthController {
         throw new OAuthError();
       }
 
+      // Provisioning policy is project-level now, not per-provider.
+      const settings = await this.ssoService.getSettings(provider.projectId);
       const user = await this.authService.ssoValidate(
         {
           provider: `oidc:${provider.id}`,
@@ -65,8 +67,8 @@ export class SsoAuthController {
         },
         {
           projectId: provider.projectId,
-          defaultRole: provider.defaultRole,
-          allowedDomains: provider.allowedDomains,
+          defaultRole: settings.defaultRole,
+          allowedDomains: settings.allowedDomains,
         },
       );
 
@@ -120,7 +122,9 @@ export class SsoAuthController {
   // Mirror of AuthController.finishOauth: land on the SPA with auth cookies, or
   // redirect into the 2FA second step with a short-lived challenge token.
   private async finishSso(userId: string, res: Response) {
-    const result = await this.authService.issueTokensOrChallenge(userId);
+    // viaSso=true: this IS the SSO path, so it must never be blocked by the
+    // project's own force-SSO enforcement.
+    const result = await this.authService.issueTokensOrChallenge(userId, true);
     const homepage = this.configService.get<string>('app.homepageUrl') || '';
     if (result.kind === 'tokens') {
       this.authService.setAuthCookie(res, result.tokens).redirect(homepage || '/');

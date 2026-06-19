@@ -8,8 +8,6 @@ const SSO_PROVIDER_FIELDS = gql`
     type
     name
     status
-    defaultRole
-    allowedDomains
     issuer
     clientId
     authorizationUrl
@@ -17,6 +15,16 @@ const SSO_PROVIDER_FIELDS = gql`
     userInfoUrl
     createdAt
     updatedAt
+  }
+`;
+
+// Project-level SSO settings: force-SSO enforcement + JIT provisioning policy.
+const SSO_SETTINGS_FIELDS = gql`
+  fragment ProjectSsoSettingsFields on ProjectSsoSettingsModel {
+    projectId
+    requireSso
+    defaultRole
+    allowedDomains
   }
 `;
 
@@ -51,6 +59,24 @@ export const deleteSsoProvider = gql`
   mutation DeleteSsoProvider($id: String!) {
     deleteSsoProvider(id: $id)
   }
+`;
+
+export const getProjectSsoSettings = gql`
+  query GetProjectSsoSettings($projectId: String!) {
+    getProjectSsoSettings(projectId: $projectId) {
+      ...ProjectSsoSettingsFields
+    }
+  }
+  ${SSO_SETTINGS_FIELDS}
+`;
+
+export const updateProjectSsoSettings = gql`
+  mutation UpdateProjectSsoSettings($projectId: String!, $input: UpdateProjectSsoSettingsInput!) {
+    updateProjectSsoSettings(projectId: $projectId, input: $input) {
+      ...ProjectSsoSettingsFields
+    }
+  }
+  ${SSO_SETTINGS_FIELDS}
 `;
 
 // Pre-auth: the project's SSO login page reads its active providers (no secrets).

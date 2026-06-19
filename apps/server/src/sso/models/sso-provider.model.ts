@@ -1,5 +1,5 @@
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { Role, SsoProviderType } from '@prisma/client';
+import { SsoProviderType } from '@prisma/client';
 
 import { BaseModel } from '@/common/models/base.model';
 
@@ -11,7 +11,7 @@ registerEnumType(SsoProviderType, {
 /**
  * Authenticated view of a project's SSO identity provider (owner-only).
  * `clientSecret` is intentionally omitted — it is write-only and never
- * returned over the API.
+ * returned over the API. Provisioning policy lives on ProjectSsoSettingsModel.
  */
 @ObjectType()
 export class SsoProviderModel extends BaseModel {
@@ -26,12 +26,6 @@ export class SsoProviderModel extends BaseModel {
 
   @Field()
   status: string;
-
-  @Field(() => Role)
-  defaultRole: Role;
-
-  @Field(() => [String])
-  allowedDomains: string[];
 
   @Field()
   issuer: string;

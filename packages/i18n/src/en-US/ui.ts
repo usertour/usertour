@@ -718,6 +718,21 @@ const translations = {
         admin: 'Member (can edit)',
         viewer: 'Viewer (read-only)',
       },
+      settings: {
+        requireTitle: 'Require SSO',
+        requireDescription:
+          'When on, members must sign in through SSO. Password and social sign-in are blocked for everyone except project owners.',
+        requireNeedsProvider: 'Add and activate an SSO provider before requiring SSO.',
+        provisioningTitle: 'User provisioning',
+        provisioningDescription: 'Applies to every SSO provider in this project.',
+        enabledToast: 'SSO is now required',
+        disabledToast: 'SSO is no longer required',
+        savedToast: 'Provisioning settings saved',
+        enableConfirmTitle: 'Require SSO?',
+        enableConfirmDescription:
+          'Members will only be able to sign in through SSO — password and social sign-in stop working for them. Project owners keep password access as a fallback.',
+        enableConfirmAction: 'Require SSO',
+      },
       locked: {
         cloud: {
           title: 'Single Sign-On is a Business feature',
@@ -736,7 +751,6 @@ const translations = {
         create: 'Add provider',
         idpSection: 'Identity provider',
         spSection: 'Service provider',
-        provisioningSection: 'User provisioning',
         nameLabel: 'Display name',
         namePlaceholder: 'e.g. Okta',
         issuerLabel: 'Issuer URL',

@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   AccountNotFoundError,
   PasswordIncorrect,
+  SsoRequiredError,
   TooManyLoginAttemptsError,
 } from '@/common/errors';
 import {
@@ -49,6 +50,8 @@ describe('AuthService', () => {
         update: jest.fn(),
         updateMany: jest.fn(),
       },
+      // Force-SSO gate lookup — default to "not a member of any enforced project".
+      userOnProject: { findFirst: jest.fn().mockResolvedValue(null) },
       $transaction: jest.fn((cb: any) => cb(prisma)),
     };
 
@@ -227,6 +230,53 @@ describe('AuthService', () => {
       await expect(service.issueTokensOrChallenge('ghost')).rejects.toBeInstanceOf(
         AccountNotFoundError,
       );
+    });
+  });
+
+  // ===========================================================================
+  // Force-SSO gate inside issueTokensOrChallenge
+  // ===========================================================================
+
+  describe('force-SSO enforcement', () => {
+    it('rejects a non-owner member of an enforced project with SsoRequiredError', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        twoFactorEnabled: false,
+        isSystemAdmin: false,
+      });
+      prisma.userOnProject.findFirst.mockResolvedValue({ projectId: 'proj-enforced' });
+
+      const error = await service.issueTokensOrChallenge('user-1').catch((e) => e);
+      expect(error).toBeInstanceOf(SsoRequiredError);
+      // Carries the enforcing project so the client can route to its SSO entry.
+      expect((error as SsoRequiredError).details).toEqual({ projectId: 'proj-enforced' });
+    });
+
+    it('exempts a system admin (break-glass)', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        twoFactorEnabled: false,
+        isSystemAdmin: true,
+      });
+      // Even if the lookup would match, an admin never reaches it.
+      prisma.userOnProject.findFirst.mockResolvedValue({ projectId: 'proj-enforced' });
+
+      const result = await service.issueTokensOrChallenge('user-1');
+      expect(result.kind).toBe('tokens');
+      expect(prisma.userOnProject.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('skips the gate entirely on the SSO path (viaSso=true)', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        twoFactorEnabled: false,
+        isSystemAdmin: false,
+      });
+      prisma.userOnProject.findFirst.mockResolvedValue({ projectId: 'proj-enforced' });
+
+      const result = await service.issueTokensOrChallenge('user-1', true);
+      expect(result.kind).toBe('tokens');
+      expect(prisma.userOnProject.findFirst).not.toHaveBeenCalled();
     });
   });
 });

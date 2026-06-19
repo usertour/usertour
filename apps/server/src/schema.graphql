@@ -529,11 +529,9 @@ input CreateLocalizationInput {
 }
 
 input CreateOidcSsoProviderInput {
-  allowedDomains: [String!]
   authorizationUrl: String
   clientId: String!
   clientSecret: String!
-  defaultRole: Role!
   issuer: String!
   name: String!
   tokenUrl: String
@@ -880,6 +878,7 @@ type Mutation {
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProjectLicense(license: String!, projectId: String!): Project!
   updateProjectName(name: String!, projectId: String!): Project!
+  updateProjectSsoSettings(input: UpdateProjectSsoSettingsInput!, projectId: String!): ProjectSsoSettingsModel!
   updateProjectUsesInstanceLicense(enabled: Boolean!, projectId: String!): Boolean!
   updateSegment(data: UpdateSegment!): Segment!
   updateSsoProvider(id: String!, input: UpdateSsoProviderInput!): SsoProviderModel!
@@ -936,6 +935,13 @@ type ProjectConfigModel {
   ssoSaml: Boolean!
 }
 
+type ProjectSsoSettingsModel {
+  allowedDomains: [String!]!
+  defaultRole: Role!
+  projectId: String!
+  requireSso: Boolean!
+}
+
 type PublicSsoProviderModel {
   id: ID!
   name: String!
@@ -960,6 +966,7 @@ type Query {
   getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
   getProjectSsoProviders(projectId: String!): [PublicSsoProviderModel!]!
+  getProjectSsoSettings(projectId: String!): ProjectSsoSettingsModel!
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
@@ -1111,13 +1118,11 @@ input SignupInput {
 }
 
 type SsoProviderModel {
-  allowedDomains: [String!]!
   authorizationUrl: String
   clientId: String!
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
-  defaultRole: Role!
   id: ID!
   issuer: String!
   name: String!
@@ -1334,6 +1339,12 @@ input UpdateLocalizationInput {
   name: String
 }
 
+input UpdateProjectSsoSettingsInput {
+  allowedDomains: [String!]
+  defaultRole: Role
+  requireSso: Boolean
+}
+
 input UpdateSegment {
   columns: JSON
   data: JSON
@@ -1342,11 +1353,9 @@ input UpdateSegment {
 }
 
 input UpdateSsoProviderInput {
-  allowedDomains: [String!]
   authorizationUrl: String
   clientId: String
   clientSecret: String
-  defaultRole: Role
   issuer: String
   name: String
   status: String

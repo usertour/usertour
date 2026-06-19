@@ -52,6 +52,8 @@ export class GqlConfigService implements GqlOptionsFactory {
             message: originalError.getMessage('en'),
             extensions: {
               code: originalError.code,
+              // Machine-readable context the client acts on (optional).
+              ...(originalError.details ?? {}),
             },
           };
         }

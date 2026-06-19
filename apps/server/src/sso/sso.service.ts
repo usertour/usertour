@@ -2,11 +2,34 @@ import { Injectable } from '@nestjs/common';
 import { ProjectSSOIdentityProvider, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
-import { FeatureRequiresLicenseError, ParamsError } from '@/common/errors';
+import {
+  FeatureRequiresLicenseError,
+  ParamsError,
+  SsoRequiresActiveProviderError,
+} from '@/common/errors';
 import { ProjectsService } from '@/projects/projects.service';
 
 import { CreateOidcSsoProviderInput } from './dto/create-oidc-sso-provider.input';
+import { UpdateProjectSsoSettingsInput } from './dto/update-project-sso-settings.input';
 import { UpdateSsoProviderInput } from './dto/update-sso-provider.input';
+
+/**
+ * Project-level SSO settings, normalized so callers never branch on "row
+ * exists". Absent row → defaults (no enforcement, ADMIN provisioning, trust
+ * the IdP).
+ */
+export interface ResolvedSsoSettings {
+  projectId: string;
+  requireSso: boolean;
+  defaultRole: Role;
+  allowedDomains: string[];
+}
+
+const DEFAULT_SETTINGS: Omit<ResolvedSsoSettings, 'projectId'> = {
+  requireSso: false,
+  defaultRole: Role.ADMIN,
+  allowedDomains: [],
+};
 
 @Injectable()
 export class SsoService {
@@ -29,6 +52,8 @@ export class SsoService {
     }
   }
 
+  // --- Provider connections ---
+
   async findById(id: string): Promise<ProjectSSOIdentityProvider | null> {
     return this.prisma.projectSSOIdentityProvider.findUnique({ where: { id } });
   }
@@ -46,14 +71,11 @@ export class SsoService {
     input: CreateOidcSsoProviderInput,
   ): Promise<ProjectSSOIdentityProvider> {
     await this.assertOidcEntitled(projectId);
-    this.assertJitRole(input.defaultRole);
     return this.prisma.projectSSOIdentityProvider.create({
       data: {
         projectId,
         type: 'OIDC',
         name: input.name,
-        defaultRole: input.defaultRole,
-        allowedDomains: input.allowedDomains ?? [],
         issuer: input.issuer,
         clientId: input.clientId,
         clientSecret: input.clientSecret,
@@ -70,16 +92,16 @@ export class SsoService {
   ): Promise<ProjectSSOIdentityProvider> {
     const provider = await this.findByIdOrThrow(id);
     await this.assertOidcEntitled(provider.projectId);
-    if (input.defaultRole !== undefined) {
-      this.assertJitRole(input.defaultRole);
+    // Deactivating the last active provider while SSO is enforced would lock
+    // every member out (they can't SSO and can't fall back to password).
+    if (input.status === 'inactive') {
+      await this.assertActiveProviderRemains(provider.projectId, id);
     }
     return this.prisma.projectSSOIdentityProvider.update({
       where: { id },
       data: {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.status !== undefined && { status: input.status }),
-        ...(input.defaultRole !== undefined && { defaultRole: input.defaultRole }),
-        ...(input.allowedDomains !== undefined && { allowedDomains: input.allowedDomains }),
         ...(input.issuer !== undefined && { issuer: input.issuer }),
         ...(input.clientId !== undefined && { clientId: input.clientId }),
         // Only rotate the secret when a non-empty value is supplied.
@@ -92,9 +114,11 @@ export class SsoService {
   }
 
   // Delete is allowed regardless of entitlement so a downgraded project can
-  // still clean up its providers.
+  // still clean up its providers — but not if it would strand members behind
+  // an enforced-SSO project with no way in.
   async deleteProvider(id: string): Promise<boolean> {
-    await this.findByIdOrThrow(id);
+    const provider = await this.findByIdOrThrow(id);
+    await this.assertActiveProviderRemains(provider.projectId, id);
     await this.prisma.projectSSOIdentityProvider.delete({ where: { id } });
     return true;
   }
@@ -121,6 +145,84 @@ export class SsoService {
       where: { projectId, status: 'active' },
       select: { id: true, name: true, type: true },
       orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  // --- Project-level settings (enforcement + provisioning) ---
+
+  /** Resolved settings for the project, with defaults when no row exists. */
+  async getSettings(projectId: string): Promise<ResolvedSsoSettings> {
+    const row = await this.prisma.projectSsoSettings.findUnique({ where: { projectId } });
+    if (!row) {
+      return { projectId, ...DEFAULT_SETTINGS };
+    }
+    return {
+      projectId,
+      requireSso: row.requireSso,
+      defaultRole: row.defaultRole,
+      allowedDomains: row.allowedDomains,
+    };
+  }
+
+  async updateSettings(
+    projectId: string,
+    input: UpdateProjectSsoSettingsInput,
+  ): Promise<ResolvedSsoSettings> {
+    await this.assertOidcEntitled(projectId);
+    if (input.defaultRole !== undefined) {
+      this.assertJitRole(input.defaultRole);
+    }
+    // Anti-lockout: never let a project switch SSO on without a way in. This is
+    // the "about to enable" check, so it counts providers unconditionally — the
+    // stored requireSso is still false here.
+    if (input.requireSso === true) {
+      if ((await this.countActiveProviders(projectId, null)) === 0) {
+        throw new SsoRequiresActiveProviderError();
+      }
+    }
+    await this.prisma.projectSsoSettings.upsert({
+      where: { projectId },
+      create: {
+        projectId,
+        ...(input.requireSso !== undefined && { requireSso: input.requireSso }),
+        ...(input.defaultRole !== undefined && { defaultRole: input.defaultRole }),
+        ...(input.allowedDomains !== undefined && { allowedDomains: input.allowedDomains }),
+      },
+      update: {
+        ...(input.requireSso !== undefined && { requireSso: input.requireSso }),
+        ...(input.defaultRole !== undefined && { defaultRole: input.defaultRole }),
+        ...(input.allowedDomains !== undefined && { allowedDomains: input.allowedDomains }),
+      },
+    });
+    return this.getSettings(projectId);
+  }
+
+  // Guard for removing/deactivating a provider: only an already-enforced project
+  // can be stranded, so this no-ops unless requireSso is currently on. The enable
+  // path doesn't use this (its precondition is the opposite — see updateSettings).
+  private async assertActiveProviderRemains(
+    projectId: string,
+    excludeProviderId: string,
+  ): Promise<void> {
+    const settings = await this.getSettings(projectId);
+    if (!settings.requireSso) {
+      return;
+    }
+    if ((await this.countActiveProviders(projectId, excludeProviderId)) === 0) {
+      throw new SsoRequiresActiveProviderError();
+    }
+  }
+
+  private async countActiveProviders(
+    projectId: string,
+    excludeProviderId: string | null,
+  ): Promise<number> {
+    return this.prisma.projectSSOIdentityProvider.count({
+      where: {
+        projectId,
+        status: 'active',
+        ...(excludeProviderId ? { id: { not: excludeProviderId } } : {}),
+      },
     });
   }
 }

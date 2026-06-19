@@ -94,6 +94,8 @@ import {
   updateSsoProvider,
   deleteSsoProvider,
   getProjectSsoProviders,
+  getProjectSsoSettings,
+  updateProjectSsoSettings,
 } from '@usertour/gql';
 
 import type {
@@ -1448,8 +1450,6 @@ export interface SsoProvider {
   type: 'OIDC' | 'SAML';
   name: string;
   status: string;
-  defaultRole: 'ADMIN' | 'VIEWER';
-  allowedDomains: string[];
   issuer: string;
   clientId: string;
   authorizationUrl?: string | null;
@@ -1467,8 +1467,6 @@ export interface PublicSsoProvider {
 
 export interface CreateOidcSsoProviderInput {
   name: string;
-  defaultRole: 'ADMIN' | 'VIEWER';
-  allowedDomains?: string[];
   issuer: string;
   clientId: string;
   clientSecret: string;
@@ -1478,11 +1476,24 @@ export interface CreateOidcSsoProviderInput {
 }
 
 export type UpdateSsoProviderInput = Partial<
-  Omit<CreateOidcSsoProviderInput, 'allowedDomains'> & {
+  CreateOidcSsoProviderInput & {
     status: string;
-    allowedDomains: string[];
   }
 >;
+
+// Project-level SSO settings: force-SSO enforcement + JIT provisioning policy.
+export interface ProjectSsoSettings {
+  projectId: string;
+  requireSso: boolean;
+  defaultRole: 'ADMIN' | 'VIEWER';
+  allowedDomains: string[];
+}
+
+export type UpdateProjectSsoSettingsInput = Partial<{
+  requireSso: boolean;
+  defaultRole: 'ADMIN' | 'VIEWER';
+  allowedDomains: string[];
+}>;
 
 export const useListProjectSsoProvidersQuery = (
   projectId: string | undefined,
@@ -1548,6 +1559,38 @@ export const useDeleteSsoProviderMutation = () => {
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { id } });
       return !!response.data?.deleteSsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useGetProjectSsoSettingsQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectSsoSettings, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  return {
+    settings: data?.getProjectSsoSettings as ProjectSsoSettings | undefined,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useUpdateProjectSsoSettingsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectSsoSettings);
+  const invoke = useCallback(
+    async (
+      projectId: string,
+      input: UpdateProjectSsoSettingsInput,
+    ): Promise<ProjectSsoSettings> => {
+      const response = await mutation({ variables: { projectId, input } });
+      return response.data?.updateProjectSsoSettings as ProjectSsoSettings;
     },
     [mutation],
   );

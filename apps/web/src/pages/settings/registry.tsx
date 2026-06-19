@@ -182,6 +182,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     capability: Capability.SsoRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout (like general/account) — sits on the muted surface.
+    surface: 'muted',
     component: lazy(() => import('./sso').then((module) => ({ default: module.SettingsSsoList }))),
   },
   {

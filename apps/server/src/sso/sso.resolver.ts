@@ -8,7 +8,9 @@ import { RequirePermission } from '@/auth/permission/require-permission.decorato
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 
 import { CreateOidcSsoProviderInput } from './dto/create-oidc-sso-provider.input';
+import { UpdateProjectSsoSettingsInput } from './dto/update-project-sso-settings.input';
 import { UpdateSsoProviderInput } from './dto/update-sso-provider.input';
+import { ProjectSsoSettingsModel } from './models/project-sso-settings.model';
 import { PublicSsoProviderModel } from './models/public-sso-provider.model';
 import { SsoProviderModel } from './models/sso-provider.model';
 import { SsoService } from './sso.service';
@@ -43,6 +45,22 @@ export class SsoResolver {
   @RequirePermission({ capability: Capability.SsoRead, scope: ScopeKind.Project })
   async listProjectSsoProviders(@Args('projectId') projectId: string) {
     return this.ssoService.listProviders(projectId);
+  }
+
+  // Project-level SSO settings: force-SSO enforcement + JIT provisioning policy.
+  @Query(() => ProjectSsoSettingsModel)
+  @RequirePermission({ capability: Capability.SsoRead, scope: ScopeKind.Project })
+  async getProjectSsoSettings(@Args('projectId') projectId: string) {
+    return this.ssoService.getSettings(projectId);
+  }
+
+  @Mutation(() => ProjectSsoSettingsModel)
+  @RequirePermission({ capability: Capability.SsoManage, scope: ScopeKind.Project })
+  async updateProjectSsoSettings(
+    @Args('projectId') projectId: string,
+    @Args('input') input: UpdateProjectSsoSettingsInput,
+  ) {
+    return this.ssoService.updateSettings(projectId, input);
   }
 
   // Pre-auth: the project's SSO login page reads its active providers. No auth

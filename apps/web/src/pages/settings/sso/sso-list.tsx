@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import {
+  Badge,
+  NewItemButton,
+  ResourceListBody,
+  type ResourceTableColumn,
+  Separator,
+  SettingsCard,
+  SettingsCardStack,
+} from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import {
   type SsoProvider,
   useGetProjectConfigQuery,
+  useGetProjectSsoSettingsQuery,
   useListProjectSsoProvidersQuery,
 } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { SsoEnforcementCard } from './components/sso-enforcement-card';
 import { SsoProviderDialog } from './components/sso-provider-dialog';
+import { SsoProvisioningCard } from './components/sso-provisioning-card';
 import { SsoRowActions } from './components/sso-row-actions';
 import { SsoUpsell } from './components/sso-upsell';
 
@@ -31,6 +42,10 @@ export const SettingsSsoList = () => {
     SHARED_CACHE_QUERY_OPTIONS,
   );
   const { providers, loading, refetch } = useListProjectSsoProvidersQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
+  const { settings, refetch: refetchSettings } = useGetProjectSsoSettingsQuery(
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
   );
@@ -70,17 +85,53 @@ export const SettingsSsoList = () => {
     },
   ];
 
+  const hasActiveProvider = providers.some((provider) => provider.status === 'active');
+  const projectId = project?.id;
+
   return (
-    <ResourceListPage<SsoProvider>
-      title={t('settings.sso.title')}
-      actions={<NewSsoProviderButton onSuccess={refetch} />}
-      description={t('settings.sso.headerBody')}
-      columns={columns}
-      rows={providers}
-      loading={loading || configLoading || !project}
-      empty={t('settings.sso.empty')}
-      getRowKey={(provider) => provider.id}
-    />
+    <SettingsCardStack>
+      {/* Providers */}
+      <SettingsCard>
+        <div className="space-y-6">
+          <div className="flex h-10 flex-row items-center justify-between gap-4">
+            <h3 className="text-xl font-medium tracking-tight">{t('settings.sso.title')}</h3>
+            <NewSsoProviderButton onSuccess={refetch} />
+          </div>
+          <p className="text-sm text-muted-foreground">{t('settings.sso.headerBody')}</p>
+          <Separator />
+          <ResourceListBody<SsoProvider>
+            columns={columns}
+            rows={providers}
+            loading={loading || configLoading || !project}
+            empty={t('settings.sso.empty')}
+            getRowKey={(provider) => provider.id}
+          />
+        </div>
+      </SettingsCard>
+
+      {/* Enforcement */}
+      {projectId && settings && (
+        <SettingsCard>
+          <SsoEnforcementCard
+            projectId={projectId}
+            requireSso={settings.requireSso}
+            hasActiveProvider={hasActiveProvider}
+            onChanged={refetchSettings}
+          />
+        </SettingsCard>
+      )}
+
+      {/* Provisioning */}
+      {projectId && settings && (
+        <SettingsCard>
+          <SsoProvisioningCard
+            projectId={projectId}
+            settings={settings}
+            onChanged={refetchSettings}
+          />
+        </SettingsCard>
+      )}
+    </SettingsCardStack>
   );
 };
 

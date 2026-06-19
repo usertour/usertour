@@ -1,6 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { Role } from '@prisma/client';
-import { IsArray, IsIn, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
 
 // All fields optional — only the provided ones are written. clientSecret is
 // write-only: send it only to rotate the secret, omit it to keep the current.
@@ -16,16 +15,6 @@ export class UpdateSsoProviderInput {
   @IsOptional()
   @IsIn(['active', 'inactive'])
   status?: string;
-
-  @Field(() => Role, { nullable: true })
-  @IsOptional()
-  @IsIn([Role.ADMIN, Role.VIEWER])
-  defaultRole?: Role;
-
-  @Field(() => [String], { nullable: true })
-  @IsOptional()
-  @IsArray()
-  allowedDomains?: string[];
 
   @Field(() => String, { nullable: true })
   @IsOptional()
