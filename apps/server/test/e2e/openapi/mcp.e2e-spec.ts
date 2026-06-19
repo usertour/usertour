@@ -431,12 +431,14 @@ describe('MCP endpoint (e2e)', () => {
       expect(res.body.error.code).toBe('E1010');
     });
 
-    it('rejects an unknown token (403 E1000)', async () => {
+    it('rejects an unknown token (401 E1000)', async () => {
       const res = await rpc(
         { jsonrpc: '2.0', id: 1, method: 'tools/list' },
         'utp_not-a-real-secret',
       );
-      expect(res.status).toBe(403);
+      // MCP normalizes auth failures to 401 + WWW-Authenticate (RFC 9728) so the
+      // client knows to (re)run OAuth — see OpenAPIExceptionFilter.
+      expect(res.status).toBe(401);
       expect(res.body.error.code).toBe('E1000');
     });
   });
