@@ -46,6 +46,7 @@ import {
 import { upsertUserBody, type UpsertUserBody } from '@/api/users/users.schema';
 
 import { McpTool } from '../mcp.types';
+import { writeAnnotationsFor } from './annotations';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
 
@@ -56,7 +57,7 @@ import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
  * rejected by the compiler, and version writes only touch editable drafts.
  */
 export function buildWriteTools(): McpTool[] {
-  return [
+  const tools: McpTool[] = [
     {
       name: 'create_content',
       audit: auditCreate('content'),
@@ -717,4 +718,5 @@ export function buildWriteTools(): McpTool[] {
       },
     },
   ];
+  return tools.map((tool) => ({ ...tool, annotations: writeAnnotationsFor(tool.name) }));
 }

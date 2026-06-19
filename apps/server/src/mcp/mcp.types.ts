@@ -81,6 +81,18 @@ export interface AuditCapture {
   ): Promise<unknown>;
 }
 
+/**
+ * MCP tool behavior hints (a subset of the spec's `ToolAnnotations`) passed to
+ * the client so it can gate calls — e.g. auto-run read-only tools, prompt before
+ * destructive ones. Advisory only; the real guard is scope-gating + `authorize`.
+ */
+export interface McpToolAnnotations {
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
 export interface McpTool {
   name: string;
   title: string;
@@ -90,4 +102,6 @@ export interface McpTool {
   handler(args: Record<string, unknown>, ctx: McpToolContext): Promise<unknown>;
   /** Optional audit metadata; present on write tools that mutate state. */
   audit?: AuditCapture;
+  /** Client-facing behavior hints (read-only / destructive / …). */
+  annotations?: McpToolAnnotations;
 }

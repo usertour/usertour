@@ -87,6 +87,7 @@ export class McpService {
           title: tool.title,
           description: tool.description,
           inputSchema: tool.inputSchema,
+          ...(tool.annotations ? { annotations: tool.annotations } : {}),
         },
         async (args: Record<string, unknown>) => {
           try {

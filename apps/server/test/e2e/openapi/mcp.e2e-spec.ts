@@ -198,6 +198,20 @@ describe('MCP endpoint (e2e)', () => {
       expect(names).toContain('list_content');
       expect(names).not.toContain('list_users');
     });
+
+    it('exposes MCP tool annotations (read-only vs destructive hints)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentDelete], [projectA]);
+      const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
+      const tools = extractResult(res).result.tools as {
+        name: string;
+        annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean };
+      }[];
+      const list = tools.find((t) => t.name === 'list_content');
+      const del = tools.find((t) => t.name === 'delete_content');
+      expect(list?.annotations?.readOnlyHint).toBe(true);
+      expect(del?.annotations?.readOnlyHint).toBe(false);
+      expect(del?.annotations?.destructiveHint).toBe(true);
+    });
   });
 
   describe('tools/call', () => {

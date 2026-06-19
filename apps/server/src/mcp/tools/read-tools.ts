@@ -17,6 +17,7 @@ import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 import { createdAtRangeFields, nameSearchField } from '@/api/shared/filters';
 
 import { McpTool, McpToolContext } from '../mcp.types';
+import { READ_ONLY } from './annotations';
 import { AUTHORING_GUIDE } from './authoring-guide';
 
 /**
@@ -132,7 +133,7 @@ export const environmentIdSchema = z
  * JSON-serializable payload. `inputSchema` is a zod raw shape the SDK validates.
  */
 export function buildReadTools(): McpTool[] {
-  return [
+  const tools: McpTool[] = [
     {
       name: 'get_authoring_guide',
       title: 'How to author content',
@@ -708,4 +709,5 @@ export function buildReadTools(): McpTool[] {
       },
     },
   ];
+  return tools.map((tool) => ({ ...tool, annotations: READ_ONLY }));
 }
