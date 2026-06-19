@@ -63,14 +63,15 @@ export class EventsService {
   }
 
   async update(data: UpdateEventInput) {
-    const { id, displayName, codeName, description, attributeIds } = data;
+    // codeName is immutable after creation (it keys event data / references) —
+    // never rewrite it, even if a caller passes one.
+    const { id, displayName, description, attributeIds } = data;
 
     return await this.prisma.$transaction(async (tx) => {
       const updateEvent = await tx.event.update({
         where: { id },
         data: {
           displayName,
-          codeName,
           description,
         },
       });

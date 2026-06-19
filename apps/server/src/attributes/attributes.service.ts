@@ -31,7 +31,12 @@ export class AttributesService {
   }
 
   async update(data: UpdateAttributeInput) {
-    const { id, ...others } = data;
+    // codeName keys BizUser.data, so it is immutable after creation — strip any
+    // incoming value so no caller (a raw GraphQL mutation included) can rename it
+    // and orphan that data. v2 omits it and the builder disables the field; this
+    // hard-enforces the invariant at the one chokepoint.
+    const { id, codeName, ...others } = data;
+    void codeName;
     const updated = await this.prisma.attribute.update({
       where: { id },
       data: { ...others },
