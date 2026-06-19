@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Badge,
+  Button,
+  Input,
+  Label,
   NewItemButton,
   ResourceListBody,
   type ResourceTableColumn,
@@ -9,6 +12,7 @@ import {
   SettingsCard,
   SettingsCardStack,
 } from '@usertour/ui';
+import { RiFileCopyLine } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import {
   type SsoProvider,
@@ -17,6 +21,7 @@ import {
   useListProjectSsoProvidersQuery,
 } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { SsoEnforcementCard } from './components/sso-enforcement-card';
 import { SsoProviderDialog } from './components/sso-provider-dialog';
 import { SsoProvisioningCard } from './components/sso-provisioning-card';
@@ -37,6 +42,7 @@ const NewSsoProviderButton = ({ onSuccess }: { onSuccess: () => void }) => {
 export const SettingsSsoList = () => {
   const { project, globalConfig } = useAppContext();
   const { t } = useTranslation();
+  const copy = useCopyWithToast();
   const { projectConfig, loading: configLoading } = useGetProjectConfigQuery(
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
@@ -87,6 +93,9 @@ export const SettingsSsoList = () => {
 
   const hasActiveProvider = providers.some((provider) => provider.status === 'active');
   const projectId = project?.id;
+  // Per-project entry: a frontend route on this origin that lists the project's
+  // providers as buttons. The one link an admin distributes to the whole team.
+  const loginUrl = projectId ? `${window.location.origin}/auth/sso/${projectId}` : '';
 
   return (
     <SettingsCardStack>
@@ -106,6 +115,29 @@ export const SettingsSsoList = () => {
             empty={t('settings.sso.empty')}
             getRowKey={(provider) => provider.id}
           />
+          {projectId && (
+            <div className="space-y-1.5">
+              <Label>{t('settings.sso.loginUrlLabel')}</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={loginUrl}
+                  onFocus={(event) => event.target.select()}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => copy(loginUrl, t('settings.sso.loginUrlCopied'))}
+                >
+                  <RiFileCopyLine className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">{t('settings.sso.loginUrlHelp')}</p>
+            </div>
+          )}
         </div>
       </SettingsCard>
 

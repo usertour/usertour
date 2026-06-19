@@ -676,6 +676,11 @@ const translations = {
       deleteResource: 'SSO 提供商',
       deleteSuccess: '已删除 SSO 提供商',
       deleteFailure: '删除 SSO 提供商失败',
+      copyLoginLink: '复制登录链接',
+      loginLinkCopied: '登录链接已复制',
+      loginUrlLabel: 'SSO 登录入口 URL',
+      loginUrlHelp: '把这条链接发给团队,用于通过 SSO 登录。',
+      loginUrlCopied: '登录入口 URL 已复制',
       columns: {
         name: '名称',
         issuer: 'Issuer',

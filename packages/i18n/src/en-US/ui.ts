@@ -705,6 +705,11 @@ const translations = {
       deleteResource: 'SSO provider',
       deleteSuccess: 'SSO provider deleted',
       deleteFailure: 'Failed to delete SSO provider',
+      copyLoginLink: 'Copy login link',
+      loginLinkCopied: 'Login link copied',
+      loginUrlLabel: 'SSO login URL',
+      loginUrlHelp: 'Share this link with your team to sign in via SSO.',
+      loginUrlCopied: 'Login URL copied',
       columns: {
         name: 'Name',
         issuer: 'Issuer',

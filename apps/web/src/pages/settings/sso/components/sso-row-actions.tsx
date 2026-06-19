@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { Delete2Icon, RiEditLine } from '@usertour/icons';
+import { Delete2Icon, RiEditLine, RiFileCopyLine } from '@usertour/icons';
 import { type SsoProvider, useDeleteSsoProviderMutation } from '@usertour/hooks';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { SsoProviderDialog } from './sso-provider-dialog';
 
 interface SsoRowActionsProps {
@@ -15,10 +16,14 @@ export const SsoRowActions = (props: SsoRowActionsProps) => {
   const { provider, onChanged } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, globalConfig } = useAppContext();
   const { invoke: deleteProvider } = useDeleteSsoProviderMutation();
   const { toast } = useToast();
+  const copy = useCopyWithToast();
   const { t } = useTranslation();
+
+  // Per-provider deep link: launches this IdP directly (skips the picker page).
+  const providerLoginLink = `${globalConfig?.apiUrl ?? ''}/api/auth/sso/${provider.id}`;
 
   const handleDelete = async () => {
     try {
@@ -39,6 +44,12 @@ export const SsoRowActions = (props: SsoRowActionsProps) => {
     <>
       <ResourceRowActions
         items={[
+          {
+            key: 'copy-link',
+            icon: <RiFileCopyLine className="w-4 h-4 mr-2" />,
+            label: t('settings.sso.copyLoginLink'),
+            onSelect: () => copy(providerLoginLink, t('settings.sso.loginLinkCopied')),
+          },
           {
             key: 'edit',
             icon: <RiEditLine className="w-4 h-4 mr-2" />,
