@@ -29,51 +29,24 @@ export class SsoAuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  @Get(':providerId')
+  // Single fixed callback for every provider — the providerId travels in our
+  // own signed tx cookie (set at initiate), not the path, so one redirect URI
+  // is registered per deployment. Declared before the `:providerId` initiate
+  // route so `/callback` matches this literal route, not `:providerId`.
+  @Get('callback')
   @Public()
-  async initiate(@Param('providerId') providerId: string, @Res() res: Response) {
-    try {
-      const provider = await this.loadActiveEntitledProvider(providerId);
-      const { url, state, nonce, codeVerifier } =
-        await this.ssoOidcService.createAuthRequest(provider);
-      const tx = await this.jwtService.signAsync(
-        { tokenType: 'sso-tx', providerId, state, nonce, codeVerifier },
-        { expiresIn: '10m' },
-      );
-      res.cookie(SSO_TX_COOKIE, tx, {
-        httpOnly: true,
-        secure: !!this.configService.get('auth.cookie.secure'),
-        // Must be 'lax' (not 'strict') so the cookie is sent on the top-level
-        // GET navigation the IdP makes back to /callback.
-        sameSite: 'lax',
-        maxAge: 10 * 60 * 1000,
-        path: '/api/auth/sso',
-      });
-      res.redirect(url);
-    } catch (error) {
-      this.logger.error(`SSO initiate failed: ${error?.stack ?? error}`);
-      throw new OAuthError();
-    }
-  }
-
-  @Get(':providerId/callback')
-  @Public()
-  async callback(
-    @Param('providerId') providerId: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async callback(@Req() req: Request, @Res() res: Response) {
     try {
       const cookie = req.cookies?.[SSO_TX_COOKIE];
       if (!cookie) {
         throw new OAuthError();
       }
       const tx = await this.jwtService.verifyAsync(cookie).catch(() => null);
-      if (!tx || tx.tokenType !== 'sso-tx' || tx.providerId !== providerId) {
+      if (!tx || tx.tokenType !== 'sso-tx' || !tx.providerId) {
         throw new OAuthError();
       }
 
-      const provider = await this.loadActiveEntitledProvider(providerId);
+      const provider = await this.loadActiveEntitledProvider(tx.providerId);
       const claims = await this.ssoOidcService.exchangeCallback(provider, req.query as any, {
         state: tx.state,
         nonce: tx.nonce,
@@ -102,6 +75,33 @@ export class SsoAuthController {
     } catch (error) {
       this.logger.error(`SSO callback failed: ${error?.stack ?? error}`);
       res.clearCookie(SSO_TX_COOKIE, { path: '/api/auth/sso' });
+      throw new OAuthError();
+    }
+  }
+
+  @Get(':providerId')
+  @Public()
+  async initiate(@Param('providerId') providerId: string, @Res() res: Response) {
+    try {
+      const provider = await this.loadActiveEntitledProvider(providerId);
+      const { url, state, nonce, codeVerifier } =
+        await this.ssoOidcService.createAuthRequest(provider);
+      const tx = await this.jwtService.signAsync(
+        { tokenType: 'sso-tx', providerId, state, nonce, codeVerifier },
+        { expiresIn: '10m' },
+      );
+      res.cookie(SSO_TX_COOKIE, tx, {
+        httpOnly: true,
+        secure: !!this.configService.get('auth.cookie.secure'),
+        // Must be 'lax' (not 'strict') so the cookie is sent on the top-level
+        // GET navigation the IdP makes back to /callback.
+        sameSite: 'lax',
+        maxAge: 10 * 60 * 1000,
+        path: '/api/auth/sso',
+      });
+      res.redirect(url);
+    } catch (error) {
+      this.logger.error(`SSO initiate failed: ${error?.stack ?? error}`);
       throw new OAuthError();
     }
   }

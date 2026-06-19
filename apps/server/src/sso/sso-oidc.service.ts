@@ -20,9 +20,11 @@ export interface OidcAuthRequest {
 export class SsoOidcService {
   constructor(private readonly configService: ConfigService) {}
 
-  buildCallbackUrl(providerId: string): string {
+  // One fixed callback for every provider; the provider is resolved from the
+  // signed tx cookie, so this is the single redirect URI to register at the IdP.
+  buildCallbackUrl(): string {
     const apiUrl = this.configService.get<string>('app.apiUrl') ?? '';
-    return `${apiUrl}/api/auth/sso/${providerId}/callback`;
+    return `${apiUrl}/api/auth/sso/callback`;
   }
 
   private async buildClient(provider: ProjectSSOIdentityProvider): Promise<Client> {
@@ -30,7 +32,7 @@ export class SsoOidcService {
     return new issuer.Client({
       client_id: provider.clientId,
       client_secret: provider.clientSecret,
-      redirect_uris: [this.buildCallbackUrl(provider.id)],
+      redirect_uris: [this.buildCallbackUrl()],
       response_types: ['code'],
     });
   }
@@ -57,7 +59,7 @@ export class SsoOidcService {
     checks: { state: string; nonce: string; codeVerifier: string },
   ) {
     const client = await this.buildClient(provider);
-    const tokenSet = await client.callback(this.buildCallbackUrl(provider.id), params as any, {
+    const tokenSet = await client.callback(this.buildCallbackUrl(), params as any, {
       state: checks.state,
       nonce: checks.nonce,
       code_verifier: checks.codeVerifier,

@@ -698,7 +698,6 @@ const translations = {
       title: 'Single Sign-On',
       headerBody:
         'Let your team sign in through your own OIDC identity provider (Okta, Azure Entra, Auth0, Google Workspace, and more).',
-      loginUrlLabel: 'SSO login URL:',
       newButton: 'Add provider',
       empty: 'No SSO providers configured yet.',
       editMenuItem: 'Edit',
@@ -735,6 +734,9 @@ const translations = {
         createTitle: 'Add OIDC provider',
         editTitle: 'Edit OIDC provider',
         create: 'Add provider',
+        idpSection: 'Identity provider',
+        spSection: 'Service provider',
+        provisioningSection: 'User provisioning',
         nameLabel: 'Display name',
         namePlaceholder: 'e.g. Okta',
         issuerLabel: 'Issuer URL',
@@ -751,6 +753,7 @@ const translations = {
           'Comma-separated. New users are auto-provisioned only if their email domain matches. Leave blank to trust the IdP.',
         callbackUrlLabel: 'Redirect / callback URL',
         callbackUrlHelp: 'Paste this into your IdP application as the allowed redirect URI.',
+        callbackUrlCopied: 'Callback URL copied',
       },
     },
     api: {

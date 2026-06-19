@@ -44,7 +44,7 @@ const oidcMock = {
     codeVerifier: 'verifier-1',
   })),
   exchangeCallback: jest.fn(async () => currentClaims),
-  buildCallbackUrl: jest.fn((id: string) => `http://test/api/auth/sso/${id}/callback`),
+  buildCallbackUrl: jest.fn(() => 'http://test/api/auth/sso/callback'),
 };
 
 const hasCookie = (res: request.Response, name: string): boolean =>
@@ -69,9 +69,10 @@ describe('SSO OIDC login flow (e2e)', () => {
       ...over,
     });
 
-  const callback = (id: string, tx: string) =>
+  // Single fixed callback; the provider is resolved from the tx cookie.
+  const callback = (tx: string) =>
     request(app.getHttpServer())
-      .get(`/api/auth/sso/${id}/callback`)
+      .get('/api/auth/sso/callback')
       .query({ code: 'auth-code', state: 'state-1' })
       .set('Cookie', `${SSO_TX_COOKIE}=${tx}`);
 
@@ -150,7 +151,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       jitEmails.push(email);
       currentClaims = { sub: 'sub-jit-1', email, email_verified: true, name: 'New User' };
 
-      const res = await callback(providerId, signTx());
+      const res = await callback(signTx());
       expect(res.status).toBe(302);
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(true);
 
@@ -177,7 +178,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       await buildMembership(prisma, { userId: member.id, projectId, role: 'VIEWER' as never });
       currentClaims = { sub: 'sub-member-1', email: EMAILS.member, email_verified: true };
 
-      const res = await callback(providerId, signTx());
+      const res = await callback(signTx());
       expect(res.status).toBe(302);
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(true);
 
@@ -199,7 +200,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       userIds.push(outsider.id);
       currentClaims = { sub: 'sub-outsider-1', email: EMAILS.outsider, email_verified: true };
 
-      const res = await callback(providerId, signTx());
+      const res = await callback(signTx());
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
       const membership = await prisma.userOnProject.findFirst({
         where: { projectId, userId: outsider.id },
@@ -232,7 +233,7 @@ describe('SSO OIDC login flow (e2e)', () => {
         nonce: 'nonce-1',
         codeVerifier: 'verifier-1',
       });
-      const res = await callback(gated.id, tx);
+      const res = await callback(tx);
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
 
@@ -244,21 +245,21 @@ describe('SSO OIDC login flow (e2e)', () => {
       jitEmails.push(email);
       currentClaims = { sub: 'sub-unverified', email, email_verified: false };
 
-      const res = await callback(providerId, signTx());
+      const res = await callback(signTx());
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
     });
 
-    it('rejects a callback whose tx cookie is for a different provider', async () => {
+    it('rejects a tx cookie referencing an unknown provider', async () => {
       currentClaims = { sub: 'sub-x', email: EMAILS.other, email_verified: true };
       const tx = jwt.sign({
         tokenType: 'sso-tx',
-        providerId: 'some-other-id',
+        providerId: 'some-unknown-id',
         state: 'state-1',
         nonce: 'nonce-1',
         codeVerifier: 'verifier-1',
       });
-      const res = await callback(providerId, tx);
+      const res = await callback(tx);
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
     });
   });

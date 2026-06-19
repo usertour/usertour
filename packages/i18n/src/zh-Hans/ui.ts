@@ -669,7 +669,6 @@ const translations = {
       title: '单点登录（SSO）',
       headerBody:
         '让团队通过你自己的 OIDC 身份提供商登录（Okta、Azure Entra、Auth0、Google Workspace 等）。',
-      loginUrlLabel: 'SSO 登录地址：',
       newButton: '添加提供商',
       empty: '尚未配置任何 SSO 提供商。',
       editMenuItem: '编辑',
@@ -705,6 +704,9 @@ const translations = {
         createTitle: '添加 OIDC 提供商',
         editTitle: '编辑 OIDC 提供商',
         create: '添加提供商',
+        idpSection: '身份提供商',
+        spSection: '服务提供方',
+        provisioningSection: '用户开通',
         nameLabel: '显示名称',
         namePlaceholder: '例如 Okta',
         issuerLabel: 'Issuer 地址',
@@ -719,6 +721,7 @@ const translations = {
         allowedDomainsHelp: '用逗号分隔。仅当新用户邮箱域名命中时才自动建号；留空表示信任该 IdP。',
         callbackUrlLabel: '回调（Redirect）地址',
         callbackUrlHelp: '将此地址作为允许的 redirect URI 粘贴到你的 IdP 应用中。',
+        callbackUrlCopied: '回调地址已复制',
       },
     },
     api: {

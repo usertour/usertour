@@ -40,8 +40,6 @@ export const SettingsSsoList = () => {
     return <SsoUpsell isSelfHosted={!!globalConfig?.isSelfHostedMode} projectId={project?.id} />;
   }
 
-  const loginUrl = project ? `${window.location.origin}/auth/sso/${project.id}` : '';
-
   const columns: ResourceTableColumn<SsoProvider>[] = [
     {
       header: t('settings.sso.columns.name'),
@@ -76,13 +74,7 @@ export const SettingsSsoList = () => {
     <ResourceListPage<SsoProvider>
       title={t('settings.sso.title')}
       actions={<NewSsoProviderButton onSuccess={refetch} />}
-      description={
-        <>
-          {t('settings.sso.headerBody')}
-          <br />
-          {t('settings.sso.loginUrlLabel')} <code className="text-foreground">{loginUrl}</code>
-        </>
-      }
+      description={t('settings.sso.headerBody')}
       columns={columns}
       rows={providers}
       loading={loading || configLoading || !project}

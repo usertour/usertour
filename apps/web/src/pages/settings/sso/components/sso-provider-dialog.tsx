@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretSortIcon } from '@radix-ui/react-icons';
+import { RiFileCopyLine } from '@usertour/icons';
 import {
   Button,
   DropdownMenu,
@@ -25,13 +26,17 @@ import {
   useUpdateSsoProviderMutation,
 } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
-import { apiUrl } from '@/utils/env';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { z } from 'zod';
 
 const ROLE_OPTIONS = [
   { value: 'ADMIN', i18nKey: 'settings.sso.roles.admin' },
   { value: 'VIEWER', i18nKey: 'settings.sso.roles.viewer' },
 ] as const;
+
+const SectionHeading = ({ title }: { title: string }) => (
+  <h4 className="pt-2 text-sm font-semibold">{title}</h4>
+);
 
 interface SsoProviderDialogProps {
   open: boolean;
@@ -64,8 +69,9 @@ const parseDomains = (value: string | undefined): string[] =>
 
 export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
   const { open, onOpenChange, provider, onSubmit } = props;
-  const { project } = useAppContext();
+  const { project, globalConfig } = useAppContext();
   const { t } = useTranslation();
+  const copy = useCopyWithToast();
   const { invoke: create } = useCreateOidcSsoProviderMutation();
   const { invoke: update } = useUpdateSsoProviderMutation();
   const isEdit = Boolean(provider);
@@ -118,7 +124,11 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, provider?.id]);
 
-  const callbackUrl = provider ? `${apiUrl}/api/auth/sso/${provider.id}/callback` : '';
+  // One fixed redirect URI for every provider — known up front, so it can be
+  // shown (and copied) in the create form, not just on edit. Built from the
+  // server-authoritative apiUrl (globalConfig) so the copied value is exactly
+  // the redirect_uri the backend sends to the IdP (no VITE_API_URL drift).
+  const callbackUrl = `${globalConfig?.apiUrl ?? ''}/api/auth/sso/callback`;
 
   return (
     <SettingsDialogForm
@@ -130,16 +140,10 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
       cancelLabel={t('settings.common.cancel')}
       contentClassName="max-w-xl"
     >
-      <div className="space-y-4">
-        {isEdit && (
-          <FormItem>
-            <FormLabel>{t('settings.sso.form.callbackUrlLabel')}</FormLabel>
-            <FormControl>
-              <Input readOnly value={callbackUrl} onFocus={(event) => event.target.select()} />
-            </FormControl>
-            <FormDescription>{t('settings.sso.form.callbackUrlHelp')}</FormDescription>
-          </FormItem>
-        )}
+      {/* Cap height so the many-field form scrolls inside the dialog instead of
+          growing past the viewport; the role dropdown portals out, so it isn't
+          clipped by the scroll container. */}
+      <div className="max-h-[60vh] space-y-4 overflow-y-auto px-0.5">
         <FormField
           control={state.form.control}
           name="name"
@@ -153,6 +157,8 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
             </FormItem>
           )}
         />
+
+        <SectionHeading title={t('settings.sso.form.idpSection')} />
         <FormField
           control={state.form.control}
           name="issuer"
@@ -198,6 +204,33 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
             </FormItem>
           )}
         />
+
+        <SectionHeading title={t('settings.sso.form.spSection')} />
+        <FormItem>
+          <FormLabel>{t('settings.sso.form.callbackUrlLabel')}</FormLabel>
+          <FormControl>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={callbackUrl}
+                onFocus={(event) => event.target.select()}
+                className="font-mono text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => copy(callbackUrl, t('settings.sso.form.callbackUrlCopied'))}
+              >
+                <RiFileCopyLine className="h-4 w-4" />
+              </Button>
+            </div>
+          </FormControl>
+          <FormDescription>{t('settings.sso.form.callbackUrlHelp')}</FormDescription>
+        </FormItem>
+
+        <SectionHeading title={t('settings.sso.form.provisioningSection')} />
         <FormField
           control={state.form.control}
           name="defaultRole"
