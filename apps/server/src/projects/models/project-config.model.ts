@@ -9,5 +9,11 @@ export class ProjectConfigModel {
   customCss: boolean;
 
   @Field()
+  ssoOidc: boolean;
+
+  @Field()
+  ssoSaml: boolean;
+
+  @Field()
   planType: string;
 }

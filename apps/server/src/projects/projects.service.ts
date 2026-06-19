@@ -168,6 +168,8 @@ export class ProjectsService {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       customCss: false,
+      ssoOidc: false,
+      ssoSaml: false,
       planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
@@ -227,6 +229,8 @@ export class ProjectsService {
     return {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
+      ssoOidc: features.ssoOidc,
+      ssoSaml: features.ssoSaml,
       planType,
     };
   }
@@ -268,6 +272,8 @@ export class ProjectsService {
     return {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
+      ssoOidc: features.ssoOidc,
+      ssoSaml: features.ssoSaml,
       planType,
     };
   }
@@ -281,6 +287,8 @@ export class ProjectsService {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       customCss: false,
+      ssoOidc: false,
+      ssoSaml: false,
       planType: PlanType.HOBBY,
     };
 
@@ -306,6 +314,8 @@ export class ProjectsService {
     return {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
+      ssoOidc: features.ssoOidc,
+      ssoSaml: features.ssoSaml,
       planType: subscription.planType,
     };
   }

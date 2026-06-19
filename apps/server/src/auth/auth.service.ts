@@ -392,6 +392,103 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  /**
+   * Resolve the Usertour user for a project-level SSO (OIDC) login.
+   *
+   * Unlike oauthValidate (global social login), this is scoped to one project
+   * and enforces the SSO safety rule: an existing global user is only admitted
+   * if they are ALREADY a member of the target project. The IdP for project X
+   * cannot mint a session for a user who does not belong to X — that would be
+   * cross-tenant account takeover, since User.email is globally unique.
+   *
+   *   - existing SSO account (provider = oidc:<providerId>)  → return it
+   *   - existing global user, member of the project          → link + return
+   *   - existing global user, NOT a member                   → reject
+   *   - brand-new email (domain-gated)                       → JIT provision
+   */
+  async ssoValidate(
+    profile: {
+      provider: string;
+      id: string;
+      emails: { value: string; verified?: boolean | string }[];
+      displayName?: string;
+    },
+    ssoContext: { projectId: string; defaultRole: string; allowedDomains: string[] },
+  ) {
+    const { provider, id, emails, displayName } = profile;
+
+    // Existing identity on this exact provider connection → log straight in.
+    const account = await this.prisma.account.findUnique({
+      where: { provider_providerAccountId: { provider, providerAccountId: id } },
+    });
+    if (account) {
+      const user = await this.prisma.user.findUnique({ where: { id: account.userId } });
+      if (user) {
+        return user;
+      }
+    }
+
+    if (!emails?.length) {
+      throw new OAuthError();
+    }
+    const email = emails[0].value.toLowerCase().trim();
+    // Reject when the IdP explicitly says the mailbox is unverified.
+    const verifiedFlag = emails[0].verified;
+    if (verifiedFlag === false || verifiedFlag === 'false') {
+      this.logger.warn(`SSO email not verified for ${provider} email=${email}`);
+      throw new OAuthError();
+    }
+
+    // Safe linking: an already-registered global user may only be linked if
+    // they already belong to this project. Otherwise this IdP has no standing
+    // to authenticate them.
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      const membership = await this.prisma.userOnProject.findFirst({
+        where: { projectId: ssoContext.projectId, userId: existingUser.id },
+      });
+      if (!membership) {
+        this.logger.warn(
+          `SSO rejected: ${email} is not a member of project ${ssoContext.projectId}`,
+        );
+        throw new OAuthError();
+      }
+      await this.linkOAuthAccount(existingUser.id, provider, id, '', '');
+      return existingUser;
+    }
+
+    // New user: optional unverified email-domain allow-list gates JIT.
+    if (ssoContext.allowedDomains.length > 0) {
+      const domain = email.split('@')[1];
+      if (!domain || !ssoContext.allowedDomains.includes(domain.toLowerCase())) {
+        this.logger.warn(`SSO rejected: domain of ${email} not in allow-list`);
+        throw new OAuthError();
+      }
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: displayName || email,
+          email,
+          emailVerified: new Date(),
+          isSystemAdmin: false,
+        },
+      });
+      await tx.account.create({
+        data: { type: 'oauth', userId: newUser.id, provider, providerAccountId: id },
+      });
+      // assignUserToProject re-checks the seat limit inside the transaction.
+      await this.teamService.assignUserToProject(
+        tx,
+        newUser.id,
+        ssoContext.projectId,
+        ssoContext.defaultRole,
+      );
+      return newUser;
+    });
+  }
+
   private async generateRefreshToken(userId: string): Promise<string> {
     const jti = randomBytes(32).toString('hex');
 

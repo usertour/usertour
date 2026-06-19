@@ -38,7 +38,10 @@ import type { PrismaClient } from '@prisma/client';
  */
 
 let counter = 0;
-const unique = () => `e2e-${Date.now()}-${counter++}`;
+// `process.pid` disambiguates parallel Jest workers sharing the test DB — two
+// workers can otherwise hit the same `Date.now()` with a counter that restarts
+// at 0 per process, colliding on unique columns (e.g. Subscription.subscriptionId).
+const unique = () => `e2e-${process.pid}-${Date.now()}-${counter++}`;
 
 // ── root nodes (no parent FKs) ─────────────────────────────────────
 

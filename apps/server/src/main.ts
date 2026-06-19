@@ -7,7 +7,6 @@ import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { configureApp } from './configure-app';
 
@@ -77,7 +76,6 @@ async function bootstrap() {
   const adapter = new RedisIoAdapter(app);
   await adapter.connectToRedis();
   app.useWebSocketAdapter(adapter);
-  app.use(cookieParser());
 
   // Add trace ID middleware
   app.use(setTraceID);

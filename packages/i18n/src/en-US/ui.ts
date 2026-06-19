@@ -225,6 +225,7 @@ const translations = {
         events: 'Events',
         localizations: 'Localization',
         team: 'Team',
+        sso: 'Single Sign-On',
         billing: 'Billing',
         subscription: 'Subscription',
         account: 'Account',
@@ -693,6 +694,65 @@ const translations = {
       uploadLicenseEmpty: 'License cannot be empty',
       uploadLicenseSuccess: 'License updated',
     },
+    sso: {
+      title: 'Single Sign-On',
+      headerBody:
+        'Let your team sign in through your own OIDC identity provider (Okta, Azure Entra, Auth0, Google Workspace, and more).',
+      loginUrlLabel: 'SSO login URL:',
+      newButton: 'Add provider',
+      empty: 'No SSO providers configured yet.',
+      editMenuItem: 'Edit',
+      deleteMenuItem: 'Delete',
+      deleteResource: 'SSO provider',
+      deleteSuccess: 'SSO provider deleted',
+      deleteFailure: 'Failed to delete SSO provider',
+      columns: {
+        name: 'Name',
+        issuer: 'Issuer',
+        status: 'Status',
+      },
+      status: {
+        active: 'Active',
+        inactive: 'Inactive',
+      },
+      roles: {
+        admin: 'Member (can edit)',
+        viewer: 'Viewer (read-only)',
+      },
+      locked: {
+        cloud: {
+          title: 'Single Sign-On is a Business feature',
+          description:
+            'Let your team sign in through your own identity provider on the Business plan.',
+          upgrade: 'Upgrade to Business',
+        },
+        selfHosted: {
+          title: 'Single Sign-On requires a license',
+          description: 'Activate a license on this instance to enable single sign-on.',
+        },
+      },
+      form: {
+        createTitle: 'Add OIDC provider',
+        editTitle: 'Edit OIDC provider',
+        create: 'Add provider',
+        nameLabel: 'Display name',
+        namePlaceholder: 'e.g. Okta',
+        issuerLabel: 'Issuer URL',
+        issuerHelp:
+          'The provider issuer; endpoints are discovered from its /.well-known/openid-configuration.',
+        clientIdLabel: 'Client ID',
+        clientSecretLabel: 'Client secret',
+        clientSecretKeep: 'Leave blank to keep the current secret',
+        clientSecretRequired: 'Client secret is required',
+        defaultRoleLabel: 'Default role for new users',
+        defaultRoleHelp: 'Role assigned when a user first signs in via SSO.',
+        allowedDomainsLabel: 'Allowed email domains (optional)',
+        allowedDomainsHelp:
+          'Comma-separated. New users are auto-provisioned only if their email domain matches. Leave blank to trust the IdP.',
+        callbackUrlLabel: 'Redirect / callback URL',
+        callbackUrlHelp: 'Paste this into your IdP application as the allowed redirect URI.',
+      },
+    },
     api: {
       title: 'API keys for {{environment}}',
       newButton: 'New API key',
@@ -969,6 +1029,12 @@ const translations = {
       continueWithGithub: 'Continue with Github',
       signingIn: 'Logging in...',
       divider: 'Or log in with email',
+    },
+    sso: {
+      title: 'Single sign-on',
+      description: 'Sign in with your organization identity provider.',
+      unavailable: 'Single sign-on is not available for this workspace.',
+      continueWith: 'Continue with {{name}}',
     },
     signIn: {
       title: 'Log in to Usertour',

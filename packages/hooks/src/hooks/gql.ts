@@ -89,6 +89,11 @@ import {
   getTheme,
   listLocalizations,
   queryOembedInfo,
+  listProjectSsoProviders,
+  createOidcSsoProvider,
+  updateSsoProvider,
+  deleteSsoProvider,
+  getProjectSsoProviders,
 } from '@usertour/gql';
 
 import type {
@@ -1152,6 +1157,8 @@ export const useGetProjectConfigQuery = (
     projectConfig: data?.getProjectConfig as {
       removeBranding: boolean;
       customCss: boolean;
+      ssoOidc: boolean;
+      ssoSaml: boolean;
       planType: string;
     } | null,
     loading,
@@ -1429,4 +1436,120 @@ export const useListLocalizationsQuery = (
     loading,
     error,
   };
+};
+
+// ---------------------------------------------------------------------------
+// SSO (project-level OIDC identity providers)
+// ---------------------------------------------------------------------------
+
+export interface SsoProvider {
+  id: string;
+  projectId: string;
+  type: 'OIDC' | 'SAML';
+  name: string;
+  status: string;
+  defaultRole: 'ADMIN' | 'VIEWER';
+  allowedDomains: string[];
+  issuer: string;
+  clientId: string;
+  authorizationUrl?: string | null;
+  tokenUrl?: string | null;
+  userInfoUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicSsoProvider {
+  id: string;
+  name: string;
+  type: 'OIDC' | 'SAML';
+}
+
+export interface CreateOidcSsoProviderInput {
+  name: string;
+  defaultRole: 'ADMIN' | 'VIEWER';
+  allowedDomains?: string[];
+  issuer: string;
+  clientId: string;
+  clientSecret: string;
+  authorizationUrl?: string;
+  tokenUrl?: string;
+  userInfoUrl?: string;
+}
+
+export type UpdateSsoProviderInput = Partial<
+  Omit<CreateOidcSsoProviderInput, 'allowedDomains'> & {
+    status: string;
+    allowedDomains: string[];
+  }
+>;
+
+export const useListProjectSsoProvidersQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(listProjectSsoProviders, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  return {
+    providers: (data?.listProjectSsoProviders ?? []) as SsoProvider[],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useGetProjectSsoProvidersQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectSsoProviders, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  return {
+    providers: (data?.getProjectSsoProviders ?? []) as PublicSsoProvider[],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useCreateOidcSsoProviderMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createOidcSsoProvider);
+  const invoke = useCallback(
+    async (projectId: string, input: CreateOidcSsoProviderInput): Promise<SsoProvider> => {
+      const response = await mutation({ variables: { projectId, input } });
+      return response.data?.createOidcSsoProvider as SsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useUpdateSsoProviderMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateSsoProvider);
+  const invoke = useCallback(
+    async (id: string, input: UpdateSsoProviderInput): Promise<SsoProvider> => {
+      const response = await mutation({ variables: { id, input } });
+      return response.data?.updateSsoProvider as SsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDeleteSsoProviderMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteSsoProvider);
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({ variables: { id } });
+      return !!response.data?.deleteSsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
 };

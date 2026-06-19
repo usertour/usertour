@@ -79,6 +79,6 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     },
   ],
   controllers: [AuthController],
-  exports: [AuthService, TwoFactorService, PasswordService],
+  exports: [AuthService, TwoFactorService, PasswordService, JwtModule],
 })
 export class AuthModule {}

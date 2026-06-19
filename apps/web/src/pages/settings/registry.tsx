@@ -9,6 +9,7 @@ import {
   RiPaletteLine,
   RiProjectorLine,
   RiPuzzleLine,
+  RiShieldKeyholeLine,
   RiTeamLine,
 } from '@usertour/icons';
 import { Capability, type GlobalConfig } from '@usertour/types';
@@ -37,7 +38,8 @@ export type SettingsSectionKey =
   | 'subscription'
   | 'account'
   | 'api'
-  | 'integrations';
+  | 'integrations'
+  | 'sso';
 
 export type SettingsSectionGroup = 'general' | 'developer';
 
@@ -172,6 +174,15 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     component: lazy(() =>
       import('./members').then((module) => ({ default: module.SettingsMemberList })),
     ),
+  },
+  {
+    key: 'sso',
+    title: 'Single Sign-On',
+    icon: <RiShieldKeyholeLine className={ICON_CLASS} />,
+    capability: Capability.SsoRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() => import('./sso').then((module) => ({ default: module.SettingsSsoList }))),
   },
   {
     key: 'billing',

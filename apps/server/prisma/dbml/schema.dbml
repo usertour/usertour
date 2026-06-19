@@ -136,6 +136,32 @@ Table Project {
   invites Invite [not null]
   contents Content [not null]
   segments Segment [not null]
+  ssoProviders ProjectSSOIdentityProvider [not null]
+}
+
+Table ProjectSSOIdentityProvider {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  project Project [not null]
+  projectId String [not null]
+  type SsoProviderType [not null, default: 'OIDC', note: 'OIDC | SAML — only OIDC is used in v1']
+  name String [not null, note: 'Admin-named connection, e.g. "Okta", "Azure Entra ID"']
+  status String [not null, default: 'active', note: 'active | inactive | error — live login still re-checks plan entitlement']
+  defaultRole Role [not null, note: 'Role assigned to just-in-time provisioned users. Restricted to ADMIN or
+VIEWER at the API layer (OWNER/USER are rejected).']
+  allowedDomains String[] [not null, note: 'Optional unverified email-domain allow-list for JIT. Empty = trust the IdP.']
+  issuer String [not null]
+  clientId String [not null]
+  clientSecret String [not null]
+  authorizationUrl String [note: 'Optional explicit endpoint overrides; when absent they are discovered
+from the issuer\'s /.well-known/openid-configuration.']
+  tokenUrl String
+  userInfoUrl String
+
+  Note: 'Per-project SSO identity provider (OIDC in v1; SAML reserved). Configured
+at runtime by a project owner; gated by the project\'s ssoOidc/ssoSaml plan
+feature. One project can hold several named connections.'
 }
 
 Table UserOnProject {
@@ -677,6 +703,11 @@ Table IntegrationLog {
   data Json [note: 'data of integration log']
 }
 
+Enum SsoProviderType {
+  OIDC
+  SAML
+}
+
 Enum Role {
   ADMIN
   VIEWER
@@ -693,6 +724,8 @@ Ref: Invite.userId > User.id
 Ref: Invite.projectId > Project.id
 
 Ref: Code.userId > User.id
+
+Ref: ProjectSSOIdentityProvider.projectId > Project.id [delete: Cascade]
 
 Ref: UserOnProject.projectId > Project.id [delete: Cascade]
 

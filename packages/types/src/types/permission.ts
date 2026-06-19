@@ -82,4 +82,7 @@ export enum Capability {
   // team
   TeamRead = 'team:read',
   TeamManage = 'team:manage',
+  // sso (single sign-on identity providers)
+  SsoRead = 'sso:read',
+  SsoManage = 'sso:manage',
 }

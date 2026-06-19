@@ -180,6 +180,45 @@ model Project {
   invites        Invite[]
   contents       Content[]
   segments       Segment[]
+  ssoProviders   ProjectSSOIdentityProvider[]
+}
+
+/// Per-project SSO identity provider (OIDC in v1; SAML reserved). Configured
+/// at runtime by a project owner; gated by the project's ssoOidc/ssoSaml plan
+/// feature. One project can hold several named connections.
+model ProjectSSOIdentityProvider {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  project   Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId String
+  /// OIDC | SAML — only OIDC is used in v1
+  type      SsoProviderType @default(OIDC)
+  /// Admin-named connection, e.g. "Okta", "Azure Entra ID"
+  name      String
+  /// active | inactive | error — live login still re-checks plan entitlement
+  status    String   @default("active")
+  /// Role assigned to just-in-time provisioned users. Restricted to ADMIN or
+  /// VIEWER at the API layer (OWNER/USER are rejected).
+  defaultRole Role
+  /// Optional unverified email-domain allow-list for JIT. Empty = trust the IdP.
+  allowedDomains String[] @default([])
+  // --- OIDC ---
+  issuer           String
+  clientId         String
+  clientSecret     String
+  /// Optional explicit endpoint overrides; when absent they are discovered
+  /// from the issuer's /.well-known/openid-configuration.
+  authorizationUrl String?
+  tokenUrl         String?
+  userInfoUrl      String?
+
+  @@index([projectId])
+}
+
+enum SsoProviderType {
+  OIDC
+  SAML
 }
 
 model UserOnProject {

@@ -11,6 +11,7 @@ import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
 import { ProjectsModule } from '@/projects/projects.module';
+import { SsoModule } from '@/sso/sso.module';
 import { ThemesModule } from '@/themes/themes.module';
 import { UsersModule } from '@/users/users.module';
 import { UtilitiesModule } from '@/utilities/utilities.module';
@@ -132,6 +133,7 @@ import { Logger } from '@nestjs/common';
     ContentModule,
     EnvironmentsModule,
     ProjectsModule,
+    SsoModule,
     UtilitiesModule,
     ThemesModule,
     AttributesModule,
