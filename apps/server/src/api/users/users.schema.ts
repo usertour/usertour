@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
 
+import { codeName as codeNameSchema } from '../shared/codename';
 import { createdAtRangeFields } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
@@ -30,10 +31,15 @@ export const getUserQuery = z.object({
 export class GetUserQueryDto extends createZodDto(getUserQuery) {}
 
 export const upsertUserBody = z.object({
+  // Attribute keys are codeNames a write may CREATE, so they carry the strict v2
+  // codeName rule (charset + length). The SDK identify path stays lenient.
   attributes: z
-    .record(z.string(), z.any())
+    .record(codeNameSchema, z.any())
     .optional()
-    .describe('Custom attributes to set on the user (merged into existing attributes).'),
+    .describe(
+      'Custom attributes to set on the user (merged into existing attributes). Each key must ' +
+        'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
+    ),
 });
 export class UpsertUserBodyDto extends createZodDto(upsertUserBody) {}
 

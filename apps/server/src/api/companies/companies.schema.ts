@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
 
+import { codeName as codeNameSchema } from '../shared/codename';
 import { createdAtRangeFields } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
@@ -24,18 +25,27 @@ export const getCompanyQuery = z.object({
 export class GetCompanyQueryDto extends createZodDto(getCompanyQuery) {}
 
 export const upsertCompanyBody = z.object({
+  // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
   attributes: z
-    .record(z.string(), z.any())
+    .record(codeNameSchema, z.any())
     .optional()
-    .describe('Custom attributes to set on the company (merged into existing attributes).'),
+    .describe(
+      'Custom attributes to set on the company (merged into existing attributes). Each key must ' +
+        'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
+    ),
 });
 export class UpsertCompanyBodyDto extends createZodDto(upsertCompanyBody) {}
 
 export const upsertMembershipBody = z.object({
+  // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
   attributes: z
-    .record(z.string(), z.any())
+    .record(codeNameSchema, z.any())
     .optional()
-    .describe("Custom attributes to set on the membership (e.g. the user's role in the company)."),
+    .describe(
+      "Custom attributes to set on the membership (e.g. the user's role in the company). Each " +
+        'key must be a valid codeName: start with a letter, then letters/digits/underscores, ' +
+        '2–20 chars.',
+    ),
 });
 export class UpsertMembershipBodyDto extends createZodDto(upsertMembershipBody) {}
 

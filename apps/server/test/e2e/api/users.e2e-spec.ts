@@ -166,6 +166,16 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     expect(after.status).toBe(404);
   });
 
+  it('PUT rejects an invalid attribute codeName (400 E1017)', async () => {
+    const token = await mint([Capability.UserWrite]);
+    const res = await request(app.getHttpServer())
+      .put(v2path('/bu-bad-attr'))
+      .set('Authorization', `Bearer ${token}`)
+      .send({ attributes: { 'bad name': 'x' } }); // space breaks the codeName rule
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+  });
+
   it('PUT rejects a token without user:write (403 E1012)', async () => {
     const res = await request(app.getHttpServer())
       .put(v2path('/whatever'))
