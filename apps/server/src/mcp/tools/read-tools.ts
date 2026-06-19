@@ -14,6 +14,7 @@ import {
 } from '@/api/content-representation/version-data.schema';
 import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
+import { createdAtRangeFields, nameSearchField } from '@/api/shared/filters';
 
 import { McpTool, McpToolContext } from '../mcp.types';
 import { AUTHORING_GUIDE } from './authoring-guide';
@@ -117,17 +118,6 @@ const orderBySchema = z
   .enum(['createdAt', '-createdAt'])
   .optional()
   .describe('Sort order: createdAt (oldest first) or -createdAt (newest first).');
-// Shared createdAt range filter shape, spread into list tool inputSchemas.
-const createdRangeShape = {
-  createdAfter: z
-    .string()
-    .optional()
-    .describe('Only items created at or after this ISO 8601 time.'),
-  createdBefore: z
-    .string()
-    .optional()
-    .describe('Only items created at or before this ISO 8601 time.'),
-};
 export const environmentIdSchema = z
   .string()
   .optional()
@@ -200,9 +190,10 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'List Usertour content (flows, checklists, launchers, banners, surveys) in the ' +
-        'project. Filter by `type`, `published`, or a created-at range. Returns ' +
+        'project. Filter by `name`, `type`, `published`, or a created-at range. Returns ' +
         '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
+        ...nameSearchField,
         type: z
           .string()
           .optional()
@@ -217,7 +208,7 @@ export function buildReadTools(): McpTool[] {
           .array(z.enum(['editedVersion', 'publishedVersion']))
           .optional()
           .describe('Inline editedVersion / publishedVersion on each item (avoids per-item get).'),
-        ...createdRangeShape,
+        ...createdAtRangeFields,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -228,6 +219,7 @@ export function buildReadTools(): McpTool[] {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
+          name: asString(args.name),
           type: asString(args.type),
           published: typeof args.published === 'boolean' ? args.published : undefined,
           expand: asStringArray(args.expand) as ContentExpand[] | undefined,
@@ -272,9 +264,10 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.AttributeRead,
       description:
         'List attribute definitions (the schema of custom attributes) for the project. ' +
-        'Optionally filter by `scope` ("user", "company", or "companyMembership"). Returns ' +
-        '`{ items, nextCursor }`.',
+        'Optionally filter by `name` or `scope` ("user", "company", or "companyMembership"). ' +
+        'Returns `{ items, nextCursor }`.',
       inputSchema: {
+        ...nameSearchField,
         scope: z
           .enum(['user', 'company', 'companyMembership'])
           .optional()
@@ -292,6 +285,7 @@ export function buildReadTools(): McpTool[] {
             limit: asLimit(args.limit),
             cursor: asString(args.cursor),
             orderBy: asOrderBy(args.orderBy),
+            name: asString(args.name),
             scope: asString(args.scope),
           },
         );
@@ -304,9 +298,10 @@ export function buildReadTools(): McpTool[] {
       title: 'List event definitions',
       capability: Capability.EventRead,
       description:
-        'List event definitions (the catalog of tracked events) for the project. Returns ' +
-        '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+        'List event definitions (the catalog of tracked events) for the project. Optionally ' +
+        'filter by `name`. Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
+        ...nameSearchField,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -320,6 +315,7 @@ export function buildReadTools(): McpTool[] {
             limit: asLimit(args.limit),
             cursor: asString(args.cursor),
             orderBy: asOrderBy(args.orderBy),
+            name: asString(args.name),
           },
         );
         return toListPayload(result);
@@ -340,7 +336,7 @@ export function buildReadTools(): McpTool[] {
         email: z.string().optional().describe('Filter to a user with this email.'),
         companyId: z.string().optional().describe('Filter to users in this company.'),
         segmentId: z.string().optional().describe('Filter to users in this segment.'),
-        ...createdRangeShape,
+        ...createdAtRangeFields,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -390,12 +386,15 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ThemeRead,
       description:
         "List the project's themes (id, name, isDefault) — the theme ids accepted by a version's " +
-        '`themeId`. Bounded per-project set; returns `{ items }`.',
-      inputSchema: {},
-      async handler(_args, ctx) {
+        '`themeId`. Optionally filter by `name`. Bounded per-project set; returns `{ items }`.',
+      inputSchema: {
+        ...nameSearchField,
+      },
+      async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.themes.list('mcp://themes', ctx.projectId, {
           limit: 100,
+          name: asString(args.name),
         });
         return { items: result.results };
       },
@@ -501,7 +500,7 @@ export function buildReadTools(): McpTool[] {
           .array(z.enum(['users', 'memberships', 'memberships.user']))
           .optional()
           .describe('Inline users / memberships on each item (avoids per-item get).'),
-        ...createdRangeShape,
+        ...createdAtRangeFields,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -555,13 +554,14 @@ export function buildReadTools(): McpTool[] {
       title: 'List segments',
       capability: Capability.SegmentRead,
       description:
-        'List the project\'s segments. Filter by `bizType` ("user" or "company"). Returns ' +
-        '`{ items, nextCursor }`.',
+        'List the project\'s segments. Filter by `name` or `bizType` ("user" or "company"). ' +
+        'Returns `{ items, nextCursor }`.',
       inputSchema: {
         bizType: z
           .enum(['user', 'company'])
           .optional()
           .describe('Filter to user or company segments.'),
+        ...nameSearchField,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -572,6 +572,7 @@ export function buildReadTools(): McpTool[] {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
+          name: asString(args.name),
           bizType: asString(args.bizType) as 'user' | 'company' | undefined,
         });
         return toListPayload(result);
@@ -614,7 +615,7 @@ export function buildReadTools(): McpTool[] {
           .array(z.enum(['answers', 'content', 'company', 'user', 'version']))
           .optional()
           .describe('Inline content / user / company / version / answers on each item.'),
-        ...createdRangeShape,
+        ...createdAtRangeFields,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -671,8 +672,10 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.EnvironmentRead,
       description:
         "List the project's environments — the environment ids that the env-scoped tools and " +
-        '`publish_content` accept (`isPrimary` marks the default). Returns `{ items, nextCursor }`.',
+        '`publish_content` accept (`isPrimary` marks the default). Optionally filter by `name`. ' +
+        'Returns `{ items, nextCursor }`.',
       inputSchema: {
+        ...nameSearchField,
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -683,6 +686,7 @@ export function buildReadTools(): McpTool[] {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
+          name: asString(args.name),
         });
         return toListPayload(result);
       },

@@ -12,6 +12,7 @@ import {
 } from '@/common/errors/errors';
 import { EnvironmentsService } from '@/environments/environments.service';
 
+import { nameContains } from '../shared/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapEnvironment } from './environments.mapper';
@@ -39,14 +40,16 @@ export class ApiEnvironmentsService {
     projectId: string,
     query: ListEnvironmentsQuery,
   ): Promise<{ results: Environment[]; next: string | null; previous: string | null }> {
-    const { limit, cursor } = query;
-    const orderByInput = Array.isArray(query.orderBy)
-      ? query.orderBy
-      : query.orderBy
-        ? [query.orderBy]
-        : ['createdAt'];
-    const orderBy = parseOrderBy(orderByInput) as Prisma.EnvironmentOrderByWithRelationInput[];
-    const where: Prisma.EnvironmentWhereInput = { projectId, deleted: false };
+    const { limit, cursor, name } = query;
+    const orderBy = parseOrderBy(query.orderBy, [
+      'createdAt',
+    ]) as Prisma.EnvironmentOrderByWithRelationInput[];
+    const nameFilter = nameContains(name);
+    const where: Prisma.EnvironmentWhereInput = {
+      projectId,
+      deleted: false,
+      ...(nameFilter ? { name: nameFilter } : {}),
+    };
 
     return paginate({
       requestUrl,

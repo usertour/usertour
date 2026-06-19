@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { orderByField, singleOrArray } from '../shared/query';
 
 import {
   contentVersion,
@@ -15,13 +16,7 @@ import {
   representationTracker,
 } from '../content-representation/version-data.schema';
 
-/** A query param that arrives as a single value or a repeated array. */
-function singleOrArray<T extends z.ZodTypeAny>(item: T) {
-  return z.union([item, z.array(item)]).optional();
-}
-
 export const versionExpand = z.enum(['questions', 'steps', 'data']);
-const orderByField = z.enum(['createdAt', '-createdAt']);
 
 export const getContentVersionQuery = z.object({
   expand: singleOrArray(versionExpand).describe('Inline the version questions.'),

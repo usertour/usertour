@@ -1,14 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { orderByField, singleOrArray } from '../shared/query';
 
+import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
-
-/** A query param that arrives as a single value or a repeated array. */
-function singleOrArray<T extends z.ZodTypeAny>(item: T) {
-  return z.union([item, z.array(item)]).optional();
-}
-const orderByField = z.enum(['createdAt', '-createdAt']);
 
 /**
  * The single source of truth for the v2 event-definitions endpoint: these zod
@@ -20,6 +16,7 @@ const orderByField = z.enum(['createdAt', '-createdAt']);
 export const listEventDefinitionsQuery = z.object({
   cursor,
   limit,
+  ...nameSearchField,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
 });
 export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefinitionsQuery) {}

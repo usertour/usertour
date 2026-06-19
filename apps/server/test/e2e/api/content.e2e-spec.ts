@@ -156,6 +156,15 @@ describe('API v2 /content (e2e)', () => {
     expect(checklists.body.results.map((c: { id: string }) => c.id)).not.toContain(flowId);
   });
 
+  it('filters by name server-side (case-insensitive substring)', async () => {
+    const token = await mint([Capability.ContentRead]);
+    // "Onboarding" matches the lowercase substring "onb"; "Live" does not.
+    const res = await api('get', `/v2/projects/${projectId}/content?name=onb`, token);
+    const ids = res.body.results.map((c: { id: string }) => c.id);
+    expect(ids).toContain(flowId);
+    expect(ids).not.toContain(publishedId);
+  });
+
   it('returns 404 for an unknown content (E1004)', async () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api('get', `/v2/projects/${projectId}/content/does-not-exist`, token);

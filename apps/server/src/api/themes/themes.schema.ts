@@ -1,7 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { orderByField, singleOrArray } from '../shared/query';
 
 import { representationCondition } from '../content-representation/representation.schema';
+import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
@@ -16,13 +18,7 @@ import { cursor, limit } from '../shared/pagination.schema';
  * `variations[].settings` is pass-through like the base settings.
  */
 
-/** A query param that arrives as a single value or a repeated array. */
-function singleOrArray<T extends z.ZodTypeAny>(item: T) {
-  return z.union([item, z.array(item)]).optional();
-}
-
 export const themeExpand = z.enum(['settings', 'variations']);
-const orderByField = z.enum(['createdAt', '-createdAt']);
 
 /** Theme settings — an opaque (pass-through) object. */
 const themeSettings = z.record(z.string(), z.unknown());
@@ -51,6 +47,7 @@ export class ThemeDto extends createZodDto(theme) {}
 export const listThemesQuery = z.object({
   limit,
   cursor,
+  ...nameSearchField,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   expand: singleOrArray(themeExpand).describe('Inline: settings, variations.'),
 });

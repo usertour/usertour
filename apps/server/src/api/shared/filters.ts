@@ -20,6 +20,29 @@ export const createdAtRangeFields = {
 };
 
 /**
+ * Reusable name-search query field for v2 list endpoints. Spread into a list
+ * query's zod object; map it to the resource's display-name column in the
+ * service via `nameContains`. Empty / whitespace-only is treated as no filter.
+ */
+export const nameSearchField = {
+  name: z.string().optional().describe('Filter by name (case-insensitive substring match).'),
+};
+
+/**
+ * Build a case-insensitive substring filter from an optional search term, or
+ * `undefined` when the term is empty/whitespace. Apply at the call site under
+ * the resource's column (`name` for most, `displayName` for definitions), e.g.
+ * `...(nameContains(query.name) ? { name: nameContains(query.name)! } : {})` or
+ * `const f = nameContains(query.name); if (f) where.displayName = f;`.
+ */
+export function nameContains(
+  term: string | undefined,
+): { contains: string; mode: 'insensitive' } | undefined {
+  const trimmed = term?.trim();
+  return trimmed ? { contains: trimmed, mode: 'insensitive' } : undefined;
+}
+
+/**
  * Build a Prisma `createdAt` range where-fragment from optional ISO strings.
  * Returns `{}` when neither bound is set, so it spreads cleanly into any where.
  */

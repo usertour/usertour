@@ -4,6 +4,7 @@ import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.inpu
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+import { nameContains } from '@/api/shared/filters';
 import { ResourceAlreadyExistsError } from '@/common/errors';
 
 @Injectable()
@@ -85,12 +86,15 @@ export class AttributesService {
     bizType?: number,
     eventName?: string[],
     orderBy?: Prisma.AttributeOrderByWithRelationInput[],
+    name?: string,
   ) {
+    const nameFilter = nameContains(name);
     const where: Prisma.AttributeWhereInput = {
       projectId,
       deleted: false,
       ...(bizType && { bizType }),
       ...(eventName && { attributeOnEvent: { some: { event: { codeName: { in: eventName } } } } }),
+      ...(nameFilter ? { displayName: nameFilter } : {}),
     };
 
     const baseQuery = {

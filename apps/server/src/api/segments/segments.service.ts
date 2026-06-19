@@ -19,6 +19,7 @@ import { loadConditionContext } from '../content-representation/condition-contex
 import { collectRuleIssues } from '../content-representation/condition-validate';
 import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { nameContains } from '../shared/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapSegment } from './segments.mapper';
@@ -46,23 +47,22 @@ export class ApiSegmentsService {
     projectId: string,
     query: ListSegmentsQuery,
   ): Promise<{ results: Segment[]; next: string | null; previous: string | null }> {
-    const { bizType: bizTypeFilter, limit, cursor } = query;
+    const { bizType: bizTypeFilter, limit, cursor, name } = query;
     const resolvers = await this.buildDecompileResolvers(projectId);
+    const nameFilter = nameContains(name);
     const bizType =
       bizTypeFilter === 'company'
         ? SegmentBizType.COMPANY
         : bizTypeFilter === 'user'
           ? SegmentBizType.USER
           : undefined;
-    const orderByInput = Array.isArray(query.orderBy)
-      ? query.orderBy
-      : query.orderBy
-        ? [query.orderBy]
-        : ['createdAt'];
-    const orderBy = parseOrderBy(orderByInput) as Prisma.SegmentOrderByWithRelationInput[];
+    const orderBy = parseOrderBy(query.orderBy, [
+      'createdAt',
+    ]) as Prisma.SegmentOrderByWithRelationInput[];
     const where: Prisma.SegmentWhereInput = {
       projectId,
       ...(bizType !== undefined ? { bizType } : {}),
+      ...(nameFilter ? { name: nameFilter } : {}),
     };
 
     return paginate({

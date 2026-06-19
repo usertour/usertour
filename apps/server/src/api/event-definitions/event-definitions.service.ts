@@ -32,19 +32,14 @@ export class ApiEventDefinitionsService {
     projectId: string,
     query: ListEventDefinitionsQuery,
   ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
-    const { cursor, limit } = query;
-    const orderBy = Array.isArray(query.orderBy)
-      ? query.orderBy
-      : query.orderBy
-        ? [query.orderBy]
-        : ['createdAt'];
-    const sortOrders = parseOrderBy(orderBy);
+    const { cursor, limit, name } = query;
+    const sortOrders = parseOrderBy(query.orderBy, ['createdAt']);
 
     return paginate({
       requestUrl,
       cursor,
       limit,
-      fetch: (params) => this.events.listWithPagination(projectId, params, sortOrders),
+      fetch: (params) => this.events.listWithPagination(projectId, params, sortOrders, name),
       map: mapEventDefinition,
     });
   }

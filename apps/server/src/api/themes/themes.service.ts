@@ -10,6 +10,7 @@ import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { nameContains } from '../shared/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapTheme } from './themes.mapper';
@@ -48,16 +49,18 @@ export class ApiThemesService {
     projectId: string,
     query: ListThemesQuery,
   ): Promise<{ results: Theme[]; next: string | null; previous: string | null }> {
-    const { limit, cursor } = query;
+    const { limit, cursor, name } = query;
     const expand = toArray(query.expand);
     const resolvers = await this.buildDecompileResolvers(projectId);
-    const orderByInput = Array.isArray(query.orderBy)
-      ? query.orderBy
-      : query.orderBy
-        ? [query.orderBy]
-        : ['createdAt'];
-    const orderBy = parseOrderBy(orderByInput) as Prisma.ThemeOrderByWithRelationInput[];
-    const where: Prisma.ThemeWhereInput = { projectId, deleted: false };
+    const orderBy = parseOrderBy(query.orderBy, [
+      'createdAt',
+    ]) as Prisma.ThemeOrderByWithRelationInput[];
+    const nameFilter = nameContains(name);
+    const where: Prisma.ThemeWhereInput = {
+      projectId,
+      deleted: false,
+      ...(nameFilter ? { name: nameFilter } : {}),
+    };
 
     return paginate({
       requestUrl,

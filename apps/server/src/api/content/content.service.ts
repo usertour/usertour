@@ -205,11 +205,9 @@ export class ApiContentService {
     projectId: string,
     query: ListContentQuery,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, type, published, createdAfter, createdBefore } = query;
+    const { limit, cursor, name, type, published, createdAfter, createdBefore } = query;
     const expand = toArray<ContentExpand>(query.expand);
-    const orderBy = parseOrderBy(
-      toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
-    );
+    const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
     return paginate({
       requestUrl,
@@ -226,6 +224,7 @@ export class ApiContentService {
           published,
           createdAfter,
           createdBefore,
+          name,
         ),
       map: (node) => mapContent(node, expand),
     });

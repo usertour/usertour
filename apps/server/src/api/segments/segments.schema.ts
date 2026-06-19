@@ -1,15 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { orderByField, singleOrArray } from '../shared/query';
 
 import { representationCondition } from '../content-representation/representation.schema';
+import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
-
-/** A query param that arrives as a single value or a repeated array. */
-function singleOrArray<T extends z.ZodTypeAny>(item: T) {
-  return z.union([item, z.array(item)]).optional();
-}
-const orderByField = z.enum(['createdAt', '-createdAt']);
 
 /**
  * v2 segments. Segment definitions are project-level; membership is env-level
@@ -39,6 +35,7 @@ export const listSegmentsQuery = z.object({
   bizType: segmentBizType.optional().describe('Filter to user or company segments.'),
   limit,
   cursor,
+  ...nameSearchField,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
 });
 export class ListSegmentsQueryDto extends createZodDto(listSegmentsQuery) {}

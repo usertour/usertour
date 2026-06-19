@@ -1,22 +1,18 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { orderByField, singleOrArray } from '../shared/query';
 
 import { contentVersion } from '../content-representation/representation.schema';
-import { createdAtRangeFields } from '../shared/filters';
+import { createdAtRangeFields, nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
-/** A query param that arrives as a single value or a repeated array. */
-function singleOrArray<T extends z.ZodTypeAny>(item: T) {
-  return z.union([item, z.array(item)]).optional();
-}
-
 export const contentExpand = z.enum(['editedVersion', 'publishedVersion']);
-const orderByField = z.enum(['createdAt', '-createdAt']);
 
 export const listContentQuery = z.object({
   limit,
   cursor,
+  ...nameSearchField,
   type: z
     .string()
     .optional()

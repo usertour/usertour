@@ -1,4 +1,4 @@
-import { createdAtWhere } from '@/api/shared/filters';
+import { createdAtWhere, nameContains } from '@/api/shared/filters';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateContentInput } from './dto/content-update.input';
@@ -800,7 +800,9 @@ export class ContentService {
     published?: boolean,
     createdAfter?: string,
     createdBefore?: string,
+    name?: string,
   ) {
+    const nameFilter = nameContains(name);
     const baseQuery = {
       // Exclude soft-deleted content — the public-API list (v1 + v2) must never
       // surface archived content (the single-get path already guards `deleted`).
@@ -808,6 +810,7 @@ export class ContentService {
         projectId,
         deleted: false,
         ...(type ? { type } : {}),
+        ...(nameFilter ? { name: nameFilter } : {}),
         ...createdAtWhere(createdAfter, createdBefore),
         // "published" is per-environment — ContentOnEnvironment is the source of
         // truth, NOT the legacy Content.published column.

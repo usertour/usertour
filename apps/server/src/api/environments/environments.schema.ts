@@ -1,14 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { orderByField, singleOrArray } from '../shared/query';
 
+import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
-
-/** A query param that arrives as a single value or a repeated array. */
-function singleOrArray<T extends z.ZodTypeAny>(item: T) {
-  return z.union([item, z.array(item)]).optional();
-}
-const orderByField = z.enum(['createdAt', '-createdAt']);
 
 /**
  * v2 environments — read-only project metadata. An environment is where content
@@ -33,6 +29,7 @@ export class EnvironmentDto extends createZodDto(environment) {}
 export const listEnvironmentsQuery = z.object({
   limit,
   cursor,
+  ...nameSearchField,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
 });
 export class ListEnvironmentsQueryDto extends createZodDto(listEnvironmentsQuery) {}

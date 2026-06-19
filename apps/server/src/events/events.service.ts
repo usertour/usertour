@@ -3,6 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
 import { CreateEventInput, UpdateEventInput } from './dto/events.input';
 import { ParamsError, ResourceAlreadyExistsError, UnknownError } from '@/common/errors';
+import { nameContains } from '@/api/shared/filters';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { PaginationConnection } from '@/common/openapi/pagination';
 import { Event, Prisma } from '@prisma/client';
@@ -142,9 +143,11 @@ export class EventsService {
       before?: string;
     },
     orderBy: Prisma.EventOrderByWithRelationInput[],
+    name?: string,
   ): Promise<PaginationConnection<Event>> {
+    const nameFilter = nameContains(name);
     const baseQuery = {
-      where: { projectId, deleted: false },
+      where: { projectId, deleted: false, ...(nameFilter ? { displayName: nameFilter } : {}) },
       orderBy,
     };
     return findManyCursorConnection(

@@ -47,7 +47,7 @@ export class ApiAttributeDefinitionsService {
     projectId: string,
     query: ListAttributeDefinitionsQuery,
   ): Promise<{ results: Attribute[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, scope, orderBy, eventName } = query;
+    const { limit, cursor, scope, orderBy, eventName, name } = query;
 
     if (scope && !isApiObjectType(scope)) {
       throw new InvalidScopeError(scope);
@@ -67,6 +67,7 @@ export class ApiAttributeDefinitionsService {
           bizType,
           toArray(eventName),
           sortOrders,
+          name,
         ),
       map: mapAttribute,
     });
