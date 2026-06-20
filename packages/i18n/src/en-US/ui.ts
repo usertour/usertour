@@ -752,7 +752,7 @@ const translations = {
         savedToast: 'Settings saved',
         enableConfirmTitle: 'Require SSO?',
         enableConfirmDescription:
-          'Members will only be able to sign in through SSO — password and social sign-in stop working for them. Project owners keep password access as a fallback.',
+          'Members will only be able to sign in through SSO — password and social sign-in stop working for them. Anyone who joined with an email that is not in your identity provider will not be able to sign in until you add them there. Project owners keep password access as a fallback.',
         enableConfirmAction: 'Require SSO',
       },
       locked: {

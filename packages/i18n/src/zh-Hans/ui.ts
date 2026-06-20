@@ -722,7 +722,7 @@ const translations = {
         savedToast: '设置已保存',
         enableConfirmTitle: '确认强制 SSO？',
         enableConfirmDescription:
-          '成员将只能通过 SSO 登录，密码与第三方登录对他们停止生效；项目所有者仍保留密码登录作为兜底。',
+          '成员将只能通过 SSO 登录，密码与第三方登录对他们停止生效。以身份提供商之外的邮箱加入的成员，在你将其加入身份提供商之前将无法登录。项目所有者仍保留密码登录作为兜底。',
         enableConfirmAction: '强制 SSO',
       },
       locked: {
