@@ -26,7 +26,9 @@ export const Invite = () => {
   // Active SSO providers of the inviting project. Signing in through one
   // consumes the pending invite server-side (AuthService.ssoValidate), so an
   // SSO-only user can accept without a password.
-  const { providers: ssoProviders } = useGetProjectSsoProvidersQuery(invite?.project?.id);
+  const { providers: ssoProviders, loading: ssoLoading } = useGetProjectSsoProvidersQuery(
+    invite?.project?.id,
+  );
   const [view, setView] = useState<View>('main');
 
   // Route `/auth/invite/:inviteCode` guarantees the path param; fall
@@ -38,7 +40,10 @@ export const Invite = () => {
   // Wait for both the invite lookup and globalConfig before rendering — the
   // latter governs which OAuth buttons SocialProviders shows, so rendering
   // early would flash "all enabled" before self-host config narrows it.
-  if (loading || globalConfigLoading) {
+  // Wait for the SSO providers too: they load in a second round-trip (keyed on
+  // the invite's projectId), and rendering before they arrive briefly shows the
+  // full form when the project actually enforces SSO (only-SSO) — a flash.
+  if (loading || globalConfigLoading || ssoLoading) {
     return <AuthCard title={t('auth.invite.expiredTitle')} loading />;
   }
 
@@ -94,39 +99,38 @@ export const Invite = () => {
     </>
   );
 
+  // When the project enforces SSO (and SSO is actually usable), password/social
+  // login would be force-blocked after joining, so show only the SSO option.
+  const forceSso = !!invite.requireSso && ssoProviders.length > 0;
+
   return (
-    <AuthCard title={title}>
+    // gap-2 so the SSO button(s) line up evenly with the social buttons below
+    // (8px), forming one button group; SignInForm's own divider separates them
+    // from the email form.
+    <AuthCard title={title} contentClassName="grid gap-2">
       {ssoProviders.length > 0 && (
-        <div className="grid gap-4">
-          <div className="flex flex-col gap-2">
-            {ssoProviders.map((provider) => (
-              <Button
-                key={provider.id}
-                variant="outline"
-                className="w-full"
-                type="button"
-                onClick={() => {
-                  window.location.href = `${apiUrl}/api/auth/sso/${provider.id}`;
-                }}
-              >
-                <RiShieldKeyholeLine className="mr-2 h-4 w-4" />
-                {t('auth.sso.continueWith', { name: provider.name })}
-              </Button>
-            ))}
-          </div>
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-sm leading-5">
-              <span className="px-2 font-medium bg-white text-background-accent dark:text-foreground/60 dark:bg-background">
-                {t('auth.social.divider')}
-              </span>
-            </div>
-          </div>
+        <div className="flex flex-col gap-2">
+          {ssoProviders.map((provider) => (
+            <Button
+              key={provider.id}
+              variant="outline"
+              className="w-full"
+              type="button"
+              onClick={() => {
+                window.location.href = `${apiUrl}/api/auth/sso/${provider.id}`;
+              }}
+            >
+              <RiShieldKeyholeLine className="mr-2 h-4 w-4" />
+              {t('auth.sso.continueWith', { name: provider.name })}
+            </Button>
+          ))}
         </div>
       )}
-      {invite.recipientExists ? (
+      {forceSso ? (
+        <p className="pt-1 text-center text-sm text-muted-foreground">
+          {t('auth.invite.requireSsoNote')}
+        </p>
+      ) : invite.recipientExists ? (
         <SignInForm
           globalConfig={globalConfig}
           inviteCode={inviteCode}

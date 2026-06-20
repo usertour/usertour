@@ -1114,6 +1114,7 @@ const translations = {
       titleTemplate: '{{userName}} invites you to join {{projectName}}',
       signInDescription: 'Log in with your existing Usertour account to join the team.',
       signUpDescription: 'Create your Usertour account to join them.',
+      requireSsoNote: 'This team requires single sign-on to join.',
       joinButton: 'Join the team',
       expiredTitle: 'This invitation is no longer valid',
       expiredDescription: 'Ask the inviter to send a new invitation, or contact your team admin.',

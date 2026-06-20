@@ -727,6 +727,7 @@ type Invite {
   project: Project
   projectId: String
   recipientExists: Boolean!
+  requireSso: Boolean!
   role: String!
 
   """Identifies the date and time when the object was last updated."""

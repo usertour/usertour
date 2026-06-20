@@ -1051,6 +1051,7 @@ const translations = {
       titleTemplate: '{{userName}} 邀请你加入 {{projectName}}',
       signInDescription: '使用你已有的 Usertour 账号登录,即可加入团队。',
       signUpDescription: '创建 Usertour 账号即可加入团队。',
+      requireSsoNote: '该团队要求通过单点登录加入。',
       joinButton: '加入团队',
       expiredTitle: '邀请已失效',
       expiredDescription: '请让发起邀请的成员重新发送邀请,或联系团队管理员。',
