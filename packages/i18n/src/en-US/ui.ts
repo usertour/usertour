@@ -3651,6 +3651,11 @@ const translations = {
     description: "We couldn't find that page.",
     backHome: 'Back to home',
   },
+  appError: {
+    updating: 'Updating to the latest version…',
+    description: 'Something went wrong. Reloading usually fixes it.',
+    reload: 'Reload',
+  },
   error: {
     forbidden: 'You are not authorized to access this page.',
     notFound: 'The page you are trying to visit does not exist.',
