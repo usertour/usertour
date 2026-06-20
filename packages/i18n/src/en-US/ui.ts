@@ -189,6 +189,22 @@ const translations = {
       totalProjects_other: '{{count}} projects total',
     },
   },
+  components: {
+    upload: {
+      chooseFile: 'Choose file',
+      upload: 'Upload',
+      change: 'Change',
+      remove: 'Remove',
+      uploading: 'Uploading',
+      uploadedImage: 'Uploaded image',
+      invalidImageFile: 'Please select a valid image file.',
+      unsupportedImageType: 'Only PNG, JPG, or SVG files are supported.',
+      maxFileSizeExceeded: 'Max file size is {{mb}}MB.',
+      invalidFile: 'Please select a valid file',
+      uploadFailed: 'Failed to upload file',
+      generateUrlFailed: 'Unable to generate upload URL. Please try again later.',
+    },
+  },
   dataTable: {
     customizeColumns: 'Customize Columns',
     searchColumns: 'Search columns...',
@@ -289,10 +305,16 @@ const translations = {
       },
     },
     project: {
-      title: 'Project Name',
+      title: 'Project',
       nameLabel: 'Project Name',
       namePlaceholder: 'Your project name',
       successToast: 'The project name has been successfully updated',
+      logo: {
+        title: 'Logo',
+        description: 'PNG, JPG or SVG, up to 1MB.',
+        uploadedToast: 'Logo updated',
+        removedToast: 'Logo removed',
+      },
     },
     attributes: {
       title: 'Attributes',
@@ -474,14 +496,6 @@ const translations = {
       },
     },
     themes: {
-      upload: {
-        invalidImageFile: 'Please select a valid image file.',
-        unsupportedImageType: 'Only PNG, JPG, or SVG files are supported.',
-        maxFileSizeExceeded: 'Max file size is {{mb}}MB.',
-        invalidFile: 'Please select a valid file',
-        avatarUploadFailed: 'Failed to upload avatar',
-        generateUrlFailed: 'Unable to generate upload URL. Please try again later.',
-      },
       defaultBadge: 'Default',
       setDefaultMenuItem: 'Set as company default',
       setDefaultSuccess: 'The theme has been successfully set as default',
@@ -1057,6 +1071,7 @@ const translations = {
     },
     sso: {
       title: 'Single sign-on',
+      titleNamed: 'Sign in to {{name}}',
       description: 'Sign in with your organization identity provider.',
       unavailable: 'Single sign-on is not available for this workspace.',
       continueWith: 'Continue with {{name}}',

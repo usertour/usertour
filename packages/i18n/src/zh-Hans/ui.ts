@@ -184,6 +184,22 @@ const translations = {
       totalProjects_other: '共 {{count}} 个项目',
     },
   },
+  components: {
+    upload: {
+      chooseFile: '选择文件',
+      upload: '上传',
+      change: '更换',
+      remove: '移除',
+      uploading: '上传中',
+      uploadedImage: '已上传图片',
+      invalidImageFile: '请选择有效的图片文件。',
+      unsupportedImageType: '仅支持 PNG、JPG 或 SVG 格式。',
+      maxFileSizeExceeded: '文件大小不能超过 {{mb}}MB。',
+      invalidFile: '请选择有效的文件',
+      uploadFailed: '文件上传失败',
+      generateUrlFailed: '无法生成上传地址，请稍后重试。',
+    },
+  },
   dataTable: {
     customizeColumns: '自定义列',
     searchColumns: '搜索列...',
@@ -275,10 +291,16 @@ const translations = {
       },
     },
     project: {
-      title: '项目名称',
+      title: '项目',
       nameLabel: '项目名称',
       namePlaceholder: '请输入项目名称',
       successToast: '项目名称已更新',
+      logo: {
+        title: 'Logo',
+        description: 'PNG、JPG 或 SVG,不超过 1MB。',
+        uploadedToast: 'Logo 已更新',
+        removedToast: 'Logo 已移除',
+      },
     },
     attributes: {
       title: '属性',
@@ -449,14 +471,6 @@ const translations = {
       },
     },
     themes: {
-      upload: {
-        invalidImageFile: '请选择有效的图片文件。',
-        unsupportedImageType: '仅支持 PNG、JPG 或 SVG 格式。',
-        maxFileSizeExceeded: '文件大小不能超过 {{mb}}MB。',
-        invalidFile: '请选择有效的文件',
-        avatarUploadFailed: '头像上传失败',
-        generateUrlFailed: '无法生成上传地址，请稍后重试。',
-      },
       defaultBadge: '默认',
       setDefaultMenuItem: '设为公司默认',
       setDefaultSuccess: '已将该主题设为默认',
@@ -995,6 +1009,7 @@ const translations = {
     },
     sso: {
       title: '单点登录',
+      titleNamed: '登录到 {{name}}',
       description: '使用你所在组织的身份提供商登录。',
       unavailable: '该工作区未启用单点登录。',
       continueWith: '使用 {{name}} 继续',

@@ -23,7 +23,7 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   // projects
   'projects.getProjectConfig': R,
   'projects.getProjectLicenseInfo': O,
-  'projects.updateProjectName': O,
+  'projects.updateProject': O,
   'projects.updateProjectLicense': O,
   // content
   'content.createContent': W,

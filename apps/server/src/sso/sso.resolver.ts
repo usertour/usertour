@@ -11,6 +11,7 @@ import { CreateOidcSsoProviderInput } from './dto/create-oidc-sso-provider.input
 import { UpdateProjectSsoSettingsInput } from './dto/update-project-sso-settings.input';
 import { UpdateSsoProviderInput } from './dto/update-sso-provider.input';
 import { ProjectSsoSettingsModel } from './models/project-sso-settings.model';
+import { PublicSsoLoginModel } from './models/public-sso-login.model';
 import { PublicSsoProviderModel } from './models/public-sso-provider.model';
 import { SsoProviderModel } from './models/sso-provider.model';
 import { SsoService } from './sso.service';
@@ -70,5 +71,12 @@ export class SsoResolver {
   @Public()
   async getProjectSsoProviders(@Args('projectId') projectId: string) {
     return this.ssoService.listPublicProviders(projectId);
+  }
+
+  // Pre-auth: the SSO entry page reads the project's branding + active providers.
+  @Query(() => PublicSsoLoginModel)
+  @Public()
+  async getProjectSsoLogin(@Args('projectId') projectId: string) {
+    return this.ssoService.getPublicSsoLogin(projectId);
   }
 }

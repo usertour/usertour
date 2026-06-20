@@ -49,7 +49,7 @@ import {
   getSubscriptionUsage,
   globalConfig,
   getProjectConfig,
-  updateProjectName,
+  updateProject,
   getProjectLicenseInfo,
   updateProjectLicense,
   ListIntegrations,
@@ -94,6 +94,7 @@ import {
   updateSsoProvider,
   deleteSsoProvider,
   getProjectSsoProviders,
+  getProjectSsoLogin,
   getProjectSsoSettings,
   updateProjectSsoSettings,
 } from '@usertour/gql';
@@ -602,12 +603,16 @@ export const useGlobalConfigQuery = () => {
   };
 };
 
-export const useUpdateProjectNameMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateProjectName);
+export const useUpdateProjectMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProject);
   const invoke = useCallback(
-    async (projectId: string, name: string): Promise<boolean> => {
-      const response = await mutation({ variables: { projectId, name } });
-      return !!response.data?.updateProjectName;
+    // Only the provided fields are updated; logoUrl null/empty clears the logo.
+    async (
+      projectId: string,
+      input: { name?: string; logoUrl?: string | null },
+    ): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, ...input } });
+      return !!response.data?.updateProject;
     },
     [mutation],
   );
@@ -1525,6 +1530,26 @@ export const useGetProjectSsoProvidersQuery = (
   });
   return {
     providers: (data?.getProjectSsoProviders ?? []) as PublicSsoProvider[],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useGetProjectSsoLoginQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectSsoLogin, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  const login = data?.getProjectSsoLogin;
+  return {
+    name: (login?.name ?? '') as string,
+    logoUrl: (login?.logoUrl ?? null) as string | null,
+    providers: (login?.providers ?? []) as PublicSsoProvider[],
     loading,
     error,
     refetch,

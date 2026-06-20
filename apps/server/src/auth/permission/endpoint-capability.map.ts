@@ -20,7 +20,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   // projects
   'projects.getProjectConfig': Capability.ProjectRead, // R
   'projects.getProjectLicenseInfo': Capability.BillingRead, // O
-  'projects.updateProjectName': Capability.ProjectManage, // O
+  'projects.updateProject': Capability.ProjectManage, // O
   'projects.updateProjectLicense': Capability.BillingManage, // O
 
   // content

@@ -90,3 +90,18 @@ export const getProjectSsoProviders = gql`
     }
   }
 `;
+
+// Pre-auth: the SSO entry page reads the project's branding + active providers.
+export const getProjectSsoLogin = gql`
+  query GetProjectSsoLogin($projectId: String!) {
+    getProjectSsoLogin(projectId: $projectId) {
+      name
+      logoUrl
+      providers {
+        id
+        name
+        type
+      }
+    }
+  }
+`;

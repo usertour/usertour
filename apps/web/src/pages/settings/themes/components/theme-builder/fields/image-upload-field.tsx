@@ -1,5 +1,5 @@
+import { ImageUploadWidget } from '@/components/upload';
 import { useBuilderContext } from '../builder-context';
-import { ImageUploadWidget } from '../widgets/upload/image-upload';
 
 export interface ImageUploadFieldProps {
   path: string;

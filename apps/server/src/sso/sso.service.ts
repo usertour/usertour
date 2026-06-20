@@ -150,6 +150,21 @@ export class SsoService {
     });
   }
 
+  // Pre-auth login info for the SSO entry page: the project's branding (name +
+  // logo, for context) plus its active providers.
+  async getPublicSsoLogin(projectId: string): Promise<{
+    name: string;
+    logoUrl: string | null;
+    providers: Pick<ProjectSSOIdentityProvider, 'id' | 'name' | 'type'>[];
+  }> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { name: true, logoUrl: true },
+    });
+    const providers = await this.listPublicProviders(projectId);
+    return { name: project?.name ?? '', logoUrl: project?.logoUrl ?? null, providers };
+  }
+
   // --- Project-level settings (enforcement + provisioning) ---
 
   /** Resolved settings for the project, with defaults when no row exists. */

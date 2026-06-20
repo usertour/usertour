@@ -877,8 +877,8 @@ type Mutation {
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
+  updateProject(logoUrl: String, name: String, projectId: String!): Project!
   updateProjectLicense(license: String!, projectId: String!): Project!
-  updateProjectName(name: String!, projectId: String!): Project!
   updateProjectSsoSettings(input: UpdateProjectSsoSettingsInput!, projectId: String!): ProjectSsoSettingsModel!
   updateProjectUsesInstanceLicense(enabled: Boolean!, projectId: String!): Boolean!
   updateSegment(data: UpdateSegment!): Segment!
@@ -944,6 +944,12 @@ type ProjectSsoSettingsModel {
   requireSso: Boolean!
 }
 
+type PublicSsoLoginModel {
+  logoUrl: String
+  name: String!
+  providers: [PublicSsoProviderModel!]!
+}
+
 type PublicSsoProviderModel {
   id: ID!
   name: String!
@@ -967,6 +973,7 @@ type Query {
   getInvites(projectId: String!): [Invite!]!
   getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
+  getProjectSsoLogin(projectId: String!): PublicSsoLoginModel!
   getProjectSsoProviders(projectId: String!): [PublicSsoProviderModel!]!
   getProjectSsoSettings(projectId: String!): ProjectSsoSettingsModel!
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
