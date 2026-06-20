@@ -937,6 +937,7 @@ type ProjectConfigModel {
 
 type ProjectSsoSettingsModel {
   allowedDomains: [String!]!
+  autoProvision: Boolean!
   defaultRole: Role!
   projectId: String!
   requireSso: Boolean!
@@ -1341,6 +1342,7 @@ input UpdateLocalizationInput {
 
 input UpdateProjectSsoSettingsInput {
   allowedDomains: [String!]
+  autoProvision: Boolean
   defaultRole: Role
   requireSso: Boolean
 }

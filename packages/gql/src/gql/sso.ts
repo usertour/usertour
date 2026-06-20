@@ -23,6 +23,7 @@ const SSO_SETTINGS_FIELDS = gql`
   fragment ProjectSsoSettingsFields on ProjectSsoSettingsModel {
     projectId
     requireSso
+    autoProvision
     defaultRole
     allowedDomains
   }

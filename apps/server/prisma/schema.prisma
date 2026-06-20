@@ -199,10 +199,17 @@ model ProjectSsoSettings {
   /// password/social login is rejected for everyone except the project OWNER
   /// and system admins (break-glass so an IdP outage cannot lock the project).
   requireSso     Boolean  @default(false)
-  /// Role assigned to just-in-time provisioned users. Restricted to ADMIN or
-  /// VIEWER at the API layer (OWNER/USER are rejected).
+  /// When true, a brand-new email that authenticates through this project's SSO
+  /// is auto-created and joined (with defaultRole, gated by allowedDomains).
+  /// When false (default) SSO never grants new team access on its own — the
+  /// person must already be a member or hold an invite. Existing members and
+  /// invited users sign in regardless of this flag.
+  autoProvision  Boolean  @default(false)
+  /// Role assigned to auto-provisioned users (autoProvision only). Restricted to
+  /// ADMIN or VIEWER at the API layer (OWNER/USER are rejected).
   defaultRole    Role     @default(ADMIN)
-  /// Optional unverified email-domain allow-list for JIT. Empty = trust the IdP.
+  /// Optional unverified email-domain allow-list for auto-provisioning. Empty =
+  /// trust the IdP. Only consulted when autoProvision is on.
   allowedDomains String[] @default([])
 }
 

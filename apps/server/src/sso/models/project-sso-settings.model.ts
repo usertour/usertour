@@ -14,6 +14,9 @@ export class ProjectSsoSettingsModel {
   @Field()
   requireSso: boolean;
 
+  @Field()
+  autoProvision: boolean;
+
   @Field(() => Role)
   defaultRole: Role;
 

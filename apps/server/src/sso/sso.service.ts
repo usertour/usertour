@@ -21,12 +21,14 @@ import { UpdateSsoProviderInput } from './dto/update-sso-provider.input';
 export interface ResolvedSsoSettings {
   projectId: string;
   requireSso: boolean;
+  autoProvision: boolean;
   defaultRole: Role;
   allowedDomains: string[];
 }
 
 const DEFAULT_SETTINGS: Omit<ResolvedSsoSettings, 'projectId'> = {
   requireSso: false,
+  autoProvision: false,
   defaultRole: Role.ADMIN,
   allowedDomains: [],
 };
@@ -159,6 +161,7 @@ export class SsoService {
     return {
       projectId,
       requireSso: row.requireSso,
+      autoProvision: row.autoProvision,
       defaultRole: row.defaultRole,
       allowedDomains: row.allowedDomains,
     };
@@ -174,6 +177,7 @@ export class SsoService {
     // allowed regardless of entitlement.
     const enablesSsoUsage =
       input.requireSso === true ||
+      input.autoProvision === true ||
       input.defaultRole !== undefined ||
       input.allowedDomains !== undefined;
     if (enablesSsoUsage) {
@@ -195,11 +199,13 @@ export class SsoService {
       create: {
         projectId,
         ...(input.requireSso !== undefined && { requireSso: input.requireSso }),
+        ...(input.autoProvision !== undefined && { autoProvision: input.autoProvision }),
         ...(input.defaultRole !== undefined && { defaultRole: input.defaultRole }),
         ...(input.allowedDomains !== undefined && { allowedDomains: input.allowedDomains }),
       },
       update: {
         ...(input.requireSso !== undefined && { requireSso: input.requireSso }),
+        ...(input.autoProvision !== undefined && { autoProvision: input.autoProvision }),
         ...(input.defaultRole !== undefined && { defaultRole: input.defaultRole }),
         ...(input.allowedDomains !== undefined && { allowedDomains: input.allowedDomains }),
       },

@@ -50,14 +50,14 @@ const DELETE = 'mutation ($id: String!) { deleteSsoProvider(id: $id) }';
 const GET_SETTINGS = `
   query ($projectId: String!) {
     getProjectSsoSettings(projectId: $projectId) {
-      projectId requireSso defaultRole allowedDomains
+      projectId requireSso autoProvision defaultRole allowedDomains
     }
   }
 `;
 const UPDATE_SETTINGS = `
   mutation ($projectId: String!, $input: UpdateProjectSsoSettingsInput!) {
     updateProjectSsoSettings(projectId: $projectId, input: $input) {
-      requireSso defaultRole allowedDomains
+      requireSso autoProvision defaultRole allowedDomains
     }
   }
 `;
@@ -327,6 +327,7 @@ describe('GraphQL sso (e2e)', () => {
       });
       expect(gqlData(res).getProjectSsoSettings).toMatchObject({
         requireSso: false,
+        autoProvision: false, // invite-required by default
         defaultRole: 'ADMIN',
         allowedDomains: [],
       });
@@ -343,9 +344,13 @@ describe('GraphQL sso (e2e)', () => {
       const res = await graphql(app, {
         token: ownerToken,
         query: UPDATE_SETTINGS,
-        variables: { projectId, input: { defaultRole: 'VIEWER', allowedDomains: ['acme.com'] } },
+        variables: {
+          projectId,
+          input: { autoProvision: true, defaultRole: 'VIEWER', allowedDomains: ['acme.com'] },
+        },
       });
       expect(gqlData(res).updateProjectSsoSettings).toMatchObject({
+        autoProvision: true,
         defaultRole: 'VIEWER',
         allowedDomains: ['acme.com'],
       });

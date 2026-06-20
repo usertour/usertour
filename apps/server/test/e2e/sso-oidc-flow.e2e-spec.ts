@@ -33,6 +33,7 @@ process.env.IS_SELF_HOSTED_MODE = 'false';
 const TAG = Date.now().toString(36);
 const EMAILS = {
   jit: `jit-${TAG}@acme.com`,
+  jitOff: `jit-off-${TAG}@acme.com`,
   jitInvited: `jit-invited-${TAG}@acme.com`,
   member: `member-${TAG}@acme.com`,
   invited: `invited-${TAG}@acme.com`,
@@ -152,8 +153,17 @@ describe('SSO OIDC login flow (e2e)', () => {
     });
   });
 
+  // Toggle the project's auto-provision policy (one settings row per project).
+  const setAutoProvision = (autoProvision: boolean, allowedDomains: string[] = []) =>
+    prisma.projectSsoSettings.upsert({
+      where: { projectId },
+      create: { projectId, autoProvision, allowedDomains },
+      update: { autoProvision, allowedDomains },
+    });
+
   describe('callback', () => {
-    it('JIT-provisions a brand-new user into the project with the default role', async () => {
+    it('auto-provisions a brand-new user when auto-provision is on (default role)', async () => {
+      await setAutoProvision(true);
       const email = EMAILS.jit;
       jitEmails.push(email);
       currentClaims = { sub: 'sub-jit-1', email, email_verified: true, name: 'New User' };
@@ -167,7 +177,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       const membership = await prisma.userOnProject.findFirst({
         where: { projectId, userId: user!.id },
       });
-      expect(membership?.role).toBe('ADMIN'); // provider.defaultRole
+      expect(membership?.role).toBe('ADMIN'); // settings.defaultRole
       const account = await prisma.account.findUnique({
         where: {
           provider_providerAccountId: {
@@ -177,6 +187,18 @@ describe('SSO OIDC login flow (e2e)', () => {
         },
       });
       expect(account?.userId).toBe(user!.id);
+    });
+
+    it('rejects a brand-new user when auto-provision is off (invite required)', async () => {
+      await setAutoProvision(false);
+      const email = EMAILS.jitOff;
+      jitEmails.push(email);
+      currentClaims = { sub: 'sub-jit-off', email, email_verified: true };
+
+      const res = await callback(signTx());
+      expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
+      // No account created — SSO grants no new access without an invite.
+      expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
     });
 
     it('JIT-provisions a brand-new invited user with the invite role (consumes the invite)', async () => {
@@ -277,13 +299,9 @@ describe('SSO OIDC login flow (e2e)', () => {
       expect(account?.userId).toBe(invited.id);
     });
 
-    it('rejects when the email domain is not in the allow-list', async () => {
-      // The allow-list is project-level now, not per-provider.
-      await prisma.projectSsoSettings.upsert({
-        where: { projectId },
-        create: { projectId, allowedDomains: ['acme.com'] },
-        update: { allowedDomains: ['acme.com'] },
-      });
+    it('rejects when the email domain is not in the allow-list (auto-provision on)', async () => {
+      // The allow-list only gates auto-provisioning, so enable that too.
+      await setAutoProvision(true, ['acme.com']);
       const email = EMAILS.intruder; // @evil.com — not in the allow-list
       jitEmails.push(email);
       currentClaims = { sub: 'sub-intruder', email, email_verified: true };
@@ -293,10 +311,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
 
       // Reset so later tests trust the IdP again.
-      await prisma.projectSsoSettings.update({
-        where: { projectId },
-        data: { allowedDomains: [] },
-      });
+      await setAutoProvision(false, []);
     });
 
     it('rejects when the IdP reports the email as unverified', async () => {

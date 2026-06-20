@@ -697,7 +697,7 @@ const translations = {
     sso: {
       title: 'Single Sign-On',
       headerBody:
-        'Let your team sign in through your own OIDC identity provider (Okta, Azure Entra, Auth0, Google Workspace, and more).',
+        'Let your team sign in through your own identity provider (Okta, Auth0, and more).',
       newButton: 'Add provider',
       empty: 'No SSO providers configured yet.',
       editMenuItem: 'Edit',
@@ -728,11 +728,14 @@ const translations = {
         requireDescription:
           'When on, members must sign in through SSO. Password and social sign-in are blocked for everyone except project owners.',
         requireNeedsProvider: 'Add and activate an SSO provider before requiring SSO.',
-        provisioningTitle: 'User provisioning',
-        provisioningDescription: 'Applies to every SSO provider in this project.',
+        provisioningTitle: 'New user access',
+        provisioningDescription: 'How people who sign in through SSO join this project.',
+        autoProvisionLabel: 'Automatically add new users',
+        autoProvisionHelp:
+          'When on, anyone who signs in through SSO is added to this project automatically. When off, new users must be invited first; existing members and invited users always sign in.',
         enabledToast: 'SSO is now required',
         disabledToast: 'SSO is no longer required',
-        savedToast: 'Provisioning settings saved',
+        savedToast: 'Settings saved',
         enableConfirmTitle: 'Require SSO?',
         enableConfirmDescription:
           'Members will only be able to sign in through SSO — password and social sign-in stop working for them. Project owners keep password access as a fallback.',

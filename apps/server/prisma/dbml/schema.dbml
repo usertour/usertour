@@ -149,9 +149,15 @@ Table ProjectSsoSettings {
   requireSso Boolean [not null, default: false, note: 'When true, members of this project must sign in through an SSO provider;
 password/social login is rejected for everyone except the project OWNER
 and system admins (break-glass so an IdP outage cannot lock the project).']
-  defaultRole Role [not null, default: 'ADMIN', note: 'Role assigned to just-in-time provisioned users. Restricted to ADMIN or
-VIEWER at the API layer (OWNER/USER are rejected).']
-  allowedDomains String[] [not null, note: 'Optional unverified email-domain allow-list for JIT. Empty = trust the IdP.']
+  autoProvision Boolean [not null, default: false, note: 'When true, a brand-new email that authenticates through this project\'s SSO
+is auto-created and joined (with defaultRole, gated by allowedDomains).
+When false (default) SSO never grants new team access on its own — the
+person must already be a member or hold an invite. Existing members and
+invited users sign in regardless of this flag.']
+  defaultRole Role [not null, default: 'ADMIN', note: 'Role assigned to auto-provisioned users (autoProvision only). Restricted to
+ADMIN or VIEWER at the API layer (OWNER/USER are rejected).']
+  allowedDomains String[] [not null, note: 'Optional unverified email-domain allow-list for auto-provisioning. Empty =
+trust the IdP. Only consulted when autoProvision is on.']
 
   Note: 'Project-level SSO settings: enforcement (requireSso) and JIT provisioning
 (defaultRole, allowedDomains). One row per project, lazily created on first

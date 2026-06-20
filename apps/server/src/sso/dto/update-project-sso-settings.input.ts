@@ -14,6 +14,13 @@ export class UpdateProjectSsoSettingsInput {
   @IsBoolean()
   requireSso?: boolean;
 
+  // When true, a brand-new SSO email is auto-created and joined; when false
+  // (default) SSO needs an existing membership or an invite to grant access.
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  autoProvision?: boolean;
+
   // Role assigned to JIT-provisioned users. Restricted to ADMIN (editor) or
   // VIEWER (read-only) — OWNER/USER are rejected. See plan & permission matrix.
   @Field(() => Role, { nullable: true })

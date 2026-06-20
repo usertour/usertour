@@ -667,8 +667,7 @@ const translations = {
     },
     sso: {
       title: '单点登录（SSO）',
-      headerBody:
-        '让团队通过你自己的 OIDC 身份提供商登录（Okta、Azure Entra、Auth0、Google Workspace 等）。',
+      headerBody: '让团队用你自己的身份提供商登录（Okta、Auth0 等）。',
       newButton: '添加提供商',
       empty: '尚未配置任何 SSO 提供商。',
       editMenuItem: '编辑',
@@ -699,11 +698,14 @@ const translations = {
         requireDescription:
           '开启后，成员必须通过 SSO 登录；除项目所有者外，密码与第三方登录都会被禁用。',
         requireNeedsProvider: '请先添加并启用一个 SSO 提供商，才能强制 SSO。',
-        provisioningTitle: '用户开通',
-        provisioningDescription: '对本项目下所有 SSO 提供商生效。',
+        provisioningTitle: '新用户加入',
+        provisioningDescription: '控制通过 SSO 登录的人如何加入本项目。',
+        autoProvisionLabel: '自动添加新用户',
+        autoProvisionHelp:
+          '开启后,任何通过 SSO 登录的人会自动加入本项目;关闭时,新用户必须先被邀请。已是成员或已被邀请的人始终可以登录。',
         enabledToast: '已开启强制 SSO',
         disabledToast: '已关闭强制 SSO',
-        savedToast: '开通设置已保存',
+        savedToast: '设置已保存',
         enableConfirmTitle: '确认强制 SSO？',
         enableConfirmDescription:
           '成员将只能通过 SSO 登录，密码与第三方登录对他们停止生效；项目所有者仍保留密码登录作为兜底。',

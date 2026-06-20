@@ -67,6 +67,7 @@ export class SsoAuthController {
         },
         {
           projectId: provider.projectId,
+          autoProvision: settings.autoProvision,
           defaultRole: settings.defaultRole,
           allowedDomains: settings.allowedDomains,
         },

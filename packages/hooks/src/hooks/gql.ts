@@ -1485,12 +1485,14 @@ export type UpdateSsoProviderInput = Partial<
 export interface ProjectSsoSettings {
   projectId: string;
   requireSso: boolean;
+  autoProvision: boolean;
   defaultRole: 'ADMIN' | 'VIEWER';
   allowedDomains: string[];
 }
 
 export type UpdateProjectSsoSettingsInput = Partial<{
   requireSso: boolean;
+  autoProvision: boolean;
   defaultRole: 'ADMIN' | 'VIEWER';
   allowedDomains: string[];
 }>;

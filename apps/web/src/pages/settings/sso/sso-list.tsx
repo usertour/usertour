@@ -102,11 +102,14 @@ export const SettingsSsoList = () => {
       {/* Providers */}
       <SettingsCard>
         <div className="space-y-6">
-          <div className="flex h-10 flex-row items-center justify-between gap-4">
-            <h3 className="text-xl font-medium tracking-tight">{t('settings.sso.title')}</h3>
-            <NewSsoProviderButton onSuccess={refetch} />
+          {/* Title + description grouped tightly, then the separator. */}
+          <div className="space-y-2">
+            <div className="flex h-10 flex-row items-center justify-between gap-4">
+              <h3 className="text-xl font-medium tracking-tight">{t('settings.sso.title')}</h3>
+              <NewSsoProviderButton onSuccess={refetch} />
+            </div>
+            <p className="text-sm text-muted-foreground">{t('settings.sso.headerBody')}</p>
           </div>
-          <p className="text-sm text-muted-foreground">{t('settings.sso.headerBody')}</p>
           <Separator />
           <ResourceListBody<SsoProvider>
             columns={columns}

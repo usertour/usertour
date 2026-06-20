@@ -407,8 +407,10 @@ export class AuthService implements OnModuleInit {
    *
    *   - existing SSO account (provider = oidc:<providerId>)  → return it
    *   - existing global user, member of the project          → link + return
-   *   - existing global user, NOT a member                   → reject
-   *   - brand-new email (domain-gated)                       → JIT provision
+   *   - existing global user / new email, with a pending invite → consume + join
+   *   - existing global user, NOT a member, no invite        → reject
+   *   - brand-new email, no invite, autoProvision on (domain-gated) → JIT
+   *   - brand-new email, no invite, autoProvision off        → reject
    */
   async ssoValidate(
     profile: {
@@ -417,7 +419,12 @@ export class AuthService implements OnModuleInit {
       emails: { value: string; verified?: boolean | string }[];
       displayName?: string;
     },
-    ssoContext: { projectId: string; defaultRole: string; allowedDomains: string[] },
+    ssoContext: {
+      projectId: string;
+      autoProvision: boolean;
+      defaultRole: string;
+      allowedDomains: string[];
+    },
   ) {
     const { provider, id, emails, displayName } = profile;
 
@@ -485,18 +492,28 @@ export class AuthService implements OnModuleInit {
       throw new OAuthError();
     }
 
-    // New user (no existing global user). An explicit invite for this email +
-    // project authorizes joining with the invite's role and bypasses the
-    // unverified domain allow-list (the admin already vouched for this address).
+    // New user (no existing global user). An explicit invite authorizes joining
+    // with the invite's role. Without one, SSO grants new team access only when
+    // the project has opted into auto-provisioning — otherwise it is rejected
+    // (the invite-required default keeps the owner in control of seats/roles).
     const invite = await this.teamService.getValidInviteForEmailAndProject(
       email,
       ssoContext.projectId,
     );
-    if (!invite && ssoContext.allowedDomains.length > 0) {
-      const domain = email.split('@')[1];
-      if (!domain || !ssoContext.allowedDomains.includes(domain.toLowerCase())) {
-        this.logger.warn(`SSO rejected: domain of ${email} not in allow-list`);
+    if (!invite) {
+      if (!ssoContext.autoProvision) {
+        this.logger.warn(
+          `SSO rejected: ${email} has no invite and auto-provisioning is off for project ${ssoContext.projectId}`,
+        );
         throw new OAuthError();
+      }
+      // Auto-provision: optional unverified email-domain allow-list gates it.
+      if (ssoContext.allowedDomains.length > 0) {
+        const domain = email.split('@')[1];
+        if (!domain || !ssoContext.allowedDomains.includes(domain.toLowerCase())) {
+          this.logger.warn(`SSO rejected: domain of ${email} not in allow-list`);
+          throw new OAuthError();
+        }
       }
     }
 
