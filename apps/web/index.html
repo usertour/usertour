@@ -15,6 +15,13 @@
     <script>
       (function () {
         try {
+          // Auth pages always render light — browser autofill paints inputs a
+          // near-white that can't be restyled for dark, so a dark auth page
+          // looks broken. Skip applying dark here (kills the first-paint flash);
+          // keep this prefix in sync with AuthLayout's useForceLightTheme.
+          if (location.pathname.indexOf('/auth/') === 0) {
+            return;
+          }
           var raw = localStorage.getItem('USERTOUR@0.0.1/appearance');
           var theme = raw ? JSON.parse(raw).value : 'system';
           var isDark =
