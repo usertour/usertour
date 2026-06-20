@@ -236,7 +236,7 @@ const translations = {
         events: '事件',
         localizations: '本地化',
         team: '团队',
-        sso: '单点登录',
+        sso: 'SSO',
         billing: '账单',
         subscription: '订阅',
         account: '账户',

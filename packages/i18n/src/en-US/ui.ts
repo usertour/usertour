@@ -241,7 +241,7 @@ const translations = {
         events: 'Events',
         localizations: 'Localization',
         team: 'Team',
-        sso: 'Single Sign-On',
+        sso: 'SSO',
         billing: 'Billing',
         subscription: 'Subscription',
         account: 'Account',
