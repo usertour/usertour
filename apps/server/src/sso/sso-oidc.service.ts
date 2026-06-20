@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ProjectSSOIdentityProvider } from '@prisma/client';
 import { Client, Issuer, generators } from 'openid-client';
@@ -18,6 +18,8 @@ export interface OidcAuthRequest {
  */
 @Injectable()
 export class SsoOidcService {
+  private readonly logger = new Logger(SsoOidcService.name);
+
   constructor(private readonly configService: ConfigService) {}
 
   // One fixed callback for every provider; the provider is resolved from the
@@ -64,6 +66,23 @@ export class SsoOidcService {
       nonce: checks.nonce,
       code_verifier: checks.codeVerifier,
     });
-    return tokenSet.claims();
+    const claims = tokenSet.claims();
+    // Some IdPs (notably Azure Entra) omit `email` from the ID token. Only then
+    // do we hit the userinfo endpoint and merge its richer claims in — keeping
+    // the common case to a single round-trip. Mirrors how Twenty/Bytebase
+    // source identity when the ID token alone is insufficient.
+    if (!claims.email) {
+      try {
+        const userinfo = await client.userinfo(tokenSet);
+        return { ...claims, ...userinfo };
+      } catch (error) {
+        this.logger.warn(
+          `SSO userinfo fallback failed for project=${provider.projectId}: ${
+            error?.message ?? error
+          }`,
+        );
+      }
+    }
+    return claims;
   }
 }

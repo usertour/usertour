@@ -56,7 +56,11 @@ export class SsoAuthController {
         nonce: tx.nonce,
         codeVerifier: tx.codeVerifier,
       });
-      if (!claims.email) {
+      // Azure Entra and some other IdPs surface identity in upn /
+      // preferred_username rather than email; the service merged any userinfo
+      // claims in already, so fall back across those before giving up.
+      const email = claims.email ?? claims.upn ?? claims.preferred_username;
+      if (!email) {
         throw new OAuthError();
       }
 
@@ -66,7 +70,7 @@ export class SsoAuthController {
         {
           provider: `oidc:${provider.id}`,
           id: claims.sub,
-          emails: [{ value: String(claims.email), verified: claims.email_verified }],
+          emails: [{ value: String(email), verified: claims.email_verified }],
           displayName: claims.name ? String(claims.name) : undefined,
         },
         {
