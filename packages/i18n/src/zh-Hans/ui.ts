@@ -998,6 +998,10 @@ const translations = {
       description: '使用你所在组织的身份提供商登录。',
       unavailable: '该工作区未启用单点登录。',
       continueWith: '使用 {{name}} 继续',
+      error: {
+        accessDenied: '你还没有该项目的访问权限,请让管理员邀请你。',
+        failed: '单点登录失败,请重试。',
+      },
     },
     signIn: {
       title: '登录 Usertour',

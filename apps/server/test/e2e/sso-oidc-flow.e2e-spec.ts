@@ -36,6 +36,8 @@ const EMAILS = {
   jitOff: `jit-off-${TAG}@acme.com`,
   jitInvited: `jit-invited-${TAG}@acme.com`,
   member: `member-${TAG}@acme.com`,
+  removed: `removed-${TAG}@acme.com`,
+  rejoiner: `rejoiner-${TAG}@acme.com`,
   invited: `invited-${TAG}@acme.com`,
   outsider: `outsider-${TAG}@acme.com`,
   intruder: `intruder-${TAG}@evil.com`,
@@ -199,6 +201,10 @@ describe('SSO OIDC login flow (e2e)', () => {
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
       // No account created — SSO grants no new access without an invite.
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
+      // Friendly redirect, not a 500: access-denied routes back to the SSO entry.
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toContain(`/auth/sso/${projectId}`);
+      expect(res.headers.location).toContain('error=access_denied');
     });
 
     it('JIT-provisions a brand-new invited user with the invite role (consumes the invite)', async () => {
@@ -247,6 +253,62 @@ describe('SSO OIDC login flow (e2e)', () => {
         },
       });
       expect(account?.userId).toBe(member.id);
+    });
+
+    it('rejects a previously-linked user who is no longer a member (access revoked)', async () => {
+      await setAutoProvision(false);
+      const removed = await buildUser(prisma, { email: EMAILS.removed });
+      userIds.push(removed.id);
+      // A linked identity from a prior login, but no current membership/invite —
+      // being linked must NOT keep granting access.
+      await prisma.account.create({
+        data: {
+          type: 'oauth',
+          userId: removed.id,
+          provider: `oidc:${providerId}`,
+          providerAccountId: 'sub-removed',
+        },
+      });
+      currentClaims = { sub: 'sub-removed', email: EMAILS.removed, email_verified: true };
+
+      const res = await callback(signTx());
+      expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
+      expect(res.headers.location).toContain('error=access_denied');
+      const membership = await prisma.userOnProject.findFirst({
+        where: { projectId, userId: removed.id },
+      });
+      expect(membership).toBeNull();
+    });
+
+    it('auto-provisions an existing non-member when auto-provision is on', async () => {
+      // Same case as the revoked user above, but the project opted into
+      // auto-provision — so they are re-added with the default role.
+      await prisma.projectSsoSettings.upsert({
+        where: { projectId },
+        create: { projectId, autoProvision: true, defaultRole: 'VIEWER', allowedDomains: [] },
+        update: { autoProvision: true, defaultRole: 'VIEWER', allowedDomains: [] },
+      });
+      const rejoiner = await buildUser(prisma, { email: EMAILS.rejoiner });
+      userIds.push(rejoiner.id);
+      await prisma.account.create({
+        data: {
+          type: 'oauth',
+          userId: rejoiner.id,
+          provider: `oidc:${providerId}`,
+          providerAccountId: 'sub-rejoin',
+        },
+      });
+      currentClaims = { sub: 'sub-rejoin', email: EMAILS.rejoiner, email_verified: true };
+
+      const res = await callback(signTx());
+      expect(res.status).toBe(302);
+      expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(true);
+      const membership = await prisma.userOnProject.findFirst({
+        where: { projectId, userId: rejoiner.id },
+      });
+      expect(membership?.role).toBe('VIEWER'); // settings.defaultRole
+      // Reset so later tests keep the invite-required default.
+      await setAutoProvision(false);
     });
 
     it('rejects an existing global user who is NOT a member (no cross-tenant takeover)', async () => {
@@ -322,6 +384,9 @@ describe('SSO OIDC login flow (e2e)', () => {
       const res = await callback(signTx());
       expect(hasCookie(res, ACCESS_TOKEN_COOKIE)).toBe(false);
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
+      // A non-access-denied failure redirects to the generic sign-in error.
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toContain('/auth/signin?error=sso');
     });
 
     it('rejects a tx cookie referencing an unknown provider', async () => {

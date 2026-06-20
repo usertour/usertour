@@ -610,6 +610,20 @@ export class SsoRequiresActiveProviderError extends BaseError {
   };
 }
 
+/**
+ * The IdP authenticated the user, but they are not allowed into the project
+ * (not a member, no invite, or email domain not in the allow-list). Distinct
+ * from a generic OAuthError so the SSO callback can show an actionable
+ * "ask an admin for access" message instead of a generic failure.
+ */
+export class SsoAccessDeniedError extends BaseError {
+  code = 'E0053';
+  messageDict = {
+    en: "You don't have access to this project. Ask an admin to invite you.",
+    'zh-CN': '你还没有该项目的访问权限，请让管理员邀请你。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -681,6 +695,7 @@ const errorMap = {
   E0050: VersionConflictError,
   E0051: SsoRequiredError,
   E0052: SsoRequiresActiveProviderError,
+  E0053: SsoAccessDeniedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

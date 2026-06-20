@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 
 import { AuthService } from '@/auth/auth.service';
 import { Public } from '@/common/decorators/public.decorator';
-import { OAuthError } from '@/common/errors';
+import { OAuthError, SsoAccessDeniedError } from '@/common/errors';
 import { SSO_TX_COOKIE } from '@/utils/cookie';
 
 import { SsoOidcService } from './sso-oidc.service';
@@ -36,6 +36,9 @@ export class SsoAuthController {
   @Get('callback')
   @Public()
   async callback(@Req() req: Request, @Res() res: Response) {
+    // Tracked once the provider loads so a failure can route back to that
+    // project's SSO entry (with an error) rather than a bare 500.
+    let projectId: string | undefined;
     try {
       const cookie = req.cookies?.[SSO_TX_COOKIE];
       if (!cookie) {
@@ -47,6 +50,7 @@ export class SsoAuthController {
       }
 
       const provider = await this.loadActiveEntitledProvider(tx.providerId);
+      projectId = provider.projectId;
       const claims = await this.ssoOidcService.exchangeCallback(provider, req.query as any, {
         state: tx.state,
         nonce: tx.nonce,
@@ -78,7 +82,7 @@ export class SsoAuthController {
     } catch (error) {
       this.logger.error(`SSO callback failed: ${error?.stack ?? error}`);
       res.clearCookie(SSO_TX_COOKIE, { path: '/api/auth/sso' });
-      throw new OAuthError();
+      this.redirectToSsoError(res, error, projectId);
     }
   }
 
@@ -105,8 +109,23 @@ export class SsoAuthController {
       res.redirect(url);
     } catch (error) {
       this.logger.error(`SSO initiate failed: ${error?.stack ?? error}`);
-      throw new OAuthError();
+      this.redirectToSsoError(res, error);
     }
+  }
+
+  // SSO entry/callback are top-level browser navigations, so a failure must land
+  // the user on a friendly page — never a raw 500. "access_denied" (the IdP
+  // authenticated them but they're not allowed into the project) routes back to
+  // the project's SSO entry with an actionable message; anything else is a
+  // generic failure on the sign-in page.
+  private redirectToSsoError(res: Response, error: unknown, projectId?: string) {
+    const homepage = this.configService.get<string>('app.homepageUrl') || '';
+    const reason = error instanceof SsoAccessDeniedError ? 'access_denied' : 'failed';
+    const target =
+      reason === 'access_denied' && projectId
+        ? `${homepage}/auth/sso/${projectId}?error=access_denied`
+        : `${homepage}/auth/signin?error=sso`;
+    res.redirect(target);
   }
 
   private async loadActiveEntitledProvider(providerId: string) {

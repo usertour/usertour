@@ -1060,6 +1060,10 @@ const translations = {
       description: 'Sign in with your organization identity provider.',
       unavailable: 'Single sign-on is not available for this workspace.',
       continueWith: 'Continue with {{name}}',
+      error: {
+        accessDenied: "You don't have access to this project yet. Ask an admin to invite you.",
+        failed: 'Single sign-on failed. Please try again.',
+      },
     },
     signIn: {
       title: 'Log in to Usertour',
