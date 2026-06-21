@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@usertour/ui';
-import { RiShieldKeyholeLine, SpinnerIcon } from '@usertour/icons';
+import { RiLockFill, SpinnerIcon } from '@usertour/icons';
 import { useGetProjectSsoLoginQuery } from '@usertour/hooks';
 import { apiUrl } from '@/utils/env';
 import { AuthCard } from './components/auth-card';
@@ -60,7 +60,7 @@ const SsoLogin = () => {
               type="button"
               onClick={() => launch(provider.id)}
             >
-              <RiShieldKeyholeLine className="mr-2 h-4 w-4" />
+              <RiLockFill className="mr-2 h-4 w-4" />
               {t('auth.sso.continueWith', { name: provider.name })}
             </Button>
           ))}
