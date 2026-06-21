@@ -32,4 +32,10 @@ i18next.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   supportedLngs: ['en'],
+  interpolation: {
+    // React already escapes rendered text, so i18next must NOT escape too —
+    // otherwise interpolated values are double-escaped and render literally:
+    // a date "7/1/2026" becomes "7&#x2F;1&#x2F;2026", a URL's "&" → "&amp;".
+    escapeValue: false,
+  },
 });
