@@ -23,7 +23,9 @@
             return;
           }
           var raw = localStorage.getItem('USERTOUR@0.0.1/appearance');
-          var theme = raw ? JSON.parse(raw).value : 'system';
+          // Default light when unset — must match readStoredTheme() in
+          // src/contexts/theme-context.tsx.
+          var theme = raw ? JSON.parse(raw).value : 'light';
           var isDark =
             theme === 'dark' ||
             (theme === 'system' &&
