@@ -11,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  InlineAlert,
   Input,
   SettingsDialogForm,
   useSettingsForm,
@@ -102,7 +103,11 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
   // shown (and copied) in the create form, not just on edit. Built from the
   // server-authoritative apiUrl (globalConfig) so the copied value is exactly
   // the redirect_uri the backend sends to the IdP (no VITE_API_URL drift).
-  const callbackUrl = `${globalConfig?.apiUrl ?? ''}/api/auth/sso/callback`;
+  // SSO depends on API_URL being set; without it the callback is just a bare
+  // path, so warn (and block copy) instead of handing over a broken URL.
+  const apiUrl = globalConfig?.apiUrl ?? '';
+  const apiUrlMissing = !apiUrl;
+  const callbackUrl = `${apiUrl}/api/auth/sso/callback`;
 
   return (
     <SettingsDialogForm
@@ -192,13 +197,21 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
                 variant="outline"
                 size="icon"
                 className="shrink-0"
+                disabled={apiUrlMissing}
                 onClick={() => copy(callbackUrl, t('settings.sso.form.callbackUrlCopied'))}
               >
                 <RiFileCopyLine className="h-4 w-4" />
               </Button>
             </div>
           </FormControl>
-          <FormDescription>{t('settings.sso.form.callbackUrlHelp')}</FormDescription>
+          {apiUrlMissing ? (
+            <InlineAlert
+              variant="warning"
+              message={t('settings.sso.form.callbackUrlApiUrlMissing')}
+            />
+          ) : (
+            <FormDescription>{t('settings.sso.form.callbackUrlHelp')}</FormDescription>
+          )}
         </FormItem>
       </div>
     </SettingsDialogForm>

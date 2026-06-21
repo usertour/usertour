@@ -756,6 +756,8 @@ const translations = {
         allowedDomainsHelp: '用逗号分隔。仅当新用户邮箱域名命中时才自动建号；留空表示信任该 IdP。',
         callbackUrlLabel: '回调（Redirect）地址',
         callbackUrlHelp: '将此地址作为允许的 redirect URI 粘贴到你的 IdP 应用中。',
+        callbackUrlApiUrlMissing:
+          '服务端未配置 API_URL，此回调地址不完整。请先配置 API_URL 后刷新。',
         callbackUrlCopied: '回调地址已复制',
       },
     },

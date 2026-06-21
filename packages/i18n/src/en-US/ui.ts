@@ -789,6 +789,8 @@ const translations = {
           'Comma-separated. New users are auto-provisioned only if their email domain matches. Leave blank to trust the IdP.',
         callbackUrlLabel: 'Redirect / callback URL',
         callbackUrlHelp: 'Paste this into your IdP application as the allowed redirect URI.',
+        callbackUrlApiUrlMissing:
+          "API_URL isn't set on your server, so this callback URL is incomplete. Set API_URL, then reload.",
         callbackUrlCopied: 'Callback URL copied',
       },
     },
