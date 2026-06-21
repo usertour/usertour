@@ -6,11 +6,9 @@ import {
   useGetProjectSsoProvidersQuery,
   useGlobalConfigQuery,
 } from '@usertour/hooks';
-import { Button } from '@usertour/ui';
-import { RiShieldKeyholeLine } from '@usertour/icons';
-import { apiUrl } from '@/utils/env';
 import { NotFound } from '@/routes/not-found';
 import { AuthCard } from './components/auth-card';
+import { SsoProviderButtons } from './components/sso-provider-buttons';
 import { SignInForm } from './components/sign-in-form';
 import { SignUpForm } from './components/registration-form';
 import { ResetPasswordForm } from './components/reset-password-form';
@@ -108,24 +106,7 @@ export const Invite = () => {
     // (8px), forming one button group; SignInForm's own divider separates them
     // from the email form.
     <AuthCard title={title} contentClassName="grid gap-2">
-      {ssoProviders.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {ssoProviders.map((provider) => (
-            <Button
-              key={provider.id}
-              variant="outline"
-              className="w-full"
-              type="button"
-              onClick={() => {
-                window.location.href = `${apiUrl}/api/auth/sso/${provider.id}`;
-              }}
-            >
-              <RiShieldKeyholeLine className="mr-2 h-4 w-4" />
-              {t('auth.sso.continueWith', { name: provider.name })}
-            </Button>
-          ))}
-        </div>
-      )}
+      {ssoProviders.length > 0 && <SsoProviderButtons providers={ssoProviders} />}
       {forceSso ? (
         <p className="pt-1 text-center text-sm text-muted-foreground">
           {t('auth.invite.requireSsoNote')}

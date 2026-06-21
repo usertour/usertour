@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Button } from '@usertour/ui';
-import { RiLockFill, SpinnerIcon } from '@usertour/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useGetProjectSsoLoginQuery } from '@usertour/hooks';
-import { apiUrl } from '@/utils/env';
 import { AuthCard } from './components/auth-card';
+import { SsoProviderButtons } from './components/sso-provider-buttons';
 
 // Per-project SSO entry page. Resolves the project's branding + active providers
 // (public query, gated server-side by the project's OIDC entitlement) and hands
@@ -19,10 +18,6 @@ const SsoLogin = () => {
   // Set by the server when a callback fails (e.g. the IdP authenticated the user
   // but they aren't allowed into the project) — show it instead of a bare 500.
   const error = searchParams.get('error');
-
-  const launch = (providerId: string) => {
-    window.location.href = `${apiUrl}/api/auth/sso/${providerId}`;
-  };
 
   // Lead with the project's branding so the page reads as "sign in to <project>"
   // rather than a generic, floating SSO card.
@@ -51,20 +46,7 @@ const SsoLogin = () => {
           {t('auth.sso.unavailable')}
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {providers.map((provider) => (
-            <Button
-              key={provider.id}
-              variant="outline"
-              className="w-full"
-              type="button"
-              onClick={() => launch(provider.id)}
-            >
-              <RiLockFill className="mr-2 h-4 w-4" />
-              {t('auth.sso.continueWith', { name: provider.name })}
-            </Button>
-          ))}
-        </div>
+        <SsoProviderButtons providers={providers} />
       )}
     </AuthCard>
   );
