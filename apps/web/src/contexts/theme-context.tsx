@@ -29,7 +29,14 @@ const readStoredTheme = (): Theme => {
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
     return stored;
   }
-  return 'system';
+  // Default to light when nothing is stored (the user never picked). Not
+  // 'system': dark mode ships, but a few surfaces (builder takeover, billing,
+  // previews) are intentionally light, so a system-dark user shouldn't be
+  // auto-dropped into a partially-dark app. Only an explicit pick opts into
+  // system/dark — those are stored, so this default never touches them.
+  // Revisit (→ 'system') once dark coverage is complete. Keep in sync with the
+  // boot-script fallback in index.html.
+  return 'light';
 };
 
 const prefersDark = (): boolean => window.matchMedia(DARK_QUERY).matches;
