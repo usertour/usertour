@@ -18,7 +18,7 @@ export class UpdateSsoProviderInput {
 
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   issuer?: string;
 
   @Field(() => String, { nullable: true })
@@ -33,16 +33,16 @@ export class UpdateSsoProviderInput {
 
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   authorizationUrl?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   tokenUrl?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   userInfoUrl?: string;
 }
