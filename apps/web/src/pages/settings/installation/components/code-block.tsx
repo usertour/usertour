@@ -1,8 +1,22 @@
 import { RiFileCopyLine } from '@usertour/icons';
 import { Button } from '@usertour/ui';
 import { useEffect, useState } from 'react';
-import { codeToHtml } from 'shiki';
+import { type Highlighter, createHighlighter } from 'shiki';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+
+// One shared highlighter, created once with the languages/themes we need, so
+// each block doesn't reload grammars.
+let highlighterPromise: Promise<Highlighter> | null = null;
+
+const ensureHighlighter = () => {
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
+      langs: ['javascript', 'html'],
+      themes: ['github-light', 'github-dark'],
+    });
+  }
+  return highlighterPromise;
+};
 
 export interface CodeBlockProps {
   code: string;
@@ -12,9 +26,11 @@ export interface CodeBlockProps {
 }
 
 /**
- * Read-only, syntax-highlighted code block via shiki (GitHub light/dark dual
- * theme; the .shiki color/background vars are mapped in index.css). A copy
- * button overlays the corner. Falls back to plain <pre> until shiki resolves.
+ * Read-only, syntax-highlighted code block (shiki, GitHub light/dark dual theme;
+ * the .shiki vars are mapped in index.css). Highlighting runs off the click path
+ * (async) so a tab switch never blocks on tokenizing a long snippet; combined
+ * with the tabs being force-mounted, each block is highlighted up front and a
+ * switch just reveals the ready result.
  */
 export const CodeBlock = (props: CodeBlockProps) => {
   const { code, language, copiedMessage } = props;
@@ -23,21 +39,17 @@ export const CodeBlock = (props: CodeBlockProps) => {
 
   useEffect(() => {
     let active = true;
-    codeToHtml(code, {
-      lang: language,
-      themes: { light: 'github-light', dark: 'github-dark' },
-      defaultColor: false,
-    })
-      .then((result) => {
-        if (active) {
-          setHtml(result);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setHtml('');
-        }
-      });
+    ensureHighlighter().then((highlighter) => {
+      if (active) {
+        setHtml(
+          highlighter.codeToHtml(code, {
+            lang: language,
+            themes: { light: 'github-light', dark: 'github-dark' },
+            defaultColor: false,
+          }),
+        );
+      }
+    });
     return () => {
       active = false;
     };

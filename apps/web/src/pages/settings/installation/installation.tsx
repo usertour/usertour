@@ -120,7 +120,11 @@ export const SettingsInstallation = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="npm" className="mt-4 space-y-4">
+            <TabsContent
+              value="npm"
+              forceMount
+              className="mt-4 space-y-4 data-[state=inactive]:hidden"
+            >
               <p className="text-sm text-muted-foreground">
                 {t('settings.installation.npm.description')}
               </p>
@@ -131,7 +135,11 @@ export const SettingsInstallation = () => {
               <CodeBlock code={npmCode} language="javascript" copiedMessage={copiedMessage} />
             </TabsContent>
 
-            <TabsContent value="html" className="mt-4 space-y-4">
+            <TabsContent
+              value="html"
+              forceMount
+              className="mt-4 space-y-4 data-[state=inactive]:hidden"
+            >
               <p className="text-sm text-muted-foreground">
                 {t('settings.installation.html.description')}
               </p>
