@@ -298,6 +298,7 @@ const translations = {
       successToast: '项目名称已更新',
       logo: {
         title: 'Logo',
+        tooltip: '显示在该项目的 SSO 登录页。',
         description: 'PNG、JPG 或 SVG,不超过 1MB。',
         uploadedToast: 'Logo 已更新',
         removedToast: 'Logo 已移除',

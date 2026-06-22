@@ -11,6 +11,7 @@ import {
   FormMessage,
   Input,
   LoadingButton,
+  QuestionTooltip,
   Separator,
   Skeleton,
   useSettingsForm,
@@ -101,7 +102,12 @@ export const ProjectGeneralForm = () => {
       {/* Logo — immediate upload, kept outside the name form so its buttons
           don't submit it. */}
       <div className="space-y-1.5">
-        <h4 className="text-sm font-medium text-foreground">{t('settings.project.logo.title')}</h4>
+        <h4 className="text-sm font-medium text-foreground">
+          {t('settings.project.logo.title')}
+          <QuestionTooltip className="inline ml-1 mb-1">
+            {t('settings.project.logo.tooltip')}
+          </QuestionTooltip>
+        </h4>
         <ImageUploadWidget
           layout="inline"
           value={project?.logoUrl}

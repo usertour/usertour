@@ -312,6 +312,7 @@ const translations = {
       successToast: 'The project name has been successfully updated',
       logo: {
         title: 'Logo',
+        tooltip: 'Displayed on the SSO sign-in page for this project.',
         description: 'PNG, JPG or SVG, up to 1MB.',
         uploadedToast: 'Logo updated',
         removedToast: 'Logo removed',
