@@ -1,11 +1,12 @@
 'use client';
 
 import { css } from '@codemirror/lang-css';
+import { html } from '@codemirror/lang-html';
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import { useEffect, useMemo, useState } from 'react';
 
-export type CodeEditorLanguage = 'javascript' | 'css';
+export type CodeEditorLanguage = 'javascript' | 'css' | 'html';
 
 interface CodeEditorProps {
   value: string;
@@ -42,10 +43,16 @@ export const CodeEditor = ({
   placeholder,
   readOnly = false,
 }: CodeEditorProps) => {
-  const extensions = useMemo(
-    () => [language === 'css' ? css() : javascript({ jsx: false, typescript: false })],
-    [language],
-  );
+  const extensions = useMemo(() => {
+    switch (language) {
+      case 'css':
+        return [css()];
+      case 'html':
+        return [html()];
+      default:
+        return [javascript({ jsx: false, typescript: false })];
+    }
+  }, [language]);
   const isDark = useIsDarkMode();
 
   return (
@@ -53,7 +60,19 @@ export const CodeEditor = ({
       value={value}
       height={height}
       theme={isDark ? 'dark' : 'light'}
-      basicSetup={{ lineNumbers: false }}
+      basicSetup={
+        // Read-only is a viewer, not an editor: strip the editor chrome
+        // (fold gutter, active-line highlight) so it reads as a clean snippet.
+        readOnly
+          ? {
+              lineNumbers: false,
+              foldGutter: false,
+              highlightActiveLine: false,
+              highlightActiveLineGutter: false,
+              highlightSelectionMatches: false,
+            }
+          : { lineNumbers: false }
+      }
       extensions={extensions}
       placeholder={placeholder}
       readOnly={readOnly}

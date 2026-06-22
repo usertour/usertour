@@ -245,6 +245,7 @@ const translations = {
         billing: 'Billing',
         subscription: 'Subscription',
         account: 'Account',
+        installation: 'Installation',
         api: 'API',
         integrations: 'Integrations',
       },
@@ -795,6 +796,37 @@ const translations = {
         callbackUrlApiUrlMissing:
           "API_URL isn't set on your server, so this callback URL is incomplete. Set API_URL, then reload.",
         callbackUrlCopied: 'Callback URL copied',
+      },
+    },
+    installation: {
+      title: 'Installation',
+      description: 'Install Usertour.js in your app to start showing content to your users.',
+      docsLink: 'Read the installation guide',
+      environmentLabel: 'Environment',
+      environmentHelp:
+        'The token below belongs to this environment. Each environment has its own token.',
+      tokenLabel: 'Token',
+      tokenHelp: 'The token for the selected environment, already filled into the code below.',
+      installLabel: 'Install the package',
+      copied: 'Copied to clipboard',
+      npm: {
+        tabLabel: 'Npm',
+        description: 'For apps built with a module bundler (Webpack, Rollup, etc.).',
+      },
+      html: {
+        tabLabel: 'HTML',
+        description:
+          'For other apps or Google Tag Manager — paste this before the closing </body> tag.',
+      },
+      placeholderNote:
+        'Replace USER_ID, USER_NAME, USER_EMAIL and USER_SIGNED_UP_AT with real values from the signed-in user. For public pages with no signed-in user, use usertour.identifyAnonymous() instead.',
+      verify: {
+        waitingTitle: 'Waiting for the first user',
+        waitingBody:
+          'Once usertour.js runs and identifies a user from this environment, it will show up here.',
+        installedTitle: 'Usertour.js is installed',
+        installedBody: 'We have received data from this environment.',
+        checkAgain: 'Check again',
       },
     },
     api: {

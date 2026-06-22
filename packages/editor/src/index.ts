@@ -26,4 +26,3 @@ export {
 export type { ActionValidationFailure } from './actions';
 export { contentTypesConfig } from './utils/config';
 export { AttributeCreateForm } from './form/attribute-create-form';
-export { CodeEditor, type CodeEditorLanguage } from './code-editor';

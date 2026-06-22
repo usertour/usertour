@@ -11,6 +11,7 @@ import {
   RiPuzzleLine,
   RiShieldKeyholeLine,
   RiTeamLine,
+  RiTerminalBoxLine,
 } from '@usertour/icons';
 import { Capability, type GlobalConfig } from '@usertour/types';
 
@@ -30,6 +31,7 @@ export type SettingsSectionKey =
   | 'general'
   | 'themes'
   | 'environments'
+  | 'installation'
   | 'attributes'
   | 'events'
   | 'localizations'
@@ -128,6 +130,19 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     component: lazy(() =>
       import('./environments').then((module) => ({ default: module.SettingsEnvironmentList })),
+    ),
+  },
+  {
+    key: 'installation',
+    title: 'Installation',
+    icon: <RiTerminalBoxLine className={ICON_CLASS} />,
+    capability: Capability.EnvironmentRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout on the muted surface, like sso / account.
+    surface: 'muted',
+    component: lazy(() =>
+      import('./installation').then((module) => ({ default: module.SettingsInstallation })),
     ),
   },
   {

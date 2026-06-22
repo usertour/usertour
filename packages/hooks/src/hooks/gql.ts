@@ -27,6 +27,7 @@ import {
   getInvites,
   getTeamMembers,
   getUserEnvironments,
+  verifyInstallation,
   inviteTeamMember as inviteTeamMemberMutation,
   listAttributes,
   listSegment,
@@ -998,6 +999,26 @@ export const useGetUserEnvironmentsQuery = (
   const environmentList = data?.userEnvironments as Environment[] | null;
 
   return { environmentList, refetch, loading, error, isRefetching };
+};
+
+export const useVerifyInstallationQuery = (
+  environmentId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch, stopPolling } = useQuery(verifyInstallation, {
+    variables: { environmentId },
+    skip: !environmentId,
+    ...options,
+  });
+
+  return {
+    installed: (data?.verifyInstallation?.installed as boolean | undefined) ?? false,
+    userCount: (data?.verifyInstallation?.userCount as number | undefined) ?? 0,
+    loading,
+    error,
+    refetch,
+    stopPolling,
+  };
 };
 
 export const useDeleteBizUserMutation = () => {

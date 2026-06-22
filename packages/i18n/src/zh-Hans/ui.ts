@@ -240,6 +240,7 @@ const translations = {
         billing: '账单',
         subscription: '订阅',
         account: '账户',
+        installation: '安装',
         api: 'API',
         integrations: '集成',
       },
@@ -762,6 +763,34 @@ const translations = {
         callbackUrlApiUrlMissing:
           '服务端未配置 API_URL，此回调地址不完整。请先配置 API_URL 后刷新。',
         callbackUrlCopied: '回调地址已复制',
+      },
+    },
+    installation: {
+      title: '安装',
+      description: '在你的应用中安装 Usertour.js，开始向用户展示内容。',
+      docsLink: '查看安装指南',
+      environmentLabel: '环境',
+      environmentHelp: '下方代码中的 token 属于该环境。每个环境都有独立的 token。',
+      tokenLabel: 'Token',
+      tokenHelp: '当前所选环境的 token，已自动填入下方代码。',
+      installLabel: '安装依赖包',
+      copied: '已复制到剪贴板',
+      npm: {
+        tabLabel: 'Npm',
+        description: '适用于使用模块打包工具（Webpack、Rollup 等）构建的应用。',
+      },
+      html: {
+        tabLabel: 'HTML',
+        description: '适用于其他应用或 Google Tag Manager —— 粘贴到 </body> 结束标签之前。',
+      },
+      placeholderNote:
+        '把 USER_ID、USER_NAME、USER_EMAIL 和 USER_SIGNED_UP_AT 替换成已登录用户的真实值。没有登录用户的公开页面，改用 usertour.identifyAnonymous()。',
+      verify: {
+        waitingTitle: '等待第一个用户',
+        waitingBody: 'usertour.js 运行并在该环境 identify 用户后，这里会显示已安装。',
+        installedTitle: 'Usertour.js 已安装',
+        installedBody: '已收到该环境的数据。',
+        checkAgain: '重新检查',
       },
     },
     api: {
