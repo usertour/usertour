@@ -651,6 +651,7 @@ const translations = {
           content: 'Content',
           team: 'Team',
           features: 'Features',
+          security: 'Security',
           support: 'Support & service',
         },
         rows: {
@@ -679,6 +680,8 @@ const translations = {
           localization: 'Localization (coming soon)',
           integrations: 'Integrations (coming soon)',
           alerting: 'Alerting (coming soon)',
+          sso: 'Single Sign-On (SSO)',
+          auditLog: 'Audit log (coming soon)',
         },
       },
       banner: {

@@ -623,6 +623,7 @@ const translations = {
           content: '内容',
           team: '团队',
           features: '功能',
+          security: '安全',
           support: '支持与服务',
         },
         rows: {
@@ -651,6 +652,8 @@ const translations = {
           localization: '本地化(即将推出)',
           integrations: '集成(即将推出)',
           alerting: '告警(即将推出)',
+          sso: '单点登录（SSO）',
+          auditLog: '审计日志（即将推出）',
         },
       },
       banner: {
