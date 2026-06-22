@@ -624,6 +624,21 @@ export class SsoAccessDeniedError extends BaseError {
   };
 }
 
+/**
+ * A user-controlled URL (an SSO issuer, a webhook target, …) is not an
+ * acceptable egress target — not HTTPS, or a plainly-internal host (an IP
+ * literal in a blocked range, or localhost). A fast-fail at config / pre-request
+ * time; the egress guard remains the real runtime SSRF boundary. Never thrown
+ * when the deployment permits private-network egress.
+ */
+export class EgressUrlNotAllowedError extends BaseError {
+  code = 'E0054';
+  messageDict = {
+    en: 'This URL must be a publicly reachable HTTPS address.',
+    'zh-CN': '该地址必须是可公网访问的 HTTPS 地址。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -696,6 +711,7 @@ const errorMap = {
   E0051: SsoRequiredError,
   E0052: SsoRequiresActiveProviderError,
   E0053: SsoAccessDeniedError,
+  E0054: EgressUrlNotAllowedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

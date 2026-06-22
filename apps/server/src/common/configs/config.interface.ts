@@ -100,6 +100,7 @@ export interface Config {
   };
   globalConfig: {
     isSelfHostedMode: boolean;
+    allowPrivateNetworkEgress: boolean;
   };
   integration: {
     salesforce: {

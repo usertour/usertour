@@ -1,7 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ProjectSSOIdentityProvider } from '@prisma/client';
-import { Client, Issuer, generators } from 'openid-client';
+import { Client, Issuer, custom, generators } from 'openid-client';
+
+import {
+  assertPublicHttpUrl,
+  createGuardedHttpsAgent,
+  guardedLookup,
+} from '@/common/egress/egress-guard';
 
 export interface OidcAuthRequest {
   url: string;
@@ -20,7 +26,21 @@ export interface OidcAuthRequest {
 export class SsoOidcService {
   private readonly logger = new Logger(SsoOidcService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {
+    this.installEgressGuard();
+  }
+
+  // openid-client v5 issues every request through Node's http.request with these
+  // options merged in, so pinning the vetting agent + resolver covers discovery,
+  // token, userinfo, jwks, and any redirect they follow. These are process-
+  // global defaults, but openid-client is this app's only user of them. No-op
+  // when the deployment permits private-network egress (e.g. internal IdPs).
+  private installEgressGuard(): void {
+    if (this.configService.get('globalConfig.allowPrivateNetworkEgress')) {
+      return;
+    }
+    custom.setHttpOptionsDefaults({ agent: createGuardedHttpsAgent(), lookup: guardedLookup });
+  }
 
   // One fixed callback for every provider; the provider is resolved from the
   // signed tx cookie, so this is the single redirect URI to register at the IdP.
@@ -30,6 +50,12 @@ export class SsoOidcService {
   }
 
   private async buildClient(provider: ProjectSSOIdentityProvider): Promise<Client> {
+    // Explicit HTTPS-only + internal-host refusal before discovery, so a
+    // misconfigured issuer fails clearly instead of via an opaque protocol
+    // error; the egress guard stays the real SSRF boundary for everything after.
+    assertPublicHttpUrl(provider.issuer, {
+      allowPrivateNetwork: !!this.configService.get('globalConfig.allowPrivateNetworkEgress'),
+    });
     const issuer = await Issuer.discover(provider.issuer);
     return new issuer.Client({
       client_id: provider.clientId,

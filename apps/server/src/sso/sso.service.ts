@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ProjectSSOIdentityProvider, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -8,6 +9,8 @@ import {
   SsoRequiresActiveProviderError,
 } from '@/common/errors';
 import { ProjectsService } from '@/projects/projects.service';
+
+import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
 
 import { CreateOidcSsoProviderInput } from './dto/create-oidc-sso-provider.input';
 import { UpdateProjectSsoSettingsInput } from './dto/update-project-sso-settings.input';
@@ -38,6 +41,7 @@ export class SsoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly projectsService: ProjectsService,
+    private readonly configService: ConfigService,
   ) {}
 
   /** Throws unless the project's plan currently grants OIDC SSO. */
@@ -51,6 +55,25 @@ export class SsoService {
   private assertJitRole(role: Role): void {
     if (role !== Role.ADMIN && role !== Role.VIEWER) {
       throw new ParamsError('SSO default role must be ADMIN or VIEWER');
+    }
+  }
+
+  // Reject obviously-internal or non-HTTPS provider URLs up front, so a bad
+  // issuer fails at save time instead of silently later during SSO login.
+  // Fail-fast only — the egress guard is the real SSRF boundary. No-op when the
+  // deployment permits private-network egress. Covers the issuer and any
+  // explicit endpoint overrides.
+  private assertProviderUrlsAllowed(input: {
+    issuer?: string;
+    authorizationUrl?: string | null;
+    tokenUrl?: string | null;
+    userInfoUrl?: string | null;
+  }): void {
+    const allowPrivateNetwork = !!this.configService.get('globalConfig.allowPrivateNetworkEgress');
+    for (const url of [input.issuer, input.authorizationUrl, input.tokenUrl, input.userInfoUrl]) {
+      if (url) {
+        assertPublicHttpUrl(url, { allowPrivateNetwork });
+      }
     }
   }
 
@@ -73,6 +96,7 @@ export class SsoService {
     input: CreateOidcSsoProviderInput,
   ): Promise<ProjectSSOIdentityProvider> {
     await this.assertOidcEntitled(projectId);
+    this.assertProviderUrlsAllowed(input);
     return this.prisma.projectSSOIdentityProvider.create({
       data: {
         projectId,
@@ -94,6 +118,7 @@ export class SsoService {
   ): Promise<ProjectSSOIdentityProvider> {
     const provider = await this.findByIdOrThrow(id);
     await this.assertOidcEntitled(provider.projectId);
+    this.assertProviderUrlsAllowed(input);
     // Deactivating the last active provider while SSO is enforced would lock
     // every member out (they can't SSO and can't fall back to password).
     if (input.status === 'inactive') {
