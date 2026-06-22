@@ -630,6 +630,11 @@ type GlobalConfig {
   require2FA: Boolean!
 }
 
+type InstallationStatus {
+  installed: Boolean!
+  userCount: Int!
+}
+
 type InstanceLicenseInfo {
   daysRemaining: Int
   error: String
@@ -1012,6 +1017,7 @@ type Query {
   queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
   queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
   userEnvironments(projectId: String!): [Environment!]!
+  verifyInstallation(environmentId: String!): InstallationStatus!
 }
 
 type Register {

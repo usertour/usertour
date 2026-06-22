@@ -18,6 +18,18 @@ export class EnvironmentsService {
     private readonly projectsService: ProjectsService,
   ) {}
 
+  /**
+   * Whether the environment has received any SDK data yet (at least one
+   * BizUser, i.e. usertour.identify() has run). Powers the Installation page's
+   * "verify installation" check.
+   */
+  async verifyInstallation(
+    environmentId: string,
+  ): Promise<{ installed: boolean; userCount: number }> {
+    const userCount = await this.prisma.bizUser.count({ where: { environmentId } });
+    return { installed: userCount > 0, userCount };
+  }
+
   async create(newData: CreateEnvironmentInput) {
     return await this.prisma.$transaction(async (tx) => {
       await this.projectsService.checkEnvironmentLimit(newData.projectId, tx);

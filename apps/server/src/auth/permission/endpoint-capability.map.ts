@@ -45,6 +45,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.updateEnvironments': Capability.EnvironmentManage, // W
   'environments.deleteEnvironments': Capability.EnvironmentManage, // W
   'environments.userEnvironments': Capability.EnvironmentRead, // R
+  'environments.verifyInstallation': Capability.EnvironmentRead, // R
   'environments.listAccessTokens': Capability.AccessTokenRead, // O
   'environments.getAccessToken': Capability.AccessTokenRead, // O
   'environments.createAccessToken': Capability.AccessTokenManage, // O
