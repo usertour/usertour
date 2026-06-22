@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouteError } from 'react-router-dom';
+import { usePostHog } from 'posthog-js/react';
 import { Button } from '@usertour/ui';
 import { isStaleChunkError, reloadForStaleChunkOnce } from '@/utils/stale-chunk';
 
@@ -10,16 +11,23 @@ import { isStaleChunkError, reloadForStaleChunkOnce } from '@/utils/stale-chunk'
 export const RouteErrorBoundary = () => {
   const { t } = useTranslation('ui');
   const error = useRouteError();
+  const posthog = usePostHog();
   const isStale = isStaleChunkError(error);
 
-  // A new version was deployed under this still-running build — reload to fetch
-  // it. If the one-shot guard already burned this run's reload, fall through to
-  // the manual prompt below.
   useEffect(() => {
+    // A stale chunk is a deploy artifact, not a bug — reload to fetch the fresh
+    // assets (one-shot guarded) and don't report it.
     if (isStale) {
       reloadForStaleChunkOnce();
+      return;
     }
-  }, [isStale]);
+    // Report genuine crashes so they surface in PostHog instead of only via
+    // user screenshots. React-router also hands us non-Error throws — only
+    // forward real Errors.
+    if (error instanceof Error) {
+      posthog?.captureException(error);
+    }
+  }, [isStale, error, posthog]);
 
   return (
     <div className="flex h-full min-h-[60vh] w-full flex-col items-center justify-center gap-4 px-4 text-center">

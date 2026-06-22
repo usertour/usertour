@@ -16,6 +16,9 @@ import './i18n/config';
 
 const options = {
   api_host: posthogHost,
+  // Auto-capture uncaught errors / unhandled rejections that escape React's
+  // error boundaries; RouteErrorBoundary reports the ones it does catch.
+  autocaptureExceptions: true,
 };
 
 // Vite fires this when a dynamic import's module preload fails — typically a
