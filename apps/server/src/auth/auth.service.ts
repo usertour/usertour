@@ -529,6 +529,10 @@ export class AuthService implements OnModuleInit {
       if (invite) {
         await this.teamService.deleteInvite(tx, invite.code);
       }
+      // assignUserToProject only marks the new row active without deactivating
+      // the others, so clear any prior active project first — otherwise an
+      // existing user ends up with multiple active rows and lands unpredictably.
+      await this.teamService.cancelActiveProject(tx, user.id);
       await this.teamService.assignUserToProject(tx, user.id, ssoContext.projectId, role);
       await this.linkOAuthAccount(user.id, provider, providerAccountId, '', '', tx);
     });
