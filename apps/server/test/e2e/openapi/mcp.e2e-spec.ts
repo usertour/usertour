@@ -1151,5 +1151,75 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(env).toMatchObject({ object: 'environment', name: 'MCP env' });
     });
+
+    it('get_theme_schema returns the writable settings fields', async () => {
+      const token = await mint([Capability.ThemeRead], [projectA]);
+      const payload = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: { name: 'get_theme_schema', arguments: {} },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(payload.body).toBe('settings');
+      expect(Object.keys(payload.schema.properties)).toEqual(
+        expect.arrayContaining(['font', 'brandColor', 'modal']),
+      );
+    });
+
+    it('create_theme applies a partial settings patch via MCP (permissive arg, strict server)', async () => {
+      const token = await mint([Capability.ThemeCreate, Capability.ThemeRead], [projectA]);
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_theme',
+                arguments: {
+                  name: 'MCP themed',
+                  settings: { font: { fontSize: 18 }, brandColor: { background: '#ff0000' } },
+                },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(created).toMatchObject({ object: 'theme', name: 'MCP themed' });
+      expect(created.settings.font.fontSize).toBe(18);
+      expect(created.settings.brandColor.background).toBe('#ff0000');
+      // auto colors derived server-side; untouched defaults preserved
+      expect(created.settings.brandColor.autoHover).toBeTruthy();
+      expect(created.settings.font.lineHeight).toBeTruthy();
+    });
+
+    it('create_theme rejects an invalid settings patch via MCP (server validates the permissive arg)', async () => {
+      const token = await mint([Capability.ThemeCreate], [projectA]);
+      const result = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'create_theme',
+              arguments: { name: 'MCP bad', settings: { primaryColor: '#fff' } },
+            },
+          },
+          token,
+        ),
+      );
+      expect(result.result?.isError).toBe(true);
+      expect(result.result.content[0].text).toContain('E1017');
+    });
   });
 });

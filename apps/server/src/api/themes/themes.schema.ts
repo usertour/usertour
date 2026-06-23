@@ -6,6 +6,7 @@ import { representationCondition } from '../content-representation/representatio
 import { nameSearchField } from '../shared/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
+import { themeSettingsPatchSchema } from './settings.schema';
 
 /**
  * v2 themes endpoint. The base projection (id/name/isDefault/timestamps) is always
@@ -65,20 +66,30 @@ export const listThemesResponse = z.object({
 });
 export class ListThemesResponseDto extends createZodDto(listThemesResponse) {}
 
-// Theme `settings` and `variations` are NOT writable through the API: they are a
-// large, cascaded, visually-tuned structure with no safe machine contract yet, so
-// the API would just be accepting unvalidated data. The write surface is limited
-// to metadata; a created theme is seeded with the default settings, and styling is
-// tuned in the theme builder. `settings` / `variations` remain readable via expand.
+// `settings` is a partial patch validated against THEME_SETTING_CONSTRAINTS (the
+// neutral SSOT, see settings.schema): a created theme starts from the default
+// styling and a write field-merges onto it, so callers send only what they change.
+// `variations` are still not writable through the API (a later phase). Both remain
+// readable via expand.
+const settingsField = themeSettingsPatchSchema
+  .optional()
+  .describe(
+    'Partial theme styling to merge onto the current settings (colors, fonts, ' +
+      'sizes, …). Send only the fields you change; omitted fields are kept. Auto ' +
+      'colors are derived server-side.',
+  );
+
 export const createThemeBody = z.object({
   name: z.string().min(1).describe('Theme name.'),
   isDefault: z.boolean().optional().describe('Make this the project default theme.'),
+  settings: settingsField,
 });
 export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
 
 export const updateThemeBody = z.object({
   name: z.string().min(1).optional(),
   isDefault: z.boolean().optional(),
+  settings: settingsField,
 });
 export class UpdateThemeBodyDto extends createZodDto(updateThemeBody) {}
 

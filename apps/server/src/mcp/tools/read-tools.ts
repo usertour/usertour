@@ -15,6 +15,7 @@ import {
 import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 import { createdAtRangeFields, nameSearchField } from '@/api/shared/filters';
+import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
 
 import { McpTool, McpToolContext } from '../mcp.types';
 import { READ_ONLY } from './annotations';
@@ -398,6 +399,27 @@ export function buildReadTools(): McpTool[] {
           name: asString(args.name),
         });
         return { items: result.results };
+      },
+    },
+
+    {
+      name: 'get_theme_schema',
+      title: 'Get the theme settings write schema',
+      capability: Capability.ThemeRead,
+      description:
+        'Return the JSON Schema of the writable theme `settings` — the fields you can pass to ' +
+        'create_theme / update_theme and their ranges/enums. The tool exposes `settings` as a ' +
+        'generic object, so fetch the shape here before theming. Settings is field-merged onto ' +
+        'the current settings; "Auto" hover/active colors are derived server-side.',
+      inputSchema: {},
+      async handler(_args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
+        // instead of throwing, so the discovery tool never fails.
+        return {
+          body: 'settings',
+          schema: z.toJSONSchema(themeSettingsPatchSchema, { unrepresentable: 'any' }),
+        };
       },
     },
 

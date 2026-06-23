@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type Theme as PrismaTheme } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { defaultSettings } from '@usertour/types';
+import { deepMergeThemeSettings, deriveThemeAutoColors } from '@usertour/helpers';
+import { type ThemeTypesSetting, defaultSettings } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -13,6 +14,7 @@ import { type DecompileResolvers } from '../content-representation/rules.decompi
 import { nameContains } from '../shared/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
+import { themeSettingsPatchSchema } from './settings.schema';
 import { mapTheme } from './themes.mapper';
 import {
   CreateThemeBody,
@@ -85,32 +87,70 @@ export class ApiThemesService {
   }
 
   /**
-   * Create a theme. `settings` / `variations` are not writable through the API
-   * (see themes.schema) — the theme is seeded with the default settings, which the
-   * caller can then tune in the theme builder.
+   * Validate a settings patch against the neutral constraint SSOT. Done here (not
+   * only in the REST pipe) so the MCP path — which bypasses the controller — is
+   * equally strict. Mirrors the content codec's `parse`.
+   */
+  private parseSettingsPatch(settings: unknown): Partial<ThemeTypesSetting> {
+    const result = themeSettingsPatchSchema.safeParse(settings);
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      const message = issue
+        ? issue.path.length
+          ? `${issue.path.join('.')}: ${issue.message}`
+          : issue.message
+        : 'Invalid theme settings';
+      throw new ValidationError(message);
+    }
+    return result.data as Partial<ThemeTypesSetting>;
+  }
+
+  /**
+   * Create a theme. Starts from the default styling; an optional `settings` patch is
+   * field-merged onto it and auto colors derived. `variations` are not yet writable.
    */
   async create(projectId: string, body: CreateThemeBody): Promise<Theme> {
+    const settings = body.settings
+      ? deriveThemeAutoColors(
+          deepMergeThemeSettings(defaultSettings, this.parseSettingsPatch(body.settings)),
+        )
+      : defaultSettings;
     const created = await this.themes.createTheme({
       projectId,
       name: body.name,
       isDefault: body.isDefault ?? false,
-      settings: defaultSettings as unknown as JsonValue,
+      settings: settings as unknown as JsonValue,
       variations: [] as unknown as JsonValue,
     });
     const resolvers = await this.buildDecompileResolvers(projectId);
     return mapTheme(created, FULL, resolvers);
   }
 
-  /** Update a theme's metadata (name / isDefault). Rejects system themes. */
+  /**
+   * Update a theme's metadata and/or styling. A `settings` patch is field-merged onto
+   * the theme's current settings and auto colors are re-derived. Rejects system themes.
+   */
   async update(id: string, projectId: string, body: UpdateThemeBody): Promise<Theme> {
     const theme = await this.requireTheme(id, projectId);
     if (theme.isSystem) {
       throw new ValidationError('Cannot modify a system theme.');
     }
+    const settingsUpdate =
+      body.settings !== undefined
+        ? {
+            settings: deriveThemeAutoColors(
+              deepMergeThemeSettings(
+                (theme.settings ?? defaultSettings) as ThemeTypesSetting,
+                this.parseSettingsPatch(body.settings),
+              ),
+            ) as unknown as JsonValue,
+          }
+        : {};
     const updated = await this.themes.updateTheme({
       id,
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.isDefault !== undefined ? { isDefault: body.isDefault } : {}),
+      ...settingsUpdate,
     });
     const resolvers = await this.buildDecompileResolvers(projectId);
     return mapTheme(updated, FULL, resolvers);

@@ -169,20 +169,39 @@ describe('API v2 themes + version themeId (e2e)', () => {
   const send = (method: 'post' | 'patch' | 'delete', path: string, token: string) =>
     request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
 
-  it('creates a theme seeded with the default styling (settings/variations not writable)', async () => {
+  it('creates a theme, applying a partial settings patch onto the default styling', async () => {
     const token = await mint([Capability.ThemeCreate, Capability.ThemeRead]);
-    // settings/variations are not part of the write contract; even if sent they
-    // are ignored — the theme is seeded with the default styling.
     const res = await send('post', basePath(), token).send({
       name: 'Created',
-      settings: { primaryColor: '#112233' },
+      settings: { font: { fontSize: 18 }, brandColor: { background: '#ff0000' } },
     });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ object: 'theme', name: 'Created' });
-    // seeded default, not the caller's value
-    expect(res.body.settings?.brandColor).toBeTruthy();
-    expect(res.body.settings.primaryColor).toBeUndefined();
+    // patch applied
+    expect(res.body.settings.font.fontSize).toBe(18);
+    expect(res.body.settings.brandColor.background).toBe('#ff0000');
+    // untouched default fields preserved; auto colors derived from the new base
+    expect(res.body.settings.font.lineHeight).toBeTruthy();
+    expect(res.body.settings.brandColor.autoHover).toBeTruthy();
     expect(res.body.variations).toEqual([]);
+  });
+
+  it('rejects a settings patch with an unknown path (strict)', async () => {
+    const token = await mint([Capability.ThemeCreate]);
+    const res = await send('post', basePath(), token).send({
+      name: 'Bad',
+      settings: { primaryColor: '#112233' },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a settings value outside the field range', async () => {
+    const token = await mint([Capability.ThemeCreate]);
+    const res = await send('post', basePath(), token).send({
+      name: 'Bad range',
+      settings: { font: { fontSize: 999 } },
+    });
+    expect(res.status).toBe(400);
   });
 
   it('omits settings/variations without expand, includes them with expand', async () => {

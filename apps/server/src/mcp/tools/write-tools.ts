@@ -50,6 +50,19 @@ import { writeAnnotationsFor } from './annotations';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
 
+// Theme `settings` is exposed to MCP as a permissive object (its full ~136-field
+// schema would bloat every tools/list); the agent fetches the exact fields/ranges
+// via `get_theme_schema`, and the server validates strictly against the SSOT. Same
+// pattern as `update_content_version`'s `data`.
+const themeSettingsMcpField = z
+  .record(z.string(), z.any())
+  .optional()
+  .describe(
+    'Partial theme styling (colors / fonts / sizes). Call get_theme_schema for the exact ' +
+      'writable fields and their ranges. Field-merged onto the current settings; "Auto" hover/' +
+      'active colors are derived server-side.',
+  );
+
 /**
  * Write-side MCP tools — gated by content:create / content:update /
  * content:delete. They bind the same v2 write services the REST endpoints use
@@ -517,9 +530,10 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create a theme',
       capability: Capability.ThemeCreate,
       description:
-        'Create a theme (metadata only). It is seeded with the default styling; theme ' +
-        'settings/variations are not editable via the API — tune them in the theme builder.',
-      inputSchema: { ...createThemeBody.shape },
+        'Create a theme. Starts from the default styling; pass a partial `settings` to ' +
+        'override colors / fonts / sizes (field-merged, auto colors derived). `variations` ' +
+        'are not yet editable via the API.',
+      inputSchema: { ...createThemeBody.shape, settings: themeSettingsMcpField },
       handler: (args, ctx) =>
         ctx.services.themes.create(ctx.projectId, args as unknown as CreateThemeBody),
     },
@@ -531,9 +545,14 @@ export function buildWriteTools(): McpTool[] {
       title: 'Update a theme',
       capability: Capability.ThemeUpdate,
       description:
-        "Update a theme's metadata (name / isDefault). Styling (settings/variations) is not " +
-        'editable via the API — tune it in the theme builder.',
-      inputSchema: { id: z.string().describe('The theme id.'), ...updateThemeBody.shape },
+        "Update a theme's metadata (name / isDefault) and/or `settings` (a partial style " +
+        'patch, field-merged onto the current settings with auto colors derived). ' +
+        '`variations` are not yet editable via the API.',
+      inputSchema: {
+        id: z.string().describe('The theme id.'),
+        ...updateThemeBody.shape,
+        settings: themeSettingsMcpField,
+      },
       handler: (args, ctx) =>
         ctx.services.themes.update(
           String(args.id),
