@@ -144,8 +144,10 @@ export function buildWriteTools(): McpTool[] {
           .optional()
           .describe(
             'Type-specific body for non-flow content (checklist / launcher / banner / tracker / ' +
-              'resource-center). Fetch its exact shape with get_content_schema; field-level ' +
-              'merged and validated against the content type.',
+              'resource-center). Fetch its exact shape with get_content_schema. Top-level fields ' +
+              'merge (omit one to leave it unchanged), but a list you DO send — e.g. checklist ' +
+              '`items` — REPLACES that whole list, deleting omitted members (same as `steps`); ' +
+              'a member is matched by its `id`. Validated against the content type.',
           ),
       },
       handler: (args, ctx) =>
