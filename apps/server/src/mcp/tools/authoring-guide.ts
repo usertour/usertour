@@ -32,6 +32,8 @@ A \`target\` points at an element by CSS selector: \`{ "selector": "[data-tour='
 ## Start rules & frequency
 \`startRules.frequency.mode\`: \`once\` (single show) | \`multiple\` (up to N per window) | \`unlimited\` (every match). \`multiple\`/\`unlimited\` use an \`every\` window (\`{ times?, duration, unit }\`); \`once\` ignores it.
 
+**Auto-start is the presence of \`startRules\` — there is no separate on/off flag.** Include \`startRules\` with ≥1 \`when\` condition to make a flow launch by page conditions; omit \`startRules\` to leave it start-on-demand only. (Don't look for an \`enabled\` field — the server derives it from whether you sent any rules.)
+
 **No auto-start ≠ unreachable.** With no \`startRules\` (or when none match) the content won't launch on its own — but it can still be started programmatically from the host app via the SDK \`usertour.start(contentId)\` call. Choose this when you want to trigger content from your own button/route rather than by page conditions.
 
 ## Making it appear (the SDK)
