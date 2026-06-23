@@ -1,4 +1,5 @@
 import { THEME_SETTING_CONSTRAINTS } from '@usertour/constants';
+import { ModalPosition } from '@usertour/types';
 import { builderSections } from '../components/theme-builder/schema/sections';
 import type { BuilderSection, FieldDef } from '../components/theme-builder/schema/types';
 
@@ -23,6 +24,19 @@ type Constraint =
   | { kind: 'enum'; values: (string | number)[] }
   | { kind: 'boolean' }
   | { kind: 'string' };
+
+// The 7 positions a `placement` field offers when it declares no custom `options`
+// (mirrors placement-field.tsx's defaultOptions). checklist/* override with their
+// own 5-position `options`.
+const DEFAULT_PLACEMENT_POSITIONS: string[] = [
+  ModalPosition.LeftTop,
+  ModalPosition.CenterTop,
+  ModalPosition.RightTop,
+  ModalPosition.LeftBottom,
+  ModalPosition.CenterBottom,
+  ModalPosition.RightBottom,
+  ModalPosition.Center,
+];
 
 const projectField = (f: FieldDef): Array<[string, Constraint]> => {
   switch (f.type) {
@@ -56,8 +70,31 @@ const projectField = (f: FieldDef): Array<[string, Constraint]> => {
     case 'font-family':
     case 'code':
       return [[f.path, { kind: 'string' }]];
+    case 'placement':
+      return [
+        [
+          `${f.path}.position`,
+          {
+            kind: 'enum',
+            values: f.options ? f.options.map((o) => o.value) : DEFAULT_PLACEMENT_POSITIONS,
+          },
+        ],
+        [`${f.path}.positionOffsetX`, { kind: 'number' }],
+        [`${f.path}.positionOffsetY`, { kind: 'number' }],
+      ];
+    case 'dynamic-number':
+      return f.allPaths.map((p) => {
+        const c: Constraint = { kind: 'number' };
+        if (f.min !== undefined) c.min = f.min;
+        if (f.max !== undefined) c.max = f.max;
+        return [p, c] as [string, Constraint];
+      });
     case 'sub-section':
       return f.fields.flatMap(projectField);
+    // Excluded from the API: `avatar-type` / `image-upload` are MEDIA-asset fields
+    // (avatars, header image, logo, custom icon) — managed in the theme builder, not
+    // written as plain style values here. `group-header` / `separator` /
+    // `inline-alert` are section chrome with no value.
     default:
       return [];
   }
@@ -76,5 +113,17 @@ const projectBuilder = (): Record<string, Constraint> => {
 describe('theme settings constraints ↔ builder parity', () => {
   it('THEME_SETTING_CONSTRAINTS equals the builder field schema projection', () => {
     expect(projectBuilder()).toEqual(THEME_SETTING_CONSTRAINTS);
+  });
+
+  it('excludes media-asset fields (avatar / image-upload) from the API', () => {
+    const map = projectBuilder();
+    expect(map['avatar.type']).toBeUndefined();
+    expect(map['avatar.name']).toBeUndefined();
+    expect(map['resourceCenter.logoUrl']).toBeUndefined();
+    expect(map['resourceCenterLauncherButton.iconUrl']).toBeUndefined();
+    // style/layout values stay in
+    expect(map['avatar.size']).toBeTruthy();
+    expect(map['checklist.placement.position']).toBeTruthy();
+    expect(map['progress.narrowHeight']).toBeTruthy();
   });
 });

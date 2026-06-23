@@ -4,9 +4,10 @@
  * theme builder (form-control bounds) and the server (write-validation zod)
  * derive from THIS, so neither owns the contract and they cannot drift.
  *
- * UI concerns live elsewhere in the builder (labels, tooltips, widget choice,
- * visibleWhen). For enums, the allowed *values* live here; their display
- * *labels* stay in the builder.
+ * Scope: declarative STYLE values only. Media-asset fields (avatars, header image,
+ * logo, custom launcher icon) are managed in the theme builder, not here. UI
+ * concerns (labels, tooltips, widget choice, visibleWhen) also stay in the builder;
+ * for enums the allowed *values* live here, their display *labels* in the builder.
  */
 export type ThemeSettingConstraint =
   | { kind: 'number'; min?: number; max?: number }
@@ -37,6 +38,20 @@ export const THEME_SETTING_CONSTRAINTS = {
   'brandColor.background': { kind: 'color', allowAuto: false },
   'brandColor.color': { kind: 'color', allowAuto: false },
   'brandColor.hover': { kind: 'color', allowAuto: true },
+  'bubble.placement.position': {
+    kind: 'enum',
+    values: [
+      'leftTop',
+      'centerTop',
+      'rightTop',
+      'leftBottom',
+      'centerBottom',
+      'rightBottom',
+      'center',
+    ],
+  },
+  'bubble.placement.positionOffsetX': { kind: 'number' },
+  'bubble.placement.positionOffsetY': { kind: 'number' },
   'bubble.width': { kind: 'number', min: 200, max: 600 },
   'buttons.borderRadius': { kind: 'number', min: 0, max: 32 },
   'buttons.height': { kind: 'number', min: 24, max: 64 },
@@ -74,6 +89,12 @@ export const THEME_SETTING_CONSTRAINTS = {
   'buttons.secondary.textColor.hover': { kind: 'color', allowAuto: true },
   'checklist.checkmarkColor': { kind: 'color', allowAuto: true },
   'checklist.completedTaskTextDecoration': { kind: 'enum', values: ['none', 'line-through'] },
+  'checklist.placement.position': {
+    kind: 'enum',
+    values: ['leftTop', 'rightTop', 'leftBottom', 'rightBottom', 'center'],
+  },
+  'checklist.placement.positionOffsetX': { kind: 'number' },
+  'checklist.placement.positionOffsetY': { kind: 'number' },
   'checklist.width': { kind: 'number', min: 240, max: 600 },
   'checklist.zIndex': { kind: 'number' },
   'checklistLauncher.borderRadius': { kind: 'number', min: 0, max: 40 },
@@ -88,6 +109,12 @@ export const THEME_SETTING_CONSTRAINTS = {
     values: [100, 200, 300, 400, 500, 600, 700, 800, 900],
   },
   'checklistLauncher.height': { kind: 'number', min: 32, max: 80 },
+  'checklistLauncher.placement.position': {
+    kind: 'enum',
+    values: ['leftTop', 'rightTop', 'leftBottom', 'rightBottom', 'center'],
+  },
+  'checklistLauncher.placement.positionOffsetX': { kind: 'number' },
+  'checklistLauncher.placement.positionOffsetY': { kind: 'number' },
   customCss: { kind: 'string' },
   'focusHighlight.color': { kind: 'color', allowAuto: true },
   'focusHighlight.opacity': { kind: 'number', min: 0, max: 100 },
@@ -133,8 +160,14 @@ export const THEME_SETTING_CONSTRAINTS = {
   'modal.backdropClickBehavior': { kind: 'enum', values: ['do-nothing', 'dismiss-flow'] },
   'modal.padding': { kind: 'number', min: 0, max: 80 },
   'modal.width': { kind: 'number', min: 320, max: 1200 },
+  'progress.chainRoundedHeight': { kind: 'number', min: 1, max: 50 },
+  'progress.chainSquaredHeight': { kind: 'number', min: 1, max: 50 },
   'progress.color': { kind: 'color', allowAuto: true },
+  'progress.dotsHeight': { kind: 'number', min: 1, max: 50 },
   'progress.enabled': { kind: 'boolean' },
+  'progress.height': { kind: 'number', min: 1, max: 50 },
+  'progress.narrowHeight': { kind: 'number', min: 1, max: 50 },
+  'progress.numberedHeight': { kind: 'number', min: 1, max: 50 },
   'progress.position': { kind: 'enum', values: ['top', 'bottom'] },
   'progress.type': {
     kind: 'enum',

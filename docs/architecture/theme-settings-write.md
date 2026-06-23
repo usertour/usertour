@@ -28,14 +28,23 @@ truth (SSOT)** that the server validates against, instead of hand-mirroring it.
   shared color helper, so agent-authored themes render correctly in **both** the
   SDK and the builder.
 
-**Out of scope (phase 2):**
-- `variations` write (conditions codec already exists; their `settings` reuse the
-  same merge + derive path — see §8).
-- The niche field kinds (`placement`, `dynamic-number`, `avatar-type`,
-  `image-upload`) — their paths stay builder-only until added incrementally (§5).
+**The scope boundary — declarative STYLE values, not media assets.** The API
+writes every *style* setting: colors, fonts, sizes, borders, buttons, widths,
+backdrop, **placement (position enum + offsets)**, **progress-bar heights**, all
+the enums. It deliberately **excludes media-asset fields** — `avatar` (cartoon
+icon / upload / url), the resource-center **header image / logo**, and the
+**custom launcher icon** (the `avatar-type` + `image-upload` field kinds). Those
+are asset-management (uploading / picking bundled icons), a theme-builder concern,
+not plain style values — so they're managed in the builder, not here. This is a
+coherent product line ("style via API, media in the builder"), not an
+implementation artifact. (Excluded paths are rejected as unknown.)
+
+**Out of scope (phase 2):** `variations` write (conditions codec already exists;
+their `settings` reuse the same merge + derive path — see §8).
 
 **Non-goals:** changing the theme data model; a per-scope theme permission (stays
-`theme:create` / `theme:update`); exposing `isPrimary`-style admin toggles.
+`theme:create` / `theme:update`); exposing `isPrimary`-style admin toggles; binary
+asset upload (media fields above).
 
 ## 2. The enabler — the constraint SSOT is reachable (verified)
 
@@ -122,31 +131,34 @@ apps/web/.../themes/__tests__/
   theme-constraints-parity.test.ts  NEW  asserts the table == builder schema projection
 ```
 
-## 5. Field-kind coverage (phase 1)
+## 5. Field-kind coverage
 
-Because the neutral table covers **all** common-kind fields across every widget
-(base colors, font, border, buttons, modal, tooltip, bubble, backdrop **and**
-banner / checklist / launcher / survey / progress — 136 paths), the earlier "which
-widgets to open" question dissolves. Only the **niche kinds** below defer,
-regardless of which widget they belong to.
+The neutral table covers **every style/layout value across every widget** — 156
+paths. The line is drawn by the **style-vs-media** boundary (§1), not by which kinds
+were cheap to handle: the only excluded kinds are the two media-asset ones.
 
 `FieldDef` has ~15 kinds. The projection (used to produce the table, and re-run by
-the parity test) maps each leaf path to a constraint; `sub-section` recurses;
-`inline-alert` / niche kinds emit nothing.
+the parity test) maps each leaf path to a constraint; `sub-section` recurses.
 
-| Kind | Phase 1 | zod |
+| Kind | In API | zod |
 |---|---|---|
 | `color` / `triple-color` | ✅ | hex string; `'Auto'` allowed where `allowAuto` (the `hover`/`active`/flagged leaves) |
 | `number` / `slider` | ✅ | `z.number()` + `min`/`max` from FieldDef |
 | `select` | ✅ | `z.enum` of `options` (number literals when `valueAsNumber`) |
 | `boolean` | ✅ | `z.boolean()` |
-| `text` / `font-family` | ✅ | `z.string()` (font-family: known-family check optional) |
+| `text` / `font-family` | ✅ | `z.string()` — `font-family` stays a string (its catalog is ~1600 Google fonts; unknown names degrade gracefully) |
 | `code` | ✅ | `z.string()` — `customCss` (see §7) |
+| `placement` | ✅ | `.position` enum (from `options` / the default 7) + `.positionOffsetX/Y` numbers |
+| `dynamic-number` | ✅ | each progress-bar height path → `z.number()` `min`/`max` |
 | `sub-section` | ✅ | recurse into `fields` |
-| `inline-alert` | n/a | no path — skipped |
-| `placement` | ⛔ phase 2 | offset/position object |
-| `dynamic-number` | ⛔ phase 2 | progress-bar per-variant heights |
-| `avatar-type` / `image-upload` | ⛔ phase 2 | avatar/logo upload |
+| `inline-alert` / `group-header` / `separator` | n/a | no path — skipped |
+| `avatar-type` / `image-upload` | ⛔ **excluded (media, §1)** | avatar (icon/upload/url), header image, logo, custom icon → managed in the builder |
+
+Two **deliberate, documented** looseness calls (not implementation gaps):
+- **`font-family` = `string`** (catalog too large to inline; graceful fallback).
+- **`visibleWhen` cascades are NOT enforced** (22 of them) — a field gated by an
+  off toggle is a harmless stored no-op, not a render error, and field-merge makes
+  validity depend on the merged result; see §13.
 
 Leaf colors are flat strings for some fields (`font.linkColor`, `border.borderColor`)
 and object members for others (`brandColor.background` …) — the generator builds the
@@ -221,10 +233,11 @@ only; reads return the full stored settings.
 ## 12. Testing matrix
 
 - **Generator unit** (`settings.schema.spec.ts`): each covered kind → expected zod
-  (range reject, enum reject, unknown-path reject, niche-kind path reject). **[done]**
-- **Parity** (`theme-constraints-parity.spec.ts`): `THEME_SETTING_CONSTRAINTS` equals
-  the `builderSections` projection — fails if the builder changes a range/enum/field
-  without the table being updated. **[done]**
+  (range reject, enum reject, unknown-path reject, placement/progress covered,
+  media-asset field reject). **[done]**
+- **Parity** (web `theme-constraints-parity.test.ts`): `THEME_SETTING_CONSTRAINTS`
+  equals the `builderSections` projection (+ asserts media fields excluded) — fails
+  if the builder changes a range/enum/field without the table being updated. **[done]**
 - **Write e2e**: partial `settings` merges (untouched groups preserved); out-of-range
   / unknown path → E1017; auto colors derived (change `brandColor.background` →
   `brandColor.autoHover` recomputed, not the default's).
@@ -241,9 +254,14 @@ only; reads return the full stored settings.
   unknown value degrades gracefully: `convert-settings.ts:19` treats anything other
   than `System font` / `Custom font` as a Google font to load. Revisit only if we
   later share a font catalog.
-- **`validate` custom fns** — only a couple exist in the covered set (e.g. tooltip
-  `missingTargetTolerance` ≤ 10). Port those as zod refinements with neutral
-  messages; no general porting mechanism.
+- **`visibleWhen` cascades + custom `validate` fns are NOT enforced** (a deliberate
+  call). The 22 `visibleWhen` conditions gate fields that, when their toggle is off,
+  are harmless stored no-ops — not render errors; and under field-merge their
+  validity depends on the *merged* result, not the patch. The 2 custom `validate`
+  fns are likewise non-render-critical (tooltip tolerance ≤ 10 just duplicates
+  `max`; launcher `width` ≠ 0 forbids an invisible-but-harmless button). The
+  projection stays a pure mirror of the FieldDef `min`/`max`/`options`. Range/enum
+  checks (the render-critical ones) ARE enforced.
 - **Derived paths need no reject list.** The `auto*` colors (the builder's
   `DERIVED_PATHS`) are NOT `builderSections` form fields, so they never enter
   `THEME_SETTING_CONSTRAINTS` → a caller that sends one is rejected as an unknown
