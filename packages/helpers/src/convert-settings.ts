@@ -81,6 +81,18 @@ export const mergeThemeDefaultSettings = (settings: ThemeTypesSetting) => {
   return mergeWithDefaults(base, settings) as ThemeTypesSetting;
 };
 
+/**
+ * Deep-merge a partial theme settings patch onto a base, returning a new object
+ * (the base is not mutated). Same semantics as the default-merge above: a value
+ * in `patch` wins; `null` / `undefined` fall back to `base`. Used by the server's
+ * theme-settings write to merge a partial patch onto the theme's current settings
+ * so an agent only sends the fields it changes.
+ */
+export const deepMergeThemeSettings = (
+  base: ThemeTypesSetting,
+  patch: Partial<ThemeTypesSetting>,
+): ThemeTypesSetting => mergeWithDefaults(deepClone(base), patch) as ThemeTypesSetting;
+
 export const convertSettings = (settings: ThemeTypesSetting) => {
   const data = mergeThemeDefaultSettings(settings);
 

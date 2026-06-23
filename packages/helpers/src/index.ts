@@ -1,4 +1,5 @@
 export * from './convert-settings';
+export * from './derive-theme';
 export * from './type-utils';
 export * from './error';
 export * from './auth';
