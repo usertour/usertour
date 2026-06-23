@@ -211,8 +211,18 @@ export const representationCondition = z.lazy(() =>
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({
       type: z.literal('current_url'),
-      includes: z.array(z.string()),
-      excludes: z.array(z.string()).optional(),
+      includes: z
+        .array(z.string())
+        .describe(
+          'URL patterns (anchored whole-url match, NOT substring/regex). `*` = wildcard within ' +
+            'one url part; `:name` = one path segment. Omitting the path matches EVERY path (the ' +
+            'whole site) — scope it: `*/` (homepage only), `*/pricing` (one page), `*/app/*` (a ' +
+            'section + below), `host.com/*` (any page on a host).',
+        ),
+      excludes: z
+        .array(z.string())
+        .optional()
+        .describe('URL patterns to exclude (same syntax as includes); excludes win over includes.'),
     }),
     z.object({
       type: z.literal('element'),

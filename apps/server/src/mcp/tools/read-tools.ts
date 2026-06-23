@@ -170,8 +170,11 @@ export function buildReadTools(): McpTool[] {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const type = String(args.type);
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
-        // instead of throwing, so the discovery tool never fails.
-        const toJson = (s: z.ZodType) => z.toJSONSchema(s, { unrepresentable: 'any' });
+        // instead of throwing, so the discovery tool never fails. `reused: 'ref'`
+        // hoists the shared sub-schemas (conditions / blocks / actions, referenced
+        // many times) into `$defs` instead of re-inlining them — ~25% smaller.
+        const toJson = (s: z.ZodType) =>
+          z.toJSONSchema(s, { unrepresentable: 'any', reused: 'ref' });
         if (type === 'flow') {
           return { type, body: 'steps', schema: toJson(z.array(representationStepInput)) };
         }
@@ -416,6 +419,8 @@ export function buildReadTools(): McpTool[] {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails.
+        // (No `reused: 'ref'` here — the generated settings leaves are distinct
+        // schema objects, so there's nothing for zod to dedupe; it's a no-op.)
         return {
           body: 'settings',
           schema: z.toJSONSchema(themeSettingsPatchSchema, { unrepresentable: 'any' }),
