@@ -19,6 +19,15 @@ export const AUTHORING_GUIDE = `# Authoring Usertour content
 ## Themes (required)
 Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\` and pass a \`themeId\` to \`create_content\`; if unsure use the one with \`isDefault: true\`. \`create_theme\` / \`update_theme\` start from the default styling and accept a **partial \`settings\`** to brand it (colors, fonts, sizes, …): send only the fields you change — they're field-merged onto the current settings and "Auto" hover/active colors are derived server-side. The \`settings\` arg is a generic object on the tool; call \`get_theme_schema\` for the exact writable fields and their ranges before theming. It writes **style** values (colors, fonts, sizes, layout); **media assets** (avatars, header image, logo, custom icons) and conditional \`variations\` are set in the theme builder, not here.
 
+**Color roles (what each drives — names are misleading, so read this).** Each color is \`{ background, color, hover, active }\` (\`hover\`/\`active\` = \`"Auto"\` derives them):
+- \`mainColor\` = the **content surface**: the popover/modal/tooltip **background** (\`.background\`) and **body text** (\`.color\`). This is what makes a theme light vs dark. (Also drives borders / the close button.)
+- \`brandColor\` = the **accent**: buttons, progress bar, links, survey, focus highlight, resource-center accent. \`.background\` is the accent fill, \`.color\` the text on it.
+- \`buttons.primary\` / \`buttons.secondary\` = explicit button colors; omit them and buttons inherit from \`brandColor\` (primary) / \`mainColor\` (secondary).
+- Per-widget colors (\`banner\`, \`checklist\`, \`launcher*\`, …) override only that widget.
+- **Most themes only need \`brandColor\` + \`mainColor\`.** A common mistake: treating \`mainColor\` as an accent — it's the surface, so a dark \`mainColor.background\` makes the whole popover dark.
+
+**Fonts.** \`font.fontFamily\` is one of: \`"System font"\` (the system stack), \`"Custom font"\` (a self-hosted font — you also set \`font.customFontFamily\` to its \`@font-face\` family name and define the face in \`customCss\`), or **any Google Font name** (e.g. \`"Inter"\`) which the SDK loads automatically. So \`fontFamily: "Inter"\` just works (loaded from Google Fonts); only use \`customFontFamily\` together with \`fontFamily: "Custom font"\`.
+
 ## Flow steps
 - **\`steps\` is the complete list, not a patch** — any existing step you omit is deleted. To change one step, send them all. Identify a step to update by its \`cvid\` (stable: it survives forking) or primary \`id\`; omit both to create a new step.
 - Step \`type\`: \`tooltip\` | \`modal\` | \`hidden\` | \`bubble\`. **Only \`tooltip\` needs a \`target\`** (a CSS selector of an element on the page); the rest are page-level.
