@@ -123,11 +123,12 @@ export function buildWriteTools(): McpTool[] {
       title: 'Update a draft content version',
       capability: Capability.ContentUpdate,
       description:
-        'Write steps and/or start/hide rules to a draft (editable) content version. `steps` ' +
-        'replaces the version step list, merged by step `id` (pass the id from a read to update ' +
-        'that step, omit it to add a new one). Text blocks use markdown, with ' +
-        '`{{ attribute | default: "x" }}` for user attributes. Returns the updated version with ' +
-        'its decompiled steps.',
+        'Write steps and/or start/hide rules to a draft (editable) content version. `steps` is ' +
+        'the COMPLETE step list, not a patch — any existing step you omit is deleted. Match a ' +
+        'step to update by its `cvid` (stable across forks) or primary `id`; omit both to add a ' +
+        'new one. Editing a published version fails with E0049 — fork it first with ' +
+        'create_content_version. Text blocks use markdown, with `{{ attribute | default: "x" }}` ' +
+        'for user attributes. Returns the updated version with its decompiled steps.',
       inputSchema: {
         contentId: z.string(),
         versionId: z.string(),
@@ -162,7 +163,10 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         "Fork the content's current edited version into a new draft (the new editable version); " +
-        'the previous draft is frozen as history. Returns the new version.',
+        'the previous draft is frozen as history. Use this to edit PUBLISHED/locked content: it ' +
+        'copies the steps and data, and each step keeps its `cvid` (only the primary `id` is ' +
+        'regenerated), so you can keep targeting steps by `cvid`/`key` without re-reading. ' +
+        'Returns the new version.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) =>
         ctx.services.contentVersions.create(ctx.projectId, String(args.contentId)),

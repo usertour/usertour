@@ -262,18 +262,22 @@ export class ApiContentVersionsService {
         await this.requireTheme(themeId, projectId);
       }
 
-      // Steps merge by their server-assigned `id` (echo to update, omit to create);
-      // the internal cvid is server-owned (matched step's cvid, or a fresh one).
-      const existingById = new Map(
-        (
-          (version.steps ?? []) as {
-            id: string;
-            cvid?: string;
-            data?: unknown;
-            target?: unknown;
-            setting?: unknown;
-          }[]
-        ).map((s) => [s.id, s]),
+      // Steps merge by handle (echo to update, omit to create). The primary `id`
+      // is the default key, but it is regenerated on fork (create_content_version)
+      // while the `cvid` is preserved — so accept either, preferring `id`, and keep
+      // the matched step's cvid (or the caller's cvid for a fresh one). This lets an
+      // agent edit a just-forked version by the stable cvid it already knows, with
+      // no read-back to learn the new ids.
+      const existingSteps = (version.steps ?? []) as {
+        id: string;
+        cvid?: string;
+        data?: unknown;
+        target?: unknown;
+        setting?: unknown;
+      }[];
+      const existingById = new Map(existingSteps.map((s) => [s.id, s]));
+      const existingByCvid = new Map(
+        existingSteps.filter((s) => s.cvid).map((s) => [s.cvid as string, s]),
       );
 
       // Fix every step's cvid BEFORE compiling any content, so a `goto_step` can
@@ -281,8 +285,19 @@ export class ApiContentVersionsService {
       // an existing cvid). Those references resolve to the real cvid here — no
       // read-back round-trip, and forward/cyclic links work in one pass.
       const planned = body.steps.map((s, i) => {
-        const existing = s.id ? existingById.get(s.id) : undefined;
-        return { input: s, existing, cvid: existing?.cvid ?? cuid(), sequence: s.sequence ?? i };
+        const existing = s.id
+          ? existingById.get(s.id)
+          : s.cvid
+            ? existingByCvid.get(s.cvid)
+            : undefined;
+        return {
+          input: s,
+          existing,
+          // cvid stays server-owned: reuse the matched step's, otherwise mint a
+          // fresh one (an unmatched caller cvid is treated as a new step, like id).
+          cvid: existing?.cvid ?? cuid(),
+          sequence: s.sequence ?? i,
+        };
       });
 
       // One handle→cvid table: every step answers to its own cvid; a step with a

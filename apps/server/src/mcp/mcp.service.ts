@@ -13,7 +13,7 @@ import { ApiEventDefinitionsService } from '@/api/event-definitions/event-defini
 import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
-import { OpenAPIError } from '@/common/errors/errors';
+import { BaseError } from '@/common/errors/base';
 import { AuditService } from '@/audit/audit.service';
 
 import { McpServices, McpTool, McpToolContext } from './mcp.types';
@@ -153,8 +153,14 @@ export class McpService {
 
   /** Turn any thrown error into a human-readable message for the tool result. */
   private errorMessage(error: unknown): string {
-    if (error instanceof OpenAPIError) {
-      return error.getMessage('en');
+    // Every domain error extends BaseError and carries its text in
+    // getMessage()/messageDict — the native Error.message is left empty. Checking
+    // only OpenAPIError (a BaseError subclass) left the errors that extend
+    // BaseError directly — version-lock (E0049), conflict (E0050), params, no
+    // permission — surfacing as an empty string ("Command failed with no output").
+    // Prefix the code so an agent gets a stable handle to branch on.
+    if (error instanceof BaseError) {
+      return `[${error.code}] ${error.getMessage('en')}`;
     }
     if (error instanceof Error) {
       return error.message;

@@ -649,6 +649,17 @@ describe('MCP endpoint (e2e)', () => {
       expect(report).toMatchObject({ ok: true, errors: [] });
     });
 
+    it('exposes update_content_version `data` as a typed object (not z.unknown)', async () => {
+      // Schema-level guard for the P0 fix: z.unknown() compiled to an empty schema,
+      // so a client couldn't tell `data` was an object and stringified it on the wire.
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate], [projectA]);
+      const list = extractResult(await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token));
+      const tool = list.result.tools.find(
+        (t: { name: string }) => t.name === 'update_content_version',
+      );
+      expect(tool?.inputSchema?.properties?.data?.type).toBe('object');
+    });
+
     it('validate_content_version flags a start rule referencing an unknown attribute', async () => {
       const token = await mint(
         [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
@@ -807,6 +818,188 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(forked).toMatchObject({ object: 'contentVersion' });
       expect(forked.id).not.toBe(created.editedVersionId);
+    });
+
+    it('update_content_version on a published version returns a readable E0049', async () => {
+      // Regression for the empty "Command failed with no output": the version-lock
+      // error extends BaseError (not OpenAPIError), so MCP used to surface its empty
+      // native message. It must now come back with the code and real text.
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.ContentPublish,
+        ],
+        [projectA],
+      );
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_content',
+                arguments: { type: 'flow', name: 'MCP locked', themeId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'update_content_version',
+            arguments: {
+              contentId: created.id,
+              versionId: created.editedVersionId,
+              steps: [
+                { name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] },
+              ],
+            },
+          },
+        },
+        token,
+      );
+      await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 3,
+          method: 'tools/call',
+          params: {
+            name: 'publish_content',
+            arguments: { contentId: created.id, versionId: created.editedVersionId },
+          },
+        },
+        token,
+      );
+
+      // the published version is now read-only — writing to it must fail readably
+      const result = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 4,
+            method: 'tools/call',
+            params: {
+              name: 'update_content_version',
+              arguments: {
+                contentId: created.id,
+                versionId: created.editedVersionId,
+                steps: [
+                  { name: 'Changed', type: 'modal', content: [{ type: 'text', markdown: 'Edit' }] },
+                ],
+              },
+            },
+          },
+          token,
+        ),
+      );
+      expect(result.result?.isError).toBe(true);
+      expect(result.result.content[0].text).toContain('E0049');
+      // not the old empty string — there is real guidance after the code
+      expect(result.result.content[0].text.length).toBeGreaterThan('[E0049] '.length);
+    });
+
+    it('update_content_version edits a forked version by stable cvid', async () => {
+      // cvid survives a fork (the primary id does not), so an agent can edit a
+      // just-forked version by the cvid it already knows — no read-back for new ids.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_content',
+                arguments: { type: 'flow', name: 'MCP cvid', themeId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      const authored = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 2,
+              method: 'tools/call',
+              params: {
+                name: 'update_content_version',
+                arguments: {
+                  contentId: created.id,
+                  versionId: created.editedVersionId,
+                  steps: [
+                    { name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] },
+                  ],
+                },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      const cvid = authored.steps[0].cvid;
+      expect(cvid).toBeTruthy();
+
+      const forked = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 3,
+              method: 'tools/call',
+              params: { name: 'create_content_version', arguments: { contentId: created.id } },
+            },
+            token,
+          ),
+        ),
+      );
+
+      // edit the forked step by the cvid we already know (no id echoed)
+      const updated = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 4,
+              method: 'tools/call',
+              params: {
+                name: 'update_content_version',
+                arguments: {
+                  contentId: created.id,
+                  versionId: forked.id,
+                  steps: [
+                    {
+                      cvid,
+                      name: 'Welcome edited',
+                      type: 'modal',
+                      content: [{ type: 'text', markdown: 'Edit' }],
+                    },
+                  ],
+                },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      // updated in place: still one step, same cvid, new name
+      expect(updated.steps).toHaveLength(1);
+      expect(updated.steps[0]).toMatchObject({ cvid, name: 'Welcome edited' });
     });
 
     it('hides bizdata / config write tools without their scopes', async () => {

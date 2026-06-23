@@ -681,8 +681,8 @@ export class ResourceAlreadyExistsError extends BaseError {
 export class VersionNotEditableError extends BaseError {
   code = 'E0049';
   messageDict = {
-    en: 'This version is no longer editable — a newer version was created elsewhere. Refresh to load the latest version.',
-    'zh-CN': '该版本已不可编辑——其他位置已创建了新版本。请刷新加载最新版本。',
+    en: 'This version can no longer be edited — it is published, or has been superseded by a newer draft. Create a new editable version to make changes.',
+    'zh-CN': '该版本不可编辑——它已发布,或已被更新的草稿取代。请创建新的可编辑版本后再修改。',
   };
 }
 

@@ -14,10 +14,13 @@ export const AUTHORING_GUIDE = `# Authoring Usertour content
 3. \`validate_content_version\` — dry-run; returns \`{ ok, errors, warnings }\`. Fix \`errors\` first.
 4. \`publish_content\` — goes live. Requires \`contentId\` + \`versionId\`; \`environmentId\` is optional (defaults to the primary environment). Publishing is **per environment** — to ship to several, call it once per \`environmentId\` (\`list_environments\` lists them). It REJECTS content that wouldn't render (same rules as validate).
 
+**Editing published content** — a published version is read-only; writing to it fails with \`E0049\`. Call \`create_content_version\` to fork a fresh editable draft: it copies the steps/data and **preserves each step's \`cvid\`** (only the primary \`id\` is regenerated), so you can keep targeting steps by \`cvid\`/\`key\` without re-reading. Edit the draft, then validate and publish it.
+
 ## Themes (required)
 Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\` and pass a \`themeId\` to \`create_content\`; if unsure use the one with \`isDefault: true\`. \`create_theme\` makes a default-styled theme (name/isDefault only) — theme colors/fonts are not editable via the API; tune them in the theme builder.
 
 ## Flow steps
+- **\`steps\` is the complete list, not a patch** — any existing step you omit is deleted. To change one step, send them all. Identify a step to update by its \`cvid\` (stable: it survives forking) or primary \`id\`; omit both to create a new step.
 - Step \`type\`: \`tooltip\` | \`modal\` | \`hidden\` | \`bubble\`. **Only \`tooltip\` needs a \`target\`** (a CSS selector of an element on the page); the rest are page-level.
 - Every non-\`hidden\` step needs content; a \`button\` block needs both text and an action; a \`question\` block needs a name.
 - **Wire navigation by step \`key\`**: give a step \`"key": "pricing"\`, and a button action elsewhere in the SAME write does \`{ "type": "goto_step", "step": "pricing" }\`. Keys are write-only handles; forward and cyclic links work in one call. (You may also target an existing step by its \`cvid\`.)

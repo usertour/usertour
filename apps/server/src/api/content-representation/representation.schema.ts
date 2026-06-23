@@ -575,7 +575,21 @@ export type RepresentationHideRules = z.infer<typeof representationHideRules>;
 // internal `cvid` is server-owned and never accepted here (preserved on update,
 // generated on create). `sequence` defaults to the array position.
 export const representationStepInput = z.object({
-  id: z.string().optional(),
+  id: z
+    .string()
+    .optional()
+    .describe(
+      'Primary id of an existing step to update in place. It is regenerated when you fork a ' +
+        'version (create_content_version), so for edits that must survive a fork prefer `cvid`.',
+    ),
+  cvid: z
+    .string()
+    .optional()
+    .describe(
+      'Stable step handle that survives forking (create_content_version): echo it to update an ' +
+        'existing step in place without re-reading new ids. A step is matched by `id` first, then ' +
+        '`cvid`; omit both to create a new step.',
+    ),
   key: z
     .string()
     .optional()
