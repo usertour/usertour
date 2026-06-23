@@ -232,6 +232,29 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(upd.body).toMatchObject({ name: 'Edited' });
   });
 
+  it('updates theme settings (field-merged) and reads them back', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      name: 'ToStyle',
+      settings: { brandColor: { background: '#112233' } },
+    });
+    const id = created.body.id;
+
+    const upd = await send('patch', `${basePath()}/${id}`, token).send({
+      settings: { modal: { width: 480 } },
+    });
+    expect(upd.status).toBe(200);
+
+    const read = await api('get', `${basePath()}/${id}?expand=settings`, token);
+    // the second patch merged onto the first — both survive
+    expect(read.body.settings.modal.width).toBe(480);
+    expect(read.body.settings.brandColor.background).toBe('#112233');
+  });
+
   it('deletes a theme (204), then it is gone (404)', async () => {
     const token = await mint([
       Capability.ThemeCreate,
