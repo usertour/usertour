@@ -136,11 +136,15 @@ export function buildWriteTools(): McpTool[] {
         hideRules: representationHideRules.nullable().optional(),
         themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
         data: z
-          .unknown()
+          // A permissive object (not z.unknown) so the MCP client can actually
+          // pass a nested body; its real per-type shape comes from
+          // get_content_schema, and the server validates it against the type.
+          .record(z.string(), z.any())
           .optional()
           .describe(
             'Type-specific body for non-flow content (checklist / launcher / banner / tracker / ' +
-              'resource-center). Validated against the content type.',
+              'resource-center). Fetch its exact shape with get_content_schema; field-level ' +
+              'merged and validated against the content type.',
           ),
       },
       handler: (args, ctx) =>

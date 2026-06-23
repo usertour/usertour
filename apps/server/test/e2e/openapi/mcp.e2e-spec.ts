@@ -333,8 +333,8 @@ describe('MCP endpoint (e2e)', () => {
       expect(res.status).toBe(200);
       const payload = parseToolContent(extractResult(res));
       expect(payload.body).toBe('data');
-      // The polymorphic `data` arg has no schema on update_content_version itself;
-      // this tool surfaces it — full checklist shape incl. nested item fields.
+      // update_content_version only types `data` as a generic object (its shape is
+      // polymorphic); this tool surfaces the full per-type shape incl. nested fields.
       expect(Object.keys(payload.schema.properties)).toEqual(
         expect.arrayContaining(['buttonText', 'initialDisplay', 'items']),
       );
@@ -531,6 +531,111 @@ describe('MCP endpoint (e2e)', () => {
             {
               jsonrpc: '2.0',
               id: 4,
+              method: 'tools/call',
+              params: {
+                name: 'validate_content_version',
+                arguments: { contentId: created.id, id: created.editedVersionId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(report).toMatchObject({ ok: true, errors: [] });
+    });
+
+    it('update_content_version writes a non-flow data body (checklist) via MCP', async () => {
+      // Regression guard for the polymorphic `data` arg: when it was typed as
+      // z.unknown() the tool exposed an empty JSON schema, so an MCP client could
+      // not pass the nested object at all ("untyped parameter"). It must accept a
+      // nested body and persist it.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_content',
+                arguments: { type: 'checklist', name: 'MCP checklist', themeId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(created).toMatchObject({
+        object: 'content',
+        type: 'checklist',
+        name: 'MCP checklist',
+      });
+
+      // The write itself: a typeless (z.unknown) schema would have stopped the
+      // client from passing this nested object at all.
+      extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 2,
+            method: 'tools/call',
+            params: {
+              name: 'update_content_version',
+              arguments: {
+                contentId: created.id,
+                versionId: created.editedVersionId,
+                data: {
+                  buttonText: 'Get started',
+                  items: [
+                    { name: 'Explore the dashboard', completeWhen: [{ type: 'task_clicked' }] },
+                  ],
+                },
+              },
+            },
+          },
+          token,
+        ),
+      );
+
+      // Read the body back (data is only inlined when expanded) to prove it persisted.
+      const reread = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 3,
+              method: 'tools/call',
+              params: {
+                name: 'get_content_version',
+                arguments: {
+                  contentId: created.id,
+                  id: created.editedVersionId,
+                  expand: ['data'],
+                },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(reread.data).toMatchObject({ buttonText: 'Get started' });
+      const item = reread.data.items.find(
+        (i: { name: string }) => i.name === 'Explore the dashboard',
+      );
+      expect(item).toMatchObject({ name: 'Explore the dashboard' });
+
+      // a one-item checklist with a name + completion condition is publish-usable
+      const report = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 3,
               method: 'tools/call',
               params: {
                 name: 'validate_content_version',

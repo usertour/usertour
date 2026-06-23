@@ -10,7 +10,7 @@ export const AUTHORING_GUIDE = `# Authoring Usertour content
 
 ## Lifecycle
 1. \`create_content\` — pick a \`type\` and a \`themeId\` (see Themes). Returns the content + its draft \`editedVersionId\`. Non-flow types are seeded with their default \`data\`, so you only set the fields you care about.
-2. \`update_content_version\` — write \`steps\` (flow) or \`data\` (other types) to that draft. \`data\` is field-level merged onto what's there, so a partial body is fine. The \`data\` arg is polymorphic (its shape depends on \`type\`), so it carries no schema on the tool itself — call \`get_content_schema(type)\` for the exact \`data\` (or \`steps\`) JSON Schema before authoring.
+2. \`update_content_version\` — write \`steps\` (flow) or \`data\` (other types) to that draft. \`data\` is field-level merged onto what's there, so a partial body is fine. The \`data\` arg is polymorphic (its shape depends on \`type\`), so the tool only types it as a generic object — call \`get_content_schema(type)\` for the exact \`data\` (or \`steps\`) JSON Schema before authoring.
 3. \`validate_content_version\` — dry-run; returns \`{ ok, errors, warnings }\`. Fix \`errors\` first.
 4. \`publish_content\` — goes live. Requires \`contentId\` + \`versionId\`; \`environmentId\` is optional (defaults to the primary environment). Publishing is **per environment** — to ship to several, call it once per \`environmentId\` (\`list_environments\` lists them). It REJECTS content that wouldn't render (same rules as validate).
 
