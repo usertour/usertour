@@ -59,7 +59,9 @@ export class TeamService {
         role: true,
         email: true,
         user: { select: { name: true } },
-        project: { select: { name: true } },
+        project: {
+          select: { id: true, name: true, ssoSettings: { select: { requireSso: true } } },
+        },
       },
     });
     if (!invite) {
@@ -74,8 +76,11 @@ export class TeamService {
       role: invite.role,
       email: invite.email,
       recipientExists: !!recipient,
+      // Raw flag; the invite page only enforces it when SSO is actually usable
+      // (an active provider exists), matching the lapsed-entitlement gate-drop.
+      requireSso: invite.project.ssoSettings?.requireSso ?? false,
       user: invite.user,
-      project: invite.project,
+      project: { id: invite.project.id, name: invite.project.name },
     };
   }
 
@@ -339,6 +344,20 @@ export class TeamService {
   async getValidInviteByCode(code: string) {
     return await this.prisma.invite.findFirst({
       where: { code, ...activeInviteWhere() },
+    });
+  }
+
+  // Accept-time lookup for the SSO flow: a still-acceptable invite for this
+  // email + project. Email is matched case-insensitively (invite emails are
+  // stored as typed). activeInviteWhere() supplies the top-level OR, so callers
+  // must not add their own.
+  async getValidInviteForEmailAndProject(email: string, projectId: string) {
+    return await this.prisma.invite.findFirst({
+      where: {
+        projectId,
+        email: { equals: email, mode: 'insensitive' },
+        ...activeInviteWhere(),
+      },
     });
   }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 import { SignInForm } from './components/sign-in-form';
@@ -16,6 +17,9 @@ const SignIn = () => {
   // here. That makes a local loading gate redundant.
   const { globalConfig } = useAppContext();
   const [view, setView] = useState<View>('signin');
+  const [searchParams] = useSearchParams();
+  // A failed SSO callback that lost its project context redirects here.
+  const ssoError = searchParams.get('error') === 'sso';
 
   if (view === 'forgot') {
     return (
@@ -38,6 +42,11 @@ const SignIn = () => {
 
   return (
     <AuthCard title={t('auth.signIn.title')} footer={<SignUpPrompt />}>
+      {ssoError && (
+        <div className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {t('auth.sso.error.failed')}
+        </div>
+      )}
       <SignInForm globalConfig={globalConfig} onForgotPassword={() => setView('forgot')} />
     </AuthCard>
   );

@@ -1,0 +1,1 @@
+export { SettingsInstallation } from './installation';

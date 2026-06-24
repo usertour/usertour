@@ -39,8 +39,9 @@ import type { PrismaClient } from '@prisma/client';
 
 let counter = 0;
 // Include the jest worker id + a random suffix so values never collide across
-// parallel workers. Two specs booting in the same millisecond would otherwise
-// both emit `e2e-<ms>-0` and trip unique constraints (e.g. User.email).
+// parallel workers sharing the test DB. Two specs booting in the same
+// millisecond would otherwise both emit `e2e-<ms>-0` and trip unique
+// constraints (e.g. User.email, Subscription.subscriptionId).
 const unique = () =>
   `e2e-${process.env.JEST_WORKER_ID ?? '0'}-${Date.now()}-${counter++}-${Math.random()
     .toString(36)

@@ -8,7 +8,6 @@ import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
-import cookieParser from 'cookie-parser';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
 import { normalizeOpenApiParameters } from './common/openapi/normalize-parameters';
@@ -105,7 +104,6 @@ async function bootstrap() {
   const adapter = new RedisIoAdapter(app);
   await adapter.connectToRedis();
   app.useWebSocketAdapter(adapter);
-  app.use(cookieParser());
 
   // Add trace ID middleware
   app.use(setTraceID);

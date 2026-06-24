@@ -16,5 +16,11 @@ export class ProjectConfigModel {
   auditLogRetentionDays: number;
 
   @Field()
+  ssoOidc: boolean;
+
+  @Field()
+  ssoSaml: boolean;
+
+  @Field()
   planType: string;
 }

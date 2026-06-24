@@ -2,6 +2,7 @@ import { Reflector } from '@nestjs/core';
 
 import { AnalyticsResolver } from '@/analytics/analytics.resolver';
 import { AttributesResolver } from '@/attributes/attributes.resolver';
+import { AuditResolver } from '@/audit/audit.resolver';
 import { BizResolver } from '@/biz/biz.resolver';
 import { ContentResolver } from '@/content/content.resolver';
 import { EnvironmentsResolver } from '@/environments/environments.resolver';
@@ -26,6 +27,7 @@ import { RequirePermission } from './require-permission.decorator';
 const RESOLVERS: Record<string, new (...args: any[]) => any> = {
   analytics: AnalyticsResolver,
   attributes: AttributesResolver,
+  audit: AuditResolver,
   biz: BizResolver,
   content: ContentResolver,
   environments: EnvironmentsResolver,

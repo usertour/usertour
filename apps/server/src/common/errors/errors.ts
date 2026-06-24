@@ -694,6 +694,63 @@ export class VersionConflictError extends BaseError {
   };
 }
 
+/**
+ * Raised at login when the user's project enforces SSO and this is not an SSO
+ * sign-in (password / social / magic-link). Carries the enforcing project's id
+ * in `details` so the client can route the user to that project's SSO entry.
+ * Only thrown after the password is verified, so surfacing the id leaks nothing.
+ */
+export class SsoRequiredError extends BaseError {
+  code = 'E0051';
+  messageDict = {
+    en: 'Your organization requires single sign-on. Please sign in through SSO.',
+    'zh-CN': '你的组织已强制使用单点登录，请通过 SSO 登录。',
+  };
+  constructor(projectId?: string) {
+    super();
+    if (projectId) {
+      this.details = { projectId };
+    }
+  }
+}
+
+export class SsoRequiresActiveProviderError extends BaseError {
+  code = 'E0052';
+  messageDict = {
+    en: 'An active SSO provider is required while SSO is enforced for this project.',
+    'zh-CN': '该项目已强制 SSO，需保留至少一个启用中的 SSO 提供方。',
+  };
+}
+
+/**
+ * The IdP authenticated the user, but they are not allowed into the project
+ * (not a member, no invite, or email domain not in the allow-list). Distinct
+ * from a generic OAuthError so the SSO callback can show an actionable
+ * "ask an admin for access" message instead of a generic failure.
+ */
+export class SsoAccessDeniedError extends BaseError {
+  code = 'E0053';
+  messageDict = {
+    en: "You don't have access to this project. Ask an admin to invite you.",
+    'zh-CN': '你还没有该项目的访问权限，请让管理员邀请你。',
+  };
+}
+
+/**
+ * A user-controlled URL (an SSO issuer, a webhook target, …) is not an
+ * acceptable egress target — not HTTPS, or a plainly-internal host (an IP
+ * literal in a blocked range, or localhost). A fast-fail at config / pre-request
+ * time; the egress guard remains the real runtime SSRF boundary. Never thrown
+ * when the deployment permits private-network egress.
+ */
+export class EgressUrlNotAllowedError extends BaseError {
+  code = 'E0054';
+  messageDict = {
+    en: 'This URL must be a publicly reachable HTTPS address.',
+    'zh-CN': '该地址必须是可公网访问的 HTTPS 地址。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -769,6 +826,10 @@ const errorMap = {
   E0048: ResourceAlreadyExistsError,
   E0049: VersionNotEditableError,
   E0050: VersionConflictError,
+  E0051: SsoRequiredError,
+  E0052: SsoRequiresActiveProviderError,
+  E0053: SsoAccessDeniedError,
+  E0054: EgressUrlNotAllowedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

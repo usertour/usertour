@@ -124,18 +124,20 @@ describe('GraphQL team (e2e)', () => {
         // No `token` — this query is @Public().
         query: `query ($inviteId: String!) {
           getInvite(inviteId: $inviteId) {
-            id role email recipientExists project { name }
+            id role email recipientExists requireSso project { id name }
           }
         }`,
         variables: { inviteId: invite.code },
       });
       // The resolved `id` is the invite's real db id (service looks up by code).
+      // project.id must be selected server-side (the invite SSO button needs it).
       expect(gqlData(res).getInvite).toMatchObject({
         id: invite.id,
         role: 'VIEWER',
         email: invite.email,
         recipientExists: false,
-        project: { name: 'gql-team' },
+        requireSso: false, // no SSO settings on this project
+        project: { id: projectId, name: 'gql-team' },
       });
     });
 

@@ -67,6 +67,8 @@ const OWNER_ONLY: Capability[] = [
   Capability.IntegrationManage,
   Capability.AccessTokenRead,
   Capability.AccessTokenManage,
+  Capability.SsoRead,
+  Capability.SsoManage,
 ];
 
 export const ROLE_CAPABILITIES: Record<Role, Capability[]> = {

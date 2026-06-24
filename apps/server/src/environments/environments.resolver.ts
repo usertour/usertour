@@ -13,6 +13,7 @@ import {
 } from './dto/environment.input';
 import { EnvironmentsService } from './environments.service';
 import { Environment } from './models/environment.model';
+import { InstallationStatus } from './models/installation-status.model';
 import { AccessToken } from './dto/access-token.dto';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
 
@@ -58,6 +59,12 @@ export class EnvironmentsResolver {
   @RequirePermission({ capability: Capability.EnvironmentRead, scope: ScopeKind.Project })
   userEnvironments(@Args() { projectId }: ProjectIdArgs) {
     return this.environmentsService.listEnvsByProjectId(projectId);
+  }
+
+  @Query(() => InstallationStatus)
+  @RequirePermission({ capability: Capability.EnvironmentRead, scope: ScopeKind.Environment })
+  async verifyInstallation(@Args('environmentId') environmentId: string) {
+    return this.environmentsService.verifyInstallation(environmentId);
   }
 
   @Query(() => [AccessToken])

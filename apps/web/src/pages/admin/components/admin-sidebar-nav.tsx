@@ -21,6 +21,8 @@ interface NavItem {
   titleKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Card-stack pages opt into the muted surface so their cards float. */
+  surface?: 'default' | 'muted';
 }
 
 const navItems: NavItem[] = [
@@ -28,11 +30,13 @@ const navItems: NavItem[] = [
     titleKey: 'admin.nav.general',
     href: '/admin/general',
     icon: RiSettings2Line,
+    surface: 'muted',
   },
   {
     titleKey: 'admin.nav.authentication',
     href: '/admin/authentication',
     icon: KeyIcon,
+    surface: 'muted',
   },
   {
     titleKey: 'admin.nav.subscription',
@@ -50,6 +54,12 @@ const navItems: NavItem[] = [
     icon: ProjectIcon,
   },
 ];
+
+// The admin layout reads this to give card-stack pages the muted surface (so
+// their soft-shadow cards float), the same way the project settings layout
+// derives surface from the section registry.
+export const getAdminSurface = (pathname: string): 'default' | 'muted' =>
+  navItems.find((item) => pathname.startsWith(item.href))?.surface ?? 'default';
 
 export const AdminPanelSidebarNav = () => {
   const { t } = useTranslation();

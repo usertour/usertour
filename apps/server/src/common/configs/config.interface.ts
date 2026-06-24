@@ -44,6 +44,7 @@ export interface Config {
     homepageUrl: string;
     apiUrl: string;
     docUrl: string;
+    ssoCallbackUrl: string;
   };
   aws: {
     s3: {
@@ -100,6 +101,7 @@ export interface Config {
   };
   globalConfig: {
     isSelfHostedMode: boolean;
+    allowPrivateNetworkEgress: boolean;
   };
   integration: {
     salesforce: {

@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<!-- translate="no": the admin UI is English-only (i18n is pinned to 'en'), and
+     browser auto-translation rewrites the DOM out from under React, crashing it
+     with insertBefore/removeChild NotFoundError. -->
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
     <link href="/public/favicon/favicon.png" rel="shortcut icon" />
@@ -15,8 +18,17 @@
     <script>
       (function () {
         try {
+          // Auth pages always render light — browser autofill paints inputs a
+          // near-white that can't be restyled for dark, so a dark auth page
+          // looks broken. Skip applying dark here (kills the first-paint flash);
+          // keep this prefix in sync with AuthLayout's useForceLightTheme.
+          if (location.pathname.indexOf('/auth/') === 0) {
+            return;
+          }
           var raw = localStorage.getItem('USERTOUR@0.0.1/appearance');
-          var theme = raw ? JSON.parse(raw).value : 'system';
+          // Default light when unset — must match readStoredTheme() in
+          // src/contexts/theme-context.tsx.
+          var theme = raw ? JSON.parse(raw).value : 'light';
           var isDark =
             theme === 'dark' ||
             (theme === 'system' &&

@@ -110,6 +110,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
             avatarSize={themeSetting?.avatar?.size}
             avatarSrc={avatarUrl}
             avatarComponent={avatarComponent}
+            notchColor={themeSetting?.mainColor?.background}
             showAvatar={showAvatar}
             enabledBackdrop={currentStep.setting.enabledBackdrop}
             onBackdropClick={undefined}

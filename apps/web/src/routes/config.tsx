@@ -73,6 +73,13 @@ const config: RouteObject[] = [
         path: '/auth/registration/:registrationCode',
         lazy: lazyComponent(() => import('@/pages/authentication/registration'), 'Registration'),
       },
+      // Per-project SSO entry. The URL an admin distributes / wires into their
+      // IdP app. Session-agnostic: a logged-out employee starts SSO here; the
+      // page lists the project's active providers and hands off to the server.
+      {
+        path: '/auth/sso/:projectId',
+        lazy: lazyComponent(() => import('@/pages/authentication/sso'), 'SsoLogin'),
+      },
     ],
   },
 

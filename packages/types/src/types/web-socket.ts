@@ -116,6 +116,8 @@ export type ProjectConfig = {
   // How far back the audit log is viewable: -1 = unlimited, 0 = none, N = last N
   // days. Read-window only (rows are never deleted). Growth = 7, Business = -1.
   auditLogRetentionDays: number;
+  ssoOidc: boolean;
+  ssoSaml: boolean;
   planType: string;
 };
 

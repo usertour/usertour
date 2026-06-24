@@ -72,7 +72,11 @@ export class ProjectsService {
     }
   }
 
-  async updateProjectName(userId: string, projectId: string, name: string) {
+  async updateProject(
+    userId: string,
+    projectId: string,
+    data: { name?: string; logoUrl?: string | null },
+  ) {
     // Check if user has access to the project
     const userProject = await this.getUserProject(userId, projectId);
     if (!userProject) {
@@ -81,7 +85,12 @@ export class ProjectsService {
 
     return this.prisma.project.update({
       where: { id: projectId },
-      data: { name },
+      data: {
+        // Only the fields the caller actually sent are touched; an empty
+        // logoUrl clears the logo.
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl || null }),
+      },
     });
   }
 
@@ -170,6 +179,8 @@ export class ProjectsService {
       customCss: false,
       auditLogs: false,
       auditLogRetentionDays: 0,
+      ssoOidc: false,
+      ssoSaml: false,
       planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
@@ -232,6 +243,8 @@ export class ProjectsService {
       auditLogs: features.auditLogs,
       auditLogRetentionDays:
         features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
+      ssoOidc: features.ssoOidc,
+      ssoSaml: features.ssoSaml,
       planType,
     };
   }
@@ -276,6 +289,8 @@ export class ProjectsService {
       auditLogs: features.auditLogs,
       auditLogRetentionDays:
         features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
+      ssoOidc: features.ssoOidc,
+      ssoSaml: features.ssoSaml,
       planType,
     };
   }
@@ -291,6 +306,8 @@ export class ProjectsService {
       customCss: false,
       auditLogs: false,
       auditLogRetentionDays: 0,
+      ssoOidc: false,
+      ssoSaml: false,
       planType: PlanType.HOBBY,
     };
 
@@ -319,6 +336,8 @@ export class ProjectsService {
       auditLogs: features.auditLogs,
       auditLogRetentionDays:
         features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
+      ssoOidc: features.ssoOidc,
+      ssoSaml: features.ssoSaml,
       planType: subscription.planType,
     };
   }

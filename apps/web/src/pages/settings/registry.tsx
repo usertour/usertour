@@ -11,7 +11,9 @@ import {
   RiPlugLine,
   RiProjectorLine,
   RiPuzzleLine,
+  RiShieldKeyholeLine,
   RiTeamLine,
+  RiTerminalBoxLine,
 } from '@usertour/icons';
 import { Capability, type GlobalConfig } from '@usertour/types';
 
@@ -31,6 +33,7 @@ export type SettingsSectionKey =
   | 'general'
   | 'themes'
   | 'environments'
+  | 'installation'
   | 'attributes'
   | 'events'
   | 'localizations'
@@ -42,7 +45,8 @@ export type SettingsSectionKey =
   | 'personal-api-keys'
   | 'connected-apps'
   | 'api'
-  | 'integrations';
+  | 'integrations'
+  | 'sso';
 
 export type SettingsSectionGroup = 'general' | 'account';
 
@@ -134,6 +138,19 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     ),
   },
   {
+    key: 'installation',
+    title: 'Installation',
+    icon: <RiTerminalBoxLine className={ICON_CLASS} />,
+    capability: Capability.EnvironmentRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout on the muted surface, like sso / account.
+    surface: 'muted',
+    component: lazy(() =>
+      import('./installation').then((module) => ({ default: module.SettingsInstallation })),
+    ),
+  },
+  {
     key: 'attributes',
     title: 'Attributes',
     icon: <RiArticleLine className={ICON_CLASS} />,
@@ -188,6 +205,17 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     component: lazy(() =>
       import('./members').then((module) => ({ default: module.SettingsMemberList })),
     ),
+  },
+  {
+    key: 'sso',
+    title: 'Single Sign-On',
+    icon: <RiShieldKeyholeLine className={ICON_CLASS} />,
+    capability: Capability.SsoRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout (like general/account) — sits on the muted surface.
+    surface: 'muted',
+    component: lazy(() => import('./sso').then((module) => ({ default: module.SettingsSsoList }))),
   },
   {
     key: 'billing',

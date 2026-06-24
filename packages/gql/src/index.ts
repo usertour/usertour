@@ -17,3 +17,4 @@ export * from './gql/project';
 export * from './gql/integration';
 export * from './gql/admin';
 export * from './gql/audit';
+export * from './gql/sso';

@@ -202,6 +202,22 @@ const translations = {
       totalProjects_other: '{{count}} projects total',
     },
   },
+  components: {
+    upload: {
+      chooseFile: 'Choose file',
+      upload: 'Upload',
+      change: 'Change',
+      remove: 'Remove',
+      uploading: 'Uploading',
+      uploadedImage: 'Uploaded image',
+      invalidImageFile: 'Please select a valid image file.',
+      unsupportedImageType: 'Only PNG, JPG, or SVG files are supported.',
+      maxFileSizeExceeded: 'Max file size is {{mb}}MB.',
+      invalidFile: 'Please select a valid file',
+      uploadFailed: 'Failed to upload file',
+      generateUrlFailed: 'Unable to generate upload URL. Please try again later.',
+    },
+  },
   dataTable: {
     customizeColumns: 'Customize Columns',
     searchColumns: 'Search columns...',
@@ -239,11 +255,13 @@ const translations = {
         localizations: 'Localization',
         'audit-log': 'Audit log',
         team: 'Team',
+        sso: 'SSO',
         billing: 'Billing',
         subscription: 'Subscription',
         account: 'Profile',
         'personal-api-keys': 'Personal API keys',
         'connected-apps': 'Connected apps',
+        installation: 'Installation',
         api: 'API',
         integrations: 'Integrations',
       },
@@ -304,10 +322,17 @@ const translations = {
       },
     },
     project: {
-      title: 'Project Name',
+      title: 'Project',
       nameLabel: 'Project Name',
       namePlaceholder: 'Your project name',
       successToast: 'The project name has been successfully updated',
+      logo: {
+        title: 'Logo',
+        tooltip: 'Displayed on the SSO sign-in page for this project.',
+        description: 'PNG, JPG or SVG, up to 1MB.',
+        uploadedToast: 'Logo updated',
+        removedToast: 'Logo removed',
+      },
     },
     attributes: {
       title: 'Attributes',
@@ -489,14 +514,6 @@ const translations = {
       },
     },
     themes: {
-      upload: {
-        invalidImageFile: 'Please select a valid image file.',
-        unsupportedImageType: 'Only PNG, JPG, or SVG files are supported.',
-        maxFileSizeExceeded: 'Max file size is {{mb}}MB.',
-        invalidFile: 'Please select a valid file',
-        avatarUploadFailed: 'Failed to upload avatar',
-        generateUrlFailed: 'Unable to generate upload URL. Please try again later.',
-      },
       defaultBadge: 'Default',
       setDefaultMenuItem: 'Set as company default',
       setDefaultSuccess: 'The theme has been successfully set as default',
@@ -653,6 +670,7 @@ const translations = {
           content: 'Content',
           team: 'Team',
           features: 'Features',
+          security: 'Security',
           support: 'Support & service',
         },
         rows: {
@@ -682,6 +700,8 @@ const translations = {
           localization: 'Localization (coming soon)',
           integrations: 'Integrations (coming soon)',
           alerting: 'Alerting (coming soon)',
+          sso: 'Single Sign-On (SSO)',
+          auditLog: 'Audit log (coming soon)',
         },
       },
       banner: {
@@ -710,6 +730,123 @@ const translations = {
       uploadLicenseUpdating: 'Updating...',
       uploadLicenseEmpty: 'License cannot be empty',
       uploadLicenseSuccess: 'License updated',
+    },
+    sso: {
+      title: 'Single Sign-On',
+      headerBody:
+        'Let your team sign in through your own identity provider (Okta, Auth0, and more).',
+      newButton: 'Add provider',
+      empty: 'No SSO providers configured yet.',
+      editMenuItem: 'Edit',
+      deleteMenuItem: 'Delete',
+      deleteResource: 'SSO provider',
+      deleteSuccess: 'SSO provider deleted',
+      deleteFailure: 'Failed to delete SSO provider',
+      copyLoginLink: 'Copy login link',
+      loginLinkCopied: 'Login link copied',
+      loginUrlLabel: 'SSO login URL',
+      loginUrlHelp: 'Share this link with your team to sign in via SSO.',
+      loginUrlCopied: 'Login URL copied',
+      columns: {
+        name: 'Name',
+        issuer: 'Issuer',
+        status: 'Status',
+      },
+      status: {
+        active: 'Active',
+        inactive: 'Inactive',
+      },
+      roles: {
+        admin: 'Member (can edit)',
+        viewer: 'Viewer (read-only)',
+      },
+      settings: {
+        requireTitle: 'Require SSO',
+        requireDescription:
+          'When on, members must sign in through SSO. Password and social sign-in are blocked for everyone except project owners.',
+        requireNeedsProvider: 'Add and activate an SSO provider before requiring SSO.',
+        provisioningTitle: 'New user access',
+        provisioningDescription: 'How people who sign in through SSO join this project.',
+        autoProvisionLabel: 'Automatically add new users',
+        autoProvisionHelp:
+          'When on, anyone who signs in through SSO is added to this project automatically. When off, new users must be invited first; existing members and invited users always sign in.',
+        enabledToast: 'SSO is now required',
+        disabledToast: 'SSO is no longer required',
+        savedToast: 'Settings saved',
+        enableConfirmTitle: 'Require SSO?',
+        enableConfirmDescription:
+          'Members will only be able to sign in through SSO — password and social sign-in stop working for them. Anyone who joined with an email that is not in your identity provider will not be able to sign in until you add them there. Project owners keep password access as a fallback.',
+        enableConfirmAction: 'Require SSO',
+      },
+      locked: {
+        cloud: {
+          title: 'Single Sign-On is a Business feature',
+          description:
+            'Let your team sign in through your own identity provider on the Business plan.',
+          upgrade: 'Upgrade to Business',
+        },
+        selfHosted: {
+          title: 'Single Sign-On requires a license',
+          description: 'Activate a license on this instance to enable single sign-on.',
+        },
+      },
+      form: {
+        createTitle: 'Add OIDC provider',
+        editTitle: 'Edit OIDC provider',
+        create: 'Add provider',
+        idpSection: 'Identity provider',
+        spSection: 'Service provider',
+        nameLabel: 'Display name',
+        namePlaceholder: 'e.g. Okta',
+        issuerLabel: 'Issuer URL',
+        issuerHelp:
+          'The provider issuer; endpoints are discovered from its /.well-known/openid-configuration.',
+        clientIdLabel: 'Client ID',
+        clientSecretLabel: 'Client secret',
+        clientSecretKeep: 'Leave blank to keep the current secret',
+        clientSecretRequired: 'Client secret is required',
+        defaultRoleLabel: 'Default role for new users',
+        defaultRoleHelp: 'Role assigned when a user first signs in via SSO.',
+        allowedDomainsLabel: 'Allowed email domains (optional)',
+        allowedDomainsHelp:
+          'Comma-separated. New users are auto-provisioned only if their email domain matches. Leave blank to trust the IdP.',
+        callbackUrlLabel: 'Redirect / callback URL',
+        callbackUrlHelp: 'Paste this into your IdP application as the allowed redirect URI.',
+        callbackUrlApiUrlMissing:
+          "API_URL isn't set on your server, so this callback URL is incomplete. Set API_URL, then reload.",
+        callbackUrlCopied: 'Callback URL copied',
+      },
+    },
+    installation: {
+      title: 'Installation',
+      description: 'Install Usertour.js in your app to start showing content to your users.',
+      docsLink: 'Read the installation guide',
+      environmentLabel: 'Environment',
+      environmentHelp:
+        'The token below belongs to this environment. Each environment has its own token.',
+      tokenLabel: 'Token',
+      tokenHelp: 'The token for the selected environment, already filled into the code below.',
+      installLabel: 'Install the package',
+      copied: 'Copied to clipboard',
+      npm: {
+        tabLabel: 'Npm',
+        description: 'For apps built with a module bundler (Webpack, Rollup, etc.).',
+      },
+      html: {
+        tabLabel: 'HTML',
+        description:
+          'For other apps or Google Tag Manager — paste this before the closing </body> tag.',
+      },
+      placeholderNote:
+        'Replace USER_ID, USER_NAME, USER_EMAIL and USER_SIGNED_UP_AT with real values from the signed-in user. For public pages with no signed-in user, use usertour.identifyAnonymous() instead.',
+      verify: {
+        waitingTitle: 'Waiting for the first user',
+        waitingBody:
+          'Once usertour.js runs and identifies a user from this environment, it will show up here.',
+        installedTitle: 'Usertour.js is installed',
+        installedBody: 'We have received data from this environment.',
+        checkAgain: 'Check again',
+      },
     },
     api: {
       title: 'API keys for {{environment}}',
@@ -1130,6 +1267,17 @@ const translations = {
       signingIn: 'Logging in...',
       divider: 'Or log in with email',
     },
+    sso: {
+      title: 'Single sign-on',
+      titleNamed: 'Sign in to {{name}}',
+      description: 'Sign in with your organization identity provider.',
+      unavailable: 'Single sign-on is not available for this workspace.',
+      continueWith: 'Continue with {{name}}',
+      error: {
+        accessDenied: "You don't have access to this project yet. Ask an admin to invite you.",
+        failed: 'Single sign-on failed. Please try again.',
+      },
+    },
     signIn: {
       title: 'Log in to Usertour',
       submitButton: 'Log in',
@@ -1179,6 +1327,7 @@ const translations = {
       titleTemplate: '{{userName}} invites you to join {{projectName}}',
       signInDescription: 'Log in with your existing Usertour account to join the team.',
       signUpDescription: 'Create your Usertour account to join them.',
+      requireSsoNote: 'This team requires single sign-on to join.',
       joinButton: 'Join the team',
       expiredTitle: 'This invitation is no longer valid',
       expiredDescription: 'Ask the inviter to send a new invitation, or contact your team admin.',
@@ -3723,6 +3872,11 @@ const translations = {
   notFound: {
     description: "We couldn't find that page.",
     backHome: 'Back to home',
+  },
+  appError: {
+    updating: 'Updating to the latest version…',
+    description: 'Something went wrong. Reloading usually fixes it.',
+    reload: 'Reload',
   },
   error: {
     forbidden: 'You are not authorized to access this page.',

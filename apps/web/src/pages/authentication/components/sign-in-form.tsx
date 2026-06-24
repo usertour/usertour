@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ApolloError } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -56,6 +58,7 @@ export const SignInForm = ({
 }: SignInFormProps) => {
   const { t } = useTranslation('ui');
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { invoke } = useLoginMutation();
   const handleAuthResult = useAuthAfterLogin();
   const flags = resolveAuthFlags(globalConfig);
@@ -85,6 +88,15 @@ export const SignInForm = ({
       const result = await invoke(variables);
       handleAuthResult(result);
     } catch (error) {
+      // Force-SSO: the password was correct but this project requires SSO. Send
+      // the user to its SSO entry (projectId travels in the error extensions).
+      const extensions = (error as ApolloError)?.graphQLErrors?.[0]?.extensions as
+        | { code?: string; projectId?: string }
+        | undefined;
+      if (extensions?.code === 'E0051' && extensions.projectId) {
+        navigate(`/auth/sso/${extensions.projectId}`);
+        return;
+      }
       toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
   };

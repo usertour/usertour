@@ -46,6 +46,12 @@ const config: Config = {
     homepageUrl: process.env.APP_HOMEPAGE_URL || '',
     apiUrl: process.env.API_URL || '',
     docUrl: process.env.DOC_URL || '',
+    // The SSO OIDC redirect URI, defined once: override with SSO_CALLBACK_URL,
+    // otherwise derived from API_URL (fixed path). Both the openid-client
+    // redirect_uri and the value shown to admins (via globalConfig) read this,
+    // so the two can't drift.
+    ssoCallbackUrl:
+      process.env.SSO_CALLBACK_URL || `${process.env.API_URL || ''}/api/auth/sso/callback`,
   },
   aws: {
     s3: {
@@ -87,13 +93,15 @@ const config: Config = {
       enabled: process.env.GITHUB_AUTH_ENABLED === 'true',
       clientId: process.env.GITHUB_CLIENT_ID || 'test',
       clientSecret: process.env.GITHUB_CLIENT_SECRET || 'test',
-      callbackUrl: process.env.GITHUB_CALLBACK_URL || 'test',
+      callbackUrl:
+        process.env.GITHUB_CALLBACK_URL || `${process.env.API_URL || ''}/api/auth/github/callback`,
     },
     google: {
       enabled: process.env.GOOGLE_AUTH_ENABLED === 'true',
       clientId: process.env.GOOGLE_CLIENT_ID || 'test',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'test',
-      callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'test',
+      callbackUrl:
+        process.env.GOOGLE_CALLBACK_URL || `${process.env.API_URL || ''}/api/auth/google/callback`,
     },
   },
   content: {
@@ -105,6 +113,12 @@ const config: Config = {
   },
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
+    // Whether the server may make outbound requests to private / internal
+    // addresses. Secure by default (false → public targets only), independent
+    // of the deployment mode. A deployment whose IdP / webhook target lives on
+    // an internal network must opt in explicitly with
+    // ALLOW_PRIVATE_NETWORK_EGRESS=true.
+    allowPrivateNetworkEgress: process.env.ALLOW_PRIVATE_NETWORK_EGRESS === 'true',
   },
   integration: {
     salesforce: {

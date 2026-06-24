@@ -32,9 +32,12 @@ export const EntityDeleteFromSegment = (props: EntityDeleteFromSegmentProps) => 
     async (success: boolean) => {
       if (success) {
         await refetch();
+        // Clear the now-deleted ids out of the selection state so it doesn't
+        // linger across refetches.
+        table.resetRowSelection();
       }
     },
-    [refetch],
+    [refetch, table],
   );
 
   return (
