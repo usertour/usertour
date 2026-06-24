@@ -15,6 +15,7 @@ export const globalConfig = gql`
     globalConfig {
       isSelfHostedMode
       apiUrl
+      ssoCallbackUrl
       allowUserRegistration
       allowProjectLevelSubscriptionManagement
       needsSystemAdminSetup

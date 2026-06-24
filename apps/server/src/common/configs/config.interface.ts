@@ -44,6 +44,7 @@ export interface Config {
     homepageUrl: string;
     apiUrl: string;
     docUrl: string;
+    ssoCallbackUrl: string;
   };
   aws: {
     s3: {

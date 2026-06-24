@@ -45,8 +45,10 @@ export class SsoOidcService {
   // One fixed callback for every provider; the provider is resolved from the
   // signed tx cookie, so this is the single redirect URI to register at the IdP.
   buildCallbackUrl(): string {
-    const apiUrl = this.configService.get<string>('app.apiUrl') ?? '';
-    return `${apiUrl}/api/auth/sso/callback`;
+    // Single source of truth (app.ssoCallbackUrl: SSO_CALLBACK_URL override, else
+    // derived from API_URL) — same value globalConfig hands the admin UI, so what
+    // gets registered at the IdP matches the redirect_uri we send.
+    return this.configService.get<string>('app.ssoCallbackUrl') ?? '';
   }
 
   private async buildClient(provider: ProjectSSOIdentityProvider): Promise<Client> {

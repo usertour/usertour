@@ -8,6 +8,9 @@ export class GlobalConfig {
   @Field(() => String, { nullable: true })
   apiUrl: string;
 
+  @Field(() => String, { nullable: true })
+  ssoCallbackUrl: string;
+
   @Field(() => Boolean)
   allowUserRegistration: boolean;
 
