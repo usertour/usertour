@@ -628,6 +628,7 @@ type GlobalConfig {
   isSelfHostedMode: Boolean!
   needsSystemAdminSetup: Boolean!
   require2FA: Boolean!
+  ssoCallbackUrl: String
 }
 
 type InstallationStatus {

@@ -142,6 +142,7 @@ export class UtilitiesService {
     return {
       isSelfHostedMode,
       apiUrl,
+      ssoCallbackUrl: this.configService.get('app.ssoCallbackUrl'),
       allowUserRegistration,
       allowProjectLevelSubscriptionManagement,
       needsSystemAdminSetup,

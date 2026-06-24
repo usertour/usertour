@@ -99,15 +99,13 @@ export const SsoProviderDialog = (props: SsoProviderDialogProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, provider?.id]);
 
-  // One fixed redirect URI for every provider — known up front, so it can be
-  // shown (and copied) in the create form, not just on edit. Built from the
-  // server-authoritative apiUrl (globalConfig) so the copied value is exactly
-  // the redirect_uri the backend sends to the IdP (no VITE_API_URL drift).
-  // SSO depends on API_URL being set; without it the callback is just a bare
-  // path, so warn (and block copy) instead of handing over a broken URL.
-  const apiUrl = globalConfig?.apiUrl ?? '';
-  const apiUrlMissing = !apiUrl;
-  const callbackUrl = `${apiUrl}/api/auth/sso/callback`;
+  // Server-authoritative redirect URI: globalConfig.ssoCallbackUrl is the single
+  // source of truth (SSO_CALLBACK_URL override, else derived from API_URL) — the
+  // exact value the backend sends to the IdP, so the copied URL can't drift from
+  // it. It's incomplete (a bare path, no host) when API_URL is unset and no
+  // override is configured; in that case warn and block copy.
+  const callbackUrl = globalConfig?.ssoCallbackUrl ?? '';
+  const apiUrlMissing = !/^https?:\/\//i.test(callbackUrl);
 
   return (
     <SettingsDialogForm
