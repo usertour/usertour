@@ -44,6 +44,11 @@ export interface DataTableProps<TData> {
   // Callbacks
   onRowClick?: (row: TData) => void;
 
+  // Stable row id — keeps selection keyed by entity id rather than row index, so
+  // it survives data changes (e.g. deletes). Must match the getRowId of any
+  // other table instance sharing this rowSelection state.
+  getRowId?: (row: TData) => string;
+
   // Customization
   emptyMessage?: string;
   emptyDescription?: string;

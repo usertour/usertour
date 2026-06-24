@@ -30,6 +30,8 @@ export enum ScopeKind {
   Session = 'session',
   /** integration id / object-mapping id → integration.environmentId → project. */
   Integration = 'integration',
+  /** sso provider id → provider.projectId, else explicit projectId. */
+  Sso = 'sso',
 }
 
 /** A resolver returns the owning projectId for the request, or null if unresolvable. */
@@ -212,4 +214,5 @@ export const createScopeResolvers = (
   [ScopeKind.Segment]: fromSegment(services),
   [ScopeKind.Session]: fromSession(services),
   [ScopeKind.Integration]: fromIntegration(services),
+  [ScopeKind.Sso]: projectLevelEntity('projectSSOIdentityProvider', services),
 });

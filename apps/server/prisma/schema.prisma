@@ -180,6 +180,71 @@ model Project {
   invites        Invite[]
   contents       Content[]
   segments       Segment[]
+  ssoProviders   ProjectSSOIdentityProvider[]
+  ssoSettings    ProjectSsoSettings?
+}
+
+/// Project-level SSO settings: enforcement (requireSso) and JIT provisioning
+/// (defaultRole, allowedDomains). One row per project, lazily created on first
+/// write; absent row means defaults (no enforcement, ADMIN, trust the IdP).
+/// Provisioning lives here — not per-provider — because it is a project policy
+/// that should not differ between a project's connections.
+model ProjectSsoSettings {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  project   Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId String   @unique
+  /// When true, members of this project must sign in through an SSO provider;
+  /// password/social login is rejected for everyone except the project OWNER
+  /// and system admins (break-glass so an IdP outage cannot lock the project).
+  requireSso     Boolean  @default(false)
+  /// When true, a brand-new email that authenticates through this project's SSO
+  /// is auto-created and joined (with defaultRole, gated by allowedDomains).
+  /// When false (default) SSO never grants new team access on its own — the
+  /// person must already be a member or hold an invite. Existing members and
+  /// invited users sign in regardless of this flag.
+  autoProvision  Boolean  @default(false)
+  /// Role assigned to auto-provisioned users (autoProvision only). Restricted to
+  /// ADMIN or VIEWER at the API layer (OWNER/USER are rejected).
+  defaultRole    Role     @default(ADMIN)
+  /// Optional unverified email-domain allow-list for auto-provisioning. Empty =
+  /// trust the IdP. Only consulted when autoProvision is on.
+  allowedDomains String[] @default([])
+}
+
+/// Per-project SSO identity provider (OIDC in v1; SAML reserved). Configured
+/// at runtime by a project owner; gated by the project's ssoOidc/ssoSaml plan
+/// feature. One project can hold several named connections. Provisioning policy
+/// (default role, allowed domains) lives on ProjectSsoSettings, not here.
+model ProjectSSOIdentityProvider {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  project   Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId String
+  /// OIDC | SAML — only OIDC is used in v1
+  type      SsoProviderType @default(OIDC)
+  /// Admin-named connection, e.g. "Okta", "Azure Entra ID"
+  name      String
+  /// active | inactive | error — live login still re-checks plan entitlement
+  status    String   @default("active")
+  // --- OIDC ---
+  issuer           String
+  clientId         String
+  clientSecret     String
+  /// Optional explicit endpoint overrides; when absent they are discovered
+  /// from the issuer's /.well-known/openid-configuration.
+  authorizationUrl String?
+  tokenUrl         String?
+  userInfoUrl      String?
+
+  @@index([projectId])
+}
+
+enum SsoProviderType {
+  OIDC
+  SAML
 }
 
 model UserOnProject {

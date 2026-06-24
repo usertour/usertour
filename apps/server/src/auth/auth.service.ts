@@ -8,7 +8,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { AcceptInviteInput } from './dto/accept-invite.input';
@@ -33,6 +33,8 @@ import {
   OAuthOnlyAccountError,
   ParamsError,
   PasswordIncorrect,
+  SsoAccessDeniedError,
+  SsoRequiredError,
   TooManyLoginAttemptsError,
   UnknownError,
   UserDisabledError,
@@ -43,6 +45,7 @@ import {
   WrongInviteAccountError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
+import { ProjectsService } from '@/projects/projects.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
@@ -63,6 +66,15 @@ const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
 const PASSWORD_LOCKOUT_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const PASSWORD_MAX_FAILED_ATTEMPTS = 10;
 const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
+
+// Project-level SSO provisioning policy resolved by the controller from
+// ProjectSsoSettings and handed to ssoValidate.
+interface SsoProvisionContext {
+  projectId: string;
+  autoProvision: boolean;
+  defaultRole: string;
+  allowedDomains: string[];
+}
 const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
 
 @Injectable()
@@ -80,6 +92,7 @@ export class AuthService implements OnModuleInit {
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
     private readonly teamService: TeamService,
+    private readonly projectsService: ProjectsService,
     private readonly redisService: RedisService,
     private readonly twoFactorService: TwoFactorService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
@@ -243,8 +256,9 @@ export class AuthService implements OnModuleInit {
     providerAccountId: string,
     accessToken: string,
     refreshToken: string,
+    client: Prisma.TransactionClient = this.prisma,
   ) {
-    await this.prisma.account.upsert({
+    await client.account.upsert({
       where: { provider_providerAccountId: { provider, providerAccountId } },
       create: { type: 'oauth', userId, provider, providerAccountId, accessToken, refreshToken },
       update: { accessToken, refreshToken },
@@ -392,6 +406,173 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  /**
+   * Resolve the Usertour user for a project-level SSO (OIDC) login.
+   *
+   * Unlike oauthValidate (global social login), this is scoped to one project
+   * and enforces the SSO safety rule: an existing global user is only admitted
+   * if they are ALREADY a member of the target project. The IdP for project X
+   * cannot mint a session for a user who does not belong to X — that would be
+   * cross-tenant account takeover, since User.email is globally unique.
+   *
+   *   - existing SSO account (provider = oidc:<providerId>)  → return it
+   *   - existing global user, member of the project          → link + return
+   *   - existing global user / new email, with a pending invite → consume + join
+   *   - existing global user, NOT a member, no invite        → reject
+   *   - brand-new email, no invite, autoProvision on (domain-gated) → JIT
+   *   - brand-new email, no invite, autoProvision off        → reject
+   */
+  async ssoValidate(
+    profile: {
+      provider: string;
+      id: string;
+      emails: { value: string; verified?: boolean | string }[];
+      displayName?: string;
+    },
+    ssoContext: SsoProvisionContext,
+  ) {
+    const { provider, id, emails, displayName } = profile;
+
+    // Existing identity on this exact provider connection. Being linked does NOT
+    // by itself grant access — a user removed from the project still has this
+    // account row — so re-check current project access before letting them in.
+    const account = await this.prisma.account.findUnique({
+      where: { provider_providerAccountId: { provider, providerAccountId: id } },
+    });
+    if (account) {
+      const user = await this.prisma.user.findUnique({ where: { id: account.userId } });
+      if (user) {
+        return await this.ensureSsoProjectAccess(user, ssoContext, provider, id);
+      }
+    }
+
+    if (!emails?.length) {
+      throw new OAuthError();
+    }
+    const email = emails[0].value.toLowerCase().trim();
+    // Reject when the IdP explicitly says the mailbox is unverified.
+    const verifiedFlag = emails[0].verified;
+    if (verifiedFlag === false || verifiedFlag === 'false') {
+      this.logger.warn(`SSO email not verified for ${provider} email=${email}`);
+      throw new OAuthError();
+    }
+
+    // Safe linking: an already-registered global user may only be linked if
+    // they already belong to this project (or hold an invite). Otherwise this
+    // IdP has no standing to authenticate them into it.
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return await this.ensureSsoProjectAccess(existingUser, ssoContext, provider, id);
+    }
+
+    // Brand-new email (no existing global user). The same join decision applies
+    // as for existing non-members — invite / auto-provision / reject — only here
+    // the user is created first.
+    const invite = await this.teamService.getValidInviteForEmailAndProject(
+      email,
+      ssoContext.projectId,
+    );
+    const role = this.resolveSsoJoinRole(email, invite, ssoContext);
+
+    return await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: displayName || email,
+          email,
+          emailVerified: new Date(),
+          isSystemAdmin: false,
+        },
+      });
+      await tx.account.create({
+        data: { type: 'oauth', userId: newUser.id, provider, providerAccountId: id },
+      });
+      // Consume the invite before assignUserToProject so its seat re-check
+      // does not count this very invite as still pending.
+      if (invite) {
+        await this.teamService.deleteInvite(tx, invite.code);
+      }
+      // assignUserToProject re-checks the seat limit inside the transaction.
+      await this.teamService.assignUserToProject(tx, newUser.id, ssoContext.projectId, role);
+      return newUser;
+    });
+  }
+
+  // An existing usertour user (resolved by linked account or by email) must have
+  // CURRENT access to the project they're signing in to. Member → link and let
+  // in. Otherwise the same join decision as a brand-new email applies (invite /
+  // auto-provision / reject) — so a removed user can't keep getting in just
+  // because their SSO identity was linked once, but auto-provision still re-adds
+  // them when the project opted in.
+  private async ensureSsoProjectAccess(
+    user: User,
+    ssoContext: SsoProvisionContext,
+    provider: string,
+    providerAccountId: string,
+  ): Promise<User> {
+    const membership = await this.prisma.userOnProject.findFirst({
+      where: { projectId: ssoContext.projectId, userId: user.id },
+    });
+    if (membership) {
+      await this.linkOAuthAccount(user.id, provider, providerAccountId, '', '');
+      return user;
+    }
+
+    const invite = await this.teamService.getValidInviteForEmailAndProject(
+      user.email,
+      ssoContext.projectId,
+    );
+    const role = this.resolveSsoJoinRole(user.email, invite, ssoContext);
+
+    await this.prisma.$transaction(async (tx) => {
+      // Delete the invite before assignUserToProject so its seat re-check does
+      // not count this very invite as still pending.
+      if (invite) {
+        await this.teamService.deleteInvite(tx, invite.code);
+      }
+      // assignUserToProject only marks the new row active without deactivating
+      // the others, so clear any prior active project first — otherwise an
+      // existing user ends up with multiple active rows and lands unpredictably.
+      await this.teamService.cancelActiveProject(tx, user.id);
+      await this.teamService.assignUserToProject(tx, user.id, ssoContext.projectId, role);
+      await this.linkOAuthAccount(user.id, provider, providerAccountId, '', '', tx);
+    });
+    return user;
+  }
+
+  // Decide the role a non-member joins with, or reject. An invite wins (its
+  // role). Otherwise auto-provisioning must be on and the email-domain allow-list
+  // (if any) must match. Shared by the existing-user and brand-new-email paths so
+  // auto-provision applies consistently to both.
+  private resolveSsoJoinRole(
+    email: string,
+    invite: { role: Role } | null,
+    ssoContext: SsoProvisionContext,
+  ): string {
+    if (invite) {
+      return invite.role;
+    }
+    if (!ssoContext.autoProvision) {
+      this.logger.warn(
+        `SSO rejected: ${email} has no invite and auto-provisioning is off for project ${ssoContext.projectId}`,
+      );
+      throw new SsoAccessDeniedError();
+    }
+    if (!this.isEmailDomainAllowed(email, ssoContext.allowedDomains)) {
+      this.logger.warn(`SSO rejected: domain of ${email} not in allow-list`);
+      throw new SsoAccessDeniedError();
+    }
+    return ssoContext.defaultRole;
+  }
+
+  // Empty allow-list = trust the IdP; otherwise the email's domain must match.
+  private isEmailDomainAllowed(email: string, allowedDomains: string[]): boolean {
+    if (allowedDomains.length === 0) {
+      return true;
+    }
+    const domain = email.split('@')[1];
+    return !!domain && allowedDomains.includes(domain.toLowerCase());
+  }
+
   private async generateRefreshToken(userId: string): Promise<string> {
     const jti = randomBytes(32).toString('hex');
 
@@ -478,13 +659,21 @@ export class AuthService implements OnModuleInit {
    *   - otherwise                  → issue real access/refresh tokens
    * Callers (login/signup/oauth) must NOT setAuthCookie when kind === 'challenge'.
    */
-  async issueTokensOrChallenge(userId: string): Promise<AuthResult> {
+  async issueTokensOrChallenge(userId: string, viaSso = false): Promise<AuthResult> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, twoFactorEnabled: true },
+      select: { id: true, twoFactorEnabled: true, isSystemAdmin: true },
     });
     if (!user) {
       throw new AccountNotFoundError();
+    }
+
+    // Force-SSO: a non-SSO sign-in (password / social / magic-link) is rejected
+    // when the user is a non-owner member of any project that enforces SSO.
+    // System admins and project owners are exempt — break-glass so an IdP
+    // outage cannot lock out the people who can fix it.
+    if (!viaSso && !user.isSystemAdmin) {
+      await this.assertNotSsoLocked(userId);
     }
 
     // If 2FA is unavailable (self-host + missing/invalid license, considering
@@ -510,6 +699,32 @@ export class AuthService implements OnModuleInit {
 
     const tokens = await this.login(userId);
     return { kind: 'tokens', tokens };
+  }
+
+  // Throws SsoRequiredError when the user is a non-owner member of any project
+  // that enforces SSO *and can still use it*. The indexed lookup returns nothing
+  // for the vast majority of users (so no entitlement work runs); callers skip
+  // this for system admins (see issueTokensOrChallenge). Carries the enforcing
+  // project's id so the client can route to its SSO entry.
+  private async assertNotSsoLocked(userId: string): Promise<void> {
+    const enforced = await this.prisma.userOnProject.findMany({
+      where: {
+        userId,
+        role: { not: Role.OWNER },
+        project: { ssoSettings: { is: { requireSso: true } } },
+      },
+      select: { projectId: true },
+    });
+    for (const { projectId } of enforced) {
+      // Mirror the 2FA "license lapse -> drop the gate" rule: if the project can
+      // no longer use SSO (entitlement lapsed), its enforcement is inert.
+      // Otherwise the member is locked out entirely — blocked here AND rejected
+      // by the SSO flow's own entitlement check.
+      const config = await this.projectsService.getProjectConfig(projectId);
+      if (config.ssoOidc) {
+        throw new SsoRequiredError(projectId);
+      }
+    }
   }
 
   // Revoke a single session's refresh token (per-device logout). The jti is

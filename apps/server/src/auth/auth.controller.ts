@@ -8,7 +8,7 @@ import { UserEntity } from '../common/decorators/user.decorator';
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 import { User } from '@/users/models/user.model';
-import { AuthenticationExpiredError, OAuthError } from '@/common/errors';
+import { AuthenticationExpiredError, OAuthError, SsoRequiredError } from '@/common/errors';
 import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
 
 @Controller('api/auth')
@@ -66,8 +66,20 @@ export class AuthController {
    * with a short-lived challenge token in the URL.
    */
   private async finishOauth(userId: string, res: Response) {
-    const result = await this.auth.issueTokensOrChallenge(userId);
     const homepage = this.configService.get<string>('app.homepageUrl') || '';
+    let result: Awaited<ReturnType<AuthService['issueTokensOrChallenge']>>;
+    try {
+      result = await this.auth.issueTokensOrChallenge(userId);
+    } catch (error) {
+      // Force-SSO: this account must sign in through SSO. Route the user to the
+      // enforcing project's SSO entry (projectId travels in the error details)
+      // instead of failing the social login with a generic OAuth error.
+      if (error instanceof SsoRequiredError && typeof error.details?.projectId === 'string') {
+        res.redirect(`${homepage}/auth/sso/${error.details.projectId}`);
+        return;
+      }
+      throw error;
+    }
     if (result.kind === 'tokens') {
       // Land at SPA root and let LandingRedirect pick the user's env.
       this.auth.setAuthCookie(res, result.tokens).redirect(homepage || '/');

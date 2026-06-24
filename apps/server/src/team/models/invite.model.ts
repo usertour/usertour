@@ -36,6 +36,13 @@ export class Invite extends BaseModel {
   @Field(() => Boolean, { nullable: false })
   recipientExists: boolean;
 
+  /**
+   * Whether the invite's project enforces SSO. The invite page uses it to show
+   * only the SSO option (password/social would be force-blocked after joining).
+   */
+  @Field(() => Boolean, { nullable: false })
+  requireSso: boolean;
+
   @Field(() => User, { nullable: true })
   user?: User;
 

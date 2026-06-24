@@ -20,3 +20,17 @@
   width: 1.25rem;
   height: 1.25rem;
 }
+
+/* shiki dual theme: GitHub light by default, GitHub dark under .dark */
+.shiki {
+  background-color: var(--shiki-light-bg);
+}
+.shiki span {
+  color: var(--shiki-light);
+}
+.dark .shiki {
+  background-color: var(--shiki-dark-bg);
+}
+.dark .shiki span {
+  color: var(--shiki-dark);
+}

@@ -55,6 +55,7 @@ export * from './primitives/use-toast';
 
 export * from './composites/combobox';
 export * from './composites/input-group';
+export { CodeEditor, type CodeEditorLanguage } from './composites/code-editor';
 // Composition UI primitives — twice-composed shadcn-style components,
 // no business knowledge, freely depended on by any consumer.
 export { ComboboxSelect } from './composites/combobox-select';

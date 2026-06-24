@@ -66,10 +66,12 @@ export const getInvite = gql`
       email
       role
       recipientExists
+      requireSso
       user {
         name
       }
       project {
+        id
         name
       }
     }

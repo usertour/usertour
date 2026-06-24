@@ -105,6 +105,12 @@ const config: Config = {
   },
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
+    // Whether the server may make outbound requests to private / internal
+    // addresses. Secure by default (false → public targets only), independent
+    // of the deployment mode. A deployment whose IdP / webhook target lives on
+    // an internal network must opt in explicitly with
+    // ALLOW_PRIVATE_NETWORK_EGRESS=true.
+    allowPrivateNetworkEgress: process.env.ALLOW_PRIVATE_NETWORK_EGRESS === 'true',
   },
   integration: {
     salesforce: {

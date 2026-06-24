@@ -30,12 +30,13 @@ export class ProjectsResolver {
 
   @Mutation(() => Project)
   @RequirePermission({ capability: Capability.ProjectManage, scope: ScopeKind.Project })
-  async updateProjectName(
+  async updateProject(
     @UserEntity() user: User,
     @Args('projectId') projectId: string,
-    @Args('name') name: string,
+    @Args('name', { nullable: true }) name?: string,
+    @Args('logoUrl', { nullable: true }) logoUrl?: string,
   ) {
-    return this.projectsService.updateProjectName(user.id, projectId, name);
+    return this.projectsService.updateProject(user.id, projectId, { name, logoUrl });
   }
 
   @Mutation(() => Project)

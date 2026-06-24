@@ -136,6 +136,57 @@ Table Project {
   invites Invite [not null]
   contents Content [not null]
   segments Segment [not null]
+  ssoProviders ProjectSSOIdentityProvider [not null]
+  ssoSettings ProjectSsoSettings
+}
+
+Table ProjectSsoSettings {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  project Project [not null]
+  projectId String [unique, not null]
+  requireSso Boolean [not null, default: false, note: 'When true, members of this project must sign in through an SSO provider;
+password/social login is rejected for everyone except the project OWNER
+and system admins (break-glass so an IdP outage cannot lock the project).']
+  autoProvision Boolean [not null, default: false, note: 'When true, a brand-new email that authenticates through this project\'s SSO
+is auto-created and joined (with defaultRole, gated by allowedDomains).
+When false (default) SSO never grants new team access on its own — the
+person must already be a member or hold an invite. Existing members and
+invited users sign in regardless of this flag.']
+  defaultRole Role [not null, default: 'ADMIN', note: 'Role assigned to auto-provisioned users (autoProvision only). Restricted to
+ADMIN or VIEWER at the API layer (OWNER/USER are rejected).']
+  allowedDomains String[] [not null, note: 'Optional unverified email-domain allow-list for auto-provisioning. Empty =
+trust the IdP. Only consulted when autoProvision is on.']
+
+  Note: 'Project-level SSO settings: enforcement (requireSso) and JIT provisioning
+(defaultRole, allowedDomains). One row per project, lazily created on first
+write; absent row means defaults (no enforcement, ADMIN, trust the IdP).
+Provisioning lives here — not per-provider — because it is a project policy
+that should not differ between a project\'s connections.'
+}
+
+Table ProjectSSOIdentityProvider {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  project Project [not null]
+  projectId String [not null]
+  type SsoProviderType [not null, default: 'OIDC', note: 'OIDC | SAML — only OIDC is used in v1']
+  name String [not null, note: 'Admin-named connection, e.g. "Okta", "Azure Entra ID"']
+  status String [not null, default: 'active', note: 'active | inactive | error — live login still re-checks plan entitlement']
+  issuer String [not null]
+  clientId String [not null]
+  clientSecret String [not null]
+  authorizationUrl String [note: 'Optional explicit endpoint overrides; when absent they are discovered
+from the issuer\'s /.well-known/openid-configuration.']
+  tokenUrl String
+  userInfoUrl String
+
+  Note: 'Per-project SSO identity provider (OIDC in v1; SAML reserved). Configured
+at runtime by a project owner; gated by the project\'s ssoOidc/ssoSaml plan
+feature. One project can hold several named connections. Provisioning policy
+(default role, allowed domains) lives on ProjectSsoSettings, not here.'
 }
 
 Table UserOnProject {
@@ -677,6 +728,11 @@ Table IntegrationLog {
   data Json [note: 'data of integration log']
 }
 
+Enum SsoProviderType {
+  OIDC
+  SAML
+}
+
 Enum Role {
   ADMIN
   VIEWER
@@ -693,6 +749,10 @@ Ref: Invite.userId > User.id
 Ref: Invite.projectId > Project.id
 
 Ref: Code.userId > User.id
+
+Ref: ProjectSsoSettings.projectId - Project.id [delete: Cascade]
+
+Ref: ProjectSSOIdentityProvider.projectId > Project.id [delete: Cascade]
 
 Ref: UserOnProject.projectId > Project.id [delete: Cascade]
 
