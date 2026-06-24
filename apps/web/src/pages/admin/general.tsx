@@ -2,8 +2,16 @@ import {
   useAdminInstanceSettingsQuery,
   useUpdateInstanceGeneralSettingsMutation,
 } from '@usertour/hooks';
-import { useToast, Separator, Button, Input, Skeleton, Switch } from '@usertour/ui';
-import { SettingsContent } from '@/pages/settings/components/content';
+import {
+  useToast,
+  Separator,
+  Button,
+  Input,
+  Skeleton,
+  Switch,
+  SettingsCard,
+  SettingsCardStack,
+} from '@usertour/ui';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
@@ -63,90 +71,99 @@ export const AdminGeneralPage = () => {
   };
 
   return (
-    <SettingsContent>
-      <div className="space-y-2">
-        <h3 className="text-xl font-medium tracking-tight">{t('admin.general.title')}</h3>
-        <p className="text-sm text-muted-foreground">{t('admin.general.description')}</p>
-      </div>
-      <Separator />
-
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <div className="text-sm font-medium">{t('admin.common.instanceId')}</div>
-          <div className="text-sm text-muted-foreground">
-            {t('admin.general.instanceIdDescription')}
+    <SettingsCardStack>
+      <SettingsCard>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex h-10 flex-row items-center">
+              <h3 className="text-xl font-medium tracking-tight">{t('admin.general.title')}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">{t('admin.general.description')}</p>
           </div>
-          <div className="flex gap-4">
-            {loading ? (
-              <Skeleton className="h-10 flex-1" />
-            ) : (
-              <Input value={data?.instanceId || ''} disabled className="flex-1" />
-            )}
-            <Button variant="secondary" onClick={handleCopyInstanceId} disabled={loading}>
-              <CopyIcon className="mr-2 h-4 w-4" />
-              {t('admin.common.copy')}
-            </Button>
-          </div>
-        </div>
+          <Separator />
 
-        <div className="space-y-2">
-          <div className="text-sm font-medium">{t('admin.general.instanceName')}</div>
-          <div className="text-sm text-muted-foreground">
-            {t('admin.general.instanceNameDescription')}
-          </div>
-          {loading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : (
-            <Input
-              placeholder={t('admin.general.instanceNamePlaceholder')}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          )}
-        </div>
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <div className="text-sm font-medium">{t('admin.common.instanceId')}</div>
+              <div className="text-sm text-muted-foreground">
+                {t('admin.general.instanceIdDescription')}
+              </div>
+              <div className="flex gap-4">
+                {loading ? (
+                  <Skeleton className="h-10 flex-1" />
+                ) : (
+                  <Input value={data?.instanceId || ''} disabled className="flex-1" />
+                )}
+                <Button variant="secondary" onClick={handleCopyInstanceId} disabled={loading}>
+                  <CopyIcon className="mr-2 h-4 w-4" />
+                  {t('admin.common.copy')}
+                </Button>
+              </div>
+            </div>
 
-        <div className="space-y-2">
-          <div className="text-sm font-medium">{t('admin.general.contactEmail')}</div>
-          <div className="text-sm text-muted-foreground">
-            {t('admin.general.contactEmailDescription')}
-          </div>
-          {loading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : (
-            <Input
-              placeholder={t('admin.general.contactEmailPlaceholder')}
-              type="email"
-              value={contactEmail}
-              onChange={(event) => setContactEmail(event.target.value)}
-            />
-          )}
-        </div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">{t('admin.general.instanceName')}</div>
+              <div className="text-sm text-muted-foreground">
+                {t('admin.general.instanceNameDescription')}
+              </div>
+              {loading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Input
+                  placeholder={t('admin.general.instanceNamePlaceholder')}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              )}
+            </div>
 
-        <div className="flex items-start justify-between gap-6 rounded-xl border border-border/60 p-5">
-          <div className="space-y-1">
-            <div className="text-sm font-medium">{t('admin.general.allowProjectSubscription')}</div>
-            <div className="text-sm text-muted-foreground">
-              {t('admin.general.allowProjectSubscriptionDescription')}
+            <div className="space-y-2">
+              <div className="text-sm font-medium">{t('admin.general.contactEmail')}</div>
+              <div className="text-sm text-muted-foreground">
+                {t('admin.general.contactEmailDescription')}
+              </div>
+              {loading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Input
+                  placeholder={t('admin.general.contactEmailPlaceholder')}
+                  type="email"
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                />
+              )}
+            </div>
+
+            {/* Toggle row inside the card — no standalone bordered panel. */}
+            <div className="flex items-start justify-between gap-6">
+              <div className="space-y-1">
+                <div className="text-sm font-medium">
+                  {t('admin.general.allowProjectSubscription')}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t('admin.general.allowProjectSubscriptionDescription')}
+                </div>
+              </div>
+              {loading ? (
+                <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
+              ) : (
+                <Switch
+                  checked={allowProjectLevelSubscriptionManagement}
+                  onCheckedChange={setAllowProjectLevelSubscriptionManagement}
+                  className="shrink-0 data-[state=unchecked]:bg-input"
+                />
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={loading || updating}>
+                {t('admin.common.saveChanges')}
+              </Button>
             </div>
           </div>
-          {loading ? (
-            <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
-          ) : (
-            <Switch
-              checked={allowProjectLevelSubscriptionManagement}
-              onCheckedChange={setAllowProjectLevelSubscriptionManagement}
-              className="shrink-0 data-[state=unchecked]:bg-input"
-            />
-          )}
         </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={loading || updating}>
-            {t('admin.common.saveChanges')}
-          </Button>
-        </div>
-      </div>
-    </SettingsContent>
+      </SettingsCard>
+    </SettingsCardStack>
   );
 };
 

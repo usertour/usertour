@@ -162,6 +162,10 @@ export function EntityDataTable<TRow extends EntityRow>({
     pageCount,
     manualPagination: true,
     state: tableState,
+    // Key row selection by entity id, not react-table's default row index —
+    // otherwise deleting rows shifts the remaining ones up and the index-based
+    // selection ends up pointing at different items.
+    getRowId: (row) => row.id,
     enableRowSelection: !isViewOnly,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -195,6 +199,7 @@ export function EntityDataTable<TRow extends EntityRow>({
       <DataTable
         data={contents}
         columns={tableColumns}
+        getRowId={(row) => row.id}
         loading={loading}
         pageCount={pageCount}
         pagination={pagination}

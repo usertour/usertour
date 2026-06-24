@@ -528,6 +528,16 @@ input CreateLocalizationInput {
   projectId: String!
 }
 
+input CreateOidcSsoProviderInput {
+  authorizationUrl: String
+  clientId: String!
+  clientSecret: String!
+  issuer: String!
+  name: String!
+  tokenUrl: String
+  userInfoUrl: String
+}
+
 input CreateOwnedProjectInput {
   name: String!
 }
@@ -618,6 +628,12 @@ type GlobalConfig {
   isSelfHostedMode: Boolean!
   needsSystemAdminSetup: Boolean!
   require2FA: Boolean!
+  ssoCallbackUrl: String
+}
+
+type InstallationStatus {
+  installed: Boolean!
+  userCount: Int!
 }
 
 type InstanceLicenseInfo {
@@ -717,6 +733,7 @@ type Invite {
   project: Project
   projectId: String
   recipientExists: Boolean!
+  requireSso: Boolean!
   role: String!
 
   """Identifies the date and time when the object was last updated."""
@@ -812,6 +829,7 @@ type Mutation {
   createEvent(data: CreateEventInput!): Events!
   createLocalization(data: CreateLocalizationInput!): Localization!
   createMagicLink(data: MagicLinkInput!): Register!
+  createOidcSsoProvider(input: CreateOidcSsoProviderInput!, projectId: String!): SsoProviderModel!
   createOwnedProject(data: CreateOwnedProjectInput!): Project!
   createPortalSession(projectId: String!): String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
@@ -830,6 +848,7 @@ type Mutation {
   deleteLocalization(data: DeleteLocalizationInput!): Localization!
   deleteSegment(data: DeleteSegment!): Common!
   deleteSession(sessionId: String!): Boolean!
+  deleteSsoProvider(id: String!): Boolean!
   deleteTheme(data: DeleteThemeInput!): Theme!
   disableTwoFactor(data: TwoFactorStepUpInput!): Boolean!
   disconnectIntegration(environmentId: String!, provider: String!): Integration!
@@ -864,10 +883,12 @@ type Mutation {
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
+  updateProject(logoUrl: String, name: String, projectId: String!): Project!
   updateProjectLicense(license: String!, projectId: String!): Project!
-  updateProjectName(name: String!, projectId: String!): Project!
+  updateProjectSsoSettings(input: UpdateProjectSsoSettingsInput!, projectId: String!): ProjectSsoSettingsModel!
   updateProjectUsesInstanceLicense(enabled: Boolean!, projectId: String!): Boolean!
   updateSegment(data: UpdateSegment!): Segment!
+  updateSsoProvider(id: String!, input: UpdateSsoProviderInput!): SsoProviderModel!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
   updateUserDisabled(disabled: Boolean!, userId: String!): User!
@@ -917,6 +938,28 @@ type ProjectConfigModel {
   customCss: Boolean!
   planType: String!
   removeBranding: Boolean!
+  ssoOidc: Boolean!
+  ssoSaml: Boolean!
+}
+
+type ProjectSsoSettingsModel {
+  allowedDomains: [String!]!
+  autoProvision: Boolean!
+  defaultRole: Role!
+  projectId: String!
+  requireSso: Boolean!
+}
+
+type PublicSsoLoginModel {
+  logoUrl: String
+  name: String!
+  providers: [PublicSsoProviderModel!]!
+}
+
+type PublicSsoProviderModel {
+  id: ID!
+  name: String!
+  type: SsoProviderType!
 }
 
 type Query {
@@ -936,6 +979,9 @@ type Query {
   getInvites(projectId: String!): [Invite!]!
   getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
+  getProjectSsoLogin(projectId: String!): PublicSsoLoginModel!
+  getProjectSsoProviders(projectId: String!): [PublicSsoProviderModel!]!
+  getProjectSsoSettings(projectId: String!): ProjectSsoSettingsModel!
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
@@ -953,6 +999,7 @@ type Query {
   listEvents(projectId: String!): [Events!]!
   listIntegrations(environmentId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
+  listProjectSsoProviders(projectId: String!): [SsoProviderModel!]!
   listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
@@ -971,6 +1018,7 @@ type Query {
   queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
   queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
   userEnvironments(projectId: String!): [Environment!]!
+  verifyInstallation(environmentId: String!): InstallationStatus!
 }
 
 type Register {
@@ -1083,6 +1131,31 @@ input SignupInput {
   companyName: String!
   password: String!
   userName: String!
+}
+
+type SsoProviderModel {
+  authorizationUrl: String
+  clientId: String!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  issuer: String!
+  name: String!
+  projectId: String!
+  status: String!
+  tokenUrl: String
+  type: SsoProviderType!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+  userInfoUrl: String
+}
+
+"""SSO identity provider protocol"""
+enum SsoProviderType {
+  OIDC
+  SAML
 }
 
 type Step {
@@ -1282,11 +1355,29 @@ input UpdateLocalizationInput {
   name: String
 }
 
+input UpdateProjectSsoSettingsInput {
+  allowedDomains: [String!]
+  autoProvision: Boolean
+  defaultRole: Role
+  requireSso: Boolean
+}
+
 input UpdateSegment {
   columns: JSON
   data: JSON
   id: ID!
   name: String
+}
+
+input UpdateSsoProviderInput {
+  authorizationUrl: String
+  clientId: String
+  clientSecret: String
+  issuer: String
+  name: String
+  status: String
+  tokenUrl: String
+  userInfoUrl: String
 }
 
 input UpdateThemeInput {

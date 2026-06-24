@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { useGetInviteQuery, useGlobalConfigQuery } from '@usertour/hooks';
+import {
+  useGetInviteQuery,
+  useGetProjectSsoProvidersQuery,
+  useGlobalConfigQuery,
+} from '@usertour/hooks';
 import { NotFound } from '@/routes/not-found';
 import { AuthCard } from './components/auth-card';
+import { SsoProviderButtons } from './components/sso-provider-buttons';
 import { SignInForm } from './components/sign-in-form';
 import { SignUpForm } from './components/registration-form';
 import { ResetPasswordForm } from './components/reset-password-form';
@@ -16,6 +21,12 @@ export const Invite = () => {
   const { inviteCode } = useParams();
   const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
   const { data: invite, loading } = useGetInviteQuery(inviteCode ?? '');
+  // Active SSO providers of the inviting project. Signing in through one
+  // consumes the pending invite server-side (AuthService.ssoValidate), so an
+  // SSO-only user can accept without a password.
+  const { providers: ssoProviders, loading: ssoLoading } = useGetProjectSsoProvidersQuery(
+    invite?.project?.id,
+  );
   const [view, setView] = useState<View>('main');
 
   // Route `/auth/invite/:inviteCode` guarantees the path param; fall
@@ -27,7 +38,10 @@ export const Invite = () => {
   // Wait for both the invite lookup and globalConfig before rendering — the
   // latter governs which OAuth buttons SocialProviders shows, so rendering
   // early would flash "all enabled" before self-host config narrows it.
-  if (loading || globalConfigLoading) {
+  // Wait for the SSO providers too: they load in a second round-trip (keyed on
+  // the invite's projectId), and rendering before they arrive briefly shows the
+  // full form when the project actually enforces SSO (only-SSO) — a flash.
+  if (loading || globalConfigLoading || ssoLoading) {
     return <AuthCard title={t('auth.invite.expiredTitle')} loading />;
   }
 
@@ -83,9 +97,21 @@ export const Invite = () => {
     </>
   );
 
+  // When the project enforces SSO (and SSO is actually usable), password/social
+  // login would be force-blocked after joining, so show only the SSO option.
+  const forceSso = !!invite.requireSso && ssoProviders.length > 0;
+
   return (
-    <AuthCard title={title}>
-      {invite.recipientExists ? (
+    // gap-2 so the SSO button(s) line up evenly with the social buttons below
+    // (8px), forming one button group; SignInForm's own divider separates them
+    // from the email form.
+    <AuthCard title={title} contentClassName="grid gap-2">
+      {ssoProviders.length > 0 && <SsoProviderButtons providers={ssoProviders} />}
+      {forceSso ? (
+        <p className="pt-1 text-center text-sm text-muted-foreground">
+          {t('auth.invite.requireSsoNote')}
+        </p>
+      ) : invite.recipientExists ? (
         <SignInForm
           globalConfig={globalConfig}
           inviteCode={inviteCode}

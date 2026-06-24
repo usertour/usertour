@@ -53,6 +53,7 @@ export type SDKSettings = {
 export type GlobalConfig = {
   isSelfHostedMode: boolean;
   apiUrl: string;
+  ssoCallbackUrl: string;
   allowUserRegistration: boolean;
   allowProjectLevelSubscriptionManagement: boolean;
   needsSystemAdminSetup: boolean;

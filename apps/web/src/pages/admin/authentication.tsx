@@ -15,8 +15,9 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  SettingsCard,
+  SettingsCardStack,
 } from '@usertour/ui';
-import { SettingsContent } from '@/pages/settings/components/content';
 import { RiAlertLine, RiSparklingFill } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
@@ -110,98 +111,115 @@ export const AdminAuthenticationPage = () => {
   };
 
   return (
-    <SettingsContent>
-      <div className="space-y-2">
-        <h3 className="text-xl font-medium tracking-tight">{t('admin.authentication.title')}</h3>
-        <p className="text-sm text-muted-foreground">{t('admin.authentication.description')}</p>
-      </div>
-      <Separator />
-
-      <div className="space-y-8">
-        <div className="flex items-start justify-between gap-6 rounded-xl border border-border/60 p-5">
-          <div className="space-y-1">
-            <div className="text-sm font-medium">
-              {t('admin.authentication.allowRegistrationLabel')}
+    <SettingsCardStack>
+      {/* User registration — edited then saved with the button. */}
+      <SettingsCard>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex h-10 flex-row items-center">
+              <h3 className="text-xl font-medium tracking-tight">
+                {t('admin.authentication.title')}
+              </h3>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {t('admin.authentication.allowRegistrationDescription')}
-            </div>
+            <p className="text-sm text-muted-foreground">{t('admin.authentication.description')}</p>
           </div>
-          {loading ? (
-            <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
-          ) : (
-            <Switch
-              checked={allowUserRegistration}
-              onCheckedChange={setAllowUserRegistration}
-              className="shrink-0 data-[state=unchecked]:bg-input"
-            />
-          )}
-        </div>
+          <Separator />
 
-        <div className="flex items-start justify-between gap-6 rounded-xl border border-border/60 p-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-sm font-medium">
-              {t('twoFactor.adminEnforce.title')}
-              {isLicenseInfoReady && !licensedForEnforce && (
-                <TooltipProvider delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger className="inline-flex cursor-default">
-                      <RiSparklingFill className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      {t('twoFactor.adminEnforce.licenseRequired')}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+          <div className="space-y-8">
+            <div className="flex items-start justify-between gap-6">
+              <div className="space-y-1">
+                <div className="text-sm font-medium">
+                  {t('admin.authentication.allowRegistrationLabel')}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t('admin.authentication.allowRegistrationDescription')}
+                </div>
+              </div>
+              {loading ? (
+                <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
+              ) : (
+                <Switch
+                  checked={allowUserRegistration}
+                  onCheckedChange={setAllowUserRegistration}
+                  className="shrink-0 data-[state=unchecked]:bg-input"
+                />
               )}
             </div>
-            <div className="text-sm text-muted-foreground">
-              {t('twoFactor.adminEnforce.description')}
+
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={loading || updating}>
+                {t('admin.common.saveChanges')}
+              </Button>
             </div>
-            {isLicenseInfoReady && licensedForEnforce && !adminHasOwn2FA && (
-              <div className="flex items-start gap-1.5 text-sm text-amber-600">
-                <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>
-                  {t('twoFactor.adminEnforce.requiresAdminEnabled')}{' '}
-                  {project?.id && (
-                    <Link
-                      to={`/project/${project.id}/settings/account`}
-                      className="font-medium underline underline-offset-2 hover:text-amber-700"
-                    >
-                      {t('twoFactor.adminEnforce.requiresAdminEnabledCta')}
-                    </Link>
-                  )}
-                </span>
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Enforce 2FA — saved immediately on toggle (its own license gate). */}
+      <SettingsCard>
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                {t('twoFactor.adminEnforce.title')}
+                {isLicenseInfoReady && !licensedForEnforce && (
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger className="inline-flex cursor-default">
+                        <RiSparklingFill className="h-4 w-4 text-indigo-500" aria-hidden="true" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        {t('twoFactor.adminEnforce.licenseRequired')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
-            )}
-            {isLicenseInfoReady && require2FA && !licensedForEnforce && (
-              <div className="flex items-start gap-1.5 text-sm text-amber-600">
-                <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{t('twoFactor.adminEnforce.dormantNoLicense')}</span>
+              <div className="text-sm text-muted-foreground">
+                {t('twoFactor.adminEnforce.description')}
               </div>
+            </div>
+            {loading ? (
+              <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
+            ) : (
+              <Switch
+                checked={require2FA}
+                disabled={
+                  updatingRequire2FA || (!require2FA && (!licensedForEnforce || !adminHasOwn2FA))
+                }
+                onCheckedChange={handleToggleRequire2FA}
+                className="shrink-0 data-[state=unchecked]:bg-input"
+              />
             )}
           </div>
-          {loading ? (
-            <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
-          ) : (
-            <Switch
-              checked={require2FA}
-              disabled={
-                updatingRequire2FA || (!require2FA && (!licensedForEnforce || !adminHasOwn2FA))
-              }
-              onCheckedChange={handleToggleRequire2FA}
-              className="shrink-0 data-[state=unchecked]:bg-input"
-            />
+
+          {/* Warnings span the full card width — not squeezed into the label
+                column next to the switch, which is what forced them to wrap. */}
+          {isLicenseInfoReady && licensedForEnforce && !adminHasOwn2FA && (
+            <div className="flex items-start gap-1.5 text-sm text-amber-600">
+              <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                {t('twoFactor.adminEnforce.requiresAdminEnabled')}{' '}
+                {project?.id && (
+                  <Link
+                    to={`/project/${project.id}/settings/account`}
+                    className="whitespace-nowrap font-medium underline underline-offset-2 hover:text-amber-700"
+                  >
+                    {t('twoFactor.adminEnforce.requiresAdminEnabledCta')}
+                  </Link>
+                )}
+              </span>
+            </div>
+          )}
+          {isLicenseInfoReady && require2FA && !licensedForEnforce && (
+            <div className="flex items-start gap-1.5 text-sm text-amber-600">
+              <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{t('twoFactor.adminEnforce.dormantNoLicense')}</span>
+            </div>
           )}
         </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={loading || updating}>
-            {t('admin.common.saveChanges')}
-          </Button>
-        </div>
-      </div>
-    </SettingsContent>
+      </SettingsCard>
+    </SettingsCardStack>
   );
 };
 

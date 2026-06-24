@@ -1,11 +1,11 @@
 import { SettingsCard, SettingsCardStack } from '@usertour/ui';
-import { ProjectNameForm } from './components/project-name-form';
+import { ProjectGeneralForm } from './components/project-general-form';
 
 export const SettingsProjectDetail = () => {
   return (
     <SettingsCardStack>
       <SettingsCard>
-        <ProjectNameForm />
+        <ProjectGeneralForm />
       </SettingsCard>
     </SettingsCardStack>
   );

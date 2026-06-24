@@ -37,10 +37,14 @@ export function SettingsFormSection<TValues extends FieldValues>(
   const { title, description, submitLabel, disableWhenPristine = true, state, children } = props;
   return (
     <div className="space-y-6">
-      <div className="flex h-10 flex-row items-center justify-between">
-        <h3 className="text-xl font-medium tracking-tight">{title}</h3>
+      {/* Title + description grouped tightly (matches SettingsPage) so a
+          description doesn't leave a big gap before the separator. */}
+      <div className="space-y-2">
+        <div className="flex h-10 flex-row items-center justify-between">
+          <h3 className="text-xl font-medium tracking-tight">{title}</h3>
+        </div>
+        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       <Separator />
       <Form {...state.form}>
         <form onSubmit={state.onSubmit} className="space-y-8">

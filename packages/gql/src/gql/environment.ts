@@ -12,6 +12,15 @@ export const getUserEnvironments = gql`
   }
 `;
 
+export const verifyInstallation = gql`
+  query verifyInstallation($environmentId: String!) {
+    verifyInstallation(environmentId: $environmentId) {
+      installed
+      userCount
+    }
+  }
+`;
+
 export const createEnvironments = gql`
   mutation createEnvironments($name: String!, $projectId: String!) {
     createEnvironments(data: { name: $name, projectId: $projectId }) {

@@ -5,14 +5,14 @@ import Upload from 'rc-upload';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
 
+import { useImageUpload } from '@/components/upload';
 import { ACCEPT_FILE_TYPES } from './constants';
-import { useAvatarUpload } from './hooks/use-avatar-upload';
 import type { UploadAvatarTabProps } from './types';
 
 export const UploadAvatarTab = memo<UploadAvatarTabProps>((props) => {
   const { avatarUrl, isCurrentUpload, onUploadSuccess, onRemove, disabled } = props;
   const { t } = useTranslation();
-  const { handleUpload, isUploading } = useAvatarUpload({
+  const { handleUpload, isUploading } = useImageUpload({
     onUploadSuccess,
   });
   const showPreview = isCurrentUpload && avatarUrl;

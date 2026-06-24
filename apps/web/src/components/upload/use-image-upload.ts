@@ -13,14 +13,17 @@ interface RcUploadOption {
   onSuccess?: (body: { url: string }) => void;
 }
 
-interface UseAvatarUploadProps {
+interface UseImageUploadProps {
   onUploadSuccess: (url: string) => void;
 }
 
 /**
- * Hook for handling avatar upload
+ * Uploads an image to S3 via a presigned URL, falling back to an inline
+ * base64 data URL when S3 isn't reachable. Shaped for rc-upload's
+ * `customRequest`. Generic — no business knowledge; used by the shared
+ * `ImageUploadWidget` and the theme avatar tab.
  */
-export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
+export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -43,7 +46,7 @@ export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
       const { signedUrl, cdnUrl } = data?.createPresignedUrl ?? {};
 
       if (!signedUrl || !cdnUrl) {
-        throw new Error(t('settings.themes.upload.generateUrlFailed'));
+        throw new Error(t('components.upload.generateUrlFailed'));
       }
 
       await axios.put(signedUrl, file, {
@@ -62,7 +65,7 @@ export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
       const file = option.file;
       if (!(file instanceof File)) {
         const error = new Error('Invalid file type');
-        toast({ variant: 'destructive', title: t('settings.themes.upload.invalidFile') });
+        toast({ variant: 'destructive', title: t('components.upload.invalidFile') });
         option.onError?.(error);
         setIsUploading(false);
         return;
@@ -92,7 +95,7 @@ export const useAvatarUpload = ({ onUploadSuccess }: UseAvatarUploadProps) => {
             const error = new Error('Upload failed');
             toast({
               variant: 'destructive',
-              title: t('settings.themes.upload.avatarUploadFailed'),
+              title: t('components.upload.uploadFailed'),
             });
             option.onError?.(error);
           }

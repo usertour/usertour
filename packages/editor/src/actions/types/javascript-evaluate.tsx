@@ -1,6 +1,6 @@
 import { RiCodeLine } from '@usertour/icons';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';
-import { CodeEditor } from '../../code-editor';
+import { CodeEditor } from '@usertour/ui';
 import { useActionsT, useSummaryTextClass } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';

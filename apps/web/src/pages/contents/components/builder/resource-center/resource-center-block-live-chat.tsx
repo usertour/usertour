@@ -15,7 +15,8 @@ import {
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
-import { PopperEditorMini, CodeEditor } from '@usertour/editor';
+import { PopperEditorMini } from '@usertour/editor';
+import { CodeEditor } from '@usertour/ui';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';

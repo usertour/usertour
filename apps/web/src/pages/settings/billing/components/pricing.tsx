@@ -11,6 +11,7 @@ import {
   RiPaintBrushLine,
   RiRouteLine,
   RiSendPlaneLine,
+  RiShieldKeyholeLine,
   RiStackLine,
   RiTeamLine,
 } from '@usertour/icons';
@@ -526,6 +527,22 @@ const ComparisonTable = ({
           values: [true, true, true, true],
         },
         { name: t('settings.billing.comparison.rows.alerting'), values: [true, true, true, true] },
+      ],
+    },
+    {
+      icon: RiShieldKeyholeLine,
+      title: t('settings.billing.comparison.sections.security'),
+      features: [
+        {
+          name: t('settings.billing.comparison.rows.sso'),
+          values: matrixRow('ssoOidc', currentPlanType, overridePlan),
+        },
+        {
+          // Audit log isn't shipped yet; show it as a Business-tier feature
+          // that's coming soon (mirrors the alerting row's coming-soon label).
+          name: t('settings.billing.comparison.rows.auditLog'),
+          values: [false, false, false, true],
+        },
       ],
     },
     {

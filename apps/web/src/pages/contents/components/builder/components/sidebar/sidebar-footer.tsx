@@ -2,7 +2,7 @@ import { Button } from '@usertour/ui';
 import {
   RiCheckboxCircleLine,
   RiErrorWarningLine,
-  RiLogoutBoxLine,
+  RiLogoutBoxRLine,
   SpinnerIcon,
 } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +100,7 @@ export const SidebarFooter = (props: SidebarFooterProps) => {
         onClick={onSave}
         disabled={saveState.status === 'saving'}
       >
-        <RiLogoutBoxLine className="size-4" />
+        <RiLogoutBoxRLine className="size-4" />
         {t('contentBuilder.common.exit')}
       </Button>
     </div>

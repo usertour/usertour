@@ -1,4 +1,4 @@
-import { CodeEditor, type CodeEditorLanguage } from '@usertour/editor';
+import { CodeEditor, type CodeEditorLanguage } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';
 import { FieldRow } from './field-row';

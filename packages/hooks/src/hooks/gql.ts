@@ -27,6 +27,7 @@ import {
   getInvites,
   getTeamMembers,
   getUserEnvironments,
+  verifyInstallation,
   inviteTeamMember as inviteTeamMemberMutation,
   listAttributes,
   listSegment,
@@ -49,7 +50,7 @@ import {
   getSubscriptionUsage,
   globalConfig,
   getProjectConfig,
-  updateProjectName,
+  updateProject,
   getProjectLicenseInfo,
   updateProjectLicense,
   ListIntegrations,
@@ -89,6 +90,14 @@ import {
   getTheme,
   listLocalizations,
   queryOembedInfo,
+  listProjectSsoProviders,
+  createOidcSsoProvider,
+  updateSsoProvider,
+  deleteSsoProvider,
+  getProjectSsoProviders,
+  getProjectSsoLogin,
+  getProjectSsoSettings,
+  updateProjectSsoSettings,
 } from '@usertour/gql';
 
 import type {
@@ -595,12 +604,16 @@ export const useGlobalConfigQuery = () => {
   };
 };
 
-export const useUpdateProjectNameMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateProjectName);
+export const useUpdateProjectMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProject);
   const invoke = useCallback(
-    async (projectId: string, name: string): Promise<boolean> => {
-      const response = await mutation({ variables: { projectId, name } });
-      return !!response.data?.updateProjectName;
+    // Only the provided fields are updated; logoUrl null/empty clears the logo.
+    async (
+      projectId: string,
+      input: { name?: string; logoUrl?: string | null },
+    ): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, ...input } });
+      return !!response.data?.updateProject;
     },
     [mutation],
   );
@@ -988,6 +1001,26 @@ export const useGetUserEnvironmentsQuery = (
   return { environmentList, refetch, loading, error, isRefetching };
 };
 
+export const useVerifyInstallationQuery = (
+  environmentId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch, stopPolling } = useQuery(verifyInstallation, {
+    variables: { environmentId },
+    skip: !environmentId,
+    ...options,
+  });
+
+  return {
+    installed: (data?.verifyInstallation?.installed as boolean | undefined) ?? false,
+    userCount: (data?.verifyInstallation?.userCount as number | undefined) ?? 0,
+    loading,
+    error,
+    refetch,
+    stopPolling,
+  };
+};
+
 export const useDeleteBizUserMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizUser);
   const invoke = useCallback(
@@ -1152,6 +1185,8 @@ export const useGetProjectConfigQuery = (
     projectConfig: data?.getProjectConfig as {
       removeBranding: boolean;
       customCss: boolean;
+      ssoOidc: boolean;
+      ssoSaml: boolean;
       planType: string;
     } | null,
     loading,
@@ -1429,4 +1464,183 @@ export const useListLocalizationsQuery = (
     loading,
     error,
   };
+};
+
+// ---------------------------------------------------------------------------
+// SSO (project-level OIDC identity providers)
+// ---------------------------------------------------------------------------
+
+export interface SsoProvider {
+  id: string;
+  projectId: string;
+  type: 'OIDC' | 'SAML';
+  name: string;
+  status: string;
+  issuer: string;
+  clientId: string;
+  authorizationUrl?: string | null;
+  tokenUrl?: string | null;
+  userInfoUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicSsoProvider {
+  id: string;
+  name: string;
+  type: 'OIDC' | 'SAML';
+}
+
+export interface CreateOidcSsoProviderInput {
+  name: string;
+  issuer: string;
+  clientId: string;
+  clientSecret: string;
+  authorizationUrl?: string;
+  tokenUrl?: string;
+  userInfoUrl?: string;
+}
+
+export type UpdateSsoProviderInput = Partial<
+  CreateOidcSsoProviderInput & {
+    status: string;
+  }
+>;
+
+// Project-level SSO settings: force-SSO enforcement + JIT provisioning policy.
+export interface ProjectSsoSettings {
+  projectId: string;
+  requireSso: boolean;
+  autoProvision: boolean;
+  defaultRole: 'ADMIN' | 'VIEWER';
+  allowedDomains: string[];
+}
+
+export type UpdateProjectSsoSettingsInput = Partial<{
+  requireSso: boolean;
+  autoProvision: boolean;
+  defaultRole: 'ADMIN' | 'VIEWER';
+  allowedDomains: string[];
+}>;
+
+export const useListProjectSsoProvidersQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(listProjectSsoProviders, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  return {
+    providers: (data?.listProjectSsoProviders ?? []) as SsoProvider[],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useGetProjectSsoProvidersQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectSsoProviders, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  return {
+    providers: (data?.getProjectSsoProviders ?? []) as PublicSsoProvider[],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useGetProjectSsoLoginQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectSsoLogin, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  const login = data?.getProjectSsoLogin;
+  return {
+    name: (login?.name ?? '') as string,
+    logoUrl: (login?.logoUrl ?? null) as string | null,
+    providers: (login?.providers ?? []) as PublicSsoProvider[],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useCreateOidcSsoProviderMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createOidcSsoProvider);
+  const invoke = useCallback(
+    async (projectId: string, input: CreateOidcSsoProviderInput): Promise<SsoProvider> => {
+      const response = await mutation({ variables: { projectId, input } });
+      return response.data?.createOidcSsoProvider as SsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useUpdateSsoProviderMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateSsoProvider);
+  const invoke = useCallback(
+    async (id: string, input: UpdateSsoProviderInput): Promise<SsoProvider> => {
+      const response = await mutation({ variables: { id, input } });
+      return response.data?.updateSsoProvider as SsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDeleteSsoProviderMutation = () => {
+  const [mutation, { loading, error }] = useMutation(deleteSsoProvider);
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({ variables: { id } });
+      return !!response.data?.deleteSsoProvider;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useGetProjectSsoSettingsQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectSsoSettings, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  return {
+    settings: data?.getProjectSsoSettings as ProjectSsoSettings | undefined,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useUpdateProjectSsoSettingsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectSsoSettings);
+  const invoke = useCallback(
+    async (
+      projectId: string,
+      input: UpdateProjectSsoSettingsInput,
+    ): Promise<ProjectSsoSettings> => {
+      const response = await mutation({ variables: { projectId, input } });
+      return response.data?.updateProjectSsoSettings as ProjectSsoSettings;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
 };

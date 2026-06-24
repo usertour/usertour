@@ -1,10 +1,11 @@
 import { gql } from '@apollo/client';
 
-export const updateProjectName = gql`
-  mutation updateProjectName($projectId: String!, $name: String!) {
-    updateProjectName(projectId: $projectId, name: $name) {
+export const updateProject = gql`
+  mutation updateProject($projectId: String!, $name: String, $logoUrl: String) {
+    updateProject(projectId: $projectId, name: $name, logoUrl: $logoUrl) {
       id
       name
+      logoUrl
     }
   }
 `;
@@ -14,6 +15,8 @@ export const getProjectConfig = gql`
     getProjectConfig(projectId: $projectId) {
       removeBranding
       customCss
+      ssoOidc
+      ssoSaml
       planType
     }
   }
