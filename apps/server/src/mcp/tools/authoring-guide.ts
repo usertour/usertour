@@ -66,6 +66,15 @@ Authoring + publishing only stores the content — it renders only once the host
 - **SDK token ≠ API token.** \`usertour.init(token)\` takes the **environment token** (a public, client-side key). NEVER put the API token (the secret \`utp_…\` used for this MCP) in client code — it grants full project write access.
 - **Publish env must match the app's token.** Each environment has its own SDK token (\`list_environments\`). Content published to environment X shows only in an app whose \`init()\` used X's token — publishing to one environment while the app runs another's token is another "why isn't it showing".
 
+## Host integration dependencies (you author these; the host wires the hook)
+Some authoring choices only work if the host app wired a matching SDK hook. They publish fine and then fail **silently** at runtime — so flag the dependency when you use the feature and point the developer at the usertour.js **advanced** reference (https://docs.usertour.io/developers/usertourjs-reference/overview). The identify ↔ externalId link above is one of these; the rest:
+- **A same-window \`navigate\` action mid-flow** does a **full page reload** unless the host called \`usertour.setCustomNavigate()\` (SPA soft-nav). A reload drops the in-progress flow (the Resource Center survives a reload; flows do not). For a flow that must continue on another page: either rely on \`setCustomNavigate\` (you control an SPA), **or don't carry one flow across the navigation** — make the destination-page guidance its own content triggered by a \`current_url\` start rule (portable and reload-proof).
+- **\`text_input\` / \`text_filled\` conditions (and "continue when filled" triggers) on a custom input** (combobox, custom dropdown, contenteditable): the SDK reads values only from native \`<input>\` by default, so the condition never matches unless the host called \`usertour.registerCustomInput()\`.
+- **A \`tooltip\` target inside a custom scroll container or sticky-header layout**: default smooth-scroll can land the element under a fixed header or fail to scroll a custom container; the host fixes positioning with \`usertour.setCustomScrollIntoView()\`.
+- **SDK UI hidden behind the app's modals/overlays**: the host raises it with \`usertour.setBaseZIndex()\` (default ≈ 1,000,000).
+- **\`current_url\` conditions when the URL carries sensitive/dynamic data** (tokens or ids in the path/query): the SDK sends and matches the **full** URL; the host can sanitize with \`usertour.setUrlFilter()\` — then write your patterns against the sanitized form.
+- **External links in content that need auth/tracking params**: the host adds them per click with \`usertour.setLinkUrlDecorator()\`.
+
 ## What each type needs to be usable (else publish is rejected)
 - **flow**: ≥1 step; tooltip steps have a target; non-hidden steps have content; goto targets resolve.
 - **checklist**: ≥1 item; each item has a name AND a click action or a completion condition.
