@@ -160,8 +160,11 @@ function decompileSpacing(
 }
 const decompileJustify = (el: any) => {
   const j = el?.justifyContent;
-  return typeof j === 'string' && j.startsWith('justify-') && j !== 'justify-start'
-    ? (j.slice('justify-'.length) as 'center' | 'end' | 'between' | 'around' | 'evenly')
+  // `justify-center` is the column default (defaultColumn), so treat it as "no
+  // override" — a default-seeded column then decompiles to an omitted justify (and a
+  // lone one flattens back to a bare block); an explicit start/end/… is preserved.
+  return typeof j === 'string' && j.startsWith('justify-') && j !== 'justify-center'
+    ? (j.slice('justify-'.length) as 'start' | 'end' | 'between' | 'around' | 'evenly')
     : undefined;
 };
 const decompileAlign = (el: any) => {

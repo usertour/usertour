@@ -1,4 +1,4 @@
-import { uuidV4 } from '@usertour/helpers';
+import { defaultColumn, uuidV4 } from '@usertour/helpers';
 import {
   ContentEditorRoot,
   ContentEditorRootColumn,
@@ -11,12 +11,9 @@ export const EmptyGroup = {
 } as ContentEditorRoot;
 
 export const EmptyColumn = {
-  element: {
-    type: 'column',
-    width: { type: 'fill' },
-    justifyContent: 'justify-center',
-    style: {},
-  },
+  // Seed the shared column defaults (fill width + centered) so the builder and the
+  // API codec stay in lockstep; `style` stays builder-local.
+  element: { ...defaultColumn, style: {} },
   children: [],
 } as ContentEditorRootColumn;
 

@@ -418,7 +418,9 @@ describe('element + column styling round-trip', () => {
         type: 'columns' as const,
         columns: [
           {
-            justify: 'center' as const,
+            // `start` is a non-default justify (the column default is now center) so it
+            // round-trips explicitly; center would be omitted on read as the default.
+            justify: 'start' as const,
             align: 'end' as const,
             padding: { top: 8 },
             blocks: [{ object: 'block' as const, type: 'text' as const, markdown: 'Hi' }],
@@ -428,13 +430,13 @@ describe('element + column styling round-trip', () => {
     ];
     const internal: any = compileContent(rep as never, undefined, ids);
     const colEl = internal[0].children[0].element;
-    expect(colEl.justifyContent).toBe('justify-center');
+    expect(colEl.justifyContent).toBe('justify-start');
     expect(colEl.alignItems).toBe('items-end');
     expect(colEl.padding).toMatchObject({ enabled: true, top: 8 });
     const back: any = decompileContent(internal).blocks;
     expect(back[0].type).toBe('columns');
     expect(back[0].columns[0]).toMatchObject({
-      justify: 'center',
+      justify: 'start',
       align: 'end',
       padding: { top: 8 },
     });
