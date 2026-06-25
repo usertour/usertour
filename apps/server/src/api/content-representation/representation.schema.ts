@@ -35,38 +35,45 @@ export const representationTarget = z.object({
 export type RepresentationTarget = z.infer<typeof representationTarget>;
 
 // ── Placement (simplified StepSettings) ──────────────────────────────────────
-export const representationPlacement = z.union([
-  z.object({
-    side: z.enum(['top', 'right', 'bottom', 'left']),
-    align: z.enum(['start', 'center', 'end']),
-    sideOffset: z.number().optional(),
-    alignOffset: z.number().optional(),
-    // `auto` (default) lets the tooltip flip to avoid the viewport edge; `fixed`
-    // pins it to the given side/align.
-    alignType: z.enum(['auto', 'fixed']).optional(),
-    // A tooltip may dim the page (backdrop) and block clicks on its target.
-    backdrop: z.boolean().optional(),
-    blockTarget: z.boolean().optional(),
-  }),
-  z.object({
-    // 9-cell grid — matches ModalPosition (@usertour/types).
-    position: z.enum([
-      'leftTop',
-      'centerTop',
-      'rightTop',
-      'leftCenter',
-      'center',
-      'rightCenter',
-      'leftBottom',
-      'centerBottom',
-      'rightBottom',
-    ]),
-    offsetX: z.number().optional(),
-    offsetY: z.number().optional(),
-    backdrop: z.boolean().optional(),
-    blockTarget: z.boolean().optional(),
-  }),
-]);
+export const representationPlacement = z
+  .union([
+    z.object({
+      side: z.enum(['top', 'right', 'bottom', 'left']),
+      align: z.enum(['start', 'center', 'end']),
+      sideOffset: z.number().optional(),
+      alignOffset: z.number().optional(),
+      // `auto` (default) lets the tooltip flip to avoid the viewport edge; `fixed`
+      // pins it to the given side/align.
+      alignType: z.enum(['auto', 'fixed']).optional(),
+      // A tooltip may dim the page (backdrop) and block clicks on its target.
+      backdrop: z.boolean().optional(),
+      blockTarget: z.boolean().optional(),
+    }),
+    z.object({
+      // 9-cell grid — matches ModalPosition (@usertour/types).
+      position: z.enum([
+        'leftTop',
+        'centerTop',
+        'rightTop',
+        'leftCenter',
+        'center',
+        'rightCenter',
+        'leftBottom',
+        'centerBottom',
+        'rightBottom',
+      ]),
+      offsetX: z.number().optional(),
+      offsetY: z.number().optional(),
+      backdrop: z.boolean().optional(),
+      blockTarget: z.boolean().optional(),
+    }),
+  ])
+  .describe(
+    'Two placement shapes, by step kind: a TOOLTIP (anchored to a `target`) uses ' +
+      '`{ side, align, sideOffset?, alignOffset?, alignType? }` positioned relative to the ' +
+      'element; a MODAL or any anchorless step uses `{ position, offsetX?, offsetY? }` on a ' +
+      '9-cell viewport grid (e.g. `"center"`). Both may set `backdrop` / `blockTarget`.',
+  );
 export type RepresentationPlacement = z.infer<typeof representationPlacement>;
 
 // ── Rules: conditions ────────────────────────────────────────────────────────
@@ -203,10 +210,35 @@ export const representationCondition = z.lazy(() =>
     z.object({
       type: z.literal('user_attribute'),
       attribute: z.string(),
-      op: z.string(),
-      value: z.string().optional(),
-      value2: z.string().optional(),
-      values: z.array(z.string()).optional(),
+      op: z
+        .string()
+        .describe(
+          'Operator — the allowed set depends on the attribute dataType. ' +
+            'String: is | not | contains | notContain | startsWith | endsWith | any | empty. ' +
+            'Number: is | not | isLessThan | isLessThanOrEqualTo | isGreaterThan | ' +
+            'isGreaterThanOrEqualTo | between | any | empty. ' +
+            'Boolean: true | false | any | empty. ' +
+            'List: includesAtLeastOne | includesAll | notIncludesAtLeastOne | notIncludesAll | ' +
+            'any | empty. ' +
+            'DateTime: lessThan | exactly | moreThan (relative "days ago" — `value` is a number ' +
+            'of days; e.g. attribute `first_seen_at` with op `lessThan`, value `7` = "first seen ' +
+            'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
+            'is an absolute date) | any | empty.',
+        ),
+      value: z
+        .string()
+        .optional()
+        .describe(
+          'The comparison value (string / number-as-string / date). Omit for any/empty/true/false.',
+        ),
+      value2: z
+        .string()
+        .optional()
+        .describe('Upper bound for the `between` operator (`value` is the lower bound).'),
+      values: z
+        .array(z.string())
+        .optional()
+        .describe('Values for the List operators (includesAtLeastOne / includesAll / …).'),
     }),
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({

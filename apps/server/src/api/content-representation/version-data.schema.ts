@@ -67,7 +67,15 @@ export const representationChecklist = z.object({
   preventDismiss: z.boolean().optional(),
   autoDismiss: z.boolean().optional(),
   content: z.array(representationBlock).optional(),
-  items: z.array(checklistItem).optional(),
+  items: z
+    .array(checklistItem)
+    .optional()
+    .describe(
+      'The checklist tasks. To be usable (enforced at publish) each item needs a `name` AND at ' +
+        'least one of `completeWhen` (how it auto-completes) or `clickActions` (what its row does) ' +
+        '— an item with neither is a dead row. `task_clicked` in `completeWhen` is the only ' +
+        'completion that needs no app instrumentation.',
+    ),
 });
 export type RepresentationChecklist = z.infer<typeof representationChecklist>;
 

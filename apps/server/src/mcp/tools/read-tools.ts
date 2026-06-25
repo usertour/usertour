@@ -247,7 +247,11 @@ export function buildReadTools(): McpTool[] {
         '"editedVersion" and/or "publishedVersion" objects inline. Publish state is ' +
         'per-environment under `environments[]`.',
       inputSchema: {
-        id: z.string().describe('The content id.'),
+        id: z
+          .string()
+          .optional()
+          .describe('The content id. (Alias: `contentId`, matching the write tools.)'),
+        contentId: z.string().optional().describe('Alias for `id` (matches the write tools).'),
         expand: z
           .array(z.enum(['editedVersion', 'publishedVersion']))
           .optional()
@@ -255,9 +259,9 @@ export function buildReadTools(): McpTool[] {
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
-        const id = asString(args.id);
+        const id = asString(args.id) || asString(args.contentId);
         if (!id) {
-          throw new Error('`id` is required.');
+          throw new Error('`id` (or `contentId`) is required.');
         }
         const expand = Array.isArray(args.expand)
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpand[])
