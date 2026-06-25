@@ -22,7 +22,7 @@ export interface DecompileResolvers {
   attributeCode: (id: string) => string;
   /**
    * Internal id → its attribute scope, so a `user-attr` condition decompiles to the
-   * matching representation type (user / company / membership_attribute). Optional —
+   * `attribute` condition's `scope` (user / company / companyMembership). Optional —
    * resolvers that don't track scope fall back to `user`.
    */
   attributeScope?: (id: string) => AttributeScope;
@@ -141,25 +141,18 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
         match: listJoiner(c.conditions) === 'or' ? 'any' : 'all',
         conditions: decompileConditions(c.conditions, r),
       };
-    case 'user-attr': {
-      // The internal id encodes the scope; emit the matching representation type so a
-      // company / membership attribute round-trips to its own type, not to user.
-      const attrScope = r.attributeScope?.(d.attrId ?? '') ?? 'user';
-      const attrType =
-        attrScope === 'company'
-          ? 'company_attribute'
-          : attrScope === 'membership'
-            ? 'membership_attribute'
-            : 'user_attribute';
+    case 'user-attr':
+      // One representation `attribute` type; `scope` (from the attribute's bizType)
+      // carries user / company / companyMembership so it round-trips losslessly.
       return {
-        type: attrType,
+        type: 'attribute',
+        scope: r.attributeScope?.(d.attrId ?? '') ?? 'user',
         attribute: r.attributeCode(d.attrId ?? ''),
         op: mapAttrOp(d.logic),
         ...(d.value != null ? { value: String(d.value) } : {}),
         ...(d.value2 != null ? { value2: String(d.value2) } : {}),
         ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
       };
-    }
     case 'event-attr':
       // attrId → code via the shared attributeCode map (ids are unique, so no
       // bizType ambiguity on the read side).

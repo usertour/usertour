@@ -33,10 +33,11 @@ describe('positional condition validity', () => {
     ).toBe(true);
   });
 
-  it('rejects a general condition (user_attribute) inside event.where', () => {
+  it('rejects a general condition (attribute) inside event.where', () => {
     expect(
       eventWhereCondition.safeParse({
-        type: 'user_attribute',
+        type: 'attribute',
+        scope: 'user',
         attribute: 'plan',
         op: 'is',
         value: 'pro',

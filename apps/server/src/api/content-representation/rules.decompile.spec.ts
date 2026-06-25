@@ -46,7 +46,7 @@ describe('decompileCondition', () => {
         { type: 'user-attr', data: { attrId: 'a1', logic: 'isGreaterThan', value: '5' } },
         resolvers,
       ),
-    ).toEqual({ type: 'user_attribute', attribute: 'plan', op: 'gt', value: '5' });
+    ).toEqual({ type: 'attribute', scope: 'user', attribute: 'plan', op: 'gt', value: '5' });
   });
 
   it('event-attr resolves to event_attribute (attrId → code via attributeCode)', () => {
@@ -107,7 +107,7 @@ describe('decompileCondition', () => {
       count: { op: 'at_least', n: 2 },
       within: { op: 'in_the_last', value: 7, unit: 'days' },
       scope: 'current_user_in_company',
-      where: [{ type: 'user_attribute', attribute: 'plan', op: 'is', value: 'pro' }],
+      where: [{ type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' }],
     });
   });
 

@@ -96,7 +96,7 @@ describe('validateAutoStartForType', () => {
           type: 'group',
           match: 'all',
           conditions: [
-            { type: 'user_attribute', attribute: 'plan', op: 'is', value: 'pro' },
+            { type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' },
             { type: 'time_window', start: '2026-01-01' },
           ],
         },

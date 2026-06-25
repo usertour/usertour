@@ -1,6 +1,6 @@
 /**
  * Single source of truth for the representation-layer attribute operators — the
- * `op` on `user_attribute` / `event_attribute` conditions — and their mapping to
+ * `op` on `attribute` / `event_attribute` conditions — and their mapping to
  * the internal `logic` tokens.
  *
  * Everything that touches these ops derives from this one map, so they can't drift

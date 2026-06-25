@@ -148,12 +148,12 @@ export type AutoStartCapabilities = {
 
 // Tracker trigger conditions are limited to these (v2 representation type names).
 // Mirrors the builder's tracker editor `filterItems` (internal names), mapped via
-// the rules codec: user_attribute=user-attr, current_url=current-page,
+// the rules codec: attribute=user-attr, current_url=current-page,
 // text_filled=text-fill, time_window=time; element / text_input / group unchanged.
 // Excludes segment / flow / event. Keep in sync with content-detail-tracker-editor.tsx.
 const TRACKER_CONDITION_TYPES = [
   'group',
-  'user_attribute',
+  'attribute',
   'current_url',
   'element',
   'text_input',

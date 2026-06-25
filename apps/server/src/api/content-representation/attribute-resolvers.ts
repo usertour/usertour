@@ -9,10 +9,10 @@ import { DecompileResolvers } from './rules.decompile';
  * and decompile (id → code/scope) sides live here so the scope handling can't drift
  * between the services that need them (content-versions, segments, themes).
  *
- * A codeName can exist for user / company / membership (the built-in `signed_up_at`,
- * `first_seen_at`, `last_seen_at`, `name`), so attribute conditions resolve a code
- * WITHIN a scope; the condition type (user_/company_/membership_attribute) picks it.
- * EVENT attributes have their own namespace (a codeName can collide with a user
+ * A codeName can exist for user / company / companyMembership (the built-in
+ * `signed_up_at`, `first_seen_at`, `last_seen_at`, `name`), so the `attribute`
+ * condition resolves a code WITHIN a scope, picked by its `scope` field. EVENT
+ * attributes have their own namespace (a codeName can collide with a user
  * attribute), so they get a separate map.
  */
 
@@ -22,7 +22,7 @@ type EventRow = { id: string; codeName: string };
 const SCOPE_BY_BIZTYPE: Partial<Record<number, AttributeScope>> = {
   [AttributeBizType.USER]: 'user',
   [AttributeBizType.COMPANY]: 'company',
-  [AttributeBizType.MEMBERSHIP]: 'membership',
+  [AttributeBizType.MEMBERSHIP]: 'companyMembership',
 };
 
 /** code → internal id, scoped (write path). */

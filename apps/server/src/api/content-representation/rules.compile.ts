@@ -19,14 +19,13 @@ import { compileText } from './text.compile';
  * stable code back to internal id (attribute / event); segment / content stay by
  * id. `run_javascript` is rejected (read-only).
  */
-export type AttributeScope = 'user' | 'company' | 'membership';
+export type AttributeScope = 'user' | 'company' | 'companyMembership';
 
 export interface CompileResolvers {
   /**
    * Resolve an attribute code → internal id WITHIN the given scope. A codeName can
-   * exist for user / company / membership, so the scope — driven by the condition
-   * type (user_attribute / company_attribute / membership_attribute) — disambiguates.
-   * Defaults to `user`.
+   * exist for user / company / companyMembership, so the `attribute` condition's
+   * `scope` disambiguates. Defaults to `user`.
    */
   attributeId: (code: string, scope?: AttributeScope) => string;
   eventId: (code: string) => string;
@@ -125,26 +124,17 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
           conditions: compileConditions(c.conditions, r, c.match === 'any' ? 'or' : 'and'),
         },
       );
-    case 'user_attribute':
-    case 'company_attribute':
-    case 'membership_attribute': {
-      // All three compile to the single internal `user-attr` type; the scope only
-      // disambiguates which attribute the codeName resolves to. Eval then dispatches
+    case 'attribute':
+      // Compiles to the internal `user-attr` type; `scope` picks which attribute the
+      // codeName resolves to (user / company / companyMembership). Eval then dispatches
       // on the resolved attribute's bizType.
-      const scope: AttributeScope =
-        c.type === 'company_attribute'
-          ? 'company'
-          : c.type === 'membership_attribute'
-            ? 'membership'
-            : 'user';
       return rule('user-attr', {
-        attrId: r.attributeId(c.attribute, scope),
+        attrId: r.attributeId(c.attribute, c.scope),
         logic: ATTR_LOGIC[c.op] ?? c.op,
         ...(c.value !== undefined ? { value: c.value } : {}),
         ...(c.value2 !== undefined ? { value2: c.value2 } : {}),
         ...(c.values !== undefined ? { listValues: c.values } : {}),
       });
-    }
     case 'event_attribute':
       // Same shape as user-attr, but the attribute resolves against the event's
       // own (bizType=event) attributes — a user attribute and an event attribute

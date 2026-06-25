@@ -96,8 +96,8 @@ export type StringOp = z.infer<typeof stringOp>;
 /**
  * Attribute condition scoped to an EVENT's own attributes — only valid inside an
  * `event` condition's `where` (enforced by the schema: it's not in the general
- * condition union). Same shape as user_attribute, but its `attribute` resolves
- * against event (bizType) attributes.
+ * condition union). Same shape as the `attribute` condition, but its `attribute`
+ * resolves against event (bizType) attributes.
  */
 export type EventAttributeCondition = {
   type: 'event_attribute';
@@ -118,23 +118,8 @@ export type EventWhereCondition =
 export type RepresentationCondition =
   | { type: 'group'; match: 'all' | 'any'; conditions: RepresentationCondition[] }
   | {
-      type: 'user_attribute';
-      attribute: string;
-      op: string;
-      value?: string;
-      value2?: string;
-      values?: string[];
-    }
-  | {
-      type: 'company_attribute';
-      attribute: string;
-      op: string;
-      value?: string;
-      value2?: string;
-      values?: string[];
-    }
-  | {
-      type: 'membership_attribute';
+      type: 'attribute';
+      scope: 'user' | 'company' | 'companyMembership';
       attribute: string;
       op: string;
       value?: string;
@@ -217,12 +202,19 @@ export const eventWhereCondition: z.ZodType<EventWhereCondition> = z.lazy(() =>
   ]),
 ) as unknown as z.ZodType<EventWhereCondition>;
 
-// Shared shape for the three attribute conditions (user / company / membership).
-// They differ ONLY by `type`, which selects the attribute scope: a codeName can
-// exist in more than one scope (the built-in `signed_up_at` / `first_seen_at` /
-// `last_seen_at` / `name` exist for both user and company), so the type — not the
-// codeName — disambiguates which attribute `attribute` resolves to.
+// The `attribute` condition — a condition on a user / company / companyMembership
+// attribute. `scope` is REQUIRED: a codeName can exist in more than one scope (the
+// built-in `signed_up_at` / `first_seen_at` / `last_seen_at` / `name` exist for both
+// user and company), so it — not the bare codeName — picks which attribute resolves.
 const attributeConditionFields = {
+  scope: z
+    .enum(['user', 'company', 'companyMembership'])
+    .describe(
+      'Which entity owns the attribute — `user` (the end user), `company`, or ' +
+        "`companyMembership`. Same value as the attribute definition's `scope` " +
+        '(list_attribute_definitions); required to disambiguate a codeName that exists ' +
+        'in more than one scope.',
+    ),
   attribute: z.string(),
   op: z
     .enum(ATTR_OPS)
@@ -260,10 +252,8 @@ export const representationCondition = z.lazy(() =>
       match: z.enum(['all', 'any']),
       conditions: z.array(representationCondition),
     }),
-    // user / company / membership attribute — same fields, the type picks the scope.
-    z.object({ type: z.literal('user_attribute'), ...attributeConditionFields }),
-    z.object({ type: z.literal('company_attribute'), ...attributeConditionFields }),
-    z.object({ type: z.literal('membership_attribute'), ...attributeConditionFields }),
+    // attribute condition (user / company / companyMembership — see `scope`).
+    z.object({ type: z.literal('attribute'), ...attributeConditionFields }),
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({
       type: z.literal('current_url'),

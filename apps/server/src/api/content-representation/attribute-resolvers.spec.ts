@@ -2,11 +2,11 @@ import { AttributeBizType } from '@/attributes/models/attribute.model';
 
 import { buildCompileResolversFrom, buildDecompileResolversFrom } from './attribute-resolvers';
 
-// Regression: a codeName can exist for user / company / membership (the built-in
-// `signed_up_at` / `first_seen_at` / `last_seen_at` / `name`). The condition type
-// (user_/company_/membership_attribute) picks the scope; resolution must be by
-// scope, not last-write-wins — otherwise an attribute-gated condition resolves to
-// the wrong attribute and silently never matches at runtime.
+// Regression: a codeName can exist for user / company / companyMembership (the
+// built-in `signed_up_at` / `first_seen_at` / `last_seen_at` / `name`). The
+// `attribute` condition's `scope` picks which one; resolution must be by scope, not
+// last-write-wins — otherwise an attribute-gated condition resolves to the wrong
+// attribute and silently never matches at runtime.
 describe('attribute resolvers — scope-aware codeName ↔ id', () => {
   const attributes = [
     { id: 'user-signed-up', codeName: 'signed_up_at', bizType: AttributeBizType.USER },
@@ -29,7 +29,7 @@ describe('attribute resolvers — scope-aware codeName ↔ id', () => {
     });
 
     it('resolves the membership scope', () => {
-      expect(r.attributeId('role', 'membership')).toBe('mem-role');
+      expect(r.attributeId('role', 'companyMembership')).toBe('mem-role');
     });
 
     it('keeps event attributes on their own resolver (not the scoped map)', () => {
@@ -48,7 +48,7 @@ describe('attribute resolvers — scope-aware codeName ↔ id', () => {
       expect(r.attributeCode('company-signed-up')).toBe('signed_up_at');
       expect(r.attributeScope('company-signed-up')).toBe('company');
       expect(r.attributeScope('user-signed-up')).toBe('user');
-      expect(r.attributeScope('mem-role')).toBe('membership');
+      expect(r.attributeScope('mem-role')).toBe('companyMembership');
     });
 
     it('defaults the scope to user for an unknown id', () => {
