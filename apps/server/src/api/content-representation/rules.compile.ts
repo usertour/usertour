@@ -19,8 +19,16 @@ import { compileText } from './text.compile';
  * stable code back to internal id (attribute / event); segment / content stay by
  * id. `run_javascript` is rejected (read-only).
  */
+export type AttributeScope = 'user' | 'company' | 'membership';
+
 export interface CompileResolvers {
-  attributeId: (code: string) => string;
+  /**
+   * Resolve an attribute code → internal id WITHIN the given scope. A codeName can
+   * exist for user / company / membership, so the scope — driven by the condition
+   * type (user_attribute / company_attribute / membership_attribute) — disambiguates.
+   * Defaults to `user`.
+   */
+  attributeId: (code: string, scope?: AttributeScope) => string;
   eventId: (code: string) => string;
   /**
    * Resolve an EVENT-scoped attribute code → internal id (for `event_attribute`
@@ -118,13 +126,25 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
         },
       );
     case 'user_attribute':
+    case 'company_attribute':
+    case 'membership_attribute': {
+      // All three compile to the single internal `user-attr` type; the scope only
+      // disambiguates which attribute the codeName resolves to. Eval then dispatches
+      // on the resolved attribute's bizType.
+      const scope: AttributeScope =
+        c.type === 'company_attribute'
+          ? 'company'
+          : c.type === 'membership_attribute'
+            ? 'membership'
+            : 'user';
       return rule('user-attr', {
-        attrId: r.attributeId(c.attribute),
+        attrId: r.attributeId(c.attribute, scope),
         logic: ATTR_LOGIC[c.op] ?? c.op,
         ...(c.value !== undefined ? { value: c.value } : {}),
         ...(c.value2 !== undefined ? { value2: c.value2 } : {}),
         ...(c.values !== undefined ? { listValues: c.values } : {}),
       });
+    }
     case 'event_attribute':
       // Same shape as user-attr, but the attribute resolves against the event's
       // own (bizType=event) attributes — a user attribute and an event attribute

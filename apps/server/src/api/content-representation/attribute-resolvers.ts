@@ -1,0 +1,64 @@
+import { AttributeBizType } from '@/attributes/models/attribute.model';
+
+import { AttributeScope, CompileResolvers } from './rules.compile';
+import { DecompileResolvers } from './rules.decompile';
+
+/**
+ * Single source of truth for building the codec's attribute/event reference
+ * resolvers from a project's attribute + event rows. Both the compile (code → id)
+ * and decompile (id → code/scope) sides live here so the scope handling can't drift
+ * between the services that need them (content-versions, segments, themes).
+ *
+ * A codeName can exist for user / company / membership (the built-in `signed_up_at`,
+ * `first_seen_at`, `last_seen_at`, `name`), so attribute conditions resolve a code
+ * WITHIN a scope; the condition type (user_/company_/membership_attribute) picks it.
+ * EVENT attributes have their own namespace (a codeName can collide with a user
+ * attribute), so they get a separate map.
+ */
+
+type AttributeRow = { id: string; codeName: string; bizType: number };
+type EventRow = { id: string; codeName: string };
+
+const SCOPE_BY_BIZTYPE: Partial<Record<number, AttributeScope>> = {
+  [AttributeBizType.USER]: 'user',
+  [AttributeBizType.COMPANY]: 'company',
+  [AttributeBizType.MEMBERSHIP]: 'membership',
+};
+
+/** code → internal id, scoped (write path). */
+export function buildCompileResolversFrom(
+  attributes: AttributeRow[],
+  events: EventRow[],
+): CompileResolvers {
+  const attrMap = new Map<string, string>();
+  for (const a of attributes) {
+    const scope = SCOPE_BY_BIZTYPE[a.bizType];
+    if (scope) attrMap.set(`${scope}:${a.codeName}`, a.id);
+  }
+  const eventAttrMap = new Map(
+    attributes.filter((a) => a.bizType === AttributeBizType.EVENT).map((a) => [a.codeName, a.id]),
+  );
+  const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
+  return {
+    attributeId: (code, scope = 'user') => attrMap.get(`${scope}:${code}`) ?? code,
+    eventId: (code) => eventMap.get(code) ?? code,
+    eventAttributeId: (code) => eventAttrMap.get(code) ?? code,
+  };
+}
+
+/** internal id → code / scope (read path). */
+export function buildDecompileResolversFrom(
+  attributes: AttributeRow[],
+  events: EventRow[],
+): DecompileResolvers {
+  const attrMap = new Map(attributes.map((a) => [a.id, a.codeName]));
+  const scopeMap = new Map<string, AttributeScope>(
+    attributes.map((a) => [a.id, SCOPE_BY_BIZTYPE[a.bizType] ?? 'user']),
+  );
+  const eventMap = new Map(events.map((e) => [e.id, e.codeName]));
+  return {
+    attributeCode: (id) => attrMap.get(id) ?? id,
+    attributeScope: (id) => scopeMap.get(id) ?? 'user',
+    eventCode: (id) => eventMap.get(id) ?? id,
+  };
+}

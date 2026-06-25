@@ -11,6 +11,7 @@ import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { buildDecompileResolversFrom } from '../content-representation/attribute-resolvers';
 import { nameContains } from '../shared/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -179,15 +180,10 @@ export class ApiThemesService {
     const [attributes, events] = await Promise.all([
       this.prisma.attribute.findMany({
         where: { projectId },
-        select: { id: true, codeName: true },
+        select: { id: true, codeName: true, bizType: true },
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
-    const attrMap = new Map(attributes.map((a) => [a.id, a.codeName]));
-    const eventMap = new Map(events.map((e) => [e.id, e.codeName]));
-    return {
-      attributeCode: (id) => attrMap.get(id) ?? id,
-      eventCode: (id) => eventMap.get(id) ?? id,
-    };
+    return buildDecompileResolversFrom(attributes, events);
   }
 }

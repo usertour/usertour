@@ -9,6 +9,7 @@ import {
   StringOp,
 } from './representation.schema';
 import { LOGIC_TO_ATTR_OP } from './attr-ops';
+import type { AttributeScope } from './rules.compile';
 import { decompileText } from './text.decompile';
 import { decompileTarget } from './target.decompile';
 
@@ -19,11 +20,18 @@ import { decompileTarget } from './target.decompile';
  */
 export interface DecompileResolvers {
   attributeCode: (id: string) => string;
+  /**
+   * Internal id → its attribute scope, so a `user-attr` condition decompiles to the
+   * matching representation type (user / company / membership_attribute). Optional —
+   * resolvers that don't track scope fall back to `user`.
+   */
+  attributeScope?: (id: string) => AttributeScope;
   eventCode: (id: string) => string;
 }
 
 export const IDENTITY_RESOLVERS: DecompileResolvers = {
   attributeCode: (id) => id,
+  attributeScope: () => 'user',
   eventCode: (id) => id,
 };
 
@@ -133,15 +141,25 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
         match: listJoiner(c.conditions) === 'or' ? 'any' : 'all',
         conditions: decompileConditions(c.conditions, r),
       };
-    case 'user-attr':
+    case 'user-attr': {
+      // The internal id encodes the scope; emit the matching representation type so a
+      // company / membership attribute round-trips to its own type, not to user.
+      const attrScope = r.attributeScope?.(d.attrId ?? '') ?? 'user';
+      const attrType =
+        attrScope === 'company'
+          ? 'company_attribute'
+          : attrScope === 'membership'
+            ? 'membership_attribute'
+            : 'user_attribute';
       return {
-        type: 'user_attribute',
+        type: attrType,
         attribute: r.attributeCode(d.attrId ?? ''),
         op: mapAttrOp(d.logic),
         ...(d.value != null ? { value: String(d.value) } : {}),
         ...(d.value2 != null ? { value2: String(d.value2) } : {}),
         ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
       };
+    }
     case 'event-attr':
       // attrId → code via the shared attributeCode map (ids are unique, so no
       // bizType ambiguity on the read side).

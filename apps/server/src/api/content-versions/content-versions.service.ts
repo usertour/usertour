@@ -9,7 +9,6 @@ import {
   ThemeNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
@@ -27,6 +26,10 @@ import {
   decompileHideRules,
   decompileStartRules,
 } from '../content-representation/rules.decompile';
+import {
+  buildCompileResolversFrom,
+  buildDecompileResolversFrom,
+} from '../content-representation/attribute-resolvers';
 import {
   type UsabilityReport,
   validateVersionUsable,
@@ -175,16 +178,11 @@ export class ApiContentVersionsService {
     const [attributes, events] = await Promise.all([
       this.prisma.attribute.findMany({
         where: { projectId },
-        select: { id: true, codeName: true },
+        select: { id: true, codeName: true, bizType: true },
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
-    const attrMap = new Map(attributes.map((a) => [a.id, a.codeName]));
-    const eventMap = new Map(events.map((e) => [e.id, e.codeName]));
-    return {
-      attributeCode: (id) => attrMap.get(id) ?? id,
-      eventCode: (id) => eventMap.get(id) ?? id,
-    };
+    return buildDecompileResolversFrom(attributes, events);
   }
 
   /**
@@ -450,17 +448,6 @@ export class ApiContentVersionsService {
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
-    const attrMap = new Map(attributes.map((a) => [a.codeName, a.id]));
-    // Event attributes live in their own bizType namespace (a codeName can collide
-    // with a user attribute), so event_attribute conditions resolve via this map.
-    const eventAttrMap = new Map(
-      attributes.filter((a) => a.bizType === AttributeBizType.EVENT).map((a) => [a.codeName, a.id]),
-    );
-    const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
-    return {
-      attributeId: (code) => attrMap.get(code) ?? code,
-      eventId: (code) => eventMap.get(code) ?? code,
-      eventAttributeId: (code) => eventAttrMap.get(code) ?? code,
-    };
+    return buildCompileResolversFrom(attributes, events);
   }
 }

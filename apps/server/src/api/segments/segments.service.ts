@@ -4,7 +4,6 @@ import { JsonValue } from '@prisma/client/runtime/library';
 import { PrismaService } from 'nestjs-prisma';
 
 import { BizService } from '@/biz/biz.service';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {
   CompanyNotFoundError,
@@ -19,6 +18,10 @@ import { loadConditionContext } from '../content-representation/condition-contex
 import { collectRuleIssues } from '../content-representation/condition-validate';
 import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import {
+  buildCompileResolversFrom,
+  buildDecompileResolversFrom,
+} from '../content-representation/attribute-resolvers';
 import { nameContains } from '../shared/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -229,16 +232,11 @@ export class ApiSegmentsService {
     const [attributes, events] = await Promise.all([
       this.prisma.attribute.findMany({
         where: { projectId },
-        select: { id: true, codeName: true },
+        select: { id: true, codeName: true, bizType: true },
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
-    const attrMap = new Map(attributes.map((a) => [a.id, a.codeName]));
-    const eventMap = new Map(events.map((e) => [e.id, e.codeName]));
-    return {
-      attributeCode: (id) => attrMap.get(id) ?? id,
-      eventCode: (id) => eventMap.get(id) ?? id,
-    };
+    return buildDecompileResolversFrom(attributes, events);
   }
 
   /** Stable codeName -> internal attribute / event id (write; fallback: the code). */
@@ -250,15 +248,6 @@ export class ApiSegmentsService {
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
-    const attrMap = new Map(attributes.map((a) => [a.codeName, a.id]));
-    const eventAttrMap = new Map(
-      attributes.filter((a) => a.bizType === AttributeBizType.EVENT).map((a) => [a.codeName, a.id]),
-    );
-    const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
-    return {
-      attributeId: (code) => attrMap.get(code) ?? code,
-      eventId: (code) => eventMap.get(code) ?? code,
-      eventAttributeId: (code) => eventAttrMap.get(code) ?? code,
-    };
+    return buildCompileResolversFrom(attributes, events);
   }
 }

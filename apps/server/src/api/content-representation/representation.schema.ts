@@ -125,6 +125,22 @@ export type RepresentationCondition =
       value2?: string;
       values?: string[];
     }
+  | {
+      type: 'company_attribute';
+      attribute: string;
+      op: string;
+      value?: string;
+      value2?: string;
+      values?: string[];
+    }
+  | {
+      type: 'membership_attribute';
+      attribute: string;
+      op: string;
+      value?: string;
+      value2?: string;
+      values?: string[];
+    }
   | { type: 'segment'; segment: string; in: boolean }
   | { type: 'current_url'; includes: string[]; excludes?: string[] }
   | {
@@ -201,6 +217,42 @@ export const eventWhereCondition: z.ZodType<EventWhereCondition> = z.lazy(() =>
   ]),
 ) as unknown as z.ZodType<EventWhereCondition>;
 
+// Shared shape for the three attribute conditions (user / company / membership).
+// They differ ONLY by `type`, which selects the attribute scope: a codeName can
+// exist in more than one scope (the built-in `signed_up_at` / `first_seen_at` /
+// `last_seen_at` / `name` exist for both user and company), so the type — not the
+// codeName — disambiguates which attribute `attribute` resolves to.
+const attributeConditionFields = {
+  attribute: z.string(),
+  op: z
+    .enum(ATTR_OPS)
+    .describe(
+      'Operator — the allowed set depends on the attribute dataType. ' +
+        'String: is | not | contains | not_contains | starts_with | ends_with | any | empty. ' +
+        'Number: is | not | lt | lte | gt | gte | between | any | empty. ' +
+        'Boolean: true | false | any | empty. ' +
+        'List: includes_any | includes_all | not_includes_any | not_includes_all | any | empty. ' +
+        'DateTime: less_than | exactly | more_than (relative "days ago" — `value` is a number ' +
+        'of days; e.g. attribute `first_seen_at` with op `less_than`, value `7` = "first seen ' +
+        'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
+        'is an absolute date) | any | empty.',
+    ),
+  value: z
+    .string()
+    .optional()
+    .describe(
+      'The comparison value (string / number-as-string / date). Omit for any/empty/true/false.',
+    ),
+  value2: z
+    .string()
+    .optional()
+    .describe('Upper bound for the `between` operator (`value` is the lower bound).'),
+  values: z
+    .array(z.string())
+    .optional()
+    .describe('Values for the List operators (includes_any / includes_all / …).'),
+};
+
 export const representationCondition = z.lazy(() =>
   z.union([
     z.object({
@@ -208,37 +260,10 @@ export const representationCondition = z.lazy(() =>
       match: z.enum(['all', 'any']),
       conditions: z.array(representationCondition),
     }),
-    z.object({
-      type: z.literal('user_attribute'),
-      attribute: z.string(),
-      op: z
-        .enum(ATTR_OPS)
-        .describe(
-          'Operator — the allowed set depends on the attribute dataType. ' +
-            'String: is | not | contains | not_contains | starts_with | ends_with | any | empty. ' +
-            'Number: is | not | lt | lte | gt | gte | between | any | empty. ' +
-            'Boolean: true | false | any | empty. ' +
-            'List: includes_any | includes_all | not_includes_any | not_includes_all | any | empty. ' +
-            'DateTime: less_than | exactly | more_than (relative "days ago" — `value` is a number ' +
-            'of days; e.g. attribute `first_seen_at` with op `less_than`, value `7` = "first seen ' +
-            'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
-            'is an absolute date) | any | empty.',
-        ),
-      value: z
-        .string()
-        .optional()
-        .describe(
-          'The comparison value (string / number-as-string / date). Omit for any/empty/true/false.',
-        ),
-      value2: z
-        .string()
-        .optional()
-        .describe('Upper bound for the `between` operator (`value` is the lower bound).'),
-      values: z
-        .array(z.string())
-        .optional()
-        .describe('Values for the List operators (includes_any / includes_all / …).'),
-    }),
+    // user / company / membership attribute — same fields, the type picks the scope.
+    z.object({ type: z.literal('user_attribute'), ...attributeConditionFields }),
+    z.object({ type: z.literal('company_attribute'), ...attributeConditionFields }),
+    z.object({ type: z.literal('membership_attribute'), ...attributeConditionFields }),
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({
       type: z.literal('current_url'),
