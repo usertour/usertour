@@ -231,6 +231,32 @@ describe('API v2 /content (e2e)', () => {
     expect(gone.status).toBe(404);
   });
 
+  it('refuses to delete published content, allows it once unpublished (409 E1028)', async () => {
+    const token = await mint([
+      Capability.ContentCreate,
+      Capability.ContentDelete,
+      Capability.ContentRead,
+    ]);
+    // a fresh content published into the environment (don't touch shared fixtures)
+    const c = await buildContent(prisma, { projectId, environmentId });
+    const v = await buildVersion(prisma, { contentId: c.id });
+    await prisma.contentOnEnvironment.create({
+      data: { environmentId, contentId: c.id, published: true, publishedVersionId: v.id },
+    });
+
+    // published → delete blocked
+    const blocked = await api('delete', `/v2/projects/${projectId}/content/${c.id}`, token);
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1028');
+    expect((await api('get', `/v2/projects/${projectId}/content/${c.id}`, token)).status).toBe(200);
+
+    // unpublish (clear the live row), then delete succeeds
+    await prisma.contentOnEnvironment.deleteMany({ where: { contentId: c.id } });
+    const ok = await api('delete', `/v2/projects/${projectId}/content/${c.id}`, token);
+    expect(ok.status).toBe(204);
+    expect((await api('get', `/v2/projects/${projectId}/content/${c.id}`, token)).status).toBe(404);
+  });
+
   it('rejects create without the create scope (403 E1012)', async () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api('post', `/v2/projects/${projectId}/content`, token).send({

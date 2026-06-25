@@ -10,6 +10,7 @@ import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import {
+  ContentPublishedDeleteError,
   ParamsError,
   UnknownError,
   VersionConflictError,
@@ -419,6 +420,17 @@ export class ContentService {
   }
 
   async deleteContent(contentId: string) {
+    // Refuse to delete content that is still live in any environment — deleting
+    // it would pull a published experience out from under users. The web UI
+    // disables delete while published; enforce the same rule here so every
+    // caller (GraphQL, v2 REST, MCP) is bound by it, not just the UI. Unpublish
+    // from all environments first, then delete.
+    const publishedCount = await this.prisma.contentOnEnvironment.count({
+      where: { contentId, published: true },
+    });
+    if (publishedCount > 0) {
+      throw new ContentPublishedDeleteError();
+    }
     // Same multi-environment caveat as updateContent: a Content can have
     // ContentOnEnvironment rows in several envs, and each env has its
     // own cached slice + pubver mapping that must be invalidated.

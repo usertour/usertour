@@ -303,6 +303,22 @@ export class ContentNotPublishableError extends OpenAPIError {
   }
 }
 
+/**
+ * Deleting content that is still published in one or more environments would
+ * pull a live experience out from under users. Unpublish from all environments
+ * first, then delete. The web UI disables delete while content is published;
+ * this enforces the same rule at the service layer so the API / MCP (which
+ * bypass the UI) can't do what the UI forbids.
+ */
+export class ContentPublishedDeleteError extends OpenAPIError {
+  code = 'E1028';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete content that is still published. Unpublish it from all environments first.',
+    'zh-CN': '无法删除仍处于发布状态的内容，请先在所有环境中取消发布。',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
