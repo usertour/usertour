@@ -193,7 +193,11 @@ export function compileContent(
           id: cuid(),
           element: {
             type: 'column',
-            ...(col.width ? { width: toInternalWidth(col.width) } : {}),
+            // Default a width-less column to `fill` so it shrinks to the row and its
+            // text wraps — matching the builder, which always sets fill (helper.ts).
+            // Without it the column is flex:'0 0 auto' (content-sized) and long text
+            // overflows the panel and gets clipped.
+            ...(col.width ? { width: toInternalWidth(col.width) } : { width: { type: 'fill' } }),
             ...(col.justify ? { justifyContent: `justify-${col.justify}` } : {}),
             ...(col.align ? { alignItems: `items-${col.align}` } : {}),
             ...(col.padding ? { padding: toInternalSpacing(col.padding) } : {}),
@@ -208,7 +212,9 @@ export function compileContent(
       children: [
         {
           id: cuid(),
-          element: { type: 'column' },
+          // Implicit single column wrapping a block — `fill` so it fills the row and
+          // the block's text wraps (matches the builder default; see helper.ts).
+          element: { type: 'column', width: { type: 'fill' } },
           children: [compileElement(block, byId, r, dismiss)],
         },
       ],
