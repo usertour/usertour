@@ -9,6 +9,7 @@ import {
   RepresentationStartRules,
   RepresentationTrigger,
 } from './representation.schema';
+import { ATTR_OP_TO_LOGIC } from './attr-ops';
 import { compileTargetToElementData } from './target.compile';
 import { compileText } from './text.compile';
 
@@ -39,36 +40,8 @@ export interface CompileResolvers {
 
 type Rule = { id: string; type: string; data: any; operators?: 'and' | 'or'; conditions?: Rule[] };
 
-// representation op → internal logic (inverse of the decompile maps).
-const ATTR_LOGIC: Record<string, string> = {
-  is: 'is',
-  not: 'not',
-  contains: 'contains',
-  not_contains: 'notContain',
-  starts_with: 'startsWith',
-  ends_with: 'endsWith',
-  match: 'match',
-  unmatch: 'unmatch',
-  any: 'any',
-  empty: 'empty',
-  lt: 'isLessThan',
-  lte: 'isLessThanOrEqualTo',
-  gt: 'isGreaterThan',
-  gte: 'isGreaterThanOrEqualTo',
-  between: 'between',
-  true: 'true',
-  false: 'false',
-  includes_any: 'includesAtLeastOne',
-  includes_all: 'includesAll',
-  not_includes_any: 'notIncludesAtLeastOne',
-  not_includes_all: 'notIncludesAll',
-  less_than: 'lessThan',
-  exactly: 'exactly',
-  more_than: 'moreThan',
-  before: 'before',
-  on: 'on',
-  after: 'after',
-};
+// representation op → internal logic — single source of truth in attr-ops.ts.
+const ATTR_LOGIC: Record<string, string> = ATTR_OP_TO_LOGIC;
 const ELEMENT_LOGIC: Record<string, string> = {
   present: 'present',
   hidden: 'unpresent',

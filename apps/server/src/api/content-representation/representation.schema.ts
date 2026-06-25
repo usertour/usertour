@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { ATTR_OPS } from './attr-ops';
 import { ApiObjectType } from '../shared/object-type';
 
 /**
@@ -182,7 +183,7 @@ export type CompilableCondition =
 export const eventAttributeCondition = z.object({
   type: z.literal('event_attribute'),
   attribute: z.string(),
-  op: z.string(),
+  op: z.enum(ATTR_OPS),
   value: z.string().optional(),
   value2: z.string().optional(),
   values: z.array(z.string()).optional(),
@@ -211,7 +212,7 @@ export const representationCondition = z.lazy(() =>
       type: z.literal('user_attribute'),
       attribute: z.string(),
       op: z
-        .string()
+        .enum(ATTR_OPS)
         .describe(
           'Operator — the allowed set depends on the attribute dataType. ' +
             'String: is | not | contains | not_contains | starts_with | ends_with | any | empty. ' +

@@ -8,6 +8,7 @@ import {
   RepresentationTrigger,
   StringOp,
 } from './representation.schema';
+import { LOGIC_TO_ATTR_OP } from './attr-ops';
 import { decompileText } from './text.decompile';
 import { decompileTarget } from './target.decompile';
 
@@ -47,26 +48,8 @@ const STRING_OP: Record<string, StringOp> = {
   any: 'any',
   empty: 'empty',
 };
-const ATTR_OP: Record<string, string> = {
-  ...STRING_OP,
-  isLessThan: 'lt',
-  isLessThanOrEqualTo: 'lte',
-  isGreaterThan: 'gt',
-  isGreaterThanOrEqualTo: 'gte',
-  between: 'between',
-  true: 'true',
-  false: 'false',
-  includesAtLeastOne: 'includes_any',
-  includesAll: 'includes_all',
-  notIncludesAtLeastOne: 'not_includes_any',
-  notIncludesAll: 'not_includes_all',
-  lessThan: 'less_than',
-  exactly: 'exactly',
-  moreThan: 'more_than',
-  before: 'before',
-  on: 'on',
-  after: 'after',
-};
+// internal logic → representation op — single source of truth in attr-ops.ts.
+const ATTR_OP: Record<string, string> = LOGIC_TO_ATTR_OP;
 const ELEMENT_STATE: Record<string, string> = {
   present: 'present',
   unpresent: 'hidden',

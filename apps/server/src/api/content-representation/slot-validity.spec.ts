@@ -13,7 +13,7 @@ describe('positional condition validity', () => {
   const eventAttr = {
     type: 'event_attribute',
     attribute: 'price',
-    op: 'greater_than',
+    op: 'gt',
     value: '10',
   };
 
