@@ -396,7 +396,11 @@ export class ApiContentVersionsService {
       }
     }
 
-    return this.get(id, contentId, projectId, { expand: ['steps'] });
+    // Echo BOTH steps (flow) and data (checklist/launcher/banner/tracker/
+    // resource-center) so the write response confirms what was persisted in one
+    // round-trip — a flow has no `data` and a non-flow has empty `steps`, so the
+    // mapper just omits the irrelevant one.
+    return this.get(id, contentId, projectId, { expand: ['steps', 'data'] });
   }
 
   /**

@@ -141,7 +141,8 @@ export function buildWriteTools(): McpTool[] {
         'step to update by its `cvid` (stable across forks) or primary `id`; omit both to add a ' +
         'new one. Editing a published version fails with E0049 — fork it first with ' +
         'create_content_version. Text blocks use markdown, with `{{ attribute | default: "x" }}` ' +
-        'for user attributes. Returns the updated version with its decompiled steps.',
+        'for user attributes. Returns the updated version with the persisted body decompiled — ' +
+        '`steps` for a flow, `data` for other types — so you can confirm the write without a re-read.',
       inputSchema: {
         contentId: z.string(),
         versionId: z.string(),
