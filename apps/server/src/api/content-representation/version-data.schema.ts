@@ -41,8 +41,23 @@ const checklistItem = z.object({
   // completeWhen also accepts the parameterless `task_clicked` (a task completes
   // when its item is clicked) — valid only here (incl. nested in OR groups), not
   // in the general condition set.
-  completeWhen: z.array(completeWhenCondition).default([]),
-  clickActions: z.array(representationAction).default([]),
+  completeWhen: z
+    .array(completeWhenCondition)
+    .default([])
+    .describe(
+      'Condition(s) that mark THIS task done. Use [{ "type": "task_clicked" }] to complete it ' +
+        'when the user clicks the task — the only option that needs no app instrumentation; ' +
+        'other conditions (event / element / segment / current_url / user_attribute) require the ' +
+        'matching wiring or data in your app. Empty = the task never auto-completes.',
+    ),
+  clickActions: z
+    .array(representationAction)
+    .default([])
+    .describe(
+      'What happens when the user CLICKS the task row (e.g. [{ "type": "navigate", "url": "/x" }]) ' +
+        '— a side effect, NOT completion. To also mark the task done on that click, add ' +
+        '{ "type": "task_clicked" } to completeWhen.',
+    ),
   onlyShowWhen: z.array(representationCondition).optional(),
 });
 export const representationChecklist = z.object({
