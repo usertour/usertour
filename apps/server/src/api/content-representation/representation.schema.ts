@@ -214,14 +214,12 @@ export const representationCondition = z.lazy(() =>
         .string()
         .describe(
           'Operator — the allowed set depends on the attribute dataType. ' +
-            'String: is | not | contains | notContain | startsWith | endsWith | any | empty. ' +
-            'Number: is | not | isLessThan | isLessThanOrEqualTo | isGreaterThan | ' +
-            'isGreaterThanOrEqualTo | between | any | empty. ' +
+            'String: is | not | contains | not_contains | starts_with | ends_with | any | empty. ' +
+            'Number: is | not | lt | lte | gt | gte | between | any | empty. ' +
             'Boolean: true | false | any | empty. ' +
-            'List: includesAtLeastOne | includesAll | notIncludesAtLeastOne | notIncludesAll | ' +
-            'any | empty. ' +
-            'DateTime: lessThan | exactly | moreThan (relative "days ago" — `value` is a number ' +
-            'of days; e.g. attribute `first_seen_at` with op `lessThan`, value `7` = "first seen ' +
+            'List: includes_any | includes_all | not_includes_any | not_includes_all | any | empty. ' +
+            'DateTime: less_than | exactly | more_than (relative "days ago" — `value` is a number ' +
+            'of days; e.g. attribute `first_seen_at` with op `less_than`, value `7` = "first seen ' +
             'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
             'is an absolute date) | any | empty.',
         ),
@@ -238,7 +236,7 @@ export const representationCondition = z.lazy(() =>
       values: z
         .array(z.string())
         .optional()
-        .describe('Values for the List operators (includesAtLeastOne / includesAll / …).'),
+        .describe('Values for the List operators (includes_any / includes_all / …).'),
     }),
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({
