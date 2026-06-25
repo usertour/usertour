@@ -173,8 +173,11 @@ export function buildReadTools(): McpTool[] {
         // instead of throwing, so the discovery tool never fails. `reused: 'ref'`
         // hoists the shared sub-schemas (conditions / blocks / actions, referenced
         // many times) into `$defs` instead of re-inlining them — ~25% smaller.
+        // `io: 'input'` advertises the WRITE shape: fields with a `.default()`
+        // (e.g. a block's `object: 'block'`) are optional on input, so they must
+        // not appear in `required` — otherwise the agent thinks it must send them.
         const toJson = (s: z.ZodType) =>
-          z.toJSONSchema(s, { unrepresentable: 'any', reused: 'ref' });
+          z.toJSONSchema(s, { unrepresentable: 'any', reused: 'ref', io: 'input' });
         if (type === 'flow') {
           return { type, body: 'steps', schema: toJson(z.array(representationStepInput)) };
         }
