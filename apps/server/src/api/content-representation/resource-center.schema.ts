@@ -102,7 +102,15 @@ const rcTab = z.object({
   id: z.string().optional(),
   name: z.string(),
   icon: rcIcon.optional(),
-  blocks: z.array(rcBlock).default([]),
+  blocks: z
+    .array(rcBlock)
+    .default([])
+    .describe(
+      'Tab blocks use the resource-center vocabulary — richtext / divider / action / sub-page / ' +
+        'content-list / live-chat — NOT the flow content blocks. Put text inside a `richtext` ' +
+        'block: { "type": "richtext", "content": [{ "object": "block", "type": "text", ' +
+        '"markdown": "…" }] }. A bare top-level text block (type "text") is rejected here.',
+    ),
 });
 
 export const representationResourceCenter = z.object({
