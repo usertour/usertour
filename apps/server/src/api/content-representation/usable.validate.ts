@@ -73,6 +73,18 @@ const UI_TYPES = new Set<string>([
   ContentDataType.RESOURCE_CENTER,
 ]);
 
+// Types that appear ONLY when their auto-start conditions match — they have no
+// session-resume first-show path (Banner is re-evaluated every toggle; Launcher
+// and Resource Center need auto-start to create the first session). With an empty
+// rule set the runtime's isEnabledAutoStartRules bails, so the content can never
+// surface on its own — but publish still succeeds. Flow/Checklist are excluded:
+// they routinely resume sessions and are commonly started via usertour.start().
+const AUTO_START_REQUIRED_TYPES = new Set<string>([
+  ContentDataType.LAUNCHER,
+  ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
+]);
+
 /** Whether a content type renders UI and therefore needs a theme (everything but tracker). */
 export function requiresTheme(type: string): boolean {
   return UI_TYPES.has(type);
@@ -205,6 +217,24 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       break;
     default:
       break;
+  }
+
+  // Auto-start gate: a Launcher / Banner / Resource Center with no start rules can
+  // never appear on its own (see AUTO_START_REQUIRED_TYPES) yet publishes fine — the
+  // silent "I published it and nothing shows" trap. Warn, not error: it can still be
+  // launched via usertour.start().
+  if (AUTO_START_REQUIRED_TYPES.has(input.type)) {
+    const rules = input.config?.autoStartRules;
+    if (!rules || rules.length === 0) {
+      const extra =
+        input.type === ContentDataType.RESOURCE_CENTER
+          ? ' Its launcher never shows and openResourceCenter() stays a no-op until a session exists.'
+          : '';
+      warn(
+        'config.autoStartRules',
+        `${input.type} has no start rules, so it never appears on its own — it surfaces only when its auto-start conditions match.${extra} Add at least one auto-start condition; for an always-available surface use a permissive current_url match. It can still be launched programmatically via usertour.start().`,
+      );
+    }
   }
 
   // Question config (renderability — always checked) across steps + non-flow data.

@@ -449,4 +449,35 @@ describe('validateVersionUsable', () => {
       ).toBe(false);
     });
   });
+
+  describe('auto-start (cross-cutting)', () => {
+    const warnsNoStart = (input: Parameters<typeof validateVersionUsable>[0]) =>
+      paths(validateVersionUsable(input).warnings).includes('config.autoStartRules');
+
+    it('warns when a resource center has no start rules', () => {
+      expect(warnsNoStart({ type: ContentDataType.RESOURCE_CENTER, themeId: 't' })).toBe(true);
+    });
+
+    it('warns when a launcher has no start rules', () => {
+      expect(warnsNoStart({ type: ContentDataType.LAUNCHER, themeId: 't' })).toBe(true);
+    });
+
+    it('warns when a banner has no start rules', () => {
+      expect(warnsNoStart({ type: ContentDataType.BANNER, themeId: 't' })).toBe(true);
+    });
+
+    it('does not warn once a start rule is present', () => {
+      expect(
+        warnsNoStart({
+          type: ContentDataType.RESOURCE_CENTER,
+          themeId: 't',
+          config: { autoStartRules: [{ type: 'current-page' } as never] },
+        }),
+      ).toBe(false);
+    });
+
+    it('does not warn for a flow with no start rules (manual start is normal)', () => {
+      expect(warnsNoStart({ type: ContentDataType.FLOW, themeId: 't' })).toBe(false);
+    });
+  });
 });
