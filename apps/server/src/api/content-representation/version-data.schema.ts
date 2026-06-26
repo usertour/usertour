@@ -62,10 +62,24 @@ const checklistItem = z.object({
 });
 export const representationChecklist = z.object({
   buttonText: z.string().optional(),
-  initialDisplay: z.enum(['expanded', 'button']).optional(),
-  completionOrder: z.enum(['any', 'ordered']).optional(),
-  preventDismiss: z.boolean().optional(),
-  autoDismiss: z.boolean().optional(),
+  initialDisplay: z
+    .enum(['expanded', 'button'])
+    .optional()
+    .describe(
+      'How the checklist first appears: `expanded` shows the whole checklist (tasks and all); ' +
+        '`button` shows just the launcher button.',
+    ),
+  completionOrder: z
+    .enum(['any', 'ordered'])
+    .optional()
+    .describe(
+      'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to bottom).',
+    ),
+  preventDismiss: z.boolean().optional().describe("When true, users can't dismiss the checklist."),
+  autoDismiss: z
+    .boolean()
+    .optional()
+    .describe('When true, the checklist closes on its own once every task is done.'),
   content: z.array(representationBlock).optional(),
   items: z
     .array(checklistItem)
@@ -106,8 +120,10 @@ export const representationLauncher = z.object({
     .object({
       placement: launcherPlacement.optional(),
       width: z.number().optional(),
-      /** Whether the tooltip anchors to the target element or to the launcher. */
-      reference: z.enum(['target', 'launcher']).optional(),
+      reference: z
+        .enum(['target', 'launcher'])
+        .optional()
+        .describe('Whether the tooltip anchors to the target element or to the launcher itself.'),
       content: z.array(representationBlock).optional(),
       settings: z
         .object({
@@ -142,24 +158,53 @@ export const representationBanner = z.object({
       'immediately-before-element',
       'immediately-after-element',
     ])
-    .optional(),
+    .optional()
+    .describe(
+      'Where the banner shows: the top/bottom of the page, or relative to a container element ' +
+        '(top/bottom of it, or immediately before/after it). The container/element variants ' +
+        'require `containerTarget`.',
+    ),
   content: z.array(representationBlock).optional(),
   /** Stacking order (CSS z-index — must be an integer; may be negative). */
   zIndex: z.number().int().optional(),
   settings: z
     .object({
-      overlayOverAppContent: z.boolean().optional(),
-      stickToTop: z.boolean().optional(),
-      allowDismiss: z.boolean().optional(),
-      animateOnAppear: z.boolean().optional(),
+      overlayOverAppContent: z
+        .boolean()
+        .optional()
+        .describe(
+          'When true the banner floats over the page; when false it takes its own space and ' +
+            'pushes the page content down.',
+        ),
+      stickToTop: z
+        .boolean()
+        .optional()
+        .describe('Keeps the banner pinned at the top while the user scrolls.'),
+      allowDismiss: z
+        .boolean()
+        .optional()
+        .describe('Adds an X button so the user can permanently dismiss the banner.'),
+      animateOnAppear: z
+        .boolean()
+        .optional()
+        .describe('Slide the banner in instead of popping into place.'),
     })
     .optional(),
   containerTarget: representationTarget.optional(),
   layout: z
     .object({
-      maxContentWidth: z.number().optional(),
-      maxEmbedWidth: z.number().optional(),
-      borderRadius: z.number().optional(),
+      maxContentWidth: z
+        .number()
+        .optional()
+        .describe('Max width of the banner content, in pixels. Omit for no limit.'),
+      maxEmbedWidth: z
+        .number()
+        .optional()
+        .describe('Max width of the embed container, in pixels. Omit for no limit.'),
+      borderRadius: z
+        .number()
+        .optional()
+        .describe('Corner rounding in pixels. Omit for the theme default.'),
       outerMargin: z
         .object({
           top: z.number(),
@@ -167,7 +212,8 @@ export const representationBanner = z.object({
           bottom: z.number(),
           left: z.number(),
         })
-        .optional(),
+        .optional()
+        .describe('Space (in pixels) around the banner on all four sides.'),
     })
     .optional(),
 });
