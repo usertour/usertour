@@ -47,8 +47,8 @@ export const representationTarget = z.object({
     .describe(
       'Optional refinement of `selector`. 0-based index to pick which match when the selector ' +
         "isn't unique — e.g. a stable selector matching 3 elements + `nth: 1` targets the 2nd, " +
-        'giving a unique result. Range 0–4 — only the first 5 matches are addressable; a larger ' +
-        'value is rejected.',
+        'giving a unique result. Matches are taken in document order (as they appear in the page ' +
+        'HTML). Range 0–4 — only the first 5 matches are addressable; a larger value is rejected.',
     ),
 });
 export type RepresentationTarget = z.infer<typeof representationTarget>;
@@ -629,14 +629,34 @@ export const representationStartRules = z.object({
         .object({ times: z.number().optional(), duration: z.number(), unit: durationUnit })
         .optional()
         .describe(
-          'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied.',
+          'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied. Manual and programmatic starts also count toward the `multiple` limit.',
         ),
-      atLeast: z.object({ duration: z.number(), unit: durationUnit }).optional(),
+      atLeast: z
+        .object({ duration: z.number(), unit: durationUnit })
+        .optional()
+        .describe(
+          'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
+        ),
     })
     .optional(),
-  priority: z.enum(['highest', 'high', 'medium', 'low', 'lowest']).optional(),
-  waitMs: z.number().optional(),
-  startIfNotComplete: z.boolean().optional(),
+  priority: z
+    .enum(['highest', 'high', 'medium', 'low', 'lowest'])
+    .optional()
+    .describe(
+      'Tie-breaker when a user matches the start conditions for more than one piece of content at ' +
+        'the same time — the higher priority starts first.',
+    ),
+  waitMs: z
+    .number()
+    .optional()
+    .describe(
+      'Delay in milliseconds between the conditions matching and the start firing. The conditions ' +
+        'must keep matching for the entire wait, or it will not start.',
+    ),
+  startIfNotComplete: z
+    .boolean()
+    .optional()
+    .describe("When true, this content won't auto-start for users who have already completed it."),
 });
 export type RepresentationStartRules = z.infer<typeof representationStartRules>;
 
