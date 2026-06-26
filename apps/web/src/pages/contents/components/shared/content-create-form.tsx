@@ -21,7 +21,12 @@ import {
 } from '@usertour/ui';
 import { useCreateContentMutation } from '@usertour/hooks';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
-import { ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
+import {
+  ContentDataType,
+  DEFAULT_BANNER_DATA,
+  DEFAULT_CHECKLIST_DATA,
+  DEFAULT_LAUNCHER_DATA,
+} from '@usertour/types';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -62,6 +67,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, () => unknown>> = {
   [ContentDataType.CHECKLIST]: () => ({ ...DEFAULT_CHECKLIST_DATA }),
+  [ContentDataType.LAUNCHER]: () => ({ ...DEFAULT_LAUNCHER_DATA }),
+  [ContentDataType.BANNER]: () => ({ ...DEFAULT_BANNER_DATA }),
   [ContentDataType.RESOURCE_CENTER]: createDefaultResourceCenterData,
 };
 
