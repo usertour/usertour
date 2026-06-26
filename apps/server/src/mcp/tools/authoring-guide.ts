@@ -48,6 +48,8 @@ A \`target\` identifies one element by a CSS \`selector\`, optionally refined by
 ## Start rules & frequency
 \`startRules.frequency.mode\`: \`once\` (single show) | \`multiple\` (up to N per window) | \`unlimited\` (every match). \`multiple\`/\`unlimited\` use an \`every\` window (\`{ times?, duration, unit }\`); \`once\` ignores it.
 
+**Start-rule knobs are type-gated — setting an unsupported one is rejected (e.g. \`frequency\` on a banner → E1017).** \`frequency\`, \`waitMs\`, \`startIfNotComplete\` are **flow + checklist** only (\`frequency.atLeast\`, flow only); \`priority\` is flow + checklist + resource-center. **Banner and launcher accept none of these — they show purely when their \`startRules\` conditions match.**
+
 **Targeting "new users" is an audience, not just a frequency.** \`frequency: once\` means "show each matching user a single time" — NOT "only recently-created users"; every user still hits it once. For a true recency audience add an \`attribute\` condition (scope \`user\`) on a date attribute (e.g. \`first_seen_at\`, op \`less_than\`, value \`7\` = first seen in the last 7 days), or make a \`segment\` for it and gate on that — then pair it with \`frequency: once\` so new users see it exactly once.
 
 **\`current_url\` patterns (NOT substring, NOT regex).** \`includes\`/\`excludes\` are arrays of **URL patterns** matched against the WHOLE url (anchored). Syntax: \`*\` is a wildcard within one url part (doesn't cross \`/\`); \`:name\` matches one path segment. **Omitting a part means "any" for it — most importantly, a pattern with NO path matches EVERY path (the whole site).** So scope by writing the path:
