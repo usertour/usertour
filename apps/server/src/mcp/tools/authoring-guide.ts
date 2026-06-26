@@ -26,7 +26,7 @@ Every visual type needs a theme or the SDK renders nothing. Call \`list_themes\`
 - Per-widget colors (\`banner\`, \`checklist\`, \`launcher*\`, …) override only that widget.
 - **Most themes only need \`brandColor\` + \`mainColor\`.** A common mistake: treating \`mainColor\` as an accent — it's the surface, so a dark \`mainColor.background\` makes the whole popover dark.
 
-**Color format.** Colors are sRGB hex (\`#rrggbb\`). If the app's brand tokens are \`oklch()\` / \`hsl()\` (common in modern shadcn / Tailwind v4), convert them to hex first.
+**Color format.** Colors are sRGB hex (\`#rrggbb\`). If the app's brand tokens are \`oklch()\` / \`hsl()\` (common in modern shadcn / Tailwind v4), convert them to hex first — and note \`getComputedStyle().color\` returns the raw \`oklch()\` (not hex) on modern browsers, so round-trip through a canvas: \`const x=document.createElement('canvas').getContext('2d'); x.fillStyle='oklch(0.208 0.042 265.755)'; const hex=x.fillStyle;\` (canvas normalizes to \`#rrggbb\`).
 
 **Fonts.** \`font.fontFamily\` is one of: \`"System font"\` (the system stack), \`"Custom font"\` (a self-hosted font — you also set \`font.customFontFamily\` to its \`@font-face\` family name and define the face in \`customCss\`), or **any Google Font name** (e.g. \`"Inter"\`) which the SDK loads automatically. So \`fontFamily: "Inter"\` just works (loaded from Google Fonts); only use \`customFontFamily\` together with \`fontFamily: "Custom font"\`.
 

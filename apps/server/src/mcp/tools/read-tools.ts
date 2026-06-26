@@ -16,6 +16,7 @@ import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 import { createdAtRangeFields, nameSearchField } from '@/api/shared/filters';
 import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
+import { ThemeExpand } from '@/api/themes/themes.schema';
 
 import { McpTool, McpToolContext } from '../mcp.types';
 import { READ_ONLY } from './annotations';
@@ -409,6 +410,36 @@ export function buildReadTools(): McpTool[] {
           name: asString(args.name),
         });
         return { items: result.results };
+      },
+    },
+
+    {
+      name: 'get_theme',
+      title: 'Get theme',
+      capability: Capability.ThemeRead,
+      description:
+        'Get a single theme by id. Pass `expand: ["settings"]` to read its ACTUAL stored style ' +
+        'settings (colors, fonts, sizes, …) — what create_theme / update_theme persisted and ' +
+        'derived (e.g. "Auto" colors resolved); read this to verify a theme you wrote. ' +
+        '`expand: ["variations"]` for conditional variations. Base fields (id, name, isDefault) ' +
+        'always return; settings/variations only when expanded. (get_theme_schema is the writable ' +
+        'shape; this returns the actual values.)',
+      inputSchema: {
+        id: z.string().describe('The theme id (from list_themes).'),
+        expand: z
+          .array(z.enum(['settings', 'variations']))
+          .optional()
+          .describe('Related data to inline: settings (actual style values), variations.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        return ctx.services.themes.get(id, ctx.projectId, {
+          expand: asStringArray(args.expand) as ThemeExpand[] | undefined,
+        });
       },
     },
 

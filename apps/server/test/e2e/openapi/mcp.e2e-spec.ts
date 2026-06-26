@@ -1202,6 +1202,30 @@ describe('MCP endpoint (e2e)', () => {
       expect(created.settings.font.lineHeight).toBeTruthy();
     });
 
+    it('get_theme reads a theme back; settings only with expand', async () => {
+      const token = await mint([Capability.ThemeCreate, Capability.ThemeRead], [projectA]);
+      const call = async (id: number, name: string, args: Record<string, unknown>) =>
+        parseToolContent(
+          extractResult(
+            await rpc(
+              { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } },
+              token,
+            ),
+          ),
+        );
+      const created = await call(1, 'create_theme', {
+        name: 'MCP get-theme',
+        settings: { brandColor: { background: '#0f172b' } },
+      });
+      // no expand → base fields, settings withheld
+      const base = await call(2, 'get_theme', { id: created.id });
+      expect(base).toMatchObject({ object: 'theme', id: created.id, name: 'MCP get-theme' });
+      expect(base.settings).toBeFalsy();
+      // expand settings → the actual stored values
+      const full = await call(3, 'get_theme', { id: created.id, expand: ['settings'] });
+      expect(full.settings.brandColor.background).toBe('#0f172b');
+    });
+
     it('create_theme rejects an invalid settings patch via MCP (server validates the permissive arg)', async () => {
       const token = await mint([Capability.ThemeCreate], [projectA]);
       const result = extractResult(
