@@ -2,6 +2,7 @@ import {
   eventWhereCondition,
   representationBlock,
   representationCondition,
+  representationTarget,
 } from './representation.schema';
 import { representationChecklist, representationLauncher } from './version-data.schema';
 
@@ -120,5 +121,13 @@ describe('numeric range sanity', () => {
   it('requires zIndex to be an integer (negatives allowed)', () => {
     expect(representationLauncher.safeParse({ zIndex: 1.5 }).success).toBe(false);
     expect(representationLauncher.safeParse({ zIndex: -3 }).success).toBe(true);
+  });
+
+  it('bounds target nth to 0–4 (the runtime addresses only the first 5 matches)', () => {
+    expect(representationTarget.safeParse({ selector: 'button', nth: 0 }).success).toBe(true);
+    expect(representationTarget.safeParse({ selector: 'button', nth: 4 }).success).toBe(true);
+    // nth > 4 would silently fall back to the first match at runtime — reject it.
+    expect(representationTarget.safeParse({ selector: 'button', nth: 5 }).success).toBe(false);
+    expect(representationTarget.safeParse({ selector: 'button', nth: -1 }).success).toBe(false);
   });
 });

@@ -19,19 +19,37 @@ import { ApiObjectType } from '../shared/object-type';
 // "auto" selectors fingerprint is NOT authorable — an auto-only target decompiles
 // to undefined + hasUnsupported.
 export const representationTarget = z.object({
-  selector: z.string().min(1).describe('A stable CSS selector for the element in your app.'),
+  selector: z
+    .string()
+    .min(1)
+    .describe(
+      'A stable CSS selector for the element. The runtime targets the FIRST match — so either ' +
+        'make the selector unique, or pair a stable non-unique selector with `nth` to pick the ' +
+        'intended match. A non-unique selector with no `nth` targets the first (often wrong) ' +
+        "element and the tooltip silently won't render.",
+    ),
   text: z
     .string()
     .optional()
     .describe(
-      'Optional visible text the matched element must contain — narrows the selector match (selector + text). Omit to match by selector alone.',
+      "Optional refinement of `selector`. Requires the targeted element's visible text to equal " +
+        'this (exact match, after trim) — use it to pin a specific content/state (e.g. a stable ' +
+        'id whose displayed text you want to match: id + text). It refines the element chosen by ' +
+        '`selector`/`nth`; on its own it does NOT search among multiple matches, so disambiguate a ' +
+        'non-unique selector with `nth`, not `text` alone.',
     ),
   nth: z
     .number()
     .int()
     .min(0)
+    .max(4)
     .optional()
-    .describe('0-based index of the match to use when the selector resolves to multiple elements.'),
+    .describe(
+      'Optional refinement of `selector`. 0-based index to pick which match when the selector ' +
+        "isn't unique — e.g. a stable selector matching 3 elements + `nth: 1` targets the 2nd, " +
+        'giving a unique result. Range 0–4 — only the first 5 matches are addressable; a larger ' +
+        'value is rejected.',
+    ),
 });
 export type RepresentationTarget = z.infer<typeof representationTarget>;
 
