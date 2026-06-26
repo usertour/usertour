@@ -83,6 +83,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
       <ResourceCenterRoot
         data={resourceCenterData}
         themeSettings={themeSettings}
+        badgeCount={resourceCenter.getAnnouncementBadgeCount()}
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
         initialNav={initialNav}
@@ -98,6 +99,11 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}
         onLiveChatClick={resourceCenter.handleLiveChatClick}
+        onListAnnouncements={(cursor) => resourceCenter.listAnnouncements(cursor)}
+        onGetAnnouncement={(contentId) => resourceCenter.getAnnouncement(contentId)}
+        onMarkAnnouncementSeen={(contentId, versionId) =>
+          resourceCenter.markAnnouncementSeen(contentId, versionId)
+        }
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>

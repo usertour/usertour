@@ -52,6 +52,11 @@ export type ResourceCenterLauncherButtonThemeSettings = {
   };
 };
 
+export type ResourceCenterUnreadBadgeThemeSettings = {
+  backgroundColor: string;
+  textColor: string;
+};
+
 export enum ProgressBarType {
   FULL_WIDTH = 'full-width',
   NARROW = 'narrow',
@@ -230,6 +235,7 @@ export type ThemeTypesSetting = {
   };
   resourceCenter?: ResourceCenterThemeSettings;
   resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
+  resourceCenterUnreadBadge?: ResourceCenterUnreadBadgeThemeSettings;
   // Raw CSS injected as a <style> tag into every widget iframe. The
   // sanctioned home for @font-face rules backing 'Custom font' and for
   // advanced widget style overrides.
@@ -505,6 +511,10 @@ export const defaultSettings: ThemeTypesSetting = {
       foreground: 'Auto',
     },
   },
+  resourceCenterUnreadBadge: {
+    backgroundColor: '#ef4444',
+    textColor: '#ffffff',
+  },
 };
 
 export const standardDarkSettings: ThemeTypesSetting = {
@@ -775,5 +785,9 @@ export const standardDarkSettings: ThemeTypesSetting = {
       active: 'Auto',
       foreground: 'Auto',
     },
+  },
+  resourceCenterUnreadBadge: {
+    backgroundColor: '#ef4444',
+    textColor: '#ffffff',
   },
 };

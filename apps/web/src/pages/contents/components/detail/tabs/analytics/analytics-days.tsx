@@ -59,6 +59,12 @@ const generateViewChartConfig = (contentType: ContentDataType, t: TFunction): Ch
       totalViews: { label: t('contents.analytics.chart.events'), color: COLOR_VIEWS_SOFT },
     };
   }
+  if (contentType === ContentDataType.ANNOUNCEMENT) {
+    return {
+      uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
+      totalViews: { label: t('contents.analytics.chart.totalViews'), color: COLOR_VIEWS_SOFT },
+    };
+  }
   if (contentType === ContentDataType.LAUNCHER) {
     return {
       uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEventList } from '@/hooks/use-event-list';
-import { EyeNoneIcon, EventTrackerIcon } from '@usertour/icons';
+import { EyeNoneIcon, EventTrackerIcon, AnnouncementIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
   BannerContainer,
@@ -37,10 +37,13 @@ import {
 } from '@usertour/widget';
 import { ScaledPreviewContainer } from '@usertour/ui';
 import {
+  AnnouncementData,
+  AnnouncementDistribution,
   AvatarType,
   BannerData,
   ChecklistData,
   ContentVersion,
+  DEFAULT_ANNOUNCEMENT_DATA,
   DEFAULT_BANNER_DATA,
   LauncherData,
   LauncherDataType,
@@ -351,6 +354,31 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
   );
 };
 
+const AnnouncementPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
+  const { t } = useTranslation();
+  const data = (currentVersion.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
+  const title = data.title || t('contents.shared.announcementPreview.untitled');
+  const distribution = data.distribution ?? AnnouncementDistribution.SILENT;
+  const distributionLabel =
+    distribution === AnnouncementDistribution.BADGE
+      ? t('contents.shared.announcementPreview.badge')
+      : t('contents.shared.announcementPreview.silent');
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
+      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+        <AnnouncementIcon className="w-5 h-5 text-primary" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
+        <span className="text-sm font-medium text-foreground truncate max-w-full">{title}</span>
+        <span className="text-xs text-muted-foreground">
+          {t('contents.shared.announcementPreview.distribution', { value: distributionLabel })}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export {
   FlowPreview,
   LauncherPreview,
@@ -358,6 +386,7 @@ export {
   ResourceCenterPreview,
   BannerPreviewContent,
   TrackerPreview,
+  AnnouncementPreview,
   EmptyContentPreview,
   ScaledPreviewContainer,
 };

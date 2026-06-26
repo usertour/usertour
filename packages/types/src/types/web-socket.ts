@@ -70,6 +70,9 @@ export enum ClientMessageKind {
   CLOSE_RESOURCE_CENTER = 'CloseResourceCenter',
   CLICK_RESOURCE_CENTER = 'ClickResourceCenter',
   LIST_RESOURCE_CENTER_BLOCK_CONTENT = 'ListResourceCenterBlockContent',
+  LIST_ANNOUNCEMENTS = 'ListAnnouncements',
+  GET_ANNOUNCEMENT = 'GetAnnouncement',
+  MARK_ANNOUNCEMENT_SEEN = 'MarkAnnouncementSeen',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -315,6 +318,65 @@ export type ResourceCenterBlockContentItem = {
   iconUrl?: string;
   navigateUrl?: unknown[];
   navigateOpenType?: 'same' | 'new';
+};
+
+// ============================================================================
+// Announcement Types
+// ============================================================================
+
+/**
+ * List announcements request (cursor-based pagination)
+ */
+export type ListAnnouncementsDto = {
+  /** Cursor: the last announcement ID from the previous page. null for first page. */
+  cursor: string | null;
+};
+
+/**
+ * List announcements response
+ */
+export type ListAnnouncementsResult = {
+  announcements: AnnouncementListItem[];
+  pageSize: number;
+  /** true if there are more announcements after this page */
+  truncated: boolean;
+};
+
+/**
+ * Announcement item in list (excludes detail content to reduce payload)
+ */
+export type AnnouncementListItem = {
+  id: string;
+  versionId: string;
+  title: string;
+  content: unknown[];
+  moreEnabled: boolean;
+  moreButtonText: string;
+  level: string;
+  seen: boolean;
+  time: string;
+};
+
+/**
+ * Get single announcement request
+ */
+export type GetAnnouncementDto = {
+  contentId: string;
+};
+
+/**
+ * Get single announcement response (full content including detail)
+ */
+export type AnnouncementDetail = AnnouncementListItem & {
+  moreContent: unknown[] | null;
+};
+
+/**
+ * Mark announcement as seen request
+ */
+export type MarkAnnouncementSeenDto = {
+  contentId: string;
+  versionId: string;
 };
 
 // ============================================================================

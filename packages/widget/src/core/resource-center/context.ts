@@ -1,5 +1,7 @@
 import { createContext, useContext } from 'react';
 import type {
+  AnnouncementDetail,
+  ListAnnouncementsResult,
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
@@ -88,12 +90,19 @@ export interface ResourceCenterContextValue {
   // Content list
   contentListItems: ContentListDisplayItem[];
 
+  // Announcements
+  onListAnnouncements?: (cursor: string | null) => Promise<ListAnnouncementsResult>;
+  onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
+  onMarkAnnouncementSeen?: (contentId: string, versionId: string) => Promise<boolean>;
+
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
   showMadeWith: boolean;
 
+  // Launcher
+  badgeCount: number;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden: boolean;
 }

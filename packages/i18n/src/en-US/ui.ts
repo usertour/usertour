@@ -1543,6 +1543,7 @@ const translations = {
       banner: 'banner',
       tracker: 'event tracker',
       resourceCenter: 'resource center',
+      announcement: 'announcement',
     },
     create: {
       title: 'New {{type}}',
@@ -1597,6 +1598,13 @@ const translations = {
         link: 'Read more in our Resource Center guide',
         emptyTitle: 'No resource centers added',
         emptyDescription: 'You have not added any resource centers. Add one below.',
+      },
+      announcements: {
+        title: 'Announcements',
+        text: 'Share product updates, release notes, and news with your users through the Resource Center.',
+        link: 'Read more in our Resource Center guide',
+        emptyTitle: 'No announcements added',
+        emptyDescription: 'You have not added any announcements. Add one below.',
       },
     },
     detail: {
@@ -1684,6 +1692,12 @@ const translations = {
           uniqueEventsTooltip: 'Unique users who triggered this tracker event.',
           events: 'Events',
           eventsTooltip: 'Total number of tracker events fired.',
+        },
+        announcement: {
+          views: 'Views',
+          viewsTooltip: 'Total number of times this announcement was seen.',
+          uniqueViews: 'Unique views',
+          uniqueViewsTooltip: 'Unique users who saw this announcement.',
         },
       },
       chart: {
@@ -1830,6 +1844,15 @@ const translations = {
           firstTrackedUtc: 'First tracked (UTC)',
           lastTrackedUtc: 'Last tracked at (UTC)',
           events: 'Events',
+        },
+        announcement: {
+          title: 'Users who viewed this announcement',
+          empty:
+            'Viewer data will appear here once the announcement is published and seen by users.',
+          seenAt: 'Seen at',
+          csv: {
+            seenAtUtc: 'Seen at (UTC)',
+          },
         },
       },
       tooltipMissing: {
@@ -1987,6 +2010,49 @@ const translations = {
         thenTrackThisEventTooltip:
           'Select the event name to track. You can reuse this event in other flows and checklists, and it will be sent to analytics providers connected in Settings Integrations.',
       },
+      announcement: {
+        onlyShowIf: 'Only show announcement if...',
+        onlyShowIfTooltip:
+          'Show the announcement only to users who match these conditions. Leave off to show it to everyone.',
+        time: 'Announcement time',
+        timeTooltip:
+          'Schedule when the announcement becomes visible. Leave empty to publish immediately.',
+        immediately: 'Immediately',
+        theme: 'Theme',
+        themeTooltip:
+          'The visual theme applied to the announcement content in the resource center.',
+        themePlaceholder: 'Select theme',
+        distribution: {
+          label: 'Distribution',
+          tooltip:
+            'How users are notified about this announcement. Silent adds it to the list quietly; Badge shows an unread indicator on the resource center.',
+          silent: {
+            label: 'Silent',
+            description: 'Appears in resource center without notification',
+          },
+          badge: {
+            label: 'Badge',
+            description: 'Shows an unread badge on the resource center',
+          },
+        },
+        content: 'Content',
+        title: 'Title',
+        titleTooltip:
+          'The announcement title displayed in the resource center list and detail page.',
+        titlePlaceholder: 'Enter announcement title',
+        titleRequired: 'Title is required.',
+        intro: 'Intro',
+        introTooltip: 'A brief summary shown in the announcement list within the resource center.',
+        readMore: 'Read more',
+        readMoreTooltip:
+          'Enable a detail page that users can navigate to from the announcement list.',
+        readMoreButtonLabel: 'Button label',
+        readMoreButtonLabelTooltip: 'The text displayed on the button that opens the detail page.',
+        readMoreButtonLabelPlaceholder: 'Read more',
+        detailContent: 'Detail content',
+        detailContentTooltip:
+          'The full content displayed when a user clicks "Read more" on the announcement.',
+      },
     },
     shared: {
       common: { cancel: 'Cancel', create: 'Create', submit: 'Submit' },
@@ -2018,6 +2084,12 @@ const translations = {
         noEventSelected: 'No event selected',
         triggerConditions: '{{count}} trigger conditions',
         noTriggerConditions: 'No trigger conditions',
+      },
+      announcementPreview: {
+        untitled: 'Untitled announcement',
+        silent: 'Silent',
+        badge: 'Badge',
+        distribution: '{{value}} distribution',
       },
       publish: {
         title: 'Publish {{type}}',
@@ -2391,6 +2463,7 @@ const translations = {
       logo: 'Logo',
       uploadBackgroundImage: 'Upload background image',
       customIcon: 'Custom icon',
+      unreadBadge: 'Unread badge',
     },
     fields: {
       // Common color states (reused across many sections)
@@ -3186,6 +3259,10 @@ const translations = {
           description: 'Start content on demand',
         },
         liveChat: { label: 'Live chat', description: 'Connect to your live chat provider' },
+        announcement: {
+          label: 'Announcements',
+          description: 'Show a list of published announcements',
+        },
       },
       onlyShowBlock: 'Only show block if...',
       nameRequired: 'Name is required',
@@ -3195,6 +3272,9 @@ const translations = {
       richTextInfo: 'Edit rich text content by clicking on the content area in the preview.',
       subPageBlock: 'Sub-page block',
       subPageInfo: 'Sub-page content can be edited in the preview panel.',
+      announcementBlock: 'Announcement block',
+      announcementInfo:
+        'Announcements are managed on the Announcements page. This block shows the published announcement list.',
       actionBlock: 'Action block',
       whenClicked: 'When block is clicked',
       contentListBlock: 'List of flows/checklists',

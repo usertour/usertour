@@ -17,6 +17,7 @@ import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   BannerPreviewContent,
   ChecklistPreview,
+  AnnouncementPreview,
   EmptyContentPreview,
   FlowPreview,
   LauncherPreview,
@@ -180,6 +181,10 @@ const ContentPreview = ({
 
   if (type === ContentDataType.TRACKER && currentVersion) {
     return <TrackerPreview currentVersion={currentVersion} />;
+  }
+
+  if (type === ContentDataType.ANNOUNCEMENT && currentVersion) {
+    return <AnnouncementPreview currentVersion={currentVersion} />;
   }
 
   // Only show empty state when not loading and truly no data

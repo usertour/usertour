@@ -20,6 +20,11 @@ import {
   ClickResourceCenterDto,
   ListResourceCenterBlockContentDto,
   ResourceCenterBlockContentItem,
+  ListAnnouncementsDto,
+  ListAnnouncementsResult,
+  GetAnnouncementDto,
+  AnnouncementDetail,
+  MarkAnnouncementSeenDto,
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
@@ -69,6 +74,11 @@ export interface IUsertourSocket {
   listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
   ): Promise<ResourceCenterBlockContentItem[]>;
+
+  // Announcement operations
+  listAnnouncements(params: ListAnnouncementsDto): Promise<ListAnnouncementsResult>;
+  getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null>;
+  markAnnouncementSeen(params: MarkAnnouncementSeenDto): Promise<boolean>;
 
   // Context and reporting
   updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean>;
@@ -481,6 +491,44 @@ export class UsertourSocket implements IUsertourSocket {
       logger.error('Failed to list resource center block content:', error);
       return [];
     }
+  }
+
+  async listAnnouncements(params: ListAnnouncementsDto): Promise<ListAnnouncementsResult> {
+    try {
+      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+        kind: ClientMessageKind.LIST_ANNOUNCEMENTS,
+        payload: params,
+        requestId: uuidV4(),
+      });
+      if (result && typeof result === 'object' && 'announcements' in result) {
+        return result as ListAnnouncementsResult;
+      }
+      return { announcements: [], pageSize: 0, truncated: false };
+    } catch (error) {
+      logger.error('Failed to list announcements:', error);
+      return { announcements: [], pageSize: 0, truncated: false };
+    }
+  }
+
+  async getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null> {
+    try {
+      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+        kind: ClientMessageKind.GET_ANNOUNCEMENT,
+        payload: params,
+        requestId: uuidV4(),
+      });
+      if (result && typeof result === 'object' && 'id' in result) {
+        return result as AnnouncementDetail;
+      }
+      return null;
+    } catch (error) {
+      logger.error('Failed to get announcement:', error);
+      return null;
+    }
+  }
+
+  async markAnnouncementSeen(params: MarkAnnouncementSeenDto): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.MARK_ANNOUNCEMENT_SEEN, params);
   }
 
   // === Status Methods ===

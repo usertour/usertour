@@ -42,6 +42,8 @@ export {
   NavigableBlockRow,
   SubPageDetail,
   ContentListDetail,
+  AnnouncementListDetail,
+  AnnouncementDetailView,
   DetailView,
 } from './resource-center-body';
 

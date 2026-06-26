@@ -45,6 +45,7 @@ export const useContentVersionUpdate = () => {
       themeId?: string;
       data?: unknown;
       config?: unknown;
+      scheduledAt?: Date | null;
     }) => {
       if (!version || !content) return;
       try {
@@ -85,6 +86,31 @@ export const useContentVersionUpdate = () => {
     (newData: unknown) =>
       updateEditableVersion({ themeId: version?.themeId, data: newData, config: version?.config }),
     [updateEditableVersion, version?.themeId, version?.config],
+  );
+
+  // Debounced data save — used by editors that write on every keystroke
+  // (announcement title / intro / detail content) so we coalesce bursts into
+  // a single mutation. Server-side scalar updates are partial (Prisma only
+  // writes the provided columns), so this never clobbers theme / config /
+  // scheduledAt.
+  const debouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
+    saveVersionData(newData);
+  }, 500);
+
+  /** Save the version's theme (published-fork safe). */
+  const saveVersionTheme = useCallback(
+    (themeId: string) => updateEditableVersion({ themeId }),
+    [updateEditableVersion],
+  );
+
+  /**
+   * Save the version's scheduled publish time. `null` clears the schedule
+   * (publish immediately). Only the scalar is written — see the partial-update
+   * note above.
+   */
+  const saveVersionScheduledAt = useCallback(
+    (scheduledAt: Date | null) => updateEditableVersion({ scheduledAt }),
+    [updateEditableVersion],
   );
 
   const processVersion = useCallback(
@@ -159,5 +185,8 @@ export const useContentVersionUpdate = () => {
   return {
     debouncedUpdateVersion,
     saveVersionData,
+    debouncedSaveVersionData,
+    saveVersionTheme,
+    saveVersionScheduledAt,
   };
 };
