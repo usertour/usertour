@@ -9,6 +9,7 @@ import {
   LauncherData,
   ResourceCenterBlockType,
   ResourceCenterData,
+  RulesCondition,
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
@@ -38,10 +39,19 @@ import {
   BizSession,
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
+import {
+  ConditionEvaluationService,
+  type ConditionEvaluationContext,
+} from './condition-evaluation.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+
+// Cap on how many of the newest announcements the badge count scans + evaluates
+// per session build. Keep aligned with WebSocketV2Service.ANNOUNCEMENT_LIMIT so
+// the badge never counts more than the feed can show.
+const ANNOUNCEMENT_BADGE_SCAN_LIMIT = 50;
 
 @Injectable()
 export class SessionBuilderService {
@@ -50,6 +60,7 @@ export class SessionBuilderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
+    private readonly conditionEvaluationService: ConditionEvaluationService,
     private readonly projectsService: ProjectsService,
     private readonly distributedLockService: DistributedLockService,
     private readonly cache: ProjectCacheService,
@@ -514,7 +525,12 @@ export class SessionBuilderService {
     session.attributes = attributes;
 
     // Populate unreadCount for announcement blocks
-    await this.populateAnnouncementUnreadCounts(resourceCenterData, environment, externalUserId);
+    await this.populateAnnouncementUnreadCounts(
+      resourceCenterData,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
 
     session.version.resourceCenter = resourceCenterData;
     return session;
@@ -522,12 +538,17 @@ export class SessionBuilderService {
 
   /**
    * Populate unreadCount on each announcement block in the resource center data.
-   * Counts published announcements with distribution='badge' that the user has not seen.
+   * Counts the newest badge-distribution announcements the user is allowed to
+   * see (passing their "Only show if..." targeting) and has not yet seen.
+   * Capped at ANNOUNCEMENT_BADGE_SCAN_LIMIT to bound the scan + evaluation, and
+   * uses the same DB-backed targeting evaluation as listAnnouncements so the
+   * badge count never includes announcements the feed would hide.
    */
   private async populateAnnouncementUnreadCounts(
     resourceCenterData: ResourceCenterData,
     environment: Environment,
     externalUserId: string,
+    externalCompanyId: string,
   ): Promise<void> {
     const announcementBlocks: ResourceCenterAnnouncementBlock[] = [];
     for (const tab of resourceCenterData.tabs ?? []) {
@@ -539,18 +560,22 @@ export class SessionBuilderService {
     }
     if (announcementBlocks.length === 0) return;
 
+    const setUnread = (count: number) => {
+      for (const block of announcementBlocks) {
+        block.unreadCount = count;
+      }
+    };
+
     const bizUser = await this.prisma.bizUser.findFirst({
       where: { externalId: String(externalUserId), environmentId: environment.id },
-      select: { id: true },
     });
     if (!bizUser) {
-      for (const block of announcementBlocks) {
-        block.unreadCount = 0;
-      }
+      setUnread(0);
       return;
     }
 
-    // Get all published announcements with distribution='badge' (only those whose scheduledAt has passed or is null)
+    // Newest N published announcements (only those whose scheduledAt has passed
+    // or is null). The cap bounds both the scan and the targeting evaluation.
     const publishedAnnouncements = await this.prisma.contentOnEnvironment.findMany({
       where: {
         environmentId: environment.id,
@@ -561,22 +586,40 @@ export class SessionBuilderService {
         },
       },
       include: {
-        publishedVersion: { select: { id: true, data: true } },
+        publishedVersion: { select: { id: true, data: true, config: true } },
       },
+      orderBy: { publishedAt: 'desc' },
+      take: ANNOUNCEMENT_BADGE_SCAN_LIMIT,
     });
 
-    // Filter to badge-level announcements
-    const badgeContentIds = publishedAnnouncements
-      .filter((item) => {
-        const data = item.publishedVersion?.data as Record<string, any> | null;
-        return data?.distribution === 'badge';
-      })
-      .map((item) => item.contentId);
+    // Keep badge-distribution announcements the user is actually allowed to see.
+    const attributes = await this.contentDataService.findAttributes(environment);
+    const evaluationContext: ConditionEvaluationContext = {
+      environment,
+      attributes,
+      bizUser,
+      externalCompanyId,
+    };
+
+    const badgeContentIds: string[] = [];
+    for (const item of publishedAnnouncements) {
+      const data = item.publishedVersion?.data as Record<string, any> | null;
+      if (data?.distribution !== 'badge') {
+        continue;
+      }
+      const config = item.publishedVersion?.config as unknown as {
+        enabledAutoStartRules?: boolean;
+        autoStartRules?: RulesCondition[];
+      };
+      if (
+        await this.conditionEvaluationService.isVisibleByAutoStartRules(config, evaluationContext)
+      ) {
+        badgeContentIds.push(item.contentId);
+      }
+    }
 
     if (badgeContentIds.length === 0) {
-      for (const block of announcementBlocks) {
-        block.unreadCount = 0;
-      }
+      setUnread(0);
       return;
     }
 
@@ -597,10 +640,7 @@ export class SessionBuilderService {
       seenEvents.filter((event) => event.contentId).map((event) => event.contentId!),
     );
 
-    const unreadCount = badgeContentIds.filter((id) => !seenSet.has(id)).length;
-    for (const block of announcementBlocks) {
-      block.unreadCount = unreadCount;
-    }
+    setUnread(badgeContentIds.filter((id) => !seenSet.has(id)).length);
   }
 
   /**

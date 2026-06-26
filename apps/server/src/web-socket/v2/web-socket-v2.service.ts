@@ -32,6 +32,7 @@ import {
   BizEvents,
   ClientCondition,
   CustomContentSession,
+  RulesCondition,
   ListAnnouncementsDto,
   ListAnnouncementsResult,
   GetAnnouncementDto,
@@ -46,10 +47,23 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { ContentDataService } from '@/web-socket/core/content-data.service';
+import {
+  ConditionEvaluationService,
+  type ConditionEvaluationContext,
+} from '@/web-socket/core/condition-evaluation.service';
+import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
 import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
 import { humanize } from '@usertour/helpers';
+
+// Minimal view of a version's `config` JSON needed to gate an announcement by
+// its "Only show if..." targeting rules.
+type AnnouncementTargetingConfig = {
+  enabledAutoStartRules?: boolean;
+  autoStartRules?: RulesCondition[];
+};
 
 @Injectable()
 export class WebSocketV2Service {
@@ -60,6 +74,8 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
+    private readonly contentDataService: ContentDataService,
+    private readonly conditionEvaluationService: ConditionEvaluationService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
   ) {}
@@ -1007,11 +1023,23 @@ export class WebSocketV2Service {
   // Announcement Methods
   // ============================================================================
 
-  private static readonly ANNOUNCEMENT_PAGE_SIZE = 20;
+  // Hard ceiling on how many announcements the resource-center feed surfaces.
+  // It bounds both the DB scan and the per-user targeting evaluation below, so
+  // the feed stays cheap no matter how many announcements a project accumulates.
+  // Announcements older than the newest ANNOUNCEMENT_LIMIT are not shown — an
+  // in-app announcement feed is reverse-chronological and doesn't need an
+  // unbounded backlog.
+  private static readonly ANNOUNCEMENT_LIMIT = 50;
 
   /**
-   * List announcements with cursor-based pagination.
-   * Returns published announcements in the current environment, ordered by publish time descending.
+   * List the announcements visible to the current user, newest first.
+   *
+   * The feed is total-capped at ANNOUNCEMENT_LIMIT and returned in a single
+   * response (truncated is always false), so there is no second page to fetch.
+   * Each candidate is gated by its "Only show if..." targeting rules
+   * (config.autoStartRules) using the same DB-backed evaluation as
+   * resource-center block visibility — a targeted announcement is never leaked
+   * to users who don't match.
    */
   async listAnnouncements(
     context: WebSocketContext,
@@ -1019,27 +1047,20 @@ export class WebSocketV2Service {
   ): Promise<ListAnnouncementsResult> {
     const { socketData } = context;
     const environmentId = socketData.environment.id;
-    const bizUserId = await this.resolveBizUserId(socketData);
-    if (!bizUserId) {
-      return {
-        announcements: [],
-        pageSize: WebSocketV2Service.ANNOUNCEMENT_PAGE_SIZE,
-        truncated: false,
-      };
+    const pageSize = WebSocketV2Service.ANNOUNCEMENT_LIMIT;
+
+    // The feed is capped and single-page; a non-null cursor means "load more",
+    // which never applies here.
+    if (params.cursor) {
+      return { announcements: [], pageSize, truncated: false };
     }
 
-    const pageSize = WebSocketV2Service.ANNOUNCEMENT_PAGE_SIZE;
+    const bizUser = await this.findBizUser(socketData);
+    if (!bizUser) {
+      return { announcements: [], pageSize, truncated: false };
+    }
 
-    // Build cursor condition
-    const cursorCondition = params.cursor
-      ? {
-          publishedAt: {
-            lt: await this.getAnnouncementPublishedAt(params.cursor, environmentId),
-          },
-        }
-      : {};
-
-    // Query published announcements (only those whose scheduledAt has passed or is null)
+    // Newest N candidates (only those whose scheduledAt has passed or is null).
     const now = new Date();
     const contentOnEnvironments = await this.prisma.contentOnEnvironment.findMany({
       where: {
@@ -1052,7 +1073,6 @@ export class WebSocketV2Service {
         publishedVersion: {
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: now } }],
         },
-        ...cursorCondition,
       },
       include: {
         content: {
@@ -1065,39 +1085,50 @@ export class WebSocketV2Service {
           select: {
             id: true,
             data: true,
+            config: true,
             scheduledAt: true,
           },
         },
       },
       orderBy: { publishedAt: 'desc' },
-      take: pageSize + 1, // fetch one extra to determine if truncated
+      take: WebSocketV2Service.ANNOUNCEMENT_LIMIT,
     });
 
-    const truncated = contentOnEnvironments.length > pageSize;
-    const items = truncated ? contentOnEnvironments.slice(0, pageSize) : contentOnEnvironments;
+    // Enforce per-announcement "Only show if..." targeting before exposing it.
+    const evaluationContext = await this.buildAnnouncementEvaluationContext(socketData, bizUser);
+    const visibleItems: typeof contentOnEnvironments = [];
+    for (const item of contentOnEnvironments) {
+      if (!item.publishedVersion) {
+        continue;
+      }
+      const config = item.publishedVersion.config as unknown as AnnouncementTargetingConfig;
+      if (
+        await this.conditionEvaluationService.isVisibleByAutoStartRules(config, evaluationContext)
+      ) {
+        visibleItems.push(item);
+      }
+    }
 
-    // Batch lookup seen status
-    const contentIds = items.map((item) => item.content.id);
-    const seenSet = await this.getSeenAnnouncementIds(bizUserId, contentIds, environmentId);
+    // Batch lookup seen status for the visible set
+    const contentIds = visibleItems.map((item) => item.content.id);
+    const seenSet = await this.getSeenAnnouncementIds(bizUser.id, contentIds, environmentId);
 
-    const announcements: AnnouncementListItem[] = items
-      .filter((item) => item.publishedVersion)
-      .map((item) => {
-        const data = (item.publishedVersion!.data ?? {}) as unknown as AnnouncementData;
-        return {
-          id: item.content.id,
-          versionId: item.publishedVersion!.id,
-          title: data.title,
-          content: data.introContent ?? [],
-          moreEnabled: data.enableReadMore ?? false,
-          moreButtonText: data.readMoreLabel ?? 'Read more',
-          level: data.distribution ?? 'silent',
-          seen: seenSet.has(item.content.id),
-          time: (item.publishedVersion!.scheduledAt ?? item.publishedAt)?.toISOString() ?? '',
-        };
-      });
+    const announcements: AnnouncementListItem[] = visibleItems.map((item) => {
+      const data = (item.publishedVersion!.data ?? {}) as unknown as AnnouncementData;
+      return {
+        id: item.content.id,
+        versionId: item.publishedVersion!.id,
+        title: data.title,
+        content: data.introContent ?? [],
+        moreEnabled: data.enableReadMore ?? false,
+        moreButtonText: data.readMoreLabel ?? 'Read more',
+        level: data.distribution ?? 'silent',
+        seen: seenSet.has(item.content.id),
+        time: (item.publishedVersion!.scheduledAt ?? item.publishedAt)?.toISOString() ?? '',
+      };
+    });
 
-    return { announcements, pageSize, truncated };
+    return { announcements, pageSize, truncated: false };
   }
 
   /**
@@ -1109,7 +1140,7 @@ export class WebSocketV2Service {
   ): Promise<AnnouncementDetail | null> {
     const { socketData } = context;
     const environmentId = socketData.environment.id;
-    const bizUserId = await this.resolveBizUserId(socketData);
+    const bizUser = await this.findBizUser(socketData);
 
     const contentOnEnv = await this.prisma.contentOnEnvironment.findFirst({
       where: {
@@ -1126,7 +1157,7 @@ export class WebSocketV2Service {
       },
       include: {
         content: { select: { id: true, name: true } },
-        publishedVersion: { select: { id: true, data: true, scheduledAt: true } },
+        publishedVersion: { select: { id: true, data: true, config: true, scheduledAt: true } },
       },
     });
 
@@ -1134,10 +1165,27 @@ export class WebSocketV2Service {
       return null;
     }
 
+    // Enforce targeting on direct fetch too, so a targeted announcement can't be
+    // read by id by a user who doesn't match.
+    const config = contentOnEnv.publishedVersion.config as unknown as AnnouncementTargetingConfig;
+    if (bizUser) {
+      const evaluationContext = await this.buildAnnouncementEvaluationContext(socketData, bizUser);
+      const visible = await this.conditionEvaluationService.isVisibleByAutoStartRules(
+        config,
+        evaluationContext,
+      );
+      if (!visible) {
+        return null;
+      }
+    } else if (config?.enabledAutoStartRules && config.autoStartRules?.length) {
+      // No bizUser to evaluate against, but the announcement is targeted → deny.
+      return null;
+    }
+
     const data = (contentOnEnv.publishedVersion.data ?? {}) as unknown as AnnouncementData;
-    const seen = bizUserId
+    const seen = bizUser
       ? (
-          await this.getSeenAnnouncementIds(bizUserId, [contentOnEnv.content.id], environmentId)
+          await this.getSeenAnnouncementIds(bizUser.id, [contentOnEnv.content.id], environmentId)
         ).has(contentOnEnv.content.id)
       : false;
 
@@ -1192,26 +1240,30 @@ export class WebSocketV2Service {
   // Announcement Helper Methods
   // ============================================================================
 
-  private async resolveBizUserId(socketData: SocketData): Promise<string | null> {
-    const bizUser = await this.prisma.bizUser.findFirst({
+  private async findBizUser(socketData: SocketData): Promise<BizUser | null> {
+    return await this.prisma.bizUser.findFirst({
       where: {
         externalId: String(socketData.externalUserId),
         environmentId: socketData.environment.id,
       },
-      select: { id: true },
     });
-    return bizUser?.id ?? null;
   }
 
-  private async getAnnouncementPublishedAt(
-    contentId: string,
-    environmentId: string,
-  ): Promise<Date | undefined> {
-    const record = await this.prisma.contentOnEnvironment.findFirst({
-      where: { contentId, environmentId },
-      select: { publishedAt: true },
-    });
-    return record?.publishedAt ?? undefined;
+  /**
+   * Build the DB-backed evaluation context (user attributes + segment lookups)
+   * used to gate announcements by their targeting rules.
+   */
+  private async buildAnnouncementEvaluationContext(
+    socketData: SocketData,
+    bizUser: BizUser,
+  ): Promise<ConditionEvaluationContext> {
+    const attributes = await this.contentDataService.findAttributes(socketData.environment);
+    return {
+      environment: socketData.environment,
+      attributes,
+      bizUser,
+      externalCompanyId: socketData.externalCompanyId,
+    };
   }
 
   private async getSeenAnnouncementIds(

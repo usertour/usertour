@@ -1,13 +1,4 @@
-import {
-  CSSProperties,
-  Fragment,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { CSSProperties, Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   ResourceCenterActionBlock,
   ResourceCenterAnnouncementBlock,
@@ -430,46 +421,18 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     useResourceCenterContext();
   const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [truncated, setTruncated] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Initial load
+  // Single load — the feed is capped server-side (newest N), so there is no
+  // pagination to drive.
   useEffect(() => {
     if (!onListAnnouncements) return;
     setIsLoading(true);
     onListAnnouncements(null)
       .then((result) => {
         setAnnouncements(result.announcements);
-        setTruncated(result.truncated);
       })
       .finally(() => setIsLoading(false));
   }, [onListAnnouncements]);
-
-  // Load more
-  const loadMore = useCallback(async () => {
-    if (!onListAnnouncements || isLoadingMore || !truncated) return;
-    const lastItem = announcements[announcements.length - 1];
-    if (!lastItem) return;
-    setIsLoadingMore(true);
-    try {
-      const result = await onListAnnouncements(lastItem.id);
-      setAnnouncements((prev) => [...prev, ...result.announcements]);
-      setTruncated(result.truncated);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [onListAnnouncements, isLoadingMore, truncated, announcements]);
-
-  // Infinite scroll
-  const handleScroll = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (!container || isLoadingMore || !truncated) return;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    if (scrollHeight - scrollTop - clientHeight < 100) {
-      loadMore();
-    }
-  }, [loadMore, isLoadingMore, truncated]);
 
   // Click "Read more" — push detail page onto stack
   const handleReadMore = useCallback(
@@ -491,7 +454,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   const dateGroups = useMemo(() => groupAnnouncementsByDate(announcements), [announcements]);
 
   return (
-    <div className="flex flex-col p-4" ref={scrollContainerRef} onScroll={handleScroll}>
+    <div className="flex flex-col p-4">
       {isLoading && (
         <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
       )}
@@ -549,10 +512,6 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
             ))}
           </div>
         ))}
-
-      {isLoadingMore && (
-        <div className="py-2 text-center text-xs text-sdk-foreground/50">Loading more...</div>
-      )}
     </div>
   );
 });
