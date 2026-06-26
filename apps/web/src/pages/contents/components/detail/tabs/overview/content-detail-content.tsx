@@ -661,7 +661,7 @@ export const ContentDetailContent = () => {
               disabled={isViewOnly}
             />
           ))}
-        {contentType === ContentTypeName.LAUNCHERS && content && (
+        {contentType === ContentTypeName.LAUNCHERS && content && version.data && (
           <LauncherContentPreview
             currentVersion={version}
             content={content}
