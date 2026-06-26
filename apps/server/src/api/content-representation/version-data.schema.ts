@@ -109,7 +109,15 @@ export const representationLauncher = z.object({
     .object({
       source: z.enum(['none', 'builtin', 'upload', 'url', 'inherit']).optional(),
       url: z.string().optional(),
-      type: z.string().optional(),
+      type: z
+        .string()
+        .optional()
+        .describe(
+          "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` " +
+            'style — e.g. `home-line`, `question-line`, `rocket`. NOT lucide names ' +
+            '(`help-circle` / `sparkles` / `book-open` render nothing, silently). Unsure? Use ' +
+            "source='none'. Common names + an intent→name table are in get_authoring_guide.",
+        ),
     })
     .optional(),
   buttonText: z.string().optional(),

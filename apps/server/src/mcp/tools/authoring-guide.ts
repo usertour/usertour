@@ -89,4 +89,11 @@ Some authoring choices only work if the host app wired a matching SDK hook. They
 - **banner**: content; element-relative placements need a container element.
 - **resource-center**: ≥1 tab; each tab has a name and ≥1 block. Tab blocks use their OWN vocabulary (\`richtext\`, \`divider\`, \`action\`, \`sub-page\`, \`content-list\`, \`live-chat\`) — text goes inside a \`richtext\` block: \`{ "type": "richtext", "content": [{ "object": "block", "type": "text", "markdown": "…" }] }\`, NOT a bare text block.
 - **tracker**: a \`data.event\` (an event id from \`list_event_definitions\`) AND \`startRules\` trigger conditions; no theme (it has no UI). Note: a \`current_url\` condition's \`includes\`/\`excludes\` are **arrays** of strings.
+
+## Builtin icon names (resource center + launcher)
+An icon field with \`source: "builtin"\` takes a **RemixIcon** name in \`-line\` / \`-fill\` kebab style — **NOT lucide names**. A name that isn't in the set renders **nothing, silently** (no error). So don't guess lucide-style names like \`help-circle\`, \`book-open\`, \`sparkles\`, \`message-circle\` — they will not render. Intent → valid name:
+- help / support → \`question-line\` · chat / message → \`chat-line\` · home → \`home-line\` · settings → \`settings-line\`
+- new / launch → \`rocket\` · doc / file → \`file-text-line\` · list / menu → \`list-check\` or \`menu-line\` · search → \`search-line\`
+- star / favorite → \`star-line\` · notification → \`notification-line\` · check → \`check-line\` · info → \`information-fill\` · mail → \`mail-line\`
+Names are \`thing-line\` / \`thing-fill\` (e.g. \`home-line\`, \`home-fill\`). **No builtin exists for some concepts (book, keyboard, sparkles) — use a near match or, when unsure, \`source: "none"\` rather than a guess that silently fails.**
 `;

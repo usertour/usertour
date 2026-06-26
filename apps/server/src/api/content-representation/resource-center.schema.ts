@@ -17,8 +17,24 @@ import {
  */
 
 const rcIcon = z.object({
-  source: z.enum(['none', 'builtin', 'upload', 'url', 'inherit']).optional(),
-  type: z.string().optional(),
+  source: z
+    .enum(['none', 'builtin', 'upload', 'url', 'inherit'])
+    .optional()
+    .describe(
+      "Icon source. 'builtin' = a named icon from the bundled RemixIcon set (see `type`); " +
+        "'upload'/'url' = a custom image via `url`; 'none' = no icon; 'inherit' (content-list " +
+        'items only) falls back to the block default.',
+    ),
+  type: z
+    .string()
+    .optional()
+    .describe(
+      "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` style — " +
+        'e.g. `home-line`, `question-line`, `chat-line`, `settings-line`, `rocket`. ' +
+        'NOT lucide names: `help-circle` / `sparkles` / `book-open` / `message-circle` are not in ' +
+        "the set and render nothing (silent, no error). Unsure of a name? Use source='none' rather " +
+        'than guess. Common names + an intent→name table are in get_authoring_guide.',
+    ),
   url: z.string().optional(),
 });
 
