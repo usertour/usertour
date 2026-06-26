@@ -55,10 +55,15 @@ export class ApiTokenService {
     return { token, plaintext: composeApiToken(secret) };
   }
 
-  /** List the caller's own tokens (never returns the secret). */
+  /**
+   * List the caller's own PERSONAL tokens (never returns the secret).
+   * `clientId: null` excludes OAuth-issued (`uto_`) access tokens — those share
+   * this table but are managed solely via "Connected apps" (oauthConnections /
+   * revokeGrant), never as personal keys.
+   */
   async listTokens(userId: string) {
     return this.prisma.apiToken.findMany({
-      where: { userId },
+      where: { userId, clientId: null },
       include: TOKEN_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
@@ -128,16 +133,23 @@ export class ApiTokenService {
    * their own tokens. Returns true if a token was deleted.
    */
   async deleteToken(userId: string, id: string): Promise<boolean> {
+    // `clientId: null` so this can only delete personal keys — deleting an OAuth
+    // token here would be a false revoke (it leaves the grant + refresh token
+    // alive, so the app re-mints on next refresh). Revoke OAuth via revokeGrant.
     const result = await this.prisma.apiToken.deleteMany({
-      where: { id, userId },
+      where: { id, userId, clientId: null },
     });
     return result.count > 0;
   }
 
-  /** Assert the token exists and belongs to `userId`, or throw. */
+  /**
+   * Assert the token exists, belongs to `userId`, and is a PERSONAL key, or
+   * throw. `clientId: null` keeps update/rotate off OAuth tokens (their secret,
+   * scopes, and lifecycle are owned by the OAuth grant, not this surface).
+   */
   private async requireOwnToken(userId: string, id: string): Promise<void> {
     const existing = await this.prisma.apiToken.findFirst({
-      where: { id, userId },
+      where: { id, userId, clientId: null },
       select: { id: true },
     });
     if (!existing) {
