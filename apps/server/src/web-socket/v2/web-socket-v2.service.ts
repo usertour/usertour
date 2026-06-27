@@ -1217,6 +1217,23 @@ export class WebSocketV2Service {
 
     try {
       const { environment, externalUserId, clientContext, bizCompanyId } = socketData;
+
+      // Idempotent: opening the feed marks every unseen announcement, so the same
+      // id can be reported again on a refetch or a quick reopen. The seen flag is
+      // unaffected either way (it's a set-membership check over events), but skip
+      // when already seen so duplicate ANNOUNCEMENT_SEEN events don't inflate counts.
+      const bizUser = await this.findBizUser(socketData);
+      if (bizUser) {
+        const seenIds = await this.getSeenAnnouncementIds(
+          bizUser.id,
+          [params.contentId],
+          environment.id,
+        );
+        if (seenIds.has(params.contentId)) {
+          return true;
+        }
+      }
+
       await this.eventTrackingService.trackDirectContentEvent({
         environment,
         externalUserId,

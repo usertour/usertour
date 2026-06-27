@@ -430,25 +430,32 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     onListAnnouncements(null)
       .then((result) => {
         setAnnouncements(result.announcements);
+        // Displaying an announcement in the opened feed is what marks it seen,
+        // independent of whether Read more is enabled. Every announcement passes
+        // through here before any detail view, so this is the only seen marker.
+        // Local seen is left untouched on purpose: the unseen dot stays for the
+        // rest of this session and clears on the next open, when the server
+        // reports it seen. Duplicate marks are absorbed server-side (idempotent).
+        for (const item of result.announcements) {
+          if (!item.seen) {
+            onMarkAnnouncementSeen?.(item.id, item.versionId);
+          }
+        }
       })
       .finally(() => setIsLoading(false));
-  }, [onListAnnouncements]);
+  }, [onListAnnouncements, onMarkAnnouncementSeen]);
 
-  // Click "Read more" — push detail page onto stack
+  // Click "Read more" — push detail page onto the stack. Seen is marked on feed
+  // load, not here, so this only navigates.
   const handleReadMore = useCallback(
     (item: AnnouncementListItem) => {
-      // Mark as seen
-      if (!item.seen) {
-        onMarkAnnouncementSeen?.(item.id, item.versionId);
-        setAnnouncements((prev) => prev.map((a) => (a.id === item.id ? { ...a, seen: true } : a)));
-      }
       actions.push({
         type: 'announcement_detail',
         blockId: block.id,
         announcementId: item.id,
       });
     },
-    [actions, block.id, onMarkAnnouncementSeen],
+    [actions, block.id],
   );
 
   const dateGroups = useMemo(() => groupAnnouncementsByDate(announcements), [announcements]);
@@ -527,22 +534,19 @@ interface AnnouncementDetailViewProps {
 }
 
 export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDetailViewProps) => {
-  const { onGetAnnouncement, onMarkAnnouncementSeen, userAttributes } = useResourceCenterContext();
+  const { onGetAnnouncement, userAttributes } = useResourceCenterContext();
   const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Seen is marked on feed load (the list every announcement passes through), so
+  // the detail view only fetches and displays.
   useEffect(() => {
     if (!onGetAnnouncement) return;
     setIsLoading(true);
     onGetAnnouncement(announcementId)
-      .then((result) => {
-        setDetail(result);
-        if (result && !result.seen) {
-          onMarkAnnouncementSeen?.(result.id, result.versionId);
-        }
-      })
+      .then(setDetail)
       .finally(() => setIsLoading(false));
-  }, [onGetAnnouncement, onMarkAnnouncementSeen, announcementId]);
+  }, [onGetAnnouncement, announcementId]);
 
   if (isLoading) {
     return <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>;
