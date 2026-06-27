@@ -5,12 +5,12 @@ import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { resolveEditableVersionId } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
-  const { contentId, setIsSaving } = useContentDetailUI();
+  const { contentId, setIsSaving, setIsSavingConfig } = useContentDetailUI();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
   const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
@@ -141,11 +141,12 @@ export const useContentVersionUpdate = () => {
         const forked = editableVersionId !== version.id;
 
         // If we forked, config was already set during fork — done.
-        // If not forked, we need to update config explicitly.
+        // If not forked, we need to update config explicitly. Send ONLY config:
+        // partial scalar updates preserve data/themeId untouched, whereas
+        // re-sending the stale closure snapshots would clobber a concurrent
+        // data / theme edit.
         if (!forked) {
           const updated = await updateContentVersion(version.id, {
-            themeId: version.themeId,
-            data: version.data,
             config: cfg,
           });
 
@@ -175,7 +176,7 @@ export const useContentVersionUpdate = () => {
   const updateVersion = useCallback(
     async (cfg: ContentConfigObject) => {
       try {
-        setIsSaving(true);
+        setIsSavingConfig(true);
         await processVersion(cfg);
 
         toast({
@@ -188,16 +189,37 @@ export const useContentVersionUpdate = () => {
           title: getErrorMessage(error),
         });
       } finally {
-        setIsSaving(false);
+        setIsSavingConfig(false);
       }
     },
-    [processVersion, setIsSaving, toast],
+    [processVersion, setIsSavingConfig, toast],
   );
 
-  // Create a debounced version of updateVersion
-  const debouncedUpdateVersion = useDebouncedCallback((cfg: ContentConfigObject) => {
+  const rawDebouncedUpdateVersion = useDebouncedCallback((cfg: ContentConfigObject) => {
     updateVersion(cfg);
   }, 500);
+
+  // Flag the config-save the moment an edit is queued, not when the timer fires,
+  // so publish (gated on isSaving) can't ship pre-debounce targeting. cancel()
+  // (rules cleared to empty) clears the flag for the dropped edit. Kept on its
+  // own flag — see content-detail-ui-context — so this can't clear a pending
+  // data save. Object.assign preserves .cancel for the editors that call it.
+  const debouncedUpdateVersion = useMemo(
+    () =>
+      Object.assign(
+        (cfg: ContentConfigObject) => {
+          setIsSavingConfig(true);
+          rawDebouncedUpdateVersion(cfg);
+        },
+        {
+          cancel: () => {
+            rawDebouncedUpdateVersion.cancel();
+            setIsSavingConfig(false);
+          },
+        },
+      ),
+    [rawDebouncedUpdateVersion, setIsSavingConfig],
+  );
 
   return {
     debouncedUpdateVersion,

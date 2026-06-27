@@ -11,6 +11,9 @@ import type { ContentTypeName } from '@usertour/types';
 // * `isSaving` — the debounced-save indicator. `use-content-version-update`
 //   flips it true/false around the save mutation; the header reads it
 //   to render the "Saving…" badge and disable destructive actions.
+//   Tracked as two independent flags (scalar `data`/theme writes vs `config`
+//   targeting writes) and exposed as their OR, so a config edit's cancel
+//   can't clear a pending data save (and vice versa).
 //
 // Genuine cross-component UI state. Distinct from server data (which
 // goes through the `useContentDetail` / `useContentVersion` hooks).
@@ -19,6 +22,7 @@ export interface ContentDetailUIContextValue {
   contentType: ContentTypeName | undefined;
   isSaving: boolean;
   setIsSaving: (next: boolean) => void;
+  setIsSavingConfig: (next: boolean) => void;
 }
 
 const ContentDetailUIContext = createContext<ContentDetailUIContextValue | undefined>(undefined);
@@ -31,10 +35,12 @@ export interface ContentDetailUIProviderProps {
 
 export const ContentDetailUIProvider = (props: ContentDetailUIProviderProps): JSX.Element => {
   const { children, contentId, contentType } = props;
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingData, setIsSaving] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const isSaving = isSavingData || isSavingConfig;
 
   const value = useMemo<ContentDetailUIContextValue>(
-    () => ({ contentId, contentType, isSaving, setIsSaving }),
+    () => ({ contentId, contentType, isSaving, setIsSaving, setIsSavingConfig }),
     [contentId, contentType, isSaving],
   );
 
