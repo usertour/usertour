@@ -11,7 +11,11 @@
 type SlateNode = Record<string, unknown>;
 
 // One special inline token: {{liquid}}, [text](url), **bold**, or *italic*.
-const INLINE = /(\{\{[^}]*\}\}|\[[^\]]*\]\([^)]*\)|\*\*[^*]+\*\*|\*[^*]+\*)/;
+// Bold is lazy (`.+?`) so it can WRAP other inline tokens — `**bold *italic* word**`
+// or `**[link](url)**` — which `parseInline` then recurses into via `applyMark`. A
+// stricter `[^*]+` would fail to match a `**…**` span containing inner `*`, leaking
+// the literal asterisks. Italic stays `[^*]+` (italic-wrapping-bold is not supported).
+const INLINE = /(\{\{[^}]*\}\}|\[[^\]]*\]\([^)]*\)|\*\*.+?\*\*|\*[^*]+\*)/;
 
 function stripQuotes(s: string): string {
   const t = s.trim();

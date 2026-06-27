@@ -49,6 +49,26 @@ describe('link compiles with `data` (so the runtime can derive its href)', () =>
   });
 });
 
+describe('emphasis wrapping emphasis (**bold *italic* word**)', () => {
+  // ASSERT THE SLATE MARKS, NOT THE ROUND-TRIP. A round-trip test passes here even when
+  // compilation is broken: a buggy compile produced literal-asterisk text nodes
+  // ([{"*"},{"bold ",italic},{"and-italic"},{" word",italic},{"*"}]) whose decompile
+  // reconstructs the exact input string — `decompile(compile(x)) === x` while the
+  // intermediate Slate is wrong, so the asterisks render literally. Only checking the
+  // marks (or a real render) catches it.
+  it('marks bold across the span and bold+italic on the nested word', () => {
+    const blocks = compileText('**bold *italic* word**') as any[];
+    const kids = blocks[0].children as any[];
+    // no literal asterisks leaked into the rendered text
+    expect(kids.some((k) => typeof k.text === 'string' && k.text.includes('*'))).toBe(false);
+    expect(kids).toEqual([
+      { text: 'bold ', bold: true },
+      { text: 'italic', italic: true, bold: true },
+      { text: ' word', bold: true },
+    ]);
+  });
+});
+
 describe('navigate action compiles to the builder shape (data.value, not data.url)', () => {
   it('stores the URL as a Slate rich-text `value` the builder/runtime read', () => {
     const [rule] = compileActions([{ type: 'navigate', url: '/users' }], ids);
