@@ -13,6 +13,7 @@ import { cn } from '@usertour/tailwind';
 import {
   AnnouncementData,
   AnnouncementDistribution,
+  ContentActionsItemType,
   ContentEditorElementType,
   DEFAULT_ANNOUNCEMENT_DATA,
   RulesCondition,
@@ -64,6 +65,15 @@ const ANNOUNCEMENT_ELEMENT_TYPES = [
   ContentEditorElementType.BUTTON,
   ContentEditorElementType.IMAGE,
   ContentEditorElementType.EMBED,
+];
+
+// Button actions offered in announcement content. The default set also includes
+// "Dismiss flow" and "Go to step", which are meaningless here (an announcement
+// isn't a flow and has no steps), so drop both and keep the other three.
+const ANNOUNCEMENT_ACTION_ITEMS = [
+  ContentActionsItemType.FLOW_START,
+  ContentActionsItemType.PAGE_NAVIGATE,
+  ContentActionsItemType.JAVASCRIPT_EVALUATE,
 ];
 
 // ============================================================================
@@ -454,6 +464,7 @@ const AnnouncementContentColumn = () => {
                 projectId={projectId}
                 attributes={attributeList}
                 enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                actionItems={ANNOUNCEMENT_ACTION_ITEMS}
                 getOembedInfo={getOembedInfo}
               />
             </div>
@@ -521,6 +532,7 @@ const AnnouncementContentColumn = () => {
                   projectId={projectId}
                   attributes={attributeList}
                   enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                  actionItems={ANNOUNCEMENT_ACTION_ITEMS}
                   getOembedInfo={getOembedInfo}
                 />
               </div>
