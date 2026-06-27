@@ -20,7 +20,12 @@ export async function loadConditionContext(
     }),
     prisma.segment.findMany({ where: { projectId, deleted: false }, select: { id: true } }),
     prisma.content.findMany({ where: { projectId, deleted: false }, select: { id: true } }),
-    prisma.event.findMany({ where: { projectId, deleted: false }, select: { id: true } }),
+    prisma.event.findMany({
+      where: { projectId, deleted: false },
+      // `predefined` + `codeName`: a tracker may only fire a CUSTOM event, so the
+      // tracker validator rejects a predefined (built-in/system) event by id.
+      select: { id: true, codeName: true, predefined: true },
+    }),
   ]);
   return {
     attributes: attributes as unknown as ValidateContext['attributes'],

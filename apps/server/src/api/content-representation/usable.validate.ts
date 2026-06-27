@@ -213,7 +213,12 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       validateResourceCenter(parseData<ResourceCenterData>(input.data), err);
       break;
     case ContentDataType.TRACKER:
-      validateTracker(parseData<Record<string, unknown>>(input.data), input.config, err);
+      validateTracker(
+        parseData<Record<string, unknown>>(input.data),
+        input.config,
+        input.conditionContext,
+        err,
+      );
       break;
     default:
       break;
@@ -437,10 +442,23 @@ function tabHasRenderableBlock(blocks: unknown[]): boolean {
 function validateTracker(
   data: Record<string, unknown> | null,
   config: ValidateUsableInput['config'],
+  ctx: ValidateContext | undefined,
   err: (path: string, message: string) => void,
 ): void {
-  if (!data?.eventId) {
+  const eventId = data?.eventId;
+  if (!eventId) {
     err('eventId', 'Tracker has no event to fire.');
+  } else {
+    // A tracker may only fire a CUSTOM event — built-in (predefined) events are
+    // excluded in the builder (it filters `!e.predefined`), so the API must reject
+    // them too rather than publish a tracker that can never fire a trackable event.
+    const event = ctx?.events?.find((e) => e.id === eventId);
+    if (event?.predefined) {
+      err(
+        'eventId',
+        `A tracker can only fire a custom event — "${event.codeName}" is a built-in system event. Create a custom event with create_event_definition and point the tracker at that.`,
+      );
+    }
   }
   if (asArray<RulesCondition>(config?.autoStartRules).length === 0) {
     err('autoStartRules', 'Tracker has no trigger conditions.');

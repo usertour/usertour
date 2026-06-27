@@ -306,6 +306,40 @@ describe('validateVersionUsable', () => {
       });
       expect(r.ok).toBe(true);
     });
+
+    // A tracker may only fire a CUSTOM event — the builder hides built-in
+    // (predefined) events; the API must reject them too (needs conditionContext.events).
+    const trackerCtx = (predefined: boolean) =>
+      ({
+        attributes: [{ id: 'a1', dataType: 2, bizType: 1 }],
+        events: [{ id: 'ev1', codeName: 'an_event', predefined }],
+      }) as never;
+    const trackerRule = [
+      { type: 'user-attr', operators: 'and', data: { attrId: 'a1', logic: 'is', value: 'x' } },
+    ] as never;
+
+    it('rejects a built-in (predefined) event', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.TRACKER,
+        themeId: null,
+        data: { eventId: 'ev1' },
+        config: { autoStartRules: trackerRule },
+        conditionContext: trackerCtx(true),
+      });
+      expect(r.ok).toBe(false);
+      expect(r.errors.some((e) => /custom event/i.test(e.message))).toBe(true);
+    });
+
+    it('accepts a custom (non-predefined) event', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.TRACKER,
+        themeId: null,
+        data: { eventId: 'ev1' },
+        config: { autoStartRules: trackerRule },
+        conditionContext: trackerCtx(false),
+      });
+      expect(r.ok).toBe(true);
+    });
   });
 
   // Semantic condition validation — only runs when the caller supplies the

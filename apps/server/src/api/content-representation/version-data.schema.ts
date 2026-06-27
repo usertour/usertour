@@ -25,8 +25,17 @@ import { representationResourceCenter } from './resource-center.schema';
 // A tracker's trigger lives in config.autoStartRules (authored via startRules);
 // version.data only holds the tracked event reference.
 export const representationTracker = z.object({
-  /** Event code to track, or null when unset. */
-  event: z.string().nullable(),
+  event: z
+    .string()
+    .nullable()
+    .describe(
+      "The CUSTOM event this tracker fires when its startRules match. A custom event's " +
+        'codeName (preferred) or id from list_event_definitions — accepted either way, ' +
+        'stored and returned as the codeName. MUST be a custom event: built-in / system ' +
+        '(predefined) events are rejected (a tracker can only fire custom events; create one ' +
+        'with create_event_definition). A tracker is headless — no UI, no theme; it just ' +
+        'fires this event whenever its startRules trigger conditions are met. null when unset.',
+    ),
 });
 export type RepresentationTracker = z.infer<typeof representationTracker>;
 

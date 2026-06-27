@@ -29,6 +29,13 @@ export const eventDefinition = z.object({
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
+  predefined: z
+    .boolean()
+    .describe(
+      'true = a built-in Usertour lifecycle event (flow/launcher/checklist/survey/… ' +
+        'started/ended/etc.) — NOT trackable: a tracker can only fire a CUSTOM event. ' +
+        'false = a custom event you created (with create_event_definition).',
+    ),
   attributes: z
     .array(z.string())
     .describe('codeNames of the event-scoped attributes attached to this event.'),

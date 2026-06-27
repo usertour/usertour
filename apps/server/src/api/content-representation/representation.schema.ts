@@ -281,9 +281,11 @@ export const representationCondition = z.lazy(() =>
         .array(z.string())
         .describe(
           'URL patterns (anchored whole-url match, NOT substring/regex). `*` = wildcard within ' +
-            'one url part; `:name` = one path segment. Omitting the path matches EVERY path (the ' +
-            'whole site) — scope it: `*/` (homepage only), `*/pricing` (one page), `*/app/*` (a ' +
-            'section + below), `host.com/*` (any page on a host). Multiple patterns are ' +
+            'one url part; `:name` = one path segment. A bare `*` (i.e. `["*"]`) matches EVERY ' +
+            'page on every host incl. deep paths — the canonical always-on / whole-site pattern ' +
+            '(use it when content should be available everywhere). Scope it down instead with: ' +
+            '`*/` (homepage only — path exactly `/`), `*/pricing` (one page), `*/app/*` (a ' +
+            'section + below), `host.com/*` (any page on a specific host). Multiple patterns are ' +
             'OR-matched: the URL matches this list if it matches ANY one pattern (so "/tasks OR ' +
             '/dashboard" is one condition with both patterns here — no group needed).',
         ),

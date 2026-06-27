@@ -7,6 +7,7 @@ type EventNode = {
   description: string;
   displayName: string;
   codeName: string;
+  predefined: boolean;
   // Present when the query includes the attribute links (v2 read paths do).
   attributeOnEvent?: { attribute: { codeName: string } }[];
 };
@@ -20,6 +21,7 @@ export function mapEventDefinition(node: EventNode): EventDefinition {
     description: node.description,
     displayName: node.displayName,
     codeName: node.codeName,
+    predefined: node.predefined,
     attributes: (node.attributeOnEvent ?? []).map((link) => link.attribute.codeName),
   };
 }
