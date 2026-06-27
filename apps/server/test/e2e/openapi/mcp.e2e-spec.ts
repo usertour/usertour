@@ -739,6 +739,68 @@ describe('MCP endpoint (e2e)', () => {
       ).toBe(true);
     });
 
+    it('update_content_version rejects a run_javascript action with a specific, non-retryable message', async () => {
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/call',
+              params: {
+                name: 'create_content',
+                arguments: { type: 'flow', name: 'MCP run-js', themeId },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+
+      // run_javascript actions are deliberately not writable via the API. The
+      // codec must surface a SPECIFIC, non-retryable reason (E1017), not the
+      // opaque "[E0003] System parameter error ... please try again later".
+      const res = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 2,
+            method: 'tools/call',
+            params: {
+              name: 'update_content_version',
+              arguments: {
+                contentId: created.id,
+                versionId: created.editedVersionId,
+                steps: [
+                  {
+                    name: 'Welcome',
+                    type: 'modal',
+                    content: [
+                      {
+                        type: 'button',
+                        text: 'Go',
+                        actions: [{ type: 'run_javascript', script: 'alert(1)' }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          token,
+        ),
+      );
+      expect(res.result?.isError).toBe(true);
+      const text: string = res.result.content[0].text;
+      expect(text).toMatch(/run_javascript/i);
+      expect(text).not.toMatch(/try again later/i);
+      expect(text).not.toContain('E0003');
+    });
+
     it('publish_content + create_content_version via MCP', async () => {
       const token = await mint(
         [

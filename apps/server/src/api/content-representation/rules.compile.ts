@@ -1,6 +1,6 @@
 import { DEFAULT_FREQUENCY, cuid } from '@usertour/helpers';
 
-import { ParamsError } from '@/common/errors';
+import { ValidationError } from '@/common/errors';
 
 import {
   CompilableCondition,
@@ -198,7 +198,9 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
       });
     default:
       // `unsupported` is filtered out by compileConditions; nothing else remains.
-      throw new ParamsError(`Cannot write condition: ${(c as { type: string }).type}`);
+      throw new ValidationError(
+        `Cannot write a "${(c as { type: string }).type}" condition — this condition type is not supported via the API.`,
+      );
   }
 }
 
@@ -248,9 +250,13 @@ function compileAction(
     case 'dismiss':
       return rule(dismiss, {});
     case 'run_javascript':
-      throw new ParamsError('run_javascript cannot be set via the API');
+      throw new ValidationError(
+        'Cannot write a run_javascript action via the API — it is blocked for security. Remove it, or edit this content in the builder.',
+      );
     default:
-      throw new ParamsError(`Cannot write action: ${(a as { type: string }).type}`);
+      throw new ValidationError(
+        `Cannot write a "${(a as { type: string }).type}" action — this action type is not supported via the API.`,
+      );
   }
 }
 
