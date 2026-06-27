@@ -389,6 +389,21 @@ export const representationTrigger = z.object({
 export type RepresentationTrigger = z.infer<typeof representationTrigger>;
 
 // ── Questions ────────────────────────────────────────────────────────────────
+// Shared across all question kinds. Answers are ALWAYS captured as a response
+// event; `bindAttribute` is the extra write that also stores the answer on a user
+// attribute for targeting/segmentation.
+const bindAttributeField = z
+  .string()
+  .optional()
+  .describe(
+    'Optional: codeName of an EXISTING attribute (create it first with create_attribute_definition) ' +
+      'to ALSO save this answer onto the user for targeting/segmentation — use the codeName, NOT the ' +
+      "id. It is NOT validated: a wrong/typo'd code still publishes and then silently captures nothing. " +
+      'Match the attribute dataType to the answer: number (nps / rating), string (single-select choice), ' +
+      'list (multi-select choice). Leaving it unset still records the answer as a response event — bind ' +
+      'only when you need to target/segment on it.',
+  );
+
 export const representationQuestion = z.union([
   z.object({
     kind: z.literal('nps'),
@@ -396,18 +411,25 @@ export const representationQuestion = z.union([
     cvid: z.string().optional(),
     lowLabel: z.string().optional(),
     highLabel: z.string().optional(),
-    bindAttribute: z.string().optional(),
+    bindAttribute: bindAttributeField,
   }),
   z.object({
     kind: z.literal('rating'),
     name: z.string(),
     cvid: z.string().optional(),
-    style: z.enum(['star', 'scale']),
-    range: z.object({ low: z.number(), high: z.number() }),
+    style: z
+      .enum(['star', 'scale'])
+      .describe(
+        'star = star rating; scale = a numeric scale. A "scale" question IS a rating with ' +
+          'style:"scale" — there is no separate "scale" kind.',
+      ),
+    range: z
+      .object({ low: z.number(), high: z.number() })
+      .describe('Numeric range, e.g. { low: 1, high: 5 }.'),
     default: z.number().optional(),
     lowLabel: z.string().optional(),
     highLabel: z.string().optional(),
-    bindAttribute: z.string().optional(),
+    bindAttribute: bindAttributeField,
   }),
   z.object({
     kind: z.literal('text'),
@@ -416,20 +438,36 @@ export const representationQuestion = z.union([
     multiline: z.boolean(),
     placeholder: z.string().optional(),
     buttonText: z.string().optional(),
-    required: z.boolean().optional(),
-    bindAttribute: z.string().optional(),
+    required: z
+      .boolean()
+      .optional()
+      .describe(
+        'Require an answer before submit. ONLY `text` supports this — nps / rating / choice cannot ' +
+          'be marked required.',
+      ),
+    bindAttribute: bindAttributeField,
   }),
   z.object({
     kind: z.literal('choice'),
     name: z.string(),
     cvid: z.string().optional(),
-    options: z.array(z.object({ label: z.string(), value: z.string() })),
-    allowMultiple: z.boolean(),
+    options: z
+      .array(z.object({ label: z.string(), value: z.string() }))
+      .describe(
+        'Each option has a human-facing `label` and a stored `value` — the `value` is what gets ' +
+          'recorded/bound as the answer.',
+      ),
+    allowMultiple: z
+      .boolean()
+      .describe(
+        'false = single-select, true = multi-select. A multi-select answer needs a `list`-typed ' +
+          'bound attribute.',
+      ),
     enableOther: z.boolean().optional(),
     otherPlaceholder: z.string().optional(),
     shuffle: z.boolean().optional(),
     buttonText: z.string().optional(),
-    bindAttribute: z.string().optional(),
+    bindAttribute: bindAttributeField,
   }),
 ]);
 export type RepresentationQuestion = z.infer<typeof representationQuestion>;

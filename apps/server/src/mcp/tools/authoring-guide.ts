@@ -86,6 +86,15 @@ Some authoring choices only work if the host app wired a matching SDK hook. They
 - **\`current_url\` conditions when the URL carries sensitive/dynamic data** (tokens or ids in the path/query): the SDK sends and matches the **full** URL; the host can sanitize with \`usertour.setUrlFilter()\` — then write your patterns against the sanitized form.
 - **External links in content that need auth/tracking params**: the host adds them per click with \`usertour.setLinkUrlDecorator()\`.
 
+## Surveys & questions
+A survey is a **flow** with \`question\` blocks in its steps — there is **no separate survey type**, and \`question\` blocks work **only in flow steps** (one in a checklist / banner / resource-center is rejected at write). Put a \`question\` block in a step's \`content\` (one or several per step; a multi-question step uses a footer button to submit). Four kinds (keyed on \`kind\`):
+- **nps** — a 0–10 "how likely to recommend" score; the 0–10 range is **fixed** (no \`range\` field). \`lowLabel\`/\`highLabel\` optional.
+- **rating** — needs \`style\` (\`star\` | \`scale\`) + a \`range\` (e.g. \`{ low: 1, high: 5 }\`). A "scale" question is just \`style: "scale"\` — there is **no** separate \`scale\` kind.
+- **text** — needs \`multiline\` (true/false); \`placeholder\` / \`buttonText\` / \`required\` optional. **\`text\` is the ONLY kind with \`required\`** — nps / rating / choice can't be made mandatory.
+- **choice** — needs \`options: [{ label, value }]\` (the \`value\` is what's stored) + \`allowMultiple\`; \`enableOther\` / \`otherPlaceholder\` / \`shuffle\` optional. A multi-select (\`allowMultiple: true\`) answer needs a \`list\`-typed bound attribute.
+
+**Capturing answers.** Every answer is recorded as a response event regardless of binding. Set a question's \`bindAttribute\` to **also** store the answer on a user attribute (for targeting/segmentation): pass the attribute **codeName** (create it first with \`create_attribute_definition\`), NOT its id. It is **not validated** — a wrong/typo'd code publishes and then silently captures nothing. Match the attribute dataType to the answer (number for nps/rating, string for single-select, list for multi-select). Leave \`bindAttribute\` unset for free prose you won't target on (it's still captured as the response event).
+
 ## What each type needs to be usable (else publish is rejected)
 - **flow**: ≥1 step; tooltip steps have a target; non-hidden steps have content; goto targets resolve.
 - **checklist**: ≥1 item; each item has a name AND a click action or a completion condition.

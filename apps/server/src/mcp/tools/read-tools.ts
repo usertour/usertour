@@ -198,7 +198,7 @@ export function buildReadTools(): McpTool[] {
       title: 'List content',
       capability: Capability.ContentRead,
       description:
-        'List Usertour content (flows, checklists, launchers, banners, surveys) in the ' +
+        'List Usertour content (flow, checklist, launcher, banner, tracker, resource-center) in the ' +
         'project. Filter by `name`, `type`, `published`, or a created-at range. Returns ' +
         '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
@@ -206,7 +206,10 @@ export function buildReadTools(): McpTool[] {
         type: z
           .string()
           .optional()
-          .describe('Filter by content kind: flow, checklist, launcher, banner, or survey.'),
+          .describe(
+            'Filter by content kind: flow, checklist, launcher, banner, tracker, or ' +
+              'resource-center. (A "survey" is a flow with question blocks — not a separate kind.)',
+          ),
         published: z
           .boolean()
           .optional()

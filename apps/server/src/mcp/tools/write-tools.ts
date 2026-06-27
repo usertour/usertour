@@ -77,9 +77,10 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create content',
       capability: Capability.ContentCreate,
       description:
-        'Create a new piece of Usertour content (flow, checklist, launcher, banner, survey) in ' +
-        'the project, with a draft version themed by `themeId`. Returns the created content (use ' +
-        '`update_content_version` to add steps; use `list_themes` to pick a themeId).',
+        'Create a new piece of Usertour content (flow, checklist, launcher, banner, tracker, ' +
+        'resource-center) in the project, with a draft version themed by `themeId`. A survey is a ' +
+        'flow with question blocks — there is no separate survey type. Returns the created content ' +
+        '(use `update_content_version` to add steps; use `list_themes` to pick a themeId).',
       inputSchema: {
         type: z
           .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])

@@ -29,12 +29,44 @@ import {
  * Throws E1017 when the content type does not accept a `data` body (e.g. `flow`,
  * whose body is `steps`).
  */
+/**
+ * Walk a representation data body for any `question` block. Question blocks render
+ * only in flow steps; the non-flow data bodies (checklist / launcher / banner /
+ * resource-center) share the block union and would accept one, but the runtime
+ * doesn't support it — so reject it at write rather than silently shipping a dead
+ * survey.
+ */
+function containsQuestionBlock(data: unknown): boolean {
+  let found = false;
+  const walk = (x: unknown) => {
+    if (found || !x) return;
+    if (Array.isArray(x)) {
+      for (const item of x) walk(item);
+      return;
+    }
+    if (typeof x === 'object') {
+      if ((x as { type?: unknown }).type === 'question') {
+        found = true;
+        return;
+      }
+      for (const v of Object.values(x as Record<string, unknown>)) walk(v);
+    }
+  };
+  walk(data);
+  return found;
+}
+
 export function compileVersionData(
   contentType: string,
   data: unknown,
   existingData: unknown,
   resolvers: CompileResolvers,
 ): unknown {
+  if (containsQuestionBlock(data)) {
+    throw new ValidationError(
+      `Question (survey) blocks are only supported in flows — not in ${contentType}. Remove the question block, or build the survey as a flow with question blocks in its steps.`,
+    );
+  }
   switch (contentType) {
     case 'tracker':
       return compileTracker(parse(representationTracker, data), existingData, resolvers);

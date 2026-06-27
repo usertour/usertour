@@ -1,4 +1,5 @@
 import { compileContent, compileStep } from './representation.compile';
+import { compileVersionData } from './version-data.compile';
 import { decompileStep } from './representation.decompile';
 import { representationCondition, representationStepInput } from './representation.schema';
 import { compileText } from './text.compile';
@@ -717,5 +718,23 @@ describe('condition type is a discriminated union (clean errors)', () => {
       value: 'pro',
     });
     expect(r.success).toBe(true);
+  });
+});
+
+describe('question blocks are flow-only', () => {
+  it('rejects a question block in a non-flow (checklist) data body', () => {
+    // ValidationError keeps its text in getMessage()/toString(), not native .message.
+    let msg = '';
+    try {
+      compileVersionData(
+        'checklist',
+        { content: [{ type: 'question', question: { kind: 'nps', name: 'Q' } }], items: [] },
+        undefined,
+        ids,
+      );
+    } catch (e) {
+      msg = String(e);
+    }
+    expect(msg).toMatch(/only supported in flows/i);
   });
 });
