@@ -301,8 +301,18 @@ export const representationCondition = z.lazy(() =>
     }),
     z.object({
       type: z.literal('flow'),
-      flow: z.string(),
-      state: z.enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive']),
+      flow: z.string().describe('contentId of the flow whose state to check (from list_content).'),
+      state: z
+        .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
+        .describe(
+          "The referenced flow's state for THIS user. seen = started at least once (TRUE from the " +
+            'moment it opens); unseen = never started; active = currently open/running; inactive = ' +
+            'NOT currently running (covers both never-started and ran-then-closed); completed = ' +
+            'reached a goal/completion step; uncompleted = not completed. To gate piece B until flow ' +
+            'A has run AND closed (the usual "show next thing after the welcome flow" sequencing), ' +
+            'use `seen` AND `inactive` together — `seen` alone fires while A is still open (B piles ' +
+            'on top), and `completed` alone strands users who skip/dismiss A.',
+        ),
     }),
     z.object({
       type: z.literal('event'),
@@ -369,7 +379,20 @@ export const representationAction = z.discriminatedUnion('type', [
           'Resolved server-side to the cvid.',
       ),
   }),
-  z.object({ type: z.literal('start_flow'), flow: z.string(), step: z.string().optional() }),
+  z.object({
+    type: z.literal('start_flow'),
+    flow: z
+      .string()
+      .describe(
+        'contentId of the flow to launch (from list_content) — a raw content id, NOT a step key ' +
+          '(unlike goto_step). The target flow must be PUBLISHED to actually start at runtime; an ' +
+          'unknown/dangling id is rejected at validate.',
+      ),
+    step: z
+      .string()
+      .optional()
+      .describe('Optional cvid of a step within the launched flow to start at.'),
+  }),
   z.object({
     type: z.literal('navigate'),
     url: z.string(),

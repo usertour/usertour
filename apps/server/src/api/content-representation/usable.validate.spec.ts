@@ -383,6 +383,53 @@ describe('validateVersionUsable', () => {
       expect(condErrors(r)[0]?.message).toMatch(/unknown attribute/);
     });
 
+    // The RC content-list existence check read `obj.items`, but the compiled block
+    // stores `contentItems` — so it silently never fired. These lock the fix.
+    it('flags a dangling resource-center content-list reference', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't1',
+        data: {
+          tabs: [
+            {
+              name: 'g',
+              blocks: [
+                {
+                  type: 'content-list',
+                  contentItems: [{ contentId: 'gone', contentType: 'flow' }],
+                },
+              ],
+            },
+          ],
+        },
+        config: { autoStartRules: [{ type: 'current-page' } as never] },
+        conditionContext: ctx,
+      });
+      expect(
+        r.errors.some((e) => /resource-center item references unknown content/.test(e.message)),
+      ).toBe(true);
+    });
+
+    it('accepts a resource-center content-list reference to existing content', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't1',
+        data: {
+          tabs: [
+            {
+              name: 'g',
+              blocks: [
+                { type: 'content-list', contentItems: [{ contentId: 'c1', contentType: 'flow' }] },
+              ],
+            },
+          ],
+        },
+        config: { autoStartRules: [{ type: 'current-page' } as never] },
+        conditionContext: ctx,
+      });
+      expect(r.errors.some((e) => /references unknown content/.test(e.message))).toBe(false);
+    });
+
     it('flags an operator the attribute type does not support', () => {
       // String attr can't use a List operator.
       const r = run({

@@ -97,10 +97,12 @@ export function collectRuleIssues(
         if (typeof cid === 'string' && cid && !contentIds.has(cid)) {
           issues.push({ path: at, message: 'start-flow action references unknown content' });
         }
-      } else if (type === 'content-list' && contentIds && Array.isArray(obj.items)) {
+      } else if (type === 'content-list' && contentIds && Array.isArray(obj.contentItems)) {
         // Resource-center content-list items each link to a flow/checklist; a
-        // dangling link renders nothing for that item.
-        const items = obj.items as unknown[];
+        // dangling link renders nothing for that item. The COMPILED block stores
+        // them under `contentItems` (each with `contentId`) — see
+        // resource-center.compile; reading `items` here silently never fired.
+        const items = obj.contentItems as unknown[];
         for (let i = 0; i < items.length; i++) {
           const cid = (items[i] as { contentId?: unknown } | undefined)?.contentId;
           if (typeof cid === 'string' && cid && !contentIds.has(cid)) {

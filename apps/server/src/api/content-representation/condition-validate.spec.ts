@@ -67,7 +67,9 @@ describe('collectRuleIssues', () => {
 
     it('flags a resource-center content-list item referencing unknown content', () => {
       const issues = collectRuleIssues(
-        { type: 'content-list', items: [{ contentId: 'c1' }, { contentId: 'gone' }] },
+        // `contentItems` is the COMPILED field name (resource-center.compile) — the
+        // check previously read `items`, so it never fired on real data.
+        { type: 'content-list', contentItems: [{ contentId: 'c1' }, { contentId: 'gone' }] },
         ctx,
       );
       expect(issues.some((i) => /unknown content/.test(i.message))).toBe(true);
