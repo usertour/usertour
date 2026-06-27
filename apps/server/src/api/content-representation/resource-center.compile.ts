@@ -2,7 +2,7 @@ import { cuid } from '@usertour/helpers';
 
 import { compileContent } from './representation.compile';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
-import { compileText } from './text.compile';
+import { compilePlainText } from './text.compile';
 import {
   RepresentationResourceCenter,
   RepresentationResourceCenterBlock,
@@ -80,7 +80,7 @@ function compileBlock(
         id,
         type: 'action',
         ...cond,
-        name: compileText(b.name),
+        name: compilePlainText(b.name),
         ...iconFields(b.icon, prev),
         clickedActions: compileActions(b.clickActions ?? []),
       };
@@ -90,7 +90,7 @@ function compileBlock(
         id,
         type: 'sub-page',
         ...cond,
-        name: compileText(b.name),
+        name: compilePlainText(b.name),
         ...iconFields(b.icon, prev),
         content: compileContent(b.content ?? [], prev?.content, r),
       };
@@ -100,7 +100,7 @@ function compileBlock(
         id,
         type: 'content-list',
         ...cond,
-        name: compileText(b.name),
+        name: compilePlainText(b.name),
         ...iconFields(b.icon, prev),
         flowIconSource: b.flowIcon?.source ?? prev?.flowIconSource ?? 'none',
         flowIconType: b.flowIcon?.type ?? prev?.flowIconType ?? '',
@@ -117,7 +117,9 @@ function compileBlock(
             ...(it.icon?.source !== undefined ? { iconSource: it.icon.source } : {}),
             ...(it.icon?.type !== undefined ? { iconType: it.icon.type } : {}),
             ...(it.icon?.url !== undefined ? { iconUrl: it.icon.url } : {}),
-            ...(it.navigateUrl !== undefined ? { navigateUrl: compileText(it.navigateUrl) } : {}),
+            ...(it.navigateUrl !== undefined
+              ? { navigateUrl: compilePlainText(it.navigateUrl) }
+              : {}),
             ...(it.navigateOpenType !== undefined ? { navigateOpenType: it.navigateOpenType } : {}),
             onlyShowItem,
             onlyShowItemConditions: onlyShowItem ? compileConditions(it.onlyShowWhen ?? [], r) : [],
@@ -130,7 +132,7 @@ function compileBlock(
         id,
         type: 'live-chat',
         ...cond,
-        name: compileText(b.name),
+        name: compilePlainText(b.name),
         ...iconFields(b.icon, prev),
         liveChatProvider: b.provider,
         customLiveChatCode: b.customCode ?? prev?.customLiveChatCode ?? '',

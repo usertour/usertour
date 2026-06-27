@@ -11,7 +11,7 @@ import {
 } from './representation.schema';
 import { ATTR_OP_TO_LOGIC } from './attr-ops';
 import { compileTargetToElementData } from './target.compile';
-import { compileText } from './text.compile';
+import { compilePlainText } from './text.compile';
 
 /**
  * Compile the representation rules model back into internal `RulesCondition[]` /
@@ -240,10 +240,11 @@ function compileAction(
     case 'navigate':
       // The URL is stored as a Slate rich-text `value` (the builder + runtime read
       // `data.value` and serialize it — this is what lets `{{ attribute }}` work in
-      // URLs), NOT a plain `url` string. compileText turns the url into that node
-      // shape; decompile reads it back via decompileText(d.value).
+      // URLs), NOT a plain `url` string. compilePlainText turns the url into that node
+      // shape WITHOUT markdown parsing (so a `*`/`_`/`[` in the URL stays literal);
+      // decompile reads it back via decompileText(d.value).
       return rule('page-navigate', {
-        value: compileText(a.url),
+        value: compilePlainText(a.url),
         ...(a.newTab ? { openType: 'new', openNewTab: true } : { openType: 'same' }),
         ...(a.newWindow ? { openNewWindow: true } : {}),
       });

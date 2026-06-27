@@ -69,6 +69,31 @@ describe('emphasis wrapping emphasis (**bold *italic* word**)', () => {
   });
 });
 
+describe('markdown-it migration: content preservation + plain-string path', () => {
+  it('keeps a loose list item continuation paragraph (no dropped text)', () => {
+    // A loose list item with a continuation paragraph: the first impl dropped every
+    // block after the first paragraph (lost "continued text"). gatherInline keeps it.
+    const out = decompileText(compileText('1. First line\n\n    continued text\n2. Second'));
+    expect(out).toContain('First line');
+    expect(out).toContain('continued text');
+    expect(out).toContain('Second');
+  });
+
+  it('keeps markdown-significant chars literal in a link URL (no markdown parse)', () => {
+    // The URL goes through compilePlainText, so `*`/`_` in it stay literal (not italic).
+    const blocks = compileText('see [x](https://e.io/a*b_c)') as any[];
+    const link = (blocks[0].children as any[]).find((c) => c.type === 'link');
+    expect(link.url).toBe('https://e.io/a*b_c');
+    expect(decompileText(link.data)).toBe('https://e.io/a*b_c');
+  });
+
+  it('protects a {{ liquid }} token that contains markdown characters', () => {
+    const blocks = compileText('Hi {{ name | default: "*VIP*" }}!') as any[];
+    const ua = (blocks[0].children as any[]).find((c) => c.type === 'user-attribute');
+    expect(ua).toMatchObject({ type: 'user-attribute', attrCode: 'name', fallback: '*VIP*' });
+  });
+});
+
 describe('navigate action compiles to the builder shape (data.value, not data.url)', () => {
   it('stores the URL as a Slate rich-text `value` the builder/runtime read', () => {
     const [rule] = compileActions([{ type: 'navigate', url: '/users' }], ids);
