@@ -97,9 +97,22 @@ export const useContentVersionUpdate = () => {
   // a single mutation. Server-side scalar updates are partial (Prisma only
   // writes the provided columns), so this never clobbers theme / config /
   // scheduledAt.
-  const debouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
+  const rawDebouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
     saveVersionData(newData);
   }, 500);
+
+  // Flag isSaving the moment an edit is queued, not when the timer fires.
+  // Publish is gated on isSaving, so without this the ~500ms pending window
+  // would let a publish ship the pre-debounce server data while the latest
+  // edit is still buffered. updateEditableVersion's finally clears it once the
+  // coalesced write has committed (after which the server holds the latest).
+  const debouncedSaveVersionData = useCallback(
+    (newData: unknown) => {
+      setIsSaving(true);
+      rawDebouncedSaveVersionData(newData);
+    },
+    [rawDebouncedSaveVersionData, setIsSaving],
+  );
 
   /** Save the version's theme (published-fork safe). */
   const saveVersionTheme = useCallback(
