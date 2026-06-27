@@ -216,12 +216,53 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   }
 
   async markAnnouncementSeen(contentId: string, versionId: string): Promise<boolean> {
+    // Optimistically drop the launcher badge so collapsing back to the launcher
+    // reflects the just-opened feed without waiting for the next session rebuild.
+    // The server's unreadCount stays the source of truth and reconciles on the
+    // next build; this only avoids a stale badge for the rest of this session.
+    // The feed only marks its unseen items, so each call maps to one unread
+    // announcement and a single decrement is correct.
+    this.decrementAnnouncementUnreadCount();
     try {
       return await this.socketService.markAnnouncementSeen({ contentId, versionId });
     } catch (error) {
       logger.error('Failed to mark announcement seen:', error);
       return false;
     }
+  }
+
+  /**
+   * Decrement the announcement unreadCount by one (clamped at zero) on every
+   * announcement block. The server mirrors the same global count onto each block
+   * and the badge sums them, so decrementing every block in step keeps the local
+   * badge consistent with both.
+   */
+  private decrementAnnouncementUnreadCount(): void {
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    if (!resourceCenterData?.tabs) {
+      return;
+    }
+
+    let changed = false;
+    const tabs = resourceCenterData.tabs.map((tab) => ({
+      ...tab,
+      blocks: tab.blocks.map((block) => {
+        if (block.type !== ResourceCenterBlockType.ANNOUNCEMENT) {
+          return block;
+        }
+        const announcementBlock = block as ResourceCenterAnnouncementBlock;
+        if ((announcementBlock.unreadCount ?? 0) <= 0) {
+          return block;
+        }
+        changed = true;
+        return { ...announcementBlock, unreadCount: (announcementBlock.unreadCount ?? 0) - 1 };
+      }),
+    }));
+
+    if (!changed) {
+      return;
+    }
+    this.updateStore({ resourceCenterData: { ...resourceCenterData, tabs } });
   }
 
   // ── Live chat provider lifecycle ─────────────────────────────────────
