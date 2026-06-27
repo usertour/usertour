@@ -38,6 +38,15 @@ describe('link compiles with `data` (so the runtime can derive its href)', () =>
   it('round-trips a link through compile → decompile', () => {
     expect(decompileText(compileText('a [x](https://y.io) b'))).toBe('a [x](https://y.io) b');
   });
+
+  it('parses a link nested in bold (**[x](url)**) as a bold link, not raw text', () => {
+    const blocks = compileText('See **[changelog](https://x.io)** now') as any[];
+    const link = (blocks[0].children as any[]).find((c) => c.type === 'link');
+    expect(link).toBeDefined(); // the link is a real link node, not literal "[changelog](url)" text
+    expect(link.url).toBe('https://x.io');
+    expect(Array.isArray(link.data)).toBe(true);
+    expect(link.children[0]).toMatchObject({ text: 'changelog', bold: true });
+  });
 });
 
 describe('navigate action compiles to the builder shape (data.value, not data.url)', () => {

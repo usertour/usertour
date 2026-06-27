@@ -43,8 +43,20 @@ function parseLink(token: string): SlateNode {
   // so a link without `data` renders href="". Store the url as `data` (the source of
   // truth the runtime reads) AND as `url` (what decompile reads back) — mirrors how a
   // `navigate` action stores its url as `value: compileText(url)`.
-  return { type: 'link', url, data: compileText(url), children: [{ text: m?.[1] ?? '' }] };
+  return { type: 'link', url, data: compileText(url), children: parseInline(m?.[1] ?? '') };
 }
+
+// Apply a bold/italic mark across parsed inline nodes — recurses into element
+// children (e.g. a link's text) so `**[x](url)**` becomes a bold LINK rather than the
+// literal text "[x](url)". Touches only display text, never a link's `data`/url.
+const applyMark = (nodes: SlateNode[], mark: 'bold' | 'italic'): SlateNode[] =>
+  nodes.map((n) =>
+    typeof n.text === 'string'
+      ? { ...n, [mark]: true }
+      : Array.isArray(n.children)
+        ? { ...n, children: applyMark(n.children as SlateNode[], mark) }
+        : n,
+  );
 
 function parseInline(text: string): SlateNode[] {
   const nodes: SlateNode[] = [];
@@ -64,9 +76,9 @@ function parseInline(text: string): SlateNode[] {
     } else if (tok.startsWith('[')) {
       nodes.push(parseLink(tok));
     } else if (tok.startsWith('**')) {
-      nodes.push({ text: tok.slice(2, -2), bold: true });
+      nodes.push(...applyMark(parseInline(tok.slice(2, -2)), 'bold'));
     } else {
-      nodes.push({ text: tok.slice(1, -1), italic: true });
+      nodes.push(...applyMark(parseInline(tok.slice(1, -1)), 'italic'));
     }
     rest = rest.slice(m.index + tok.length);
   }
