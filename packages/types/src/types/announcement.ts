@@ -60,5 +60,5 @@ export const DEFAULT_ANNOUNCEMENT_DATA: AnnouncementData = {
   enableReadMore: false,
   readMoreLabel: 'Read more',
   detailContent: DEFAULT_EDITOR_CONTENT,
-  distribution: AnnouncementDistribution.SILENT,
+  distribution: AnnouncementDistribution.BADGE,
 };

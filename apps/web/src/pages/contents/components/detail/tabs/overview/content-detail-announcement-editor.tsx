@@ -3,7 +3,7 @@ import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
-import { useThemeList } from '@/hooks/use-theme-list';
+import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useAws } from '@usertour/hooks';
@@ -71,6 +71,7 @@ const AnnouncementSettingsColumn = () => {
   const { debouncedUpdateVersion, saveVersionData, saveVersionTheme, saveVersionScheduledAt } =
     useContentVersionUpdate();
   const { themeList } = useThemeList();
+  const defaultTheme = useDefaultTheme();
 
   const config = buildConfig(version?.config, content?.type);
   const announcementData = (version?.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
@@ -78,6 +79,24 @@ const AnnouncementSettingsColumn = () => {
   // Hold the latest data in a ref to avoid stale closures in callbacks.
   const dataRef = useRef(announcementData);
   dataRef.current = announcementData;
+
+  // Mirror the builder's theme defaulting (sidebar-theme). Announcements have no
+  // builder, so without this their version keeps an empty themeId. The stored
+  // themeId isn't rendered today — the resource center supplies its own theme —
+  // but future self-rendering announcement formats resolve it like flows do, so
+  // persist the project default when none is set. Guarded per version id so an
+  // in-flight save doesn't trigger a second write before the version refetches.
+  const assignedDefaultThemeFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (isViewOnly || !version?.id || version.themeId || !defaultTheme) {
+      return;
+    }
+    if (assignedDefaultThemeFor.current === version.id) {
+      return;
+    }
+    assignedDefaultThemeFor.current = version.id;
+    saveVersionTheme(defaultTheme.id);
+  }, [isViewOnly, version?.id, version?.themeId, defaultTheme, saveVersionTheme]);
 
   const distributionOptions = useMemo(
     () => [
