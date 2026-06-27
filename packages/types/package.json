@@ -25,7 +25,7 @@
     "typescript": "^5.0.2"
   },
   "tsup": {
-    "clean": true,
+    "clean": false,
     "target": "es2019",
     "format": ["cjs", "esm"],
     "entry": ["src/index.ts"],
