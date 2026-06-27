@@ -1,6 +1,6 @@
 import { compileContent, compileStep } from './representation.compile';
 import { decompileStep } from './representation.decompile';
-import { representationStepInput } from './representation.schema';
+import { representationCondition, representationStepInput } from './representation.schema';
 import { compileText } from './text.compile';
 import { decompileText } from './text.decompile';
 import { extractLinkUrl } from '@usertour/helpers';
@@ -689,5 +689,33 @@ describe('run_javascript is write-rejected', () => {
       triggers: [{ do: [{ type: 'run_javascript' as const, script: 'alert(1)' }] }],
     };
     expect(() => compileStep(representation as any, undefined, ids)).toThrow();
+  });
+});
+
+describe('condition type is a discriminated union (clean errors)', () => {
+  it('rejects an unknown condition type with one discriminator error listing valid types', () => {
+    // `user_attribute` is the natural-but-wrong guess for an attribute condition.
+    // A z.union would dump every branch; the discriminated union gives one message.
+    const r = representationCondition.safeParse({
+      type: 'user_attribute',
+      attribute: 'plan',
+      op: 'is',
+      value: 'pro',
+    });
+    expect(r.success).toBe(false);
+    const issues = r.success ? '' : JSON.stringify(r.error.issues);
+    expect(issues).toMatch(/discriminator/i);
+    expect(issues).toContain('attribute'); // names the correct type in the options
+  });
+
+  it('accepts the correct attribute + scope shape', () => {
+    const r = representationCondition.safeParse({
+      type: 'attribute',
+      scope: 'user',
+      attribute: 'plan',
+      op: 'is',
+      value: 'pro',
+    });
+    expect(r.success).toBe(true);
   });
 });

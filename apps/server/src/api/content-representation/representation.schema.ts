@@ -266,7 +266,7 @@ const attributeConditionFields = {
 };
 
 export const representationCondition = z.lazy(() =>
-  z.union([
+  z.discriminatedUnion('type', [
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
@@ -357,7 +357,7 @@ export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =
 ) as unknown as z.ZodType<CompletionCondition>;
 
 // ── Rules: actions ───────────────────────────────────────────────────────────
-export const representationAction = z.union([
+export const representationAction = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('goto_step'),
     step: z
