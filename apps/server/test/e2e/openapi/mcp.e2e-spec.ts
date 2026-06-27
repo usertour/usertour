@@ -701,7 +701,15 @@ describe('MCP endpoint (e2e)', () => {
                 { name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] },
               ],
               startRules: {
-                when: [{ type: 'user_attribute', attribute: 'ghost_attr', op: 'is', value: 'x' }],
+                when: [
+                  {
+                    type: 'attribute',
+                    scope: 'user',
+                    attribute: 'ghost_attr',
+                    op: 'is',
+                    value: 'x',
+                  },
+                ],
               },
             },
           },
@@ -1114,7 +1122,13 @@ describe('MCP endpoint (e2e)', () => {
                 bizType: 'user',
                 kind: 'condition',
                 conditions: [
-                  { type: 'user_attribute', attribute: 'ghost_attr', op: 'is', value: 'x' },
+                  {
+                    type: 'attribute',
+                    scope: 'user',
+                    attribute: 'ghost_attr',
+                    op: 'is',
+                    value: 'x',
+                  },
                 ],
               },
             },

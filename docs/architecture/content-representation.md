@@ -151,7 +151,7 @@ value, so it is fully modeled, not deferred to `unsupported`.
 // Predicate tree. internal `operators` and/or → group `match` all/any.
 RepresentationCondition =
   | { type:"group";          match:"all"|"any"; conditions: RepresentationCondition[] }
-  | { type:"user_attribute"; attribute: string; op: AttrOp; value?: string; value2?: string; values?: string[] }
+  | { type:"attribute";      scope:"user"|"company"|"companyMembership"; attribute: string; op: AttrOp; value?: string; value2?: string; values?: string[] }
   | { type:"segment";        segment: string; in: boolean }              // segment by id
   | { type:"current_url";    includes: string[]; excludes?: string[] }   // URL glob/regex patterns (NOT op+value)
   | { type:"element";        target: RepresentationTarget; state:"present"|"hidden"|"disabled"|"enabled"|"clicked"|"unclicked" }
@@ -166,7 +166,7 @@ RepresentationCondition =
   | { type:"time_window";    start?: string; end?: string }             // ISO 8601 (legacy MM/dd format → unsupported)
   | { type:"unsupported";    note?: string };                          // auto-target, task-is-clicked (unimplemented), legacy time, unknown types
 
-// user_attribute ops are data-type-dependent (resolved against the attribute);
+// attribute ops are data-type-dependent (resolved against the attribute);
 // the compiler validates op ∈ the set for that attribute's type:
 //   string:   is|not|contains|not_contains|starts_with|ends_with|empty|any
 //   number:   is|not|lt|lte|gt|gte|between|empty|any
@@ -381,7 +381,7 @@ This design covers the **flow** content type (steps + blocks + rules). Publishin
    replaces it.
 7. **Condition/action model aligned to the runtime** (verified against the SDK +
    websocket evaluators): `current_url` is `includes/excludes` URL-pattern arrays
-   (not op+value); `user_attribute` operators are data-type-dependent (string/
+   (not op+value); `attribute` operators are data-type-dependent (string/
    number/boolean/list/datetime); `event` carries `scope`, range `count2`, and a
    nested `where` filter on event attributes (the old `event-attr` folds in);
    `text_filled` has no op/value; `wait`/`task-is-clicked` are not authorable
