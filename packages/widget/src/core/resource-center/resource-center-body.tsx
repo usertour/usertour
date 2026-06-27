@@ -482,7 +482,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                 {/* Title */}
                 <div className="flex items-center gap-2">
                   {!item.seen && (
-                    <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-primary" />
+                    <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
                   )}
                   <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
                 </div>
