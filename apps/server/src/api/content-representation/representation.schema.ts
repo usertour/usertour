@@ -429,10 +429,21 @@ const bindAttributeField = z
       'only when you need to target/segment on it.',
   );
 
+// The question's identifier / analytics label — NOT the visible prompt.
+const questionNameField = z
+  .string()
+  .describe(
+    "The question's internal name / analytics label (it is the `questionName` on captured " +
+      'responses). It is NOT rendered to the user — the widget shows only the input (scale / ' +
+      'options / text field), not this string. To show a visible question prompt, add a `text` ' +
+      'block in the SAME step before the question block; a question with only a `name` renders ' +
+      'as bare options with no question text.',
+  );
+
 export const representationQuestion = z.union([
   z.object({
     kind: z.literal('nps'),
-    name: z.string(),
+    name: questionNameField,
     cvid: z.string().optional(),
     lowLabel: z.string().optional(),
     highLabel: z.string().optional(),
@@ -440,7 +451,7 @@ export const representationQuestion = z.union([
   }),
   z.object({
     kind: z.literal('rating'),
-    name: z.string(),
+    name: questionNameField,
     cvid: z.string().optional(),
     style: z
       .enum(['star', 'scale'])
@@ -458,7 +469,7 @@ export const representationQuestion = z.union([
   }),
   z.object({
     kind: z.literal('text'),
-    name: z.string(),
+    name: questionNameField,
     cvid: z.string().optional(),
     multiline: z.boolean(),
     placeholder: z.string().optional(),
@@ -474,7 +485,7 @@ export const representationQuestion = z.union([
   }),
   z.object({
     kind: z.literal('choice'),
-    name: z.string(),
+    name: questionNameField,
     cvid: z.string().optional(),
     options: z
       .array(z.object({ label: z.string(), value: z.string() }))
