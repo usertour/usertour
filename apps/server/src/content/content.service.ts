@@ -118,8 +118,33 @@ export class ContentService {
           throw new ParamsError();
         }
 
-        const editedVersion = sourceVersion.content.editedVersion;
-        const contentId = editedVersion.contentId;
+        const contentId = sourceVersion.content.id;
+
+        // Serialize concurrent forks on this Content row. Two autosaves (data +
+        // config) editing a live version each fork independently; without this
+        // lock they race — both compute the same sequence and one INSERT hits
+        // @@unique([contentId, sequence]), so that save errors and its edit is
+        // lost. Mirrors assertVersionEditableLocked used by updateContentVersion.
+        await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${contentId} FOR UPDATE`;
+
+        // Re-read the edit version under the lock. If a concurrent fork already
+        // turned it into an unpublished draft, reuse it instead of forking
+        // again — the other autosave's write then lands on the same draft and
+        // both edits survive.
+        const content = await tx.content.findUnique({
+          where: { id: contentId },
+          include: { editedVersion: true, contentOnEnvironments: true },
+        });
+        const editedVersion = content?.editedVersion;
+        if (!editedVersion) {
+          throw new ParamsError();
+        }
+        const editedVersionPublished = content.contentOnEnvironments?.some(
+          (env) => env.published && env.publishedVersionId === editedVersion.id,
+        );
+        if (!editedVersionPublished) {
+          return editedVersion;
+        }
 
         // Prepare steps by removing database-specific fields
         const steps = sourceVersion.steps.map(

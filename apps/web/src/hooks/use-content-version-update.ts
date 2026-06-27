@@ -140,22 +140,17 @@ export const useContentVersionUpdate = () => {
         const editableVersionId = await ensureEditableVersionId(cfg);
         const forked = editableVersionId !== version.id;
 
-        // If we forked, config was already set during fork — done.
-        // If not forked, we need to update config explicitly. Send ONLY config:
-        // partial scalar updates preserve data/themeId untouched, whereas
-        // re-sending the stale closure snapshots would clobber a concurrent
-        // data / theme edit.
-        if (!forked) {
-          const updated = await updateContentVersion(version.id, {
-            config: cfg,
-          });
-
-          if (!updated?.id) {
-            throw new Error('Failed to update version');
-          }
-          // updateContentVersion returns the full version → the normalized
-          // cache updates Version:id in place, no refetch needed.
-          return true;
+        // Always write config explicitly. A fork only guarantees an editable
+        // draft exists — when the server reuses a draft a concurrent data save
+        // already forked, it returns that draft WITHOUT our config, so skipping
+        // this on `forked` would drop the targeting. Send ONLY config: partial
+        // scalar updates preserve data/themeId, so this never clobbers a
+        // concurrent data / theme edit (and writes to the new draft when forked).
+        const updated = await updateContentVersion(editableVersionId, {
+          config: cfg,
+        });
+        if (!updated?.id) {
+          throw new Error('Failed to update version');
         }
 
         // Fork: createContentVersion doesn't return the parent content's new
@@ -163,7 +158,9 @@ export const useContentVersionUpdate = () => {
         // the new id (which then cache-and-network-fetches the new version).
         // The version-list refresh is already done by
         // useCreateContentVersionMutation's refetchQueries.
-        await refetchContent();
+        if (forked) {
+          await refetchContent();
+        }
         return true;
       } catch (error) {
         console.error('Failed to process version:', error);
