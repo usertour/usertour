@@ -340,6 +340,18 @@ describe('validateVersionUsable', () => {
       });
       expect(r.ok).toBe(true);
     });
+
+    it('rejects a dangling event (not in the project) — existence before predefined', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.TRACKER,
+        themeId: null,
+        data: { eventId: 'ghost' }, // not 'ev1'
+        config: { autoStartRules: trackerRule },
+        conditionContext: trackerCtx(false),
+      });
+      expect(r.ok).toBe(false);
+      expect(r.errors.some((e) => /unknown event/.test(e.message))).toBe(true);
+    });
   });
 
   // Semantic condition validation — only runs when the caller supplies the

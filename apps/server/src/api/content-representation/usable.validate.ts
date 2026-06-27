@@ -448,12 +448,15 @@ function validateTracker(
   const eventId = data?.eventId;
   if (!eventId) {
     err('eventId', 'Tracker has no event to fire.');
-  } else {
-    // A tracker may only fire a CUSTOM event — built-in (predefined) events are
+  } else if (ctx?.events) {
+    // The event must EXIST and be a CUSTOM event — built-in (predefined) events are
     // excluded in the builder (it filters `!e.predefined`), so the API must reject
-    // them too rather than publish a tracker that can never fire a trackable event.
-    const event = ctx?.events?.find((e) => e.id === eventId);
-    if (event?.predefined) {
+    // them too. A dangling id (resolver `?? code` fallback) is `find`-undefined; guard
+    // existence first, else a nonexistent event would slip past the predefined check.
+    const event = ctx.events.find((e) => e.id === eventId);
+    if (!event) {
+      err('eventId', 'Tracker references an unknown event.');
+    } else if (event.predefined) {
       err(
         'eventId',
         `A tracker can only fire a custom event — "${event.codeName}" is a built-in system event. Create a custom event with create_event_definition and point the tracker at that.`,
