@@ -211,8 +211,17 @@ export function validateTime(data: TimeConditionData | undefined): ValidationErr
 // v1 getEventError did the same `=== undefined || === null` check.
 const isMissing = (v: unknown): boolean => v === undefined || v === null;
 
-export function validateEvent(data: EventShape | undefined): ValidationError | undefined {
+export function validateEvent(
+  data: EventShape | undefined,
+  events?: Event[],
+): ValidationError | undefined {
   if (!data?.eventId) return { key: 'conditions.errors.event.selectEvent' };
+  // Existence check, like segment/content — a dangling eventId gates nothing at
+  // runtime. Only enforced when the caller supplies the event list (server
+  // publish/dry-run); skipped in contexts that don't load it.
+  if (events && !events.find((e) => e.id === data.eventId)) {
+    return { key: 'conditions.errors.event.selectEvent' };
+  }
   if (isMissing(data.count)) return { key: 'conditions.errors.event.enterCount' };
   if (data.countLogic === EventCountLogic.BETWEEN && isMissing(data.count2)) {
     return { key: 'conditions.errors.event.enterSecondCount' };
@@ -274,7 +283,7 @@ export function validateConditionByType(
     case 'time':
       return validateTime(condition.data as TimeConditionData);
     case 'event':
-      return validateEvent(condition.data as EventShape);
+      return validateEvent(condition.data as EventShape, ctx.events);
     case 'event-attr':
       return validateEventAttr(condition.data as EventAttrShape, ctx.attributes);
     default:

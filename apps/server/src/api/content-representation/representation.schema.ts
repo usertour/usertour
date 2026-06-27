@@ -332,7 +332,17 @@ export const representationCondition = z.lazy(() =>
           unit: z.enum(['seconds', 'minutes', 'hours', 'days']).optional(),
         })
         .optional(),
-      scope: z.enum(['current_user', 'current_user_in_company', 'any_user_in_company']).optional(),
+      scope: z
+        .enum(['current_user', 'current_user_in_company', 'any_user_in_company'])
+        .optional()
+        .describe(
+          'Whose event activity to count (default `current_user`). `current_user` = only this ' +
+            "user's own events. `current_user_in_company` = this user's events, but counted within " +
+            'their currently-associated company context (needs the user associated to a company via ' +
+            '`group()` / add_company_member). `any_user_in_company` = events by ANY user in this ' +
+            'user\'s company — account-level activity (e.g. "anyone on the account has done X"). ' +
+            'The two company scopes require the user to be in a company or they never match.',
+        ),
       where: z.array(eventWhereCondition).optional(),
     }),
     z.object({

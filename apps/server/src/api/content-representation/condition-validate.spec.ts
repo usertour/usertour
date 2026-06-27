@@ -75,6 +75,19 @@ describe('collectRuleIssues', () => {
       expect(issues.some((i) => /unknown content/.test(i.message))).toBe(true);
       expect(issues).toHaveLength(1); // only the dangling one
     });
+
+    // Events were NOT existence-checked (validateEvent ignored ctx.events) while
+    // attribute/segment/content were — a dangling event gated nothing yet published clean.
+    it('flags an event condition referencing an unknown event', () => {
+      const issues = collectRuleIssues({ type: 'event', data: { eventId: 'gone', count: 1 } }, ctx);
+      expect(issues.some((i) => /unknown event/.test(i.message))).toBe(true);
+    });
+
+    it('does not flag an existing event as unknown', () => {
+      // (may still have other completeness issues; we only assert the existence check passes)
+      const issues = collectRuleIssues({ type: 'event', data: { eventId: 'e1', count: 1 } }, ctx);
+      expect(issues.some((i) => /unknown event/.test(i.message))).toBe(false);
+    });
   });
 
   it('skips reference checks when the context lists are absent', () => {
