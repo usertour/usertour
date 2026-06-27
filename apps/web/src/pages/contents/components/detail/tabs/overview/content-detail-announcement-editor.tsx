@@ -39,7 +39,15 @@ import {
   Switch,
 } from '@usertour/ui';
 import { BadgeDistributionIcon, RiNotificationOffFill, RiPaletteFill } from '@usertour/icons';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ContentDetailAutoStartRules,
@@ -59,6 +67,30 @@ const ANNOUNCEMENT_ELEMENT_TYPES = [
 ];
 
 // ============================================================================
+// Shared data draft
+// ============================================================================
+
+// The announcement `data` JSON is edited from both columns (distribution on the
+// left, title/intro/read-more on the right). Routing every edit through one
+// optimistic draft + one debounced save makes concurrent field edits merge into
+// a single source, instead of racing as whole-blob overwrites of the `data`
+// column where a stale snapshot reverts another field.
+interface AnnouncementDraftContextValue {
+  data: AnnouncementData;
+  patchData: (partial: Partial<AnnouncementData>) => void;
+}
+
+const AnnouncementDraftContext = createContext<AnnouncementDraftContextValue | null>(null);
+
+const useAnnouncementDraft = () => {
+  const draft = useContext(AnnouncementDraftContext);
+  if (!draft) {
+    throw new Error('useAnnouncementDraft must be used within ContentDetailAnnouncementEditor');
+  }
+  return draft;
+};
+
+// ============================================================================
 // Left Column: Settings
 // ============================================================================
 
@@ -68,17 +100,13 @@ const AnnouncementSettingsColumn = () => {
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
   const { isViewOnly } = useAppContext();
-  const { debouncedUpdateVersion, saveVersionData, saveVersionTheme, saveVersionScheduledAt } =
+  const { debouncedUpdateVersion, saveVersionTheme, saveVersionScheduledAt } =
     useContentVersionUpdate();
   const { themeList } = useThemeList();
   const defaultTheme = useDefaultTheme();
+  const { data, patchData } = useAnnouncementDraft();
 
   const config = buildConfig(version?.config, content?.type);
-  const announcementData = (version?.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
-
-  // Hold the latest data in a ref to avoid stale closures in callbacks.
-  const dataRef = useRef(announcementData);
-  dataRef.current = announcementData;
 
   // Mirror the builder's theme defaulting (sidebar-theme). Announcements have no
   // builder, so without this their version keeps an empty themeId. The stored
@@ -135,10 +163,9 @@ const AnnouncementSettingsColumn = () => {
 
   const handleDistributionChange = useCallback(
     (value: string) => {
-      const distribution = value as AnnouncementDistribution;
-      saveVersionData({ ...dataRef.current, distribution });
+      patchData({ distribution: value as AnnouncementDistribution });
     },
-    [saveVersionData],
+    [patchData],
   );
 
   const handleScheduledAtChange = useCallback(
@@ -244,14 +271,14 @@ const AnnouncementSettingsColumn = () => {
               </QuestionTooltip>
             </div>
             <Select
-              value={announcementData.distribution}
+              value={data.distribution}
               onValueChange={handleDistributionChange}
               disabled={isViewOnly}
             >
               <SelectTrigger className="justify-start flex h-8">
                 {(() => {
                   const selected = distributionOptions.find(
-                    (option) => option.value === announcementData.distribution,
+                    (option) => option.value === data.distribution,
                   );
                   if (!selected) return <SelectValue />;
                   const Icon = selected.icon;
@@ -306,12 +333,12 @@ const AnnouncementContentColumn = () => {
   const { themeList } = useThemeList();
   const getOembedInfo = useOembedInfo();
 
-  const announcementData = (version?.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
-  const { debouncedSaveVersionData } = useContentVersionUpdate();
+  const { data, patchData } = useAnnouncementDraft();
 
-  // Hold the latest data in a ref for stable callbacks.
-  const dataRef = useRef(announcementData);
-  dataRef.current = announcementData;
+  // Mirror the draft into a ref for the synchronous content-editor change
+  // guards below (the editor re-emits identical content on mount/refocus).
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   // Derive the theme's global CSS variables so the inline editors render the
   // announcement content with the selected theme's styling.
@@ -324,49 +351,41 @@ const AnnouncementContentColumn = () => {
     [theme?.settings],
   );
 
-  // Local state keeps the UI responsive during debounced saves.
-  const [localTitle, setLocalTitle] = useState(announcementData.title);
-  const [localReadMoreLabel, setLocalReadMoreLabel] = useState(announcementData.readMoreLabel);
-  const [localEnableReadMore, setLocalEnableReadMore] = useState(announcementData.enableReadMore);
-
   const handleTitleChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setLocalTitle(event.target.value);
-      debouncedSaveVersionData({ ...dataRef.current, title: event.target.value });
+      patchData({ title: event.target.value });
     },
-    [debouncedSaveVersionData],
+    [patchData],
   );
 
   const handleIntroContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
       if (JSON.stringify(value) === JSON.stringify(dataRef.current.introContent)) return;
-      debouncedSaveVersionData({ ...dataRef.current, introContent: value });
+      patchData({ introContent: value });
     },
-    [debouncedSaveVersionData],
+    [patchData],
   );
 
   const handleEnableReadMoreChange = useCallback(
     (checked: boolean) => {
-      setLocalEnableReadMore(checked);
-      debouncedSaveVersionData({ ...dataRef.current, enableReadMore: checked });
+      patchData({ enableReadMore: checked });
     },
-    [debouncedSaveVersionData],
+    [patchData],
   );
 
   const handleReadMoreLabelChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setLocalReadMoreLabel(event.target.value);
-      debouncedSaveVersionData({ ...dataRef.current, readMoreLabel: event.target.value });
+      patchData({ readMoreLabel: event.target.value });
     },
-    [debouncedSaveVersionData],
+    [patchData],
   );
 
   const handleDetailContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
       if (JSON.stringify(value) === JSON.stringify(dataRef.current.detailContent)) return;
-      debouncedSaveVersionData({ ...dataRef.current, detailContent: value });
+      patchData({ detailContent: value });
     },
-    [debouncedSaveVersionData],
+    [patchData],
   );
 
   // Apply the theme CSS variables to the content editor wrappers.
@@ -377,13 +396,13 @@ const AnnouncementContentColumn = () => {
     if (!globalStyle) return;
     if (introEditorRef.current) introEditorRef.current.style.cssText = globalStyle;
     if (detailEditorRef.current) detailEditorRef.current.style.cssText = globalStyle;
-  }, [globalStyle, localEnableReadMore]);
+  }, [globalStyle, data.enableReadMore]);
 
   const projectId = project?.id ?? '';
 
   // Memoize initial editor values so re-renders don't reset the editor state.
-  const initialIntroContent = useMemo(() => announcementData.introContent, []);
-  const initialDetailContent = useMemo(() => announcementData.detailContent, []);
+  const initialIntroContent = useMemo(() => data.introContent, []);
+  const initialDetailContent = useMemo(() => data.detailContent, []);
 
   if (!version) return null;
 
@@ -402,10 +421,10 @@ const AnnouncementContentColumn = () => {
                 {t('contents.overview.announcement.titleTooltip')}
               </QuestionTooltip>
             </div>
-            <ErrorTooltip open={!localTitle.trim()}>
+            <ErrorTooltip open={!data.title.trim()}>
               <ErrorTooltipAnchor asChild>
                 <Input
-                  value={localTitle}
+                  value={data.title}
                   onChange={handleTitleChange}
                   placeholder={t('contents.overview.announcement.titlePlaceholder')}
                   disabled={isViewOnly}
@@ -455,14 +474,14 @@ const AnnouncementContentColumn = () => {
               </QuestionTooltip>
             </div>
             <Switch
-              checked={localEnableReadMore}
+              checked={data.enableReadMore}
               onCheckedChange={handleEnableReadMoreChange}
               disabled={isViewOnly}
               className="data-[state=unchecked]:bg-input"
             />
           </div>
         </CardHeader>
-        {localEnableReadMore && (
+        {data.enableReadMore && (
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <div className="flex items-center">
@@ -475,7 +494,7 @@ const AnnouncementContentColumn = () => {
               </div>
               <Input
                 id="announcement-read-more-label"
-                value={localReadMoreLabel}
+                value={data.readMoreLabel}
                 onChange={handleReadMoreLabelChange}
                 placeholder={t('contents.overview.announcement.readMoreButtonLabelPlaceholder')}
                 disabled={isViewOnly}
@@ -521,14 +540,42 @@ export const ContentDetailAnnouncementEditor = () => {
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
+  const { debouncedSaveVersionData } = useContentVersionUpdate();
+
+  // Optimistic draft of the announcement `data` blob, owned here and shared with
+  // both columns. Every edit merges into this one source and saves through a
+  // single debounced call, so concurrent field edits can't overwrite each other
+  // with stale whole-blob snapshots. `null` until the first edit — until then
+  // reads fall through to the server version. The whole detail subtree remounts
+  // per contentId (route key), so a fresh draft starts for each announcement.
+  const [draftData, setDraftData] = useState<AnnouncementData | null>(null);
+  const serverData = (version?.data as AnnouncementData) ?? DEFAULT_ANNOUNCEMENT_DATA;
+
+  const patchData = useCallback(
+    (partial: Partial<AnnouncementData>) => {
+      setDraftData((prev) => {
+        const next = { ...(prev ?? serverData), ...partial };
+        debouncedSaveVersionData(next);
+        return next;
+      });
+    },
+    [debouncedSaveVersionData, serverData],
+  );
+
+  const draft = useMemo<AnnouncementDraftContextValue>(
+    () => ({ data: draftData ?? serverData, patchData }),
+    [draftData, serverData, patchData],
+  );
 
   if (!version || !content) return null;
 
   return (
-    <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto w-full items-start">
-      <AnnouncementSettingsColumn />
-      <AnnouncementContentColumn />
-    </div>
+    <AnnouncementDraftContext.Provider value={draft}>
+      <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto w-full items-start">
+        <AnnouncementSettingsColumn />
+        <AnnouncementContentColumn />
+      </div>
+    </AnnouncementDraftContext.Provider>
   );
 };
 

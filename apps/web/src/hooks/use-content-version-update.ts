@@ -81,11 +81,15 @@ export const useContentVersionUpdate = () => {
 
   /**
    * Save version data (the `data` JSON field) with published-fork safety.
+   *
+   * Sends ONLY `data`. Server-side scalar updates are partial (Prisma writes
+   * just the provided columns), so themeId/config/scheduledAt are preserved
+   * untouched. Including them here would write back the stale snapshot captured
+   * in this closure and clobber a concurrent theme / autostart-rules edit.
    */
   const saveVersionData = useCallback(
-    (newData: unknown) =>
-      updateEditableVersion({ themeId: version?.themeId, data: newData, config: version?.config }),
-    [updateEditableVersion, version?.themeId, version?.config],
+    (newData: unknown) => updateEditableVersion({ data: newData }),
+    [updateEditableVersion],
   );
 
   // Debounced data save — used by editors that write on every keystroke

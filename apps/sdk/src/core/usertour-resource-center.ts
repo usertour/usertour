@@ -26,20 +26,24 @@ import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   getAnnouncementBadgeCount(): number {
-    const store = this.getStoreData();
-    const resourceCenterData = store?.resourceCenterData;
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    if (!resourceCenterData?.tabs) {
+      return 0;
+    }
 
-    // Sum unreadCount from all announcement blocks across all tabs
-    return (
-      resourceCenterData?.tabs?.reduce((total, tab) => {
-        return tab.blocks.reduce((sum, block) => {
-          if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
-            return sum + ((block as ResourceCenterAnnouncementBlock).unreadCount ?? 0);
-          }
-          return sum;
-        }, total);
-      }, 0) ?? 0
-    );
+    // The announcement feed is global (not per-block), and the server writes the
+    // same unread count onto every announcement block. So take it once — max
+    // guards against any divergence — instead of summing, which would multiply
+    // the badge by the number of announcement blocks the resource center has.
+    let count = 0;
+    for (const tab of resourceCenterData.tabs) {
+      for (const block of tab.blocks) {
+        if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
+          count = Math.max(count, (block as ResourceCenterAnnouncementBlock).unreadCount ?? 0);
+        }
+      }
+    }
+    return count;
   }
 
   protected initializeActionHandlers(): void {

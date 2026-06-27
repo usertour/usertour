@@ -135,6 +135,11 @@ export class ContentService {
             config: newConfig,
             data: editedVersion.data,
             themeId: editedVersion.themeId,
+            // Carry the publish schedule across the fork. Announcement
+            // visibility is gated on publishedVersion.scheduledAt, so dropping
+            // it here would silently turn a future-scheduled announcement into
+            // an immediately-visible one once the forked draft is republished.
+            scheduledAt: editedVersion.scheduledAt,
             contentId,
             steps: { create: steps },
           } as any,

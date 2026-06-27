@@ -31,7 +31,13 @@ export const ContentDetail = () => {
   }
 
   return (
+    // Key by contentId so switching announcements (or any content) via
+    // history/back-forward forces a clean remount. The detail editors seed
+    // local state and editor initialValues once on mount; without a key, a
+    // same-route param change keeps them mounted and shows the previous
+    // content.
     <ContentDetailView
+      key={contentId}
       contentId={contentId}
       type={type}
       contentType={contentType as ContentTypeName}
