@@ -1,4 +1,13 @@
-import { CSSProperties, Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  CSSProperties,
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type {
   ResourceCenterActionBlock,
   ResourceCenterAnnouncementBlock,
@@ -422,12 +431,24 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // The SDK passes fresh inline callbacks on every render, and marking seen
+  // optimistically updates the store (to drop the badge), which re-renders the
+  // provider and churns those callback identities. Depending on the callbacks
+  // here would re-run this load on that churn — refetching the feed and
+  // re-firing marks that race the still-in-flight ones. So read them from refs
+  // and run the load exactly once per open.
+  const onListAnnouncementsRef = useRef(onListAnnouncements);
+  onListAnnouncementsRef.current = onListAnnouncements;
+  const onMarkAnnouncementSeenRef = useRef(onMarkAnnouncementSeen);
+  onMarkAnnouncementSeenRef.current = onMarkAnnouncementSeen;
+
   // Single load — the feed is capped server-side (newest N), so there is no
   // pagination to drive.
   useEffect(() => {
-    if (!onListAnnouncements) return;
+    const listAnnouncements = onListAnnouncementsRef.current;
+    if (!listAnnouncements) return;
     setIsLoading(true);
-    onListAnnouncements(null)
+    listAnnouncements(null)
       .then((result) => {
         setAnnouncements(result.announcements);
         // Displaying an announcement in the opened feed is what marks it seen,
@@ -435,15 +456,15 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
         // through here before any detail view, so this is the only seen marker.
         // Local seen is left untouched on purpose: the unseen dot stays for the
         // rest of this session and clears on the next open, when the server
-        // reports it seen. Duplicate marks are absorbed server-side (idempotent).
+        // reports it seen.
         for (const item of result.announcements) {
           if (!item.seen) {
-            onMarkAnnouncementSeen?.(item.id, item.versionId);
+            onMarkAnnouncementSeenRef.current?.(item.id, item.versionId);
           }
         }
       })
       .finally(() => setIsLoading(false));
-  }, [onListAnnouncements, onMarkAnnouncementSeen]);
+  }, []);
 
   // Click "Read more" — push detail page onto the stack. Seen is marked on feed
   // load, not here, so this only navigates.
