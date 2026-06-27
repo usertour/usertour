@@ -245,7 +245,9 @@ const attributeConditionFields = {
         'DateTime: less_than | exactly | more_than (relative "days ago" — `value` is a number ' +
         'of days; e.g. attribute `first_seen_at` with op `less_than`, value `7` = "first seen ' +
         'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
-        'is an absolute date) | any | empty.',
+        'is an absolute date) | any | empty. The relative ops (less_than / more_than / exactly) ' +
+        'are DAY-granularity only — `value` is a whole number of days and there is no unit field; ' +
+        'for hour/minute windows use an `event` condition with a `within` (which has a `unit`).',
     ),
   value: z
     .string()
@@ -281,7 +283,9 @@ export const representationCondition = z.lazy(() =>
           'URL patterns (anchored whole-url match, NOT substring/regex). `*` = wildcard within ' +
             'one url part; `:name` = one path segment. Omitting the path matches EVERY path (the ' +
             'whole site) — scope it: `*/` (homepage only), `*/pricing` (one page), `*/app/*` (a ' +
-            'section + below), `host.com/*` (any page on a host).',
+            'section + below), `host.com/*` (any page on a host). Multiple patterns are ' +
+            'OR-matched: the URL matches this list if it matches ANY one pattern (so "/tasks OR ' +
+            '/dashboard" is one condition with both patterns here — no group needed).',
         ),
       excludes: z
         .array(z.string())
