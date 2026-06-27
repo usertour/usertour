@@ -6,7 +6,7 @@ import { compileContent } from '@/api/content-representation/representation.comp
 import type { CompileResolvers } from '@/api/content-representation/rules.compile';
 import { extractQuestionData } from '@/utils/content-question';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
-import { createTestApp } from './create-test-app';
+import { createTestApp } from '../create-test-app';
 import {
   buildAttribute,
   buildBizUser,
@@ -18,7 +18,7 @@ import {
   buildStep,
   buildTheme,
   buildVersion,
-} from './factories';
+} from '../factories';
 
 /**
  * End-to-end capture: when a survey question is answered, the runtime
