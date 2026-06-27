@@ -23,6 +23,23 @@ describe('markdown round-trip', () => {
   });
 });
 
+describe('link compiles with `data` (so the runtime can derive its href)', () => {
+  it('stores the URL as a Slate `data` value, not just a top-level `url`', () => {
+    const blocks = compileText('See [docs](https://x.io) now') as any[];
+    const link = (blocks[0].children as any[]).find((c) => c.type === 'link');
+    expect(link).toBeDefined();
+    expect(link.url).toBe('https://x.io');
+    // The runtime (replaceUserAttr) does `url = data ? extract(data) : ''` — without
+    // `data` the link renders href="". `data` must hold the URL as a Slate value.
+    expect(Array.isArray(link.data)).toBe(true);
+    expect(decompileText(link.data)).toBe('https://x.io');
+  });
+
+  it('round-trips a link through compile → decompile', () => {
+    expect(decompileText(compileText('a [x](https://y.io) b'))).toBe('a [x](https://y.io) b');
+  });
+});
+
 describe('navigate action compiles to the builder shape (data.value, not data.url)', () => {
   it('stores the URL as a Slate rich-text `value` the builder/runtime read', () => {
     const [rule] = compileActions([{ type: 'navigate', url: '/users' }], ids);

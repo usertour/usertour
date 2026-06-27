@@ -37,7 +37,13 @@ function parseLiquid(token: string): SlateNode {
 
 function parseLink(token: string): SlateNode {
   const m = token.match(/^\[([^\]]*)\]\(([^)]*)\)$/);
-  return { type: 'link', url: m?.[2] ?? '', children: [{ text: m?.[1] ?? '' }] };
+  const url = m?.[2] ?? '';
+  // The runtime derives a link's href from `data` (a Slate value, so a URL can hold
+  // `{{ user-attribute }}` tokens): `replaceUserAttr` does `url = data ? extract(data) : ''`,
+  // so a link without `data` renders href="". Store the url as `data` (the source of
+  // truth the runtime reads) AND as `url` (what decompile reads back) — mirrors how a
+  // `navigate` action stores its url as `value: compileText(url)`.
+  return { type: 'link', url, data: compileText(url), children: [{ text: m?.[1] ?? '' }] };
 }
 
 function parseInline(text: string): SlateNode[] {
