@@ -101,14 +101,30 @@ export class OAuthController {
       where: { userId },
       include: { project: { select: { id: true, name: true } } },
     });
-    // Coarse consent (like Bytebase): the token acts "with your permissions" on
-    // the chosen project. Fine-grained least-privilege is the personal API key's
-    // job, not OAuth — so no per-scope picker here, just the project choice.
-    const projects = memberships
-      .filter((m) => m.project)
-      .map((m) => ({ id: m.projectId, name: m.project?.name ?? m.projectId }));
+    const visible = memberships.filter((m) => m.project);
+    // Per-project environments, so the consent page can offer an environment scope.
+    const environments = await this.prisma.environment.findMany({
+      where: { projectId: { in: visible.map((m) => m.projectId) }, deleted: false },
+      select: { id: true, name: true, projectId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    // The consent page shows a PostHog-style picker — the user grants a subset of what the
+    // client requested ∩ their role on the chosen project, and which environments it covers.
+    const projects = visible.map((m) => ({
+      id: m.projectId,
+      name: m.project?.name ?? m.projectId,
+      capabilities: (ROLE_CAPABILITIES[m.role as Role] ?? []) as Capability[],
+      environments: environments
+        .filter((e) => e.projectId === m.projectId)
+        .map((e) => ({ id: e.id, name: e.name })),
+    }));
 
-    return { client, redirectHost: safeHost(claims.redirectUri), projects };
+    return {
+      client,
+      redirectHost: safeHost(claims.redirectUri),
+      projects,
+      requestedScopes: claims.scope,
+    };
   }
 
   /** Approve or deny. On approve, issue a code and return the client redirect. */
@@ -116,7 +132,14 @@ export class OAuthController {
   @UseGuards(AuthGuard('jwt'))
   async consent(
     @Req() req: Request,
-    @Body() body: { transaction: string; projectId?: string; approved?: boolean },
+    @Body()
+    body: {
+      transaction: string;
+      projectId?: string;
+      approved?: boolean;
+      scopes?: string[];
+      environmentIds?: string[];
+    },
   ) {
     const claims = this.oauth.verifyTransaction(body.transaction);
 
@@ -137,14 +160,37 @@ export class OAuthController {
       throw new OAuth2Server.InvalidRequestError('Not a member of the selected project');
     }
     const roleCaps = (ROLE_CAPABILITIES[membership.role as Role] ?? []) as Capability[];
-    // The common MCP case: the client requested no specific scope → grant the
-    // user's full role on this project ("with your permissions"). A client that
-    // DID request narrower scopes gets request ∩ role. Either way role caps it.
-    const granted: string[] =
+    // Max grantable = what the client requested ∩ the user's role (full role if it asked for
+    // nothing). The consent page may narrow further (PostHog-style); clamp to never exceed.
+    const grantable: string[] =
       claims.scope.length > 0
         ? claims.scope.filter((s) => roleCaps.includes(s as Capability))
         : roleCaps;
-    const redirect = await this.oauth.issueAuthorizationCode(claims, userId, projectId, granted);
+    const granted: string[] = body.scopes
+      ? body.scopes.filter((s) => grantable.includes(s))
+      : grantable;
+
+    // Environment scope (optional): every chosen env must belong to the selected project.
+    let allowedEnvironmentIds: string[] | null = null;
+    if (body.environmentIds?.length) {
+      const ids = [...new Set(body.environmentIds)];
+      const inProject = await this.prisma.environment.findMany({
+        where: { id: { in: ids }, projectId, deleted: false },
+        select: { id: true },
+      });
+      if (inProject.length !== ids.length) {
+        throw new OAuth2Server.InvalidRequestError('Environment not in the selected project');
+      }
+      allowedEnvironmentIds = ids;
+    }
+
+    const redirect = await this.oauth.issueAuthorizationCode(
+      claims,
+      userId,
+      projectId,
+      granted,
+      allowedEnvironmentIds,
+    );
     return { redirect };
   }
 

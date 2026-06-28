@@ -1,13 +1,12 @@
 /**
- * Personal API token scopes, presented as a per-resource access level
- * (No access / Read / Write). The token still stores the flat, fine-grained
- * capability strings (e.g. `content:create`) — this catalog only maps each
- * resource's Read / Write level to the set of capabilities it grants, so the
- * UI is a friendly selector over `scopes: string[]` and the backend guard is
- * unchanged. `Write` always includes `Read`.
+ * API token scopes as a per-resource access level (No access / Read / Write), shared by the
+ * personal-API-key dialog and the OAuth consent screen. Tokens still store the flat,
+ * fine-grained capability strings (e.g. `content:create`); this catalog maps each resource's
+ * Read / Write level to the capabilities it grants, so the UI is a friendly selector over
+ * `scopes: string[]` and the backend guard is unchanged. `Write` always includes `Read`.
  *
- * Resource labels resolve via i18n (`settings.personalApiKeys.scopeResources.*`),
- * levels via (`settings.personalApiKeys.scopeLevels.*`).
+ * Resource labels resolve via i18n (`settings.personalApiKeys.scopeResources.*`), levels via
+ * (`settings.personalApiKeys.scopeLevels.*`).
  */
 export type ScopeLevel = 'none' | 'read' | 'write';
 
@@ -87,10 +86,9 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
 export const levelOf = (scopes: string[], resource: ScopeResource): ScopeLevel => {
   const has = (cap: string) => scopes.includes(cap);
   const writeCaps = resource.write ?? [];
-  // Any write capability ⇒ "write": personal keys always hold the complete write
-  // set (the picker sets read/write as a unit), but an OAuth grant may hold a
-  // partial set (e.g. only `content:create`) — it can still write, so report it
-  // honestly instead of downgrading to "read".
+  // Any write capability ⇒ "write": personal keys always hold the complete write set (the
+  // picker sets read/write as a unit), but an OAuth grant may hold a partial set (e.g. only
+  // `content:create`) — it can still write, so report it honestly instead of downgrading.
   if (writeCaps.some(has)) {
     return 'write';
   }
@@ -143,6 +141,9 @@ const ENV_TARGETED_CAPABILITIES = new Set<string>([
 /** Whether the chosen scopes act on a specific environment (→ require an env selection). */
 export const requiresEnvironmentScope = (scopes: string[]): boolean =>
   scopes.some((s) => ENV_TARGETED_CAPABILITIES.has(s));
+
+/** All read-level capabilities across every resource (for a "read-only" quick toggle). */
+export const READ_ONLY_CAPABILITIES: string[] = SCOPE_RESOURCES.flatMap((r) => r.read);
 
 /** Per-resource levels for display (drops resources with no access). */
 export const summarizeScopes = (

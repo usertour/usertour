@@ -29,6 +29,8 @@ interface OAuthUser extends User {
   id: string;
   projectId: string;
   grantId: string;
+  /** Environments this grant may act on; null/absent = all (carried consent → code → token). */
+  allowedEnvironmentIds?: string[] | null;
 }
 
 const toUris = (value: unknown): string[] =>
@@ -107,6 +109,7 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
         userId: u.id,
         projectId: u.projectId,
         scopes: code.scope ?? [],
+        allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
         redirectUri: code.redirectUri,
         codeChallenge: code.codeChallenge ?? null,
         codeChallengeMethod: code.codeChallengeMethod ?? null,
@@ -136,7 +139,12 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
       codeChallenge: row.codeChallenge ?? undefined,
       codeChallengeMethod: row.codeChallengeMethod ?? undefined,
       client,
-      user: { id: row.userId, projectId: row.projectId, grantId: row.grantId } as OAuthUser,
+      user: {
+        id: row.userId,
+        projectId: row.projectId,
+        grantId: row.grantId,
+        allowedEnvironmentIds: (row.allowedEnvironmentIds as string[] | null) ?? null,
+      } as OAuthUser,
     };
   }
 
@@ -171,11 +179,13 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
         clientId: client.id,
         projectId: u.projectId,
         scopes,
+        allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
         hashedRefreshToken: token.refreshToken ? hashSecret(token.refreshToken) : null,
         refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
       },
       update: {
         scopes,
+        allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
         hashedRefreshToken: token.refreshToken ? hashSecret(token.refreshToken) : null,
         refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
         revokedAt: null,
@@ -193,6 +203,7 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
           hashedSecret: hashSecret(secret),
           partialKey: secret.slice(-4),
           scopes,
+          allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
           clientId: client.id,
           oauthGrantId: u.grantId,
           isActive: true,
@@ -245,7 +256,12 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
       refreshTokenExpiresAt: grant.refreshExpiresAt ?? undefined,
       scope: (grant.scopes as string[]) ?? [],
       client,
-      user: { id: grant.userId, projectId: grant.projectId, grantId: grant.id } as OAuthUser,
+      user: {
+        id: grant.userId,
+        projectId: grant.projectId,
+        grantId: grant.id,
+        allowedEnvironmentIds: (grant.allowedEnvironmentIds as string[] | null) ?? null,
+      } as OAuthUser,
     };
   }
 

@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
-import { summarizeScopes } from '../personal-api-keys/components/scopes';
+import { summarizeScopes } from '@/components/token-scopes';
 
 const RevokeButton = ({ id, name, onDone }: { id: string; name: string; onDone: () => void }) => {
   const { t } = useTranslation();

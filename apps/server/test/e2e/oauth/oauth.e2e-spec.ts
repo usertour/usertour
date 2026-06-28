@@ -270,6 +270,83 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     await prisma.oAuthClient.deleteMany({ where: { id: cid } });
   });
 
+  it('consent with environmentIds → the issued OAuth token + grant are env-scoped', async () => {
+    const env = await buildEnvironment(prisma, { projectId });
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Env MCP',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    const v = randomBytes(40).toString('base64url');
+    const ch = createHash('sha256').update(v).digest('base64url');
+
+    const auth = await http()
+      .get('/oauth/authorize')
+      .query({
+        response_type: 'code',
+        client_id: cid,
+        redirect_uri: redirectUri,
+        scope: 'content:read content:publish',
+        code_challenge: ch,
+        code_challenge_method: 'S256',
+      })
+      .expect(302);
+    const transaction = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+    // consent-info now exposes each project's environments + capabilities + the requested scopes.
+    const info = await http()
+      .get('/oauth/consent-info')
+      .query({ transaction })
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+    const proj = info.body.projects.find((p: { id: string }) => p.id === projectId);
+    expect(proj.environments.some((e: { id: string }) => e.id === env.id)).toBe(true);
+    expect(proj.capabilities).toContain('content:publish');
+    expect(info.body.requestedScopes).toContain('content:publish');
+
+    // approve, scoped to ONLY the new environment
+    const consent = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        transaction,
+        projectId,
+        approved: true,
+        scopes: ['content:read', 'content:publish'],
+        environmentIds: [env.id],
+      })
+      .expect(201);
+    const code = new URL(consent.body.redirect).searchParams.get('code') as string;
+
+    const tok = await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: cid,
+        code_verifier: v,
+      })
+      .expect(200);
+    expect(tok.body.access_token).toMatch(/^uto_/);
+
+    // the env scope rode consent → code → grant → issued ApiToken
+    const row = await prisma.apiToken.findFirst({ where: { clientId: cid } });
+    expect(row?.allowedEnvironmentIds).toEqual([env.id]);
+    const grant = await prisma.oAuthGrant.findFirst({ where: { clientId: cid } });
+    expect(grant?.allowedEnvironmentIds).toEqual([env.id]);
+
+    await prisma.apiToken.deleteMany({ where: { clientId: cid } });
+    await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+    await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+    await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+  });
+
   it('lists and revokes the connection over GraphQL', async () => {
     const list = await http()
       .post('/graphql')

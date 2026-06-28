@@ -138,6 +138,7 @@ export class OAuthService {
     userId: string,
     projectId: string,
     scopes: string[],
+    allowedEnvironmentIds?: string[] | null,
   ): Promise<string> {
     const grantId = cuid();
     const request = new OAuth2Server.Request({
@@ -159,7 +160,9 @@ export class OAuthService {
     await this.server.authorize(request, response, {
       allowEmptyState: true,
       authorizationCodeLifetime: AUTH_CODE_LIFETIME,
-      authenticateHandler: { handle: () => ({ id: userId, projectId, grantId }) },
+      authenticateHandler: {
+        handle: () => ({ id: userId, projectId, grantId, allowedEnvironmentIds }),
+      },
     });
     const location = response.headers?.location;
     if (!location) {

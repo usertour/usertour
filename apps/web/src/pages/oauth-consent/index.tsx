@@ -1,30 +1,38 @@
-import { RiCheckboxCircleFill } from '@usertour/icons';
 import { SpinnerIcon } from '@usertour/icons';
-import { Button, Card, CardContent, ComboboxSelect } from '@usertour/ui';
+import { Button, Card, CardContent, Checkbox, ComboboxSelect, Label } from '@usertour/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
+import {
+  EnvironmentChecklist,
+  READ_ONLY_CAPABILITIES,
+  ScopesGrid,
+  requiresEnvironmentScope,
+} from '@/components/token-scopes';
 import { AuthCard } from '@/pages/authentication/components/auth-card';
 
 interface ConsentProject {
   id: string;
   name: string;
+  /** The user's capabilities on this project (cap for what can be granted). */
+  capabilities: string[];
+  environments: { id: string; name: string }[];
 }
 
 interface ConsentInfo {
   client: { id: string; name: string; logoUri?: string | null; clientUri?: string | null };
   redirectHost: string;
   projects: ConsentProject[];
+  /** Scopes the client asked for ([] = it asked for nothing → offer the full role). */
+  requestedScopes: string[];
 }
 
 /**
  * OAuth consent screen for MCP connectors. Reached via a redirect from the AS
- * (`/oauth/authorize`). Coarse by design (like Bytebase): the connection acts
- * "with your permissions" on the project you pick — fine-grained least-privilege
- * is the Personal API key's job, so there's no per-scope picker here. Approve
- * issues an authorization code and redirects back to the connector. Built on the
- * shared AuthCard so it matches the sign-in / sign-up surface.
+ * (`/oauth/authorize`). The user grants a subset of what the client requested ∩ their role
+ * on the chosen project, and which environments it may act on (safe-first — none
+ * pre-selected). Approve issues an authorization code and redirects back to the connector.
  */
 export const OAuthConsent = () => {
   const { t } = useTranslation();
@@ -34,6 +42,8 @@ export const OAuthConsent = () => {
   const [info, setInfo] = useState<ConsentInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string>('');
+  const [scopes, setScopes] = useState<string[]>([]);
+  const [environmentIds, setEnvironmentIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -60,10 +70,27 @@ export const OAuthConsent = () => {
     };
   }, [transaction, t]);
 
-  const projectOptions = useMemo(
-    () => (info?.projects ?? []).map((p) => ({ value: p.id, label: p.name })),
-    [info],
+  const selectedProject = useMemo(
+    () => info?.projects.find((p) => p.id === projectId) ?? null,
+    [info, projectId],
   );
+
+  // Max grantable = requested ∩ role (full role if the client asked for nothing).
+  const grantable = useMemo(() => {
+    const caps = selectedProject?.capabilities ?? [];
+    const requested = info?.requestedScopes ?? [];
+    return requested.length > 0 ? requested.filter((s) => caps.includes(s)) : caps;
+  }, [selectedProject, info]);
+
+  // Default to granting everything requested; reset when the project changes (its
+  // capabilities + environments differ). `grantable` is derived from projectId + info.
+  useEffect(() => {
+    setScopes(grantable);
+    setEnvironmentIds([]);
+  }, [projectId, info]);
+
+  const isReadOnly = scopes.length > 0 && scopes.every((s) => READ_ONLY_CAPABILITIES.includes(s));
+  const envRequired = requiresEnvironmentScope(scopes) && environmentIds.length === 0;
 
   const submit = useCallback(
     async (approved: boolean) => {
@@ -73,7 +100,7 @@ export const OAuthConsent = () => {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ transaction, projectId, approved }),
+          body: JSON.stringify({ transaction, projectId, approved, scopes, environmentIds }),
         });
         const data = (await res.json()) as { redirect?: string };
         if (data.redirect) {
@@ -87,7 +114,7 @@ export const OAuthConsent = () => {
         setSubmitting(false);
       }
     },
-    [transaction, projectId, t],
+    [transaction, projectId, scopes, environmentIds, t],
   );
 
   if (error) {
@@ -106,6 +133,7 @@ export const OAuthConsent = () => {
 
   const single = info.projects.length === 1;
   const noProjects = info.projects.length === 0;
+  const environments = selectedProject?.environments ?? [];
 
   return (
     <AuthCard
@@ -123,7 +151,7 @@ export const OAuthConsent = () => {
           </Button>
           <Button
             className="flex-1"
-            disabled={submitting || noProjects || !projectId}
+            disabled={submitting || noProjects || !projectId || envRequired || scopes.length === 0}
             onClick={() => submit(true)}
           >
             {t('oauth.consent.allow')}
@@ -142,7 +170,7 @@ export const OAuthConsent = () => {
         ) : (
           <ComboboxSelect
             className="w-full"
-            options={projectOptions}
+            options={info.projects.map((p) => ({ value: p.id, label: p.name }))}
             value={projectId}
             onValueChange={(v) => setProjectId(v)}
             placeholder={t('oauth.consent.projectLabel')}
@@ -150,15 +178,45 @@ export const OAuthConsent = () => {
         )}
       </div>
 
-      <div className="flex items-start gap-2 rounded-md bg-muted/40 px-3 py-2.5">
-        <RiCheckboxCircleFill
-          className="mt-0.5 h-4 w-4 shrink-0 text-green-600"
-          aria-hidden="true"
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium text-foreground">
+          {t('oauth.consent.environmentsLabel')}
+        </span>
+        <p className="text-xs text-muted-foreground">{t('oauth.consent.environmentsHelp')}</p>
+        <EnvironmentChecklist
+          environments={environments}
+          value={environmentIds}
+          onChange={setEnvironmentIds}
         />
-        <span className="text-sm text-foreground">{t('oauth.consent.permissionsNote')}</span>
+        {envRequired && (
+          <p className="text-xs text-destructive">{t('oauth.consent.selectEnvironment')}</p>
+        )}
       </div>
 
-      <p className="text-xs text-muted-foreground">{t('oauth.consent.scopedHint')}</p>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-foreground">
+            {t('oauth.consent.scopesLabel')}
+          </span>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="consent-readonly"
+              checked={isReadOnly}
+              onCheckedChange={(checked) =>
+                setScopes(
+                  checked === true
+                    ? grantable.filter((s) => READ_ONLY_CAPABILITIES.includes(s))
+                    : grantable,
+                )
+              }
+            />
+            <Label htmlFor="consent-readonly" className="cursor-pointer font-normal">
+              {t('oauth.consent.readOnly')}
+            </Label>
+          </div>
+        </div>
+        <ScopesGrid value={scopes} onChange={setScopes} available={grantable} />
+      </div>
     </AuthCard>
   );
 };

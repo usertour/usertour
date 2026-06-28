@@ -17,7 +17,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CreateDialog } from './components/create-dialog';
 import { RowActions } from './components/row-actions';
-import { SCOPE_RESOURCES, summarizeScopes } from './components/scopes';
+import { SCOPE_RESOURCES, summarizeScopes } from '@/components/token-scopes';
 
 const TOTAL_RESOURCE_COUNT = SCOPE_RESOURCES.length;
 
