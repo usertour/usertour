@@ -132,6 +132,7 @@ export const OAuthConnections = gql`
       projectId
       projectName
       scopes
+      environmentNames
       createdAt
       lastUsedAt
     }

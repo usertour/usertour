@@ -8,6 +8,8 @@ export interface OAuthConnection {
   projectId: string;
   projectName: string;
   scopes: string[];
+  /** Environments this connection may act on; null = all environments. */
+  environmentNames: string[] | null;
   createdAt: string;
   lastUsedAt: string | null;
 }

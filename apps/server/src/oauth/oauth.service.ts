@@ -292,7 +292,14 @@ export class OAuthService {
     if (grants.length === 0) {
       return [];
     }
-    const [clients, projects, lastUses] = await Promise.all([
+    const envIds = [
+      ...new Set(
+        grants.flatMap((g) =>
+          Array.isArray(g.allowedEnvironmentIds) ? (g.allowedEnvironmentIds as string[]) : [],
+        ),
+      ),
+    ];
+    const [clients, projects, environments, lastUses] = await Promise.all([
       this.prisma.oAuthClient.findMany({
         where: { id: { in: [...new Set(grants.map((g) => g.clientId))] } },
         select: { id: true, name: true },
@@ -301,6 +308,12 @@ export class OAuthService {
         where: { id: { in: [...new Set(grants.map((g) => g.projectId))] } },
         select: { id: true, name: true },
       }),
+      envIds.length
+        ? this.prisma.environment.findMany({
+            where: { id: { in: envIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
       this.prisma.apiToken.groupBy({
         by: ['oauthGrantId'],
         where: { oauthGrantId: { in: grants.map((g) => g.id) } },
@@ -309,16 +322,24 @@ export class OAuthService {
     ]);
     const clientName = new Map(clients.map((c) => [c.id, c.name]));
     const projectName = new Map(projects.map((p) => [p.id, p.name]));
+    const envName = new Map(environments.map((e) => [e.id, e.name]));
     const lastUsed = new Map(lastUses.map((l) => [l.oauthGrantId, l._max.lastUsedAt]));
-    return grants.map((g) => ({
-      id: g.id,
-      clientName: clientName.get(g.clientId) ?? g.clientId,
-      projectId: g.projectId,
-      projectName: projectName.get(g.projectId) ?? g.projectId,
-      scopes: (g.scopes as string[]) ?? [],
-      createdAt: g.createdAt,
-      lastUsedAt: lastUsed.get(g.id) ?? null,
-    }));
+    return grants.map((g) => {
+      // null allowlist = all environments (legacy/back-compat).
+      const allowed = Array.isArray(g.allowedEnvironmentIds)
+        ? (g.allowedEnvironmentIds as string[])
+        : null;
+      return {
+        id: g.id,
+        clientName: clientName.get(g.clientId) ?? g.clientId,
+        projectId: g.projectId,
+        projectName: projectName.get(g.projectId) ?? g.projectId,
+        scopes: (g.scopes as string[]) ?? [],
+        environmentNames: allowed ? allowed.map((id) => envName.get(id) ?? id) : null,
+        createdAt: g.createdAt,
+        lastUsedAt: lastUsed.get(g.id) ?? null,
+      };
+    });
   }
 
   /** Revoke a grant the user owns (kills its access tokens + refresh). */

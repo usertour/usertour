@@ -943,9 +943,11 @@ const translations = {
       revokeDescription:
         'This immediately invalidates its access. The app must be re-authorized to connect again.',
       never: 'Never',
+      allEnvironments: 'All',
       columns: {
         app: 'App',
         project: 'Project',
+        environments: 'Environments',
         access: 'Access',
         lastUsed: 'Last used',
         authorized: 'Authorized',

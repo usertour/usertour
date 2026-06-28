@@ -80,6 +80,24 @@ export const ConnectedAppsList = () => {
       cell: (c) => c.projectName,
     },
     {
+      header: t('settings.connectedApps.columns.environments'),
+      // null = all environments (legacy / no env restriction); otherwise the granted names.
+      cell: (c) =>
+        c.environmentNames === null ? (
+          <Badge variant="secondary" className="font-normal">
+            {t('settings.connectedApps.allEnvironments')}
+          </Badge>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {c.environmentNames.map((name) => (
+              <Badge key={name} variant="secondary" className="font-normal">
+                {name}
+              </Badge>
+            ))}
+          </div>
+        ),
+    },
+    {
       header: t('settings.connectedApps.columns.access'),
       cell: (c) => (
         <div className="flex flex-wrap gap-1">

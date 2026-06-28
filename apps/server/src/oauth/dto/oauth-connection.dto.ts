@@ -18,6 +18,10 @@ export class OAuthConnection {
   @Field(() => [String])
   scopes: string[];
 
+  /** Environment names this connection may act on; null = all environments. */
+  @Field(() => [String], { nullable: true })
+  environmentNames?: string[] | null;
+
   @Field()
   createdAt: Date;
 

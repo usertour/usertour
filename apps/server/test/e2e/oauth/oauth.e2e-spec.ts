@@ -341,6 +341,17 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     const grant = await prisma.oAuthGrant.findFirst({ where: { clientId: cid } });
     expect(grant?.allowedEnvironmentIds).toEqual([env.id]);
 
+    // Connected apps surfaces the granted environment by name (null = all).
+    const conns = await http()
+      .post('/graphql')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ query: '{ oauthConnections { clientName environmentNames } }' })
+      .expect(200);
+    const conn = conns.body.data.oauthConnections.find(
+      (c: { clientName: string }) => c.clientName === 'Env MCP',
+    );
+    expect(conn.environmentNames).toEqual([env.name]);
+
     await prisma.apiToken.deleteMany({ where: { clientId: cid } });
     await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
     await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });

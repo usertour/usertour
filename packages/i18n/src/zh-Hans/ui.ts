@@ -901,9 +901,11 @@ const translations = {
       revokeTitle: '撤销 {{name}}?',
       revokeDescription: '这将立即使其访问失效。该应用需重新授权才能再次连接。',
       never: '从未',
+      allEnvironments: '全部',
       columns: {
         app: '应用',
         project: '项目',
+        environments: '环境',
         access: '权限',
         lastUsed: '最近使用',
         authorized: '授权时间',
