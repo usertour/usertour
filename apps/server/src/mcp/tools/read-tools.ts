@@ -92,28 +92,34 @@ function asLimit(value: unknown): number {
 export async function resolveEnvironment(
   args: Record<string, unknown>,
   ctx: McpToolContext,
+  opts: { requireExplicit?: boolean } = {},
 ): Promise<Environment> {
   const environmentId = asString(args.environmentId);
   if (environmentId) {
     return ctx.auth.resolveEnvironment(ctx.projectId, environmentId);
   }
 
-  const primary = await ctx.prisma.environment.findFirst({
-    where: { projectId: ctx.projectId, deleted: false, isPrimary: true },
-  });
-  if (primary) {
-    return primary;
-  }
-
-  const fallback = await ctx.prisma.environment.findFirst({
+  const environments = await ctx.prisma.environment.findMany({
     where: { projectId: ctx.projectId, deleted: false },
+    orderBy: { createdAt: 'asc' },
   });
-  if (!fallback) {
+  if (environments.length === 0) {
     throw new Error(
       'No environment found for this project. Pass an explicit "environmentId" argument.',
     );
   }
-  return fallback;
+  // Never silently pick an environment for a state-changing / outward operation (publish,
+  // user/company/session writes) when the choice is ambiguous — defaulting to the primary
+  // would, e.g., publish to Production ON THE USER'S BEHALF. Once a project has more than
+  // one environment, require an explicit environmentId for those tools. Reads stay lenient.
+  if (opts.requireExplicit && environments.length > 1) {
+    const list = environments.map((e) => `${e.name} (${e.id})`).join(', ');
+    throw new Error(
+      `This project has ${environments.length} environments — refusing to choose one for a ` +
+        `state-changing operation. Pass an explicit "environmentId". Available: ${list}.`,
+    );
+  }
+  return environments.find((e) => e.isPrimary) ?? environments[0];
 }
 
 // Shared zod fragments for the common pagination args. Each is `.optional()` so
@@ -135,6 +141,17 @@ export const environmentIdSchema = z
   .string()
   .optional()
   .describe('Environment to target (defaults to the primary environment).');
+// Strict variant for state-changing / outward write tools: a single-environment project
+// still defaults, but a multi-environment project MUST pass this — the tool refuses to
+// pick one for a publish/write (see resolveEnvironment requireExplicit).
+export const environmentIdWriteSchema = z
+  .string()
+  .optional()
+  .describe(
+    'Environment to target. Single-environment projects default to that environment; if the ' +
+      'project has MULTIPLE environments you MUST set this — a state-changing tool will not ' +
+      'choose one for you (it errors and lists the available environments).',
+  );
 
 /**
  * Build the read-only MCP tool registry. Each tool is a thin binding over a v2

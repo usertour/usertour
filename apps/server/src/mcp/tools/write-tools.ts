@@ -47,7 +47,7 @@ import { upsertUserBody, type UpsertUserBody } from '@/api/users/users.schema';
 
 import { McpTool } from '../mcp.types';
 import { writeAnnotationsFor } from './annotations';
-import { environmentIdSchema, resolveEnvironment } from './read-tools';
+import { environmentIdWriteSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
 
 // Theme `settings` is exposed to MCP as a permissive object (its full ~136-field
@@ -229,19 +229,17 @@ export function buildWriteTools(): McpTool[] {
       title: 'Publish a version to an environment',
       capability: Capability.ContentPublish,
       description:
-        "Publish a version as an environment's live version (idempotent). Defaults to the " +
-        'primary environment; pass `environmentId` to target another. Returns the content with ' +
-        'refreshed `environments[]`.',
+        "Publish a version as an environment's live version (idempotent). Publishing is " +
+        'per-environment: a single-environment project defaults, but if the project has multiple ' +
+        'environments you must pass `environmentId` (it is NOT chosen for you). Returns the ' +
+        'content with refreshed `environments[]`.',
       inputSchema: {
         contentId: z.string(),
         versionId: z.string(),
-        environmentId: z
-          .string()
-          .optional()
-          .describe('Environment to publish to (defaults to the primary environment).'),
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        const environment = await resolveEnvironment(args, ctx);
+        const environment = await resolveEnvironment(args, ctx, { requireExplicit: true });
         return ctx.services.content.publish(
           String(args.contentId),
           ctx.projectId,
@@ -256,17 +254,15 @@ export function buildWriteTools(): McpTool[] {
       title: 'Unpublish content from an environment',
       capability: Capability.ContentPublish,
       description:
-        "Clear an environment's live version for a content. Defaults to the primary environment; " +
-        'pass `environmentId` to target another. Returns the content with refreshed `environments[]`.',
+        "Clear an environment's live version for a content. Per-environment: a single-environment " +
+        'project defaults, but with multiple environments you must pass `environmentId` (it is NOT ' +
+        'chosen for you). Returns the content with refreshed `environments[]`.',
       inputSchema: {
         contentId: z.string(),
-        environmentId: z
-          .string()
-          .optional()
-          .describe('Environment to unpublish from (defaults to the primary environment).'),
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        const environment = await resolveEnvironment(args, ctx);
+        const environment = await resolveEnvironment(args, ctx, { requireExplicit: true });
         return ctx.services.content.unpublish(
           String(args.contentId),
           ctx.projectId,
@@ -283,16 +279,16 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.UserWrite,
       description:
         'Create or update an end-user by external id (idempotent). Attributes merge into the ' +
-        'existing ones. Defaults to the primary environment; pass `environmentId` to target another.',
+        'existing ones. With multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The user external id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
         ...upsertUserBody.shape,
       },
       handler: async (args, ctx) =>
         ctx.services.users.upsert(
           String(args.id),
-          await resolveEnvironment(args, ctx),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
           args as unknown as UpsertUserBody,
         ),
     },
@@ -309,14 +305,17 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a user',
       capability: Capability.UserDelete,
       description:
-        'Delete an end-user by external id. Defaults to the primary environment; pass ' +
-        '`environmentId` to target another.',
+        'Delete an end-user by external id. With multiple environments you must pass ' +
+        '`environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The user external id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        await ctx.services.users.delete(String(args.id), await resolveEnvironment(args, ctx));
+        await ctx.services.users.delete(
+          String(args.id),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
+        );
         return { success: true };
       },
     },
@@ -329,16 +328,16 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Create or update a company by external id (idempotent). Attributes merge into the ' +
-        'existing ones. Defaults to the primary environment; pass `environmentId` to target another.',
+        'existing ones. With multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The company external id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
         ...upsertCompanyBody.shape,
       },
       handler: async (args, ctx) =>
         ctx.services.companies.upsert(
           String(args.id),
-          await resolveEnvironment(args, ctx),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
           args as unknown as UpsertCompanyBody,
         ),
     },
@@ -355,14 +354,17 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a company',
       capability: Capability.CompanyDelete,
       description:
-        'Delete a company by external id. Defaults to the primary environment; pass ' +
-        '`environmentId` to target another.',
+        'Delete a company by external id. With multiple environments you must pass ' +
+        '`environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The company external id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        await ctx.services.companies.delete(String(args.id), await resolveEnvironment(args, ctx));
+        await ctx.services.companies.delete(
+          String(args.id),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
+        );
         return { success: true };
       },
     },
@@ -378,18 +380,18 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Add a user to a company, or update the membership (idempotent). Optional membership ' +
-        'attributes merge. Defaults to the primary environment; pass `environmentId` to target another.',
+        'attributes merge. With multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         companyId: z.string().describe('The company external id.'),
         userId: z.string().describe('The user external id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
         ...upsertMembershipBody.shape,
       },
       handler: async (args, ctx) => {
         await ctx.services.companies.upsertMembership(
           String(args.companyId),
           String(args.userId),
-          await resolveEnvironment(args, ctx),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
           args as unknown as UpsertMembershipBody,
         );
         return { success: true };
@@ -406,18 +408,18 @@ export function buildWriteTools(): McpTool[] {
       title: 'Remove a user from a company',
       capability: Capability.CompanyWrite,
       description:
-        'Remove a user from a company. Defaults to the primary environment; pass `environmentId` ' +
-        'to target another.',
+        'Remove a user from a company. With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default).',
       inputSchema: {
         companyId: z.string().describe('The company external id.'),
         userId: z.string().describe('The user external id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
         await ctx.services.companies.deleteMembership(
           String(args.companyId),
           String(args.userId),
-          await resolveEnvironment(args, ctx),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
         );
         return { success: true };
       },
@@ -477,15 +479,15 @@ export function buildWriteTools(): McpTool[] {
       title: 'Add a member to a manual segment',
       capability: Capability.SegmentUpdate,
       description:
-        'Add a user or company (per the segment bizType) to a manual segment. Defaults to the ' +
-        'primary environment; pass `environmentId` to target another.',
+        'Add a user or company (per the segment bizType) to a manual segment. With multiple ' +
+        'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The segment id.'),
         externalId: z.string().describe('User or company external id (per segment bizType).'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        const environment = await resolveEnvironment(args, ctx);
+        const environment = await resolveEnvironment(args, ctx, { requireExplicit: true });
         await ctx.services.segments.addMember(
           String(args.id),
           ctx.projectId,
@@ -506,15 +508,15 @@ export function buildWriteTools(): McpTool[] {
       title: 'Remove a member from a manual segment',
       capability: Capability.SegmentUpdate,
       description:
-        'Remove a user or company from a manual segment. Defaults to the primary environment; ' +
-        'pass `environmentId` to target another.',
+        'Remove a user or company from a manual segment. With multiple environments you must ' +
+        'pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The segment id.'),
         externalId: z.string().describe('User or company external id (per segment bizType).'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        const environment = await resolveEnvironment(args, ctx);
+        const environment = await resolveEnvironment(args, ctx, { requireExplicit: true });
         await ctx.services.segments.removeMember(
           String(args.id),
           ctx.projectId,
@@ -678,14 +680,17 @@ export function buildWriteTools(): McpTool[] {
       title: 'End a session',
       capability: Capability.SessionManage,
       description:
-        'End an in-progress session. Defaults to the primary environment; pass `environmentId` ' +
-        'to target another. Returns the completed session.',
+        'End an in-progress session. With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default). Returns the completed session.',
       inputSchema: {
         id: z.string().describe('The session id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) =>
-        ctx.services.sessions.end(String(args.id), await resolveEnvironment(args, ctx)),
+        ctx.services.sessions.end(
+          String(args.id),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
+        ),
     },
     {
       name: 'delete_session',
@@ -697,13 +702,16 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a session',
       capability: Capability.SessionManage,
       description:
-        'Delete a session. Defaults to the primary environment; pass `environmentId` to target another.',
+        'Delete a session. With multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The session id.'),
-        environmentId: environmentIdSchema,
+        environmentId: environmentIdWriteSchema,
       },
       handler: async (args, ctx) => {
-        await ctx.services.sessions.delete(String(args.id), await resolveEnvironment(args, ctx));
+        await ctx.services.sessions.delete(
+          String(args.id),
+          await resolveEnvironment(args, ctx, { requireExplicit: true }),
+        );
         return { success: true };
       },
     },
