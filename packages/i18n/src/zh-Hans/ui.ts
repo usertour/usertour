@@ -941,6 +941,7 @@ const translations = {
       environmentsLabel: '环境',
       environmentsHelp: '此密钥可作用的环境(发布、用户、会话等)。',
       environmentsPickProject: '请先选择项目。',
+      environmentsSelect: '选择环境',
       scopesLabel: '权限范围',
       createButton: '创建密钥',
       creating: '创建中…',

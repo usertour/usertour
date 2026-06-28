@@ -987,6 +987,7 @@ const translations = {
       environmentsLabel: 'Environments',
       environmentsHelp: 'Which environments this key can act on (publish, users, sessions…).',
       environmentsPickProject: 'Select a project first.',
+      environmentsSelect: 'Select environments',
       scopesLabel: 'Scopes',
       createButton: 'Create key',
       creating: 'Creating...',

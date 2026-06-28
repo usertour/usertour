@@ -66,6 +66,11 @@ export type {
 } from './composites/combobox-select';
 export { VirtualizedComboboxSelect } from './composites/virtualized-combobox-select';
 export type { VirtualizedComboboxSelectProps } from './composites/virtualized-combobox-select';
+export { FacetedMultiSelect } from './composites/faceted-multi-select';
+export type {
+  FacetedMultiSelectOption,
+  FacetedMultiSelectProps,
+} from './composites/faceted-multi-select';
 export { LoadingContainer } from './composites/loading';
 export { LoadingButton } from './composites/loading-button';
 export type { LoadingButtonProps } from './composites/loading-button';

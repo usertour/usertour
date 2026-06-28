@@ -1,5 +1,6 @@
 import {
   ComboboxSelect,
+  FacetedMultiSelect,
   FormControl,
   FormDescription,
   FormField,
@@ -7,17 +8,14 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  QuestionTooltip,
 } from '@usertour/ui';
 import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
 import { useRef } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import {
-  EnvironmentChecklist,
-  ScopesGrid,
-  requiresEnvironmentScope,
-} from '@/components/token-scopes';
+import { ScopesGrid, requiresEnvironmentScope } from '@/components/token-scopes';
 import { useAppContext } from '@/contexts/app-context';
 
 /** Shared shape for the create + edit token dialogs. */
@@ -130,20 +128,26 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
         name="environmentIds"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t('settings.personalApiKeys.environmentsLabel')}</FormLabel>
-            <FormDescription>{t('settings.personalApiKeys.environmentsHelp')}</FormDescription>
+            <div className="flex items-center gap-1.5">
+              <FormLabel>{t('settings.personalApiKeys.environmentsLabel')}</FormLabel>
+              <QuestionTooltip>{t('settings.personalApiKeys.environmentsHelp')}</QuestionTooltip>
+            </div>
             <FormControl>
-              {selectedProjectId ? (
-                <EnvironmentChecklist
-                  environments={environmentList ?? []}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {t('settings.personalApiKeys.environmentsPickProject')}
-                </p>
-              )}
+              <div>
+                {selectedProjectId ? (
+                  <FacetedMultiSelect
+                    label={t('settings.personalApiKeys.environmentsSelect')}
+                    options={(environmentList ?? []).map((e) => ({ label: e.name, value: e.id }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                    withoutPortal
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.personalApiKeys.environmentsPickProject')}
+                  </p>
+                )}
+              </div>
             </FormControl>
             <FormMessage />
           </FormItem>
