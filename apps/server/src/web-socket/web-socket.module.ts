@@ -18,6 +18,7 @@ import { ConditionEvaluationService } from './core/condition-evaluation.service'
 import { ContentDataService } from './core/content-data.service';
 import { SessionBuilderService } from './core/session-builder.service';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
+import { ContentDiagnosisService } from './core/content-diagnosis.service';
 import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
@@ -72,6 +73,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     ContentDataService,
     SessionBuilderService,
     ContentOrchestratorService,
+    ContentDiagnosisService,
     SocketOperationService,
     SocketEmitterService,
     SocketParallelService,
@@ -80,6 +82,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     DistributedLockService,
     WebSocketV2MessageHandler,
   ],
-  exports: [WebSocketGateway, WebSocketV2Gateway],
+  exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService],
 })
 export class WebSocketModule {}

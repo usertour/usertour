@@ -696,6 +696,7 @@ export const isShowOnlyContentType = (contentType: ContentDataType): boolean =>
  */
 const SINGLE_SESSION_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.BANNER,
+  ContentDataType.LAUNCHER,
   ContentDataType.RESOURCE_CENTER,
 ];
 

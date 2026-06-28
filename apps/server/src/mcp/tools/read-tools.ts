@@ -1,6 +1,9 @@
-import { Capability } from '@usertour/types';
+import { Capability, ContentDataType } from '@usertour/types';
 import { Environment } from '@prisma/client';
 import { z } from 'zod';
+
+import { buildDecompileResolversFrom } from '@/api/content-representation/attribute-resolvers';
+import { decompileConditions } from '@/api/content-representation/rules.decompile';
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
 import { ContentExpand } from '@/api/content/content.schema';
@@ -21,6 +24,7 @@ import { ThemeExpand } from '@/api/themes/themes.schema';
 import { McpTool, McpToolContext } from '../mcp.types';
 import { READ_ONLY } from './annotations';
 import { AUTHORING_GUIDE } from './authoring-guide';
+import { annotateConditions, buildDiagnoseReport } from './diagnose-report';
 
 /**
  * Parse the `cursor` query param out of a paginate() `next`/`previous` URL and
@@ -271,6 +275,100 @@ export function buildReadTools(): McpTool[] {
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpand[])
           : undefined;
         return ctx.services.content.get(id, ctx.projectId, { expand });
+      },
+    },
+
+    {
+      name: 'diagnose_content',
+      title: "Diagnose why content isn't showing",
+      capability: Capability.ContentRead,
+      annotations: READ_ONLY,
+      description:
+        'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
+        'checklist (published / identified / start_rules / frequency / single_session / hidden / ' +
+        'active_session), each gate evaluated by the SAME runtime function the websocket uses, plus ' +
+        '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
+        'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
+        'unknown so you can see exactly which branch failed. `unknown` = a live-only leaf (DOM ' +
+        'element/text, or current_url when no `url` is passed) — confirm in the app. Pass `userId` ' +
+        'to evaluate the per-user gates, `companyId` for company-scoped rules, `url` to test ' +
+        'current_url conditions.',
+      inputSchema: {
+        contentId: z.string().describe('The content id.'),
+        userId: z
+          .string()
+          .optional()
+          .describe(
+            'externalId of the end-user to diagnose for (omit for a structural-only check).',
+          ),
+        companyId: z
+          .string()
+          .optional()
+          .describe('externalId of the company, for company-scoped segment/attribute rules.'),
+        url: z
+          .string()
+          .optional()
+          .describe(
+            'A page URL to evaluate current_url conditions against (omit → reported as unknown).',
+          ),
+        environmentId: environmentIdSchema,
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const contentId = asString(args.contentId);
+        if (!contentId) {
+          throw new Error('`contentId` is required.');
+        }
+        const environment = await resolveEnvironment(args, ctx);
+        const content = (await ctx.services.content.get(contentId, ctx.projectId, {})) as {
+          type: string;
+        };
+        const url = asString(args.url);
+
+        const facts = await ctx.contentDiagnosis.diagnose({
+          environment,
+          contentId,
+          contentType: content.type as ContentDataType,
+          externalUserId: asString(args.userId),
+          externalCompanyId: asString(args.companyId),
+          url,
+        });
+
+        // Render the stamped compiled conditions readable via the api-layer decompile
+        // (attribute/event codes resolved; segment/content stay as ids per the v2
+        // representation contract), then overlay status.
+        let startConditions: ReturnType<typeof annotateConditions> | undefined;
+        let hideConditions: ReturnType<typeof annotateConditions> | undefined;
+        if (facts.autoStartRules || facts.hideRules) {
+          const [attributes, events] = await Promise.all([
+            ctx.prisma.attribute.findMany({
+              where: { projectId: ctx.projectId },
+              select: { id: true, codeName: true, bizType: true },
+            }),
+            ctx.prisma.event.findMany({
+              where: { projectId: ctx.projectId },
+              select: { id: true, codeName: true },
+            }),
+          ]);
+          const resolvers = buildDecompileResolversFrom(attributes, events);
+          const hasUrl = !!url;
+          if (facts.autoStartRules) {
+            startConditions = annotateConditions(
+              facts.autoStartRules,
+              decompileConditions(facts.autoStartRules, resolvers),
+              hasUrl,
+            );
+          }
+          if (facts.hideRules) {
+            hideConditions = annotateConditions(
+              facts.hideRules,
+              decompileConditions(facts.hideRules, resolvers),
+              hasUrl,
+            );
+          }
+        }
+
+        return buildDiagnoseReport(facts, startConditions, hideConditions);
       },
     },
 

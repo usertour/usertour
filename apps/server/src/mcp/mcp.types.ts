@@ -14,6 +14,7 @@ import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import type { AuditAction } from '@/audit/audit.types';
+import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
 
 /**
  * The v2 API services an MCP tool handler can reach through its context — the
@@ -45,6 +46,9 @@ export interface McpToolContext {
   auth: ApiTokenAuthService;
   prisma: PrismaService;
   services: McpServices;
+  /** Websocket runtime diagnosis — diagnose_content delegates the per-user gate
+   * evaluation here so each gate's status is the runtime's own function. */
+  contentDiagnosis: ContentDiagnosisService;
 }
 
 /**

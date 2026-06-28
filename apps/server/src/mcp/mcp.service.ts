@@ -15,6 +15,7 @@ import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { BaseError } from '@/common/errors/base';
 import { AuditService } from '@/audit/audit.service';
+import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
 
 import { McpServices, McpTool, McpToolContext } from './mcp.types';
 import { buildMcpAuditEntry } from './tools/audit-meta';
@@ -39,6 +40,7 @@ export class McpService {
     private readonly auth: ApiTokenAuthService,
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly contentDiagnosis: ContentDiagnosisService,
     contentService: ApiContentService,
     contentVersionsService: ApiContentVersionsService,
     attributeDefinitionsService: ApiAttributeDefinitionsService,
@@ -101,6 +103,7 @@ export class McpService {
               auth: this.auth,
               prisma: this.prisma,
               services: this.services,
+              contentDiagnosis: this.contentDiagnosis,
             };
             const payload = await this.runWithAudit(tool, args ?? {}, ctx);
             return { content: [{ type: 'text' as const, text: JSON.stringify(payload) }] };
