@@ -152,7 +152,9 @@ export class EventsService {
     const where = {
       projectId,
       deleted: false,
-      ...(nameFilter ? { displayName: nameFilter } : {}),
+      // Match the machine `codeName` as well as the human `displayName` — callers (esp. MCP
+      // agents) reference events by codeName, so a displayName-only filter silently misses.
+      ...(nameFilter ? { OR: [{ codeName: nameFilter }, { displayName: nameFilter }] } : {}),
     };
     // Include the attribute links (codeNames) for the v2 read shape; kept off the
     // count() call, which doesn't accept `include`.

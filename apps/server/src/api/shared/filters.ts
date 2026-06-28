@@ -31,9 +31,10 @@ export const nameSearchField = {
 /**
  * Build a case-insensitive substring filter from an optional search term, or
  * `undefined` when the term is empty/whitespace. Apply at the call site under
- * the resource's column (`name` for most, `displayName` for definitions), e.g.
- * `...(nameContains(query.name) ? { name: nameContains(query.name)! } : {})` or
- * `const f = nameContains(query.name); if (f) where.displayName = f;`.
+ * the resource's column (`name` for most; attribute/event definitions match it
+ * against BOTH codeName and displayName via an `OR`, since callers reference the
+ * codeName), e.g. `...(nameContains(query.name) ? { name: nameContains(query.name)! } : {})`
+ * or `const f = nameContains(query.name); if (f) where.OR = [{ codeName: f }, { displayName: f }];`.
  */
 export function nameContains(
   term: string | undefined,

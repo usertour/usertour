@@ -99,7 +99,10 @@ export class AttributesService {
       deleted: false,
       ...(bizType && { bizType }),
       ...(eventName && { attributeOnEvent: { some: { event: { codeName: { in: eventName } } } } }),
-      ...(nameFilter ? { displayName: nameFilter } : {}),
+      // Match the machine `codeName` as well as the human `displayName`: callers (esp. MCP
+      // agents) hold the codeName — it is what conditions, identify(), and diagnose use — so a
+      // displayName-only filter silently returns nothing and reads as "attribute not defined".
+      ...(nameFilter ? { OR: [{ codeName: nameFilter }, { displayName: nameFilter }] } : {}),
     };
 
     const baseQuery = {

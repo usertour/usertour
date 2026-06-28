@@ -82,6 +82,21 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect(seeded).toMatchObject({ object: 'eventDefinition', displayName: 'Flow Started' });
   });
 
+  it('filters `name` by codeName, not just displayName (the agent search path)', async () => {
+    const token = await mint([Capability.EventRead]);
+    const codes = async (q: string) => {
+      const res = await api('get', `/v2/projects/${projectId}/event-definitions?name=${q}`, token);
+      expect(res.status).toBe(200);
+      return res.body.results.map((e: { codeName: string }) => e.codeName);
+    };
+    // Agents reference events by the machine codeName; a displayName-only filter would miss it.
+    expect(await codes(codeName)).toContain(codeName);
+    // The human displayName still matches ("Flow Started" ⊃ "flow", case-insensitive).
+    expect(await codes('flow')).toContain(codeName);
+    // A non-matching term excludes it.
+    expect(await codes('evt_spike_other')).not.toContain(codeName);
+  });
+
   it('maps a zod validation failure to the documented E1017 (limit=0)', async () => {
     const token = await mint([Capability.EventRead]);
     const res = await api('get', `/v2/projects/${projectId}/event-definitions?limit=0`, token);

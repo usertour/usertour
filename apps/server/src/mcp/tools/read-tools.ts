@@ -466,8 +466,9 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.AttributeRead,
       description:
         'List attribute definitions (the schema of custom attributes) for the project. ' +
-        'Optionally filter by `name` or `scope` ("user", "company", or "companyMembership"). ' +
-        'Returns `{ items, nextCursor }`.',
+        'Optionally filter by `name` (case-insensitive substring of EITHER the machine codeName ' +
+        'or the human displayName — search by the codeName you see in conditions/identify) or ' +
+        '`scope` ("user", "company", or "companyMembership"). Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         scope: z
@@ -501,7 +502,8 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.EventRead,
       description:
         'List event definitions (the catalog of tracked events) for the project. Optionally ' +
-        'filter by `name`. Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+        'filter by `name` (case-insensitive substring of either the machine codeName or the human ' +
+        'displayName). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
         ...nameSearchField,
         limit: limitSchema,

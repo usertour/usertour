@@ -95,6 +95,25 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(v2item).toEqual(v1item);
   });
 
+  it('filters `name` by codeName, not just displayName (the agent search path)', async () => {
+    const codes = async (q: string) => {
+      const res = await api(
+        'get',
+        `/v2/projects/${fx.projectId}/attribute-definitions?name=${q}`,
+        v2Token,
+      );
+      expect(res.status).toBe(200);
+      return res.body.results.map((a: { codeName: string }) => a.codeName);
+    };
+    // The machine codeName an agent reads from conditions/diagnose — a displayName-only
+    // filter would silently return nothing and read as "attribute not defined".
+    expect(await codes(codeName)).toContain(codeName);
+    // The human displayName still matches ("Signed Up" ⊃ "signed", case-insensitive).
+    expect(await codes('signed')).toContain(codeName);
+    // A non-matching term excludes it (guards against an always-true OR).
+    expect(await codes('attr_parity_plan')).not.toContain(codeName);
+  });
+
   it('rejects a missing Authorization header (401 E1010)', async () => {
     const res = await api('get', `/v2/projects/${fx.projectId}/attribute-definitions`);
     expect(res.status).toBe(401);
