@@ -30,6 +30,7 @@ export class ApiTokenService {
   async createToken(userId: string, input: CreateApiTokenInput) {
     const scopes = this.validateScopes(input.scopes);
     const projectIds = await this.validateProjects(userId, input.projectIds);
+    const allowedEnvironmentIds = await this.validateEnvironments(projectIds, input.environmentIds);
 
     if (input.expiresAt && input.expiresAt.getTime() <= Date.now()) {
       throw new ParamsError('expiresAt must be in the future');
@@ -44,6 +45,8 @@ export class ApiTokenService {
         hashedSecret: hashApiTokenSecret(secret),
         partialKey: partialApiTokenSecret(secret),
         scopes,
+        // undefined → column stays null = "all environments" (back-compat default).
+        allowedEnvironmentIds,
         expiresAt: input.expiresAt ?? null,
         projects: {
           create: projectIds.map((projectId) => ({ projectId })),
@@ -80,6 +83,7 @@ export class ApiTokenService {
     const data: {
       name?: string;
       scopes?: string[];
+      allowedEnvironmentIds?: string[];
       projects?: { deleteMany: Record<string, never>; create: { projectId: string }[] };
     } = {};
 
@@ -89,14 +93,23 @@ export class ApiTokenService {
     if (input.scopes !== undefined) {
       data.scopes = this.validateScopes(input.scopes);
     }
+    let projectIds: string[] | undefined;
     if (input.projectIds !== undefined) {
-      const projectIds = await this.validateProjects(userId, input.projectIds);
+      projectIds = await this.validateProjects(userId, input.projectIds);
       // Replace the join rows wholesale — the set of projects is small and the
       // edit is explicit, so a delete-all + recreate is simpler than diffing.
       data.projects = {
         deleteMany: {},
         create: projectIds.map((projectId) => ({ projectId })),
       };
+    }
+    if (input.environmentIds != null) {
+      // Validate against the token's projects — the new set if it's changing, else current.
+      const scopeProjects = projectIds ?? (await this.ownTokenProjectIds(id));
+      data.allowedEnvironmentIds = await this.validateEnvironments(
+        scopeProjects,
+        input.environmentIds,
+      );
     }
 
     return this.prisma.apiToken.update({
@@ -168,6 +181,46 @@ export class ApiTokenService {
       throw new ParamsError(`Unknown scope(s): ${unknown.join(', ')}`);
     }
     return scopes;
+  }
+
+  /**
+   * Validate an optional environment allowlist: each env must belong to one of the token's
+   * projects (a token can never reach an environment outside its project scope). `undefined`
+   * / `null` → `undefined` = "all environments" (back-compat). A provided list must be
+   * non-empty.
+   */
+  private async validateEnvironments(
+    projectIds: string[],
+    input: string[] | null | undefined,
+  ): Promise<string[] | undefined> {
+    if (input == null) {
+      return undefined;
+    }
+    const environmentIds = [...new Set(input)];
+    if (environmentIds.length === 0) {
+      throw new ParamsError('At least one environment is required when environmentIds is provided');
+    }
+    const environments = await this.prisma.environment.findMany({
+      where: { id: { in: environmentIds }, deleted: false },
+      select: { id: true, projectId: true },
+    });
+    const inProject = new Set(
+      environments.filter((e) => projectIds.includes(e.projectId)).map((e) => e.id),
+    );
+    const bad = environmentIds.filter((id) => !inProject.has(id));
+    if (bad.length > 0) {
+      throw new ParamsError(`Environment(s) not in the token's project(s): ${bad.join(', ')}`);
+    }
+    return environmentIds;
+  }
+
+  /** The project ids a token is currently scoped to (for validating an env-only update). */
+  private async ownTokenProjectIds(id: string): Promise<string[]> {
+    const token = await this.prisma.apiToken.findUnique({
+      where: { id },
+      include: { projects: { select: { projectId: true } } },
+    });
+    return token?.projects.map((p) => p.projectId) ?? [];
   }
 
   /** Dedupe + validate that projects are non-empty and the user belongs to each. */

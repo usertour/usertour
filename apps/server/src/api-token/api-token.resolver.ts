@@ -66,6 +66,10 @@ export class ApiTokenResolver {
       partialKey: row.partialKey,
       scopes: Array.isArray(row.scopes) ? (row.scopes as string[]) : [],
       projectIds: row.projects.map((p) => p.projectId),
+      // null/absent allowlist = "all environments"; surface as null so the UI can show "All".
+      environmentIds: Array.isArray(row.allowedEnvironmentIds)
+        ? (row.allowedEnvironmentIds as string[])
+        : undefined,
       clientId: row.clientId ?? undefined,
       isActive: row.isActive,
       expiresAt: row.expiresAt ?? undefined,

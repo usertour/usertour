@@ -24,6 +24,10 @@ export class ApiToken {
   @Field(() => [String])
   projectIds: string[];
 
+  /** Environment ids this token may act on; null/absent = all environments (legacy/default). */
+  @Field(() => [String], { nullable: true })
+  environmentIds?: string[];
+
   @Field({ nullable: true })
   clientId?: string;
 
@@ -75,6 +79,15 @@ export class CreateApiTokenInput {
   @IsString({ each: true })
   scopes: string[];
 
+  /** Environments this token may act on. Omit → all environments (back-compat); the UI
+   * sends an explicit non-empty set (safe-first). Each must belong to a listed project. */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  environmentIds?: string[];
+
   @Field(() => Date, { nullable: true })
   @IsOptional()
   expiresAt?: Date;
@@ -101,4 +114,11 @@ export class UpdateApiTokenInput {
   @ArrayNotEmpty()
   @IsString({ each: true })
   scopes?: string[];
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  environmentIds?: string[];
 }

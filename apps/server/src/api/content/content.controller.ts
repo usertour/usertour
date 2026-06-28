@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -15,6 +16,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
+import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
@@ -41,7 +43,23 @@ import {
 @UsePipes(ApiValidationPipe)
 @ApiBearerAuth()
 export class ApiContentController {
-  constructor(private readonly service: ApiContentService) {}
+  constructor(
+    private readonly service: ApiContentService,
+    private readonly auth: ApiTokenAuthService,
+  ) {}
+
+  /**
+   * Publish/unpublish carry the target environment in the BODY (not the path), so the
+   * guard's path-param environment-scope check never fires for them — enforce it here.
+   * Checks the env id against the token's allowlist directly (no DB lookup): the service
+   * still validates that the environment exists in the project.
+   */
+  private requireEnvironmentInScope(
+    req: { apiToken: AuthedApiToken },
+    environmentId: string,
+  ): void {
+    this.auth.assertEnvironmentInScope(req.apiToken, { id: environmentId });
+  }
 
   @Get()
   @RequireCapability(Capability.ContentRead)
@@ -144,7 +162,9 @@ export class ApiContentController {
     @Param('id') id: string,
     @Param('projectId') projectId: string,
     @Body() body: PublishContentBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
+    this.requireEnvironmentInScope(req, body.environmentId);
     return this.service.publish(id, projectId, body.environmentId, body.versionId);
   }
 
@@ -163,7 +183,9 @@ export class ApiContentController {
     @Param('id') id: string,
     @Param('projectId') projectId: string,
     @Body() body: UnpublishContentBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
+    this.requireEnvironmentInScope(req, body.environmentId);
     return this.service.unpublish(id, projectId, body.environmentId);
   }
 }

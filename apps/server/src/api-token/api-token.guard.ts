@@ -39,6 +39,8 @@ export class ApiTokenGuard implements CanActivate {
     const environmentId = request.params?.environmentId as string | undefined;
     if (environmentId) {
       request.environment = await this.auth.resolveEnvironment(projectId, environmentId);
+      // Third dimension: the token must be scoped to this environment (read or write).
+      this.auth.assertEnvironmentInScope(token, request.environment);
     }
 
     request.apiToken = token;

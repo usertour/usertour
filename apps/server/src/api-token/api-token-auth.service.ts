@@ -5,6 +5,7 @@ import { Environment, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
 import {
+  EnvironmentNotInTokenScopeError,
   EnvironmentProjectMismatchError,
   ExpiredApiKeyError,
   InsufficientScopeError,
@@ -67,6 +68,31 @@ export class ApiTokenAuthService {
   /** The token's granted capabilities (its `scopes` JSON column as Capability[]). */
   scopes(token: AuthedApiToken): Capability[] {
     return (Array.isArray(token.scopes) ? token.scopes : []) as Capability[];
+  }
+
+  /**
+   * The environment ids this token may ACT ON, or `null` for "all environments"
+   * (the legacy/back-compat default — a token created before env-scoping, or one
+   * deliberately granted every environment).
+   */
+  allowedEnvironmentIds(token: AuthedApiToken): string[] | null {
+    return Array.isArray(token.allowedEnvironmentIds)
+      ? (token.allowedEnvironmentIds as string[])
+      : null;
+  }
+
+  /**
+   * Assert the token may act on `environment`. The third permission dimension
+   * (alongside project + capability): a token restricted to a set of environments
+   * may only read/write/publish within them. `null` allowedEnvironmentIds = all.
+   * Call AFTER {@link authorize} and after the env is resolved — applies to every
+   * env-targeted operation, read and write alike.
+   */
+  assertEnvironmentInScope(token: AuthedApiToken, environment: { id: string }): void {
+    const allowed = this.allowedEnvironmentIds(token);
+    if (allowed && !allowed.includes(environment.id)) {
+      throw new EnvironmentNotInTokenScopeError();
+    }
   }
 
   /**

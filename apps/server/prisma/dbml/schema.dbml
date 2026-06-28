@@ -251,6 +251,8 @@ Table ApiToken {
   hashedSecret String [unique, not null, note: 'SHA-256 hash of the token secret. Plaintext is returned once at creation and never stored.']
   partialKey String [not null, note: 'Trailing characters of the secret, for display only (e.g. "···a1b2").']
   scopes Json [not null, note: 'Capability[] (from @usertour/types) the token may exercise, intersected with the owner\'s role per request.']
+  allowedEnvironmentIds Json [note: 'Environment ids this token may ACT ON (read + write of env-scoped resources, and publish).
+null/absent = all environments in the token\'s project(s) — legacy/back-compat default.']
   clientId String [note: 'Set when issued via an OAuth grant; null for user-created personal tokens.']
   oauthGrantId String [note: 'The OAuthGrant that issued this access token; revoking the grant kills it.']
   isActive Boolean [not null, default: true]
@@ -308,6 +310,7 @@ Table OAuthAuthorizationCode {
   userId String [not null]
   projectId String [not null]
   scopes Json [not null]
+  allowedEnvironmentIds Json [note: 'Environment ids the consent granted; carried to the grant/token. null = all (Phase 2).']
   redirectUri String [not null]
   codeChallenge String
   codeChallengeMethod String
@@ -328,6 +331,7 @@ Table OAuthGrant {
   clientId String [not null]
   projectId String [not null]
   scopes Json [not null]
+  allowedEnvironmentIds Json [note: 'Environment ids this grant\'s issued tokens may act on; null = all (set at consent, Phase 2).']
   hashedRefreshToken String [unique, note: 'SHA-256 hash of the current refresh token; rotated on each refresh.']
   refreshExpiresAt DateTime
   revokedAt DateTime

@@ -227,6 +227,15 @@ export class EnvironmentProjectMismatchError extends OpenAPIError {
   };
 }
 
+export class EnvironmentNotInTokenScopeError extends OpenAPIError {
+  code = 'E1029';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'API key is not scoped to the requested environment',
+    'zh-CN': 'API 密钥未授权访问该环境',
+  };
+}
+
 export class ThemeNotFoundError extends OpenAPIError {
   code = 'E1021';
   statusCode = HttpStatus.NOT_FOUND;

@@ -96,30 +96,42 @@ export async function resolveEnvironment(
 ): Promise<Environment> {
   const environmentId = asString(args.environmentId);
   if (environmentId) {
-    return ctx.auth.resolveEnvironment(ctx.projectId, environmentId);
+    // Explicit target: resolve it, then enforce the token's environment scope (read or
+    // write alike — a token may only act on the environments it was granted).
+    const environment = await ctx.auth.resolveEnvironment(ctx.projectId, environmentId);
+    ctx.auth.assertEnvironmentInScope(ctx.token, environment);
+    return environment;
   }
 
-  const environments = await ctx.prisma.environment.findMany({
+  // No explicit env: pick a default WITHIN the token's allowed environments (null = all).
+  const all = await ctx.prisma.environment.findMany({
     where: { projectId: ctx.projectId, deleted: false },
     orderBy: { createdAt: 'asc' },
   });
-  if (environments.length === 0) {
+  const allowed = ctx.auth.allowedEnvironmentIds(ctx.token);
+  const inScope = allowed ? all.filter((e) => allowed.includes(e.id)) : all;
+  if (inScope.length === 0) {
     throw new Error(
-      'No environment found for this project. Pass an explicit "environmentId" argument.',
+      'No environment is available to this token for the project. Pass an explicit ' +
+        '"environmentId" the token is scoped to.',
     );
   }
-  // Never silently pick an environment for a state-changing / outward operation (publish,
-  // user/company/session writes) when the choice is ambiguous — defaulting to the primary
-  // would, e.g., publish to Production ON THE USER'S BEHALF. Once a project has more than
-  // one environment, require an explicit environmentId for those tools. Reads stay lenient.
-  if (opts.requireExplicit && environments.length > 1) {
-    const list = environments.map((e) => `${e.name} (${e.id})`).join(', ');
+  // A token scoped to exactly one environment is unambiguous — default to it, even for
+  // writes (no need to make a single-env agent restate its only environment every call).
+  if (inScope.length === 1) {
+    return inScope[0];
+  }
+  // Ambiguous: never silently pick an environment for a state-changing / outward operation
+  // (defaulting would, e.g., publish to Production on the user's behalf). Require explicit.
+  if (opts.requireExplicit) {
+    const list = inScope.map((e) => `${e.name} (${e.id})`).join(', ');
     throw new Error(
-      `This project has ${environments.length} environments — refusing to choose one for a ` +
+      `This token may act on ${inScope.length} environments — refusing to choose one for a ` +
         `state-changing operation. Pass an explicit "environmentId". Available: ${list}.`,
     );
   }
-  return environments.find((e) => e.isPrimary) ?? environments[0];
+  // Read default: the primary if it's in scope, else the first in-scope environment.
+  return inScope.find((e) => e.isPrimary) ?? inScope[0];
 }
 
 // Shared zod fragments for the common pagination args. Each is `.optional()` so

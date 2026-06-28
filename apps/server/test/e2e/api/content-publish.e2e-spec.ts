@@ -31,6 +31,7 @@ describe('API v2 content publish (e2e)', () => {
   let ownerUserId: string;
   let projectId: string;
   let environmentId: string;
+  let otherEnvironmentId: string;
   let contentId: string;
   let versionId: string;
   let otherVersionId: string;
@@ -39,12 +40,12 @@ describe('API v2 content publish (e2e)', () => {
     createApiToken(input: $input){ token apiToken { id } }
   }`;
 
-  async function mint(scopes: Capability[]): Promise<string> {
-    const res = await graphql(app, {
-      query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds: [projectId] } },
-      token: ownerToken,
-    });
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
+    const input: Record<string, unknown> = { name: 'k', scopes, projectIds: [projectId] };
+    if (environmentIds) {
+      input.environmentIds = environmentIds;
+    }
+    const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
   }
 
@@ -63,6 +64,8 @@ describe('API v2 content publish (e2e)', () => {
 
     projectId = (await buildProject(prisma, { name: 'api-v2-publish' })).id;
     environmentId = (await buildEnvironment(prisma, { projectId })).id;
+    // A second environment in the same project, to prove environment-scoped tokens.
+    otherEnvironmentId = (await buildEnvironment(prisma, { projectId })).id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
     ownerUserId = owner.user.id;
@@ -122,6 +125,27 @@ describe('API v2 content publish (e2e)', () => {
 
     const read = await api('get', `/v2/projects/${projectId}/content/${contentId}`, token);
     expect(read.body.environments).toEqual([]);
+  });
+
+  it('rejects publish to an environment outside the token’s env scope (403 E1029)', async () => {
+    // Token may publish only to `environmentId`; publishing to the other env is refused
+    // BEFORE the service runs — the core "agent can't push to Production" guardrail.
+    const token = await mint([Capability.ContentRead, Capability.ContentPublish], [environmentId]);
+    const res = await api('post', publishPath(), token).send({
+      environmentId: otherEnvironmentId,
+      versionId,
+    });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1029');
+  });
+
+  it('allows publish to an environment within the token’s env scope (200)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentPublish], [environmentId]);
+    const res = await api('post', publishPath(), token).send({ environmentId, versionId });
+    expect(res.status).toBe(200);
+    expect(res.body.environments).toContainEqual(
+      expect.objectContaining({ environmentId, published: true }),
+    );
   });
 
   it('rejects publish without the publish scope (403 E1012)', async () => {
