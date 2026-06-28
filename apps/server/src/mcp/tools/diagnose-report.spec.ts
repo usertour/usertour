@@ -4,8 +4,10 @@ import { decompileConditions } from '@/api/content-representation/rules.decompil
 import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service';
 
 import {
+  type AnnotatedCondition,
   annotateConditions,
   attachConditionNames,
+  attachUserAttributeValues,
   buildDiagnoseReport,
   collectConditionRefs,
 } from './diagnose-report';
@@ -109,6 +111,45 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
       | undefined;
     expect(inner?.find((c) => c.type === 'segment')?.name).toBe('Pro Users');
     expect(inner?.find((c) => c.type === 'flow')?.name).toBe('Welcome Tour');
+  });
+
+  it('attaches the user ACTUAL value to user-scoped attribute leaves (present → value, absent → null)', () => {
+    const tree = {
+      type: 'group',
+      match: 'all',
+      status: 'unmatched',
+      conditions: [
+        {
+          type: 'attribute',
+          scope: 'user',
+          attribute: 'first_seen_at',
+          op: 'more_than',
+          value: '2',
+          status: 'unmatched',
+        },
+        {
+          type: 'attribute',
+          scope: 'user',
+          attribute: 'missing_attr',
+          op: 'is',
+          status: 'unmatched',
+        },
+        {
+          type: 'attribute',
+          scope: 'company',
+          attribute: 'plan_tier',
+          op: 'is',
+          status: 'matched',
+        },
+        { type: 'segment', segment: 'seg-pro', in: true, status: 'unmatched' },
+      ],
+    } as unknown as AnnotatedCondition;
+    attachUserAttributeValues(tree, { first_seen_at: '2026-06-26T13:22:12.365Z', plan: 'pro' });
+    const c = tree.conditions as Array<{ actual?: unknown }>;
+    expect(c[0].actual).toBe('2026-06-26T13:22:12.365Z'); // user scope, present → value
+    expect(c[1].actual).toBeNull(); // user scope, absent → null (attribute not set)
+    expect(c[2].actual).toBeUndefined(); // company scope → untouched (not user data)
+    expect(c[3].actual).toBeUndefined(); // segment → untouched
   });
 
   it('content (flow-state) condition uses the runtime .actived, not live-only unknown', () => {

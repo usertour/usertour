@@ -32,6 +32,9 @@ export type AnnotatedCondition = RepresentationCondition & {
   /** Human name for `segment`/`flow` nodes (their `segment`/`flow` fields are ids per the
    * representation contract); filled in the MCP layer so the cause reads without a lookup. */
   name?: string;
+  /** The user's ACTUAL current value for a user-scoped `attribute` leaf (null = not set),
+   * so an unmatched condition explains itself without a separate get_user + date math. */
+  actual?: unknown;
 };
 
 /** Collect the segment + content(flow) ids referenced anywhere in a condition tree, so the
@@ -68,6 +71,23 @@ export const attachConditionNames = (
   const ref = node as { type: string; segment?: string; flow?: string };
   const id = ref.type === 'segment' ? ref.segment : ref.type === 'flow' ? ref.flow : undefined;
   if (id && nameById[id]) node.name = nameById[id];
+};
+
+/** Attach the user's ACTUAL value to each user-scoped `attribute` leaf in place (codeName →
+ * value; null when the user has no value), so an unmatched leaf explains itself. */
+export const attachUserAttributeValues = (
+  node: AnnotatedCondition | undefined,
+  userAttributes: Record<string, unknown>,
+): void => {
+  if (!node) return;
+  if (node.conditions) {
+    for (const c of node.conditions) attachUserAttributeValues(c, userAttributes);
+    return;
+  }
+  const ref = node as { type: string; scope?: string; attribute?: string };
+  if (ref.type === 'attribute' && ref.scope === 'user' && ref.attribute) {
+    node.actual = userAttributes[ref.attribute] ?? null;
+  }
 };
 
 export interface DiagnoseReport {

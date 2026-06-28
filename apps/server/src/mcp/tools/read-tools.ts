@@ -27,6 +27,7 @@ import { AUTHORING_GUIDE } from './authoring-guide';
 import {
   annotateConditions,
   attachConditionNames,
+  attachUserAttributeValues,
   buildDiagnoseReport,
   collectConditionRefs,
 } from './diagnose-report';
@@ -408,6 +409,13 @@ export function buildReadTools(): McpTool[] {
             for (const c of contents) if (c.name) nameById[c.id] = c.name;
             attachConditionNames(startConditions, nameById);
             attachConditionNames(hideConditions, nameById);
+          }
+
+          // Show the user's ACTUAL value next to each user-scoped attribute condition so
+          // an unmatched leaf is self-explanatory (no separate get_user + date math).
+          if (facts.userAttributes) {
+            attachUserAttributeValues(startConditions, facts.userAttributes);
+            attachUserAttributeValues(hideConditions, facts.userAttributes);
           }
         }
 

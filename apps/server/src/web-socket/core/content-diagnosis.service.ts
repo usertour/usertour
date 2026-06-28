@@ -56,6 +56,9 @@ export interface DiagnoseFacts {
   /** Stamped compiled conditions (.actived per leaf), for the MCP layer to render + overlay status. */
   autoStartRules?: RulesCondition[];
   hideRules?: RulesCondition[];
+  /** The user's current attribute values (codeName → value), for the MCP layer to show the
+   * ACTUAL value next to each user-scoped attribute condition (so the cause is self-evident). */
+  userAttributes?: Record<string, unknown>;
 }
 
 @Injectable()
@@ -125,6 +128,7 @@ export class ContentDiagnosisService {
           outrankedByContentId,
           autoStartRules: target.config.autoStartRules ?? [],
           hideRules: target.config.hideRules ?? [],
+          userAttributes: (bizUser.data as Record<string, unknown>) ?? {},
         };
       }
     }
