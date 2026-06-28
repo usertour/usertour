@@ -7,6 +7,7 @@ import { Environment } from '@/common/types/schema';
 import {
   evaluateCustomContentVersion,
   filterAvailableAutoStartContentVersions,
+  findLatestActivatedCustomContentVersions,
   isActivedAutoStartRules,
   isActivedHideRules,
   isAllowedByAutoStartRulesSetting,
@@ -53,6 +54,13 @@ export interface DiagnoseFacts {
   /** Human-readable name of {@link outrankedByContentId}, resolved in the MCP layer
    * (the websocket runtime version only carries content id + type, not the name). */
   outrankedByName?: string;
+  /** For singleton types, the content id of ANOTHER content of the same type that
+   * currently has an active session: the runtime resumes it (strategy 1) into the single
+   * slot BEFORE auto-starting fresh candidates, so THIS content can't appear (regardless
+   * of priority) until that session ends. Set only when this content has no own session. */
+  activeSlotHeldByContentId?: string;
+  /** Human-readable name of {@link activeSlotHeldByContentId} (resolved in the MCP layer). */
+  activeSlotHeldByName?: string;
   /** Stamped compiled conditions (.actived per leaf), for the MCP layer to render + overlay status. */
   autoStartRules?: RulesCondition[];
   hideRules?: RulesCondition[];
@@ -95,18 +103,28 @@ export class ContentDiagnosisService {
       const target = evaluated.find((cv) => cv.content.id === contentId);
 
       if (target) {
-        // Competition (singleton types only): the orchestrator auto-starts just the
-        // top-priority eligible content of a type ([0] after priorityCompare). Reuse
-        // the SAME selector to see if this content — when it would otherwise be
-        // eligible — is outranked by a sibling and so never gets the slot. No live
-        // socket here, so clientConditions/waitTimers are empty (matches the drift e2e).
+        // Competition (singleton types only). The orchestrator fills the single slot in
+        // strategy order: (1) RESUME an existing active session, then (2) auto-start the
+        // top-priority eligible candidate. Reuse those exact selectors. No live socket
+        // here, so clientConditions/waitTimers are empty (matches the drift e2e).
+        let activeSlotHeldByContentId: string | undefined;
         let outrankedByContentId: string | undefined;
         if (isSingletonContentType(contentType) && !target.session.activeSession) {
+          // Only meaningful when this content would otherwise auto-start (its own gates
+          // pass) — if its start_rules/frequency/hide already fail, THAT is the reason and
+          // the slot competition is moot noise. So gate on it being eligible first.
           const eligible = filterAvailableAutoStartContentVersions(evaluated, contentType, [], []);
           const targetEligible = eligible.some((cv) => cv.content.id === contentId);
-          const winner = eligible[0];
-          if (targetEligible && winner && winner.content.id !== contentId) {
-            outrankedByContentId = winner.content.id;
+          if (targetEligible) {
+            // Strategy 1: another content of this type has a live session → it resumes into
+            // the slot before anything fresh starts, so this one can't appear (any priority).
+            const holder = findLatestActivatedCustomContentVersions(evaluated, [])?.[0];
+            if (holder && holder.content.id !== contentId) {
+              activeSlotHeldByContentId = holder.content.id;
+            } else if (eligible[0] && eligible[0].content.id !== contentId) {
+              // Strategy 2: no resume in the way, but a higher-priority sibling outranks it.
+              outrankedByContentId = eligible[0].content.id;
+            }
           }
         }
 
@@ -126,6 +144,7 @@ export class ContentDiagnosisService {
             target.session.totalSessions > 0,
           hasActiveSession: !!target.session.activeSession,
           outrankedByContentId,
+          activeSlotHeldByContentId,
           autoStartRules: target.config.autoStartRules ?? [],
           hideRules: target.config.hideRules ?? [],
           userAttributes: (bizUser.data as Record<string, unknown>) ?? {},

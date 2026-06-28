@@ -220,6 +220,15 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.gates.find((g) => g.id === 'outranked')?.detail).toContain('c_winner');
   });
 
+  it('active slot held by another content → blocked, even though its own gates pass', () => {
+    const r = buildDiagnoseReport(
+      facts({ activeSlotHeldByContentId: 'c_holder', activeSlotHeldByName: 'Welcome Tour' }),
+    );
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('pass');
+    expect(r.blockedBy).toContain('active_slot');
+    expect(r.gates.find((g) => g.id === 'active_slot')?.detail).toContain('Welcome Tour');
+  });
+
   it('not published / no user / active session summaries', () => {
     expect(buildDiagnoseReport(facts({ published: false })).blockedBy).toEqual(['published']);
     expect(buildDiagnoseReport(facts({ userId: undefined })).summary).toMatch(/pass a userId/i);

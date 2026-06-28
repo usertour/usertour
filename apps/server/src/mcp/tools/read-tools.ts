@@ -357,13 +357,19 @@ export function buildReadTools(): McpTool[] {
           url,
         });
 
-        // Name the outranking sibling (the runtime carries only its content id).
-        if (facts.outrankedByContentId) {
-          const winner = (await ctx.services.content
-            .get(facts.outrankedByContentId, ctx.projectId, {})
+        // Name the competing sibling (the runtime carries only its content id) — either the
+        // active-slot holder or the higher-priority outranker (mutually exclusive).
+        const siblingId = facts.activeSlotHeldByContentId ?? facts.outrankedByContentId;
+        if (siblingId) {
+          const sibling = (await ctx.services.content
+            .get(siblingId, ctx.projectId, {})
             .catch(() => null)) as { name?: string } | null;
-          if (winner?.name) {
-            facts.outrankedByName = winner.name;
+          if (sibling?.name) {
+            if (facts.activeSlotHeldByContentId) {
+              facts.activeSlotHeldByName = sibling.name;
+            } else {
+              facts.outrankedByName = sibling.name;
+            }
           }
         }
 

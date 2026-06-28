@@ -219,9 +219,21 @@ export const buildDiagnoseReport = (
                 : 'shows once per user; not yet shown (or still active).',
             });
           }
-          // Singleton types show only the top-priority eligible content; if this one is
-          // eligible but outranked by a sibling, it passes all its own gates yet never
-          // shows. Without this, the report would wrongly say "should show".
+          // Singleton types fill ONE slot. (a) Another content of this type currently has
+          // a live session → the runtime resumes it before anything fresh starts, so this
+          // one can't appear regardless of priority.
+          if (facts.activeSlotHeldByContentId) {
+            const holder = facts.activeSlotHeldByName
+              ? `'${facts.activeSlotHeldByName}'`
+              : `content '${facts.activeSlotHeldByContentId}'`;
+            gates.push({
+              id: 'active_slot',
+              status: 'fail',
+              detail: `another ${facts.contentType} (${holder}) has an active session; the runtime resumes it into the single ${facts.contentType} slot before starting anything new, so this one won't appear until that session ends.`,
+            });
+          }
+          // (b) No resume in the way, but this one is eligible yet outranked by a
+          // higher-priority sibling — it passes all its own gates yet never shows.
           if (facts.outrankedByContentId) {
             const winner = facts.outrankedByName
               ? `'${facts.outrankedByName}'`

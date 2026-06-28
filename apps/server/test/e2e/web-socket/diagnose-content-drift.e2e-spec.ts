@@ -383,6 +383,32 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
     await check(environment, loser.content, winner.user, ContentDataType.FLOW, false);
   });
 
+  it('active slot held by ANOTHER flow’s session → runtime resumes the holder, tool must block the newcomer', async () => {
+    // Singleton types start ONE per type. The runtime resumes an existing active session
+    // (strategy 1) BEFORE auto-starting fresh candidates (strategy 2). So a different flow
+    // with a live session holds the slot and a brand-new flow can't appear — even at the
+    // highest priority and with every one of its own gates passing.
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const holder = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      userData: { plan: 'pro' },
+      activeSessions: 1,
+    });
+    const newcomer = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { priority: ContentPriority.HIGHEST },
+      user: holder.user,
+    });
+    await check(environment, newcomer.content, holder.user, ContentDataType.FLOW, false);
+  });
+
   it('hide rule active (attribute) → runtime skips, tool blocks via hidden', async () => {
     // Start rules match, but an attribute-based hide rule also matches. The runtime's
     // auto-start filter rejects it (isAllowedByHideRules → isActivedHideRules), so the
