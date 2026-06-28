@@ -117,6 +117,33 @@ export const setLevel = (
   return rest;
 };
 
+/**
+ * Capabilities that ACT ON a specific environment, so a token granting any of them must
+ * declare its environment scope (safe-first). Reads of env-scoped entities count (a token
+ * reads a SPECIFIC environment's users); content is env-targeted only at publish. Project-
+ * level resources (themes / attributes / events / analytics / environment-settings, and
+ * content read/create/update) are NOT here.
+ */
+const ENV_TARGETED_CAPABILITIES = new Set<string>([
+  'content:publish',
+  'user:read',
+  'user:write',
+  'user:delete',
+  'company:read',
+  'company:write',
+  'company:delete',
+  'session:read',
+  'session:manage',
+  'segment:read',
+  'segment:create',
+  'segment:update',
+  'segment:delete',
+]);
+
+/** Whether the chosen scopes act on a specific environment (→ require an env selection). */
+export const requiresEnvironmentScope = (scopes: string[]): boolean =>
+  scopes.some((s) => ENV_TARGETED_CAPABILITIES.has(s));
+
 /** Per-resource levels for display (drops resources with no access). */
 export const summarizeScopes = (
   scopes: string[],

@@ -8,7 +8,7 @@ import {
   Form,
   useToast,
 } from '@usertour/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreateApiTokenMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
@@ -42,6 +42,14 @@ export const CreateDialog = (props: CreateDialogProps) => {
     mode: 'onChange',
   });
 
+  // The dialog stays mounted, so reset on each open — otherwise a cancelled draft
+  // (name / scopes / env selection) would reappear the next time it's opened.
+  useEffect(() => {
+    if (open) {
+      form.reset(tokenFormDefaults);
+    }
+  }, [open, form]);
+
   const { invoke: createApiToken, loading: creating } = useCreateApiTokenMutation();
 
   const handleSubmit = async (values: TokenFormValues) => {
@@ -50,6 +58,8 @@ export const CreateDialog = (props: CreateDialogProps) => {
         name: values.name.trim(),
         projectIds: values.projectIds,
         scopes: values.scopes,
+        // Omit when empty → all environments (only valid for non-env-targeted scopes).
+        ...(values.environmentIds.length > 0 ? { environmentIds: values.environmentIds } : {}),
       });
       if (!result) {
         toast({ title: t('settings.personalApiKeys.createFailure'), variant: 'destructive' });

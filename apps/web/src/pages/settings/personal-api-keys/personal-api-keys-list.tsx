@@ -78,6 +78,20 @@ export const PersonalApiKeysList = () => {
       ),
     },
     {
+      header: t('settings.personalApiKeys.columns.environments'),
+      // null/empty allowlist = all environments; otherwise a compact count (the exact
+      // environments are shown — and editable — in the Edit dialog).
+      cell: (token) => (
+        <Badge variant="secondary" className="cursor-default font-normal">
+          {!token.environmentIds || token.environmentIds.length === 0
+            ? t('settings.personalApiKeys.environmentsAllBadge')
+            : t('settings.personalApiKeys.environmentsCount', {
+                count: token.environmentIds.length,
+              })}
+        </Badge>
+      ),
+    },
+    {
       header: t('settings.personalApiKeys.columns.scopes'),
       headerClassName: 'w-32',
       // Collapse to a single badge — the per-resource access levels live in the

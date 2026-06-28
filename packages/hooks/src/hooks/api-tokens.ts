@@ -14,6 +14,8 @@ export interface ApiToken {
   partialKey: string;
   scopes: string[];
   projectIds: string[];
+  /** Environments this token may act on; null/absent = all environments. */
+  environmentIds: string[] | null;
   isActive: boolean;
   expiresAt: string | null;
   lastUsedAt: string | null;
@@ -24,6 +26,8 @@ export interface CreateApiTokenInput {
   name: string;
   projectIds: string[];
   scopes: string[];
+  /** Environments this token may act on. Omit → all (the form sends an explicit set). */
+  environmentIds?: string[];
   expiresAt?: string | null;
 }
 
@@ -31,6 +35,7 @@ export interface UpdateApiTokenInput {
   name?: string;
   projectIds?: string[];
   scopes?: string[];
+  environmentIds?: string[];
 }
 
 export interface CreatedApiToken {

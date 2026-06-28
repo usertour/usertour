@@ -51,6 +51,7 @@ export const ApiTokens = gql`
       partialKey
       scopes
       projectIds
+      environmentIds
       isActive
       expiresAt
       lastUsedAt
@@ -69,6 +70,7 @@ export const CreateApiToken = gql`
         partialKey
         scopes
         projectIds
+        environmentIds
         isActive
         expiresAt
         createdAt
@@ -85,6 +87,7 @@ export const UpdateApiToken = gql`
       partialKey
       scopes
       projectIds
+      environmentIds
       isActive
       expiresAt
       lastUsedAt
@@ -103,6 +106,7 @@ export const RotateApiToken = gql`
         partialKey
         scopes
         projectIds
+        environmentIds
         isActive
         expiresAt
         lastUsedAt

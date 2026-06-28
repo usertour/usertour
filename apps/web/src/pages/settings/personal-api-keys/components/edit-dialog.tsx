@@ -35,6 +35,7 @@ export const EditDialog = (props: EditDialogProps) => {
     defaultValues: {
       name: token.name,
       projectIds: token.projectIds,
+      environmentIds: token.environmentIds ?? [],
       scopes: token.scopes,
     },
     mode: 'onChange',
@@ -44,7 +45,12 @@ export const EditDialog = (props: EditDialogProps) => {
   // across rows, so stale values would otherwise leak between tokens.
   useEffect(() => {
     if (open) {
-      form.reset({ name: token.name, projectIds: token.projectIds, scopes: token.scopes });
+      form.reset({
+        name: token.name,
+        projectIds: token.projectIds,
+        environmentIds: token.environmentIds ?? [],
+        scopes: token.scopes,
+      });
     }
   }, [open, token, form]);
 
@@ -56,6 +62,9 @@ export const EditDialog = (props: EditDialogProps) => {
         name: values.name.trim(),
         projectIds: values.projectIds,
         scopes: values.scopes,
+        // Omit when empty → leave the env scope unchanged (the form blocks an empty set
+        // when scopes are env-targeted; an empty set here means a project-level-only token).
+        ...(values.environmentIds.length > 0 ? { environmentIds: values.environmentIds } : {}),
       });
       if (!result) {
         toast({ title: t('settings.personalApiKeys.updateFailure'), variant: 'destructive' });
