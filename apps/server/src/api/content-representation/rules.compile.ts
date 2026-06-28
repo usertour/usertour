@@ -284,17 +284,23 @@ export function compileStartRules(
   }
   const setting: any = {};
   if (start.frequency) {
-    // `multiple` / `unlimited` render the "every N times" control, which reads
-    // `every.times` — so `every` MUST be present for those modes (a bare `{ mode }`
-    // otherwise crashes the builder picker and breaks SDK frequency evaluation).
-    // Default it from DEFAULT_FREQUENCY, merging any caller-provided fields. `once`
-    // doesn't use `every`, and `atLeast` is optional (guarded by the picker), so
-    // neither is synthesized.
-    const needsEvery = start.frequency.mode === 'multiple' || start.frequency.mode === 'unlimited';
+    // `multiple` / `unlimited` need an `every` window present (a bare `{ mode }` crashes
+    // the builder picker and breaks SDK frequency evaluation). Default it from
+    // DEFAULT_FREQUENCY, merging any caller-provided fields. But only `multiple` reads
+    // `every.times` (the count cap); `unlimited` uses only the window, so synthesizing a
+    // `times` for it would echo a meaningless cap — drop it from the default there (an
+    // explicitly-passed value is still respected). `once` uses no `every`; `atLeast` is
+    // optional, so neither is synthesized.
+    const mode = start.frequency.mode;
+    const needsEvery = mode === 'multiple' || mode === 'unlimited';
+    const everyDefault =
+      mode === 'unlimited'
+        ? { duration: DEFAULT_FREQUENCY.every.duration, unit: DEFAULT_FREQUENCY.every.unit }
+        : DEFAULT_FREQUENCY.every;
     setting.frequency = {
-      frequency: start.frequency.mode,
+      frequency: mode,
       ...(start.frequency.every || needsEvery
-        ? { every: { ...DEFAULT_FREQUENCY.every, ...(start.frequency.every ?? {}) } }
+        ? { every: { ...everyDefault, ...(start.frequency.every ?? {}) } }
         : {}),
       ...(start.frequency.atLeast ? { atLeast: start.frequency.atLeast } : {}),
     };
