@@ -7,6 +7,7 @@ import { decompileConditions } from '@/api/content-representation/rules.decompil
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
 import { ContentExpand } from '@/api/content/content.schema';
+import { EnvironmentNotInTokenScopeError } from '@/common/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
 import {
@@ -97,9 +98,19 @@ export async function resolveEnvironment(
   const environmentId = asString(args.environmentId);
   if (environmentId) {
     // Explicit target: resolve it, then enforce the token's environment scope (read or
-    // write alike — a token may only act on the environments it was granted).
+    // write alike — a token may only act on the environments it was granted). On a scope
+    // miss, name the environments the token CAN use so an agent can self-correct instead
+    // of dead-ending on "not scoped".
     const environment = await ctx.auth.resolveEnvironment(ctx.projectId, environmentId);
-    ctx.auth.assertEnvironmentInScope(ctx.token, environment);
+    const allowed = ctx.auth.allowedEnvironmentIds(ctx.token);
+    if (allowed && !allowed.includes(environment.id)) {
+      const usable = await ctx.prisma.environment.findMany({
+        where: { id: { in: allowed }, projectId: ctx.projectId, deleted: false },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, name: true },
+      });
+      throw new EnvironmentNotInTokenScopeError(usable);
+    }
     return environment;
   }
 
@@ -152,17 +163,21 @@ const orderBySchema = z
 export const environmentIdSchema = z
   .string()
   .optional()
-  .describe('Environment to target (defaults to the primary environment).');
-// Strict variant for state-changing / outward write tools: a single-environment project
-// still defaults, but a multi-environment project MUST pass this — the tool refuses to
-// pick one for a publish/write (see resolveEnvironment requireExplicit).
+  .describe(
+    'Environment to target. Omit to use the default: a token that can act on a single ' +
+      'environment uses that one; otherwise the primary environment. (The default follows the ' +
+      "environments the TOKEN may act on, not the project's full list.)",
+  );
+// Strict variant for state-changing / outward write tools: a token that can act on a single
+// environment still defaults, but a token that can act on MULTIPLE MUST pass this — the tool
+// refuses to pick one for a publish/write (see resolveEnvironment requireExplicit).
 export const environmentIdWriteSchema = z
   .string()
   .optional()
   .describe(
-    'Environment to target. Single-environment projects default to that environment; if the ' +
-      'project has MULTIPLE environments you MUST set this — a state-changing tool will not ' +
-      'choose one for you (it errors and lists the available environments).',
+    'Environment to target. A token that can act on a single environment defaults to it; if the ' +
+      'token can act on MULTIPLE environments you MUST set this — a state-changing tool will not ' +
+      'choose one for you (it errors and lists the environments the token may use).',
   );
 
 /**

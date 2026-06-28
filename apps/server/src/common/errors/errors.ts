@@ -234,6 +234,22 @@ export class EnvironmentNotInTokenScopeError extends OpenAPIError {
     en: 'API key is not scoped to the requested environment',
     'zh-CN': 'API 密钥未授权访问该环境',
   };
+
+  /**
+   * Optionally name the environments the token MAY act on, turning a dead-end ("not
+   * scoped") into a redirect ("use one of these") — caller passes them when the names
+   * are on hand (e.g. the MCP env resolver). Omit for the bare, stable message.
+   */
+  constructor(allowed?: { name: string; id: string }[]) {
+    super();
+    if (allowed?.length) {
+      const list = allowed.map((e) => `${e.name} (${e.id})`).join(', ');
+      this.messageDict = {
+        en: `API key is not scoped to the requested environment. It may only act on: ${list}.`,
+        'zh-CN': `API 密钥未授权访问该环境。仅可操作:${list}。`,
+      };
+    }
+  }
 }
 
 export class ThemeNotFoundError extends OpenAPIError {

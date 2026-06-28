@@ -230,9 +230,9 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentPublish,
       description:
         "Publish a version as an environment's live version (idempotent). Publishing is " +
-        'per-environment: a single-environment project defaults, but if the project has multiple ' +
-        'environments you must pass `environmentId` (it is NOT chosen for you). Returns the ' +
-        'content with refreshed `environments[]`.',
+        'per-environment: if the token can act on a single environment it defaults to that one, ' +
+        'but if it can act on multiple you must pass `environmentId` (it is NOT chosen for you). ' +
+        'Returns the content with refreshed `environments[]`.',
       inputSchema: {
         contentId: z.string(),
         versionId: z.string(),
@@ -254,9 +254,10 @@ export function buildWriteTools(): McpTool[] {
       title: 'Unpublish content from an environment',
       capability: Capability.ContentPublish,
       description:
-        "Clear an environment's live version for a content. Per-environment: a single-environment " +
-        'project defaults, but with multiple environments you must pass `environmentId` (it is NOT ' +
-        'chosen for you). Returns the content with refreshed `environments[]`.',
+        "Clear an environment's live version for a content. Per-environment: if the token can act " +
+        'on a single environment it defaults to that one, but with multiple you must pass ' +
+        '`environmentId` (it is NOT chosen for you). Returns the content with refreshed ' +
+        '`environments[]`.',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdWriteSchema,

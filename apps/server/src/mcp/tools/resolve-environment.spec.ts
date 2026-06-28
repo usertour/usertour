@@ -20,7 +20,16 @@ const makeCtx = (envs: any[], allowedEnvironmentIds: string[] | null = null) => 
     projectId: 'p1',
     token: { allowedEnvironmentIds } as any,
     auth,
-    prisma: { environment: { findMany: jest.fn(async () => envs) } },
+    prisma: {
+      environment: {
+        // Honor a `where.id.in` filter so the explicit-out-of-scope path (which loads only
+        // the token's allowed envs to name them) gets the right subset; other calls get all.
+        findMany: jest.fn(async (q: any) => {
+          const ids = q?.where?.id?.in as string[] | undefined;
+          return ids ? envs.filter((e) => ids.includes(e.id)) : envs;
+        }),
+      },
+    },
   } as any;
 };
 
@@ -82,6 +91,19 @@ describe('resolveEnvironment — multi-env safety (Q1) + token env scope', () =>
     await expect(resolveEnvironment({ environmentId: 'e1' }, ctx)).rejects.toThrow(
       EnvironmentNotInTokenScopeError,
     );
+  });
+
+  it('out-of-scope error NAMES the envs the token may use (redirect, not dead-end)', async () => {
+    const ctx = makeCtx(
+      [env('e1', 'Production', true), env('e2', 'Dev'), env('e3', 'Staging')],
+      ['e2', 'e3'],
+    );
+    const err = await resolveEnvironment({ environmentId: 'e1' }, ctx).catch((e) => e);
+    expect(err).toBeInstanceOf(EnvironmentNotInTokenScopeError);
+    const msg = err.getMessage('en');
+    expect(msg).toMatch(/Dev \(e2\)/);
+    expect(msg).toMatch(/Staging \(e3\)/);
+    expect(msg).not.toMatch(/Production/); // never offers the env it can't use
   });
 
   it('scope lists an env not in the project → no usable env → throws', async () => {
