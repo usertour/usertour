@@ -229,6 +229,32 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.gates.find((g) => g.id === 'active_slot')?.detail).toContain('Welcome Tour');
   });
 
+  it('unknown leaves are flagged NOT blockers, with how to resolve each (url vs live-only)', () => {
+    // Real blocker (frequency) PLUS a current_url leaf that is unknown because no url was
+    // passed. The summary must not let the unknown read as a second blocker, and must say
+    // `url` resolves it — the gap the diagnose eval flagged (unknown easily misread as fail).
+    const stamped: RulesCondition[] = [
+      { id: id(), type: 'current-page', data: { includes: ['*/'] }, operators: 'and' },
+    ];
+    const tree = annotateConditions(stamped, decompileConditions(stamped, resolvers), false);
+    expect(tree?.conditions?.[0].status).toBe('unknown'); // current_url, no url → unknown
+    const r = buildDiagnoseReport(facts({ frequencyAllowed: false }), tree);
+    expect(r.blockedBy).toEqual(['frequency']); // the unknown leaf is NOT in blockedBy
+    expect(r.summary).toMatch(/not blockers/i);
+    expect(r.summary).toContain('pass `url`');
+    expect(r.summary).toContain('startConditions');
+  });
+
+  it('a live-only DOM unknown leaf points to the app, not to `url`', () => {
+    const stamped: RulesCondition[] = [element()];
+    const tree = annotateConditions(stamped, decompileConditions(stamped, resolvers), false);
+    const r = buildDiagnoseReport(facts(), tree); // no server-side blocker
+    expect(r.blockedBy).toEqual([]);
+    expect(r.summary).toMatch(/confirmed live/i);
+    expect(r.summary).toContain('running app');
+    expect(r.summary).not.toContain('pass `url`');
+  });
+
   it('not published / no user / active session summaries', () => {
     expect(buildDiagnoseReport(facts({ published: false })).blockedBy).toEqual(['published']);
     expect(buildDiagnoseReport(facts({ userId: undefined })).summary).toMatch(/pass a userId/i);

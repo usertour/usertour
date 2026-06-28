@@ -324,8 +324,10 @@ export function buildReadTools(): McpTool[] {
         'active_session), each gate evaluated by the SAME runtime function the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
-        'unknown so you can see exactly which branch failed. `unknown` = a live-only leaf (DOM ' +
-        'element/text, or current_url when no `url` is passed) — confirm in the app. Pass `userId` ' +
+        'unknown so you can see exactly which branch failed. Only gates listed in `blockedBy` ' +
+        'actually block. `unknown` is NOT a blocker — it is a condition that cannot be evaluated ' +
+        'server-side (a live-only DOM element/text leaf, or current_url when no `url` is passed); ' +
+        'pass `url` to resolve current_url, or confirm live-only ones in the app. Pass `userId` ' +
         'to evaluate the per-user gates, `companyId` for company-scoped rules, `url` to test ' +
         'current_url conditions.',
       inputSchema: {

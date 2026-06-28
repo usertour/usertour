@@ -146,10 +146,29 @@ export const annotateConditions = (
   } as AnnotatedCondition;
 };
 
-const hasUnknownLeaf = (node?: AnnotatedCondition): boolean => {
-  if (!node) return false;
-  if (node.conditions) return node.conditions.some(hasUnknownLeaf);
-  return node.status === 'unknown';
+/**
+ * Categorize the `unknown` (not-server-evaluable) leaves so the summary can say what to DO
+ * about each — and make explicit they are NOT blockers (an agent must not read an `unknown`
+ * leaf as a second blocker alongside the real ones in `blockedBy`). `current_url` unknowns
+ * resolve by passing `url`; the rest (DOM element / text, wait) are live-only and need the app.
+ */
+const classifyUnknownLeaves = (
+  node?: AnnotatedCondition,
+): { urlResolvable: boolean; liveOnly: boolean } => {
+  let urlResolvable = false;
+  let liveOnly = false;
+  const walk = (n?: AnnotatedCondition) => {
+    if (!n) return;
+    if (n.conditions) {
+      for (const c of n.conditions) walk(c);
+      return;
+    }
+    if (n.status !== 'unknown') return;
+    if ((n as { type?: string }).type === 'current_url') urlResolvable = true;
+    else liveOnly = true;
+  };
+  walk(node);
+  return { urlResolvable, liveOnly };
 };
 
 export const buildDiagnoseReport = (
@@ -266,7 +285,26 @@ export const buildDiagnoseReport = (
   }
 
   const blockedBy = gates.filter((g) => g.status === 'fail').map((g) => g.id);
-  const liveOnly = hasUnknownLeaf(startConditions);
+  // `unknown` conditions are NOT blockers (only `blockedBy` blocks). Classify them so the
+  // summary names what resolves each, and never lets an agent read an `unknown` leaf as a
+  // second blocker beside the real ones.
+  const su = classifyUnknownLeaves(startConditions);
+  const hu = classifyUnknownLeaves(hideConditions);
+  const urlResolvable = su.urlResolvable || hu.urlResolvable;
+  const liveOnly = su.liveOnly || hu.liveOnly;
+  const anyUnknown = urlResolvable || liveOnly;
+  const resolveUnknown = [
+    urlResolvable ? 'pass `url` to resolve current_url conditions' : '',
+    liveOnly ? 'confirm live-only conditions (DOM element / text) in the running app' : '',
+  ]
+    .filter(Boolean)
+    .join('; ');
+  const unknownWhere = [
+    su.urlResolvable || su.liveOnly ? 'startConditions' : '',
+    hu.urlResolvable || hu.liveOnly ? 'hideConditions' : '',
+  ]
+    .filter(Boolean)
+    .join('/');
 
   let summary: string;
   if (!facts.published) {
@@ -283,13 +321,12 @@ export const buildDiagnoseReport = (
       : 'Currently active for this user — it is showing (or resumes on the next load).';
   } else if (blockedBy.length) {
     summary = `Blocked by: ${blockedBy.join(', ')}.${
-      blockedBy.includes('start_rules') && liveOnly
-        ? ' Some start conditions are live-only (see startConditions) — confirm in the app.'
+      anyUnknown
+        ? ` (\`unknown\` conditions are NOT blockers — ${resolveUnknown}; see ${unknownWhere}.)`
         : ''
     }`;
-  } else if (liveOnly) {
-    summary =
-      'No server-side blocker, but it depends on live conditions (see startConditions) — verify in the app.';
+  } else if (anyUnknown) {
+    summary = `No server-side blocker, but some conditions can only be confirmed live — ${resolveUnknown} (see ${unknownWhere}).`;
   } else {
     summary =
       'No server-side blocker — it should show on a matching page. Verify live that identify() fires for this user.';
