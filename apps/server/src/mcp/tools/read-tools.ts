@@ -24,7 +24,12 @@ import { ThemeExpand } from '@/api/themes/themes.schema';
 import { McpTool, McpToolContext } from '../mcp.types';
 import { READ_ONLY } from './annotations';
 import { AUTHORING_GUIDE } from './authoring-guide';
-import { annotateConditions, buildDiagnoseReport } from './diagnose-report';
+import {
+  annotateConditions,
+  attachConditionNames,
+  buildDiagnoseReport,
+  collectConditionRefs,
+} from './diagnose-report';
 
 /**
  * Parse the `cursor` query param out of a paginate() `next`/`previous` URL and
@@ -334,6 +339,16 @@ export function buildReadTools(): McpTool[] {
           url,
         });
 
+        // Name the outranking sibling (the runtime carries only its content id).
+        if (facts.outrankedByContentId) {
+          const winner = (await ctx.services.content
+            .get(facts.outrankedByContentId, ctx.projectId, {})
+            .catch(() => null)) as { name?: string } | null;
+          if (winner?.name) {
+            facts.outrankedByName = winner.name;
+          }
+        }
+
         // Render the stamped compiled conditions readable via the api-layer decompile
         // (attribute/event codes resolved; segment/content stay as ids per the v2
         // representation contract), then overlay status.
@@ -365,6 +380,34 @@ export function buildReadTools(): McpTool[] {
               decompileConditions(facts.hideRules, resolvers),
               hasUrl,
             );
+          }
+
+          // segment/content conditions decompile to ids per the representation contract;
+          // resolve their names so the diagnosis reads without a follow-up lookup.
+          const startRefs = collectConditionRefs(startConditions);
+          const hideRefs = collectConditionRefs(hideConditions);
+          const segmentIds = [...new Set([...startRefs.segmentIds, ...hideRefs.segmentIds])];
+          const flowIds = [...new Set([...startRefs.flowIds, ...hideRefs.flowIds])];
+          if (segmentIds.length || flowIds.length) {
+            const [segments, contents] = await Promise.all([
+              segmentIds.length
+                ? ctx.prisma.segment.findMany({
+                    where: { id: { in: segmentIds } },
+                    select: { id: true, name: true },
+                  })
+                : Promise.resolve([]),
+              flowIds.length
+                ? ctx.prisma.content.findMany({
+                    where: { id: { in: flowIds }, projectId: ctx.projectId },
+                    select: { id: true, name: true },
+                  })
+                : Promise.resolve([]),
+            ]);
+            const nameById: Record<string, string> = {};
+            for (const s of segments) if (s.name) nameById[s.id] = s.name;
+            for (const c of contents) if (c.name) nameById[c.id] = c.name;
+            attachConditionNames(startConditions, nameById);
+            attachConditionNames(hideConditions, nameById);
           }
         }
 

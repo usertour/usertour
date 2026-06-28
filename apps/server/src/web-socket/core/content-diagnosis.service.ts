@@ -6,10 +6,12 @@ import { BizService } from '@/biz/biz.service';
 import { Environment } from '@/common/types/schema';
 import {
   evaluateCustomContentVersion,
+  filterAvailableAutoStartContentVersions,
   isActivedAutoStartRules,
   isActivedHideRules,
   isAllowedByAutoStartRulesSetting,
   isSingleSessionContentType,
+  isSingletonContentType,
 } from '@/utils/content-utils';
 
 import { ContentDataService } from './content-data.service';
@@ -44,6 +46,13 @@ export interface DiagnoseFacts {
   singleSessionApplicable: boolean; // isSingleSessionContentType
   singleSessionDismissed?: boolean;
   hasActiveSession?: boolean;
+  /** For singleton types (one shows per type), the content id of a higher-priority
+   * sibling that wins the single slot — set only when THIS content is itself eligible
+   * (passes its own gates) but is outranked, so it would never auto-start. */
+  outrankedByContentId?: string;
+  /** Human-readable name of {@link outrankedByContentId}, resolved in the MCP layer
+   * (the websocket runtime version only carries content id + type, not the name). */
+  outrankedByName?: string;
   /** Stamped compiled conditions (.actived per leaf), for the MCP layer to render + overlay status. */
   autoStartRules?: RulesCondition[];
   hideRules?: RulesCondition[];
@@ -83,6 +92,21 @@ export class ContentDiagnosisService {
       const target = evaluated.find((cv) => cv.content.id === contentId);
 
       if (target) {
+        // Competition (singleton types only): the orchestrator auto-starts just the
+        // top-priority eligible content of a type ([0] after priorityCompare). Reuse
+        // the SAME selector to see if this content — when it would otherwise be
+        // eligible — is outranked by a sibling and so never gets the slot. No live
+        // socket here, so clientConditions/waitTimers are empty (matches the drift e2e).
+        let outrankedByContentId: string | undefined;
+        if (isSingletonContentType(contentType) && !target.session.activeSession) {
+          const eligible = filterAvailableAutoStartContentVersions(evaluated, contentType, [], []);
+          const targetEligible = eligible.some((cv) => cv.content.id === contentId);
+          const winner = eligible[0];
+          if (targetEligible && winner && winner.content.id !== contentId) {
+            outrankedByContentId = winner.content.id;
+          }
+        }
+
         return {
           contentType,
           publishedVersionId,
@@ -98,6 +122,7 @@ export class ContentDiagnosisService {
             !target.session.activeSession &&
             target.session.totalSessions > 0,
           hasActiveSession: !!target.session.activeSession,
+          outrankedByContentId,
           autoStartRules: target.config.autoStartRules ?? [],
           hideRules: target.config.hideRules ?? [],
         };

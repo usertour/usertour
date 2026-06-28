@@ -29,6 +29,45 @@ export interface Gate {
 export type AnnotatedCondition = RepresentationCondition & {
   status: ConditionStatus;
   conditions?: AnnotatedCondition[];
+  /** Human name for `segment`/`flow` nodes (their `segment`/`flow` fields are ids per the
+   * representation contract); filled in the MCP layer so the cause reads without a lookup. */
+  name?: string;
+};
+
+/** Collect the segment + content(flow) ids referenced anywhere in a condition tree, so the
+ * MCP layer can batch-resolve their names (the representation keeps them as ids). */
+export const collectConditionRefs = (
+  node?: AnnotatedCondition,
+): { segmentIds: string[]; flowIds: string[] } => {
+  const segmentIds = new Set<string>();
+  const flowIds = new Set<string>();
+  const walk = (n?: AnnotatedCondition) => {
+    if (!n) return;
+    if (n.conditions) {
+      for (const c of n.conditions) walk(c);
+      return;
+    }
+    const ref = n as { type: string; segment?: string; flow?: string };
+    if (ref.type === 'segment' && ref.segment) segmentIds.add(ref.segment);
+    if (ref.type === 'flow' && ref.flow) flowIds.add(ref.flow);
+  };
+  walk(node);
+  return { segmentIds: [...segmentIds], flowIds: [...flowIds] };
+};
+
+/** Attach resolved names to `segment`/`flow` leaves in place (id → name map). */
+export const attachConditionNames = (
+  node: AnnotatedCondition | undefined,
+  nameById: Record<string, string>,
+): void => {
+  if (!node) return;
+  if (node.conditions) {
+    for (const c of node.conditions) attachConditionNames(c, nameById);
+    return;
+  }
+  const ref = node as { type: string; segment?: string; flow?: string };
+  const id = ref.type === 'segment' ? ref.segment : ref.type === 'flow' ? ref.flow : undefined;
+  if (id && nameById[id]) node.name = nameById[id];
 };
 
 export interface DiagnoseReport {
@@ -129,30 +168,50 @@ export const buildDiagnoseReport = (
         // e.g. banner/launcher have no frequency or hide rules, resource-center has no
         // frequency. Showing an inapplicable gate would be noise/misleading.
         const caps = getAutoStartCapabilities(facts.contentType);
-        gates.push({
-          id: 'start_rules',
-          status: facts.startRulesActive ? 'pass' : 'fail',
-          detail: facts.startRulesActive
-            ? 'auto-start enabled and start conditions match.'
-            : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
-        });
-        if (caps.frequency) {
+        // The fresh-start gates (start_rules / frequency / single_session) decide
+        // whether the runtime would AUTO-START a NEW session. When one is already
+        // active, the runtime resumes it instead of re-evaluating these — so emitting
+        // them would contradict "currently active" (see active_session). Only the hide
+        // gate still applies to an active session (a hide rule can cancel it).
+        if (!facts.hasActiveSession) {
           gates.push({
-            id: 'frequency',
-            status: facts.frequencyAllowed ? 'pass' : 'fail',
-            detail: facts.frequencyAllowed
-              ? 'frequency / start-if-not-complete allows it now.'
-              : 'frequency cap reached, or start-if-not-complete and already completed.',
+            id: 'start_rules',
+            status: facts.startRulesActive ? 'pass' : 'fail',
+            detail: facts.startRulesActive
+              ? 'auto-start enabled and start conditions match.'
+              : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
           });
-        }
-        if (facts.singleSessionApplicable) {
-          gates.push({
-            id: 'single_session',
-            status: facts.singleSessionDismissed ? 'fail' : 'pass',
-            detail: facts.singleSessionDismissed
-              ? `a ${facts.contentType} shows once per user and a prior session was already dismissed/ended.`
-              : 'shows once per user; not yet shown (or still active).',
-          });
+          if (caps.frequency) {
+            gates.push({
+              id: 'frequency',
+              status: facts.frequencyAllowed ? 'pass' : 'fail',
+              detail: facts.frequencyAllowed
+                ? 'frequency / start-if-not-complete allows it now.'
+                : 'frequency cap reached, or start-if-not-complete and already completed.',
+            });
+          }
+          if (facts.singleSessionApplicable) {
+            gates.push({
+              id: 'single_session',
+              status: facts.singleSessionDismissed ? 'fail' : 'pass',
+              detail: facts.singleSessionDismissed
+                ? `a ${facts.contentType} shows once per user and a prior session was already dismissed/ended.`
+                : 'shows once per user; not yet shown (or still active).',
+            });
+          }
+          // Singleton types show only the top-priority eligible content; if this one is
+          // eligible but outranked by a sibling, it passes all its own gates yet never
+          // shows. Without this, the report would wrongly say "should show".
+          if (facts.outrankedByContentId) {
+            const winner = facts.outrankedByName
+              ? `'${facts.outrankedByName}'`
+              : `content '${facts.outrankedByContentId}'`;
+            gates.push({
+              id: 'outranked',
+              status: 'fail',
+              detail: `another ${facts.contentType} (${winner}) has higher priority and wins the single slot — only one ${facts.contentType} shows at a time. Lower its priority or this one's, or stop the other.`,
+            });
+          }
         }
         if (caps.hideRules) {
           gates.push({
@@ -187,7 +246,9 @@ export const buildDiagnoseReport = (
     summary =
       'User not identified — the app must call usertour.identify() with the id the content targets (the #1 cause).';
   } else if (facts.hasActiveSession) {
-    summary = 'Currently active for this user — it is showing (or resumes on the next load).';
+    summary = facts.hidden
+      ? 'Has an active session, but a hide rule is active — the runtime will cancel it (won’t show).'
+      : 'Currently active for this user — it is showing (or resumes on the next load).';
   } else if (blockedBy.length) {
     summary = `Blocked by: ${blockedBy.join(', ')}.${
       blockedBy.includes('start_rules') && liveOnly

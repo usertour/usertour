@@ -2,7 +2,15 @@ import type { INestApplication } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AttributeBizTypes, AttributeDataType, ContentDataType, Frequency } from '@usertour/types';
+import {
+  AttributeBizTypes,
+  AttributeDataType,
+  BizEvents,
+  ContentDataType,
+  ContentPriority,
+  Frequency,
+  FrequencyUnits,
+} from '@usertour/types';
 
 import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
@@ -15,6 +23,7 @@ import {
   buildBizUser,
   buildContent,
   buildEnvironment,
+  buildEvent,
   buildProject,
   buildSession,
   buildTheme,
@@ -46,16 +55,24 @@ const attrRule = (attrId: string, value: string): Cond => ({
 
 const mkConfig = (
   autoStartRules: Cond[],
-  opts: { hideRules?: Cond[]; startIfNotComplete?: boolean; frequency?: Frequency } = {},
+  opts: {
+    hideRules?: Cond[];
+    startIfNotComplete?: boolean;
+    frequency?: Frequency;
+    every?: { unit: FrequencyUnits; duration: number; times?: number };
+    priority?: ContentPriority;
+  } = {},
 ) => ({
   enabledAutoStartRules: true,
   autoStartRules,
   enabledHideRules: !!opts.hideRules,
   hideRules: opts.hideRules ?? [],
   autoStartRulesSetting: {
-    priority: 'medium',
+    priority: opts.priority ?? ContentPriority.MEDIUM,
     startIfNotComplete: opts.startIfNotComplete ?? false,
-    ...(opts.frequency ? { frequency: { frequency: opts.frequency } } : {}),
+    ...(opts.frequency
+      ? { frequency: { frequency: opts.frequency, ...(opts.every ? { every: opts.every } : {}) } }
+      : {}),
   },
   hideRulesSetting: {},
 });
@@ -103,6 +120,9 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
     opts?: Parameters<typeof mkConfig>[1];
     userData?: Record<string, unknown>;
     dismissedSessions?: number;
+    activeSessions?: number;
+    /** Reuse an existing user (so two contents can compete for one user). */
+    user?: any;
   }) => {
     const { projectId, environment, type } = args;
     const content = await buildContent(prisma, { projectId, environmentId: environment.id, type });
@@ -120,10 +140,12 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
         publishedVersionId: version.id,
       },
     });
-    const user = await buildBizUser(prisma, {
-      environmentId: environment.id,
-      data: (args.userData ?? {}) as Prisma.InputJsonValue,
-    });
+    const user =
+      args.user ??
+      (await buildBizUser(prisma, {
+        environmentId: environment.id,
+        data: (args.userData ?? {}) as Prisma.InputJsonValue,
+      }));
     // state:1 = ended/dismissed session (state 0 is active).
     for (let i = 0; i < (args.dismissedSessions ?? 0); i++) {
       await buildSession(prisma, {
@@ -133,7 +155,43 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
         state: 1,
       });
     }
-    return { content, user };
+    for (let i = 0; i < (args.activeSessions ?? 0); i++) {
+      await buildSession(prisma, {
+        bizUserId: user.id,
+        contentId: content.id,
+        versionId: version.id,
+        state: 0,
+      });
+    }
+    return { content, user, version };
+  };
+
+  // Seed an ended session + a dismissed event (FLOW_ENDED) with a chosen age, so the
+  // frequency window (isAllowedByAutoStartRulesSetting → latestDismissedEvent) has data.
+  const seedDismissedEvent = async (
+    projectId: string,
+    content: any,
+    user: any,
+    version: any,
+    daysAgo: number,
+  ) => {
+    const session = await buildSession(prisma, {
+      bizUserId: user.id,
+      contentId: content.id,
+      versionId: version.id,
+      state: 1,
+    });
+    const event = await buildEvent(prisma, { projectId, codeName: BizEvents.FLOW_ENDED });
+    await prisma.bizEvent.create({
+      data: {
+        eventId: event.id,
+        bizUserId: user.id,
+        bizSessionId: session.id,
+        contentId: content.id,
+        versionId: version.id,
+        createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+      },
+    });
   };
 
   /** The tool's verdict on the CURRENT (pre-toggle) state: does any gate block it? */
@@ -227,6 +285,47 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
     await check(environment, content, user, ContentDataType.FLOW, false);
   });
 
+  it('frequency multiple, window NOT elapsed → runtime skips, tool blocks', async () => {
+    // Shown up to 5×, every 7 days; dismissed just now → the 7-day window hasn't
+    // elapsed, so isAllowedByAutoStartRulesSetting rejects it. (times: 5 > 1 prior, so
+    // the window — not the count — is the blocker.)
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const { content, user, version } = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: {
+        frequency: Frequency.MULTIPLE,
+        every: { unit: FrequencyUnits.DAYES, duration: 7, times: 5 },
+      },
+      userData: { plan: 'pro' },
+    });
+    await seedDismissedEvent(projectId, content, user, version, 0);
+    await check(environment, content, user, ContentDataType.FLOW, false);
+  });
+
+  it('frequency multiple, window elapsed → runtime activates, tool says show', async () => {
+    // Same config, but dismissed 10 days ago → past the 7-day window and under the
+    // 5× cap, so it auto-starts again.
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const { content, user, version } = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: {
+        frequency: Frequency.MULTIPLE,
+        every: { unit: FrequencyUnits.DAYES, duration: 7, times: 5 },
+      },
+      userData: { plan: 'pro' },
+    });
+    await seedDismissedEvent(projectId, content, user, version, 10);
+    await check(environment, content, user, ContentDataType.FLOW, true);
+  });
+
   it('dismissed banner (single-session) → runtime skips, tool blocks', async () => {
     const { projectId, environment } = await fresh();
     const attr = await planAttr(projectId);
@@ -239,6 +338,67 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
       dismissedSessions: 1,
     });
     await check(environment, content, user, ContentDataType.BANNER, false);
+  });
+
+  it('active session + non-matching start rules → runtime RESUMES it, tool must not block', async () => {
+    // A flow with an active session resumes regardless of whether its start rules
+    // currently match (findLatestActivatedCustomContentVersions gates only on the
+    // active session + hide rules). So the fresh-start gates are moot — the tool must
+    // not report start_rules as a blocker when there is an active session.
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const { content, user } = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'enterprise')], // does NOT match plan=pro
+      userData: { plan: 'pro' },
+      activeSessions: 1,
+    });
+    await check(environment, content, user, ContentDataType.FLOW, true);
+  });
+
+  it('outranked by a higher-priority sibling → runtime starts the winner, tool must block the loser', async () => {
+    // Two flows both match for the same user. Singleton types start only the top-
+    // priority eligible one ([0] after priorityCompare); the loser passes all its OWN
+    // gates yet never shows. The tool must surface this competition, not say "show".
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const winner = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { priority: ContentPriority.HIGH },
+      userData: { plan: 'pro' },
+    });
+    const loser = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { priority: ContentPriority.LOW },
+      user: winner.user,
+    });
+    await check(environment, loser.content, winner.user, ContentDataType.FLOW, false);
+  });
+
+  it('hide rule active (attribute) → runtime skips, tool blocks via hidden', async () => {
+    // Start rules match, but an attribute-based hide rule also matches. The runtime's
+    // auto-start filter rejects it (isAllowedByHideRules → isActivedHideRules), so the
+    // tool's hidden gate must fail too. (Live element/url hide conditions are a separate
+    // transient case, marked unknown.)
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const { content, user } = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { hideRules: [attrRule(attr.id, 'pro')] },
+      userData: { plan: 'pro' },
+    });
+    await check(environment, content, user, ContentDataType.FLOW, false);
   });
 
   it('fresh banner → runtime activates, tool says show', async () => {
