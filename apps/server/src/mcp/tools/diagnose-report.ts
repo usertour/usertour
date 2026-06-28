@@ -1,5 +1,5 @@
 import { getAutoStartCapabilities, isConditionsActived } from '@usertour/helpers';
-import { RulesCondition, RulesType } from '@usertour/types';
+import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 
 import type { RepresentationCondition } from '@/api/content-representation/representation.schema';
 import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service';
@@ -327,6 +327,11 @@ export const buildDiagnoseReport = (
     }`;
   } else if (anyUnknown) {
     summary = `No server-side blocker, but some conditions can only be confirmed live — ${resolveUnknown} (see ${unknownWhere}).`;
+  } else if (facts.contentType === ContentDataType.TRACKER) {
+    // A tracker is headless — it has no UI to "show"; it fires its event when its start
+    // conditions match. Keep the summary truthful for the type.
+    summary =
+      'No server-side blocker — it fires its event when its start conditions match on a matching page. Verify live that identify() fires for this user.';
   } else {
     summary =
       'No server-side blocker — it should show on a matching page. Verify live that identify() fires for this user.';

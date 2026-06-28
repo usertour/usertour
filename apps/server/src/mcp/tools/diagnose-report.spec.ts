@@ -255,6 +255,14 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.summary).not.toContain('pass `url`');
   });
 
+  it('a passing tracker fires its event — summary says fire, not "show" (headless type)', () => {
+    // A tracker has no UI; the no-blocker summary must not claim it will "show".
+    const r = buildDiagnoseReport(facts({ contentType: ContentDataType.TRACKER }));
+    expect(r.blockedBy).toEqual([]);
+    expect(r.summary).toMatch(/fires its event/i);
+    expect(r.summary).not.toMatch(/should show/i);
+  });
+
   it('not published / no user / active session summaries', () => {
     expect(buildDiagnoseReport(facts({ published: false })).blockedBy).toEqual(['published']);
     expect(buildDiagnoseReport(facts({ userId: undefined })).summary).toMatch(/pass a userId/i);
