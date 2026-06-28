@@ -10,6 +10,7 @@ const translations = {
       readOnly: 'Read-only',
       environmentsLabel: 'Environments',
       environmentsHelp: 'Which environments this connection can act on.',
+      environmentsSelect: 'Select environments',
       selectEnvironment: 'Select at least one environment for the selected permissions.',
       allow: 'Allow',
       deny: 'Deny',

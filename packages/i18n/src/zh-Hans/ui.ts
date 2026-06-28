@@ -10,6 +10,7 @@ const translations = {
       readOnly: '只读',
       environmentsLabel: '环境',
       environmentsHelp: '此连接可作用的环境。',
+      environmentsSelect: '选择环境',
       selectEnvironment: '所选权限需要至少选择一个环境。',
       allow: '允许',
       deny: '拒绝',

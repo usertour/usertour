@@ -1,11 +1,19 @@
 import { SpinnerIcon } from '@usertour/icons';
-import { Button, Card, CardContent, Checkbox, ComboboxSelect, Label } from '@usertour/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  ComboboxSelect,
+  FacetedMultiSelect,
+  Label,
+  QuestionTooltip,
+} from '@usertour/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 import {
-  EnvironmentChecklist,
   READ_ONLY_CAPABILITIES,
   ScopesGrid,
   requiresEnvironmentScope,
@@ -179,12 +187,15 @@ export const OAuthConsent = () => {
       </div>
 
       <div className="space-y-1.5">
-        <span className="text-sm font-medium text-foreground">
-          {t('oauth.consent.environmentsLabel')}
-        </span>
-        <p className="text-xs text-muted-foreground">{t('oauth.consent.environmentsHelp')}</p>
-        <EnvironmentChecklist
-          environments={environments}
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium text-foreground">
+            {t('oauth.consent.environmentsLabel')}
+          </span>
+          <QuestionTooltip>{t('oauth.consent.environmentsHelp')}</QuestionTooltip>
+        </div>
+        <FacetedMultiSelect
+          label={t('oauth.consent.environmentsSelect')}
+          options={environments.map((e) => ({ label: e.name, value: e.id }))}
           value={environmentIds}
           onChange={setEnvironmentIds}
         />
