@@ -255,6 +255,37 @@ describe('dismiss compiles to the host content variant', () => {
   });
 });
 
+describe('question cvid is honored (analytics identity survives edits)', () => {
+  const cvidOf = (content: any) => content[0].children[0].children[0].element.data.cvid;
+
+  it('uses the echoed question cvid even with no existing block to match', () => {
+    // A maintainer reads a version and writes it back: the question's cvid (its
+    // analytics identity) must be kept, not regenerated, even when block ids churn.
+    const content: any = compileContent(
+      [
+        {
+          object: 'block',
+          type: 'question',
+          question: { kind: 'nps', name: 'Q', cvid: 'keep-me' },
+        },
+      ] as any,
+      undefined,
+      ids,
+    );
+    expect(cvidOf(content)).toBe('keep-me');
+  });
+
+  it('generates a cvid when none is echoed and nothing matches', () => {
+    const content: any = compileContent(
+      [{ object: 'block', type: 'question', question: { kind: 'nps', name: 'Q' } }] as any,
+      undefined,
+      ids,
+    );
+    expect(typeof cvidOf(content)).toBe('string');
+    expect(cvidOf(content).length).toBeGreaterThan(0);
+  });
+});
+
 describe('compileStep → decompileStep round-trip', () => {
   it('preserves target, placement, width, content, triggers', () => {
     const representation = {

@@ -274,6 +274,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     };
     if (input.config) push(collectRuleIssues(input.config, ctx, 'config'));
     if (input.data) push(collectRuleIssues(input.data, ctx, 'data'));
+    collectBindIssues(input.data, 'data', ctx.attributes, warn);
     const steps = asArray<Step>(input.steps);
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
@@ -281,10 +282,36 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
       push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.data`));
       push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.trigger`));
+      collectBindIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
     }
   }
 
   return { ok: errors.length === 0, errors, warnings };
+}
+
+// A question's bindAttribute (stored as `selectedAttribute` with `bindToAttribute`)
+// must resolve to an existing project attribute, or the answer silently captures
+// nothing onto the user — targeting/segments built on it stay empty. WARNING, not
+// error: the question still renders and still records a response event, so the
+// content is usable; the bind just no-ops. Only checked when the attribute list is
+// supplied (conditionContext).
+function collectBindIssues(
+  data: unknown,
+  base: string,
+  attrs: { codeName?: string }[] | undefined,
+  warn: (path: string, message: string) => void,
+): void {
+  if (!Array.isArray(data)) return;
+  for (const el of extractQuestionData(data as ContentEditorRoot[])) {
+    const d = (el as { data?: { bindToAttribute?: boolean; selectedAttribute?: string } }).data;
+    if (!d?.bindToAttribute || !d.selectedAttribute) continue;
+    if (!(attrs ?? []).some((a) => a.codeName === d.selectedAttribute)) {
+      warn(
+        base,
+        `A question binds to attribute "${d.selectedAttribute}" but no such attribute exists — the answer records as a response but silently captures nothing onto the user (targeting/segments on it stay empty). Create the attribute or fix the codeName.`,
+      );
+    }
+  }
 }
 
 function validateFlow(

@@ -307,8 +307,10 @@ function compileElement(
         children: null,
       };
     case 'question': {
-      // The question's cvid is server-owned: preserve the matched element's cvid
-      // on update, generate on create — the client-supplied value is ignored.
+      // The question's cvid is its stable analytics identity (responses key on it).
+      // Honor an echoed cvid first (same as step cvid), then the cvid of the element
+      // matched by block id, then generate — so a maintainer who reads a version and
+      // writes it back keeps the question's analytics identity even if block ids churn.
       const existingCvid = (existing?.element as any)?.data?.cvid;
       const q = compileQuestion(block.question, existingCvid);
       return {
@@ -341,7 +343,7 @@ function compileQuestion(
   existingCvid?: string,
 ): { type: string; data: any } {
   const bind = q.bindAttribute ? { bindToAttribute: true, selectedAttribute: q.bindAttribute } : {};
-  const base = { cvid: existingCvid ?? cuid(), name: q.name, ...bind };
+  const base = { cvid: q.cvid ?? existingCvid ?? cuid(), name: q.name, ...bind };
   switch (q.kind) {
     case 'nps':
       return {

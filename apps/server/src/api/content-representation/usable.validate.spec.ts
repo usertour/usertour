@@ -492,6 +492,57 @@ describe('validateVersionUsable', () => {
 
   // Question config (renderability) — the builder's question editors enforce
   // these; the API has no editor, so an agent can author an unanswerable question.
+  describe('question bindAttribute existence (conditionContext)', () => {
+    // a1 has codeName "plan"; binding a question to a missing codeName should warn.
+    const ctx = {
+      attributes: [{ id: 'a1', dataType: 2, bizType: 1, codeName: 'plan' }],
+      segments: [],
+      contents: [],
+      events: [],
+    } as never;
+    const withBoundQuestion = (codeName: string) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            sequence: 0,
+            cvid: 'a',
+            data: [
+              {
+                children: [
+                  {
+                    children: [
+                      {
+                        element: {
+                          type: 'single-line-text',
+                          data: { name: 'Q', bindToAttribute: true, selectedAttribute: codeName },
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ] as never,
+        conditionContext: ctx,
+      });
+    const bindWarn = (r: { warnings: { message: string }[] }) =>
+      r.warnings.some((w) => /binds to attribute/.test(w.message));
+
+    it('warns (not errors) when a question binds to a non-existent attribute', () => {
+      const r = withBoundQuestion('typo_plan');
+      expect(bindWarn(r)).toBe(true);
+      expect(r.errors.some((e) => /binds to attribute/.test(e.message))).toBe(false);
+    });
+
+    it('does not warn when the bound attribute exists', () => {
+      expect(bindWarn(withBoundQuestion('plan'))).toBe(false);
+    });
+  });
+
   describe('question config', () => {
     const withQuestion = (element: unknown) =>
       validateVersionUsable({

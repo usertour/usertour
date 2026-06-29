@@ -16,7 +16,9 @@ export async function loadConditionContext(
   const [attributes, segments, contents, events] = await Promise.all([
     prisma.attribute.findMany({
       where: { projectId, deleted: false },
-      select: { id: true, dataType: true, bizType: true },
+      // `codeName`: a question's `bindAttribute` references an attribute by codeName,
+      // so the usability validator needs it to flag a bind to a non-existent attribute.
+      select: { id: true, dataType: true, bizType: true, codeName: true },
     }),
     prisma.segment.findMany({ where: { projectId, deleted: false }, select: { id: true } }),
     prisma.content.findMany({ where: { projectId, deleted: false }, select: { id: true } }),
