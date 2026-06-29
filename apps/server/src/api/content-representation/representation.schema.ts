@@ -657,7 +657,16 @@ export const representationBlock = z.lazy(() =>
       ...blockBase,
       type: z.literal('question'),
       question: representationQuestion,
-      actions: z.array(representationAction).optional(),
+      actions: z
+        .array(representationAction)
+        .optional()
+        .describe(
+          'Actions that fire when this question is answered (on pick for nps/rating/single-select; ' +
+            'on its Submit button for text/multi-select). Put a `goto_step` HERE to advance to the next ' +
+            'step — without it the question records the answer but the flow does NOT advance (validate ' +
+            'flags the next step "not reachable"). Do NOT add a separate `button` block just to advance: ' +
+            "it doubles up with the question's own submit affordance.",
+        ),
     }),
     z.object({
       ...blockBase,
