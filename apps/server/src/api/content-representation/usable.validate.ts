@@ -1,4 +1,5 @@
 import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
+import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import {
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
@@ -250,7 +251,16 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       const s = qSteps[i];
       const label = (s as { name?: string })?.name;
       const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
-      collectQuestionIssues((s as { data?: unknown }).data, base, err);
+      const data = (s as { data?: unknown }).data;
+      collectQuestionIssues(data, base, err);
+      // At most ONE question per step: the builder enforces it, and the runtime reads only the
+      // first question in a step — a second one would be invisible (no answers/analytics).
+      if (Array.isArray(data) && extractQuestionData(data as ContentEditorRoot[]).length > 1) {
+        err(
+          base,
+          'A step has more than one question — only one question per step is supported (the builder allows one, and the runtime reads only the first). Put each question in its own step.',
+        );
+      }
     }
   }
 

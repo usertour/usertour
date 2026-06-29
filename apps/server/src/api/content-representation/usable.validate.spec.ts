@@ -541,6 +541,43 @@ describe('validateVersionUsable', () => {
         ),
       ).toBe(false);
     });
+
+    it('errors on a step with more than one question (one question per step)', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            sequence: 0,
+            cvid: 'a',
+            data: [
+              {
+                children: [
+                  {
+                    children: [
+                      { element: { type: 'nps', data: { name: 'Q1' } } },
+                      {
+                        element: {
+                          type: 'scale',
+                          data: { name: 'Q2', lowRange: 0, highRange: 10 },
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ] as never,
+      });
+      expect(has(r, /more than one question/)).toBe(true);
+    });
+
+    it('accepts a step with exactly one question', () => {
+      const r = withQuestion({ type: 'nps', data: { name: 'Q' } });
+      expect(has(r, /more than one question/)).toBe(false);
+    });
   });
 
   describe('auto-start (cross-cutting)', () => {
