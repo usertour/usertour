@@ -309,6 +309,21 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.summary).not.toMatch(/should show/i);
   });
 
+  it('render targets surface as an unknown `target` gate, not a blocker', () => {
+    // A launcher/tooltip selector the server can't verify — a typo'd anchor otherwise passes
+    // every gate yet renders nothing, so make the dependency visible.
+    const r = buildDiagnoseReport(facts(), undefined, undefined, ['a[href="/help-center"]']);
+    const target = r.gates.find((g) => g.id === 'target');
+    expect(target?.status).toBe('unknown');
+    expect(target?.detail).toContain('a[href="/help-center"]');
+    expect(r.blockedBy).not.toContain('target'); // unknown ≠ blocker
+    expect(r.summary).toMatch(/target selector/i); // the green summary flags it too
+  });
+
+  it('no render targets → no target gate (e.g. a modal flow)', () => {
+    expect(buildDiagnoseReport(facts()).gates.find((g) => g.id === 'target')).toBeUndefined();
+  });
+
   it('not published / no user / active session summaries', () => {
     expect(buildDiagnoseReport(facts({ published: false })).blockedBy).toEqual(['published']);
     expect(buildDiagnoseReport(facts({ userId: undefined })).summary).toMatch(/pass a userId/i);

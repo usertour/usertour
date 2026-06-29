@@ -478,7 +478,26 @@ export function buildReadTools(): McpTool[] {
           }
         }
 
-        return buildDiagnoseReport(facts, startConditions, hideConditions);
+        // Render anchors the content draws against (launcher `data.target`, flow tooltip steps'
+        // `target`). The server can't verify the element exists, so diagnose surfaces them as an
+        // `unknown` gate — a typo'd selector otherwise passes every gate yet renders nothing.
+        const renderTargets: string[] = [];
+        if (facts.published && facts.publishedVersionId) {
+          const version = (await ctx.services.contentVersions
+            .get(facts.publishedVersionId, contentId, ctx.projectId, { expand: ['steps', 'data'] })
+            .catch(() => null)) as {
+            data?: { target?: { selector?: string } };
+            steps?: Array<{ target?: { selector?: string } }>;
+          } | null;
+          const dataSel = version?.data?.target?.selector;
+          if (typeof dataSel === 'string' && dataSel) renderTargets.push(dataSel);
+          for (const step of version?.steps ?? []) {
+            const sel = step?.target?.selector;
+            if (typeof sel === 'string' && sel) renderTargets.push(sel);
+          }
+        }
+
+        return buildDiagnoseReport(facts, startConditions, hideConditions, renderTargets);
       },
     },
 

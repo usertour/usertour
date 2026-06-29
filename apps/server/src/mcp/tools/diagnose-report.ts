@@ -20,7 +20,7 @@ export type GateStatus = 'pass' | 'fail' | 'unknown';
 export type ConditionStatus = 'matched' | 'unmatched' | 'unknown';
 
 export interface Gate {
-  id: string; // published | identified | start_rules | frequency | single_session | hidden | active_session
+  id: string; // published | identified | start_rules | frequency | single_session | hidden | active_session | target
   status: GateStatus;
   detail: string;
 }
@@ -193,6 +193,10 @@ export const buildDiagnoseReport = (
   facts: DiagnoseFacts,
   startConditions?: AnnotatedCondition,
   hideConditions?: AnnotatedCondition,
+  /** Render-anchor selectors the content draws against (launcher target, tooltip step targets).
+   * The server can't verify the element exists, so they surface as an `unknown` gate — a typo'd
+   * selector otherwise diagnoses fully green yet renders nothing. */
+  renderTargets: string[] = [],
 ): DiagnoseReport => {
   const gates: Gate[] = [];
 
@@ -302,6 +306,18 @@ export const buildDiagnoseReport = (
     }
   }
 
+  // Render anchors the server can't verify: a launcher/tooltip whose `target` selector is wrong
+  // would pass every gate above and still render nothing — surface the selectors as `unknown`
+  // (not a blocker) so the dependency is visible and the author re-checks them in the app.
+  if (facts.published && renderTargets.length) {
+    const list = [...new Set(renderTargets)].map((s) => `\`${s}\``).join(', ');
+    gates.push({
+      id: 'target',
+      status: 'unknown',
+      detail: `renders against target selector(s) ${list} — the server can't verify the element exists; confirm it's present on the page in the running app.`,
+    });
+  }
+
   const blockedBy = gates.filter((g) => g.status === 'fail').map((g) => g.id);
   // `unknown` conditions are NOT blockers (only `blockedBy` blocks). Classify them so the
   // summary names what resolves each, and never lets an agent read an `unknown` leaf as a
@@ -327,6 +343,11 @@ export const buildDiagnoseReport = (
   ]
     .filter(Boolean)
     .join('/');
+  // When nothing blocks, "should show" still hinges on the render anchor existing — flag it so
+  // the green summary isn't read as "definitely renders".
+  const targetNote = renderTargets.length
+    ? ' Also confirm the target selector(s) it anchors to exist on the page (see the `target` gate).'
+    : '';
 
   let summary: string;
   if (!facts.published) {
@@ -348,15 +369,14 @@ export const buildDiagnoseReport = (
         : ''
     }`;
   } else if (anyUnknown) {
-    summary = `No server-side blocker, but some conditions can only be confirmed live — ${resolveUnknown} (see ${unknownWhere}).`;
+    summary = `No server-side blocker, but some conditions can only be confirmed live — ${resolveUnknown} (see ${unknownWhere}).${targetNote}`;
   } else if (facts.contentType === ContentDataType.TRACKER) {
     // A tracker is headless — it has no UI to "show"; it fires its event when its start
     // conditions match. Keep the summary truthful for the type.
     summary =
       'No server-side blocker — it fires its event when its start conditions match on a matching page. Verify live that identify() fires for this user.';
   } else {
-    summary =
-      'No server-side blocker — it should show on a matching page. Verify live that identify() fires for this user.';
+    summary = `No server-side blocker — it should show on a matching page. Verify live that identify() fires for this user.${targetNote}`;
   }
 
   return {
