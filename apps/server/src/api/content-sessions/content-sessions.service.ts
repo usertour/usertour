@@ -57,9 +57,14 @@ export class ApiContentSessionsService {
     const expand = toArray<SessionExpand>(query.expand);
 
     // contentId is an optional filter; validate it when given so a bad id is a
-    // clear 404 rather than a silently-empty list.
+    // clear 404 rather than a silently-empty list. Scope it to the environment's
+    // project so a foreign contentId is a 404, not a cross-tenant existence oracle.
     if (contentId) {
-      const content = await this.content.getContentById(contentId);
+      const content = await this.content.findContentWithRelations(
+        contentId,
+        environment.projectId,
+        {},
+      );
       if (!content) {
         throw new ContentNotFoundError();
       }

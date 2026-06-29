@@ -52,7 +52,7 @@ export class ApiCompaniesService {
 
   async list(
     requestUrl: string,
-    environmentId: string,
+    environment: Environment,
     query: ListCompaniesQuery,
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
     const { limit, cursor, segmentId, createdAfter, createdBefore } = query;
@@ -64,6 +64,11 @@ export class ApiCompaniesService {
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
     );
 
+    // A foreign segmentId must 404, not silently apply another tenant's segment.
+    if (segmentId) {
+      await this.biz.assertSegmentInProject(segmentId, environment.projectId);
+    }
+
     return paginate({
       requestUrl,
       cursor,
@@ -71,7 +76,7 @@ export class ApiCompaniesService {
       query: { ...(expand.length ? { expand } : {}), ...(segmentId ? { segmentId } : {}) },
       fetch: (params) =>
         this.biz.listBizCompanies(
-          environmentId,
+          environment.id,
           params,
           include,
           orderBy,

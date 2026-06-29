@@ -4,6 +4,7 @@ import {
   AttributeDataType,
 } from '@/attributes/models/attribute.model';
 import { createdAtWhere } from '@/api/shared/filters';
+import { SegmentNotFoundError } from '@/common/errors';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -1141,6 +1142,22 @@ export class BizService {
     }
 
     return bizCompany;
+  }
+
+  /**
+   * Assert a `segmentId` used as a list filter belongs to the given project, so a
+   * caller can't pass another tenant's segment id (which would otherwise be an
+   * existence/type oracle and apply a foreign segment's rules). Mirrors the
+   * ownership check in ApiSegmentsService.requireSegment.
+   */
+  async assertSegmentInProject(segmentId: string, projectId: string): Promise<void> {
+    const segment = await this.prisma.segment.findFirst({
+      where: { id: segmentId, projectId },
+      select: { id: true },
+    });
+    if (!segment) {
+      throw new SegmentNotFoundError();
+    }
   }
 
   async listBizCompanies(

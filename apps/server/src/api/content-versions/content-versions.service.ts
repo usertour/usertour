@@ -107,7 +107,9 @@ export class ApiContentVersionsService {
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
     );
 
-    const content = await this.content.getContentById(contentId);
+    // Scope the existence check to the project so a foreign contentId is a 404,
+    // not a 200-empty (which would leak cross-tenant content-id existence).
+    const content = await this.content.findContentWithRelations(contentId, projectId, {});
     if (!content) {
       throw new ContentNotFoundError();
     }

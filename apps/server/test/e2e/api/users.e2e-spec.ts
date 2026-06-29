@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildBizCompany, buildBizUser, buildBizUserOnCompany } from '../factories';
+import {
+  buildBizCompany,
+  buildBizUser,
+  buildBizUserOnCompany,
+  buildProject,
+  buildSegment,
+} from '../factories';
 import { buildAuthorizedUser } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 import { OpenApiFixture, openapi, seedApiFixture, teardownApiFixture } from '../openapi';
@@ -115,6 +121,22 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     const res = await api('get', v2path('/nope'), v2Token);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1001');
+  });
+
+  it('404s on a segmentId from another project (no cross-tenant segment oracle)', async () => {
+    const own = await buildSegment(prisma, {
+      projectId: fx.projectId,
+      environmentId: fx.environmentId,
+    });
+    const other = await buildProject(prisma, { name: 'api-v2-users-foreign' });
+    const foreign = await buildSegment(prisma, { projectId: other.id });
+    // own segment filters fine (dataType ALL → no rows excluded) ...
+    expect((await api('get', v2path(`?segmentId=${own.id}`), v2Token)).status).toBe(200);
+    // ... but another project's segment id is a hard 404, not a silent all-rows
+    // result that would leak its existence / apply a foreign segment's rules.
+    const res = await api('get', v2path(`?segmentId=${foreign.id}`), v2Token);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1025');
   });
 
   it('rejects insufficient scope (403 E1012)', async () => {

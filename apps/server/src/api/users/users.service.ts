@@ -47,6 +47,11 @@ export class ApiUsersService {
       toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
     );
 
+    // A foreign segmentId must 404, not silently apply another tenant's segment.
+    if (segmentId) {
+      await this.biz.assertSegmentInProject(segmentId, environment.projectId);
+    }
+
     return paginate({
       requestUrl,
       cursor,

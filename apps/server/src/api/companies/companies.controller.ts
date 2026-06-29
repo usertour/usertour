@@ -52,7 +52,7 @@ export class ApiCompaniesController {
     @EnvironmentDecorator() environment: Environment,
     @Query() query: ListCompaniesQueryDto,
   ) {
-    return this.service.list(requestUrl, environment.id, query);
+    return this.service.list(requestUrl, environment, query);
   }
 
   @Get(':id')

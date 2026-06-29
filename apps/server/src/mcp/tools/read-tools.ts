@@ -825,7 +825,7 @@ export function buildReadTools(): McpTool[] {
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const environment = await resolveEnvironment(args, ctx);
-        const result = await ctx.services.companies.list('mcp://companies', environment.id, {
+        const result = await ctx.services.companies.list('mcp://companies', environment, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
