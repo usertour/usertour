@@ -677,8 +677,8 @@ export function buildReadTools(): McpTool[] {
       title: 'List content versions',
       capability: Capability.ContentRead,
       description:
-        "List a content's versions (newest first). Returns `{ items, nextCursor }`; pass " +
-        '`nextCursor` back as `cursor` to page.',
+        "List a content's versions (oldest first by default — pass `orderBy: -createdAt` for " +
+        'newest first). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
         contentId: z.string().describe('The content id.'),
         limit: limitSchema,
