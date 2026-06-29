@@ -196,6 +196,31 @@ describe('condition and/or (operators)', () => {
     );
     expect(single).toEqual([{ type: 'segment', segment: 's1', in: true }]);
   });
+
+  it('round-trips a nested AND-of-OR group without flattening or flipping the joiner', () => {
+    // The headline branching-flow property: an `all` group containing an `any`
+    // subgroup must survive compile → decompile unchanged — no flatten, no and↔or
+    // flip — or targeting / disabledWhen logic silently changes meaning.
+    const nested = [
+      {
+        type: 'group',
+        match: 'all',
+        conditions: [
+          { type: 'segment', segment: 's1', in: true },
+          {
+            type: 'group',
+            match: 'any',
+            conditions: [
+              { type: 'segment', segment: 's2', in: true },
+              { type: 'segment', segment: 's3', in: true },
+            ],
+          },
+        ],
+      },
+    ];
+    const back = decompileWhen(compileConditions(nested as any, ids), IDENTITY_RESOLVERS);
+    expect(back).toEqual(nested);
+  });
 });
 
 describe('event_attribute + task_clicked conditions', () => {
