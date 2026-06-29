@@ -17,6 +17,7 @@ import {
   representationTracker,
 } from '@/api/content-representation/version-data.schema';
 import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
+import { UserExpand } from '@/api/users/users.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
 import { createdAtRangeFields, nameSearchField } from '@/api/shared/filters';
 import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
@@ -555,12 +556,20 @@ export function buildReadTools(): McpTool[] {
         'List end-users (the tracked business users your product onboards) in an environment. ' +
         "Defaults to the project's primary environment; pass `environmentId` to target another. " +
         'Filter by `email`, `companyId`, `segmentId`, or a created-at range. Returns ' +
-        '`{ items, nextCursor }`.',
+        '`{ items, nextCursor }`. Pass `expand` to inline each user’s companies / memberships ' +
+        '(left out by default to keep the list lean).',
       inputSchema: {
         environmentId: environmentIdSchema,
         email: z.string().optional().describe('Filter to a user with this email.'),
         companyId: z.string().optional().describe('Filter to users in this company.'),
         segmentId: z.string().optional().describe('Filter to users in this segment.'),
+        expand: z
+          .array(z.enum(['companies', 'memberships', 'memberships.company']))
+          .optional()
+          .describe(
+            'Related objects to inline per user (omitted by default). `memberships` carries each ' +
+              'user’s per-company role attributes; `memberships.company` also inlines the company.',
+          ),
         ...createdAtRangeFields,
         limit: limitSchema,
         cursor: cursorSchema,
@@ -576,6 +585,7 @@ export function buildReadTools(): McpTool[] {
           email: asString(args.email),
           companyId: asString(args.companyId),
           segmentId: asString(args.segmentId),
+          expand: asStringArray(args.expand) as UserExpand[] | undefined,
           createdAfter: asString(args.createdAfter),
           createdBefore: asString(args.createdBefore),
         });
@@ -589,9 +599,18 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.UserRead,
       description:
         'Get a single end-user by their external id (the id you sent when identifying the ' +
-        'user). Defaults to the primary environment; pass `environmentId` to target another.',
+        'user). Includes the user’s `companies` and `memberships` (the role they hold in ' +
+        'each company) by default — override with `expand`. Defaults to the primary ' +
+        'environment; pass `environmentId` to target another.',
       inputSchema: {
         id: z.string().describe('The user external id.'),
+        expand: z
+          .array(z.enum(['companies', 'memberships', 'memberships.company']))
+          .optional()
+          .describe(
+            'Related objects to inline (default: companies + memberships). `memberships` carries ' +
+              'the user’s per-company role attributes; `memberships.company` also inlines each company.',
+          ),
         environmentId: environmentIdSchema,
       },
       async handler(args, ctx) {
@@ -601,7 +620,8 @@ export function buildReadTools(): McpTool[] {
           throw new Error('`id` is required.');
         }
         const environment = await resolveEnvironment(args, ctx);
-        return ctx.services.users.getUser(id, environment.id, { expand: 'companies' });
+        const expand = (asStringArray(args.expand) ?? ['companies', 'memberships']) as UserExpand[];
+        return ctx.services.users.getUser(id, environment.id, { expand });
       },
     },
 

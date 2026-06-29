@@ -5,7 +5,9 @@ import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
 import {
+  buildBizCompany,
   buildBizUser,
+  buildBizUserOnCompany,
   buildContent,
   buildEnvironment,
   buildProject,
@@ -232,6 +234,62 @@ describe('MCP endpoint (e2e)', () => {
       const payload = parseToolContent(result);
       expect(Array.isArray(payload.items)).toBe(true);
       expect(payload.items.map((u: { id: string }) => u.id)).toContain(bizUserExternalId);
+    });
+
+    it('get_user inlines companies + memberships (role) by default; list_users stays lean unless asked', async () => {
+      // F1 regression: get_user must surface the user's per-company role from the user side
+      // (it used to hardcode expand=companies, leaving memberships null). list_users keeps
+      // memberships out by default for leanness but honors an explicit `expand`.
+      const token = await mint([Capability.UserRead], [projectA]);
+      const ext = 'f1-membership-user';
+      const bu = await buildBizUser(prisma, { environmentId: envA, externalId: ext });
+      const co = await buildBizCompany(prisma, { environmentId: envA });
+      await buildBizUserOnCompany(prisma, {
+        bizUserId: bu.id,
+        bizCompanyId: co.id,
+        data: { company_role: 'admin' },
+      });
+
+      const getUser = async (args: object) =>
+        parseToolContent(
+          extractResult(
+            await rpc(
+              {
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: { name: 'get_user', arguments: args },
+              },
+              token,
+            ),
+          ),
+        );
+
+      // Default: companies + memberships inlined, with the role visible from the user side.
+      const user = await getUser({ id: ext });
+      expect(Array.isArray(user.companies)).toBe(true);
+      expect(user.companies.length).toBeGreaterThan(0);
+      expect(Array.isArray(user.memberships)).toBe(true);
+      expect(user.memberships[0].attributes.company_role).toBe('admin');
+
+      // list_users: lean by default (no memberships), but expand surfaces them on request.
+      const listed = async (args: object) =>
+        parseToolContent(
+          extractResult(
+            await rpc(
+              {
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: { name: 'list_users', arguments: args },
+              },
+              token,
+            ),
+          ),
+        ).items.find((u: { id: string }) => u.id === ext);
+      expect((await listed({})).memberships).toBeNull();
+      const expanded = await listed({ expand: ['memberships'] });
+      expect(expanded.memberships[0].attributes.company_role).toBe('admin');
     });
 
     it('list_content works for a content-scoped token', async () => {
