@@ -341,10 +341,11 @@ export function buildReadTools(): McpTool[] {
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
         'unknown so you can see exactly which branch failed. Only gates listed in `blockedBy` ' +
         'actually block. `unknown` is NOT a blocker — it is a condition that cannot be evaluated ' +
-        'server-side (a live-only DOM element/text leaf, or current_url when no `url` is passed); ' +
-        'pass `url` to resolve current_url, or confirm live-only ones in the app. Pass `userId` ' +
-        'to evaluate the per-user gates, `companyId` for company-scoped rules, `url` to test ' +
-        'current_url conditions.',
+        'server-side (a live-only DOM element/text leaf; current_url when no `url` is passed; or a ' +
+        'company / companyMembership condition when no `companyId` is passed); pass `url` to ' +
+        'resolve current_url, `companyId` to resolve company-scoped conditions, or confirm ' +
+        'live-only ones in the app. Pass `userId` to evaluate the per-user gates, `companyId` for ' +
+        'company-scoped rules, `url` to test current_url conditions.',
       inputSchema: {
         contentId: z.string().describe('The content id.'),
         userId: z
@@ -420,11 +421,15 @@ export function buildReadTools(): McpTool[] {
           ]);
           const resolvers = buildDecompileResolversFrom(attributes, events);
           const hasUrl = !!url;
+          // Company / companyMembership conditions can only be evaluated when a company context
+          // was supplied — else they're `unknown`, not a definitive `unmatched` (see leafStatus).
+          const hasCompany = !!asString(args.companyId);
           if (facts.autoStartRules) {
             startConditions = annotateConditions(
               facts.autoStartRules,
               decompileConditions(facts.autoStartRules, resolvers),
               hasUrl,
+              hasCompany,
             );
           }
           if (facts.hideRules) {
@@ -432,6 +437,7 @@ export function buildReadTools(): McpTool[] {
               facts.hideRules,
               decompileConditions(facts.hideRules, resolvers),
               hasUrl,
+              hasCompany,
             );
           }
 

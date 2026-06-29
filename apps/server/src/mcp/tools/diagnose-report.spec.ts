@@ -159,6 +159,28 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     expect(tree?.conditions?.[0].type).toBe('flow');
     expect(tree?.conditions?.[0].status).toBe('matched');
   });
+
+  it('company-scoped condition: unknown without a company context, evaluated with one', () => {
+    // A company / companyMembership condition can't be judged without a companyId, so it must
+    // read `unknown` (not a definitive `unmatched` that looks like "the company doesn't qualify").
+    const stamped: RulesCondition[] = [attr('enterprise', false)];
+    const readable = [
+      {
+        type: 'attribute',
+        scope: 'company',
+        attribute: 'plan_tier',
+        op: 'is',
+        value: 'enterprise',
+      },
+    ] as any;
+    expect(annotateConditions(stamped, readable, false, false)?.conditions?.[0].status).toBe(
+      'unknown',
+    );
+    // With a company context it is evaluated against the runtime stamp (actived false → unmatched).
+    expect(annotateConditions(stamped, readable, false, true)?.conditions?.[0].status).toBe(
+      'unmatched',
+    );
+  });
 });
 
 describe('buildDiagnoseReport (gate checklist + summary)', () => {
@@ -253,6 +275,30 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.summary).toMatch(/confirmed live/i);
     expect(r.summary).toContain('running app');
     expect(r.summary).not.toContain('pass `url`');
+  });
+
+  it('company condition unknown → summary points to companyId (not a real blocker)', () => {
+    // Diagnosing a company-gated flow without companyId: the gate fails (runtime can't match),
+    // but the summary must flag the company condition as unknown and say to pass companyId —
+    // not let the agent conclude the user's company doesn't qualify.
+    const stamped: RulesCondition[] = [attr('enterprise', false)];
+    const readable = [
+      {
+        type: 'attribute',
+        scope: 'company',
+        attribute: 'plan_tier',
+        op: 'is',
+        value: 'enterprise',
+      },
+    ] as any;
+    const tree = annotateConditions(stamped, readable, false, false); // company unknown
+    const r = buildDiagnoseReport(
+      facts({ startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    expect(r.blockedBy).toContain('start_rules');
+    expect(r.summary).toMatch(/not blockers/i);
+    expect(r.summary).toContain('pass `companyId`');
   });
 
   it('a passing tracker fires its event — summary says fire, not "show" (headless type)', () => {

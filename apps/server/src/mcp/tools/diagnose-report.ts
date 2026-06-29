@@ -107,9 +107,20 @@ const LIVE_ONLY = new Set<string>([
   RulesType.WAIT,
 ]);
 
-const leafStatus = (stamped: RulesCondition, hasUrl: boolean): ConditionStatus => {
+const leafStatus = (
+  stamped: RulesCondition,
+  readable: RepresentationCondition,
+  hasUrl: boolean,
+  hasCompany: boolean,
+): ConditionStatus => {
   if (LIVE_ONLY.has(stamped.type)) return 'unknown';
   if (stamped.type === RulesType.CURRENT_PAGE && !hasUrl) return 'unknown';
+  // A company / companyMembership attribute condition can't be evaluated without a company
+  // context (the diagnose `companyId`). Report unknown — NOT a definitive `unmatched` that
+  // would read as "the user's company doesn't qualify" — so the agent passes companyId
+  // instead of chasing the wrong cause. Mirrors current_url → unknown when no `url`.
+  const scope = (readable as { scope?: string }).scope;
+  if (!hasCompany && (scope === 'company' || scope === 'companyMembership')) return 'unknown';
   return stamped.actived ? 'matched' : 'unmatched';
 };
 
@@ -122,6 +133,7 @@ export const annotateConditions = (
   stamped: RulesCondition[],
   readable: RepresentationCondition[],
   hasUrl: boolean,
+  hasCompany = false,
 ): AnnotatedCondition | undefined => {
   if (!stamped || stamped.length === 0) return undefined;
 
@@ -134,7 +146,7 @@ export const annotateConditions = (
         conditions: s.conditions.map((sc, i) => node(sc, rChildren[i])),
       } as AnnotatedCondition;
     }
-    return { ...(r as object), status: leafStatus(s, hasUrl) } as AnnotatedCondition;
+    return { ...(r as object), status: leafStatus(s, r, hasUrl, hasCompany) } as AnnotatedCondition;
   };
 
   // The top-level list is itself an AND/OR group (the join is on the first item).
@@ -150,12 +162,14 @@ export const annotateConditions = (
  * Categorize the `unknown` (not-server-evaluable) leaves so the summary can say what to DO
  * about each — and make explicit they are NOT blockers (an agent must not read an `unknown`
  * leaf as a second blocker alongside the real ones in `blockedBy`). `current_url` unknowns
- * resolve by passing `url`; the rest (DOM element / text, wait) are live-only and need the app.
+ * resolve by passing `url`; company / companyMembership ones by passing `companyId`; the rest
+ * (DOM element / text, wait) are live-only and need the app.
  */
 const classifyUnknownLeaves = (
   node?: AnnotatedCondition,
-): { urlResolvable: boolean; liveOnly: boolean } => {
+): { urlResolvable: boolean; companyResolvable: boolean; liveOnly: boolean } => {
   let urlResolvable = false;
+  let companyResolvable = false;
   let liveOnly = false;
   const walk = (n?: AnnotatedCondition) => {
     if (!n) return;
@@ -164,11 +178,15 @@ const classifyUnknownLeaves = (
       return;
     }
     if (n.status !== 'unknown') return;
-    if ((n as { type?: string }).type === 'current_url') urlResolvable = true;
+    const type = (n as { type?: string }).type;
+    const scope = (n as { scope?: string }).scope;
+    if (type === 'current_url') urlResolvable = true;
+    else if (type === 'attribute' && (scope === 'company' || scope === 'companyMembership'))
+      companyResolvable = true;
     else liveOnly = true;
   };
   walk(node);
-  return { urlResolvable, liveOnly };
+  return { urlResolvable, companyResolvable, liveOnly };
 };
 
 export const buildDiagnoseReport = (
@@ -291,17 +309,21 @@ export const buildDiagnoseReport = (
   const su = classifyUnknownLeaves(startConditions);
   const hu = classifyUnknownLeaves(hideConditions);
   const urlResolvable = su.urlResolvable || hu.urlResolvable;
+  const companyResolvable = su.companyResolvable || hu.companyResolvable;
   const liveOnly = su.liveOnly || hu.liveOnly;
-  const anyUnknown = urlResolvable || liveOnly;
+  const anyUnknown = urlResolvable || companyResolvable || liveOnly;
   const resolveUnknown = [
     urlResolvable ? 'pass `url` to resolve current_url conditions' : '',
+    companyResolvable ? 'pass `companyId` to resolve company-scoped conditions' : '',
     liveOnly ? 'confirm live-only conditions (DOM element / text) in the running app' : '',
   ]
     .filter(Boolean)
     .join('; ');
+  const hasUnknown = (c: ReturnType<typeof classifyUnknownLeaves>) =>
+    c.urlResolvable || c.companyResolvable || c.liveOnly;
   const unknownWhere = [
-    su.urlResolvable || su.liveOnly ? 'startConditions' : '',
-    hu.urlResolvable || hu.liveOnly ? 'hideConditions' : '',
+    hasUnknown(su) ? 'startConditions' : '',
+    hasUnknown(hu) ? 'hideConditions' : '',
   ]
     .filter(Boolean)
     .join('/');
