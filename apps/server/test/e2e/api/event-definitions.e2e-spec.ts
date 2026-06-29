@@ -10,7 +10,13 @@ import { normalizeOpenApiParameters } from '@/common/openapi/normalize-parameter
 import { OpenAPIModule } from '@/openapi/openapi.module';
 
 import { gqlData, graphql } from '../auth';
-import { buildAttribute, buildEnvironment, buildEvent, buildProject } from '../factories';
+import {
+  buildAttribute,
+  buildBizUser,
+  buildEnvironment,
+  buildEvent,
+  buildProject,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -151,6 +157,37 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
     const list = await api('get', basePath(), token);
     expect(list.body.results.map((e: { id: string }) => e.id)).not.toContain(id);
+  });
+
+  it('refuses to delete an event definition that has recorded events (409 E1030)', async () => {
+    const token = await mint([
+      Capability.EventCreate,
+      Capability.EventDelete,
+      Capability.EventRead,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      codeName: 'evt_in_use',
+      displayName: 'In Use',
+    });
+    expect(created.status).toBe(201);
+
+    // Record an event against it, as a tracker / usertour.track() would. The FK is RESTRICT,
+    // so a raw delete would leak a Postgres error — the service must translate it to E1030.
+    const env = await buildEnvironment(prisma, { projectId });
+    const bizUser = await buildBizUser(prisma, { environmentId: env.id });
+    const bizEvent = await prisma.bizEvent.create({
+      data: { eventId: created.body.id, bizUserId: bizUser.id },
+    });
+
+    const del = await send('delete', `${basePath()}/${created.body.id}`, token).send();
+    expect(del.status).toBe(409);
+    expect(del.body.error.code).toBe('E1030');
+
+    // Once the recorded events are gone, the definition deletes cleanly.
+    await prisma.bizEvent.delete({ where: { id: bizEvent.id } });
+    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
+      204,
+    );
   });
 
   it('attaches / reads / replaces event attributes by codeName', async () => {

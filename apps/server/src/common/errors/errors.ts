@@ -288,6 +288,21 @@ export class EventDefinitionNotFoundError extends OpenAPIError {
   };
 }
 
+/**
+ * Deleting an event definition that already has recorded events (BizEvent rows —
+ * e.g. fired by a tracker or `usertour.track()`) is blocked by a DB foreign-key
+ * RESTRICT. Translate that into a clean domain error instead of leaking the raw
+ * Postgres constraint message to API / MCP callers.
+ */
+export class EventDefinitionInUseError extends OpenAPIError {
+  code = 'E1030';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete an event definition that has recorded events. Trackers or usertour.track() calls have already logged events against it.',
+    'zh-CN': '无法删除已记录事件的事件定义（已有 tracker 或 usertour.track() 记录的事件引用它）。',
+  };
+}
+
 export class SegmentNotFoundError extends OpenAPIError {
   code = 'E1025';
   statusCode = HttpStatus.NOT_FOUND;

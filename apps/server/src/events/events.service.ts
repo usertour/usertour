@@ -2,7 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
 import { CreateEventInput, UpdateEventInput } from './dto/events.input';
-import { ParamsError, ResourceAlreadyExistsError, UnknownError } from '@/common/errors';
+import {
+  EventDefinitionInUseError,
+  ParamsError,
+  ResourceAlreadyExistsError,
+  UnknownError,
+} from '@/common/errors';
 import { nameContains } from '@/api/shared/filters';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { PaginationConnection } from '@/common/openapi/pagination';
@@ -103,16 +108,32 @@ export class EventsService {
   }
 
   async delete(id: string) {
-    return await this.prisma.$transaction(async (tx) => {
-      await tx.attributeOnEvent.deleteMany({
-        where: { eventId: id },
-      });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // An event with recorded BizEvent rows (fired by a tracker / usertour.track())
+        // can't be hard-deleted — the FK is RESTRICT. Surface a clean domain error rather
+        // than leaking the raw Postgres constraint failure to API / MCP callers.
+        const recorded = await tx.bizEvent.count({ where: { eventId: id } });
+        if (recorded > 0) {
+          throw new EventDefinitionInUseError();
+        }
 
-      const deleteEvent = await tx.event.delete({
-        where: { id },
+        await tx.attributeOnEvent.deleteMany({
+          where: { eventId: id },
+        });
+
+        return await tx.event.delete({
+          where: { id },
+        });
       });
-      return deleteEvent;
-    });
+    } catch (err) {
+      // Backstop for a race (a BizEvent inserted between the count and the delete) or any
+      // other FK still referencing the event: P2003 = foreign-key constraint violation.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+        throw new EventDefinitionInUseError();
+      }
+      throw err;
+    }
   }
 
   async get(id: string) {
