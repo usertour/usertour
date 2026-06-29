@@ -169,6 +169,7 @@ describe('MCP endpoint (e2e)', () => {
       const names = result.result.tools.map((t: { name: string }) => t.name).sort();
       expect(names).toEqual(
         [
+          'diagnose_content',
           'get_authoring_guide',
           'get_content',
           'get_content_schema',
@@ -396,7 +397,12 @@ describe('MCP endpoint (e2e)', () => {
       expect(Object.keys(payload.schema.properties)).toEqual(
         expect.arrayContaining(['buttonText', 'initialDisplay', 'items']),
       );
-      const item = payload.schema.properties.items.items.properties;
+      // The schema now emits `$ref` into `$defs` for nested shapes (it used to inline them);
+      // follow a ref (or take the node as-is) so the assertion survives either form.
+      const deref = (node: any) =>
+        node?.$ref ? payload.schema.$defs[node.$ref.split('/').pop()] : node;
+      const itemsArray = deref(payload.schema.properties.items);
+      const item = deref(itemsArray.items).properties;
       expect(Object.keys(item)).toEqual(
         expect.arrayContaining(['name', 'completeWhen', 'clickActions']),
       );
