@@ -301,11 +301,17 @@ export const representationCondition = z.lazy(() =>
     }),
     z.object({
       type: z.literal('flow'),
-      flow: z.string().describe('contentId of the flow whose state to check (from list_content).'),
+      flow: z
+        .string()
+        .describe(
+          'contentId of the content whose lifecycle state to check — despite the `flow` key name ' +
+            'this gates on ANY content type (flow, checklist, banner, launcher, resource-center), ' +
+            'e.g. start a tour only after a banner has been `seen` (from list_content).',
+        ),
       state: z
         .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
         .describe(
-          "The referenced flow's state for THIS user. seen = started at least once (TRUE from the " +
+          "The referenced content's state for THIS user (any content type, not only flows). seen = started at least once (TRUE from the " +
             'moment it opens); unseen = never started; active = currently open/running; inactive = ' +
             'NOT currently running (covers both never-started and ran-then-closed); completed = ' +
             'reached a goal/completion step; uncompleted = not completed. To gate piece B until flow ' +

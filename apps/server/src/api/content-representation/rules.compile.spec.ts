@@ -56,3 +56,25 @@ describe('compileConditions — event without `within`', () => {
     });
   });
 });
+
+describe('compileConditions — `flow`-state condition gates any content type', () => {
+  // The `flow` representation key compiles to a `content` rule keyed only by id;
+  // validation checks the id EXISTS, not that it points at a flow — so a tour can
+  // gate on a BANNER (or checklist, etc.) being `seen`. Locks the documented
+  // "despite the `flow` name, any content type works" behavior.
+  const gateOn = (id: string) =>
+    compileConditions([{ type: 'flow', flow: id, state: 'seen' } as any], r);
+
+  it('a banner contentId validates clean (existence-only, type-agnostic)', () => {
+    const issues = collectRuleIssues(gateOn('banner-1'), {
+      contents: [{ id: 'banner-1', type: 'banner' }],
+    } as any);
+    expect(issues).toEqual([]);
+  });
+
+  it('an unknown contentId is flagged as unknown content', () => {
+    const issues = collectRuleIssues(gateOn('nope'), { contents: [{ id: 'banner-1' }] } as any);
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toMatch(/unknown content/i);
+  });
+});
