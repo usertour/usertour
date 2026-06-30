@@ -3742,6 +3742,7 @@ const translations = {
         enterCount: 'Please enter a count',
         enterSecondCount: 'Please enter the second count',
         enterTimeWindow: 'Please enter a time value',
+        selectTimeUnit: 'Please select a time unit',
         enterSecondTimeWindow: 'Please enter the second time value',
         invalidWhere: 'One or more filter conditions are incomplete — open the event to fix them.',
       },

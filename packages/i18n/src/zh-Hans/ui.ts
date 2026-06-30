@@ -3567,6 +3567,7 @@ const translations = {
         enterCount: '请输入次数',
         enterSecondCount: '请输入第二个次数',
         enterTimeWindow: '请输入时间值',
+        selectTimeUnit: '请选择时间单位',
         enterSecondTimeWindow: '请输入第二个时间值',
         invalidWhere: '过滤条件中有未填写完整的项目,展开事件后修复。',
       },

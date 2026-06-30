@@ -60,6 +60,8 @@ const CONDITION_ERROR_MESSAGES: Record<string, string> = {
   'conditions.errors.event.enterCount': 'event condition needs a count',
   'conditions.errors.event.enterSecondCount': 'event “between” count needs a second value',
   'conditions.errors.event.enterTimeWindow': 'event condition needs a time window',
+  'conditions.errors.event.selectTimeUnit':
+    'event time window needs a unit (seconds/minutes/hours/days)',
   'conditions.errors.event.enterSecondTimeWindow': 'event “between” window needs a second value',
   'conditions.errors.eventAttr.selectAttribute':
     'event-attribute condition is missing or references an unknown attribute',

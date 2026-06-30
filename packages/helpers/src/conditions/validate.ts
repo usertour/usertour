@@ -79,6 +79,7 @@ export interface EventShape {
   timeLogic?: string;
   windowValue?: number;
   windowValue2?: number;
+  timeUnit?: string;
 }
 
 // eventId is no longer persisted on event-attr's data — it flows down via
@@ -231,6 +232,13 @@ export function validateEvent(
   }
   if (data.timeLogic === EventTimeLogic.BETWEEN && isMissing(data.windowValue2)) {
     return { key: 'conditions.errors.event.enterSecondTimeWindow' };
+  }
+  // A windowed op needs a unit too — without it the runtime silently assumes
+  // days (toMilliseconds default), so "7" could mean days when the author meant
+  // hours. Enforce it (the builder always sets one; this only catches API/MCP
+  // payloads). atAnyPointInTime needs no window and so no unit.
+  if (data.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME && isMissing(data.timeUnit)) {
+    return { key: 'conditions.errors.event.selectTimeUnit' };
   }
   return undefined;
 }

@@ -425,6 +425,33 @@ describe('validateEvent', () => {
       }),
     ).toEqual({ key: 'conditions.errors.event.enterSecondTimeWindow' });
   });
+
+  // A windowed op needs a unit too: without it the runtime silently assumes
+  // days (toMilliseconds default), so "7" could mean days when hours was meant.
+  it('flags a windowed op with a windowValue but no timeUnit', () => {
+    expect(
+      validateEvent({
+        eventId: 'evt-1',
+        count: 1,
+        countLogic: EventCountLogic.AT_LEAST,
+        timeLogic: EventTimeLogic.IN_THE_LAST,
+        windowValue: 7,
+      }),
+    ).toEqual({ key: 'conditions.errors.event.selectTimeUnit' });
+  });
+
+  it('passes for a windowed op with both windowValue and timeUnit', () => {
+    expect(
+      validateEvent({
+        eventId: 'evt-1',
+        count: 1,
+        countLogic: EventCountLogic.AT_LEAST,
+        timeLogic: EventTimeLogic.IN_THE_LAST,
+        windowValue: 7,
+        timeUnit: 'days',
+      }),
+    ).toBeUndefined();
+  });
 });
 
 describe('validateEventAttr', () => {
