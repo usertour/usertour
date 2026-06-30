@@ -57,6 +57,26 @@ describe('compileConditions — event without `within`', () => {
   });
 });
 
+describe('compileConditions — bare event (no count, no within)', () => {
+  // `{type:event, event}` with nothing else is the common "has this happened?"
+  // check. A missing `count` is dangerous (runtime `count ?? 0` → at_least 0 =
+  // match-all), so it must compile to an explicit at_least 1, and a missing
+  // `within` to atAnyPointInTime — together a clean, validatable "happened ≥1×".
+  const bare = () => compileConditions([{ type: 'event', event: 'e1' } as any], r)[0] as any;
+
+  it('defaults to at_least 1 over any time (never an empty/match-all count)', () => {
+    expect(bare().data).toMatchObject({
+      countLogic: 'atLeast',
+      count: 1,
+      timeLogic: 'atAnyPointInTime',
+    });
+  });
+
+  it('passes rule validation (no "needs a count" / "needs a time window")', () => {
+    expect(collectRuleIssues(bare(), { events: [{ id: 'e1' }] } as any)).toEqual([]);
+  });
+});
+
 describe('compileConditions — `flow`-state condition gates any content type', () => {
   // The `flow` representation key compiles to a `content` rule keyed only by id;
   // validation checks the id EXISTS, not that it points at a flow — so a tour can

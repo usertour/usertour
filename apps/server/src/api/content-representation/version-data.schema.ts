@@ -67,7 +67,15 @@ const checklistItem = z.object({
         '— a side effect, NOT completion. To also mark the task done on that click, add ' +
         '{ "type": "task_clicked" } to completeWhen.',
     ),
-  onlyShowWhen: z.array(representationCondition).optional(),
+  onlyShowWhen: z
+    .array(representationCondition)
+    .optional()
+    .describe(
+      'Condition(s) that gate whether this task is VISIBLE (distinct from `completeWhen`, which ' +
+        'marks it done). Omit = always shown. There is no "task X is completed" condition, so to ' +
+        'make this task appear only after another is done, gate on the same event/state that ' +
+        'completes that other task — you cannot reference another task directly.',
+    ),
 });
 export const representationChecklist = z.object({
   buttonText: z.string().optional(),
@@ -82,7 +90,10 @@ export const representationChecklist = z.object({
     .enum(['any', 'ordered'])
     .optional()
     .describe(
-      'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to bottom).',
+      'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to ' +
+        'bottom). This is the ONLY built-in cross-task sequencing — there is no per-task "after ' +
+        'task X" condition; for finer dependencies gate a task\'s `onlyShowWhen` on the shared ' +
+        'event/state that completes its prerequisite.',
     ),
   preventDismiss: z.boolean().optional().describe("When true, users can't dismiss the checklist."),
   autoDismiss: z

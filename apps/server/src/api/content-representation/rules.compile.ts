@@ -163,13 +163,18 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
     case 'event':
       return rule('event', {
         eventId: r.eventId(c.event),
+        // Like `within`: `count` is optional in the representation, but a MISSING
+        // count is dangerous — the runtime coerces it to 0 (`count ?? 0`), making
+        // "at least 0" a match-everything condition, which is why the validator
+        // rejects a countless event. So omitting `count` compiles to an explicit
+        // "at least 1" ("the event has happened"), the intuitive default.
         ...(c.count
           ? {
               countLogic: COUNT_LOGIC[c.count.op] ?? 'atLeast',
               count: c.count.n,
               ...(c.count.n2 !== undefined ? { count2: c.count.n2 } : {}),
             }
-          : {}),
+          : { countLogic: 'atLeast', count: 1 }),
         // `within` is optional in the representation, but the runtime/validator
         // treat a MISSING timeLogic as "needs a time window" (only
         // atAnyPointInTime is exempt) — so omitting `within` must compile to an

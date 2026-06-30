@@ -329,7 +329,12 @@ export const representationCondition = z.lazy(() =>
           n: z.number(),
           n2: z.number().optional(),
         })
-        .optional(),
+        .optional()
+        .describe(
+          'How many times the event must have occurred. Omit it for the common case "the event ' +
+            'has happened" (treated as at_least 1). Set `op`/`n` for a threshold (`between` needs ' +
+            '`n` and `n2`).',
+        ),
       within: z
         .object({
           op: z.enum(['in_the_last', 'more_than', 'between', 'any_time']),
