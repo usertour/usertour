@@ -170,6 +170,11 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
               ...(c.count.n2 !== undefined ? { count2: c.count.n2 } : {}),
             }
           : {}),
+        // `within` is optional in the representation, but the runtime/validator
+        // treat a MISSING timeLogic as "needs a time window" (only
+        // atAnyPointInTime is exempt) — so omitting `within` must compile to an
+        // explicit atAnyPointInTime ("ever / no time limit"), not to nothing, or
+        // an otherwise-valid event condition fails validation.
         ...(c.within
           ? {
               timeLogic: TIME_LOGIC[c.within.op] ?? 'atAnyPointInTime',
@@ -177,7 +182,7 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
               ...(c.within.value2 !== undefined ? { windowValue2: c.within.value2 } : {}),
               ...(c.within.unit ? { timeUnit: c.within.unit } : {}),
             }
-          : {}),
+          : { timeLogic: 'atAnyPointInTime' }),
         ...(c.scope ? { scope: SCOPE[c.scope] } : {}),
         ...(c.where
           ? { whereConditions: compileConditions(c.where as CompilableCondition[], r) }

@@ -331,7 +331,12 @@ export const representationCondition = z.lazy(() =>
           value2: z.number().optional(),
           unit: z.enum(['seconds', 'minutes', 'hours', 'days']).optional(),
         })
-        .optional(),
+        .optional()
+        .describe(
+          'Optional time window for the event count. Omit it (or use `any_time`) to count over ' +
+            'all time — "the event has ever happened". Any other `op` (`in_the_last` / `more_than` ' +
+            '/ `between`) needs its `value` (+ `unit`); `between` needs `value` and `value2`.',
+        ),
       scope: z
         .enum(['current_user', 'current_user_in_company', 'any_user_in_company'])
         .optional()
