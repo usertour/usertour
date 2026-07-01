@@ -466,9 +466,16 @@ export class SessionBuilderService {
       }
     };
 
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
-    });
+    // Memoize on the same request-scoped key attribute resolution / findBizUser
+    // use, so this hot session-build path reuses the bizUser row instead of
+    // issuing a duplicate query.
+    const bizUser = await this.cache.memoize(
+      this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId: environment.id },
+        }),
+    );
     if (!bizUser) {
       setUnread(0);
       return;
