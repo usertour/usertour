@@ -262,6 +262,37 @@ describe('API v2 version.data codec (e2e)', () => {
       );
       expect(res.status).toBeGreaterThanOrEqual(400);
     });
+
+    it('rejects goto_step in a non-flow action slot (no steps to navigate to)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        checklist,
+        { data: { items: [{ name: 'Go', clickActions: [{ type: 'goto_step', step: 'x' }] }] } },
+        token,
+      );
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a button hide rule that uses a server-evaluated condition', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        checklist,
+        {
+          data: {
+            content: [
+              {
+                type: 'button',
+                text: 'Later',
+                actions: [{ type: 'dismiss' }],
+                hiddenWhen: [{ type: 'segment', segment: 'seg_x', in: true }],
+              },
+            ],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('launcher', () => {
@@ -372,6 +403,22 @@ describe('API v2 version.data codec (e2e)', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1017');
     });
+
+    it('rejects a fill unit on an image block (image/embed support only percent/pixels)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        banner,
+        { data: { content: [{ type: 'image', url: 'https://x/i.png', width: { unit: 'fill' } }] } },
+        token,
+      );
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects an empty image url', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(banner, { data: { content: [{ type: 'image', url: '' }] } }, token);
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('resource-center', () => {
@@ -464,6 +511,25 @@ describe('API v2 version.data codec (e2e)', () => {
       );
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1017');
+    });
+
+    it('rejects a dismiss action (a resource center has no dismiss handler)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        rc,
+        {
+          data: {
+            tabs: [
+              {
+                name: 'T',
+                blocks: [{ type: 'action', name: 'Close', clickActions: [{ type: 'dismiss' }] }],
+              },
+            ],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(400);
     });
   });
 });

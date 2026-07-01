@@ -353,6 +353,50 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(ok.status).toBe(200);
   });
 
+  it('rejects a placement shape or onClick that does not match the step kind (400)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const patch = (steps: unknown[]) =>
+      api(
+        'patch',
+        `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+        token,
+      ).send({ steps });
+
+    // modal given a tooltip-shape placement { side, align } → would be silently dropped.
+    const modalBadPlacement = await patch([
+      {
+        name: 'T',
+        type: 'modal',
+        content: [{ type: 'text', markdown: 'x' }],
+        placement: { side: 'top', align: 'start' },
+      },
+    ]);
+    expect(modalBadPlacement.status).toBe(400);
+
+    // tooltip given a modal-shape placement { position } → would be silently dropped.
+    const tooltipBadPlacement = await patch([
+      {
+        name: 'T',
+        type: 'tooltip',
+        target: { selector: '#x' },
+        content: [{ type: 'text', markdown: 'x' }],
+        placement: { position: 'center' },
+      },
+    ]);
+    expect(tooltipBadPlacement.status).toBe(400);
+
+    // onClick (click the target element to advance) on a non-tooltip step never fires → rejected.
+    const modalOnClick = await patch([
+      {
+        name: 'T',
+        type: 'modal',
+        content: [{ type: 'text', markdown: 'x' }],
+        onClick: [{ type: 'dismiss' }],
+      },
+    ]);
+    expect(modalOnClick.status).toBe(400);
+  });
+
   it('wires goto_step by step key in a single write (resolves to cvids, cycle ok)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // Two new steps that reference each other by `key` — a cycle, authored in one

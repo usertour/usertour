@@ -304,6 +304,109 @@ export class ApiContentVersionsService {
     });
   }
 
+  /**
+   * Walk a non-flow content body (checklist / launcher / banner / resource-center) and reject
+   * inputs the general write schema accepts but the builder never offers and the runtime can't
+   * honour on these content types:
+   *  - `goto_step` actions anywhere: goto_step navigates between the STEPS of a flow; a non-flow
+   *    content type has no steps, so the builder omits it and the runtime leaves it inert / dangling.
+   *  - button `hiddenWhen` / `disabledWhen` reactive conditions referencing server-evaluated types
+   *    (event / segment / flow-state): the builder restricts these show/hide/disable rules to
+   *    client-polled types, and the runtime never re-checks server types mid-session, so the button
+   *    would fail open (always shown / enabled). This is the body.data counterpart of the flow-step
+   *    guard `assertStepReactiveConditions` (which only covers body.steps).
+   * checklist `completeWhen` intentionally allows the full condition set, so it is NOT touched here —
+   * only button hiddenWhen/disabledWhen carry the reactive-slot restriction.
+   */
+  private assertNonFlowData(data: unknown, contentType: string, slotHint: string): void {
+    // resource-center has no dismiss action handler (the builder registers dismiss only for
+    // flow / checklist / banner / launcher), so a `dismiss` in an RC action compiles to the
+    // default flow-dismiss and silently no-ops in the RC renderer.
+    const rejectDismiss = contentType === 'resource-center';
+    const walk = (node: unknown, path: string): void => {
+      if (Array.isArray(node)) {
+        node.forEach((n, i) => walk(n, `${path}[${i}]`));
+        return;
+      }
+      if (!node || typeof node !== 'object') {
+        return;
+      }
+      const obj = node as Record<string, unknown>;
+      if (obj.type === 'goto_step') {
+        throw new ValidationError(
+          `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_flow, page_navigate, or dismiss instead.`,
+        );
+      }
+      if (rejectDismiss && obj.type === 'dismiss') {
+        throw new ValidationError(
+          `A "dismiss" action can't be used in ${slotHint} (at ${path}). A resource center has no dismiss action — use start_flow or page_navigate, or let its built-in close button dismiss it.`,
+        );
+      }
+      if (obj.type === 'button') {
+        this.assertReactiveConditions(
+          obj.hiddenWhen,
+          `${path}.hiddenWhen`,
+          "a button's show/hide rule",
+        );
+        this.assertReactiveConditions(
+          obj.disabledWhen,
+          `${path}.disabledWhen`,
+          "a button's enable/disable rule",
+        );
+      }
+      for (const key of Object.keys(obj)) {
+        walk(obj[key], `${path}.${key}`);
+      }
+    };
+    walk(data, 'data');
+  }
+
+  /**
+   * Per-step shape checks the general step schema is too loose to enforce:
+   *  - placement shape must match the step kind. The placement union is non-discriminated,
+   *    so the schema accepts a tooltip-shape `{side,align}` on a modal (renders centered,
+   *    side/align dropped) or a modal-shape `{position}` on a tooltip (renders by side/align,
+   *    position dropped). Require tooltip→`{side,align}` and modal→`{position}`. bubble is
+   *    positioned by its theme (step placement is ignored by design) and hidden has no UI, so
+   *    neither is shape-checked.
+   *  - onClick (click-the-target-element to advance) only fires on a tooltip, which anchors to
+   *    a target element; on a modal / bubble / hidden step there is no target to click, so the
+   *    action silently never runs. An empty onClick (clearing the actions) is allowed anywhere.
+   */
+  private assertStepShape(steps: unknown[]): void {
+    steps.forEach((step, i) => {
+      if (!step || typeof step !== 'object') {
+        return;
+      }
+      const s = step as Record<string, unknown>;
+      const type = s.type;
+      const at = `steps[${i}]`;
+      const placement = s.placement as Record<string, unknown> | undefined;
+      if (placement && typeof placement === 'object') {
+        const isTooltipShape = 'side' in placement;
+        const isModalShape = 'position' in placement;
+        if (type === 'tooltip' && isModalShape) {
+          throw new ValidationError(
+            `A tooltip step (${at}) needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
+          );
+        }
+        if (type === 'modal' && isTooltipShape) {
+          throw new ValidationError(
+            `A modal step (${at}) needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
+          );
+        }
+      }
+      const onClick = s.onClick;
+      if (Array.isArray(onClick) && onClick.length > 0 && type !== 'tooltip') {
+        throw new ValidationError(
+          `onClick (click the target element to advance) only works on a tooltip step; a ${String(
+            type,
+          )} step (${at}) has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
+        );
+      }
+    });
+  }
+
   async update(
     id: string,
     contentId: string,
@@ -326,6 +429,11 @@ export class ApiContentVersionsService {
       // builder omits them there and they'd silently never fire; those belong in
       // start/hide rules or a checklist item's completeWhen).
       this.assertStepReactiveConditions(body.steps as unknown[]);
+      // Placement shape + onClick must match the step kind: the placement union is
+      // non-discriminated, so a tooltip given a modal-shape `{position}` (or a modal given
+      // a tooltip-shape `{side,align}`) would silently drop the wrong-shape fields, and an
+      // onClick (click-the-target-to-advance) on a targetless step never fires.
+      this.assertStepShape(body.steps as unknown[]);
       // Per-step theme overrides must reference a live project theme (a null clears
       // the override → inherit the version theme, so only validate non-null strings).
       for (const themeId of new Set(
@@ -461,6 +569,7 @@ export class ApiContentVersionsService {
       if (!contentType) {
         throw new ParamsError('Cannot resolve content type for this version');
       }
+      this.assertNonFlowData(body.data, contentType, `a ${contentType}'s content`);
       content.data = compileVersionData(
         contentType,
         body.data,

@@ -620,6 +620,17 @@ const widthShape = z
     value: z.number().nonnegative().optional(),
   })
   .optional();
+// Image and embed blocks only support fixed sizing (percent / pixels) — the builder
+// offers no `fill` for them and the widget renderer only reads percent/pixels, so a
+// `fill` image/embed would silently render at 0 / its raw value. `fill` (flex-grow)
+// is a COLUMN-only unit; keep it on `widthShape` for columns and use this narrower
+// shape for image/embed width & height.
+const mediaWidthShape = z
+  .object({
+    unit: z.enum(['percent', 'pixels']),
+    value: z.number().nonnegative().optional(),
+  })
+  .optional();
 const spacingShape = z
   .object({
     enabled: z.boolean().optional(),
@@ -647,10 +658,10 @@ export const representationBlock = z.lazy(() =>
     z.object({
       ...blockBase,
       type: z.literal('image'),
-      url: z.string(),
+      url: z.string().min(1, 'An image block needs a non-empty url.'),
       alt: z.string().optional(),
       link: z.object({ url: z.string(), newTab: z.boolean().optional() }).optional(),
-      width: widthShape,
+      width: mediaWidthShape,
       margin: spacingShape,
     }),
     z.object({
@@ -666,9 +677,9 @@ export const representationBlock = z.lazy(() =>
     z.object({
       ...blockBase,
       type: z.literal('embed'),
-      url: z.string(),
-      width: widthShape,
-      height: widthShape,
+      url: z.string().min(1, 'An embed block needs a non-empty url.'),
+      width: mediaWidthShape,
+      height: mediaWidthShape,
       margin: spacingShape,
     }),
     z.object({
