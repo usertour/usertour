@@ -88,13 +88,15 @@ function asLimit(value: unknown): number {
 
 /**
  * Resolve the environment an env-level tool should operate on. If the caller
- * passed `environmentId`, validate it belongs to the project; otherwise fall back
- * to the project's primary environment (then the first live one).
+ * passed `environmentId`, validate it belongs to the project and is in the token's
+ * scope. Otherwise a token scoped to exactly ONE environment defaults to it; a
+ * token that can act on MULTIPLE must name the environment — we never pick one for
+ * it (read or write alike), so a multi-env agent can't silently act on, or read,
+ * the wrong environment's data.
  */
 export async function resolveEnvironment(
   args: Record<string, unknown>,
   ctx: McpToolContext,
-  opts: { requireExplicit?: boolean } = {},
 ): Promise<Environment> {
   const environmentId = asString(args.environmentId);
   if (environmentId) {
@@ -128,22 +130,19 @@ export async function resolveEnvironment(
         '"environmentId" the token is scoped to.',
     );
   }
-  // A token scoped to exactly one environment is unambiguous — default to it, even for
-  // writes (no need to make a single-env agent restate its only environment every call).
+  // A token scoped to exactly one environment is unambiguous — default to it (no need to
+  // make a single-env agent restate its only environment every call).
   if (inScope.length === 1) {
     return inScope[0];
   }
-  // Ambiguous: never silently pick an environment for a state-changing / outward operation
-  // (defaulting would, e.g., publish to Production on the user's behalf). Require explicit.
-  if (opts.requireExplicit) {
-    const list = inScope.map((e) => `${e.name} (${e.id})`).join(', ');
-    throw new Error(
-      `This token may act on ${inScope.length} environments — refusing to choose one for a ` +
-        `state-changing operation. Pass an explicit "environmentId". Available: ${list}.`,
-    );
-  }
-  // Read default: the primary if it's in scope, else the first in-scope environment.
-  return inScope.find((e) => e.isPrimary) ?? inScope[0];
+  // Ambiguous: never silently pick an environment — read or write alike. Defaulting would
+  // let a multi-env agent act on (or read) the wrong environment without saying so; this also
+  // mirrors REST, where the environment is always explicit in the path. Require a choice.
+  const list = inScope.map((e) => `${e.name} (${e.id})`).join(', ');
+  throw new Error(
+    `This token can act on ${inScope.length} environments — pass an explicit "environmentId" ` +
+      `to choose one. Available: ${list}.`,
+  );
 }
 
 // Shared zod fragments for the common pagination args. Each is `.optional()` so
@@ -165,20 +164,10 @@ export const environmentIdSchema = z
   .string()
   .optional()
   .describe(
-    'Environment to target. Omit to use the default: a token that can act on a single ' +
-      'environment uses that one; otherwise the primary environment. (The default follows the ' +
-      "environments the TOKEN may act on, not the project's full list.)",
-  );
-// Strict variant for state-changing / outward write tools: a token that can act on a single
-// environment still defaults, but a token that can act on MULTIPLE MUST pass this — the tool
-// refuses to pick one for a publish/write (see resolveEnvironment requireExplicit).
-export const environmentIdWriteSchema = z
-  .string()
-  .optional()
-  .describe(
-    'Environment to target. A token that can act on a single environment defaults to it; if the ' +
-      'token can act on MULTIPLE environments you MUST set this — a state-changing tool will not ' +
-      'choose one for you (it errors and lists the environments the token may use).',
+    'Environment to target. A token scoped to a single environment defaults to it (omit this); ' +
+      'a token that can act on MULTIPLE environments MUST set it — the tool will not choose one ' +
+      'for you (it errors and lists the environments the token may use). Holds for reads and ' +
+      "writes alike. (Scope follows the environments the TOKEN may act on, not the project's full list.)",
   );
 
 /**
@@ -573,7 +562,7 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.UserRead,
       description:
         'List end-users (the tracked business users your product onboards) in an environment. ' +
-        "Defaults to the project's primary environment; pass `environmentId` to target another. " +
+        'A single-environment token targets its env; with multiple, pass `environmentId`. ' +
         'Filter by `email`, `companyId`, `segmentId`, or a created-at range. Returns ' +
         '`{ items, nextCursor }`. Pass `expand` to inline each user’s companies / memberships ' +
         '(left out by default to keep the list lean).',
@@ -619,8 +608,8 @@ export function buildReadTools(): McpTool[] {
       description:
         'Get a single end-user by their external id (the id you sent when identifying the ' +
         'user). Includes the user’s `companies` and `memberships` (the role they hold in ' +
-        'each company) by default — override with `expand`. Defaults to the primary ' +
-        'environment; pass `environmentId` to target another.',
+        'each company) by default — override with `expand`. A single-environment token ' +
+        'targets its env; with multiple, pass `environmentId`.',
       inputSchema: {
         id: z.string().describe('The user external id.'),
         expand: z
@@ -807,8 +796,8 @@ export function buildReadTools(): McpTool[] {
       title: 'List companies',
       capability: Capability.CompanyRead,
       description:
-        'List companies in an environment. Defaults to the primary environment; pass ' +
-        '`environmentId` to target another. Filter by `segmentId` or a created-at range. ' +
+        'List companies in an environment. A single-environment token targets its env; with ' +
+        'multiple, pass `environmentId`. Filter by `segmentId` or a created-at range. ' +
         'Returns `{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,
@@ -843,8 +832,8 @@ export function buildReadTools(): McpTool[] {
       title: 'Get a company',
       capability: Capability.CompanyRead,
       description:
-        'Get a company by its external id. `expand` inlines users / memberships. Defaults to the ' +
-        'primary environment; pass `environmentId` to target another.',
+        'Get a company by its external id. `expand` inlines users / memberships. A single-' +
+        'environment token targets its env; with multiple, pass `environmentId`.',
       inputSchema: {
         id: z.string().describe('The company external id.'),
         environmentId: environmentIdSchema,
@@ -918,8 +907,8 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.SessionRead,
       description:
         'List content sessions in an environment. Filter by `contentId`, `userId`, `completed`, ' +
-        'or a created-at range. Defaults to the primary environment; pass `environmentId` to ' +
-        'target another. Returns `{ items, nextCursor }`.',
+        'or a created-at range. A single-environment token targets its env; with multiple, pass ' +
+        '`environmentId`. Returns `{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,
         contentId: z.string().optional().describe('Filter to a single content.'),
@@ -961,7 +950,7 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.SessionRead,
       description:
         'Get a content session by id. `expand` inlines content / user / company / version / ' +
-        'answers. Defaults to the primary environment; pass `environmentId` to target another.',
+        'answers. A single-environment token targets its env; with multiple, pass `environmentId`.',
       inputSchema: {
         id: z.string().describe('The session id.'),
         environmentId: environmentIdSchema,
@@ -989,7 +978,7 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.EnvironmentRead,
       description:
         "List the project's environments — the environment ids that the env-scoped tools and " +
-        '`publish_content` accept (`isPrimary` marks the default). Optionally filter by `name`. ' +
+        '`publish_content` accept. Optionally filter by `name`. ' +
         'Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,

@@ -37,50 +37,48 @@ describe('resolveEnvironment — multi-env safety (Q1) + token env scope', () =>
   // ---- back-compat: token with no env allowlist (null = all) ----
   it('explicit environmentId → resolves via auth, regardless of ambiguity', async () => {
     const ctx = makeCtx([env('e1', 'Production', true), env('e2', 'Staging')]);
-    const r = await resolveEnvironment({ environmentId: 'e2' }, ctx, { requireExplicit: true });
+    const r = await resolveEnvironment({ environmentId: 'e2' }, ctx);
     expect(r.id).toBe('e2');
     expect(ctx.auth.resolveEnvironment).toHaveBeenCalledWith('p1', 'e2');
   });
 
-  it('single environment → defaults even in strict (write) mode', async () => {
+  it('single environment → defaults (no explicit id needed)', async () => {
     const ctx = makeCtx([env('e1', 'Production', true)]);
-    expect((await resolveEnvironment({}, ctx, { requireExplicit: true })).id).toBe('e1');
-  });
-
-  it('multiple environments + strict + no id → throws and lists them (no silent pick)', async () => {
-    const ctx = makeCtx([env('e1', 'Production', true), env('e2', 'Staging')]);
-    await expect(resolveEnvironment({}, ctx, { requireExplicit: true })).rejects.toThrow(
-      /Staging \(e2\)/,
-    );
-  });
-
-  it('multiple environments + lenient (reads) + no id → defaults to the primary', async () => {
-    const ctx = makeCtx([env('e2', 'Staging'), env('e1', 'Production', true)]);
     expect((await resolveEnvironment({}, ctx)).id).toBe('e1');
+  });
+
+  it('multiple environments + no id → throws and lists them (no silent pick)', async () => {
+    const ctx = makeCtx([env('e1', 'Production', true), env('e2', 'Staging')]);
+    await expect(resolveEnvironment({}, ctx)).rejects.toThrow(/Staging \(e2\)/);
+  });
+
+  // Reads used to fall back to the primary here; they no longer do — a multi-env
+  // token must name the environment for reads too (no silent primary pick).
+  it('multiple environments + no id → throws even when a primary exists', async () => {
+    const ctx = makeCtx([env('e2', 'Staging'), env('e1', 'Production', true)]);
+    await expect(resolveEnvironment({}, ctx)).rejects.toThrow(/Production \(e1\)/);
   });
 
   it('no environment at all → throws', async () => {
     const ctx = makeCtx([]);
-    await expect(resolveEnvironment({}, ctx, { requireExplicit: true })).rejects.toThrow(
-      /No environment/,
-    );
+    await expect(resolveEnvironment({}, ctx)).rejects.toThrow(/No environment/);
   });
 
   // ---- token scoped to a subset of environments ----
-  it('scoped to exactly one env → defaults to it (no explicit id needed, even for writes)', async () => {
+  it('scoped to exactly one env → defaults to it (no explicit id needed)', async () => {
     const ctx = makeCtx(
       [env('e1', 'Production', true), env('e2', 'Dev'), env('e3', 'Staging')],
       ['e2'],
     );
-    expect((await resolveEnvironment({}, ctx, { requireExplicit: true })).id).toBe('e2');
+    expect((await resolveEnvironment({}, ctx)).id).toBe('e2');
   });
 
-  it('scoped to multiple envs + strict + no id → requires explicit, lists only in-scope', async () => {
+  it('scoped to multiple envs + no id → requires explicit, lists only in-scope', async () => {
     const ctx = makeCtx(
       [env('e1', 'Production', true), env('e2', 'Dev'), env('e3', 'Staging')],
       ['e2', 'e3'],
     );
-    const err = await resolveEnvironment({}, ctx, { requireExplicit: true }).catch((e) => e);
+    const err = await resolveEnvironment({}, ctx).catch((e) => e);
     expect(String(err.message)).toMatch(/Dev \(e2\)/);
     expect(String(err.message)).toMatch(/Staging \(e3\)/);
     expect(String(err.message)).not.toMatch(/Production/); // out-of-scope env not offered
