@@ -244,7 +244,7 @@ function mapBlockNode(node: TreeNode): SlateNode[] {
       // not in the subset — flatten to the inner blocks (keep content, drop the quote)
       return node.children.flatMap(mapBlockNode);
     default:
-      // hr, html_block, table (disabled), … → dropped
+      // hr, html_block, table (parsed by the default preset, but not in our subset), … → dropped
       return [];
   }
 }

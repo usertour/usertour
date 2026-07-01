@@ -80,6 +80,37 @@ describe('codec corpus: markdown text is round-trip idempotent', () => {
       expect(leakText(blocks)).not.toContain('*');
     }
   });
+
+  // Out-of-subset markdown is intentionally normalized/dropped, not rejected. Lock the
+  // degradation so a parser change can't silently start emitting unsupported Slate nodes.
+  describe('out-of-subset markdown degrades silently (documented behavior)', () => {
+    const norm = (md: string) => decompileText(compileText(md));
+
+    it('clamps h3+ to h2', () => {
+      expect(norm('### Deep heading')).toBe('## Deep heading');
+      expect(norm('###### Deepest')).toBe('## Deepest');
+    });
+
+    it('flattens a blockquote to a plain paragraph', () => {
+      expect(norm('> A quoted line')).toBe('A quoted line');
+    });
+
+    it('drops a table entirely', () => {
+      expect(norm('| a | b |\n| --- | --- |\n| 1 | 2 |')).toBe('');
+    });
+
+    it('drops a horizontal rule', () => {
+      expect(norm('above\n\n---\n\nbelow')).toBe('above\n\nbelow');
+    });
+
+    it('degrades strikethrough to plain text', () => {
+      expect(norm('Some ~~struck~~ text')).toBe('Some struck text');
+    });
+
+    it('drops liquid filters other than default', () => {
+      expect(norm('{{ name | upcase }}')).not.toContain('upcase');
+    });
+  });
 });
 
 // ── Flow steps (the bulk of real Step.data: content blocks + conditions + triggers) ──

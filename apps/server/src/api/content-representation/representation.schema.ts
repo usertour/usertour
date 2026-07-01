@@ -652,7 +652,11 @@ export const representationBlock = z.lazy(() =>
         .describe(
           'A small markdown subset: paragraphs, `# `/`## ` headings (h1/h2 only — no h3+), ' +
             '`-`/`*` and `1.` lists, ``` code fences; inline `**bold**`, `*italic*`, ' +
-            '`[text](url)`, and `{{ attribute_code | default: "x" }}` for user attributes.',
+            '`[text](url)`, and `{{ attribute_code | default: "x" }}` for user attributes. ' +
+            'Anything outside this subset is SILENTLY normalized, not rejected: h3+ → h2; ' +
+            'blockquotes flatten to paragraphs; tables, horizontal rules, strikethrough, inline ' +
+            'images/code, and liquid filters other than `default` are dropped. Unsupported ' +
+            "syntax won't round-trip — don't rely on it.",
         ),
     }),
     z.object({
