@@ -712,7 +712,9 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         "List a content's versions (oldest first by default — pass `orderBy: -createdAt` for " +
-        'newest first). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+        'newest first). This list has NO live/published marker — to find which version is LIVE for ' +
+        'users, read `get_content` and check `environments[].publishedVersionId` (publish is ' +
+        'per-environment). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
         contentId: z.string().describe('The content id.'),
         limit: limitSchema,

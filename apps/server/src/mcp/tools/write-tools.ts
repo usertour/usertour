@@ -194,8 +194,10 @@ export function buildWriteTools(): McpTool[] {
       title: 'Restore a historical version',
       capability: Capability.ContentUpdate,
       description:
-        'Restore a historical content version by forking it forward as the new draft (config / ' +
-        'data / theme / steps copied from it). Returns the new version.',
+        'Restore a historical content version by forking it forward as the new editable DRAFT ' +
+        '(config / data / theme / steps copied from it). This only STAGES a draft — despite the ' +
+        'name it does NOT change what end-users see; the live/published version is untouched until ' +
+        'you separately `publish_content` this restored draft. Returns the new version.',
       inputSchema: { contentId: z.string(), versionId: z.string() },
       handler: (args, ctx) =>
         ctx.services.contentVersions.restore(
@@ -210,8 +212,10 @@ export function buildWriteTools(): McpTool[] {
       title: 'Duplicate content',
       capability: Capability.ContentCreate,
       description:
-        'Duplicate a piece of content into a fresh content (copies the edited version). ' +
-        'Optionally set a `name` and a target `environmentId`. Returns the new content.',
+        "Duplicate a piece of content into a fresh content. Copies the source's current EDITED " +
+        'DRAFT — which may DIFFER from what is published/live (if the source has an unpublished or ' +
+        'diverged draft you get the draft, NOT production); the copy starts UNPUBLISHED and carries ' +
+        'no version history. Optionally set a `name` and a target `environmentId`. Returns the new content.',
       inputSchema: {
         contentId: z.string(),
         name: z.string().optional(),
