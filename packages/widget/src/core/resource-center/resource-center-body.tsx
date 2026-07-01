@@ -409,10 +409,14 @@ const formatAnnouncementDate = (dateStr: string): string => {
  */
 const groupAnnouncementsByDate = (items: AnnouncementListItem[]) => {
   const groups: { label: string; items: AnnouncementListItem[] }[] = [];
-  let currentLabel = '';
+  // null sentinel, not '': an item with an empty time (label '') still starts a
+  // group instead of pushing into groups[-1]. A null-scheduledAt row can sort
+  // first (server allows it and Postgres orders NULLS FIRST desc), and its time
+  // is '' — without this the first push would read undefined and crash the feed.
+  let currentLabel: string | null = null;
   for (const item of items) {
     const label = item.time ? formatAnnouncementDate(item.time) : '';
-    if (label !== currentLabel) {
+    if (groups.length === 0 || label !== currentLabel) {
       currentLabel = label;
       groups.push({ label, items: [] });
     }
