@@ -57,7 +57,11 @@ import {
 
 // Announcements are gated by user/segment/time conditions only — there is no
 // page/element context for a resource-center surface.
-const ANNOUNCEMENT_FILTER_ITEMS = [RulesType.USER_ATTR, RulesType.SEGMENT, RulesType.TIME];
+// No TIME: announcement visibility is gated server-side (isVisibleByAutoStartRules),
+// which has no time evaluator, and scheduledAt already covers "show from" timing.
+// Offering TIME here would silently hide the announcement until an "end time"
+// feature exists to make it meaningful.
+const ANNOUNCEMENT_FILTER_ITEMS = [RulesType.USER_ATTR, RulesType.SEGMENT];
 
 // Inline content editing is limited to these element types.
 const ANNOUNCEMENT_ELEMENT_TYPES = [
@@ -410,9 +414,10 @@ const AnnouncementContentColumn = () => {
 
   const projectId = project?.id ?? '';
 
-  // Memoize initial editor values so re-renders don't reset the editor state.
-  const initialIntroContent = useMemo(() => data.introContent, []);
-  const initialDetailContent = useMemo(() => data.detailContent, []);
+  // ContentEditor is uncontrolled — it reads `initialValue` only when it mounts,
+  // so pass the live draft rather than a first-mount snapshot. The detail editor
+  // unmounts/remounts with the Read-more toggle; a frozen snapshot would remount
+  // with stale content and then clobber saved edits when the user resumes typing.
 
   if (!version) return null;
 
@@ -459,7 +464,7 @@ const AnnouncementContentColumn = () => {
               <ContentEditor
                 zIndex={10002}
                 customUploadRequest={upload}
-                initialValue={initialIntroContent}
+                initialValue={data.introContent}
                 onValueChange={handleIntroContentChange}
                 projectId={projectId}
                 attributes={attributeList}
@@ -527,7 +532,7 @@ const AnnouncementContentColumn = () => {
                 <ContentEditor
                   zIndex={10003}
                   customUploadRequest={upload}
-                  initialValue={initialDetailContent}
+                  initialValue={data.detailContent}
                   onValueChange={handleDetailContentChange}
                   projectId={projectId}
                   attributes={attributeList}
