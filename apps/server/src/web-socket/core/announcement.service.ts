@@ -6,22 +6,15 @@ import {
   BizEvents,
   ContentDataType,
   ContentEditorRoot,
-  RulesCondition,
 } from '@usertour/types';
 import { BizUser, Environment } from '@/common/types/schema';
 import { extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
 import {
+  type AutoStartRulesConfig,
   ConditionEvaluationService,
   type ConditionEvaluationContext,
 } from './condition-evaluation.service';
-
-// Minimal view of a version's `config` JSON needed to gate an announcement by
-// its "Only show if..." targeting rules.
-type AnnouncementTargetingConfig = {
-  enabledAutoStartRules?: boolean;
-  autoStartRules?: RulesCondition[];
-};
 
 /**
  * A published announcement that passed its "Only show if..." targeting for the
@@ -61,6 +54,21 @@ export class AnnouncementService {
     return { environment, attributes, bizUser, externalCompanyId };
   }
 
+  // The candidate gate shared by the feed scan and the by-id fetch: a published,
+  // non-deleted announcement whose scheduledAt has passed (or is unset). Keeping
+  // it in one place stops the feed and the direct fetch from drifting on a
+  // security-sensitive visibility decision.
+  private announcementCandidateWhere(environmentId: string) {
+    return {
+      environmentId,
+      published: true,
+      content: { type: ContentDataType.ANNOUNCEMENT, deleted: false },
+      publishedVersion: {
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
+    };
+  }
+
   /**
    * Newest N published announcements whose scheduledAt has passed (or is unset),
    * filtered to those the user may see per their targeting. Ordered by
@@ -75,14 +83,7 @@ export class AnnouncementService {
     limit: number = AnnouncementService.SCAN_LIMIT,
   ): Promise<VisibleAnnouncement[]> {
     const candidates = await this.prisma.contentOnEnvironment.findMany({
-      where: {
-        environmentId: environment.id,
-        published: true,
-        content: { type: ContentDataType.ANNOUNCEMENT, deleted: false },
-        publishedVersion: {
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        },
-      },
+      where: this.announcementCandidateWhere(environment.id),
       include: {
         content: { select: { id: true, name: true } },
         publishedVersion: { select: { id: true, data: true, config: true, scheduledAt: true } },
@@ -96,7 +97,7 @@ export class AnnouncementService {
       candidates.map((item) =>
         item.publishedVersion
           ? this.conditionEvaluationService.isVisibleByAutoStartRules(
-              item.publishedVersion.config as unknown as AnnouncementTargetingConfig,
+              item.publishedVersion.config as unknown as AutoStartRulesConfig,
               context,
             )
           : Promise.resolve(false),
@@ -114,6 +115,48 @@ export class AnnouncementService {
       }
     });
     return visible;
+  }
+
+  /**
+   * Fetch a single published announcement by id and apply the SAME targeting
+   * gate the feed uses, so a direct by-id fetch can't expose an announcement the
+   * feed would hide. Returns null when it doesn't exist, hasn't reached its
+   * scheduledAt, or is targeted away from this user (including when there is no
+   * bizUser to evaluate against).
+   */
+  async findVisibleAnnouncementById(
+    contentId: string,
+    environment: Environment,
+    bizUser: BizUser | null,
+    externalCompanyId: string,
+  ): Promise<VisibleAnnouncement | null> {
+    const item = await this.prisma.contentOnEnvironment.findFirst({
+      where: { ...this.announcementCandidateWhere(environment.id), contentId },
+      include: {
+        content: { select: { id: true, name: true } },
+        publishedVersion: { select: { id: true, data: true, config: true, scheduledAt: true } },
+      },
+    });
+    if (!item?.publishedVersion) {
+      return null;
+    }
+
+    const config = item.publishedVersion.config as unknown as AutoStartRulesConfig;
+    if (bizUser) {
+      const context = await this.buildEvaluationContext(environment, bizUser, externalCompanyId);
+      if (!(await this.conditionEvaluationService.isVisibleByAutoStartRules(config, context))) {
+        return null;
+      }
+    } else if (config?.enabledAutoStartRules && config.autoStartRules?.length) {
+      // No user to evaluate against, but the announcement is targeted → deny.
+      return null;
+    }
+
+    return {
+      contentId: item.contentId,
+      content: item.content,
+      publishedVersion: item.publishedVersion,
+    };
   }
 
   /**

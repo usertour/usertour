@@ -45,6 +45,16 @@ type SegmentDataItem = {
 };
 
 /**
+ * The auto-start-rules slice of a version's `config` JSON that gates visibility
+ * ("Only show if..."). Shared by the announcement read paths so the targeting
+ * contract lives in one place instead of being re-declared per caller.
+ */
+export type AutoStartRulesConfig = {
+  enabledAutoStartRules?: boolean;
+  autoStartRules?: RulesCondition[];
+};
+
+/**
  * Filter object structure for Prisma queries
  * Contains AND/OR conditions for attribute-based filtering
  */
@@ -149,10 +159,7 @@ export class ConditionEvaluationService {
    * Returns true when targeting is disabled or there are no conditions.
    */
   async isVisibleByAutoStartRules(
-    config:
-      | { enabledAutoStartRules?: boolean; autoStartRules?: RulesCondition[] }
-      | null
-      | undefined,
+    config: AutoStartRulesConfig | null | undefined,
     context: ConditionEvaluationContext,
   ): Promise<boolean> {
     if (!config?.enabledAutoStartRules || !config.autoStartRules?.length) {

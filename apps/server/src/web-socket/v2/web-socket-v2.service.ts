@@ -32,7 +32,6 @@ import {
   BizEvents,
   ClientCondition,
   CustomContentSession,
-  RulesCondition,
   ListAnnouncementsDto,
   ListAnnouncementsResult,
   GetAnnouncementDto,
@@ -49,19 +48,11 @@ import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { AnnouncementService } from '@/web-socket/core/announcement.service';
-import { ConditionEvaluationService } from '@/web-socket/core/condition-evaluation.service';
 import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
 import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
 import { humanize } from '@usertour/helpers';
-
-// Minimal view of a version's `config` JSON needed to gate an announcement by
-// its "Only show if..." targeting rules.
-type AnnouncementTargetingConfig = {
-  enabledAutoStartRules?: boolean;
-  autoStartRules?: RulesCondition[];
-};
 
 @Injectable()
 export class WebSocketV2Service {
@@ -73,7 +64,6 @@ export class WebSocketV2Service {
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
     private readonly announcementService: AnnouncementService,
-    private readonly conditionEvaluationService: ConditionEvaluationService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
     private readonly distributedLockService: DistributedLockService,
@@ -1022,20 +1012,12 @@ export class WebSocketV2Service {
   // Announcement Methods
   // ============================================================================
 
-  // Hard ceiling on how many announcements the resource-center feed surfaces.
-  // It bounds both the DB scan and the per-user targeting evaluation below, so
-  // the feed stays cheap no matter how many announcements a project accumulates.
-  // Announcements older than the newest ANNOUNCEMENT_LIMIT are not shown — an
-  // in-app announcement feed is reverse-chronological and doesn't need an
-  // unbounded backlog.
-  private static readonly ANNOUNCEMENT_LIMIT = 50;
-
   /**
    * List the announcements visible to the current user, newest first.
    *
-   * The feed is total-capped at ANNOUNCEMENT_LIMIT and returned in a single
-   * response (truncated is always false), so there is no second page to fetch.
-   * Each candidate is gated by its "Only show if..." targeting rules
+   * The feed is total-capped (AnnouncementService.SCAN_LIMIT) and returned in a
+   * single response (truncated is always false), so there is no second page to
+   * fetch. Each candidate is gated by its "Only show if..." targeting rules
    * (config.autoStartRules) using the same DB-backed evaluation as
    * resource-center block visibility — a targeted announcement is never leaked
    * to users who don't match.
@@ -1046,7 +1028,7 @@ export class WebSocketV2Service {
   ): Promise<ListAnnouncementsResult> {
     const { socketData } = context;
     const environmentId = socketData.environment.id;
-    const pageSize = WebSocketV2Service.ANNOUNCEMENT_LIMIT;
+    const pageSize = AnnouncementService.SCAN_LIMIT;
 
     // The feed is capped and single-page; a non-null cursor means "load more",
     // which never applies here.
@@ -1059,12 +1041,12 @@ export class WebSocketV2Service {
       return { announcements: [], pageSize, truncated: false };
     }
 
-    // Newest N candidates that pass the user's "Only show if..." targeting.
+    // Newest N candidates that pass the user's "Only show if..." targeting
+    // (findVisibleAnnouncements defaults to AnnouncementService.SCAN_LIMIT).
     const visibleItems = await this.announcementService.findVisibleAnnouncements(
       socketData.environment,
       bizUser,
       socketData.externalCompanyId,
-      WebSocketV2Service.ANNOUNCEMENT_LIMIT,
     );
 
     // Batch lookup seen status for the visible set.
@@ -1108,59 +1090,27 @@ export class WebSocketV2Service {
     const environmentId = socketData.environment.id;
     const bizUser = await this.findBizUser(socketData);
 
-    const contentOnEnv = await this.prisma.contentOnEnvironment.findFirst({
-      where: {
-        environmentId,
-        contentId: params.contentId,
-        published: true,
-        content: {
-          type: ContentDataType.ANNOUNCEMENT,
-          deleted: false,
-        },
-        publishedVersion: {
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        },
-      },
-      include: {
-        content: { select: { id: true, name: true } },
-        publishedVersion: { select: { id: true, data: true, config: true, scheduledAt: true } },
-      },
-    });
-
-    if (!contentOnEnv?.publishedVersion) {
+    // Same candidate query + "Only show if..." targeting gate the feed uses, so
+    // a direct by-id fetch can't expose an announcement the feed would hide.
+    const visible = await this.announcementService.findVisibleAnnouncementById(
+      params.contentId,
+      socketData.environment,
+      bizUser,
+      socketData.externalCompanyId,
+    );
+    if (!visible) {
       return null;
     }
 
-    // Enforce targeting on direct fetch too, so a targeted announcement can't be
-    // read by id by a user who doesn't match.
-    const config = contentOnEnv.publishedVersion.config as unknown as AnnouncementTargetingConfig;
-    if (bizUser) {
-      const evaluationContext = await this.announcementService.buildEvaluationContext(
-        socketData.environment,
-        bizUser,
-        socketData.externalCompanyId,
-      );
-      const visible = await this.conditionEvaluationService.isVisibleByAutoStartRules(
-        config,
-        evaluationContext,
-      );
-      if (!visible) {
-        return null;
-      }
-    } else if (config?.enabledAutoStartRules && config.autoStartRules?.length) {
-      // No bizUser to evaluate against, but the announcement is targeted → deny.
-      return null;
-    }
-
-    const data = (contentOnEnv.publishedVersion.data ?? {}) as unknown as AnnouncementData;
+    const data = (visible.publishedVersion.data ?? {}) as unknown as AnnouncementData;
     const seen = bizUser
       ? (
           await this.announcementService.getSeenAnnouncementIds(
             bizUser.id,
-            [contentOnEnv.content.id],
+            [visible.contentId],
             environmentId,
           )
-        ).has(contentOnEnv.content.id)
+        ).has(visible.contentId)
       : false;
 
     // Resolve the attributes referenced in the intro + detail content — the
@@ -1174,11 +1124,7 @@ export class WebSocketV2Service {
     );
 
     return {
-      ...this.announcementService.buildListItem(
-        contentOnEnv.content,
-        contentOnEnv.publishedVersion,
-        seen,
-      ),
+      ...this.announcementService.buildListItem(visible.content, visible.publishedVersion, seen),
       moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
       attributes,
     };
@@ -1248,11 +1194,19 @@ export class WebSocketV2Service {
   // ============================================================================
 
   private async findBizUser(socketData: SocketData): Promise<BizUser | null> {
-    return await this.prisma.bizUser.findFirst({
-      where: {
-        externalId: String(socketData.externalUserId),
-        environmentId: socketData.environment.id,
-      },
-    });
+    // Memoize on the same request-scoped key ContentDataService.queryUserAttributeValue
+    // uses, so the feed's bizUser lookup and the attribute-resolution one coalesce
+    // into a single query per request instead of two.
+    const { environment, externalUserId } = socketData;
+    return this.cache.memoize(
+      this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: {
+            externalId: String(externalUserId),
+            environmentId: environment.id,
+          },
+        }),
+    );
   }
 }
