@@ -1083,7 +1083,18 @@ export class WebSocketV2Service {
       ),
     );
 
-    return { announcements, pageSize, truncated: false };
+    // Resolve the attributes referenced in the feed's intro content — it isn't
+    // part of the RC session, so the widget has no values for it otherwise.
+    const attributes = await this.announcementService.resolveContentAttributes(
+      visibleItems.map(
+        (item) => (item.publishedVersion.data as AnnouncementData | null)?.introContent,
+      ),
+      socketData.environment,
+      socketData.externalUserId,
+      socketData.externalCompanyId,
+    );
+
+    return { announcements, pageSize, truncated: false, attributes };
   }
 
   /**
@@ -1152,6 +1163,16 @@ export class WebSocketV2Service {
         ).has(contentOnEnv.content.id)
       : false;
 
+    // Resolve the attributes referenced in the intro + detail content — the
+    // announcement isn't part of the RC session, so the widget can't otherwise
+    // interpolate them.
+    const attributes = await this.announcementService.resolveContentAttributes(
+      [data.introContent, data.detailContent],
+      socketData.environment,
+      socketData.externalUserId,
+      socketData.externalCompanyId,
+    );
+
     return {
       ...this.announcementService.buildListItem(
         contentOnEnv.content,
@@ -1159,6 +1180,7 @@ export class WebSocketV2Service {
         seen,
       ),
       moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
+      attributes,
     };
   }
 

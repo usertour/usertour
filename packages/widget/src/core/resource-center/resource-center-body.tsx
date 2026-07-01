@@ -426,10 +426,20 @@ interface AnnouncementListDetailProps {
 }
 
 export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
-  const { onListAnnouncements, onMarkAnnouncementSeen, actions, userAttributes } =
+  const { onListAnnouncements, onMarkAnnouncementSeen, onContentClick, actions, userAttributes } =
     useResourceCenterContext();
   const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
+  const [feedAttributes, setFeedAttributes] = useState<Record<string, any> | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+
+  // The announcement content isn't part of the RC session, so its referenced
+  // attributes aren't in the session's userAttributes; the feed returns their
+  // resolved values, which we merge here so intro attributes interpolate instead
+  // of showing their fallback.
+  const mergedAttributes = useMemo(
+    () => ({ ...userAttributes, ...feedAttributes }),
+    [userAttributes, feedAttributes],
+  );
 
   // The SDK passes fresh inline callbacks on every render, and marking seen
   // optimistically updates the store (to drop the badge), which re-renders the
@@ -457,6 +467,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     listAnnouncements(null)
       .then((result) => {
         setAnnouncements(result.announcements);
+        setFeedAttributes(result.attributes);
         // Displaying an announcement in the opened feed is what marks it seen,
         // independent of whether Read more is enabled. Every announcement passes
         // through here before any detail view, so this is the only seen marker.
@@ -525,7 +536,8 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                 <div className="text-sm text-sdk-foreground mt-1">
                   <ContentEditorSerialize
                     contents={item.content as any}
-                    userAttributes={userAttributes}
+                    onClick={onContentClick}
+                    userAttributes={mergedAttributes}
                   />
                 </div>
 
@@ -561,7 +573,7 @@ interface AnnouncementDetailViewProps {
 }
 
 export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDetailViewProps) => {
-  const { onGetAnnouncement, userAttributes } = useResourceCenterContext();
+  const { onGetAnnouncement, onContentClick, userAttributes } = useResourceCenterContext();
   const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -574,6 +586,14 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
       .then(setDetail)
       .finally(() => setIsLoading(false));
   }, [onGetAnnouncement, announcementId]);
+
+  // Merge the announcement's own resolved attributes (its content isn't part of
+  // the RC session, so they aren't in the session's userAttributes) so intro /
+  // detail attributes interpolate instead of showing their fallback.
+  const mergedAttributes = useMemo(
+    () => ({ ...userAttributes, ...detail?.attributes }),
+    [userAttributes, detail?.attributes],
+  );
 
   if (isLoading) {
     return <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>;
@@ -593,14 +613,19 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
       </div>
 
       <div className="text-sm text-sdk-foreground">
-        <ContentEditorSerialize contents={detail.content as any} userAttributes={userAttributes} />
+        <ContentEditorSerialize
+          contents={detail.content as any}
+          onClick={onContentClick}
+          userAttributes={mergedAttributes}
+        />
       </div>
 
       {detail.moreContent && (
         <div className="text-sm text-sdk-foreground">
           <ContentEditorSerialize
             contents={detail.moreContent as any}
-            userAttributes={userAttributes}
+            onClick={onContentClick}
+            userAttributes={mergedAttributes}
           />
         </div>
       )}

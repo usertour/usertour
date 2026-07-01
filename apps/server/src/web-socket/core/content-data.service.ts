@@ -21,10 +21,11 @@ import {
   ContentDataType,
   ResourceCenterData,
   RulesCondition,
+  SessionAttribute,
   ThemeVariation,
 } from '@usertour/types';
 import { buildConfig, isArray } from '@usertour/helpers';
-import { getPublishedVersionId } from '@/utils/content-utils';
+import { getAttributeValue, getPublishedVersionId } from '@/utils/content-utils';
 import { CustomContentVersion, ContentSessionCollection } from '@/common/types/content';
 import {
   ConditionEvaluationService,
@@ -432,6 +433,144 @@ export class ContentDataService {
           },
         }),
     );
+  }
+
+  /**
+   * Resolve a single attribute's value for the user (and, for company /
+   * membership attributes, the company). Reads are memoized per request scope.
+   */
+  async queryUserAttributeValue(
+    attr: Attribute,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<any> {
+    const environmentId = environment.id;
+    // Drop projections so per-request memos hold consistent full entities
+    // across all callers in the scope.
+    const bizUser = await this.cache.memoize(
+      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: {
+            environmentId,
+            externalId: String(externalUserId),
+          },
+        }),
+    );
+
+    if (!bizUser) {
+      return null;
+    }
+
+    if (attr.bizType === AttributeBizType.USER) {
+      if (bizUser?.data) {
+        return getAttributeValue(bizUser.data, attr.codeName);
+      }
+      return null;
+    }
+
+    if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
+      if (!externalCompanyId) {
+        return null;
+      }
+
+      const bizCompany = await this.cache.memoize(
+        this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
+        () =>
+          this.prisma.bizCompany.findFirst({
+            where: {
+              externalId: String(externalCompanyId),
+              environmentId,
+            },
+          }),
+      );
+
+      if (!bizCompany) {
+        return null;
+      }
+
+      const userOnCompany = await this.cache.memoize(
+        this.cache.memoKeys.bizUserOnCompany(bizUser.id, bizCompany.id),
+        () =>
+          this.prisma.bizUserOnCompany.findFirst({
+            where: {
+              bizUserId: bizUser.id,
+              bizCompanyId: bizCompany.id,
+            },
+          }),
+      );
+
+      if (!userOnCompany) {
+        return null;
+      }
+
+      if (attr.bizType === AttributeBizType.COMPANY) {
+        return getAttributeValue(bizCompany.data, attr.codeName);
+      }
+
+      if (attr.bizType === AttributeBizType.MEMBERSHIP) {
+        return getAttributeValue(userOnCompany.data, attr.codeName);
+      }
+
+      return null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Resolve the given attribute ids / codes into session attributes (with
+   * values) for the user. Shared by the session builder and the announcement
+   * feed so both resolve attributes the same way.
+   */
+  async resolveSessionAttributes(
+    attrIds: string[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+    attrCodes: string[] = [],
+  ): Promise<SessionAttribute[]> {
+    if (attrIds.length === 0 && attrCodes.length === 0) {
+      return [];
+    }
+
+    // Reuse the project-level Attribute cache instead of a per-session findMany.
+    // Cache contains [USER, COMPANY, MEMBERSHIP, EVENT] across all extracts;
+    // filter EVENT out so the contract (session attributes only) is preserved.
+    const allAttributes = await this.findAttributes(environment);
+    const relevantAttributes = allAttributes.filter((attr) => {
+      const isSessionBizType =
+        attr.bizType === AttributeBizType.USER ||
+        attr.bizType === AttributeBizType.COMPANY ||
+        attr.bizType === AttributeBizType.MEMBERSHIP;
+      if (!isSessionBizType) {
+        return false;
+      }
+      return (
+        attrIds.includes(attr.id) ||
+        (attrCodes.includes(attr.codeName) && attr.bizType === AttributeBizType.USER)
+      );
+    });
+
+    const results: SessionAttribute[] = [];
+    for (const attr of relevantAttributes) {
+      const value = await this.queryUserAttributeValue(
+        attr,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+      results.push({
+        id: attr.id,
+        codeName: attr.codeName,
+        value,
+        bizType: attr.bizType,
+        dataType: attr.dataType,
+      });
+    }
+
+    return results;
   }
 
   /**

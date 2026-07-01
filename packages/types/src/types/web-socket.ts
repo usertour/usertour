@@ -340,6 +340,13 @@ export type ListAnnouncementsResult = {
   pageSize: number;
   /** true if there are more announcements after this page */
   truncated: boolean;
+  /**
+   * Resolved user-attribute values (codeName → value) for the attributes
+   * referenced across the returned announcements' content. The feed's content
+   * isn't part of the resource-center session, so its attributes aren't in the
+   * session's userAttributes; the widget merges these to interpolate them.
+   */
+  attributes?: Record<string, any>;
 };
 
 /**
@@ -369,6 +376,12 @@ export type GetAnnouncementDto = {
  */
 export type AnnouncementDetail = AnnouncementListItem & {
   moreContent: unknown[] | null;
+  /**
+   * Resolved user-attribute values (codeName → value) for the attributes
+   * referenced in this announcement's intro + detail content. See
+   * ListAnnouncementsResult.attributes.
+   */
+  attributes?: Record<string, any>;
 };
 
 /**

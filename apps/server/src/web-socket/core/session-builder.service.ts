@@ -1,4 +1,3 @@
-import { AttributeBizType, Attribute } from '@/attributes/models/attribute.model';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -16,7 +15,6 @@ import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
   extractThemeVariationsAttributeIds,
-  getAttributeValue,
   evaluateChecklistItemsWithContext,
   evaluateResourceCenterBlocksWithContext,
   extractLauncherAttrCodes,
@@ -307,94 +305,6 @@ export class SessionBuilderService {
     if (bizSession.versionId !== customContentVersion.id) {
       await this.updateBizSessionVersionId(bizSession.id, customContentVersion.id);
     }
-  }
-
-  /**
-   * Query user attribute value based on attribute business type
-   * @param attr - Attribute definition
-   * @param environment - Environment context
-   * @param externalUserId - External user ID
-   * @param externalCompanyId - Optional company ID
-   * @returns User attribute value
-   */
-  async queryUserAttributeValue(
-    attr: Attribute,
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<any> {
-    const environmentId = environment.id;
-    // Drop projections so per-request memos hold consistent full entities
-    // across all callers in the scope.
-    const bizUser = await this.cache.memoize(
-      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
-      () =>
-        this.prisma.bizUser.findFirst({
-          where: {
-            environmentId,
-            externalId: String(externalUserId),
-          },
-        }),
-    );
-
-    if (!bizUser) {
-      return null;
-    }
-
-    if (attr.bizType === AttributeBizType.USER) {
-      if (bizUser?.data) {
-        return getAttributeValue(bizUser.data, attr.codeName);
-      }
-      return null;
-    }
-
-    if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
-      if (!externalCompanyId) {
-        return null;
-      }
-
-      const bizCompany = await this.cache.memoize(
-        this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
-        () =>
-          this.prisma.bizCompany.findFirst({
-            where: {
-              externalId: String(externalCompanyId),
-              environmentId,
-            },
-          }),
-      );
-
-      if (!bizCompany) {
-        return null;
-      }
-
-      const userOnCompany = await this.cache.memoize(
-        this.cache.memoKeys.bizUserOnCompany(bizUser.id, bizCompany.id),
-        () =>
-          this.prisma.bizUserOnCompany.findFirst({
-            where: {
-              bizUserId: bizUser.id,
-              bizCompanyId: bizCompany.id,
-            },
-          }),
-      );
-
-      if (!userOnCompany) {
-        return null;
-      }
-
-      if (attr.bizType === AttributeBizType.COMPANY) {
-        return getAttributeValue(bizCompany.data, attr.codeName);
-      }
-
-      if (attr.bizType === AttributeBizType.MEMBERSHIP) {
-        return getAttributeValue(userOnCompany.data, attr.codeName);
-      }
-
-      return null;
-    }
-
-    return null;
   }
 
   // ============================================================================
@@ -903,13 +813,9 @@ export class SessionBuilderService {
   }
 
   /**
-   * Extract attribute data based on attribute IDs and codes
-   * @param attrIds - Array of attribute IDs to extract
-   * @param environment - Environment context
-   * @param externalUserId - External user ID
-   * @param externalCompanyId - Optional company ID
-   * @param attrCodes - Array of attribute codes to extract (optional)
-   * @returns Array of session attribute information
+   * Extract attribute data based on attribute IDs and codes. Delegates to
+   * ContentDataService so the session builder and the announcement feed resolve
+   * attributes through one implementation.
    */
   private async extractAttributes(
     attrIds: string[],
@@ -918,49 +824,12 @@ export class SessionBuilderService {
     externalCompanyId?: string,
     attrCodes: string[] = [],
   ): Promise<SessionAttribute[]> {
-    if (attrIds.length === 0 && attrCodes.length === 0) {
-      return [];
-    }
-
-    // Reuse the project-level Attribute cache from ContentDataService instead
-    // of issuing a per-session findMany. Cache contains [USER, COMPANY,
-    // MEMBERSHIP, EVENT] across all extracts; filter EVENT out so this
-    // method's contract (session attributes only) is preserved.
-    const allAttributes = await this.contentDataService.findAttributes(environment);
-    const relevantAttributes = allAttributes.filter((attr) => {
-      const isSessionBizType =
-        attr.bizType === AttributeBizType.USER ||
-        attr.bizType === AttributeBizType.COMPANY ||
-        attr.bizType === AttributeBizType.MEMBERSHIP;
-      if (!isSessionBizType) {
-        return false;
-      }
-      return (
-        attrIds.includes(attr.id) ||
-        (attrCodes.includes(attr.codeName) && attr.bizType === AttributeBizType.USER)
-      );
-    });
-
-    // Query attribute values and build result
-    const results: SessionAttribute[] = [];
-
-    for (const attr of relevantAttributes) {
-      const value = await this.queryUserAttributeValue(
-        attr,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      results.push({
-        id: attr.id,
-        codeName: attr.codeName,
-        value,
-        bizType: attr.bizType,
-        dataType: attr.dataType,
-      });
-    }
-
-    return results;
+    return this.contentDataService.resolveSessionAttributes(
+      attrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
   }
 }

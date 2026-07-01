@@ -5,9 +5,11 @@ import {
   AnnouncementListItem,
   BizEvents,
   ContentDataType,
+  ContentEditorRoot,
   RulesCondition,
 } from '@usertour/types';
 import { BizUser, Environment } from '@/common/types/schema';
+import { extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
 import {
   ConditionEvaluationService,
@@ -138,6 +140,40 @@ export class AnnouncementService {
       distinct: ['contentId'],
     });
     return new Set(seenEvents.filter((event) => event.contentId).map((event) => event.contentId!));
+  }
+
+  /**
+   * Resolve the user-attribute values referenced across the given announcement
+   * content blobs (intro / detail), returned as a codeName → value map. The
+   * feed's content isn't part of the resource-center session, so its attributes
+   * aren't in the session's userAttributes; the widget merges this to
+   * interpolate them (otherwise every attribute renders its fallback).
+   */
+  async resolveContentAttributes(
+    contents: unknown[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+  ): Promise<Record<string, any>> {
+    const attrCodes = [
+      ...new Set(
+        contents.flatMap((content) =>
+          Array.isArray(content) ? extractUserAttrCodes(content as ContentEditorRoot[]) : [],
+        ),
+      ),
+    ];
+    if (attrCodes.length === 0) {
+      return {};
+    }
+
+    const resolved = await this.contentDataService.resolveSessionAttributes(
+      [],
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    return Object.fromEntries(resolved.map((attr) => [attr.codeName, attr.value]));
   }
 
   /**
