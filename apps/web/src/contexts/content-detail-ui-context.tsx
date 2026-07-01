@@ -10,12 +10,15 @@ import type { ContentTypeName } from '@usertour/types';
 //   hook calls that fetch server data.
 // * `isSaving` — the save indicator. `use-content-version-update` raises it
 //   around save mutations; the header reads it to render the "Saving…" badge
-//   and disable destructive actions. Two concerns feed it: the `data` family
-//   (debounced data write + immediate theme / scheduledAt writes) is a
-//   ref-count via begin/endSavingData — the three can overlap, so a single
-//   bool would let one's completion clear another's still-pending save; the
-//   `config` targeting write stays a bool with its own cancel. Exposed as
-//   their OR, so neither concern can clear the other's pending save.
+//   and disable destructive actions. Composed of three signals:
+//   - `savingCount` — a ref-count of in-flight writes (data / theme /
+//     scheduledAt / config). A ref-count, not a bool: several can overlap and a
+//     bool would let one write's completion clear another's still-pending save.
+//   - `dataPending` / `configPending` — the buffered ~500ms debounce window
+//     before a data / config write fires. Held separately (per concern) so a
+//     config edit's cancel can't clear a pending data save, and vice versa.
+//   isSaving is their OR, so both the buffered window and any in-flight write
+//   gate publish.
 //
 // Genuine cross-component UI state. Distinct from server data (which
 // goes through the `useContentDetail` / `useContentVersion` hooks).
@@ -23,9 +26,10 @@ export interface ContentDetailUIContextValue {
   contentId: string;
   contentType: ContentTypeName | undefined;
   isSaving: boolean;
-  beginSavingData: () => void;
-  endSavingData: () => void;
-  setIsSavingConfig: (next: boolean) => void;
+  beginSaving: () => void;
+  endSaving: () => void;
+  setDataPending: (next: boolean) => void;
+  setConfigPending: (next: boolean) => void;
 }
 
 const ContentDetailUIContext = createContext<ContentDetailUIContextValue | undefined>(undefined);
@@ -38,30 +42,30 @@ export interface ContentDetailUIProviderProps {
 
 export const ContentDetailUIProvider = (props: ContentDetailUIProviderProps): JSX.Element => {
   const { children, contentId, contentType } = props;
-  // Ref-count of outstanding data-family save obligations (debounced data write
-  // + immediate theme / scheduledAt writes). A bool can't model overlap: one
-  // operation finishing would clear another's still-pending save. isSaving only
-  // drops once every obligation has settled.
-  const [savingDataCount, setSavingDataCount] = useState(0);
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const isSaving = savingDataCount > 0 || isSavingConfig;
+  // In-flight writes (data / theme / scheduledAt / config). Ref-count, not a
+  // bool: several can overlap and a bool would let one's completion clear
+  // another's still-pending save. Only drops once every write has settled.
+  const [savingCount, setSavingCount] = useState(0);
+  // Buffered ~500ms debounce windows before a data / config write fires. Held
+  // per concern so one's cancel/settle can't clear the other's pending flag.
+  const [dataPending, setDataPending] = useState(false);
+  const [configPending, setConfigPending] = useState(false);
+  const isSaving = savingCount > 0 || dataPending || configPending;
 
-  const beginSavingData = useCallback(() => setSavingDataCount((count) => count + 1), []);
-  const endSavingData = useCallback(
-    () => setSavingDataCount((count) => Math.max(0, count - 1)),
-    [],
-  );
+  const beginSaving = useCallback(() => setSavingCount((count) => count + 1), []);
+  const endSaving = useCallback(() => setSavingCount((count) => Math.max(0, count - 1)), []);
 
   const value = useMemo<ContentDetailUIContextValue>(
     () => ({
       contentId,
       contentType,
       isSaving,
-      beginSavingData,
-      endSavingData,
-      setIsSavingConfig,
+      beginSaving,
+      endSaving,
+      setDataPending,
+      setConfigPending,
     }),
-    [contentId, contentType, isSaving, beginSavingData, endSavingData],
+    [contentId, contentType, isSaving, beginSaving, endSaving],
   );
 
   return (

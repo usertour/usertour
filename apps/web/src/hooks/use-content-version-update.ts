@@ -5,12 +5,13 @@ import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { resolveEditableVersionId } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
-  const { contentId, beginSavingData, endSavingData, setIsSavingConfig } = useContentDetailUI();
+  const { contentId, beginSaving, endSaving, setDataPending, setConfigPending } =
+    useContentDetailUI();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
   const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
@@ -42,8 +43,8 @@ export const useContentVersionUpdate = () => {
   // during the fork and skips the redundant update.
   //
   // Flag-agnostic on purpose: each caller brackets the save indicator with one
-  // begin/endSavingData obligation around its own edit, since the data / theme /
-  // scheduledAt writes can overlap and a shared flag can't model that.
+  // begin/endSaving obligation around its own write, since the data / theme /
+  // scheduledAt writes can overlap and a shared bool can't model that.
   const updateEditableVersion = useCallback(
     async (payload: {
       themeId?: string;
@@ -82,14 +83,14 @@ export const useContentVersionUpdate = () => {
    */
   const saveVersionData = useCallback(
     async (newData: unknown) => {
-      beginSavingData();
+      beginSaving();
       try {
         await updateEditableVersion({ data: newData });
       } finally {
-        endSavingData();
+        endSaving();
       }
     },
-    [updateEditableVersion, beginSavingData, endSavingData],
+    [updateEditableVersion, beginSaving, endSaving],
   );
 
   // Debounced data save — used by editors that write on every keystroke
@@ -100,41 +101,36 @@ export const useContentVersionUpdate = () => {
   //
   // The buffered ~500ms window before the write fires must also gate publish,
   // else a publish there would ship the pre-debounce server data while the
-  // latest edit is still buffered. So hold one save obligation from the moment
-  // an edit is queued (pendingDataRef coalesces a burst into a single hold) and
-  // release it once the coalesced write settles — saveVersionData brackets the
-  // write itself, so the count never dips to zero across the buffered→write
-  // handoff.
-  const pendingDataRef = useRef(false);
+  // latest edit is still buffered. `dataPending` covers that window: set the
+  // moment an edit is queued, cleared only after the fired write has taken its
+  // in-flight obligation (saveVersionData calls beginSaving synchronously before
+  // we clear pending, so isSaving never dips across the handoff — and a newer
+  // keystroke arriving mid-write re-sets dataPending). The unmount effect below
+  // flushes any still-pending write so the edit isn't lost and pending can't leak.
   const rawDebouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
-    saveVersionData(newData).finally(() => {
-      pendingDataRef.current = false;
-      endSavingData();
-    });
+    saveVersionData(newData);
+    setDataPending(false);
   }, 500);
 
   const debouncedSaveVersionData = useCallback(
     (newData: unknown) => {
-      if (!pendingDataRef.current) {
-        pendingDataRef.current = true;
-        beginSavingData();
-      }
+      setDataPending(true);
       rawDebouncedSaveVersionData(newData);
     },
-    [rawDebouncedSaveVersionData, beginSavingData],
+    [rawDebouncedSaveVersionData, setDataPending],
   );
 
   /** Save the version's theme (published-fork safe). */
   const saveVersionTheme = useCallback(
     async (themeId: string) => {
-      beginSavingData();
+      beginSaving();
       try {
         await updateEditableVersion({ themeId });
       } finally {
-        endSavingData();
+        endSaving();
       }
     },
-    [updateEditableVersion, beginSavingData, endSavingData],
+    [updateEditableVersion, beginSaving, endSaving],
   );
 
   /**
@@ -144,14 +140,14 @@ export const useContentVersionUpdate = () => {
    */
   const saveVersionScheduledAt = useCallback(
     async (scheduledAt: Date | null) => {
-      beginSavingData();
+      beginSaving();
       try {
         await updateEditableVersion({ scheduledAt });
       } finally {
-        endSavingData();
+        endSaving();
       }
     },
-    [updateEditableVersion, beginSavingData, endSavingData],
+    [updateEditableVersion, beginSaving, endSaving],
   );
 
   const processVersion = useCallback(
@@ -196,8 +192,8 @@ export const useContentVersionUpdate = () => {
 
   const updateVersion = useCallback(
     async (cfg: ContentConfigObject) => {
+      beginSaving();
       try {
-        setIsSavingConfig(true);
         await processVersion(cfg);
 
         toast({
@@ -210,37 +206,50 @@ export const useContentVersionUpdate = () => {
           title: getErrorMessage(error),
         });
       } finally {
-        setIsSavingConfig(false);
+        endSaving();
       }
     },
-    [processVersion, setIsSavingConfig, toast],
+    [processVersion, beginSaving, endSaving, toast],
   );
 
   const rawDebouncedUpdateVersion = useDebouncedCallback((cfg: ContentConfigObject) => {
     updateVersion(cfg);
+    setConfigPending(false);
   }, 500);
 
   // Flag the config-save the moment an edit is queued, not when the timer fires,
-  // so publish (gated on isSaving) can't ship pre-debounce targeting. cancel()
-  // (rules cleared to empty) clears the flag for the dropped edit. Kept on its
-  // own flag — see content-detail-ui-context — so this can't clear a pending
-  // data save. Object.assign preserves .cancel for the editors that call it.
+  // so publish (gated on isSaving) can't ship pre-debounce targeting. Mirrors the
+  // data path: configPending covers the buffered window (updateVersion brackets
+  // the in-flight count before we clear pending), cancel() (rules cleared to
+  // empty) clears it for the dropped edit, and it's kept on its own flag so it
+  // can't clear a pending data save. Object.assign preserves .cancel for callers.
   const debouncedUpdateVersion = useMemo(
     () =>
       Object.assign(
         (cfg: ContentConfigObject) => {
-          setIsSavingConfig(true);
+          setConfigPending(true);
           rawDebouncedUpdateVersion(cfg);
         },
         {
           cancel: () => {
             rawDebouncedUpdateVersion.cancel();
-            setIsSavingConfig(false);
+            setConfigPending(false);
           },
         },
       ),
-    [rawDebouncedUpdateVersion, setIsSavingConfig],
+    [rawDebouncedUpdateVersion, setConfigPending],
   );
+
+  // use-debounce silently drops a pending trailing call on unmount, which would
+  // both lose the buffered edit and leak its pending flag (isSaving stuck true in
+  // the still-mounted provider). Flush on unmount instead: it fires the pending
+  // write, which persists the edit and clears the pending flag.
+  useEffect(() => {
+    return () => {
+      rawDebouncedSaveVersionData.flush();
+      rawDebouncedUpdateVersion.flush();
+    };
+  }, [rawDebouncedSaveVersionData, rawDebouncedUpdateVersion]);
 
   return {
     debouncedUpdateVersion,
