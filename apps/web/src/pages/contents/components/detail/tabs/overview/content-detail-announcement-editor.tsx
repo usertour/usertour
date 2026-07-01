@@ -294,7 +294,7 @@ const AnnouncementSettingsColumn = () => {
                   const Icon = selected.icon;
                   return (
                     <>
-                      <Icon size={16} className="text-current flex-none" />
+                      <Icon size={16} className="text-muted-foreground flex-none" />
                       <div className="grow text-left ml-2">
                         <SelectValue asChild>
                           <span>{selected.label}</span>
