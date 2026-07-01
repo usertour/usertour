@@ -14,7 +14,7 @@ import {
   VersionConflictError,
   VersionNotEditableError,
 } from '@/common/errors';
-import { ContentConfigObject } from '@usertour/types';
+import { ContentConfigObject, ContentDataType } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
@@ -346,6 +346,7 @@ export class ContentService {
 
   async publishedContentVersion(versionId: string, environmentId: string) {
     const version = await this.getContentVersionById(versionId);
+    const now = new Date();
 
     const content = await this.prisma.$transaction(async (tx) => {
       // Update Content table
@@ -354,9 +355,23 @@ export class ContentService {
         data: {
           published: true,
           publishedVersionId: version.id,
-          publishedAt: new Date(),
+          publishedAt: now,
         },
       });
+
+      // The announcement feed orders and groups strictly by scheduledAt (the
+      // author-facing "Announcement time"). When it's left as "Immediately",
+      // stamp the first publish time so every published announcement has a
+      // stable, non-null ordering key. Only fill when empty: publishing a
+      // second environment — or an edit that forks and carries scheduledAt
+      // forward — keeps the original first-publish time, and an author-set
+      // (future) time is left untouched.
+      if (content.type === ContentDataType.ANNOUNCEMENT && !version.scheduledAt) {
+        await tx.version.update({
+          where: { id: version.id },
+          data: { scheduledAt: now },
+        });
+      }
 
       // Update or create ContentOnEnvironment
       await tx.contentOnEnvironment.upsert({
@@ -370,12 +385,12 @@ export class ContentService {
           environmentId: environmentId,
           contentId: content.id,
           published: true,
-          publishedAt: new Date(),
+          publishedAt: now,
           publishedVersionId: version.id,
         },
         update: {
           published: true,
-          publishedAt: new Date(),
+          publishedAt: now,
           publishedVersionId: version.id,
         },
       });

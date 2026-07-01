@@ -588,7 +588,10 @@ export class SessionBuilderService {
       include: {
         publishedVersion: { select: { id: true, data: true, config: true } },
       },
-      orderBy: { publishedAt: 'desc' },
+      // Order by scheduledAt to match the feed's newest-N set (web-socket-v2
+      // listAnnouncements), so the badge count and the list agree on which
+      // announcements are in scope. Publish stamps scheduledAt on first publish.
+      orderBy: { publishedVersion: { scheduledAt: 'desc' } },
       take: ANNOUNCEMENT_BADGE_SCAN_LIMIT,
     });
 

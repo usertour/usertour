@@ -431,7 +431,7 @@ const AnnouncementContentColumn = () => {
                 {t('contents.overview.announcement.titleTooltip')}
               </QuestionTooltip>
             </div>
-            <ErrorTooltip open={!data.title.trim()}>
+            <ErrorTooltip open={!data.title?.trim()}>
               <ErrorTooltipAnchor asChild>
                 <Input
                   value={data.title}

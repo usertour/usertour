@@ -446,7 +446,13 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   // pagination to drive.
   useEffect(() => {
     const listAnnouncements = onListAnnouncementsRef.current;
-    if (!listAnnouncements) return;
+    // No provider (e.g. the builder preview embed passes no announcement
+    // handlers): clear the initial loading state so we fall through to the
+    // empty placeholder instead of hanging on "Loading..." forever.
+    if (!listAnnouncements) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     listAnnouncements(null)
       .then((result) => {

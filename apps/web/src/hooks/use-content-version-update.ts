@@ -5,12 +5,12 @@ import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { resolveEditableVersionId } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
-  const { contentId, setIsSaving, setIsSavingConfig } = useContentDetailUI();
+  const { contentId, beginSavingData, endSavingData, setIsSavingConfig } = useContentDetailUI();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
   const { invoke: updateContentVersion } = useUpdateContentVersionMutation();
@@ -40,6 +40,10 @@ export const useContentVersionUpdate = () => {
   // mutation response, so only a fork refetches content (details inside). The
   // config (autostart-rules) save uses processVersion instead — it sets config
   // during the fork and skips the redundant update.
+  //
+  // Flag-agnostic on purpose: each caller brackets the save indicator with one
+  // begin/endSavingData obligation around its own edit, since the data / theme /
+  // scheduledAt writes can overlap and a shared flag can't model that.
   const updateEditableVersion = useCallback(
     async (payload: {
       themeId?: string;
@@ -49,7 +53,6 @@ export const useContentVersionUpdate = () => {
     }) => {
       if (!version || !content) return;
       try {
-        setIsSaving(true);
         const editableVersionId = await ensureEditableVersionId();
         const forked = editableVersionId !== version.id;
         await updateContentVersion(editableVersionId, payload);
@@ -64,19 +67,9 @@ export const useContentVersionUpdate = () => {
         }
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
-      } finally {
-        setIsSaving(false);
       }
     },
-    [
-      version,
-      content,
-      ensureEditableVersionId,
-      updateContentVersion,
-      refetchContent,
-      setIsSaving,
-      toast,
-    ],
+    [version, content, ensureEditableVersionId, updateContentVersion, refetchContent, toast],
   );
 
   /**
@@ -88,8 +81,15 @@ export const useContentVersionUpdate = () => {
    * in this closure and clobber a concurrent theme / autostart-rules edit.
    */
   const saveVersionData = useCallback(
-    (newData: unknown) => updateEditableVersion({ data: newData }),
-    [updateEditableVersion],
+    async (newData: unknown) => {
+      beginSavingData();
+      try {
+        await updateEditableVersion({ data: newData });
+      } finally {
+        endSavingData();
+      }
+    },
+    [updateEditableVersion, beginSavingData, endSavingData],
   );
 
   // Debounced data save — used by editors that write on every keystroke
@@ -97,27 +97,44 @@ export const useContentVersionUpdate = () => {
   // a single mutation. Server-side scalar updates are partial (Prisma only
   // writes the provided columns), so this never clobbers theme / config /
   // scheduledAt.
+  //
+  // The buffered ~500ms window before the write fires must also gate publish,
+  // else a publish there would ship the pre-debounce server data while the
+  // latest edit is still buffered. So hold one save obligation from the moment
+  // an edit is queued (pendingDataRef coalesces a burst into a single hold) and
+  // release it once the coalesced write settles — saveVersionData brackets the
+  // write itself, so the count never dips to zero across the buffered→write
+  // handoff.
+  const pendingDataRef = useRef(false);
   const rawDebouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
-    saveVersionData(newData);
+    saveVersionData(newData).finally(() => {
+      pendingDataRef.current = false;
+      endSavingData();
+    });
   }, 500);
 
-  // Flag isSaving the moment an edit is queued, not when the timer fires.
-  // Publish is gated on isSaving, so without this the ~500ms pending window
-  // would let a publish ship the pre-debounce server data while the latest
-  // edit is still buffered. updateEditableVersion's finally clears it once the
-  // coalesced write has committed (after which the server holds the latest).
   const debouncedSaveVersionData = useCallback(
     (newData: unknown) => {
-      setIsSaving(true);
+      if (!pendingDataRef.current) {
+        pendingDataRef.current = true;
+        beginSavingData();
+      }
       rawDebouncedSaveVersionData(newData);
     },
-    [rawDebouncedSaveVersionData, setIsSaving],
+    [rawDebouncedSaveVersionData, beginSavingData],
   );
 
   /** Save the version's theme (published-fork safe). */
   const saveVersionTheme = useCallback(
-    (themeId: string) => updateEditableVersion({ themeId }),
-    [updateEditableVersion],
+    async (themeId: string) => {
+      beginSavingData();
+      try {
+        await updateEditableVersion({ themeId });
+      } finally {
+        endSavingData();
+      }
+    },
+    [updateEditableVersion, beginSavingData, endSavingData],
   );
 
   /**
@@ -126,8 +143,15 @@ export const useContentVersionUpdate = () => {
    * note above.
    */
   const saveVersionScheduledAt = useCallback(
-    (scheduledAt: Date | null) => updateEditableVersion({ scheduledAt }),
-    [updateEditableVersion],
+    async (scheduledAt: Date | null) => {
+      beginSavingData();
+      try {
+        await updateEditableVersion({ scheduledAt });
+      } finally {
+        endSavingData();
+      }
+    },
+    [updateEditableVersion, beginSavingData, endSavingData],
   );
 
   const processVersion = useCallback(

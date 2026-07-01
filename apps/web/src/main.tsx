@@ -22,6 +22,15 @@ import './i18n/config';
 // (no JS frame to fix) and any ResizeObserver — Radix popper, react-use's
 // useMeasure, etc. — can surface it, so we drop it at the reporting boundary
 // rather than chase a non-existent loop source.
+//
+// Matched by prefix against the exact browser wordings (Chrome emits both a
+// "...limit exceeded" and a "...completed with undelivered notifications."
+// variant), so a trailing period or appended detail still counts — without
+// swallowing a genuine error whose message merely mentions a ResizeObserver.
+const BENIGN_RESIZE_OBSERVER_MESSAGES = [
+  'ResizeObserver loop limit exceeded',
+  'ResizeObserver loop completed with undelivered notifications',
+];
 const isBenignResizeObserverNotice = (event: CaptureResult): boolean => {
   if (event.event !== '$exception') {
     return false;
@@ -32,7 +41,8 @@ const isBenignResizeObserverNotice = (event: CaptureResult): boolean => {
   }
   return exceptionList.some(
     (exception) =>
-      typeof exception?.value === 'string' && exception.value.includes('ResizeObserver loop'),
+      typeof exception?.value === 'string' &&
+      BENIGN_RESIZE_OBSERVER_MESSAGES.some((message) => exception.value.startsWith(message)),
   );
 };
 

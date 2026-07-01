@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { ContentTypeName } from '@usertour/types';
 
 // Coordinated UI state for the content-detail page tree.
@@ -8,12 +8,14 @@ import type { ContentTypeName } from '@usertour/types';
 //   so deep children don't each call `useParams()`. They drive the
 //   `useContentDetail(contentId)` / `useContentVersion(content?.editedVersionId)`
 //   hook calls that fetch server data.
-// * `isSaving` — the debounced-save indicator. `use-content-version-update`
-//   flips it true/false around the save mutation; the header reads it
-//   to render the "Saving…" badge and disable destructive actions.
-//   Tracked as two independent flags (scalar `data`/theme writes vs `config`
-//   targeting writes) and exposed as their OR, so a config edit's cancel
-//   can't clear a pending data save (and vice versa).
+// * `isSaving` — the save indicator. `use-content-version-update` raises it
+//   around save mutations; the header reads it to render the "Saving…" badge
+//   and disable destructive actions. Two concerns feed it: the `data` family
+//   (debounced data write + immediate theme / scheduledAt writes) is a
+//   ref-count via begin/endSavingData — the three can overlap, so a single
+//   bool would let one's completion clear another's still-pending save; the
+//   `config` targeting write stays a bool with its own cancel. Exposed as
+//   their OR, so neither concern can clear the other's pending save.
 //
 // Genuine cross-component UI state. Distinct from server data (which
 // goes through the `useContentDetail` / `useContentVersion` hooks).
@@ -21,7 +23,8 @@ export interface ContentDetailUIContextValue {
   contentId: string;
   contentType: ContentTypeName | undefined;
   isSaving: boolean;
-  setIsSaving: (next: boolean) => void;
+  beginSavingData: () => void;
+  endSavingData: () => void;
   setIsSavingConfig: (next: boolean) => void;
 }
 
@@ -35,13 +38,30 @@ export interface ContentDetailUIProviderProps {
 
 export const ContentDetailUIProvider = (props: ContentDetailUIProviderProps): JSX.Element => {
   const { children, contentId, contentType } = props;
-  const [isSavingData, setIsSaving] = useState(false);
+  // Ref-count of outstanding data-family save obligations (debounced data write
+  // + immediate theme / scheduledAt writes). A bool can't model overlap: one
+  // operation finishing would clear another's still-pending save. isSaving only
+  // drops once every obligation has settled.
+  const [savingDataCount, setSavingDataCount] = useState(0);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const isSaving = isSavingData || isSavingConfig;
+  const isSaving = savingDataCount > 0 || isSavingConfig;
+
+  const beginSavingData = useCallback(() => setSavingDataCount((count) => count + 1), []);
+  const endSavingData = useCallback(
+    () => setSavingDataCount((count) => Math.max(0, count - 1)),
+    [],
+  );
 
   const value = useMemo<ContentDetailUIContextValue>(
-    () => ({ contentId, contentType, isSaving, setIsSaving, setIsSavingConfig }),
-    [contentId, contentType, isSaving],
+    () => ({
+      contentId,
+      contentType,
+      isSaving,
+      beginSavingData,
+      endSavingData,
+      setIsSavingConfig,
+    }),
+    [contentId, contentType, isSaving, beginSavingData, endSavingData],
   );
 
   return (

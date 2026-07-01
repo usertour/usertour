@@ -44,6 +44,7 @@ import {
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
+import { DistributedLockService } from '../core/distributed-lock.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
@@ -78,6 +79,7 @@ export class WebSocketV2Service {
     private readonly conditionEvaluationService: ConditionEvaluationService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
+    private readonly distributedLockService: DistributedLockService,
   ) {}
 
   // ============================================================================
@@ -1090,7 +1092,11 @@ export class WebSocketV2Service {
           },
         },
       },
-      orderBy: { publishedAt: 'desc' },
+      // Order by scheduledAt (the "Announcement time"), matching the client's
+      // date grouping. Publish stamps scheduledAt on first publish, so this is
+      // always populated for published announcements — the grouping stays
+      // contiguous regardless of when each was actually published.
+      orderBy: { publishedVersion: { scheduledAt: 'desc' } },
       take: WebSocketV2Service.ANNOUNCEMENT_LIMIT,
     });
 
@@ -1218,39 +1224,50 @@ export class WebSocketV2Service {
     try {
       const { environment, externalUserId, clientContext, bizCompanyId } = socketData;
 
-      // Idempotent: opening the feed marks every unseen announcement, so the same
-      // id can be reported again on a refetch or a quick reopen. The seen flag is
-      // unaffected either way (it's a set-membership check over events), but skip
-      // when already seen so duplicate ANNOUNCEMENT_SEEN events don't inflate counts.
+      // Opening the feed marks every unseen announcement, so the same id can be
+      // reported again on a refetch or a quick reopen — including before the
+      // first ANNOUNCEMENT_SEEN event has committed. The check-then-insert must
+      // be atomic, or two such marks both read "unseen" and each insert an
+      // event, double-counting views. There's no row to lock (seen is a
+      // set-membership check over events), so serialize per (user, announcement)
+      // with a distributed lock; a mark that can't acquire it is a concurrent
+      // duplicate whose winner records the event, so skipping it is a safe no-op.
       const bizUser = await this.findBizUser(socketData);
-      if (bizUser) {
-        const seenIds = await this.getSeenAnnouncementIds(
-          bizUser.id,
-          [params.contentId],
-          environment.id,
-        );
-        if (seenIds.has(params.contentId)) {
-          return true;
-        }
-      }
+      const lockKey = `announcement-seen:${bizUser?.id ?? externalUserId}:${params.contentId}`;
 
-      await this.eventTrackingService.trackDirectContentEvent({
-        environment,
-        externalUserId,
-        clientContext,
-        contentId: params.contentId,
-        versionId: params.versionId,
-        eventCodeName: BizEvents.ANNOUNCEMENT_SEEN,
-        buildEventData: (content, version) =>
-          buildAnnouncementSeenEventData(content, version, 'resource_center'),
-        bizCompanyId,
+      const recorded = await this.distributedLockService.withLock(lockKey, async () => {
+        if (bizUser) {
+          const seenIds = await this.getSeenAnnouncementIds(
+            bizUser.id,
+            [params.contentId],
+            environment.id,
+          );
+          if (seenIds.has(params.contentId)) {
+            return true;
+          }
+        }
+
+        await this.eventTrackingService.trackDirectContentEvent({
+          environment,
+          externalUserId,
+          clientContext,
+          contentId: params.contentId,
+          versionId: params.versionId,
+          eventCodeName: BizEvents.ANNOUNCEMENT_SEEN,
+          buildEventData: (content, version) =>
+            buildAnnouncementSeenEventData(content, version, 'resource_center'),
+          bizCompanyId,
+        });
+        return true;
       });
+
+      // withLock returns null when a concurrent mark for the same announcement
+      // holds the lock; that winner records the event, so treat this as success.
+      return recorded ?? true;
     } catch (error) {
       this.logger.error(`Failed to track announcement_seen event: ${(error as Error).message}`);
       return false;
     }
-
-    return true;
   }
 
   // ============================================================================
