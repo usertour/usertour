@@ -1,4 +1,4 @@
-import { ModalPosition } from '@usertour/types';
+import { ModalPosition, StepContentType } from '@usertour/types';
 
 import { ApiObjectType } from '../shared/object-type';
 import {
@@ -54,7 +54,8 @@ export function decompileStep(
 
   // A tooltip whose only targeting is the internal "auto" fingerprint can't be
   // represented — flag it so consumers know the target is opaque.
-  const targetUnsupported = step.type === 'tooltip' && !target && hasAutoTarget(step.target);
+  const targetUnsupported =
+    step.type === StepContentType.TOOLTIP && !target && hasAutoTarget(step.target);
   const hasUnsupported = contentUnsupported || targetUnsupported;
 
   return {
@@ -363,7 +364,7 @@ function decompilePlacement(raw: unknown, type: string): RepresentationPlacement
   if (!s || typeof s !== 'object') {
     return undefined;
   }
-  if (type === 'modal' || type === 'bubble') {
+  if (type === StepContentType.MODAL || type === StepContentType.BUBBLE) {
     if (typeof s.position !== 'string' || !POSITIONS.has(s.position)) {
       return undefined;
     }
@@ -375,7 +376,7 @@ function decompilePlacement(raw: unknown, type: string): RepresentationPlacement
       ...(typeof s.enabledBlockTarget === 'boolean' ? { blockTarget: s.enabledBlockTarget } : {}),
     };
   }
-  if (type === 'tooltip') {
+  if (type === StepContentType.TOOLTIP) {
     if (
       typeof s.side !== 'string' ||
       !SIDES.has(s.side) ||

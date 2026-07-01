@@ -1,4 +1,5 @@
 import { cuid, defaultColumn, defaultStep } from '@usertour/helpers';
+import { StepContentType } from '@usertour/types';
 
 import {
   RepresentationAction,
@@ -134,7 +135,7 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
   }
   // Guarantee a modal renders on-screen even when updating a legacy step whose
   // existing setting lacks a position (create already gets it from the defaults).
-  if (step.type === 'modal' && s.position === undefined) {
+  if (step.type === StepContentType.MODAL && s.position === undefined) {
     s.position = (DEFAULT_STEP_SETTING.position as string) ?? 'center';
   }
   return s;

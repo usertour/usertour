@@ -223,15 +223,15 @@ export function buildReadTools(): McpTool[] {
         // not appear in `required` — otherwise the agent thinks it must send them.
         const toJson = (s: z.ZodType) =>
           z.toJSONSchema(s, { unrepresentable: 'any', reused: 'ref', io: 'input' });
-        if (type === 'flow') {
+        if (type === ContentDataType.FLOW) {
           return { type, body: 'steps', schema: toJson(z.array(representationStepInput)) };
         }
         const byType: Record<string, z.ZodType> = {
-          checklist: representationChecklist,
-          launcher: representationLauncher,
-          banner: representationBanner,
-          tracker: representationTracker,
-          'resource-center': representationResourceCenter,
+          [ContentDataType.CHECKLIST]: representationChecklist,
+          [ContentDataType.LAUNCHER]: representationLauncher,
+          [ContentDataType.BANNER]: representationBanner,
+          [ContentDataType.TRACKER]: representationTracker,
+          [ContentDataType.RESOURCE_CENTER]: representationResourceCenter,
         };
         return { type, body: 'data', schema: toJson(byType[type]) };
       },

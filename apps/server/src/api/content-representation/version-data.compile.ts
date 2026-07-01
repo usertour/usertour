@@ -1,4 +1,5 @@
 import { cuid } from '@usertour/helpers';
+import { ContentDataType } from '@usertour/types';
 
 import { z } from 'zod';
 
@@ -68,15 +69,15 @@ export function compileVersionData(
     );
   }
   switch (contentType) {
-    case 'tracker':
+    case ContentDataType.TRACKER:
       return compileTracker(parse(representationTracker, data), existingData, resolvers);
-    case 'checklist':
+    case ContentDataType.CHECKLIST:
       return compileChecklist(parse(representationChecklist, data), existingData, resolvers);
-    case 'launcher':
+    case ContentDataType.LAUNCHER:
       return compileLauncher(parse(representationLauncher, data), existingData, resolvers);
-    case 'banner':
+    case ContentDataType.BANNER:
       return compileBanner(parse(representationBanner, data), existingData, resolvers);
-    case 'resource-center':
+    case ContentDataType.RESOURCE_CENTER:
       return compileResourceCenter(
         parse(representationResourceCenter, data),
         existingData,

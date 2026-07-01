@@ -1,3 +1,5 @@
+import { ContentDataType, LauncherDataType } from '@usertour/types';
+
 import { decompileContent } from './representation.decompile';
 import { decompileResourceCenter } from './resource-center.decompile';
 import { decompileActions, decompileWhen, DecompileResolvers } from './rules.decompile';
@@ -21,15 +23,15 @@ export function decompileVersionData(
   resolvers: DecompileResolvers,
 ): RepresentationVersionData | undefined {
   switch (contentType) {
-    case 'tracker':
+    case ContentDataType.TRACKER:
       return decompileTracker(data, resolvers);
-    case 'checklist':
+    case ContentDataType.CHECKLIST:
       return decompileChecklist(data, resolvers);
-    case 'launcher':
+    case ContentDataType.LAUNCHER:
       return decompileLauncher(data, resolvers);
-    case 'banner':
+    case ContentDataType.BANNER:
       return decompileBanner(data, resolvers);
-    case 'resource-center':
+    case ContentDataType.RESOURCE_CENTER:
       return decompileResourceCenter(data, resolvers);
     default:
       return undefined;
@@ -71,7 +73,16 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
   const settings = (tooltip.settings ?? {}) as Record<string, any>;
   const target = decompileTarget(d.target?.element);
   return {
-    style: ['beacon', 'icon', 'hidden', 'button'].includes(d.type) ? d.type : 'icon',
+    style: (
+      [
+        LauncherDataType.BEACON,
+        LauncherDataType.ICON,
+        LauncherDataType.HIDDEN,
+        LauncherDataType.BUTTON,
+      ] as string[]
+    ).includes(d.type)
+      ? d.type
+      : LauncherDataType.ICON,
     icon: {
       ...(d.iconSource ? { source: d.iconSource } : {}),
       ...(d.iconUrl ? { url: d.iconUrl } : {}),

@@ -1,3 +1,5 @@
+import { ContentDataType } from '@usertour/types';
+
 import { decompileContent } from './representation.decompile';
 import { decompileActions, decompileWhen, DecompileResolvers } from './rules.decompile';
 import { decompileText } from './text.decompile';
@@ -91,7 +93,10 @@ function decompileBlock(
         items: (Array.isArray(b.contentItems) ? b.contentItems : []).map(
           (it: Record<string, any>) => ({
             content: typeof it.contentId === 'string' ? it.contentId : '',
-            contentType: it.contentType === 'checklist' ? 'checklist' : 'flow',
+            contentType:
+              it.contentType === ContentDataType.CHECKLIST
+                ? ContentDataType.CHECKLIST
+                : ContentDataType.FLOW,
             ...(icon(it.iconSource, it.iconType, it.iconUrl)
               ? { icon: icon(it.iconSource, it.iconType, it.iconUrl) }
               : {}),
