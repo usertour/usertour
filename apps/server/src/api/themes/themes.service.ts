@@ -107,7 +107,8 @@ export class ApiThemesService {
   }
 
   /**
-   * Create a theme. Starts from the default styling; an optional `settings` patch is
+   * Create a theme. Starts from the fixed built-in `defaultSettings` (a neutral base — NOT a
+   * copy of the project's default / isDefault theme); an optional `settings` patch is
    * field-merged onto it and auto colors derived. `variations` are not yet writable.
    */
   async create(projectId: string, body: CreateThemeBody): Promise<Theme> {

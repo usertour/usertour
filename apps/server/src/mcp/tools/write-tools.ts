@@ -532,7 +532,8 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create a theme',
       capability: Capability.ThemeCreate,
       description:
-        'Create a theme. Starts from the default styling; pass a partial `settings` to ' +
+        'Create a theme. Starts from a fixed built-in default styling (a neutral base — NOT a ' +
+        "copy of your project's default / `isDefault` theme); pass a partial `settings` to " +
         'override colors / fonts / sizes (field-merged, auto colors derived). `variations` ' +
         'are not yet editable via the API.',
       inputSchema: { ...createThemeBody.shape, settings: themeSettingsMcpField },
