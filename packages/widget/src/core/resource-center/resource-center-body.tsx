@@ -581,15 +581,23 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // The SDK passes a fresh onGetAnnouncement identity every render, so depending
+  // on it would re-run this fetch (flashing back to 'Loading...' + re-issuing the
+  // socket request) on every widget re-render. Read it from a ref and fetch once
+  // per announcementId — same reason the list view refs its callbacks.
+  const onGetAnnouncementRef = useRef(onGetAnnouncement);
+  onGetAnnouncementRef.current = onGetAnnouncement;
+
   // Seen is marked on feed load (the list every announcement passes through), so
   // the detail view only fetches and displays.
   useEffect(() => {
-    if (!onGetAnnouncement) return;
+    const getAnnouncement = onGetAnnouncementRef.current;
+    if (!getAnnouncement) return;
     setIsLoading(true);
-    onGetAnnouncement(announcementId)
+    getAnnouncement(announcementId)
       .then(setDetail)
       .finally(() => setIsLoading(false));
-  }, [onGetAnnouncement, announcementId]);
+  }, [announcementId]);
 
   // Merge the announcement's own resolved attributes (its content isn't part of
   // the RC session, so they aren't in the session's userAttributes) so intro /

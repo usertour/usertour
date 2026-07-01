@@ -156,10 +156,10 @@ const AnnouncementSettingsColumn = () => {
 
   const handleAutoStartRulesDataChange = useCallback(
     (enabled: boolean, conditions: RulesCondition[], setting: any) => {
-      if (conditions.length === 0) {
-        debouncedUpdateVersion.cancel();
-        return;
-      }
+      // Unlike a tracker (where empty conditions are an invalid, unpublishable
+      // state), an announcement with no "Only show if..." conditions is the
+      // valid "show to everyone" state. So persist an empty set instead of
+      // cancelling — clearing all conditions must actually broaden visibility.
       const newConfig = {
         ...config,
         enabledAutoStartRules: enabled,

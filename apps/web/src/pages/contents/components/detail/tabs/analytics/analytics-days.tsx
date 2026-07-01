@@ -308,10 +308,14 @@ export const AnalyticsDays = () => {
     return null;
   }
 
+  // Types with no meaningful completion have completions === views, so a
+  // rate would always read 100%. Announcements are view-only like these, so
+  // exclude them too instead of showing a nonsensical 100% completion rate.
   const showRate =
     contentType !== ContentDataType.BANNER &&
     contentType !== ContentDataType.TRACKER &&
-    contentType !== ContentDataType.RESOURCE_CENTER;
+    contentType !== ContentDataType.RESOURCE_CENTER &&
+    contentType !== ContentDataType.ANNOUNCEMENT;
 
   const dateLabel = formatDateRange(dateRange, t);
 
