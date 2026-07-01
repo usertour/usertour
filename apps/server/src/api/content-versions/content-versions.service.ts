@@ -409,20 +409,27 @@ export class ApiContentVersionsService {
   }
 
   /**
-   * A content-state ("content" / representation `flow`) condition gates on another piece of
-   * content's per-user state (seen / completed / active). Only FLOWS and CHECKLISTS carry that
-   * state — the builder's picker lists only flows and checklists here, and the runtime records
-   * seen/completed events only for them (FLOW_STEP_SEEN / CHECKLIST_SEEN, FLOW_COMPLETED /
-   * CHECKLIST_COMPLETED). A banner / launcher / resource-center / tracker can't be a target: on
-   * those a seen/completed condition silently never matches and active/inactive isn't authorable
-   * in the builder, so referencing one is rejected for ANY state. Reactive slots (step triggers,
-   * button show/hide) already reject all content-state conditions, so only start / hide rules and
-   * non-flow `data` slots reach here. Unknown / cross-project target ids are left to other
-   * validation — only a real content of the wrong type is flagged.
+   * Every cross-content reference must point at a FLOW or a CHECKLIST — the only types the
+   * builder lets you pick in these spots. Three carriers of the same rule:
+   *  - a content-state condition (`{ type: 'flow', flow, state }`) — only flows/checklists record
+   *    the per-user seen/completed/active state it gates on (FLOW_STEP_SEEN / CHECKLIST_SEEN, …);
+   *  - a `start_flow` action (`{ type: 'start_flow', flow }`) — you can launch a flow or a
+   *    checklist, not a banner/launcher/RC/tracker;
+   *  - a resource-center content-list item (`{ content, contentType }`) — links to a flow/checklist.
+   * The write schema accepts any content id in all three, so a reference to a banner/launcher/RC/
+   * tracker publishes but never fires (condition never matches; action/list renders nothing). This
+   * is a deterministic type error (the target's type is fixed now), so — like the existence check's
+   * sibling — it's rejected at WRITE, not deferred to a publish warning. (Existence/dangling-id is
+   * the soft, forward-ref-tolerant half and stays a validate warning in collectRuleIssues.)
+   * Unknown / cross-project ids are left to that existence check — only a real content of the
+   * wrong type is flagged here.
    */
-  private async assertFlowStateTargets(body: UpdateVersionBody, projectId: string): Promise<void> {
+  private async assertContentReferenceTargets(
+    body: UpdateVersionBody,
+    projectId: string,
+  ): Promise<void> {
     const VALID_TARGET_TYPES = new Set<string>([ContentDataType.FLOW, ContentDataType.CHECKLIST]);
-    const refs: { flow: string; where: string }[] = [];
+    const refs: { id: string; where: string; kind: string }[] = [];
     const collect = (node: unknown, where: string): void => {
       if (Array.isArray(node)) {
         for (const n of node) {
@@ -435,7 +442,12 @@ export class ApiContentVersionsService {
       }
       const obj = node as Record<string, unknown>;
       if (obj.type === 'flow' && typeof obj.flow === 'string') {
-        refs.push({ flow: obj.flow, where });
+        refs.push({ id: obj.flow, where, kind: 'A content-state condition' });
+      } else if (obj.type === 'start_flow' && typeof obj.flow === 'string') {
+        refs.push({ id: obj.flow, where, kind: 'A start_flow action' });
+      } else if (typeof obj.content === 'string' && typeof obj.contentType === 'string') {
+        // A resource-center content-list item: { content: <id>, contentType: 'flow'|'checklist' }.
+        refs.push({ id: obj.content, where, kind: 'A resource-center content-list item' });
       }
       for (const key of Object.keys(obj)) {
         collect(obj[key], where);
@@ -443,22 +455,23 @@ export class ApiContentVersionsService {
     };
     collect(body.startRules?.when, 'a start rule');
     collect(body.hideRules?.when, 'a hide rule');
+    collect(body.steps, 'a step'); // start_flow actions live in flow step buttons/triggers/onClick
     collect(body.data, "the content's data");
     if (refs.length === 0) {
       return;
     }
 
-    const ids = [...new Set(refs.map((r) => r.flow))];
+    const ids = [...new Set(refs.map((r) => r.id))];
     const found = await this.prisma.content.findMany({
       where: { id: { in: ids }, projectId },
       select: { id: true, type: true },
     });
     const typeById = new Map(found.map((c) => [c.id, c.type]));
     for (const r of refs) {
-      const targetType = typeById.get(r.flow);
+      const targetType = typeById.get(r.id);
       if (targetType && !VALID_TARGET_TYPES.has(targetType)) {
         throw new ValidationError(
-          `A content-state condition (in ${r.where}) references a ${targetType}, but these conditions can only track a flow or a checklist (only those record per-user seen/completed/active state). Reference a flow or checklist instead.`,
+          `${r.kind} (in ${r.where}) references a ${targetType}, but it can only reference a flow or a checklist. Point it at a flow or checklist instead.`,
         );
       }
     }
@@ -480,10 +493,10 @@ export class ApiContentVersionsService {
     const resolvers = await this.buildCompileResolvers(projectId);
     const content: Record<string, unknown> = {};
 
-    // A content-state condition can only track a flow or checklist (the builder lists only
-    // those; banner/launcher/RC/tracker carry no per-user seen/completed state) — reject before
-    // compiling.
-    await this.assertFlowStateTargets(body, projectId);
+    // Every cross-content reference (content-state condition, start_flow action, RC content-list
+    // item) can only point at a flow or checklist, the only types the builder lets you pick —
+    // reject a wrong-type target before compiling.
+    await this.assertContentReferenceTargets(body, projectId);
 
     if (body.steps) {
       // Reactive slots (step triggers + button show/hide/disable) only support

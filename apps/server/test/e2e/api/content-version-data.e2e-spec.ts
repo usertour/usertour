@@ -531,5 +531,33 @@ describe('API v2 version.data codec (e2e)', () => {
       );
       expect(res.status).toBe(400);
     });
+
+    it('rejects a content-list item that targets a non-flow/checklist (400)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      // content-list items link to a flow/checklist; the item's `contentType` label is schema-
+      // limited to flow/checklist, but `content` (the id) could still point at a banner.
+      const bannerContent = await buildContent(prisma, { projectId, type: 'banner' });
+      const res = await write(
+        rc,
+        {
+          data: {
+            tabs: [
+              {
+                name: 'T',
+                blocks: [
+                  {
+                    type: 'content-list',
+                    name: 'Tours',
+                    items: [{ content: bannerContent.id, contentType: 'flow' }],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(400);
+    });
   });
 });

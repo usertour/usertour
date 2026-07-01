@@ -412,9 +412,10 @@ export const representationAction = z.discriminatedUnion('type', [
     flow: z
       .string()
       .describe(
-        'contentId of the flow to launch (from list_content) — a raw content id, NOT a step key ' +
-          '(unlike goto_step). The target flow must be PUBLISHED to actually start at runtime; an ' +
-          'unknown/dangling id is rejected at validate.',
+        'contentId of the flow OR checklist to launch (from list_content) — a raw content id, NOT ' +
+          'a step key (unlike goto_step). Must reference a flow or checklist (a banner / launcher / ' +
+          'resource-center / tracker is rejected at write). The target must be PUBLISHED to actually ' +
+          'start at runtime; an unknown/dangling id is rejected at validate.',
       ),
     step: z
       .string()

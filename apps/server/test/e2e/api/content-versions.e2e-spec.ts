@@ -420,6 +420,36 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(ok.status).toBe(200);
   });
 
+  it('rejects a start_flow action targeting a non-flow/checklist (400)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    // start_flow can launch a flow or a checklist — not a banner (the builder never lists it).
+    const bannerContent = await buildContent(prisma, { projectId, type: 'banner' });
+    const flowContent = await buildContent(prisma, { projectId, type: 'flow' });
+    const patchSteps = (actions: unknown[]) =>
+      api(
+        'patch',
+        `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+        token,
+      ).send({
+        steps: [
+          {
+            name: 'T',
+            type: 'modal',
+            content: [
+              { type: 'text', markdown: 'x' },
+              { type: 'button', text: 'Go', actions },
+            ],
+          },
+        ],
+      });
+
+    const bad = await patchSteps([{ type: 'start_flow', flow: bannerContent.id }]);
+    expect(bad.status).toBe(400);
+
+    const ok = await patchSteps([{ type: 'start_flow', flow: flowContent.id }]);
+    expect(ok.status).toBe(200);
+  });
+
   it('wires goto_step by step key in a single write (resolves to cvids, cycle ok)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // Two new steps that reference each other by `key` — a cycle, authored in one
