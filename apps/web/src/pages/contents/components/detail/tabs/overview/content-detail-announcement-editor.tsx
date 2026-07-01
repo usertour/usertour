@@ -5,6 +5,7 @@ import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
+import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useAws } from '@usertour/hooks';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
@@ -128,9 +129,18 @@ const AnnouncementSettingsColumn = () => {
   // but future self-rendering announcement formats resolve it like flows do, so
   // persist the project default when none is set. Guarded per version id so an
   // in-flight save doesn't trigger a second write before the version refetches.
+  //
+  // Skip when the current version is published: saveVersionTheme would fork it
+  // into a draft, so merely viewing a published themeless announcement would
+  // create a spurious "unpublished changes" draft. Like the builder, only write
+  // the default onto an already-editable draft — a real edit forks first, then
+  // this fills the themeId on that draft.
   const assignedDefaultThemeFor = useRef<string | null>(null);
   useEffect(() => {
-    if (isViewOnly || !version?.id || version.themeId || !defaultTheme) {
+    if (isViewOnly || !content || !version?.id || version.themeId || !defaultTheme) {
+      return;
+    }
+    if (isVersionPublished(content, version.id)) {
       return;
     }
     if (assignedDefaultThemeFor.current === version.id) {
@@ -138,7 +148,7 @@ const AnnouncementSettingsColumn = () => {
     }
     assignedDefaultThemeFor.current = version.id;
     saveVersionTheme(defaultTheme.id);
-  }, [isViewOnly, version?.id, version?.themeId, defaultTheme, saveVersionTheme]);
+  }, [isViewOnly, content, version?.id, version?.themeId, defaultTheme, saveVersionTheme]);
 
   const distributionOptions = useMemo(
     () => [
