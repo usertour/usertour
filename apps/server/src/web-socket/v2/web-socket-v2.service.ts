@@ -66,6 +66,31 @@ type AnnouncementTargetingConfig = {
   autoStartRules?: RulesCondition[];
 };
 
+// Shared field mapping for an announcement's feed row and its detail view: the
+// two read paths (listAnnouncements / getAnnouncement) must expose identical
+// values, so both build the item from here. `time` is the scheduledAt (the
+// "Announcement time"), which publish stamps on first publish — always set for
+// a published announcement (legacy rows are backfilled) — so there is no
+// publishedAt fallback.
+const buildAnnouncementListItem = (
+  content: { id: string },
+  publishedVersion: { id: string; data: unknown; scheduledAt: Date | null },
+  seen: boolean,
+): AnnouncementListItem => {
+  const data = (publishedVersion.data ?? {}) as unknown as AnnouncementData;
+  return {
+    id: content.id,
+    versionId: publishedVersion.id,
+    title: data.title,
+    content: data.introContent ?? [],
+    moreEnabled: data.enableReadMore ?? false,
+    moreButtonText: data.readMoreLabel ?? 'Read more',
+    level: data.distribution ?? 'silent',
+    seen,
+    time: publishedVersion.scheduledAt?.toISOString() ?? '',
+  };
+};
+
 @Injectable()
 export class WebSocketV2Service {
   private readonly logger = new Logger(WebSocketV2Service.name);
@@ -1119,20 +1144,9 @@ export class WebSocketV2Service {
     const contentIds = visibleItems.map((item) => item.content.id);
     const seenSet = await this.getSeenAnnouncementIds(bizUser.id, contentIds, environmentId);
 
-    const announcements: AnnouncementListItem[] = visibleItems.map((item) => {
-      const data = (item.publishedVersion!.data ?? {}) as unknown as AnnouncementData;
-      return {
-        id: item.content.id,
-        versionId: item.publishedVersion!.id,
-        title: data.title,
-        content: data.introContent ?? [],
-        moreEnabled: data.enableReadMore ?? false,
-        moreButtonText: data.readMoreLabel ?? 'Read more',
-        level: data.distribution ?? 'silent',
-        seen: seenSet.has(item.content.id),
-        time: (item.publishedVersion!.scheduledAt ?? item.publishedAt)?.toISOString() ?? '',
-      };
-    });
+    const announcements: AnnouncementListItem[] = visibleItems.map((item) =>
+      buildAnnouncementListItem(item.content, item.publishedVersion!, seenSet.has(item.content.id)),
+    );
 
     return { announcements, pageSize, truncated: false };
   }
@@ -1196,17 +1210,7 @@ export class WebSocketV2Service {
       : false;
 
     return {
-      id: contentOnEnv.content.id,
-      versionId: contentOnEnv.publishedVersion.id,
-      title: data.title,
-      content: data.introContent ?? [],
-      moreEnabled: data.enableReadMore ?? false,
-      moreButtonText: data.readMoreLabel ?? 'Read more',
-      level: data.distribution ?? 'silent',
-      seen,
-      time:
-        (contentOnEnv.publishedVersion!.scheduledAt ?? contentOnEnv.publishedAt)?.toISOString() ??
-        '',
+      ...buildAnnouncementListItem(contentOnEnv.content, contentOnEnv.publishedVersion, seen),
       moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
     };
   }
