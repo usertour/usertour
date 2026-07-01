@@ -237,6 +237,67 @@ export class ApiContentVersionsService {
     return this.get(created.id, contentId, projectId, {});
   }
 
+  /**
+   * Reactive condition slots — a step's `triggers[].when` and a button block's
+   * `hiddenWhen` / `disabledWhen` — are evaluated LIVE in the browser (the SDK
+   * polls the DOM). The builder omits `event` / `segment` / `flow`-state from these
+   * slots because those are server-evaluated and would silently never fire here.
+   * The general condition union (accepted by this write API) allows them, so gate
+   * it: reject those types in these slots at write, and point authors to start/hide
+   * rules or a checklist item's completeWhen (which ARE server-evaluated) instead.
+   */
+  private assertStepReactiveConditions(steps: unknown[]): void {
+    steps.forEach((s, i) => {
+      const step = s as { triggers?: { when?: unknown }[]; content?: unknown };
+      (step.triggers ?? []).forEach((t, ti) =>
+        this.assertReactiveConditions(t?.when, `steps[${i}].triggers[${ti}].when`),
+      );
+      this.assertButtonReactiveConditions(step.content, `steps[${i}].content`);
+    });
+  }
+
+  private assertButtonReactiveConditions(blocks: unknown, path: string): void {
+    if (!Array.isArray(blocks)) return;
+    blocks.forEach((b, i) => {
+      const block = b as {
+        type?: string;
+        hiddenWhen?: unknown;
+        disabledWhen?: unknown;
+        columns?: { blocks?: unknown }[];
+      };
+      const at = `${path}[${i}]`;
+      if (block?.type === 'button') {
+        this.assertReactiveConditions(block.hiddenWhen, `${at}.hiddenWhen`);
+        this.assertReactiveConditions(block.disabledWhen, `${at}.disabledWhen`);
+      }
+      if (block?.type === 'columns' && Array.isArray(block.columns)) {
+        block.columns.forEach((col, ci) =>
+          this.assertButtonReactiveConditions(col?.blocks, `${at}.columns[${ci}].blocks`),
+        );
+      }
+    });
+  }
+
+  private assertReactiveConditions(conditions: unknown, path: string): void {
+    if (!Array.isArray(conditions)) return;
+    const EXCLUDED = new Set(['event', 'segment', 'flow']);
+    conditions.forEach((c, i) => {
+      const at = `${path}[${i}]`;
+      const type = (c as { type?: unknown })?.type;
+      if (typeof type === 'string' && EXCLUDED.has(type)) {
+        throw new ValidationError(
+          `A "${type}" condition can't be used in a step trigger or a button show/hide/disable rule (at ${at}). Those are evaluated live in the browser and support only attribute / current_url / element / text_input / text_filled / time conditions; event / segment / flow-state conditions are server-evaluated and would silently never fire here — use them in start/hide rules or a checklist item's completeWhen instead.`,
+        );
+      }
+      if (type === 'group') {
+        this.assertReactiveConditions(
+          (c as { conditions?: unknown }).conditions,
+          `${at}.conditions`,
+        );
+      }
+    });
+  }
+
   async update(
     id: string,
     contentId: string,
@@ -254,6 +315,11 @@ export class ApiContentVersionsService {
     const content: Record<string, unknown> = {};
 
     if (body.steps) {
+      // Reactive slots (step triggers + button show/hide/disable) only support
+      // client-evaluable conditions — reject event/segment/flow-state up front (the
+      // builder omits them there and they'd silently never fire; those belong in
+      // start/hide rules or a checklist item's completeWhen).
+      this.assertStepReactiveConditions(body.steps as unknown[]);
       // Per-step theme overrides must reference a live project theme (a null clears
       // the override → inherit the version theme, so only validate non-null strings).
       for (const themeId of new Set(

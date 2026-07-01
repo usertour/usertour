@@ -300,6 +300,59 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('rejects server-side conditions (event/segment/flow) in a step trigger or button rule (400 E1017)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const patch = (steps: unknown[]) =>
+      api(
+        'patch',
+        `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+        token,
+      ).send({ steps });
+
+    // event condition in a step trigger — server-evaluated, won't fire a client-side
+    // in-session advance (the builder omits it here) → rejected.
+    const evt = await patch([
+      {
+        name: 'T',
+        type: 'modal',
+        content: [{ type: 'text', markdown: 'x' }],
+        triggers: [{ when: [{ type: 'event', event: 'whatever' }], do: [{ type: 'dismiss' }] }],
+      },
+    ]);
+    expect(evt.status).toBe(400);
+    expect(evt.body.error.code).toBe('E1017');
+
+    // segment condition in a button's hiddenWhen → rejected.
+    const seg = await patch([
+      {
+        name: 'T',
+        type: 'modal',
+        content: [
+          { type: 'text', markdown: 'x' },
+          { type: 'button', text: 'Go', hiddenWhen: [{ type: 'segment', segment: 'x', in: true }] },
+        ],
+      },
+    ]);
+    expect(seg.status).toBe(400);
+    expect(seg.body.error.code).toBe('E1017');
+
+    // an element condition in a step trigger is client-evaluable → allowed (200).
+    const ok = await patch([
+      {
+        name: 'T',
+        type: 'modal',
+        content: [{ type: 'text', markdown: 'x' }],
+        triggers: [
+          {
+            when: [{ type: 'element', state: 'present', target: { selector: '#x' } }],
+            do: [{ type: 'dismiss' }],
+          },
+        ],
+      },
+    ]);
+    expect(ok.status).toBe(200);
+  });
+
   it('wires goto_step by step key in a single write (resolves to cvids, cycle ok)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // Two new steps that reference each other by `key` — a cycle, authored in one
@@ -572,20 +625,20 @@ describe('API v2 /content-versions (e2e)', () => {
       });
     });
 
-    it('defaults `every` for an unlimited frequency authored without it', async () => {
-      // Regression: `multiple` / `unlimited` render the "every N times" control,
-      // which reads `every.times`. A bare `{ mode: 'unlimited' }` must still
-      // compile to a complete `every` or the builder picker crashes and the SDK
-      // can't evaluate the rule.
+    it('defaults `every` (window only, no times) for an unlimited frequency authored without it', async () => {
+      // A bare `{ mode: 'unlimited' }` must still compile to an `every` WINDOW
+      // (duration/unit) so the builder picker + SDK have one — but NOT a `times`
+      // count cap: `times` is meaningless for "every time" and only `multiple`
+      // reads it (see compileStartRules / rules.compile.spec).
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       await write({ startRules: { when: [], frequency: { mode: 'unlimited' } } }, token);
       const r = await read(token);
       expect(r.body.startRules.frequency.mode).toBe('unlimited');
       expect(r.body.startRules.frequency.every).toMatchObject({
-        times: expect.any(Number),
         duration: expect.any(Number),
         unit: expect.any(String),
       });
+      expect(r.body.startRules.frequency.every.times).toBeUndefined();
     });
 
     it('merges: writing one rule preserves the other', async () => {
