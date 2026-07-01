@@ -478,11 +478,17 @@ export class UsertourSocket implements IUsertourSocket {
     params: ListResourceCenterBlockContentDto,
   ): Promise<ResourceCenterBlockContentItem[]> {
     try {
-      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
-        payload: params,
-        requestId: uuidV4(),
-      });
+      // EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects instead of
+      // hanging the caller forever (see listAnnouncements).
+      const result = await this.socket?.emitWithAck(
+        WebSocketEvents.CLIENT_MESSAGE,
+        {
+          kind: ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
+          payload: params,
+          requestId: uuidV4(),
+        },
+        this.EMIT_TIMEOUT,
+      );
       if (Array.isArray(result)) {
         return result as ResourceCenterBlockContentItem[];
       }
@@ -495,11 +501,14 @@ export class UsertourSocket implements IUsertourSocket {
 
   async listAnnouncements(params: ListAnnouncementsDto): Promise<ListAnnouncementsResult> {
     try {
-      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.LIST_ANNOUNCEMENTS,
-        payload: params,
-        requestId: uuidV4(),
-      });
+      // EMIT_TIMEOUT bounds the ack (as emitClientMessage does) so a socket
+      // buffering during a slow/failed reconnect rejects instead of leaving the
+      // promise pending forever — which would hang the feed on 'Loading...'.
+      const result = await this.socket?.emitWithAck(
+        WebSocketEvents.CLIENT_MESSAGE,
+        { kind: ClientMessageKind.LIST_ANNOUNCEMENTS, payload: params, requestId: uuidV4() },
+        this.EMIT_TIMEOUT,
+      );
       if (result && typeof result === 'object' && 'announcements' in result) {
         return result as ListAnnouncementsResult;
       }
@@ -512,11 +521,13 @@ export class UsertourSocket implements IUsertourSocket {
 
   async getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null> {
     try {
-      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.GET_ANNOUNCEMENT,
-        payload: params,
-        requestId: uuidV4(),
-      });
+      // EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects instead of
+      // hanging the detail view on 'Loading...' forever (see listAnnouncements).
+      const result = await this.socket?.emitWithAck(
+        WebSocketEvents.CLIENT_MESSAGE,
+        { kind: ClientMessageKind.GET_ANNOUNCEMENT, payload: params, requestId: uuidV4() },
+        this.EMIT_TIMEOUT,
+      );
       if (result && typeof result === 'object' && 'id' in result) {
         return result as AnnouncementDetail;
       }
