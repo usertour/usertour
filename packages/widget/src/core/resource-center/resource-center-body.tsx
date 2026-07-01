@@ -592,7 +592,12 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   // the detail view only fetches and displays.
   useEffect(() => {
     const getAnnouncement = onGetAnnouncementRef.current;
-    if (!getAnnouncement) return;
+    // No provider wired the handler: clear loading so we fall through to an empty
+    // state instead of hanging on 'Loading...' (mirrors the list view).
+    if (!getAnnouncement) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     getAnnouncement(announcementId)
       .then(setDetail)
