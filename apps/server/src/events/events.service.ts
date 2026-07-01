@@ -7,6 +7,7 @@ import {
   ParamsError,
   ResourceAlreadyExistsError,
   UnknownError,
+  ValidationError,
 } from '@/common/errors';
 import { nameContains } from '@/api/shared/filters';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -108,6 +109,13 @@ export class EventsService {
   }
 
   async delete(id: string) {
+    // Predefined (system) events must never be deleted. Enforce it here at the
+    // shared chokepoint so no caller can bypass it — the v2 API pre-checks, but a
+    // raw GraphQL `deleteEvent` mutation calls this directly.
+    const existing = await this.prisma.event.findUnique({ where: { id } });
+    if (existing?.predefined) {
+      throw new ValidationError('Cannot delete a predefined event definition.');
+    }
     try {
       return await this.prisma.$transaction(async (tx) => {
         // An event with recorded BizEvent rows (fired by a tracker / usertour.track())

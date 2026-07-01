@@ -5,7 +5,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { nameContains } from '@/api/shared/filters';
-import { ResourceAlreadyExistsError } from '@/common/errors';
+import { ResourceAlreadyExistsError, ValidationError } from '@/common/errors';
 
 @Injectable()
 export class AttributesService {
@@ -46,6 +46,14 @@ export class AttributesService {
   }
 
   async delete(id: string) {
+    // Predefined (system) attributes must never be deleted. Enforce it here at the
+    // shared chokepoint so NO caller can bypass it — the v2 API pre-checks, but a
+    // raw GraphQL `deleteAttribute` mutation calls this directly. Mirrors how
+    // `update` above hard-enforces the immutable codeName at this same layer.
+    const existing = await this.prisma.attribute.findUnique({ where: { id } });
+    if (existing?.predefined) {
+      throw new ValidationError('Cannot delete a predefined attribute definition.');
+    }
     // Clear AttributeOnEvent join rows before deleting the Attribute.
     // The relation has Prisma's default `onDelete: Restrict`, so a bare
     // `attribute.delete` throws P2003 the moment any event has tracked
