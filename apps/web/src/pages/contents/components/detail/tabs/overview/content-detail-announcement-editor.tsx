@@ -578,13 +578,18 @@ export const ContentDetailAnnouncementEditor = () => {
   const [draftData, setDraftData] = useState<AnnouncementData | null>(null);
   const serverData = (version?.data as AnnouncementData) ?? DEFAULT_ANNOUNCEMENT_DATA;
 
+  // Mirror the draft in a ref so patchData merges successive edits from the ref
+  // rather than inside the setDraftData updater — the updater must stay pure
+  // (StrictMode double-invokes it, which would double-fire the debounced save).
+  // patchData is the only writer of draftData, so the ref stays in sync.
+  const draftRef = useRef<AnnouncementData | null>(draftData);
+
   const patchData = useCallback(
     (partial: Partial<AnnouncementData>) => {
-      setDraftData((prev) => {
-        const next = { ...(prev ?? serverData), ...partial };
-        debouncedSaveVersionData(next);
-        return next;
-      });
+      const next = { ...(draftRef.current ?? serverData), ...partial };
+      draftRef.current = next;
+      setDraftData(next);
+      debouncedSaveVersionData(next);
     },
     [debouncedSaveVersionData, serverData],
   );
