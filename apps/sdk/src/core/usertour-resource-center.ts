@@ -238,8 +238,8 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   /**
    * Decrement the announcement unreadCount by one (clamped at zero) on every
    * announcement block. The server mirrors the same global count onto each block
-   * and the badge sums them, so decrementing every block in step keeps the local
-   * badge consistent with both.
+   * and the badge takes the max across blocks (getAnnouncementBadgeCount), so
+   * decrementing every block in step keeps the local badge consistent with both.
    */
   private decrementAnnouncementUnreadCount(): void {
     const resourceCenterData = this.getStoreData()?.resourceCenterData;
