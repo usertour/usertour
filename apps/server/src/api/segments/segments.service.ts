@@ -95,6 +95,7 @@ export class ApiSegmentsService {
     const dataType = body.kind === 'condition' ? SegmentDataType.CONDITION : SegmentDataType.MANUAL;
     let data: JsonValue | undefined;
     if (body.kind === 'condition') {
+      this.assertSegmentConditionTypes(body.conditions);
       const compileResolvers = await this.buildCompileResolvers(projectId);
       data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
       await this.assertConditionsValid(data, projectId);
@@ -121,6 +122,7 @@ export class ApiSegmentsService {
       if (seg.dataType !== SegmentDataType.CONDITION) {
         throw new ValidationError('Conditions can only be set on a condition segment.');
       }
+      this.assertSegmentConditionTypes(body.conditions);
       const compileResolvers = await this.buildCompileResolvers(projectId);
       data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
       await this.assertConditionsValid(data, projectId);
@@ -132,6 +134,34 @@ export class ApiSegmentsService {
     });
     const resolvers = await this.buildDecompileResolvers(projectId);
     return mapSegment(await this.requireSegment(id, projectId), resolvers);
+  }
+
+  /**
+   * Reject condition types a segment can't actually evaluate. Segment membership
+   * is a query over user/company ATTRIBUTES — the builder's segment editor only
+   * offers `attribute` + `group`, and the evaluator (createConditionsFilter) only
+   * implements those. Any other type the general condition union allows (event /
+   * current_url / element / flow / segment / text / time) is silently skipped at
+   * evaluation, which DROPS the constraint and makes the segment match too many
+   * users — a segment of only such conditions matches everyone (fail-open). The
+   * API/MCP accepts the full union (unlike the builder), so gate it here.
+   */
+  private assertSegmentConditionTypes(conditions: unknown): void {
+    const ALLOWED = new Set(['attribute', 'group']);
+    const walk = (conds: unknown, path: string): void => {
+      if (!Array.isArray(conds)) return;
+      conds.forEach((c, i) => {
+        const at = `${path}[${i}]`;
+        const type = (c as { type?: unknown })?.type;
+        if (typeof type !== 'string' || !ALLOWED.has(type)) {
+          throw new ValidationError(
+            `Segment conditions support only attribute conditions (and groups of them); got "${String(type)}" at ${at}. A segment's membership is computed from user/company attributes — event / page-url / element / flow / other content-targeting condition types are not evaluated for a segment (they would silently match every user). Use attribute conditions here, or put that logic on the content's start rules instead.`,
+          );
+        }
+        if (type === 'group') walk((c as { conditions?: unknown }).conditions, `${at}.conditions`);
+      });
+    };
+    walk(conditions, 'conditions');
   }
 
   /**

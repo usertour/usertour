@@ -238,6 +238,11 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   }
 };
 
+// A Prisma predicate that matches no row — `id IN ()`. Wrapped in AND so it
+// survives callers that later assign `where.id` / `where.OR` (it can't be
+// clobbered). Used to fail a segment CLOSED when it can't be evaluated.
+const NEVER_MATCH = { AND: [{ id: { in: [] as string[] } }] };
+
 export const createConditionsFilter = (conditions: any, attributes: Attribute[]) => {
   if (!conditions || !conditions.length) {
     return false;
@@ -252,7 +257,17 @@ export const createConditionsFilter = (conditions: any, attributes: Attribute[])
         ? createFilterItem(condition, attributes)
         : createConditionsFilter(condition.conditions, attributes);
     if (!item) {
-      continue;
+      // Fail CLOSED. A falsy item means this condition can't be turned into a
+      // membership query — either an unsupported condition type (segments only
+      // evaluate attribute conditions; event / page / element / flow / etc. are
+      // not translated) or a broken leaf (deleted attribute, malformed value).
+      // Skipping it would DROP the constraint and widen the match — a segment of
+      // only-unevaluable conditions would then match EVERY user (fail-open). So
+      // instead the whole segment matches nobody until it's fixed. (Conservative
+      // for OR-with-an-unevaluable-branch, but "too few" is safe for targeting;
+      // "everyone" is not. The v2/MCP write path rejects these types outright —
+      // this guards segments created via other paths or before that gate.)
+      return NEVER_MATCH;
     }
     if (operators === 'and') {
       AND.push(item);

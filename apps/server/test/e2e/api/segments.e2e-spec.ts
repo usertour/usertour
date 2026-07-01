@@ -157,6 +157,37 @@ describe('API v2 segments (e2e)', () => {
     expect(badConds.body.error.code).toBe('E1017');
   });
 
+  it('rejects a non-attribute condition type in a segment (400 E1017)', async () => {
+    const token = await mint([
+      Capability.SegmentCreate,
+      Capability.SegmentUpdate,
+      Capability.SegmentRead,
+    ]);
+    // Segments only evaluate attribute conditions; an event condition would be
+    // silently skipped at membership time and match EVERY user — reject it at write.
+    const evt = await send('post', segPath(), token).send({
+      name: 'Event seg',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [{ type: 'event', event: 'whatever' }],
+    });
+    expect(evt.status).toBe(400);
+    expect(evt.body.error.code).toBe('E1017');
+
+    // ... and on update: a current_url condition is equally unevaluable for a segment.
+    const ok = await send('post', segPath(), token).send({
+      name: 'Attr seg',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [],
+    });
+    const upd = await send('patch', `${segPath()}/${ok.body.id}`, token).send({
+      conditions: [{ type: 'current_url', includes: ['*'] }],
+    });
+    expect(upd.status).toBe(400);
+    expect(upd.body.error.code).toBe('E1017');
+  });
+
   it('deletes a segment (204), then 404', async () => {
     const token = await mint([
       Capability.SegmentCreate,
