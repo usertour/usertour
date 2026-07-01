@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { cuid } from '@usertour/helpers';
+import { ContentDataType, StepContentType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -322,7 +323,7 @@ export class ApiContentVersionsService {
     // resource-center has no dismiss action handler (the builder registers dismiss only for
     // flow / checklist / banner / launcher), so a `dismiss` in an RC action compiles to the
     // default flow-dismiss and silently no-ops in the RC renderer.
-    const rejectDismiss = contentType === 'resource-center';
+    const rejectDismiss = contentType === ContentDataType.RESOURCE_CENTER;
     const walk = (node: unknown, path: string): void => {
       if (Array.isArray(node)) {
         node.forEach((n, i) => walk(n, `${path}[${i}]`));
@@ -385,19 +386,19 @@ export class ApiContentVersionsService {
       if (placement && typeof placement === 'object') {
         const isTooltipShape = 'side' in placement;
         const isModalShape = 'position' in placement;
-        if (type === 'tooltip' && isModalShape) {
+        if (type === StepContentType.TOOLTIP && isModalShape) {
           throw new ValidationError(
             `A tooltip step (${at}) needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
           );
         }
-        if (type === 'modal' && isTooltipShape) {
+        if (type === StepContentType.MODAL && isTooltipShape) {
           throw new ValidationError(
             `A modal step (${at}) needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
           );
         }
       }
       const onClick = s.onClick;
-      if (Array.isArray(onClick) && onClick.length > 0 && type !== 'tooltip') {
+      if (Array.isArray(onClick) && onClick.length > 0 && type !== StepContentType.TOOLTIP) {
         throw new ValidationError(
           `onClick (click the target element to advance) only works on a tooltip step; a ${String(
             type,
@@ -405,6 +406,62 @@ export class ApiContentVersionsService {
         );
       }
     });
+  }
+
+  /**
+   * A content-state ("content" / representation `flow`) condition gates on another piece of
+   * content's per-user state (seen / completed / active). Only FLOWS and CHECKLISTS carry that
+   * state — the builder's picker lists only flows and checklists here, and the runtime records
+   * seen/completed events only for them (FLOW_STEP_SEEN / CHECKLIST_SEEN, FLOW_COMPLETED /
+   * CHECKLIST_COMPLETED). A banner / launcher / resource-center / tracker can't be a target: on
+   * those a seen/completed condition silently never matches and active/inactive isn't authorable
+   * in the builder, so referencing one is rejected for ANY state. Reactive slots (step triggers,
+   * button show/hide) already reject all content-state conditions, so only start / hide rules and
+   * non-flow `data` slots reach here. Unknown / cross-project target ids are left to other
+   * validation — only a real content of the wrong type is flagged.
+   */
+  private async assertFlowStateTargets(body: UpdateVersionBody, projectId: string): Promise<void> {
+    const VALID_TARGET_TYPES = new Set<string>([ContentDataType.FLOW, ContentDataType.CHECKLIST]);
+    const refs: { flow: string; where: string }[] = [];
+    const collect = (node: unknown, where: string): void => {
+      if (Array.isArray(node)) {
+        for (const n of node) {
+          collect(n, where);
+        }
+        return;
+      }
+      if (!node || typeof node !== 'object') {
+        return;
+      }
+      const obj = node as Record<string, unknown>;
+      if (obj.type === 'flow' && typeof obj.flow === 'string') {
+        refs.push({ flow: obj.flow, where });
+      }
+      for (const key of Object.keys(obj)) {
+        collect(obj[key], where);
+      }
+    };
+    collect(body.startRules?.when, 'a start rule');
+    collect(body.hideRules?.when, 'a hide rule');
+    collect(body.data, "the content's data");
+    if (refs.length === 0) {
+      return;
+    }
+
+    const ids = [...new Set(refs.map((r) => r.flow))];
+    const found = await this.prisma.content.findMany({
+      where: { id: { in: ids }, projectId },
+      select: { id: true, type: true },
+    });
+    const typeById = new Map(found.map((c) => [c.id, c.type]));
+    for (const r of refs) {
+      const targetType = typeById.get(r.flow);
+      if (targetType && !VALID_TARGET_TYPES.has(targetType)) {
+        throw new ValidationError(
+          `A content-state condition (in ${r.where}) references a ${targetType}, but these conditions can only track a flow or a checklist (only those record per-user seen/completed/active state). Reference a flow or checklist instead.`,
+        );
+      }
+    }
   }
 
   async update(
@@ -422,6 +479,11 @@ export class ApiContentVersionsService {
     }
     const resolvers = await this.buildCompileResolvers(projectId);
     const content: Record<string, unknown> = {};
+
+    // A content-state condition can only track a flow or checklist (the builder lists only
+    // those; banner/launcher/RC/tracker carry no per-user seen/completed state) — reject before
+    // compiling.
+    await this.assertFlowStateTargets(body, projectId);
 
     if (body.steps) {
       // Reactive slots (step triggers + button show/hide/disable) only support
@@ -542,7 +604,7 @@ export class ApiContentVersionsService {
       // in the browser (client-driven), so (matching the builder's tracker editor)
       // its conditions can't be server-side event / segment / flow-state. Other
       // types' start/hide rules ARE server-evaluated and accept the full union.
-      if (contentType === 'tracker') {
+      if (contentType === ContentDataType.TRACKER) {
         this.assertReactiveConditions(
           body.startRules?.when,
           'startRules.when',
@@ -616,7 +678,7 @@ export class ApiContentVersionsService {
       content?: { type?: string };
     };
     return validateVersionUsable({
-      type: v.content?.type ?? 'flow',
+      type: v.content?.type ?? ContentDataType.FLOW,
       themeId: v.themeId,
       steps: v.steps as Step[],
       data: v.data,

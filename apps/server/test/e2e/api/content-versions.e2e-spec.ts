@@ -397,6 +397,29 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(modalOnClick.status).toBe(400);
   });
 
+  it('rejects a content-state condition targeting a non-flow/checklist, for any state (400)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    // A content-state condition can only track a flow or checklist; a banner carries no such
+    // per-user state and the builder never lists it here → rejected for every state.
+    const bannerContent = await buildContent(prisma, { projectId, type: 'banner' });
+    const checklistContent = await buildContent(prisma, { projectId, type: 'checklist' });
+    const patch = (when: unknown[]) =>
+      api(
+        'patch',
+        `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+        token,
+      ).send({ startRules: { when } });
+
+    const bannerSeen = await patch([{ type: 'flow', flow: bannerContent.id, state: 'seen' }]);
+    expect(bannerSeen.status).toBe(400);
+    const bannerActive = await patch([{ type: 'flow', flow: bannerContent.id, state: 'active' }]);
+    expect(bannerActive.status).toBe(400);
+
+    // A checklist IS a valid target → allowed.
+    const ok = await patch([{ type: 'flow', flow: checklistContent.id, state: 'completed' }]);
+    expect(ok.status).toBe(200);
+  });
+
   it('wires goto_step by step key in a single write (resolves to cvids, cycle ok)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // Two new steps that reference each other by `key` — a cycle, authored in one
