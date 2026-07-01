@@ -2023,7 +2023,7 @@ const translations = {
           'The visual theme applied to the announcement content in the resource center.',
         themePlaceholder: 'Select theme',
         distribution: {
-          label: 'Distribution',
+          label: 'Notification style',
           tooltip:
             'How users are notified about this announcement. Silent adds it to the list quietly; Badge shows an unread indicator on the resource center.',
           silent: {
@@ -2041,7 +2041,7 @@ const translations = {
           'The announcement title displayed in the resource center list and detail page.',
         titlePlaceholder: 'Enter announcement title',
         titleRequired: 'Title is required.',
-        intro: 'Intro',
+        intro: 'Summary',
         introTooltip: 'A brief summary shown in the announcement list within the resource center.',
         readMore: 'Read more',
         readMoreTooltip:
@@ -2049,7 +2049,7 @@ const translations = {
         readMoreButtonLabel: 'Button label',
         readMoreButtonLabelTooltip: 'The text displayed on the button that opens the detail page.',
         readMoreButtonLabelPlaceholder: 'Read more',
-        detailContent: 'Detail content',
+        detailContent: 'Details',
         detailContentTooltip:
           'The full content displayed when a user clicks "Read more" on the announcement.',
       },
@@ -2089,7 +2089,7 @@ const translations = {
         untitled: 'Untitled announcement',
         silent: 'Silent',
         badge: 'Badge',
-        distribution: '{{value}} distribution',
+        distribution: '{{value}} notification',
       },
       publish: {
         title: 'Publish {{type}}',
