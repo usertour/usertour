@@ -140,6 +140,29 @@ describe('API v2 version.data codec (e2e)', () => {
       expect(res.body.error.code).toBe('E1017');
     });
 
+    it('rejects a server-side condition in a tracker start rule (400 E1017)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      // A tracker fires client-side, so (matching the builder's tracker editor) its
+      // start conditions can't be server-side event / segment / flow-state.
+      const evt = await write(
+        tracker,
+        { startRules: { when: [{ type: 'event', event: 'x' }] } },
+        token,
+      );
+      expect(evt.status).toBe(400);
+      expect(evt.body.error.code).toBe('E1017');
+
+      // a client-evaluable element condition is fine.
+      const ok = await write(
+        tracker,
+        {
+          startRules: { when: [{ type: 'element', state: 'present', target: { selector: '#x' } }] },
+        },
+        token,
+      );
+      expect(ok.status).toBe(200);
+    });
+
     it('rejects a data write without the update scope (403 E1012)', async () => {
       const token = await mint([Capability.ContentRead]);
       const res = await write(tracker, { data: { event: eventCode } }, token);

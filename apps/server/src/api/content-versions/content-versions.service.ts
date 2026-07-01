@@ -250,7 +250,11 @@ export class ApiContentVersionsService {
     steps.forEach((s, i) => {
       const step = s as { triggers?: { when?: unknown }[]; content?: unknown };
       (step.triggers ?? []).forEach((t, ti) =>
-        this.assertReactiveConditions(t?.when, `steps[${i}].triggers[${ti}].when`),
+        this.assertReactiveConditions(
+          t?.when,
+          `steps[${i}].triggers[${ti}].when`,
+          'a step trigger',
+        ),
       );
       this.assertButtonReactiveConditions(step.content, `steps[${i}].content`);
     });
@@ -267,8 +271,9 @@ export class ApiContentVersionsService {
       };
       const at = `${path}[${i}]`;
       if (block?.type === 'button') {
-        this.assertReactiveConditions(block.hiddenWhen, `${at}.hiddenWhen`);
-        this.assertReactiveConditions(block.disabledWhen, `${at}.disabledWhen`);
+        const slot = 'a button show/hide/disable rule';
+        this.assertReactiveConditions(block.hiddenWhen, `${at}.hiddenWhen`, slot);
+        this.assertReactiveConditions(block.disabledWhen, `${at}.disabledWhen`, slot);
       }
       if (block?.type === 'columns' && Array.isArray(block.columns)) {
         block.columns.forEach((col, ci) =>
@@ -278,7 +283,7 @@ export class ApiContentVersionsService {
     });
   }
 
-  private assertReactiveConditions(conditions: unknown, path: string): void {
+  private assertReactiveConditions(conditions: unknown, path: string, slot: string): void {
     if (!Array.isArray(conditions)) return;
     const EXCLUDED = new Set(['event', 'segment', 'flow']);
     conditions.forEach((c, i) => {
@@ -286,13 +291,14 @@ export class ApiContentVersionsService {
       const type = (c as { type?: unknown })?.type;
       if (typeof type === 'string' && EXCLUDED.has(type)) {
         throw new ValidationError(
-          `A "${type}" condition can't be used in a step trigger or a button show/hide/disable rule (at ${at}). Those are evaluated live in the browser and support only attribute / current_url / element / text_input / text_filled / time conditions; event / segment / flow-state conditions are server-evaluated and would silently never fire here — use them in start/hide rules or a checklist item's completeWhen instead.`,
+          `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / flow-state conditions are server-evaluated and aren't supported here.`,
         );
       }
       if (type === 'group') {
         this.assertReactiveConditions(
           (c as { conditions?: unknown }).conditions,
           `${at}.conditions`,
+          slot,
         );
       }
     });
@@ -423,6 +429,17 @@ export class ApiContentVersionsService {
       );
       if (violations.length > 0) {
         throw new ValidationError(violations.join(' '));
+      }
+      // A tracker fires its event when its start conditions match — evaluated live
+      // in the browser (client-driven), so (matching the builder's tracker editor)
+      // its conditions can't be server-side event / segment / flow-state. Other
+      // types' start/hide rules ARE server-evaluated and accept the full union.
+      if (contentType === 'tracker') {
+        this.assertReactiveConditions(
+          body.startRules?.when,
+          'startRules.when',
+          "a tracker's start conditions",
+        );
       }
       const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
       if (body.startRules !== undefined) {
