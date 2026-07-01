@@ -48,11 +48,8 @@ import { DistributedLockService } from '../core/distributed-lock.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { ContentDataService } from '@/web-socket/core/content-data.service';
-import {
-  ConditionEvaluationService,
-  type ConditionEvaluationContext,
-} from '@/web-socket/core/condition-evaluation.service';
+import { AnnouncementService } from '@/web-socket/core/announcement.service';
+import { ConditionEvaluationService } from '@/web-socket/core/condition-evaluation.service';
 import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
@@ -66,31 +63,6 @@ type AnnouncementTargetingConfig = {
   autoStartRules?: RulesCondition[];
 };
 
-// Shared field mapping for an announcement's feed row and its detail view: the
-// two read paths (listAnnouncements / getAnnouncement) must expose identical
-// values, so both build the item from here. `time` is the scheduledAt (the
-// "Announcement time"), which publish stamps on first publish — always set for
-// a published announcement (legacy rows are backfilled) — so there is no
-// publishedAt fallback.
-const buildAnnouncementListItem = (
-  content: { id: string },
-  publishedVersion: { id: string; data: unknown; scheduledAt: Date | null },
-  seen: boolean,
-): AnnouncementListItem => {
-  const data = (publishedVersion.data ?? {}) as unknown as AnnouncementData;
-  return {
-    id: content.id,
-    versionId: publishedVersion.id,
-    title: data.title,
-    content: data.introContent ?? [],
-    moreEnabled: data.enableReadMore ?? false,
-    moreButtonText: data.readMoreLabel ?? 'Read more',
-    level: data.distribution ?? 'silent',
-    seen,
-    time: publishedVersion.scheduledAt?.toISOString() ?? '',
-  };
-};
-
 @Injectable()
 export class WebSocketV2Service {
   private readonly logger = new Logger(WebSocketV2Service.name);
@@ -100,7 +72,7 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
-    private readonly contentDataService: ContentDataService,
+    private readonly announcementService: AnnouncementService,
     private readonly conditionEvaluationService: ConditionEvaluationService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
@@ -1087,65 +1059,28 @@ export class WebSocketV2Service {
       return { announcements: [], pageSize, truncated: false };
     }
 
-    // Newest N candidates (only those whose scheduledAt has passed or is null).
-    const now = new Date();
-    const contentOnEnvironments = await this.prisma.contentOnEnvironment.findMany({
-      where: {
-        environmentId,
-        published: true,
-        content: {
-          type: ContentDataType.ANNOUNCEMENT,
-          deleted: false,
-        },
-        publishedVersion: {
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: now } }],
-        },
-      },
-      include: {
-        content: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        publishedVersion: {
-          select: {
-            id: true,
-            data: true,
-            config: true,
-            scheduledAt: true,
-          },
-        },
-      },
-      // Order by scheduledAt (the "Announcement time"), matching the client's
-      // date grouping. Publish stamps scheduledAt on first publish, so this is
-      // always populated for published announcements — the grouping stays
-      // contiguous regardless of when each was actually published.
-      orderBy: { publishedVersion: { scheduledAt: 'desc' } },
-      take: WebSocketV2Service.ANNOUNCEMENT_LIMIT,
-    });
+    // Newest N candidates that pass the user's "Only show if..." targeting.
+    const visibleItems = await this.announcementService.findVisibleAnnouncements(
+      socketData.environment,
+      bizUser,
+      socketData.externalCompanyId,
+      WebSocketV2Service.ANNOUNCEMENT_LIMIT,
+    );
 
-    // Enforce per-announcement "Only show if..." targeting before exposing it.
-    const evaluationContext = await this.buildAnnouncementEvaluationContext(socketData, bizUser);
-    const visibleItems: typeof contentOnEnvironments = [];
-    for (const item of contentOnEnvironments) {
-      if (!item.publishedVersion) {
-        continue;
-      }
-      const config = item.publishedVersion.config as unknown as AnnouncementTargetingConfig;
-      if (
-        await this.conditionEvaluationService.isVisibleByAutoStartRules(config, evaluationContext)
-      ) {
-        visibleItems.push(item);
-      }
-    }
-
-    // Batch lookup seen status for the visible set
-    const contentIds = visibleItems.map((item) => item.content.id);
-    const seenSet = await this.getSeenAnnouncementIds(bizUser.id, contentIds, environmentId);
+    // Batch lookup seen status for the visible set.
+    const contentIds = visibleItems.map((item) => item.contentId);
+    const seenSet = await this.announcementService.getSeenAnnouncementIds(
+      bizUser.id,
+      contentIds,
+      environmentId,
+    );
 
     const announcements: AnnouncementListItem[] = visibleItems.map((item) =>
-      buildAnnouncementListItem(item.content, item.publishedVersion!, seenSet.has(item.content.id)),
+      this.announcementService.buildListItem(
+        item.content,
+        item.publishedVersion,
+        seenSet.has(item.contentId),
+      ),
     );
 
     return { announcements, pageSize, truncated: false };
@@ -1189,7 +1124,11 @@ export class WebSocketV2Service {
     // read by id by a user who doesn't match.
     const config = contentOnEnv.publishedVersion.config as unknown as AnnouncementTargetingConfig;
     if (bizUser) {
-      const evaluationContext = await this.buildAnnouncementEvaluationContext(socketData, bizUser);
+      const evaluationContext = await this.announcementService.buildEvaluationContext(
+        socketData.environment,
+        bizUser,
+        socketData.externalCompanyId,
+      );
       const visible = await this.conditionEvaluationService.isVisibleByAutoStartRules(
         config,
         evaluationContext,
@@ -1205,12 +1144,20 @@ export class WebSocketV2Service {
     const data = (contentOnEnv.publishedVersion.data ?? {}) as unknown as AnnouncementData;
     const seen = bizUser
       ? (
-          await this.getSeenAnnouncementIds(bizUser.id, [contentOnEnv.content.id], environmentId)
+          await this.announcementService.getSeenAnnouncementIds(
+            bizUser.id,
+            [contentOnEnv.content.id],
+            environmentId,
+          )
         ).has(contentOnEnv.content.id)
       : false;
 
     return {
-      ...buildAnnouncementListItem(contentOnEnv.content, contentOnEnv.publishedVersion, seen),
+      ...this.announcementService.buildListItem(
+        contentOnEnv.content,
+        contentOnEnv.publishedVersion,
+        seen,
+      ),
       moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
     };
   }
@@ -1241,7 +1188,7 @@ export class WebSocketV2Service {
 
       const recorded = await this.distributedLockService.withLock(lockKey, async () => {
         if (bizUser) {
-          const seenIds = await this.getSeenAnnouncementIds(
+          const seenIds = await this.announcementService.getSeenAnnouncementIds(
             bizUser.id,
             [params.contentId],
             environment.id,
@@ -1285,44 +1232,5 @@ export class WebSocketV2Service {
         environmentId: socketData.environment.id,
       },
     });
-  }
-
-  /**
-   * Build the DB-backed evaluation context (user attributes + segment lookups)
-   * used to gate announcements by their targeting rules.
-   */
-  private async buildAnnouncementEvaluationContext(
-    socketData: SocketData,
-    bizUser: BizUser,
-  ): Promise<ConditionEvaluationContext> {
-    const attributes = await this.contentDataService.findAttributes(socketData.environment);
-    return {
-      environment: socketData.environment,
-      attributes,
-      bizUser,
-      externalCompanyId: socketData.externalCompanyId,
-    };
-  }
-
-  private async getSeenAnnouncementIds(
-    bizUserId: string,
-    contentIds: string[],
-    environmentId: string,
-  ): Promise<Set<string>> {
-    if (contentIds.length === 0) return new Set();
-
-    const seenEvents = await this.prisma.bizEvent.findMany({
-      where: {
-        bizUserId,
-        contentId: { in: contentIds },
-        event: {
-          codeName: BizEvents.ANNOUNCEMENT_SEEN,
-          project: { environments: { some: { id: environmentId } } },
-        },
-      },
-      select: { contentId: true },
-      distinct: ['contentId'],
-    });
-    return new Set(seenEvents.filter((event) => event.contentId).map((event) => event.contentId!));
   }
 }

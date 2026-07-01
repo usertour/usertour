@@ -3,13 +3,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
   BannerData,
-  BizEvents,
   ChecklistData,
   ContentDataType,
   LauncherData,
   ResourceCenterBlockType,
   ResourceCenterData,
-  RulesCondition,
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
@@ -39,19 +37,11 @@ import {
   BizSession,
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
-import {
-  ConditionEvaluationService,
-  type ConditionEvaluationContext,
-} from './condition-evaluation.service';
+import { AnnouncementService } from './announcement.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-
-// Cap on how many of the newest announcements the badge count scans + evaluates
-// per session build. Keep aligned with WebSocketV2Service.ANNOUNCEMENT_LIMIT so
-// the badge never counts more than the feed can show.
-const ANNOUNCEMENT_BADGE_SCAN_LIMIT = 50;
 
 @Injectable()
 export class SessionBuilderService {
@@ -60,7 +50,7 @@ export class SessionBuilderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
-    private readonly conditionEvaluationService: ConditionEvaluationService,
+    private readonly announcementService: AnnouncementService,
     private readonly projectsService: ProjectsService,
     private readonly distributedLockService: DistributedLockService,
     private readonly cache: ProjectCacheService,
@@ -540,9 +530,9 @@ export class SessionBuilderService {
    * Populate unreadCount on each announcement block in the resource center data.
    * Counts the newest badge-distribution announcements the user is allowed to
    * see (passing their "Only show if..." targeting) and has not yet seen.
-   * Capped at ANNOUNCEMENT_BADGE_SCAN_LIMIT to bound the scan + evaluation, and
-   * uses the same DB-backed targeting evaluation as listAnnouncements so the
-   * badge count never includes announcements the feed would hide.
+   * Reads through the shared AnnouncementService.findVisibleAnnouncements — the
+   * same bounded query + targeting the feed uses — so the badge count never
+   * includes announcements the feed would hide.
    */
   private async populateAnnouncementUnreadCounts(
     resourceCenterData: ResourceCenterData,
@@ -574,75 +564,31 @@ export class SessionBuilderService {
       return;
     }
 
-    // Newest N published announcements (only those whose scheduledAt has passed
-    // or is null). The cap bounds both the scan and the targeting evaluation.
-    const publishedAnnouncements = await this.prisma.contentOnEnvironment.findMany({
-      where: {
-        environmentId: environment.id,
-        published: true,
-        content: { type: ContentDataType.ANNOUNCEMENT, deleted: false },
-        publishedVersion: {
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        },
-      },
-      include: {
-        publishedVersion: { select: { id: true, data: true, config: true } },
-      },
-      // Order by scheduledAt to match the feed's newest-N set (web-socket-v2
-      // listAnnouncements), so the badge count and the list agree on which
-      // announcements are in scope. Publish stamps scheduledAt on first publish.
-      orderBy: { publishedVersion: { scheduledAt: 'desc' } },
-      take: ANNOUNCEMENT_BADGE_SCAN_LIMIT,
-    });
-
-    // Keep badge-distribution announcements the user is actually allowed to see.
-    const attributes = await this.contentDataService.findAttributes(environment);
-    const evaluationContext: ConditionEvaluationContext = {
+    // Newest N visible announcements — the same query + targeting the feed uses
+    // (AnnouncementService), so the badge count and the list can't disagree.
+    const visible = await this.announcementService.findVisibleAnnouncements(
       environment,
-      attributes,
       bizUser,
       externalCompanyId,
-    };
+    );
 
-    const badgeContentIds: string[] = [];
-    for (const item of publishedAnnouncements) {
-      const data = item.publishedVersion?.data as Record<string, any> | null;
-      if (data?.distribution !== 'badge') {
-        continue;
-      }
-      const config = item.publishedVersion?.config as unknown as {
-        enabledAutoStartRules?: boolean;
-        autoStartRules?: RulesCondition[];
-      };
-      if (
-        await this.conditionEvaluationService.isVisibleByAutoStartRules(config, evaluationContext)
-      ) {
-        badgeContentIds.push(item.contentId);
-      }
-    }
-
+    // Only badge-distribution announcements contribute to the launcher badge.
+    const badgeContentIds = visible
+      .filter(
+        (item) =>
+          (item.publishedVersion.data as Record<string, any> | null)?.distribution === 'badge',
+      )
+      .map((item) => item.contentId);
     if (badgeContentIds.length === 0) {
       setUnread(0);
       return;
     }
 
-    // Get seen announcement IDs
-    const seenEvents = await this.prisma.bizEvent.findMany({
-      where: {
-        bizUserId: bizUser.id,
-        contentId: { in: badgeContentIds },
-        event: {
-          codeName: BizEvents.ANNOUNCEMENT_SEEN,
-          project: { environments: { some: { id: environment.id } } },
-        },
-      },
-      select: { contentId: true },
-      distinct: ['contentId'],
-    });
-    const seenSet = new Set(
-      seenEvents.filter((event) => event.contentId).map((event) => event.contentId!),
+    const seenSet = await this.announcementService.getSeenAnnouncementIds(
+      bizUser.id,
+      badgeContentIds,
+      environment.id,
     );
-
     setUnread(badgeContentIds.filter((id) => !seenSet.has(id)).length);
   }
 
