@@ -391,13 +391,13 @@ export class ContentDataService {
   // ============================================================================
 
   /**
-   * Find business user by external ID. Memoized per request scope so the
-   * 6-type toggleContents loop + findThemes don't all re-query the same row.
+   * Find business user by external ID. Memoized per request scope on the shared
+   * bizUser key, so every caller (toggleContents, attribute resolution, the
+   * announcement feed / badge, WebSocketV2Service) coalesces to one query and
+   * resolves the same row. The single source for that lookup — don't re-query
+   * bizUser inline elsewhere.
    */
-  private async findBizUser(
-    environment: Environment,
-    externalUserId: string,
-  ): Promise<BizUser | null> {
+  async findBizUser(environment: Environment, externalUserId: string): Promise<BizUser | null> {
     return this.cache.memoize(
       this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
       () =>
@@ -446,18 +446,7 @@ export class ContentDataService {
     externalCompanyId?: string,
   ): Promise<any> {
     const environmentId = environment.id;
-    // Drop projections so per-request memos hold consistent full entities
-    // across all callers in the scope.
-    const bizUser = await this.cache.memoize(
-      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
-      () =>
-        this.prisma.bizUser.findFirst({
-          where: {
-            environmentId,
-            externalId: String(externalUserId),
-          },
-        }),
-    );
+    const bizUser = await this.findBizUser(environment, externalUserId);
 
     if (!bizUser) {
       return null;

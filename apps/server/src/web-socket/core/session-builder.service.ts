@@ -466,16 +466,9 @@ export class SessionBuilderService {
       }
     };
 
-    // Memoize on the same request-scoped key attribute resolution / findBizUser
-    // use, so this hot session-build path reuses the bizUser row instead of
-    // issuing a duplicate query.
-    const bizUser = await this.cache.memoize(
-      this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
-      () =>
-        this.prisma.bizUser.findFirst({
-          where: { externalId: String(externalUserId), environmentId: environment.id },
-        }),
-    );
+    // Shared request-memoized lookup, so this hot session-build path reuses the
+    // bizUser row attribute resolution already fetched instead of re-querying.
+    const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
     if (!bizUser) {
       setUnread(0);
       return;

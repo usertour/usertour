@@ -48,6 +48,7 @@ import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { AnnouncementService } from '@/web-socket/core/announcement.service';
+import { ContentDataService } from '@/web-socket/core/content-data.service';
 import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
@@ -64,6 +65,7 @@ export class WebSocketV2Service {
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
     private readonly announcementService: AnnouncementService,
+    private readonly contentDataService: ContentDataService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
     private readonly distributedLockService: DistributedLockService,
@@ -1087,7 +1089,6 @@ export class WebSocketV2Service {
     params: GetAnnouncementDto,
   ): Promise<AnnouncementDetail | null> {
     const { socketData } = context;
-    const environmentId = socketData.environment.id;
     const bizUser = await this.findBizUser(socketData);
 
     // Same candidate query + "Only show if..." targeting gate the feed uses, so
@@ -1103,15 +1104,6 @@ export class WebSocketV2Service {
     }
 
     const data = (visible.publishedVersion.data ?? {}) as unknown as AnnouncementData;
-    const seen = bizUser
-      ? (
-          await this.announcementService.getSeenAnnouncementIds(
-            bizUser.id,
-            [visible.contentId],
-            environmentId,
-          )
-        ).has(visible.contentId)
-      : false;
 
     // Resolve the attributes referenced in the intro + detail content — the
     // announcement isn't part of the RC session, so the widget can't otherwise
@@ -1124,7 +1116,9 @@ export class WebSocketV2Service {
     );
 
     return {
-      ...this.announcementService.buildListItem(visible.content, visible.publishedVersion, seen),
+      // The detail view never renders `seen` (it's marked on feed load), so pass
+      // false rather than spending a getSeenAnnouncementIds query per open.
+      ...this.announcementService.buildListItem(visible.content, visible.publishedVersion, false),
       moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
       attributes,
     };
@@ -1194,19 +1188,8 @@ export class WebSocketV2Service {
   // ============================================================================
 
   private async findBizUser(socketData: SocketData): Promise<BizUser | null> {
-    // Memoize on the same request-scoped key ContentDataService.queryUserAttributeValue
-    // uses, so the feed's bizUser lookup and the attribute-resolution one coalesce
-    // into a single query per request instead of two.
-    const { environment, externalUserId } = socketData;
-    return this.cache.memoize(
-      this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
-      () =>
-        this.prisma.bizUser.findFirst({
-          where: {
-            externalId: String(externalUserId),
-            environmentId: environment.id,
-          },
-        }),
-    );
+    // Single shared, request-memoized lookup — so the feed's bizUser and the
+    // attribute-resolution one coalesce into one query per request.
+    return this.contentDataService.findBizUser(socketData.environment, socketData.externalUserId);
   }
 }
