@@ -46,7 +46,14 @@ export class EventDefinitionDto extends createZodDto(eventDefinition) {}
 // (a reference to an existing attribute — NOT validated as a new codeName).
 const eventAttributes = z
   .array(z.string())
-  .describe('codeNames of event-scoped attributes to attach. Unknown codeNames are rejected.');
+  .describe(
+    'codeNames of EXISTING event-scoped attributes to attach to this event — the built-in / ' +
+      'predefined ones, or custom event properties that were auto-created when your app tracked ' +
+      'this event with a properties payload. Note: you cannot PRE-DEFINE a new event property via ' +
+      'create_attribute_definition (its scope is only user / company / companyMembership); event ' +
+      'properties are created automatically at ingestion when the SDK calls ' +
+      'usertour.track(name, { prop: value }). Unknown codeNames are rejected.',
+  );
 
 export const createEventDefinitionBody = z.object({
   codeName: codeNameSchema.describe('Stable identifier, unique per project. Immutable.'),

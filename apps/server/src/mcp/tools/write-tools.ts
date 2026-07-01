@@ -280,7 +280,10 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.UserWrite,
       description:
         'Create or update an end-user by external id (idempotent). Attributes merge into the ' +
-        'existing ones. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'existing ones and are type-checked against each attribute definition (a value whose type ' +
+        'mismatches is rejected, never coerced/stored wrong); a DateTime value must be full ISO ' +
+        '8601 with time + zone (e.g. "2026-01-15T00:00:00Z") — a date-only string or epoch number ' +
+        'is rejected. With multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The user external id.'),
         environmentId: environmentIdSchema,
@@ -596,7 +599,11 @@ export function buildWriteTools(): McpTool[] {
       ),
       title: 'Update an attribute definition',
       capability: Capability.AttributeUpdate,
-      description: 'Update an attribute definition (displayName / description; codeName is fixed).',
+      description:
+        'Update an attribute definition (displayName / description only). `codeName`, `scope`, and ' +
+        '`dataType` are IMMUTABLE — there is no type-change path; a passed dataType/scope/codeName ' +
+        'is ignored (the call returns the unchanged value, with no error). To change a type, create ' +
+        'a new attribute.',
       inputSchema: { id: z.string().describe('The attribute id.'), ...updateAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.update(
@@ -612,7 +619,13 @@ export function buildWriteTools(): McpTool[] {
       ),
       title: 'Delete an attribute definition',
       capability: Capability.AttributeDelete,
-      description: 'Delete an attribute definition.',
+      description:
+        'Delete an attribute definition. NOT blocked or cascaded even when it is still in use: ' +
+        'any condition that references it (a segment, or a content start/hide/trigger/button rule), ' +
+        'a survey `bindAttribute`, or a theme variation keeps a now-dead reference and silently ' +
+        'FAILS CLOSED — a segment on it then matches nobody, content gated on it stops showing ' +
+        '(never fail-open, but silently broken). Stored user values for it are orphaned, not ' +
+        'purged. Rewire / unbind references BEFORE deleting.',
       inputSchema: { id: z.string().describe('The attribute id.') },
       handler: async (args, ctx) => {
         await ctx.services.attributeDefinitions.delete(String(args.id), ctx.projectId);
@@ -660,7 +673,13 @@ export function buildWriteTools(): McpTool[] {
       ),
       title: 'Delete an event definition',
       capability: Capability.EventDelete,
-      description: 'Delete an event definition.',
+      description:
+        'Delete an event definition. Refused (E1030) if it already has recorded events. Otherwise ' +
+        'NOT blocked or cascaded even when referenced: a tracker that fires it (its `data.event`) ' +
+        'or an event condition keeps a now-dead reference and silently stops firing / matching. ' +
+        '`validate_content_version` will then flag the referencing content ("references an unknown ' +
+        'event"), but an already-PUBLISHED version stays broken and segments have no validate — so ' +
+        'rewire references BEFORE deleting.',
       inputSchema: { id: z.string().describe('The event id.') },
       handler: async (args, ctx) => {
         await ctx.services.eventDefinitions.delete(String(args.id), ctx.projectId);
