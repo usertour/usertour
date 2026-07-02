@@ -195,7 +195,7 @@ export function buildWebAuditEntry(
     resourceType: meta.resourceType,
     resourceId: meta.resourceId ? meta.resourceId(args, result) : resolveResourceId(args, result),
     before: ctx.before,
-    after: result,
+    after: meta.capture ? meta.capture(args, result) : result,
     metadata: {
       credentialType: 'session',
       ip: req?.ip,
@@ -335,6 +335,8 @@ async function fetchBefore(
       return prisma.apiToken.findUnique({ where: { id: String(id) } });
     case 'access_token':
       return prisma.accessToken.findUnique({ where: { id: String(id) } });
+    case 'integration':
+      return prisma.integration.findUnique({ where: { id: String(id) } });
     case 'oauth_grant':
       return prisma.oAuthGrant.findUnique({ where: { id: String(id) } });
     case 'sso_provider':

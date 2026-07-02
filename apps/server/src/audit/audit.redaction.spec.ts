@@ -72,4 +72,29 @@ describe('redactSnapshot', () => {
       token: '[redacted]',
     });
   });
+
+  it('blanks integration credentials incl. the whole config blob (per-type keys)', () => {
+    expect(
+      redactSnapshot('integration', {
+        id: 'i1',
+        provider: 'mixpanel',
+        key: 'mp-secret',
+        accessToken: 'at',
+        config: { projectToken: 's3cr3t', region: 'eu' },
+        enabled: true,
+      }),
+    ).toEqual({
+      id: 'i1',
+      provider: 'mixpanel',
+      key: '[redacted]',
+      accessToken: '[redacted]',
+      config: '[redacted]',
+      enabled: true,
+    });
+    // `key`/`config` are NOT stripped on other resource types (too generic globally)
+    expect(redactSnapshot('segment', { id: 's1', config: { x: 1 } })).toEqual({
+      id: 's1',
+      config: { x: 1 },
+    });
+  });
 });

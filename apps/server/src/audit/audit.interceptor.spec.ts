@@ -1,4 +1,4 @@
-import { deriveAudit } from './audit.interceptor';
+import { buildWebAuditEntry, deriveAudit } from './audit.interceptor';
 
 describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
   it('maps create/update/delete verbs directly', () => {
@@ -57,5 +57,39 @@ describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
     expect(deriveAudit('segment:read', 'GET')).toBeNull();
     expect(deriveAudit('project:manage', 'POST')).toBeNull(); // project not an audited resource
     expect(deriveAudit('billing:read', 'GET')).toBeNull();
+  });
+});
+
+describe('buildWebAuditEntry capture override (bulk mutations)', () => {
+  it('stores the captured args-derived payload as `after` instead of the raw result', () => {
+    const entry = buildWebAuditEntry(
+      undefined,
+      { data: { ids: ['u1', 'u2', 'u3'], environmentId: 'env1' } },
+      { success: true, count: 3 },
+      {
+        action: 'delete',
+        resourceType: 'user',
+        resourceId: (a) => String((a.data as { ids: string[] }).ids.length),
+        capture: (a, r) => ({
+          deletedBizUserIds: (a.data as { ids: string[] }).ids,
+          count: (r as { count: number }).count,
+        }),
+      },
+      { projectId: 'p1', environmentId: 'env1', operation: 'deleteBizUser', before: undefined },
+    );
+    expect(entry.after).toEqual({ deletedBizUserIds: ['u1', 'u2', 'u3'], count: 3 });
+    expect(entry.resourceId).toBe('3');
+    expect(entry.operation).toBe('deleteBizUser');
+  });
+
+  it('falls back to the raw result when no capture is given', () => {
+    const entry = buildWebAuditEntry(
+      undefined,
+      { id: 'x' },
+      { id: 'x', name: 'after' },
+      { action: 'update', resourceType: 'segment' },
+      { projectId: 'p1', environmentId: null, operation: 'op', before: undefined },
+    );
+    expect(entry.after).toEqual({ id: 'x', name: 'after' });
   });
 });

@@ -28,6 +28,8 @@ const POLICY: Record<string, SnapshotPolicy> = {
   api_token: 'full',
   // ak_ value is a public client-side key by design (the SDK ships it) — full is safe.
   access_token: 'full',
+  // third-party credentials blanked via REDACT_KEYS_BY_TYPE; the rest is config.
+  integration: 'full',
   oauth_grant: 'full',
   sso_provider: 'full',
   project_sso_settings: 'full',
@@ -44,6 +46,16 @@ const PII_KEYS = ['data', 'attributes'];
  * `clientSecret`.
  */
 const SECRET_KEYS = ['token', 'hashedSecret', 'hashedRefreshToken', 'clientSecret'];
+
+/**
+ * Resource-specific keys to blank in addition to SECRET_KEYS. `integration` rows
+ * carry third-party credentials under names too generic for the global list
+ * (`key`, `accessToken`) and inside the `config` JSONB (nested, provider-shaped) —
+ * blank the whole blob rather than trying to parse it.
+ */
+const REDACT_KEYS_BY_TYPE: Record<string, string[]> = {
+  integration: ['key', 'accessToken', 'config'],
+};
 
 export function snapshotPolicy(resourceType: string): SnapshotPolicy {
   // Unknown types default to `full` so a new resource is captured, not silently dropped.
@@ -63,7 +75,7 @@ export function redactSnapshot(resourceType: string, value: unknown): unknown {
     return value;
   }
   const out: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-  for (const key of SECRET_KEYS) {
+  for (const key of [...SECRET_KEYS, ...(REDACT_KEYS_BY_TYPE[resourceType] ?? [])]) {
     if (key in out) {
       out[key] = '[redacted]';
     }

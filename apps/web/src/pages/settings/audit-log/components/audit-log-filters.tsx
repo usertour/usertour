@@ -48,6 +48,7 @@ const RESOURCE_TYPES = [
   'api_token',
   'access_token',
   'oauth_grant',
+  'integration',
   'sso_provider',
   'project_sso_settings',
 ];

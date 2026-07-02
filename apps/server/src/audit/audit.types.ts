@@ -89,4 +89,11 @@ export interface WebAuditMeta {
     args: Record<string, unknown>,
     prisma: PrismaService,
   ) => Promise<string | null | undefined>;
+  /**
+   * Override for the `after` snapshot. For BULK mutations (array args) the result
+   * is just a count — the audit-worthy facts (which ids, how many) live in the
+   * args; capture them explicitly. One mutation call = one entry (the call IS the
+   * user's action). Output still passes through snapshot redaction.
+   */
+  capture?: (args: Record<string, unknown>, result: unknown) => unknown;
 }
