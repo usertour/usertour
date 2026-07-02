@@ -6,6 +6,7 @@ export * from './auth';
 export * from './settings';
 export * from './is-url';
 export * from './globals';
+export * from './capability-matrix';
 export * from './content';
 export * from './utils';
 export * from './color';

@@ -1,6 +1,7 @@
 import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
+import { stepCapabilities } from './contract-map';
 import {
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   type BannerData,
@@ -330,8 +331,9 @@ function validateFlow(
   steps.forEach((step, i) => {
     const label = `steps[${i}]${step.name ? ` "${step.name}"` : ''}`;
 
-    // Only tooltip steps need a target; modal/bubble/hidden anchor to the page.
-    if (step.type === StepContentType.TOOLTIP && !hasTarget(step.target)) {
+    // Only tooltip steps need a target; modal/bubble/hidden anchor to the page
+    // (capability matrix: STEP_CAPABILITIES.requiresTarget).
+    if (stepCapabilities(step.type)?.requiresTarget && !hasTarget(step.target)) {
       err(label, 'Tooltip step has no target element; the SDK skips it.');
     }
 

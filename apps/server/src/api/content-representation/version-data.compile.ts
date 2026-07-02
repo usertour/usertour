@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { ValidationError } from '@/common/errors/errors';
 
+import { dismissVariantFor } from './contract-map';
 import { compileContent } from './representation.compile';
 import { compileResourceCenter } from './resource-center.compile';
 import { representationResourceCenter } from './resource-center.schema';
@@ -119,7 +120,12 @@ function compileChecklist(
   if (rep.preventDismiss !== undefined) out.preventDismissChecklist = rep.preventDismiss;
   if (rep.autoDismiss !== undefined) out.autoDismissChecklist = rep.autoDismiss;
   if (rep.content !== undefined)
-    out.content = compileContent(rep.content, base.content, r, 'checklist-dismis');
+    out.content = compileContent(
+      rep.content,
+      base.content,
+      r,
+      dismissVariantFor(ContentDataType.CHECKLIST),
+    );
 
   if (rep.items !== undefined) {
     const prevById = new Map(
@@ -135,7 +141,11 @@ function compileChecklist(
         ...(it.description !== undefined ? { description: it.description } : {}),
         isCompleted: prev?.isCompleted ?? false,
         completeConditions: compileConditions(it.completeWhen ?? [], r),
-        clickedActions: compileActions(it.clickActions ?? [], r, 'checklist-dismis'),
+        clickedActions: compileActions(
+          it.clickActions ?? [],
+          r,
+          dismissVariantFor(ContentDataType.CHECKLIST),
+        ),
         onlyShowTask,
         onlyShowTaskConditions: onlyShowTask ? compileConditions(it.onlyShowWhen ?? [], r) : [],
       };
@@ -180,7 +190,12 @@ function compileLauncher(
     if (rep.tooltip.width !== undefined) t.width = rep.tooltip.width;
     if (rep.tooltip.reference !== undefined) t.reference = rep.tooltip.reference;
     if (rep.tooltip.content !== undefined) {
-      t.content = compileContent(rep.tooltip.content, base.tooltip?.content, r, 'launcher-dismis');
+      t.content = compileContent(
+        rep.tooltip.content,
+        base.tooltip?.content,
+        r,
+        dismissVariantFor(ContentDataType.LAUNCHER),
+      );
     }
     const s = rep.tooltip.settings;
     if (s !== undefined) {
@@ -204,7 +219,11 @@ function compileLauncher(
     if (rep.behavior.event !== undefined) b.triggerEvent = rep.behavior.event;
     if (rep.behavior.action !== undefined) b.actionType = rep.behavior.action;
     if (rep.behavior.actions !== undefined)
-      b.actions = compileActions(rep.behavior.actions, r, 'launcher-dismis');
+      b.actions = compileActions(
+        rep.behavior.actions,
+        r,
+        dismissVariantFor(ContentDataType.LAUNCHER),
+      );
     out.behavior = b;
   }
   return out;
@@ -216,7 +235,12 @@ function compileBanner(rep: RepresentationBanner, existing: unknown, r: CompileR
   if (rep.placement !== undefined) out.embedPlacement = rep.placement;
   if (rep.zIndex !== undefined) out.zIndex = rep.zIndex;
   if (rep.content !== undefined)
-    out.contents = compileContent(rep.content, base.contents, r, 'banner-dismis');
+    out.contents = compileContent(
+      rep.content,
+      base.contents,
+      r,
+      dismissVariantFor(ContentDataType.BANNER),
+    );
   if (rep.settings !== undefined) {
     const s = rep.settings;
     if (s.overlayOverAppContent !== undefined)

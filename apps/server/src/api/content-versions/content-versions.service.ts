@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { cuid } from '@usertour/helpers';
-import { ContentDataType, StepContentType } from '@usertour/types';
+import { ContentActionsItemType, ContentDataType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -14,6 +14,12 @@ import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
+import {
+  CONTENT_REFERENCE_TARGET_TYPE_SET,
+  REACTIVE_REJECTED_REP_CONDITION_TYPES,
+  contentActionCapabilities,
+  stepCapabilities,
+} from '../content-representation/contract-map';
 import { compileStep } from '../content-representation/representation.compile';
 import { decompileStep } from '../content-representation/representation.decompile';
 import { ContentVersion } from '../content-representation/representation.schema';
@@ -286,11 +292,10 @@ export class ApiContentVersionsService {
 
   private assertReactiveConditions(conditions: unknown, path: string, slot: string): void {
     if (!Array.isArray(conditions)) return;
-    const EXCLUDED = new Set(['event', 'segment', 'flow']);
     conditions.forEach((c, i) => {
       const at = `${path}[${i}]`;
       const type = (c as { type?: unknown })?.type;
-      if (typeof type === 'string' && EXCLUDED.has(type)) {
+      if (typeof type === 'string' && REACTIVE_REJECTED_REP_CONDITION_TYPES.has(type)) {
         throw new ValidationError(
           `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / flow-state conditions are server-evaluated and aren't supported here.`,
         );
@@ -320,10 +325,15 @@ export class ApiContentVersionsService {
    * only button hiddenWhen/disabledWhen carry the reactive-slot restriction.
    */
   private assertNonFlowData(data: unknown, contentType: string, slotHint: string): void {
-    // resource-center has no dismiss action handler (the builder registers dismiss only for
-    // flow / checklist / banner / launcher), so a `dismiss` in an RC action compiles to the
-    // default flow-dismiss and silently no-ops in the RC renderer.
-    const rejectDismiss = contentType === ContentDataType.RESOURCE_CENTER;
+    const caps = contentActionCapabilities(contentType);
+    // goto_step is flow-only per the capability matrix — every non-flow type's action set
+    // excludes STEP_GOTO (unknown type: reject too; compile rejects the type right after).
+    const rejectGotoStep = !caps?.actions.includes(ContentActionsItemType.STEP_GOTO);
+    // A type with action slots but no dismiss variant (resource center: the builder registers
+    // dismiss only for flow / checklist / banner / launcher) can't dismiss — a `dismiss` there
+    // would compile to the default flow-dismiss and silently no-op in its renderer. Types with
+    // no action slots at all (tracker) are left to their own schema.
+    const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
     const walk = (node: unknown, path: string): void => {
       if (Array.isArray(node)) {
         node.forEach((n, i) => walk(n, `${path}[${i}]`));
@@ -333,7 +343,7 @@ export class ApiContentVersionsService {
         return;
       }
       const obj = node as Record<string, unknown>;
-      if (obj.type === 'goto_step') {
+      if (rejectGotoStep && obj.type === 'goto_step') {
         throw new ValidationError(
           `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_flow, page_navigate, or dismiss instead.`,
         );
@@ -382,23 +392,24 @@ export class ApiContentVersionsService {
       const s = step as Record<string, unknown>;
       const type = s.type;
       const at = `steps[${i}]`;
+      const caps = stepCapabilities(type);
       const placement = s.placement as Record<string, unknown> | undefined;
-      if (placement && typeof placement === 'object') {
+      if (placement && typeof placement === 'object' && caps) {
         const isTooltipShape = 'side' in placement;
         const isModalShape = 'position' in placement;
-        if (type === StepContentType.TOOLTIP && isModalShape) {
+        if (caps.placement === 'anchor' && isModalShape) {
           throw new ValidationError(
             `A tooltip step (${at}) needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
           );
         }
-        if (type === StepContentType.MODAL && isTooltipShape) {
+        if (caps.placement === 'grid' && isTooltipShape) {
           throw new ValidationError(
             `A modal step (${at}) needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
           );
         }
       }
       const onClick = s.onClick;
-      if (Array.isArray(onClick) && onClick.length > 0 && type !== StepContentType.TOOLTIP) {
+      if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {
         throw new ValidationError(
           `onClick (click the target element to advance) only works on a tooltip step; a ${String(
             type,
@@ -428,7 +439,6 @@ export class ApiContentVersionsService {
     body: UpdateVersionBody,
     projectId: string,
   ): Promise<void> {
-    const VALID_TARGET_TYPES = new Set<string>([ContentDataType.FLOW, ContentDataType.CHECKLIST]);
     const refs: { id: string; where: string; kind: string }[] = [];
     const collect = (node: unknown, where: string): void => {
       if (Array.isArray(node)) {
@@ -469,7 +479,7 @@ export class ApiContentVersionsService {
     const typeById = new Map(found.map((c) => [c.id, c.type]));
     for (const r of refs) {
       const targetType = typeById.get(r.id);
-      if (targetType && !VALID_TARGET_TYPES.has(targetType)) {
+      if (targetType && !CONTENT_REFERENCE_TARGET_TYPE_SET.has(targetType)) {
         throw new ValidationError(
           `${r.kind} (in ${r.where}) references a ${targetType}, but it can only reference a flow or a checklist. Point it at a flow or checklist instead.`,
         );
