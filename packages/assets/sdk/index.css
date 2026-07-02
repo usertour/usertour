@@ -282,6 +282,41 @@
     usertour-widget-indicator-ripple 300ms cubic-bezier(0, 1, 1, 1)
       var(--usertour-resource-center-transition-duration) backwards;
 }
+/* Announcement popup enter: delayed by the RC panel's transition duration
+   (like the unread indicator), so collapsing the panel finishes before the
+   popup fades in — a hand-off instead of an abrupt swap. `backwards` keeps
+   the popup invisible during the delay. */
+.usertour-widget-announcement-bubble {
+  animation: usertour-widget-announcement-bubble-enter 240ms ease-out
+    var(--usertour-resource-center-transition-duration, 450ms) backwards;
+}
+/* The modal is centered via transform, so its enter animates opacity only. */
+.usertour-widget-announcement-modal {
+  animation: usertour-widget-announcement-fade-enter 240ms ease-out
+    var(--usertour-resource-center-transition-duration, 450ms) backwards;
+}
+.usertour-widget-announcement-modal-overlay {
+  animation: usertour-widget-announcement-fade-enter 240ms ease-out
+    var(--usertour-resource-center-transition-duration, 450ms) backwards;
+}
+@keyframes usertour-widget-announcement-bubble-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes usertour-widget-announcement-fade-enter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 .usertour-widget-bubble__avatar {
   pointer-events: all;
   position: absolute;

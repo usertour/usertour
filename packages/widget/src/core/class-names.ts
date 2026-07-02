@@ -59,6 +59,11 @@ export const WidgetClass = {
   // Indicator (unread badge)
   indicator: `${PREFIX}-indicator`,
 
+  // Announcement popup (bubble / modal enter transitions)
+  announcementBubble: `${PREFIX}-announcement-bubble`,
+  announcementModal: `${PREFIX}-announcement-modal`,
+  announcementModalOverlay: `${PREFIX}-announcement-modal-overlay`,
+
   // Bubble avatar
   bubbleAvatar: `${PREFIX}-bubble__avatar`,
   bubbleAvatarMinimizable: `${PREFIX}-bubble__avatar--minimizable`,

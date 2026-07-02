@@ -196,12 +196,12 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
   return (
     <>
       <div
-        className={WidgetClass.overlay}
+        className={`${WidgetClass.overlay} ${WidgetClass.announcementModalOverlay}`}
         style={{ position: 'fixed', visibility: 'visible', zIndex: zIndex + 2 }}
         onClick={onDismiss}
       />
       <div
-        className={`${WidgetClass.surface} ${WidgetClass.elevation}`}
+        className={`${WidgetClass.surface} ${WidgetClass.elevation} ${WidgetClass.announcementModal}`}
         style={{ ...computePositionStyle('center', 0, 0), width: `${width}px`, zIndex: zIndex + 3 }}
       >
         <div className={WidgetClass.surfaceShell}>
@@ -276,7 +276,7 @@ export const AnnouncementBubbleShell = (props: AnnouncementBubbleShellProps) => 
 
   return (
     <div
-      className={`${WidgetClass.surface} ${WidgetClass.elevation}`}
+      className={`${WidgetClass.surface} ${WidgetClass.elevation} ${WidgetClass.announcementBubble}`}
       style={{ ...style, width: `${width}px` }}
     >
       <div className={WidgetClass.surfaceShell}>
