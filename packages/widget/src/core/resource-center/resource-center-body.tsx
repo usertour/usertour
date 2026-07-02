@@ -27,6 +27,7 @@ import type {
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { RiArrowRightSLine } from '@usertour/icons';
+import { Button } from '../../primitives';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext, type ContentListDisplayItem } from './context';
 import { serializeBlockName } from '@usertour/helpers';
@@ -399,6 +400,32 @@ ContentListDetail.displayName = 'ContentListDetail';
  * can't merge same-weekday/month/day announcements from different years under one
  * separator.
  */
+/**
+ * The announcement Read more button — brand-colored text in a pill that gains
+ * the theme hover/active background. Shared by the feed rows and the popup
+ * bubble so the two surfaces can't drift.
+ */
+export interface AnnouncementReadMoreButtonProps {
+  label?: string;
+  onClick: () => void;
+}
+
+export const AnnouncementReadMoreButton = (props: AnnouncementReadMoreButtonProps) => {
+  const { label, onClick } = props;
+  return (
+    <Button
+      variant="custom"
+      className="inline-flex items-center gap-1 text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover active:bg-sdk-active cursor-pointer"
+      onClick={onClick}
+    >
+      {label || 'Read more'}
+      <span className="text-xs" aria-hidden="true">
+        →
+      </span>
+    </Button>
+  );
+};
+
 export const formatAnnouncementDate = (dateStr: string): string => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', {
@@ -615,14 +642,10 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                 {/* Read more button */}
                 {item.moreEnabled && (
                   <div className="flex justify-end mt-2">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover active:bg-sdk-active cursor-pointer"
+                    <AnnouncementReadMoreButton
+                      label={item.moreButtonText}
                       onClick={() => handleReadMore(item)}
-                    >
-                      {item.moreButtonText || 'Read more'}
-                      <span className="text-xs">→</span>
-                    </button>
+                    />
                   </div>
                 )}
               </div>

@@ -13,7 +13,7 @@ import { WidgetClass } from '../class-names';
 import { PopperClose } from '../popper';
 import { computePositionStyle } from '../utils/position';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
-import { formatAnnouncementDate } from './resource-center-body';
+import { AnnouncementReadMoreButton, formatAnnouncementDate } from './resource-center-body';
 import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
 import { useResourceCenterContext } from './context';
 
@@ -159,16 +159,7 @@ export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
           </div>
         ) : (
           <div className="flex justify-end">
-            {/* Link-style button (same idiom as the checklist dismiss link):
-                text-sdk-link is the theme's linkColor. */}
-            <Button
-              variant="custom"
-              className="inline-flex items-center gap-1 text-sdk-link hover:text-sdk-link/80 font-sdk-bold cursor-pointer"
-              onClick={handleReadMore}
-            >
-              {popup.moreButtonText || 'Read more'}
-              <span aria-hidden="true">→</span>
-            </Button>
+            <AnnouncementReadMoreButton label={popup.moreButtonText} onClick={handleReadMore} />
           </div>
         ))}
     </div>
