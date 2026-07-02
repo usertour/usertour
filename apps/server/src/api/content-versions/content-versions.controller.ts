@@ -9,11 +9,13 @@ import {
   UseFilters,
   UseGuards,
   UsePipes,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
+import { AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -105,8 +107,15 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiResponse({ status: 201, description: 'Created content version', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async create(@Param('projectId') projectId: string, @Param('contentId') contentId: string) {
-    return this.service.create(projectId, contentId);
+  async create(
+    @Param('projectId') projectId: string,
+    @Param('contentId') contentId: string,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    return this.service.create(projectId, contentId, {
+      userId: req.apiToken.userId,
+      tokenId: req.apiToken.id,
+    });
   }
 
   @Post(':id/restore')
@@ -124,8 +133,12 @@ export class ApiContentVersionsController {
     @Param('id') id: string,
     @Param('contentId') contentId: string,
     @Param('projectId') projectId: string,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
-    return this.service.restore(id, contentId, projectId);
+    return this.service.restore(id, contentId, projectId, {
+      userId: req.apiToken.userId,
+      tokenId: req.apiToken.id,
+    });
   }
 
   @Patch(':id')
@@ -145,7 +158,11 @@ export class ApiContentVersionsController {
     @Param('contentId') contentId: string,
     @Param('projectId') projectId: string,
     @Body() body: UpdateVersionBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
-    return this.service.update(id, contentId, projectId, body);
+    return this.service.update(id, contentId, projectId, body, {
+      userId: req.apiToken.userId,
+      tokenId: req.apiToken.id,
+    });
   }
 }

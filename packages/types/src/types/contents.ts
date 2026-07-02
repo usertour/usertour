@@ -152,6 +152,27 @@ export type ContentVersion = {
   type: string;
   steps?: Step[];
   scheduledAt?: string | null;
+  /** Author attribution (null for rows predating it). */
+  createdByUserId?: string | null;
+  updatedByUserId?: string | null;
+  updatedByName?: string | null;
+};
+
+/** One publish / unpublish event (per-content Publish history panel). */
+export type ContentPublishRecord = {
+  id: string;
+  createdAt: string;
+  contentId: string;
+  versionId: string;
+  /** Raw sequence — display as v{versionSequence + 1}, matching version rows. */
+  versionSequence: number;
+  environmentId: string;
+  environmentName?: string | null;
+  action: 'publish' | 'unpublish';
+  actorUserId?: string | null;
+  actorTokenId?: string | null;
+  actorName?: string | null;
+  actorTokenName?: string | null;
 };
 
 export type ContentOnEnvironment = {

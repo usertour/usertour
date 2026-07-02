@@ -90,9 +90,14 @@ export const VersionRow = ({
             <span key={`${chip.kind}-${idx}`} className="inline-flex items-center gap-1.5">
               {badge}
               <span className="text-xs text-muted-foreground">
-                {t('contents.versions.editedRelative', {
-                  time: formatDistanceToNowStrict(updatedAt, { addSuffix: true }),
-                })}
+                {version.updatedByName
+                  ? t('contents.versions.editedBy', {
+                      time: formatDistanceToNowStrict(updatedAt, { addSuffix: true }),
+                      name: version.updatedByName,
+                    })
+                  : t('contents.versions.editedRelative', {
+                      time: formatDistanceToNowStrict(updatedAt, { addSuffix: true }),
+                    })}
               </span>
             </span>
           );

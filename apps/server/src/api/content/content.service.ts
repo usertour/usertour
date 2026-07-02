@@ -11,7 +11,7 @@ import {
   ThemeNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
-import { ContentService } from '@/content/content.service';
+import { ContentService, type WriteActor } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
@@ -106,6 +106,7 @@ export class ApiContentService {
     projectId: string,
     environmentId: string,
     versionId: string,
+    actor?: WriteActor,
   ): Promise<Content> {
     await this.requireContent(id, projectId);
     await this.requireEnvironment(environmentId, projectId);
@@ -135,15 +136,20 @@ export class ApiContentService {
           .join('; ')}`,
       );
     }
-    await this.content.publishedContentVersion(versionId, environmentId);
+    await this.content.publishedContentVersion(versionId, environmentId, actor);
     return this.get(id, projectId, {});
   }
 
   /** Unpublish the content from an environment (clear its live version). */
-  async unpublish(id: string, projectId: string, environmentId: string): Promise<Content> {
+  async unpublish(
+    id: string,
+    projectId: string,
+    environmentId: string,
+    actor?: WriteActor,
+  ): Promise<Content> {
     await this.requireContent(id, projectId);
     await this.requireEnvironment(environmentId, projectId);
-    await this.content.unpublishedContentVersion(id, environmentId);
+    await this.content.unpublishedContentVersion(id, environmentId, actor);
     return this.get(id, projectId, {});
   }
 

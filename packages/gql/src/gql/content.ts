@@ -360,6 +360,39 @@ export const listContentVersions = gql`
           createdAt
           updatedAt
           config
+          updatedByUserId
+          updatedByName
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;
+
+export const listContentPublishRecords = gql`
+  query listContentPublishRecords($contentId: String!, $first: Int, $after: String) {
+    listContentPublishRecords(contentId: $contentId, first: $first, after: $after) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          createdAt
+          contentId
+          versionId
+          versionSequence
+          environmentId
+          environmentName
+          action
+          actorUserId
+          actorTokenId
+          actorName
+          actorTokenName
         }
       }
       pageInfo {

@@ -165,7 +165,10 @@ export class ApiContentController {
     @Req() req: { apiToken: AuthedApiToken },
   ) {
     this.requireEnvironmentInScope(req, body.environmentId);
-    return this.service.publish(id, projectId, body.environmentId, body.versionId);
+    return this.service.publish(id, projectId, body.environmentId, body.versionId, {
+      userId: req.apiToken.userId,
+      tokenId: req.apiToken.id,
+    });
   }
 
   @Post(':id/unpublish')
@@ -186,6 +189,9 @@ export class ApiContentController {
     @Req() req: { apiToken: AuthedApiToken },
   ) {
     this.requireEnvironmentInScope(req, body.environmentId);
-    return this.service.unpublish(id, projectId, body.environmentId);
+    return this.service.unpublish(id, projectId, body.environmentId, {
+      userId: req.apiToken.userId,
+      tokenId: req.apiToken.id,
+    });
   }
 }

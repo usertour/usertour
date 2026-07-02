@@ -11,7 +11,7 @@ import {
   ValidationError,
   type ValidationIssue,
 } from '@/common/errors/errors';
-import { ContentService } from '@/content/content.service';
+import { ContentService, type WriteActor } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
@@ -205,7 +205,7 @@ export class ApiContentVersionsService {
    * builder's "new version" action): the fork becomes the new editedVersion, the
    * previous draft is frozen as a historical version.
    */
-  async create(projectId: string, contentId: string): Promise<ContentVersion> {
+  async create(projectId: string, contentId: string, actor?: WriteActor): Promise<ContentVersion> {
     const content = await this.content.findContentWithRelations(contentId, projectId, {});
     if (!content || (content as { deleted?: boolean }).deleted) {
       throw new ContentNotFoundError();
@@ -214,7 +214,7 @@ export class ApiContentVersionsService {
     if (!editedVersionId) {
       throw new ParamsError('Content has no editable version to fork');
     }
-    const created = await this.content.createContentVersion({ versionId: editedVersionId });
+    const created = await this.content.createContentVersion({ versionId: editedVersionId }, actor);
     if (!created) {
       throw new ParamsError('Failed to create version');
     }
@@ -226,7 +226,12 @@ export class ApiContentVersionsService {
    * version — config / data / theme / steps copied from version `id`. Binds the
    * same domain method the builder uses. Returns the new version.
    */
-  async restore(id: string, contentId: string, projectId: string): Promise<ContentVersion> {
+  async restore(
+    id: string,
+    contentId: string,
+    projectId: string,
+    actor?: WriteActor,
+  ): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       content: true,
     });
@@ -237,7 +242,7 @@ export class ApiContentVersionsService {
     ) {
       throw new ContentNotFoundError();
     }
-    const created = await this.content.restoreContentVersion(id);
+    const created = await this.content.restoreContentVersion(id, actor);
     if (!created) {
       throw new ParamsError('Failed to restore version');
     }
@@ -287,6 +292,7 @@ export class ApiContentVersionsService {
     contentId: string,
     projectId: string,
     body: UpdateVersionBody,
+    actor?: WriteActor,
   ): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       steps: { orderBy: { sequence: 'asc' } },
@@ -446,10 +452,13 @@ export class ApiContentVersionsService {
     }
 
     if (Object.keys(content).length > 0) {
-      const result = await this.content.updateContentVersion({
-        versionId: id,
-        content: content as never,
-      });
+      const result = await this.content.updateContentVersion(
+        {
+          versionId: id,
+          content: content as never,
+        },
+        actor,
+      );
       if (!result) {
         throw new ParamsError('Version is not editable');
       }

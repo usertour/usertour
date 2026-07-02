@@ -127,6 +127,27 @@ describe('API v2 content publish (e2e)', () => {
     expect(read.body.environments).toEqual([]);
   });
 
+  it('records publish history rows with the acting token (either-or actor)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
+    await api('post', publishPath(), token).send({ environmentId, versionId });
+    await api('post', unpublishPath(), token).send({ environmentId });
+
+    const records = await prisma.contentPublishRecord.findMany({
+      where: { contentId },
+      orderBy: { createdAt: 'desc' },
+      take: 2,
+    });
+    expect(records.map((r) => r.action)).toEqual(['unpublish', 'publish']);
+    for (const record of records) {
+      expect(record.versionId).toBe(versionId);
+      expect(record.environmentId).toBe(environmentId);
+      // API write → the token IS the actor; the user column stays empty (either-or).
+      expect(record.actorTokenId).toBeTruthy();
+      expect(record.actorUserId).toBeNull();
+      expect(record.versionSequence).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it('rejects publish to an environment outside the token’s env scope (403 E1029)', async () => {
     // Token may publish only to `environmentId`; publishing to the other env is refused
     // BEFORE the service runs — the core "agent can't push to Production" guardrail.

@@ -171,6 +171,7 @@ export function buildWriteTools(): McpTool[] {
           String(args.contentId),
           ctx.projectId,
           args as never,
+          { userId: ctx.token.userId, tokenId: ctx.token.id },
         ),
     },
     {
@@ -186,7 +187,10 @@ export function buildWriteTools(): McpTool[] {
         'Returns the new version.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) =>
-        ctx.services.contentVersions.create(ctx.projectId, String(args.contentId)),
+        ctx.services.contentVersions.create(ctx.projectId, String(args.contentId), {
+          userId: ctx.token.userId,
+          tokenId: ctx.token.id,
+        }),
     },
     {
       name: 'restore_content_version',
@@ -204,6 +208,7 @@ export function buildWriteTools(): McpTool[] {
           String(args.versionId),
           String(args.contentId),
           ctx.projectId,
+          { userId: ctx.token.userId, tokenId: ctx.token.id },
         ),
     },
     {
@@ -249,6 +254,7 @@ export function buildWriteTools(): McpTool[] {
           ctx.projectId,
           environment.id,
           String(args.versionId),
+          { userId: ctx.token.userId, tokenId: ctx.token.id },
         );
       },
     },
@@ -272,6 +278,7 @@ export function buildWriteTools(): McpTool[] {
           String(args.contentId),
           ctx.projectId,
           environment.id,
+          { userId: ctx.token.userId, tokenId: ctx.token.id },
         );
       },
     },

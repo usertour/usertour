@@ -382,6 +382,7 @@ Reading this field directly picks the wrong version in multi-environment setups.
   editedVersionId String [unique]
   bizSession BizSession [not null]
   contentOnEnvironments ContentOnEnvironment [not null]
+  publishRecords ContentPublishRecord [not null]
 }
 
 Table ContentOnEnvironment {
@@ -402,6 +403,27 @@ Table ContentOnEnvironment {
   }
 }
 
+Table ContentPublishRecord {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  content Content [not null]
+  contentId String [not null]
+  versionId String [not null]
+  versionSequence Int [not null, note: 'Denormalized so "v3" still renders if the version row is later deleted.']
+  environmentId String [not null]
+  action String [not null, note: 'publish | unpublish']
+  actorUserId String
+  actorTokenId String
+
+  Note: 'One publish / unpublish event — the per-content "Publish history" product
+surface (permanent, content-scoped, visible to anyone who can read the
+content). Deliberately NOT derived from AuditLog: audit is owner-only,
+plan-gated and read-time windowed; this is product data written in the same
+transaction as the publish itself. Actor is either-or (web user OR the API
+key/OAuth token that acted) — plain ids, no FKs, mirroring AuditLog: records
+outlive users/tokens/environments; names resolve at read time.'
+}
+
 Table Version {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
@@ -410,6 +432,11 @@ Table Version {
   scheduledAt DateTime
   deleted Boolean [not null, default: false]
   sequence Int [not null, default: 0]
+  createdByUserId String [note: 'Who created this version row (web session user, or the API key\'s owner).
+Nullable: rows predating the column, and system-created seeds.']
+  updatedByUserId String [note: 'Who last wrote the version ROW (whole-version save / scalar fields). Step
+sub-row operations (sequence drag, location data) don\'t bump the row\'s
+updatedAt and intentionally don\'t restamp this either — the pair stays consistent.']
   theme Theme
   themeId String
   content Content [not null]
@@ -908,6 +935,8 @@ Ref: ContentOnEnvironment.environmentId > Environment.id
 Ref: ContentOnEnvironment.contentId > Content.id
 
 Ref: ContentOnEnvironment.publishedVersionId > Version.id
+
+Ref: ContentPublishRecord.contentId > Content.id [delete: Cascade]
 
 Ref: Version.themeId > Theme.id
 

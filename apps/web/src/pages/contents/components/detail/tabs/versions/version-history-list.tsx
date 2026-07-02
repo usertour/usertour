@@ -3,6 +3,7 @@ import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
+import { cn } from '@usertour/tailwind';
 import { SpinnerIcon } from '@usertour/icons';
 import { Content, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -162,9 +163,17 @@ export const VersionHistoryList = () => {
         </div>
       )}
 
-      <div ref={sentryRef} className="flex h-10 items-center justify-center">
+      {/* Sentry only earns its footprint when there is (or was) more to load —
+          a short list that fits on screen doesn't need an "End of history" marker. */}
+      <div
+        ref={sentryRef}
+        className={cn(
+          'flex items-center justify-center',
+          hasNextPage || versionList.length > 20 ? 'h-10' : 'h-0',
+        )}
+      >
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
-        {!hasNextPage && versionList.length > 0 && (
+        {!hasNextPage && versionList.length > 20 && (
           <span className="text-xs text-muted-foreground">
             {t('contents.versions.endOfHistory')}
           </span>

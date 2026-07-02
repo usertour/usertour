@@ -109,6 +109,7 @@ export const TypePolicy: TypePolicies = {
       // `fetchMore` (with a different `after`) would land in its own
       // slot — the watch query would never see appended pages.
       listContentVersions: accumulatorMerge(['contentId']),
+      listContentPublishRecords: accumulatorMerge(['contentId']),
       queryContent: accumulatorMerge(['query', 'orderBy']),
       queryBizUserEvents: accumulatorMerge(['query', 'orderBy']),
       queryBizCompanyEvents: accumulatorMerge(['query', 'orderBy']),

@@ -1,5 +1,7 @@
 import { Common } from '@/auth/models/common.model';
 import { AuditWeb } from '@/audit/audit.decorator';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { User } from '@/users/models/user.model';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
@@ -11,6 +13,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { PrismaService } from 'nestjs-prisma';
 import { ContentIdArgs } from './args/content-id.args';
 import { VersionIdArgs } from './args/version-id.args';
+import { ContentPublishRecordConnection } from './models/content-publish-record.model';
 import { ContentService } from './content.service';
 import { ContentOrder } from './dto/content-order.input';
 import { ContentQuery } from './dto/content-query.input';
@@ -93,8 +96,8 @@ export class ContentResolver {
     resourceType: 'content',
     resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
   })
-  async createContentVersion(@Args('data') data: ContentVersionInput) {
-    return await this.contentService.createContentVersion(data);
+  async createContentVersion(@UserEntity() user: User, @Args('data') data: ContentVersionInput) {
+    return await this.contentService.createContentVersion(data, { userId: user.id });
   }
 
   @Query(() => Version)
@@ -105,8 +108,8 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async updateContentVersion(@Args('data') input: VersionUpdateInput) {
-    return await this.contentService.updateContentVersion(input);
+  async updateContentVersion(@UserEntity() user: User, @Args('data') input: VersionUpdateInput) {
+    return await this.contentService.updateContentVersion(input, { userId: user.id });
   }
 
   @Mutation(() => Version)
@@ -118,8 +121,11 @@ export class ContentResolver {
     resourceType: 'content',
     resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
   })
-  async restoreContentVersion(@Args('data') { versionId }: VersionIdInput) {
-    return await this.contentService.restoreContentVersion(versionId);
+  async restoreContentVersion(
+    @UserEntity() user: User,
+    @Args('data') { versionId }: VersionIdInput,
+  ) {
+    return await this.contentService.restoreContentVersion(versionId, { userId: user.id });
   }
 
   @Mutation(() => Version)
@@ -130,8 +136,13 @@ export class ContentResolver {
     resourceId: (_a, r) => (r as { contentId: string }).contentId,
     environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
   })
-  async publishedContentVersion(@Args('data') { versionId, environmentId }: VersionIdInput) {
-    return await this.contentService.publishedContentVersion(versionId, environmentId);
+  async publishedContentVersion(
+    @UserEntity() user: User,
+    @Args('data') { versionId, environmentId }: VersionIdInput,
+  ) {
+    return await this.contentService.publishedContentVersion(versionId, environmentId, {
+      userId: user.id,
+    });
   }
 
   @Mutation(() => Common)
@@ -142,8 +153,13 @@ export class ContentResolver {
     resourceId: (a) => (a.data as { contentId: string }).contentId,
     environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
   })
-  async unpublishedContentVersion(@Args('data') { contentId, environmentId }: ContentIdInput) {
-    await this.contentService.unpublishedContentVersion(contentId, environmentId);
+  async unpublishedContentVersion(
+    @UserEntity() user: User,
+    @Args('data') { contentId, environmentId }: ContentIdInput,
+  ) {
+    await this.contentService.unpublishedContentVersion(contentId, environmentId, {
+      userId: user.id,
+    });
     return { success: true };
   }
 
@@ -171,6 +187,15 @@ export class ContentResolver {
       before,
       after,
     });
+  }
+
+  @Query(() => ContentPublishRecordConnection)
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async listContentPublishRecords(
+    @Args() { contentId }: ContentIdArgs,
+    @Args() pagination: PaginationArgs,
+  ) {
+    return await this.contentService.listContentPublishRecords(contentId, pagination);
   }
 
   @Query(() => [VersionOnLocalization])
@@ -301,5 +326,26 @@ export class ContentResolver {
       where: { id: content.editedVersionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
+  }
+}
+
+/**
+ * Field resolvers for Version rows. `updatedByName` resolves the author column
+ * to a display name at read time (page-sized lists — a per-row lookup is fine).
+ */
+@Resolver(() => Version)
+export class VersionFieldsResolver {
+  constructor(private prisma: PrismaService) {}
+
+  @ResolveField('updatedByName', () => String, { nullable: true })
+  async updatedByName(@Parent() version: { updatedByUserId?: string | null }) {
+    if (!version.updatedByUserId) {
+      return null;
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: version.updatedByUserId },
+      select: { name: true },
+    });
+    return user?.name ?? null;
   }
 }

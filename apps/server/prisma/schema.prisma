@@ -305,30 +305,30 @@ model AccessToken {
 /// User-owned API token for the public REST API (v2) and MCP/OAuth.
 /// Authority at request time = ROLE_CAPABILITIES[owner's role on the project] ∩ scopes.
 model ApiToken {
-  id           String              @id @default(cuid())
-  createdAt    DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime            @updatedAt @db.Timestamptz(6)
-  name         String
-  prefix       String              @default("utp_")
+  id                    String              @id @default(cuid())
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+  name                  String
+  prefix                String              @default("utp_")
   /// SHA-256 hash of the token secret. Plaintext is returned once at creation and never stored.
-  hashedSecret String              @unique
+  hashedSecret          String              @unique
   /// Trailing characters of the secret, for display only (e.g. "···a1b2").
-  partialKey   String
+  partialKey            String
   /// Capability[] (from @usertour/types) the token may exercise, intersected with the owner's role per request.
-  scopes       Json                @db.JsonB
+  scopes                Json                @db.JsonB
   /// Environment ids this token may ACT ON (read + write of env-scoped resources, and publish).
   /// null/absent = all environments in the token's project(s) — legacy/back-compat default.
-  allowedEnvironmentIds Json?      @db.JsonB
+  allowedEnvironmentIds Json?               @db.JsonB
   /// Set when issued via an OAuth grant; null for user-created personal tokens.
-  clientId     String?
+  clientId              String?
   /// The OAuthGrant that issued this access token; revoking the grant kills it.
-  oauthGrantId String?
-  isActive     Boolean             @default(true)
-  expiresAt    DateTime?           @db.Timestamptz(6)
-  lastUsedAt   DateTime?           @db.Timestamptz(6)
-  user         User                @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  userId       String
-  projects     ApiTokenOnProject[]
+  oauthGrantId          String?
+  isActive              Boolean             @default(true)
+  expiresAt             DateTime?           @db.Timestamptz(6)
+  lastUsedAt            DateTime?           @db.Timestamptz(6)
+  user                  User                @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userId                String
+  projects              ApiTokenOnProject[]
 
   @@index([userId])
   @@index([hashedSecret])
@@ -378,23 +378,23 @@ model OAuthClient {
 /// A one-time OAuth authorization code (short TTL). Carries the consent decision
 /// (chosen project + scopes) and the PKCE challenge until token exchange.
 model OAuthAuthorizationCode {
-  id                  String    @id @default(cuid())
-  createdAt           DateTime  @default(now()) @db.Timestamptz(6)
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
   /// SHA-256 hash of the code; the plaintext is only in the redirect.
-  hashedCode          String    @unique
-  clientId            String
-  userId              String
-  projectId           String
-  scopes              Json      @db.JsonB
+  hashedCode            String    @unique
+  clientId              String
+  userId                String
+  projectId             String
+  scopes                Json      @db.JsonB
   /// Environment ids the consent granted; carried to the grant/token. null = all (Phase 2).
-  allowedEnvironmentIds Json?   @db.JsonB
-  redirectUri         String
-  codeChallenge       String?
-  codeChallengeMethod String? // 'S256'
-  grantId             String
-  resource            String?
-  expiresAt           DateTime  @db.Timestamptz(6)
-  consumedAt          DateTime? @db.Timestamptz(6)
+  allowedEnvironmentIds Json?     @db.JsonB
+  redirectUri           String
+  codeChallenge         String?
+  codeChallengeMethod   String? // 'S256'
+  grantId               String
+  resource              String?
+  expiresAt             DateTime  @db.Timestamptz(6)
+  consumedAt            DateTime? @db.Timestamptz(6)
 
   @@index([clientId])
 }
@@ -403,19 +403,19 @@ model OAuthAuthorizationCode {
 /// project, and the current (rotating) refresh token. Revoking it cascade-kills
 /// the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.
 model OAuthGrant {
-  id                 String    @id @default(cuid()) // = grantId
-  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
-  userId             String
-  clientId           String
-  projectId          String
-  scopes             Json      @db.JsonB
+  id                    String    @id @default(cuid()) // = grantId
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  userId                String
+  clientId              String
+  projectId             String
+  scopes                Json      @db.JsonB
   /// Environment ids this grant's issued tokens may act on; null = all (set at consent, Phase 2).
-  allowedEnvironmentIds Json?  @db.JsonB
+  allowedEnvironmentIds Json?     @db.JsonB
   /// SHA-256 hash of the current refresh token; rotated on each refresh.
-  hashedRefreshToken String?   @unique
-  refreshExpiresAt   DateTime? @db.Timestamptz(6)
-  revokedAt          DateTime? @db.Timestamptz(6)
+  hashedRefreshToken    String?   @unique
+  refreshExpiresAt      DateTime? @db.Timestamptz(6)
+  revokedAt             DateTime? @db.Timestamptz(6)
 
   @@index([userId, clientId])
   @@index([clientId])
@@ -465,6 +465,7 @@ model Content {
   editedVersionId       String?                @unique
   bizSession            BizSession[]
   contentOnEnvironments ContentOnEnvironment[]
+  publishRecords        ContentPublishRecord[]
 }
 
 model ContentOnEnvironment {
@@ -483,6 +484,30 @@ model ContentOnEnvironment {
   @@unique([environmentId, contentId])
 }
 
+/// One publish / unpublish event — the per-content "Publish history" product
+/// surface (permanent, content-scoped, visible to anyone who can read the
+/// content). Deliberately NOT derived from AuditLog: audit is owner-only,
+/// plan-gated and read-time windowed; this is product data written in the same
+/// transaction as the publish itself. Actor is either-or (web user OR the API
+/// key/OAuth token that acted) — plain ids, no FKs, mirroring AuditLog: records
+/// outlive users/tokens/environments; names resolve at read time.
+model ContentPublishRecord {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  content         Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  contentId       String
+  versionId       String
+  /// Denormalized so "v3" still renders if the version row is later deleted.
+  versionSequence Int
+  environmentId   String
+  /// publish | unpublish
+  action          String
+  actorUserId     String?
+  actorTokenId    String?
+
+  @@index([contentId, createdAt])
+}
+
 model Version {
   id                    String                  @id @default(cuid())
   createdAt             DateTime                @default(now()) @db.Timestamptz(6)
@@ -491,6 +516,13 @@ model Version {
   scheduledAt           DateTime?               @db.Timestamptz(6)
   deleted               Boolean                 @default(false)
   sequence              Int                     @default(0)
+  /// Who created this version row (web session user, or the API key's owner).
+  /// Nullable: rows predating the column, and system-created seeds.
+  createdByUserId       String?
+  /// Who last wrote the version ROW (whole-version save / scalar fields). Step
+  /// sub-row operations (sequence drag, location data) don't bump the row's
+  /// updatedAt and intentionally don't restamp this either — the pair stays consistent.
+  updatedByUserId       String?
   theme                 Theme?                  @relation(fields: [themeId], references: [id])
   themeId               String?
   content               Content                 @relation("ContentVersions", fields: [contentId], references: [id])

@@ -353,6 +353,31 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(ok.status).toBe(200);
   });
 
+  it('stamps the version author on a write (token owner as updatedByUserId)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'Authored',
+          type: 'modal',
+          placement: { position: 'center' },
+          content: [{ type: 'text', markdown: 'x' }],
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    const row = await prisma.version.findUnique({
+      where: { id: writeVersionId },
+      select: { updatedByUserId: true },
+    });
+    // The API key acted, so the version row is attributed to the key's OWNER.
+    expect(row?.updatedByUserId).toBe(ownerUserId);
+  });
+
   it('rejects a placement shape or onClick that does not match the step kind (400)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const patch = (steps: unknown[]) =>

@@ -58,6 +58,18 @@ export class Version extends BaseModel {
   @Field(() => Number)
   sequence: number;
 
+  /** Who created this version row (null for rows predating attribution). */
+  @Field(() => String, { nullable: true })
+  createdByUserId?: string | null;
+
+  /** Who last wrote the version row. */
+  @Field(() => String, { nullable: true })
+  updatedByUserId?: string | null;
+
+  /** Display name for updatedByUserId (resolved field). */
+  @Field(() => String, { nullable: true })
+  updatedByName?: string | null;
+
   @Field(() => String, { nullable: true })
   themeId?: string;
 

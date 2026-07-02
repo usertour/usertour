@@ -20,6 +20,23 @@ import { ContentConfigObject } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
+/**
+ * Who performed a version / publish write. Web passes the session user; the
+ * API/MCP surfaces pass the key: `userId` = the key's OWNER (used for the
+ * version rows' created/updatedBy attribution) and `tokenId` = the key itself
+ * (publish records store either-or, mirroring AuditLog, so an automation's
+ * action is never disguised as a hand-made one).
+ */
+export type WriteActor = { userId?: string | null; tokenId?: string | null };
+
+/** Either-or actor columns for a ContentPublishRecord. */
+const publishActorFields = (actor?: WriteActor) =>
+  actor?.tokenId
+    ? { actorTokenId: actor.tokenId }
+    : actor?.userId
+      ? { actorUserId: actor.userId }
+      : {};
+
 @Injectable()
 export class ContentService {
   constructor(
@@ -100,7 +117,7 @@ export class ContentService {
     return await this.getContent(contentId);
   }
 
-  async createContentVersion(input: ContentVersionInput) {
+  async createContentVersion(input: ContentVersionInput, actor?: WriteActor) {
     const { versionId, config } = input;
 
     try {
@@ -138,6 +155,8 @@ export class ContentService {
             data: editedVersion.data,
             themeId: editedVersion.themeId,
             contentId,
+            createdByUserId: actor?.userId ?? null,
+            updatedByUserId: actor?.userId ?? null,
             steps: { create: steps },
           } as any,
         });
@@ -203,9 +222,13 @@ export class ContentService {
     });
   }
 
-  async updateContentVersion(input: VersionUpdateInput) {
+  async updateContentVersion(input: VersionUpdateInput, actor?: WriteActor) {
     const { versionId, content, expectedUpdatedAt } = input;
-    const { steps, ...versionFields } = content;
+    const { steps, ...bareFields } = content;
+    // Stamp who wrote the version row alongside the write itself.
+    const versionFields = actor?.userId
+      ? { ...bareFields, updatedByUserId: actor.userId }
+      : bareFields;
 
     // Contract: when steps are sent (the builder's whole-version save) each one
     // must carry a front-end cvid — it's the upsert key. Cheap to validate
@@ -299,6 +322,66 @@ export class ContentService {
     });
   }
 
+  /**
+   * Publish history for one content — newest first, enriched with display names
+   * (actor user / key, environment). Names resolve at read time so records
+   * survive user/token/environment deletion (they just lose the pretty name).
+   */
+  async listContentPublishRecords(
+    contentId: string,
+    pagination: { first?: number; last?: number; before?: string; after?: string },
+  ) {
+    const where = { contentId };
+    const connection = await findManyCursorConnection(
+      (args) =>
+        this.prisma.contentPublishRecord.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          ...args,
+        }),
+      () => this.prisma.contentPublishRecord.count({ where }),
+      pagination,
+    );
+
+    const nodes = connection.edges.map((e) => e.node);
+    const userIds = [...new Set(nodes.map((n) => n.actorUserId).filter(Boolean))] as string[];
+    const tokenIds = [...new Set(nodes.map((n) => n.actorTokenId).filter(Boolean))] as string[];
+    const envIds = [...new Set(nodes.map((n) => n.environmentId))];
+    // An empty `in: []` list returns [] — no need to special-case.
+    const [users, tokens, envs] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true },
+      }),
+      this.prisma.apiToken.findMany({
+        where: { id: { in: tokenIds } },
+        select: { id: true, name: true, user: { select: { name: true } } },
+      }),
+      this.prisma.environment.findMany({
+        where: { id: { in: envIds } },
+        select: { id: true, name: true },
+      }),
+    ]);
+    const userName = new Map(users.map((u) => [u.id, u.name]));
+    const tokenById = new Map(tokens.map((t) => [t.id, t]));
+    const envName = new Map(envs.map((e) => [e.id, e.name]));
+
+    for (const edge of connection.edges) {
+      const n = edge.node as (typeof nodes)[number] & {
+        actorName?: string | null;
+        actorTokenName?: string | null;
+        environmentName?: string | null;
+      };
+      const token = n.actorTokenId ? tokenById.get(n.actorTokenId) : undefined;
+      n.actorName = n.actorUserId
+        ? (userName.get(n.actorUserId) ?? null)
+        : (token?.user?.name ?? null);
+      n.actorTokenName = token?.name ?? null;
+      n.environmentName = envName.get(n.environmentId) ?? null;
+    }
+    return connection;
+  }
+
   async listContentVersions(
     contentId: string,
     pagination: { first?: number; last?: number; before?: string; after?: string },
@@ -316,7 +399,7 @@ export class ContentService {
     );
   }
 
-  async publishedContentVersion(versionId: string, environmentId: string) {
+  async publishedContentVersion(versionId: string, environmentId: string, actor?: WriteActor) {
     const version = await this.getContentVersionById(versionId);
 
     const content = await this.prisma.$transaction(async (tx) => {
@@ -352,6 +435,19 @@ export class ContentService {
         },
       });
 
+      // Publish history: product data, written in the SAME transaction as the
+      // publish (unlike the audit log's async side-channel).
+      await tx.contentPublishRecord.create({
+        data: {
+          contentId: content.id,
+          versionId: version.id,
+          versionSequence: version.sequence,
+          environmentId,
+          action: 'publish',
+          ...publishActorFields(actor),
+        },
+      });
+
       return content;
     });
 
@@ -363,7 +459,7 @@ export class ContentService {
     return content;
   }
 
-  async unpublishedContentVersion(contentId: string, environmentId: string) {
+  async unpublishedContentVersion(contentId: string, environmentId: string, actor?: WriteActor) {
     const result = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
@@ -391,6 +487,20 @@ export class ContentService {
               environmentId: environmentId,
               contentId: content.id,
             },
+          },
+        });
+        const unpublished = await tx.version.findUnique({
+          where: { id: contentOnEnv.publishedVersionId },
+          select: { sequence: true },
+        });
+        await tx.contentPublishRecord.create({
+          data: {
+            contentId: content.id,
+            versionId: contentOnEnv.publishedVersionId,
+            versionSequence: unpublished?.sequence ?? 0,
+            environmentId,
+            action: 'unpublish',
+            ...publishActorFields(actor),
           },
         });
       }
@@ -537,7 +647,7 @@ export class ContentService {
     }
   }
 
-  async restoreContentVersion(versionId: string) {
+  async restoreContentVersion(versionId: string, actor?: WriteActor) {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const restoreVersion = await tx.version.findUnique({
@@ -562,6 +672,8 @@ export class ContentService {
           data: {
             sequence: editedVersion.sequence + 1,
             contentId: restoreVersion.contentId,
+            createdByUserId: actor?.userId ?? null,
+            updatedByUserId: actor?.userId ?? null,
             config: restoreVersion.config,
             data: restoreVersion.data,
             themeId: restoreVersion.themeId,
