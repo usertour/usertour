@@ -1051,13 +1051,22 @@ export class WebSocketV2Service {
       socketData.externalCompanyId,
     );
 
-    // Batch lookup seen status for the visible set.
+    // Seen status and the intro-content attributes are independent (different
+    // tables), so resolve them in parallel to save a round-trip on feed open.
+    // Attributes: the feed's intro content isn't part of the RC session, so the
+    // widget has no values for it otherwise.
     const contentIds = visibleItems.map((item) => item.contentId);
-    const seenSet = await this.announcementService.getSeenAnnouncementIds(
-      bizUser.id,
-      contentIds,
-      environmentId,
-    );
+    const [seenSet, attributes] = await Promise.all([
+      this.announcementService.getSeenAnnouncementIds(bizUser.id, contentIds, environmentId),
+      this.announcementService.resolveContentAttributes(
+        visibleItems.map(
+          (item) => (item.publishedVersion.data as AnnouncementData | null)?.introContent,
+        ),
+        socketData.environment,
+        socketData.externalUserId,
+        socketData.externalCompanyId,
+      ),
+    ]);
 
     const announcements: AnnouncementListItem[] = visibleItems.map((item) =>
       this.announcementService.buildListItem(
@@ -1065,17 +1074,6 @@ export class WebSocketV2Service {
         item.publishedVersion,
         seenSet.has(item.contentId),
       ),
-    );
-
-    // Resolve the attributes referenced in the feed's intro content — it isn't
-    // part of the RC session, so the widget has no values for it otherwise.
-    const attributes = await this.announcementService.resolveContentAttributes(
-      visibleItems.map(
-        (item) => (item.publishedVersion.data as AnnouncementData | null)?.introContent,
-      ),
-      socketData.environment,
-      socketData.externalUserId,
-      socketData.externalCompanyId,
     );
 
     return { announcements, pageSize, truncated: false, attributes };
