@@ -25,6 +25,7 @@ describe('mapContent (pure)', () => {
       buildUrl: null,
       editedVersionId: 'v1',
       editedVersion: undefined,
+      deleted: false,
       environments: [],
       updatedAt: '2026-01-01T00:00:00.000Z',
       createdAt: '2026-01-01T00:00:00.000Z',

@@ -128,6 +128,24 @@ export class ApiContentController {
     await this.service.remove(id, projectId);
   }
 
+  @Post(':id/restore')
+  @HttpCode(200)
+  @RequireCapability(Capability.ContentUpdate)
+  @ApiOperation({
+    summary: 'Restore deleted content',
+    description:
+      'Restore soft-deleted content (find it via GET /content?deleted=true). It returns as an ' +
+      'unpublished draft with versions and history intact — publish again explicitly to go live. ' +
+      'Idempotent on content that is not deleted.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Content ID' })
+  @ApiResponse({ status: 200, description: 'Restored content', type: ContentDto })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async restore(@Param('id') id: string, @Param('projectId') projectId: string) {
+    return this.service.restore(id, projectId);
+  }
+
   @Post(':id/duplicate')
   @RequireCapability(Capability.ContentCreate)
   @ApiOperation({

@@ -573,6 +573,20 @@ export class ContentService {
   }
 
   /**
+   * Reverse deleteContent's soft-delete. deleteContent refuses while published
+   * and drops every ContentOnEnvironment row, so a deleted content holds no
+   * publish state — restoring reintroduces none and has no caches to
+   * invalidate. The content returns as an unpublished draft (versions, steps
+   * and publish history were never touched).
+   */
+  async restoreContent(contentId: string) {
+    return await this.prisma.content.update({
+      where: { id: contentId },
+      data: { deleted: false },
+    });
+  }
+
+  /**
    * All env ids that have this content cached. Pulls every COE row plus
    * the legacy `Content.environmentId` (some old rows may have a primary
    * env without a matching COE entry — defend in depth).
@@ -926,14 +940,16 @@ export class ContentService {
     createdAfter?: string,
     createdBefore?: string,
     name?: string,
+    deleted = false,
   ) {
     const nameFilter = nameContains(name);
     const baseQuery = {
-      // Exclude soft-deleted content — the public-API list (v1 + v2) must never
-      // surface archived content (the single-get path already guards `deleted`).
+      // Soft-deleted content is excluded by default — the public-API list (v1 +
+      // v2) must never surface archived content unless the caller explicitly
+      // asks for the recovery pool (v2 `?deleted=true`, for restore).
       where: {
         projectId,
-        deleted: false,
+        deleted,
         ...(type ? { type } : {}),
         ...(nameFilter ? { name: nameFilter } : {}),
         ...createdAtWhere(createdAfter, createdBefore),

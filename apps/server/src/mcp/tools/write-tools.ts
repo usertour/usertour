@@ -124,12 +124,24 @@ export function buildWriteTools(): McpTool[] {
       audit: auditDelete('content', undefined, { idArg: 'contentId' }),
       title: 'Delete content',
       capability: Capability.ContentDelete,
-      description: 'Delete a piece of content.',
+      description: 'Delete a piece of content (soft delete — recoverable with `restore_content`).',
       inputSchema: { contentId: z.string() },
       handler: async (args, ctx) => {
         await ctx.services.content.remove(String(args.contentId), ctx.projectId);
         return { success: true };
       },
+    },
+    {
+      name: 'restore_content',
+      audit: auditUpdate('content', undefined, { idArg: 'contentId' }),
+      title: 'Restore content',
+      capability: Capability.ContentUpdate,
+      description:
+        'Restore a soft-deleted content (find it via `list_content` with `deleted: true`). It comes ' +
+        'back as an UNPUBLISHED draft with its versions and history intact — publish again explicitly ' +
+        'to go live. Idempotent if the content is not deleted. Returns the restored content.',
+      inputSchema: { contentId: z.string() },
+      handler: (args, ctx) => ctx.services.content.restore(String(args.contentId), ctx.projectId),
     },
     {
       name: 'update_content_version',

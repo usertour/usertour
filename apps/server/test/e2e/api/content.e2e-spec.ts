@@ -231,6 +231,50 @@ describe('API v2 /content (e2e)', () => {
     expect(gone.status).toBe(404);
   });
 
+  it('lists deleted content on ?deleted=true and restores it as an unpublished draft', async () => {
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentCreate,
+      Capability.ContentUpdate,
+      Capability.ContentDelete,
+    ]);
+    const created = await api('post', `/v2/projects/${projectId}/content`, token).send({
+      type: 'flow',
+      name: 'Restore me',
+      themeId,
+    });
+    expect(created.status).toBe(201);
+    const id = created.body.id;
+
+    const deleted = await api('delete', `/v2/projects/${projectId}/content/${id}`, token);
+    expect(deleted.status).toBe(204);
+
+    // invisible on the default list, discoverable on the recovery list
+    const liveList = await api('get', `/v2/projects/${projectId}/content?name=Restore me`, token);
+    expect(liveList.body.results.map((c: { id: string }) => c.id)).not.toContain(id);
+    const trash = await api(
+      'get',
+      `/v2/projects/${projectId}/content?deleted=true&name=Restore me`,
+      token,
+    );
+    expect(trash.status).toBe(200);
+    const trashed = trash.body.results.find((c: { id: string }) => c.id === id);
+    expect(trashed).toMatchObject({ id, deleted: true });
+
+    // restore -> visible again, unpublished draft, versions intact
+    const restored = await api('post', `/v2/projects/${projectId}/content/${id}/restore`, token);
+    expect(restored.status).toBe(200);
+    expect(restored.body).toMatchObject({ id, deleted: false, environments: [] });
+    expect(typeof restored.body.editedVersionId).toBe('string');
+    const back = await api('get', `/v2/projects/${projectId}/content/${id}`, token);
+    expect(back.status).toBe(200);
+
+    // idempotent on non-deleted content
+    const again = await api('post', `/v2/projects/${projectId}/content/${id}/restore`, token);
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ id, deleted: false });
+  });
+
   it('refuses to delete published content, allows it once unpublished (409 E1028)', async () => {
     const token = await mint([
       Capability.ContentCreate,

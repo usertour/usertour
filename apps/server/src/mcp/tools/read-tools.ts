@@ -243,7 +243,8 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'List Usertour content (flow, checklist, launcher, banner, tracker, resource-center) in the ' +
-        'project. Filter by `name`, `type`, `published`, or a created-at range. Returns ' +
+        'project. Filter by `name`, `type`, `published`, or a created-at range; `deleted: true` lists ' +
+        'soft-deleted content instead (restorable via `restore_content`). Returns ' +
         '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
         ...nameSearchField,
@@ -259,6 +260,12 @@ export function buildReadTools(): McpTool[] {
           .optional()
           .describe(
             'Filter to content published in at least one environment (true) or none (false).',
+          ),
+        deleted: z
+          .boolean()
+          .optional()
+          .describe(
+            'List soft-deleted (archived) content instead — the recovery pool for `restore_content`.',
           ),
         expand: z
           .array(z.enum(['editedVersion', 'publishedVersion']))
@@ -278,6 +285,7 @@ export function buildReadTools(): McpTool[] {
           name: asString(args.name),
           type: asString(args.type),
           published: typeof args.published === 'boolean' ? args.published : undefined,
+          deleted: typeof args.deleted === 'boolean' ? args.deleted : undefined,
           expand: asStringArray(args.expand) as ContentExpand[] | undefined,
           createdAfter: asString(args.createdAfter),
           createdBefore: asString(args.createdBefore),

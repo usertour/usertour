@@ -21,6 +21,12 @@ export const listContentQuery = z.object({
     .stringbool()
     .optional()
     .describe('Filter to content published in at least one environment (true) or none (false).'),
+  deleted: z
+    .stringbool()
+    .optional()
+    .describe(
+      'List soft-deleted (archived) content instead of live content — the recovery pool for restore.',
+    ),
   expand: singleOrArray(contentExpand).describe('Inline: editedVersion and/or publishedVersion.'),
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   ...createdAtRangeFields,
@@ -50,6 +56,7 @@ export const content = z.object({
   editedVersionId: z.string(),
   editedVersion: contentVersion.optional(),
   environments: z.array(contentEnvironment),
+  deleted: z.boolean(),
   updatedAt: z.string(),
   createdAt: z.string(),
 });

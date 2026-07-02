@@ -37,6 +37,7 @@ export function mapContent(node: any, expand: ContentExpand[]): Content {
     type: node.type,
     buildUrl: node.buildUrl ?? null,
     editedVersionId: node.editedVersionId,
+    deleted: Boolean(node.deleted),
     editedVersion:
       expand.includes('editedVersion') && node.editedVersion
         ? mapContentVersion(node.editedVersion)

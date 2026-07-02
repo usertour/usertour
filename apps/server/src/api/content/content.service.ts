@@ -95,6 +95,24 @@ export class ApiContentService {
   }
 
   /**
+   * Restore soft-deleted content. Idempotent — restoring content that isn't
+   * deleted returns it unchanged (mirrors publish), so agent retries are safe.
+   * deleteContent guarantees a deleted content is unpublished everywhere, so it
+   * comes back as a clean unpublished draft; publishing again is a separate,
+   * explicit call.
+   */
+  async restore(id: string, projectId: string): Promise<Content> {
+    const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
+    if (!node) {
+      throw new ContentNotFoundError();
+    }
+    if ((node as { deleted?: boolean }).deleted) {
+      await this.content.restoreContent(id);
+    }
+    return this.get(id, projectId, {});
+  }
+
+  /**
    * Publish a version as the environment's live version (idempotent). Content is
    * project-level, so the target environment is a body parameter (like versionId);
    * we assert it belongs to this project, and that the version belongs to this
@@ -211,7 +229,7 @@ export class ApiContentService {
     projectId: string,
     query: ListContentQuery,
   ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, name, type, published, createdAfter, createdBefore } = query;
+    const { limit, cursor, name, type, published, createdAfter, createdBefore, deleted } = query;
     const expand = toArray<ContentExpand>(query.expand);
     const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
@@ -231,6 +249,7 @@ export class ApiContentService {
           createdAfter,
           createdBefore,
           name,
+          deleted,
         ),
       map: (node) => mapContent(node, expand),
     });
