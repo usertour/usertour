@@ -1,3 +1,4 @@
+import type { PopupAnnouncement } from './announcement';
 import type { ContentEditorRoot } from './editor';
 import type { RulesCondition } from './config';
 import type { LauncherIconSource } from './launcher';
@@ -93,8 +94,6 @@ export interface ResourceCenterAnnouncementBlock extends ResourceCenterBlockCond
   iconSource: LauncherIconSource;
   iconType: string;
   iconUrl?: string;
-  /** Number of unread announcements (populated by server at session build time) */
-  unreadCount?: number;
 }
 
 export interface ContentListItem {
@@ -164,6 +163,19 @@ export interface ResourceCenterData {
   buttonText: string;
   headerText: string;
   tabs: ResourceCenterTab[];
+  /**
+   * Number of unread announcements for this user (populated by server at
+   * session build time). Announcement state is global — the block is only a
+   * navigation entry — so this lives here, not on the block. Absent when the
+   * resource center has no announcement block.
+   */
+  announcementUnreadCount?: number;
+  /**
+   * The newest unseen POPUP-level announcement for this user (populated by
+   * server at session build time, like announcementUnreadCount). Absent when
+   * there is nothing to pop or the resource center has no announcement block.
+   */
+  popupAnnouncement?: PopupAnnouncement;
 }
 
 // ============================================================================

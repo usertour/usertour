@@ -9,10 +9,11 @@ import {
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
   ThemeTypesSetting,
-  ResourceCenterAnnouncementBlock,
   ResourceCenterBlockContentItem,
   ListAnnouncementsResult,
   AnnouncementDetail,
+  AnnouncementPopupStyle,
+  AnnouncementSeenSource,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
@@ -26,24 +27,7 @@ import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   getAnnouncementBadgeCount(): number {
-    const resourceCenterData = this.getStoreData()?.resourceCenterData;
-    if (!resourceCenterData?.tabs) {
-      return 0;
-    }
-
-    // The announcement feed is global (not per-block), and the server writes the
-    // same unread count onto every announcement block. So take it once — max
-    // guards against any divergence — instead of summing, which would multiply
-    // the badge by the number of announcement blocks the resource center has.
-    let count = 0;
-    for (const tab of resourceCenterData.tabs) {
-      for (const block of tab.blocks) {
-        if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
-          count = Math.max(count, (block as ResourceCenterAnnouncementBlock).unreadCount ?? 0);
-        }
-      }
-    }
-    return count;
+    return this.getStoreData()?.resourceCenterData?.announcementUnreadCount ?? 0;
   }
 
   protected initializeActionHandlers(): void {
@@ -219,19 +203,32 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     }
   }
 
-  async markAnnouncementsSeen(items: { contentId: string; versionId: string }[]): Promise<boolean> {
+  async markAnnouncementsSeen(
+    items: { contentId: string; versionId: string }[],
+    source?: AnnouncementSeenSource,
+  ): Promise<boolean> {
     if (items.length === 0) {
       return true;
     }
+
+    // The popup's presence mirrors unread state exactly: it retires when (and
+    // only when) its announcement is marked seen — by the feed including it in
+    // its batch, or by the popup's own dismiss. Panel open/close never touches
+    // it, so collapsing an un-read panel brings the bubble back.
+    const popup = this.getStoreData()?.resourceCenterData?.popupAnnouncement;
+    if (popup && items.some((item) => item.contentId === popup.id)) {
+      this.clearPopupAnnouncementLocally();
+    }
+
     // Optimistically drop the launcher badge so collapsing back to the launcher
     // reflects the just-opened feed without waiting for the next session rebuild.
-    // The server's unreadCount stays the source of truth and reconciles on the
+    // The server's announcementUnreadCount stays the source of truth and reconciles on the
     // next build; this only avoids a stale badge for the rest of this session.
     // The feed sends one batch covering exactly its unseen items, so decrementing
     // by the batch size matches what the server will mark.
     this.decrementAnnouncementUnreadCount(items.length);
     try {
-      return await this.socketService.markAnnouncementsSeen({ items });
+      return await this.socketService.markAnnouncementsSeen({ items, source });
     } catch (error) {
       logger.error('Failed to mark announcements seen:', error);
       return false;
@@ -239,40 +236,52 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   }
 
   /**
-   * Decrement the announcement unreadCount (clamped at zero) on every
-   * announcement block. The server mirrors the same global count onto each block
-   * and the badge takes the max across blocks (getAnnouncementBadgeCount), so
-   * decrementing every block in step keeps the local badge consistent with both.
+   * Dismiss the self-presenting popup announcement by marking it seen — the
+   * mark path retires the local payload synchronously and the server stops
+   * delivering it on future session builds. Every popup interaction (close,
+   * backdrop, read more, content action) funnels through here.
+   */
+  async dismissPopupAnnouncement(): Promise<void> {
+    const popup = this.getStoreData()?.resourceCenterData?.popupAnnouncement;
+    if (!popup) {
+      return;
+    }
+
+    const source: AnnouncementSeenSource =
+      popup.popupConfig.style === AnnouncementPopupStyle.MODAL ? 'modal' : 'bubble';
+    await this.markAnnouncementsSeen([{ contentId: popup.id, versionId: popup.versionId }], source);
+  }
+
+  /**
+   * Drop the popup payload from the local store. Called only from
+   * markAnnouncementsSeen when its batch covers the popup announcement, so the
+   * popup's presence always mirrors the announcement's unread state.
+   */
+  private clearPopupAnnouncementLocally(): void {
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    if (!resourceCenterData?.popupAnnouncement) {
+      return;
+    }
+    const { popupAnnouncement: _dismissed, ...remaining } = resourceCenterData;
+    this.updateStore({ resourceCenterData: remaining });
+  }
+
+  /**
+   * Decrement the global announcement unread count (clamped at zero), which
+   * drives the launcher badge.
    */
   private decrementAnnouncementUnreadCount(count: number): void {
     const resourceCenterData = this.getStoreData()?.resourceCenterData;
-    if (!resourceCenterData?.tabs) {
+    const current = resourceCenterData?.announcementUnreadCount ?? 0;
+    if (!resourceCenterData || current <= 0) {
       return;
     }
-
-    let changed = false;
-    const tabs = resourceCenterData.tabs.map((tab) => ({
-      ...tab,
-      blocks: tab.blocks.map((block) => {
-        if (block.type !== ResourceCenterBlockType.ANNOUNCEMENT) {
-          return block;
-        }
-        const announcementBlock = block as ResourceCenterAnnouncementBlock;
-        if ((announcementBlock.unreadCount ?? 0) <= 0) {
-          return block;
-        }
-        changed = true;
-        return {
-          ...announcementBlock,
-          unreadCount: Math.max(0, (announcementBlock.unreadCount ?? 0) - count),
-        };
-      }),
-    }));
-
-    if (!changed) {
-      return;
-    }
-    this.updateStore({ resourceCenterData: { ...resourceCenterData, tabs } });
+    this.updateStore({
+      resourceCenterData: {
+        ...resourceCenterData,
+        announcementUnreadCount: Math.max(0, current - count),
+      },
+    });
   }
 
   // ── Live chat provider lifecycle ─────────────────────────────────────

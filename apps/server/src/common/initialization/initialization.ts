@@ -914,7 +914,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Announcement Level',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'How the announcement was delivered (silent, badge)',
+    description: 'How the announcement was delivered (silent, badge, popup)',
   },
   {
     codeName: EventAttributes.ANNOUNCEMENT_SOURCE,

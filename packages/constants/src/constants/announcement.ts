@@ -1,5 +1,9 @@
-import { AnnouncementDistribution, ContentEditorElementType } from '@usertour/types';
-import type { AnnouncementData, ContentEditorRoot } from '@usertour/types';
+import {
+  AnnouncementDistribution,
+  AnnouncementPopupStyle,
+  ContentEditorElementType,
+} from '@usertour/types';
+import type { AnnouncementData, AnnouncementPopupConfig, ContentEditorRoot } from '@usertour/types';
 
 const DEFAULT_EDITOR_CONTENT: ContentEditorRoot[] = [
   {
@@ -33,4 +37,11 @@ export const DEFAULT_ANNOUNCEMENT_DATA: AnnouncementData = {
   readMoreLabel: 'Read more',
   detailContent: DEFAULT_EDITOR_CONTENT,
   distribution: AnnouncementDistribution.BADGE,
+};
+
+export const DEFAULT_POPUP_MODAL_WIDTH = 480;
+
+export const DEFAULT_POPUP_CONFIG: AnnouncementPopupConfig = {
+  style: AnnouncementPopupStyle.BUBBLE,
+  modalWidth: DEFAULT_POPUP_MODAL_WIDTH,
 };

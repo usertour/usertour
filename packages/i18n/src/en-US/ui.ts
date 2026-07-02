@@ -2025,7 +2025,7 @@ const translations = {
         distribution: {
           label: 'Notification style',
           tooltip:
-            'How users are notified about this announcement. Silent adds it to the list quietly; Badge shows an unread indicator on the resource center.',
+            'How users are notified about this announcement. Silent adds it to the list quietly; Badge shows an unread indicator on the resource center; Pop-up actively presents it once as a modal or speech bubble.',
           silent: {
             label: 'Silent',
             description: 'Appears in resource center without notification',
@@ -2034,6 +2034,22 @@ const translations = {
             label: 'Badge',
             description: 'Shows an unread badge on the resource center',
           },
+          popup: {
+            label: 'Pop-up',
+            description: 'Actively shown once as a modal or speech bubble',
+          },
+        },
+        popup: {
+          style: 'Pop-up style',
+          styleBubble: {
+            label: 'Speech bubble',
+            description: 'Appears next to the resource center launcher',
+          },
+          styleModal: {
+            label: 'Modal',
+            description: 'Centered overlay dialog',
+          },
+          modalWidth: 'Width (px)',
         },
         content: 'Content',
         title: 'Title',
@@ -2089,6 +2105,7 @@ const translations = {
         untitled: 'Untitled announcement',
         silent: 'Silent',
         badge: 'Badge',
+        popup: 'Pop-up',
         distribution: '{{value}} notification',
       },
       publish: {
@@ -3262,6 +3279,7 @@ const translations = {
         announcement: {
           label: 'Announcements',
           description: 'Show a list of published announcements',
+          alreadyAdded: 'Already added — a resource center supports one announcement block',
         },
       },
       onlyShowBlock: 'Only show block if...',

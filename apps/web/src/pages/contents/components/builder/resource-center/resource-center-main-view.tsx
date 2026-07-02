@@ -13,6 +13,7 @@ import {
   ScrollArea,
   Button,
 } from '@usertour/ui';
+import { ResourceCenterBlockType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
@@ -33,6 +34,12 @@ const ResourceCenterMainViewBody = () => {
   const { t } = useTranslation();
 
   const currentTab = localData.tabs.find((tab) => tab.id === currentTabId);
+
+  // Announcement state (feed, badge, popup) is global, so a resource center
+  // supports exactly one announcement block — across all tabs.
+  const hasAnnouncementBlock = localData.tabs.some((tab) =>
+    tab.blocks.some((block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT),
+  );
 
   return (
     <CardContent className="grow overflow-hidden p-0">
@@ -102,10 +109,12 @@ const ResourceCenterMainViewBody = () => {
                   >
                     {BLOCK_TYPE_OPTIONS.map(
                       ({ key, value, label, description, icon: Icon, disabled }) => {
+                        const isAnnouncementTaken =
+                          value === ResourceCenterBlockType.ANNOUNCEMENT && hasAnnouncementBlock;
                         return (
                           <DropdownMenuItem
                             key={key}
-                            disabled={disabled}
+                            disabled={disabled || isAnnouncementTaken}
                             className="min-w-[220px] gap-2 py-1.5 text-xs"
                             onSelect={() => value && startCreateBlock(value)}
                           >
@@ -119,7 +128,11 @@ const ResourceCenterMainViewBody = () => {
                                 {t(label)}
                               </span>
                               <span className="ml-1 text-xs text-muted-foreground">
-                                {t(description)}
+                                {isAnnouncementTaken
+                                  ? t(
+                                      'contentBuilder.resourceCenter.blockType.announcement.alreadyAdded',
+                                    )
+                                  : t(description)}
                               </span>
                             </span>
                           </DropdownMenuItem>

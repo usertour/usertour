@@ -1,10 +1,8 @@
-import { AnnouncementDistribution } from './announcement';
 import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { BannerData } from './banner';
 import { ChecklistData } from './checklist';
 import { Content, ContentDataType, Step } from './contents';
 import { ContentConfigObject, RulesCondition } from './config';
-import { ContentEditorRoot } from './editor';
 import { LauncherData } from './launcher';
 import { ResourceCenterData } from './resource-center';
 import { ClientContext, contentStartReason } from './sdk';
@@ -320,84 +318,6 @@ export type ResourceCenterBlockContentItem = {
   iconUrl?: string;
   navigateUrl?: unknown[];
   navigateOpenType?: 'same' | 'new';
-};
-
-// ============================================================================
-// Announcement Types
-// ============================================================================
-
-/**
- * List announcements response. The feed is a single server-capped page (the
- * newest N announcements) — there is no pagination on this contract; the
- * request carries no parameters.
- */
-export type ListAnnouncementsResult = {
-  announcements: AnnouncementListItem[];
-  /**
-   * Resolved user-attribute values (codeName → value) for the attributes
-   * referenced across the returned announcements' content. The feed's content
-   * isn't part of the resource-center session, so its attributes aren't in the
-   * session's userAttributes; the widget merges these to interpolate them.
-   */
-  attributes?: Record<string, any>;
-};
-
-/**
- * Fields shared by a feed row and the detail view — the two read paths must
- * expose identical values for them.
- */
-export type AnnouncementItemBase = {
-  id: string;
-  versionId: string;
-  title: string;
-  /** Intro content shown in the feed row (detail content is fetched on demand). */
-  content: ContentEditorRoot[];
-  moreEnabled: boolean;
-  moreButtonText: string;
-  level: AnnouncementDistribution;
-  /** The announcement time (scheduledAt), ISO-8601. */
-  time: string;
-};
-
-/**
- * Announcement item in the feed (excludes detail content to reduce payload).
- */
-export type AnnouncementListItem = AnnouncementItemBase & {
-  seen: boolean;
-};
-
-/**
- * Get single announcement request
- */
-export type GetAnnouncementDto = {
-  contentId: string;
-};
-
-/**
- * Get single announcement response (full content including detail). Carries no
- * `seen` — the feed is the only surface that renders it, and every detail open
- * goes through the feed.
- */
-export type AnnouncementDetail = AnnouncementItemBase & {
-  moreContent: ContentEditorRoot[] | null;
-  /**
-   * Resolved user-attribute values (codeName → value) for the attributes
-   * referenced in this announcement's intro + detail content. See
-   * ListAnnouncementsResult.attributes.
-   */
-  attributes?: Record<string, any>;
-};
-
-/**
- * Mark announcements as seen request — one batch per feed open, covering every
- * announcement the feed displayed as unseen.
- */
-export type MarkAnnouncementsSeenDto = {
-  items: {
-    contentId: string;
-    /** The published version the user actually saw, for the analytics event. */
-    versionId: string;
-  }[];
 };
 
 // ============================================================================

@@ -14,13 +14,19 @@ import { cn } from '@usertour/tailwind';
 import {
   AnnouncementData,
   AnnouncementDistribution,
+  AnnouncementPopupConfig,
+  AnnouncementPopupStyle,
   ContentActionsItemType,
   ContentEditorElementType,
   RulesCondition,
   RulesType,
   Theme,
 } from '@usertour/types';
-import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
+import {
+  DEFAULT_ANNOUNCEMENT_DATA,
+  DEFAULT_POPUP_CONFIG,
+  DEFAULT_POPUP_MODAL_WIDTH,
+} from '@usertour/constants';
 import {
   Card,
   CardContent,
@@ -40,7 +46,14 @@ import {
   SelectValue,
   Switch,
 } from '@usertour/ui';
-import { BadgeDistributionIcon, RiNotificationOffFill, RiPaletteFill } from '@usertour/icons';
+import {
+  BadgeDistributionIcon,
+  ModelIcon,
+  RiMessageFill,
+  RiNotification2Fill,
+  RiNotificationOffFill,
+  RiPaletteFill,
+} from '@usertour/icons';
 import {
   createContext,
   useCallback,
@@ -106,6 +119,111 @@ const useAnnouncementDraft = () => {
 };
 
 // ============================================================================
+// Popup Settings (only when distribution is POPUP)
+// ============================================================================
+
+export interface AnnouncementPopupSettingsProps {
+  config?: AnnouncementPopupConfig;
+  onChange: (config: AnnouncementPopupConfig) => void;
+  disabled?: boolean;
+}
+
+const AnnouncementPopupSettings = (props: AnnouncementPopupSettingsProps) => {
+  const { config, onChange, disabled } = props;
+  const { t } = useTranslation();
+  const current = config ?? DEFAULT_POPUP_CONFIG;
+
+  const styleOptions = useMemo(
+    () => [
+      {
+        value: AnnouncementPopupStyle.BUBBLE,
+        label: t('contents.overview.announcement.popup.styleBubble.label'),
+        description: t('contents.overview.announcement.popup.styleBubble.description'),
+        icon: RiMessageFill,
+      },
+      {
+        value: AnnouncementPopupStyle.MODAL,
+        label: t('contents.overview.announcement.popup.styleModal.label'),
+        description: t('contents.overview.announcement.popup.styleModal.description'),
+        icon: ModelIcon,
+      },
+    ],
+    [t],
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium">
+          {t('contents.overview.announcement.popup.style')}
+        </span>
+        <Select
+          value={current.style}
+          onValueChange={(value: string) =>
+            onChange({ ...current, style: value as AnnouncementPopupStyle })
+          }
+          disabled={disabled}
+        >
+          <SelectTrigger className="justify-start flex h-8">
+            {(() => {
+              const selected = styleOptions.find((option) => option.value === current.style);
+              if (!selected) return <SelectValue />;
+              const Icon = selected.icon;
+              return (
+                <>
+                  <Icon size={16} className="text-muted-foreground flex-none" />
+                  <div className="grow text-left ml-2">
+                    <SelectValue asChild>
+                      <span>{selected.label}</span>
+                    </SelectValue>
+                  </div>
+                </>
+              );
+            })()}
+          </SelectTrigger>
+          <SelectContent>
+            {styleOptions.map((option) => {
+              const Icon = option.icon;
+              return (
+                <SelectItem key={option.value} value={option.value} className="cursor-pointer">
+                  <div className="flex flex-col">
+                    <div className="flex flex-row space-x-1 items-center">
+                      <Icon size={16} className="text-current" />
+                      <span className="text-xs font-bold">{option.label}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{option.description}</div>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {current.style === AnnouncementPopupStyle.MODAL && (
+        <div className="space-y-1.5">
+          <Label htmlFor="announcement-popup-modal-width" className="text-sm">
+            {t('contents.overview.announcement.popup.modalWidth')}
+          </Label>
+          <Input
+            id="announcement-popup-modal-width"
+            type="number"
+            value={current.modalWidth ?? DEFAULT_POPUP_MODAL_WIDTH}
+            onChange={(event) =>
+              onChange({
+                ...current,
+                modalWidth: Number(event.target.value) || DEFAULT_POPUP_MODAL_WIDTH,
+              })
+            }
+            disabled={disabled}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // Left Column: Settings
 // ============================================================================
 
@@ -164,6 +282,12 @@ const AnnouncementSettingsColumn = () => {
         description: t('contents.overview.announcement.distribution.badge.description'),
         icon: BadgeDistributionIcon,
       },
+      {
+        value: AnnouncementDistribution.POPUP,
+        label: t('contents.overview.announcement.distribution.popup.label'),
+        description: t('contents.overview.announcement.distribution.popup.description'),
+        icon: RiNotification2Fill,
+      },
     ],
     [t],
   );
@@ -188,6 +312,13 @@ const AnnouncementSettingsColumn = () => {
   const handleDistributionChange = useCallback(
     (value: string) => {
       patchData({ distribution: value as AnnouncementDistribution });
+    },
+    [patchData],
+  );
+
+  const handlePopupConfigChange = useCallback(
+    (popupConfig: AnnouncementPopupConfig) => {
+      patchData({ popupConfig });
     },
     [patchData],
   );
@@ -336,6 +467,15 @@ const AnnouncementSettingsColumn = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Popup presentation (only for POPUP level) */}
+          {data.distribution === AnnouncementDistribution.POPUP && (
+            <AnnouncementPopupSettings
+              config={data.popupConfig}
+              onChange={handlePopupConfigChange}
+              disabled={isViewOnly}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

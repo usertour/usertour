@@ -1915,7 +1915,8 @@ const translations = {
         themePlaceholder: '选择主题',
         distribution: {
           label: '通知方式',
-          tooltip: '如何通知用户该公告。静默会安静地把它加入列表；角标会在资源中心上显示未读提示。',
+          tooltip:
+            '如何通知用户该公告。静默会安静地把它加入列表；角标会在资源中心上显示未读提示；弹出会以模态框或气泡的形式主动展示一次。',
           silent: {
             label: '静默',
             description: '出现在资源中心中，不发出通知',
@@ -1924,6 +1925,22 @@ const translations = {
             label: '角标',
             description: '在资源中心上显示未读角标',
           },
+          popup: {
+            label: '弹出',
+            description: '以模态框或气泡的形式主动展示一次',
+          },
+        },
+        popup: {
+          style: '弹出样式',
+          styleBubble: {
+            label: '气泡',
+            description: '出现在资源中心启动器旁边',
+          },
+          styleModal: {
+            label: '模态框',
+            description: '居中的遮罩对话框',
+          },
+          modalWidth: '宽度（px）',
         },
         content: '内容',
         title: '标题',
@@ -1975,6 +1992,7 @@ const translations = {
         untitled: '未命名公告',
         silent: '静默',
         badge: '角标',
+        popup: '弹出',
         distribution: '{{value}}通知',
       },
       publish: {
@@ -3102,6 +3120,7 @@ const translations = {
         announcement: {
           label: '公告',
           description: '展示已发布的公告列表',
+          alreadyAdded: '已添加——每个资源中心只支持一个公告区块',
         },
       },
       onlyShowBlock: '仅在满足条件时显示该区块…',

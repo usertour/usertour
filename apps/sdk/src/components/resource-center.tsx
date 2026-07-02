@@ -1,5 +1,6 @@
 import {
   LinkDecoratorContext,
+  ResourceCenterAnnouncementPopup,
   ResourceCenterPanel,
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -78,6 +79,15 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
 
   if (!themeSettings || !resourceCenterData) return <></>;
 
+  // The popup announcement self-presents only while the launcher surface is
+  // actually visible and idle: not with the panel open (opening the feed marks
+  // everything seen anyway), not when the launcher is hidden (the bubble has
+  // nothing to anchor to), and not while a live chat provider owns the corner.
+  const popupAnnouncement =
+    !expanded && !launcherHidden && liveChatActive !== true
+      ? resourceCenterData.popupAnnouncement
+      : undefined;
+
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
       <ResourceCenterRoot
@@ -102,6 +112,8 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onListAnnouncements={() => resourceCenter.listAnnouncements()}
         onGetAnnouncement={(contentId) => resourceCenter.getAnnouncement(contentId)}
         onMarkAnnouncementsSeen={(items) => resourceCenter.markAnnouncementsSeen(items)}
+        popupAnnouncement={popupAnnouncement}
+        onPopupDismiss={() => resourceCenter.dismissPopupAnnouncement()}
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>
@@ -112,6 +124,9 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
             <ResourceCenterTabBar />
             <ResourceCenterFooter />
           </ResourceCenterPanel>
+          {/* Lives in the RC stage (one stage per widget instance); its
+              shells are context-free primitives, so no nested stage. */}
+          <ResourceCenterAnnouncementPopup assets={assets} />
         </ResourceCenterStyleProvider>
       </ResourceCenterRoot>
     </LinkDecoratorContext.Provider>

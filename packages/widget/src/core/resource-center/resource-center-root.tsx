@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AnnouncementDetail,
   ListAnnouncementsResult,
+  PopupAnnouncement,
   ResourceCenterAnnouncementBlock,
   ResourceCenterContentListBlock,
   ResourceCenterData,
@@ -53,6 +54,10 @@ interface ResourceCenterRootProps {
   onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
   onMarkAnnouncementsSeen?: (items: { contentId: string; versionId: string }[]) => Promise<boolean>;
+  /** The gated popup payload (gating lives in the SDK — pass undefined to hide). */
+  popupAnnouncement?: PopupAnnouncement;
+  /** Any popup interaction (close, backdrop, read more, content action). */
+  onPopupDismiss?: () => void;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;
   /**
@@ -87,6 +92,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onListAnnouncements,
     onGetAnnouncement,
     onMarkAnnouncementsSeen,
+    popupAnnouncement,
+    onPopupDismiss,
     launcherHidden = false,
     initialNav,
     onNavChange,
@@ -302,6 +309,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const contextValue = useMemo(
     () => ({
       globalStyle,
+      themeSettings,
       themeSetting,
       data,
       badgeCount,
@@ -331,10 +339,13 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onListAnnouncements,
       onGetAnnouncement,
       onMarkAnnouncementsSeen,
+      popupAnnouncement,
+      onPopupDismiss,
       launcherHidden,
     }),
     [
       globalStyle,
+      themeSettings,
       themeSetting,
       data,
       badgeCount,
@@ -364,6 +375,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onListAnnouncements,
       onGetAnnouncement,
       onMarkAnnouncementsSeen,
+      popupAnnouncement,
+      onPopupDismiss,
       launcherHidden,
     ],
   );

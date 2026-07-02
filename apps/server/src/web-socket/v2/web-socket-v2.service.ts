@@ -35,6 +35,7 @@ import {
   ListAnnouncementsResult,
   GetAnnouncementDto,
   AnnouncementDetail,
+  AnnouncementSeenSource,
   MarkAnnouncementsSeenDto,
   AnnouncementListItem,
   AnnouncementData,
@@ -1141,6 +1142,12 @@ export class WebSocketV2Service {
         return true;
       }
 
+      // The surface that marked them, recorded on the analytics event.
+      // Whitelisted rather than passed through, so a client can't invent
+      // arbitrary source values.
+      const source: AnnouncementSeenSource =
+        params.source === 'modal' || params.source === 'bubble' ? params.source : 'resource_center';
+
       // Fire the analytics trail only for first-seen announcements. The event
       // records the version the user actually saw (the one the feed served),
       // which the client round-trips per item.
@@ -1159,7 +1166,7 @@ export class WebSocketV2Service {
             versionId,
             eventCodeName: BizEvents.ANNOUNCEMENT_SEEN,
             buildEventData: (content, version) =>
-              buildAnnouncementSeenEventData(content, version, 'resource_center'),
+              buildAnnouncementSeenEventData(content, version, source),
             bizCompanyId,
           });
         }),

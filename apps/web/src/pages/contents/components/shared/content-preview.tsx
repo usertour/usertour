@@ -356,11 +356,13 @@ const AnnouncementPreview = ({ currentVersion }: { currentVersion: ContentVersio
   const { t } = useTranslation();
   const data = (currentVersion.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
   const title = data.title || t('contents.shared.announcementPreview.untitled');
-  const distribution = data.distribution ?? AnnouncementDistribution.SILENT;
-  const distributionLabel =
-    distribution === AnnouncementDistribution.BADGE
-      ? t('contents.shared.announcementPreview.badge')
-      : t('contents.shared.announcementPreview.silent');
+  const distribution = data.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution;
+  const distributionLabelKeys: Record<AnnouncementDistribution, string> = {
+    [AnnouncementDistribution.SILENT]: 'contents.shared.announcementPreview.silent',
+    [AnnouncementDistribution.BADGE]: 'contents.shared.announcementPreview.badge',
+    [AnnouncementDistribution.POPUP]: 'contents.shared.announcementPreview.popup',
+  };
+  const distributionLabel = t(distributionLabelKeys[distribution]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">

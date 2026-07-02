@@ -10,7 +10,7 @@ import {
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
-import type { AnnouncementData, ResourceCenterAnnouncementBlock } from '@usertour/types';
+import type { AnnouncementData } from '@usertour/types';
 import { AnnouncementDistribution } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import {
@@ -37,7 +37,7 @@ import {
   BizSession,
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
-import { AnnouncementService } from './announcement.service';
+import { AnnouncementService, type VisibleAnnouncement } from './announcement.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
@@ -426,8 +426,8 @@ export class SessionBuilderService {
     );
     session.attributes = attributes;
 
-    // Populate unreadCount for announcement blocks
-    await this.populateAnnouncementUnreadCounts(
+    // Populate the announcement unread count and popup payload
+    await this.populateAnnouncements(
       resourceCenterData,
       environment,
       externalUserId,
@@ -439,33 +439,29 @@ export class SessionBuilderService {
   }
 
   /**
-   * Populate unreadCount on each announcement block in the resource center data.
-   * Counts the newest badge-distribution announcements the user is allowed to
-   * see (passing their "Only show if..." targeting) and has not yet seen.
-   * Reads through the shared AnnouncementService.findVisibleAnnouncements — the
-   * same bounded query + targeting the feed uses — so the badge count never
-   * includes announcements the feed would hide.
+   * Populate the announcement presentation on the resource center data: the
+   * global announcementUnreadCount (BADGE- and POPUP-level announcements the
+   * user hasn't seen), and the newest unseen POPUP-level announcement as the
+   * self-presenting popup payload. Reads through the shared
+   * AnnouncementService.findVisibleAnnouncements — the same bounded query +
+   * targeting the feed uses — so neither the badge count nor the popup can
+   * include announcements the feed would hide.
    */
-  private async populateAnnouncementUnreadCounts(
+  private async populateAnnouncements(
     resourceCenterData: ResourceCenterData,
     environment: Environment,
     externalUserId: string,
     externalCompanyId: string,
   ): Promise<void> {
-    const announcementBlocks: ResourceCenterAnnouncementBlock[] = [];
-    for (const tab of resourceCenterData.tabs ?? []) {
-      for (const block of tab.blocks) {
-        if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
-          announcementBlocks.push(block as ResourceCenterAnnouncementBlock);
-        }
-      }
-    }
-    if (announcementBlocks.length === 0) return;
+    // Announcement state is global; the block is only the navigation entry.
+    // Without one there is nothing to badge or pop.
+    const hasAnnouncementBlock = (resourceCenterData.tabs ?? []).some((tab) =>
+      tab.blocks.some((block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT),
+    );
+    if (!hasAnnouncementBlock) return;
 
     const setUnread = (count: number) => {
-      for (const block of announcementBlocks) {
-        block.unreadCount = count;
-      }
+      resourceCenterData.announcementUnreadCount = count;
     };
 
     // Shared request-memoized lookup, so this hot session-build path reuses the
@@ -484,26 +480,43 @@ export class SessionBuilderService {
       externalCompanyId,
     );
 
-    // Only badge-distribution announcements contribute to the launcher badge.
-    const badgeContentIds = visible
-      .filter((item) => {
-        const data = item.publishedVersion.data as AnnouncementData | null;
-        return (
-          (data?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution) ===
-          AnnouncementDistribution.BADGE
-        );
-      })
-      .map((item) => item.contentId);
-    if (badgeContentIds.length === 0) {
+    const distributionOf = (item: VisibleAnnouncement): AnnouncementDistribution => {
+      const data = item.publishedVersion.data as AnnouncementData | null;
+      return data?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution;
+    };
+
+    // BADGE and POPUP announcements both light the launcher badge (POPUP is the
+    // louder level, so it implies badge behavior); only SILENT is excluded.
+    const notifyingItems = visible.filter(
+      (item) => distributionOf(item) !== AnnouncementDistribution.SILENT,
+    );
+    if (notifyingItems.length === 0) {
       setUnread(0);
       return;
     }
 
+    const notifyingContentIds = notifyingItems.map((item) => item.contentId);
     const seenSet = await this.announcementService.getSeenAnnouncementIds(
       bizUser.id,
-      badgeContentIds,
+      notifyingContentIds,
     );
-    setUnread(badgeContentIds.filter((id) => !seenSet.has(id)).length);
+    setUnread(notifyingContentIds.filter((id) => !seenSet.has(id)).length);
+
+    // The newest unseen POPUP-level announcement self-presents once. `visible`
+    // is ordered newest-first, so the first match wins; older unseen popups
+    // stay badge-only until this one is acknowledged (no queueing).
+    const popupItem = notifyingItems.find(
+      (item) =>
+        distributionOf(item) === AnnouncementDistribution.POPUP && !seenSet.has(item.contentId),
+    );
+    if (popupItem) {
+      resourceCenterData.popupAnnouncement = await this.announcementService.buildPopupAnnouncement(
+        popupItem,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+    }
   }
 
   /**

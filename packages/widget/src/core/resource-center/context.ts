@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import type {
   AnnouncementDetail,
   ListAnnouncementsResult,
+  PopupAnnouncement,
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
@@ -49,6 +50,8 @@ export interface ResourceCenterNavigationActions {
 export interface ResourceCenterContextValue {
   // Config
   data: ResourceCenterData;
+  /** Raw theme settings as passed in — the popup falls back to these when the announcement has no theme of its own. */
+  themeSettings: ThemeTypesSetting;
   themeSetting: ThemeTypesSetting;
   globalStyle: string;
 
@@ -94,6 +97,10 @@ export interface ResourceCenterContextValue {
   onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
   onMarkAnnouncementsSeen?: (items: { contentId: string; versionId: string }[]) => Promise<boolean>;
+  /** The gated popup payload — when set, the popup renders (gating lives in the SDK). */
+  popupAnnouncement?: PopupAnnouncement;
+  /** Any popup interaction (close, backdrop, read more, content action) — marks seen and hides. */
+  onPopupDismiss?: () => void;
 
   // Search
   searchQuery: string;

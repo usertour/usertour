@@ -7,8 +7,10 @@ import {
   AnnouncementItemBase,
   ContentDataType,
   ContentEditorRoot,
+  PopupAnnouncement,
+  ThemeTypesSetting,
 } from '@usertour/types';
-import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
+import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_POPUP_CONFIG } from '@usertour/constants';
 import { BizUser, Environment } from '@/common/types/schema';
 import { extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
@@ -27,7 +29,12 @@ import {
 export interface VisibleAnnouncement {
   contentId: string;
   content: { id: string; name: string | null };
-  publishedVersion: { id: string; data: unknown; scheduledAt: Date | null };
+  publishedVersion: {
+    id: string;
+    data: unknown;
+    scheduledAt: Date | null;
+    themeId: string | null;
+  };
 }
 
 /**
@@ -88,7 +95,9 @@ export class AnnouncementService {
       where: this.announcementCandidateWhere(environment.id),
       include: {
         content: { select: { id: true, name: true } },
-        publishedVersion: { select: { id: true, data: true, config: true, scheduledAt: true } },
+        publishedVersion: {
+          select: { id: true, data: true, config: true, scheduledAt: true, themeId: true },
+        },
       },
       orderBy: { publishedVersion: { scheduledAt: 'desc' } },
       take: limit,
@@ -136,7 +145,9 @@ export class AnnouncementService {
       where: { ...this.announcementCandidateWhere(environment.id), contentId },
       include: {
         content: { select: { id: true, name: true } },
-        publishedVersion: { select: { id: true, data: true, config: true, scheduledAt: true } },
+        publishedVersion: {
+          select: { id: true, data: true, config: true, scheduledAt: true, themeId: true },
+        },
       },
     });
     if (!item?.publishedVersion) {
@@ -278,6 +289,43 @@ export class AnnouncementService {
       moreButtonText: data.readMoreLabel ?? 'Read more',
       level: data.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution,
       time: publishedVersion.scheduledAt?.toISOString() ?? '',
+    };
+  }
+
+  /**
+   * Build the self-presenting popup payload for a visible POPUP-level
+   * announcement. The popup renders outside both the RC session and the feed,
+   * so everything it needs — detail content, resolved attribute values, and
+   * the announcement's own theme (per version.themeId, resolved through the
+   * same variation-aware pipeline flows use) — is bundled here to avoid a
+   * second round trip at presentation time.
+   */
+  async buildPopupAnnouncement(
+    visible: VisibleAnnouncement,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+  ): Promise<PopupAnnouncement> {
+    const data = (visible.publishedVersion.data ?? {}) as unknown as AnnouncementData;
+    const moreContent = data.enableReadMore ? (data.detailContent ?? null) : null;
+
+    const [attributes, themes] = await Promise.all([
+      this.resolveContentAttributes(
+        moreContent ? [data.introContent, moreContent] : [data.introContent],
+        environment,
+        externalUserId,
+        externalCompanyId,
+      ),
+      this.contentDataService.findThemes({ environment, externalUserId, externalCompanyId }),
+    ]);
+    const theme = themes.find((item) => item.id === visible.publishedVersion.themeId);
+
+    return {
+      ...this.buildItemBase(visible.content, visible.publishedVersion),
+      moreContent,
+      attributes,
+      popupConfig: data.popupConfig ?? DEFAULT_POPUP_CONFIG,
+      themeSettings: theme ? (theme.settings as unknown as ThemeTypesSetting) : undefined,
     };
   }
 }

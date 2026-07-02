@@ -398,7 +398,7 @@ ContentListDetail.displayName = 'ContentListDetail';
  * can't merge same-weekday/month/day announcements from different years under one
  * separator.
  */
-const formatAnnouncementDate = (dateStr: string): string => {
+export const formatAnnouncementDate = (dateStr: string): string => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
