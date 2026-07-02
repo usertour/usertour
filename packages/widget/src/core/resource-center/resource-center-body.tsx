@@ -221,9 +221,11 @@ ResourceCenterLiveChatBlockView.displayName = 'ResourceCenterLiveChatBlockView';
 interface NavigableBlockRowProps {
   block: ResourceCenterNavigableBlock;
   onNavigate: (ref: ResourceCenterPageRef) => void;
+  /** Unread count badge shown next to the name (announcement block rows). */
+  badge?: number;
 }
 
-export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowProps) => {
+export const NavigableBlockRow = memo(({ block, onNavigate, badge }: NavigableBlockRowProps) => {
   const { userAttributes, onBlockClick } = useResourceCenterContext();
   const handleClick = () => {
     onBlockClick?.(block.id);
@@ -246,12 +248,20 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
       onClick={handleClick}
     >
       <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
-      <BlockIcon
-        iconSource={block.iconSource}
-        iconType={block.iconType}
-        iconUrl={block.iconUrl}
-        className="relative"
-      />
+      {/* Unread badge replaces the icon while there is something new (the
+          reference pattern); the icon returns once everything is read. */}
+      {badge != null && badge > 0 ? (
+        <span className="relative flex size-5 flex-shrink-0 items-center justify-center rounded-full bg-sdk-resource-center-badge-background text-xs font-bold text-sdk-resource-center-badge-foreground">
+          {badge}
+        </span>
+      ) : (
+        <BlockIcon
+          iconSource={block.iconSource}
+          iconType={block.iconType}
+          iconUrl={block.iconUrl}
+          className="relative"
+        />
+      )}
       <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">{label}</span>
       <RiArrowRightSLine size={16} className="relative flex-shrink-0 text-sdk-foreground/40" />
     </button>
@@ -907,6 +917,7 @@ export const ResourceCenterBlocks = memo(
       onBlockClick,
       onLiveChatClick,
       actions,
+      data,
     } = useResourceCenterContext();
 
     // If a detail page is pushed, render it
@@ -950,6 +961,11 @@ export const ResourceCenterBlocks = memo(
                 <NavigableBlockRow
                   block={block as ResourceCenterNavigableBlock}
                   onNavigate={actions.push}
+                  badge={
+                    block.type === ResourceCenterBlockType.ANNOUNCEMENT
+                      ? data.announcementUnreadCount
+                      : undefined
+                  }
                 />
               )}
             </Fragment>
