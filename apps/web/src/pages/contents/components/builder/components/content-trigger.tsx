@@ -2,9 +2,9 @@ import { Button, Label, SurfaceCard } from '@usertour/ui';
 import { BUILDER_Z } from '@usertour/constants';
 import { Delete2Icon } from '@usertour/icons';
 import {
+  CLIENT_EVALUABLE_CONDITION_TYPES,
   ConditionWait,
   Conditions,
-  DEFAULT_CONDITION_TYPES,
   validateConditions,
 } from '@usertour/business-components';
 import { Actions, validateActions } from '@usertour/editor';
@@ -137,9 +137,10 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               contents={contents}
               currentContent={currentContent}
               token={token}
-              filterItems={DEFAULT_CONDITION_TYPES.filter(
-                (item) => item !== 'segment' && item !== 'content' && item !== 'event',
-              )}
+              // Trigger `when` conditions are polled live in the browser — only the
+              // client-evaluable subset (capability matrix, shared with the server's
+              // write guard).
+              filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
               onElementChange={onRulesConditionElementChange}
               baseZIndex={BUILDER_Z.rules}
               t={t}

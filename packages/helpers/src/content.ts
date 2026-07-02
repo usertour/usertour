@@ -146,11 +146,14 @@ export type AutoStartCapabilities = {
   conditionTypes?: string[];
 };
 
-// Tracker trigger conditions are limited to these (v2 representation type names).
-// Mirrors the builder's tracker editor `filterItems` (internal names), mapped via
-// the rules codec: attribute=user-attr, current_url=current-page,
-// text_filled=text-fill, time_window=time; element / text_input / group unchanged.
-// Excludes segment / flow / event. Keep in sync with content-detail-tracker-editor.tsx.
+// Tracker trigger conditions are limited to these (v2 representation type names) —
+// the client-evaluable subset: everything except the server-evaluated types
+// (SERVER_EVALUATED_CONDITION_TYPES in ./capability-matrix, which the builder's
+// tracker editor derives its filterItems from via CLIENT_EVALUABLE_CONDITION_TYPES).
+// This list states the same rule in representation names, mapped via the rules
+// codec: attribute=user-attr, current_url=current-page, text_filled=text-fill,
+// time_window=time; element / text_input / group unchanged. Harmonizing it into
+// the matrix (one vocabulary) is a follow-up.
 const TRACKER_CONDITION_TYPES = [
   'group',
   'attribute',

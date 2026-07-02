@@ -5,6 +5,7 @@ import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
+import { CLIENT_EVALUABLE_CONDITION_TYPES } from '@usertour/business-components';
 import { buildConfig } from '@usertour/helpers';
 import { Event, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
@@ -256,18 +257,10 @@ export const ContentDetailTrackerEditor = () => {
               showPriority={false}
               showAtLeast={false}
               disabled={isViewOnly}
-              // Tracker triggers allow only these condition types. The v2/MCP
-              // write path enforces the same set via TRACKER_CONDITION_TYPES
-              // (@usertour/helpers, in v2 names) — keep the two in sync.
-              filterItems={[
-                'user-attr',
-                'current-page',
-                'element',
-                'text-input',
-                'text-fill',
-                'time',
-                'group',
-              ]}
+              // Tracker start conditions are polled live in the browser — only the
+              // client-evaluable subset (capability matrix, shared with the server's
+              // write guard).
+              filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
               featureTooltip={t('contents.overview.tracker.triggerConditionsTooltip')}
             />
           </CardContent>

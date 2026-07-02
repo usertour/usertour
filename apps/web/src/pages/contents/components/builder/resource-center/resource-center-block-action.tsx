@@ -19,12 +19,12 @@ import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import {
-  ContentActionsItemType,
+  ContentDataType,
   LauncherIconSource,
   ResourceCenterBlockType,
   RulesCondition,
 } from '@usertour/types';
-import { isRichTextEmpty } from '@usertour/helpers';
+import { CONTENT_ACTION_CAPABILITIES, isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
@@ -156,9 +156,7 @@ const BlockActionBody = () => {
               baseZIndex={BUILDER_Z.popover}
               currentStep={undefined}
               filterItems={[
-                ContentActionsItemType.FLOW_START,
-                ContentActionsItemType.PAGE_NAVIGATE,
-                ContentActionsItemType.JAVASCRIPT_EVALUATE,
+                ...CONTENT_ACTION_CAPABILITIES[ContentDataType.RESOURCE_CENTER].actions,
               ]}
               currentVersion={undefined}
               onChange={handleClickedActionsChange}
