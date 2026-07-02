@@ -1,10 +1,13 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useAppContext } from '@/contexts/app-context';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Card,
+  ComboboxSelect,
+  type ComboboxSelectOption,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -18,11 +21,15 @@ import { useListContentPublishRecordsQuery } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';
 import type { ContentPublishRecord, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
+import { PlaneIcon } from '@usertour/icons';
 import type { TFunction } from 'i18next';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
+import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentRestoreForm } from '../../../shared/content-restore-form';
+
+const COLLAPSED_COUNT = 5;
 
 type RecordGroup = { key: string; label: string; records: ContentPublishRecord[] };
 
@@ -61,6 +68,7 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
   const { t } = useTranslation();
   const { isViewOnly } = useAppContext();
   const [openRestore, setOpenRestore] = useState(false);
+  const [openPublish, setOpenPublish] = useState(false);
   const isPublish = record.action === 'publish';
   const actor = actorText(record, t);
   // The restore dialog only reads id + sequence — synthesize the minimal version.
@@ -91,6 +99,15 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {/* One-click rollback: publish THIS row's version again (any environment). */}
+            <DropdownMenuItem
+              className="cursor-pointer"
+              disabled={isViewOnly}
+              onClick={() => setOpenPublish(true)}
+            >
+              <PlaneIcon className="mr-2 h-4 w-4" />
+              {t('contents.versions.action.publish')}
+            </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
               disabled={isViewOnly}
@@ -101,6 +118,12 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <ContentPublishForm
+          versionId={record.versionId}
+          open={openPublish}
+          onOpenChange={setOpenPublish}
+          onSubmit={() => setOpenPublish(false)}
+        />
         <ContentRestoreForm
           version={restoreTarget as ContentVersion}
           open={openRestore}
@@ -115,13 +138,32 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
 export const PublishHistoryList = () => {
   const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
+  const { environmentList } = useEnvironmentList();
+  // Server-side environment filter — client filtering would only see loaded pages.
+  const [envFilter, setEnvFilter] = useState<string | undefined>(undefined);
   const { recordList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
-    useListContentPublishRecordsQuery(contentId);
+    useListContentPublishRecordsQuery(contentId, envFilter);
+  // Collapsed by default: old entries are archaeology, not daily reading.
+  // "Show all" reveals the loaded pages and re-arms infinite scroll.
+  const [expanded, setExpanded] = useState(false);
+  const visibleList = expanded ? recordList : recordList.slice(0, COLLAPSED_COUNT);
+  const showAllButton = !expanded && totalCount > COLLAPSED_COUNT;
+
+  // Fixed-width dropdown (not pills): pills grow with env count × name length and
+  // wrap into a mess; a select stays put no matter how many environments exist.
+  const envOptions: ComboboxSelectOption[] = [
+    { value: '', label: t('contents.publishHistory.filterAll') },
+    ...(environmentList ?? []).map((env) => ({ value: env.id, label: env.name ?? env.id })),
+  ];
+  // Hidden while there is nothing to filter — but kept once a filter is active,
+  // else picking an env with zero records would strand the user.
+  const showEnvFilter =
+    (environmentList ?? []).length > 1 && (totalCount > 0 || envFilter !== undefined);
 
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loading || loadingMore,
-    hasNextPage,
+    hasNextPage: expanded && hasNextPage,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -129,7 +171,7 @@ export const PublishHistoryList = () => {
     rootRef(scrollRoot);
   }, [rootRef, scrollRoot]);
 
-  const grouped = useMemo(() => groupRecordsByDay(recordList, t), [recordList, t]);
+  const grouped = useMemo(() => groupRecordsByDay(visibleList, t), [visibleList, t]);
 
   if (loading && recordList.length === 0) {
     return (
@@ -151,17 +193,28 @@ export const PublishHistoryList = () => {
           {t('contents.publishHistory.title')}
           <QuestionTooltip>{t('contents.publishHistory.tooltip')}</QuestionTooltip>
         </h3>
-        {totalCount > 0 && (
-          <span className="text-sm text-muted-foreground">
-            {t('contents.publishHistory.countLabel', { count: totalCount })}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {totalCount > 0 && (
+            <span className="text-sm text-muted-foreground">
+              {t('contents.publishHistory.countLabel', { count: totalCount })}
+            </span>
+          )}
+          {showEnvFilter && (
+            <ComboboxSelect
+              options={envOptions}
+              value={envFilter ?? ''}
+              onValueChange={(v) => setEnvFilter(v || undefined)}
+              size="compact"
+              className="w-40 bg-background hover:bg-accent"
+            />
+          )}
+        </div>
       </div>
       <Separator />
 
       {recordList.length === 0 && !hasNextPage ? (
         <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-          {t('contents.publishHistory.empty')}
+          {t(envFilter ? 'contents.publishHistory.emptyFiltered' : 'contents.publishHistory.empty')}
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -197,17 +250,27 @@ export const PublishHistoryList = () => {
         </div>
       )}
 
+      {showAllButton && (
+        <Button
+          variant="ghost"
+          className="h-8 w-full text-xs text-muted-foreground"
+          onClick={() => setExpanded(true)}
+        >
+          {t('contents.publishHistory.showAll', { count: totalCount })}
+        </Button>
+      )}
+
       {/* Sentry only earns its footprint when there is (or was) more to load —
           a 3-row list that fits on screen doesn't need an "End of history" marker. */}
       <div
         ref={sentryRef}
         className={cn(
           'flex items-center justify-center',
-          hasNextPage || totalCount > recordList.length || recordList.length > 20 ? 'h-10' : 'h-0',
+          expanded && (hasNextPage || recordList.length > 20) ? 'h-10' : 'h-0',
         )}
       >
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
-        {!hasNextPage && recordList.length > 20 && (
+        {expanded && !hasNextPage && recordList.length > 20 && (
           <span className="text-xs text-muted-foreground">
             {t('contents.publishHistory.endOfHistory')}
           </span>

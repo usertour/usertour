@@ -2248,6 +2248,7 @@ const translations = {
       countLabel_other: '{{count}} versions',
       empty: 'No versions yet.',
       endOfHistory: 'End of history',
+      showAll: 'Show all {{count}} versions',
       createdLabel: 'Created',
       editedRelative: 'edited {{time}}',
       publishedRelative: 'Published {{time}}',
@@ -2255,6 +2256,14 @@ const translations = {
       group: { today: 'Today', yesterday: 'Yesterday' },
       action: { publish: 'Publish...', restore: 'Restore...' },
       editedBy: 'edited {{time}} by {{name}}',
+    },
+    environments: {
+      title: 'Environments',
+      tooltip:
+        'Where this content is live right now — each environment with its published version.',
+      since: 'since {{date}}',
+      notPublished: 'Not published',
+      draftAhead: 'Draft v{{version}} ahead',
     },
     publishHistory: {
       title: 'Publish history',
@@ -2265,6 +2274,9 @@ const translations = {
       empty: 'Not published yet.',
       endOfHistory: 'End of history',
       unpublished: 'unpublished from',
+      showAll: 'Show all {{count}} events',
+      filterAll: 'All environments',
+      emptyFiltered: 'No publishes in this environment yet.',
       by: 'by {{name}}',
       viaToken: 'via {{token}}',
       viaApi: 'via API',

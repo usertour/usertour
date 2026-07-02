@@ -2,16 +2,18 @@ import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
-import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
+import { Button, ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { SpinnerIcon } from '@usertour/icons';
 import { Content, ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { VersionRow, VersionRowChip } from './version-row';
+
+const COLLAPSED_COUNT = 5;
 
 type VersionGroup = { key: string; label: string; versions: ContentVersion[] };
 
@@ -65,6 +67,11 @@ export const VersionHistoryList = () => {
   const { content } = useContentDetail(contentId);
   const { versionList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
     useContentVersionList(contentId);
+  // Collapsed by default: old entries are archaeology, not daily reading.
+  // "Show all" reveals the loaded pages and re-arms infinite scroll.
+  const [expanded, setExpanded] = useState(false);
+  const visibleList = expanded ? versionList : versionList.slice(0, COLLAPSED_COUNT);
+  const showAllButton = !expanded && totalCount > COLLAPSED_COUNT;
 
   // Library-managed sentinel: handles "fire once per inView" semantics,
   // resize debounce, and auto-fill termination. `rootRef` must be wired
@@ -74,7 +81,7 @@ export const VersionHistoryList = () => {
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loading || loadingMore,
-    hasNextPage,
+    hasNextPage: expanded && hasNextPage,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -84,7 +91,7 @@ export const VersionHistoryList = () => {
 
   const chipsMap = useMemo(() => buildAllChipsMap(content), [content]);
 
-  const groupedHistory = useMemo(() => groupVersionsByDay(versionList, t), [versionList, t]);
+  const groupedHistory = useMemo(() => groupVersionsByDay(visibleList, t), [visibleList, t]);
 
   // First-load gating only — once any versions are in cache, a
   // background refetch shouldn't collapse the list to a skeleton.
@@ -163,17 +170,27 @@ export const VersionHistoryList = () => {
         </div>
       )}
 
+      {showAllButton && (
+        <Button
+          variant="ghost"
+          className="h-8 w-full text-xs text-muted-foreground"
+          onClick={() => setExpanded(true)}
+        >
+          {t('contents.versions.showAll', { count: totalCount })}
+        </Button>
+      )}
+
       {/* Sentry only earns its footprint when there is (or was) more to load —
           a short list that fits on screen doesn't need an "End of history" marker. */}
       <div
         ref={sentryRef}
         className={cn(
           'flex items-center justify-center',
-          hasNextPage || versionList.length > 20 ? 'h-10' : 'h-0',
+          expanded && (hasNextPage || versionList.length > 20) ? 'h-10' : 'h-0',
         )}
       >
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
-        {!hasNextPage && versionList.length > 20 && (
+        {expanded && !hasNextPage && versionList.length > 20 && (
           <span className="text-xs text-muted-foreground">
             {t('contents.versions.endOfHistory')}
           </span>

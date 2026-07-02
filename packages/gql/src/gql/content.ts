@@ -375,8 +375,18 @@ export const listContentVersions = gql`
 `;
 
 export const listContentPublishRecords = gql`
-  query listContentPublishRecords($contentId: String!, $first: Int, $after: String) {
-    listContentPublishRecords(contentId: $contentId, first: $first, after: $after) {
+  query listContentPublishRecords(
+    $contentId: String!
+    $environmentId: String
+    $first: Int
+    $after: String
+  ) {
+    listContentPublishRecords(
+      contentId: $contentId
+      environmentId: $environmentId
+      first: $first
+      after: $after
+    ) {
       totalCount
       edges {
         cursor

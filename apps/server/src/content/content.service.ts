@@ -330,8 +330,9 @@ export class ContentService {
   async listContentPublishRecords(
     contentId: string,
     pagination: { first?: number; last?: number; before?: string; after?: string },
+    environmentId?: string,
   ) {
-    const where = { contentId };
+    const where = { contentId, ...(environmentId ? { environmentId } : {}) };
     const connection = await findManyCursorConnection(
       (args) =>
         this.prisma.contentPublishRecord.findMany({

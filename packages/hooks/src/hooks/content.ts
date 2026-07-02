@@ -248,11 +248,12 @@ const PUBLISH_HISTORY_PAGE_SIZE = 20;
  * the versions list). */
 export const useListContentPublishRecordsQuery = (
   contentId: string | undefined,
+  environmentId?: string,
   options?: QueryHookOptions,
 ) => {
   const { data, loading, networkStatus, fetchMore, refetch } =
     useQuery<ListContentPublishRecordsData>(listContentPublishRecords, {
-      variables: { contentId, first: PUBLISH_HISTORY_PAGE_SIZE },
+      variables: { contentId, environmentId, first: PUBLISH_HISTORY_PAGE_SIZE },
       notifyOnNetworkStatusChange: true,
       skip: !contentId,
       ...options,
@@ -273,7 +274,12 @@ export const useListContentPublishRecordsQuery = (
     hasNextPage,
     endCursor,
     fetchMore,
-    buildVariables: (after) => ({ contentId, first: PUBLISH_HISTORY_PAGE_SIZE, after }),
+    buildVariables: (after) => ({
+      contentId,
+      environmentId,
+      first: PUBLISH_HISTORY_PAGE_SIZE,
+      after,
+    }),
   });
 
   return {

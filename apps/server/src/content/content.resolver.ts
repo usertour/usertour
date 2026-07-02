@@ -194,8 +194,13 @@ export class ContentResolver {
   async listContentPublishRecords(
     @Args() { contentId }: ContentIdArgs,
     @Args() pagination: PaginationArgs,
+    @Args('environmentId', { nullable: true }) environmentId?: string,
   ) {
-    return await this.contentService.listContentPublishRecords(contentId, pagination);
+    return await this.contentService.listContentPublishRecords(
+      contentId,
+      pagination,
+      environmentId ?? undefined,
+    );
   }
 
   @Query(() => [VersionOnLocalization])
