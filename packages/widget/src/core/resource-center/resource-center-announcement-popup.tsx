@@ -6,13 +6,12 @@ import { AnnouncementPopupStyle, ResourceCenterBlockType } from '@usertour/types
 import { DEFAULT_POPUP_MODAL_WIDTH } from '@usertour/constants';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { Button } from '../../primitives';
-import { PopperAvatarNotch } from '../bubble';
 import { WidgetClass } from '../class-names';
 import { PopperClose } from '../popper';
 import { computePositionStyle } from '../utils/position';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import { formatAnnouncementDate } from './resource-center-body';
-import { RESOURCE_CENTER_DEFAULTS } from './constants';
+import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
 import { useResourceCenterContext } from './context';
 
 // ============================================================================
@@ -194,7 +193,7 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
 // separate avatar.
 // ============================================================================
 
-const BUBBLE_NOTCH_SIZE = 20;
+const BUBBLE_TAIL_SIZE = 24;
 
 interface AnnouncementPopupBubbleProps {
   popup: PopupAnnouncement;
@@ -216,22 +215,50 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
 
   const width = themeSetting?.bubble?.width ?? 300;
 
-  // Sit above the launcher's corner: same horizontal offset as the resource
-  // center anchor, lifted by the launcher's height plus the notch. The
-  // launcher placement (not the announcement theme) decides the side, so the
-  // bubble grows toward the viewport center.
+  // Full four-quadrant handling, like the flow bubble's useAnchorPosition: the
+  // launcher placement decides both sides. Bottom placements put the card
+  // above the launcher with the tail pointing down; top placements flip it.
+  // The bubble grows toward the viewport center.
   const resourceCenter = resourceCenterThemeSetting.resourceCenter;
   const placement = resourceCenter?.placement ?? RESOURCE_CENTER_DEFAULTS.placement;
   const alignLeft = String(placement).includes('left');
-  const position = alignLeft ? 'leftBottom' : 'rightBottom';
+  const alignTop = String(placement).includes('top');
+  const position = resourceCenterPlacementToPosition(placement);
   const launcherHeight = resourceCenterThemeSetting.resourceCenterLauncherButton?.height ?? 60;
   const positionOffsetX = resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX;
+  // The tail (like the flow bubble's notch) IS the connector between the card
+  // and the launcher: the card sits exactly one tail-height away, no gap.
   const positionOffsetY =
     (resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY) +
     launcherHeight +
-    BUBBLE_NOTCH_SIZE;
+    BUBBLE_TAIL_SIZE;
 
   const positionStyle = computePositionStyle(position, positionOffsetX, positionOffsetY);
+
+  // The classic speech-bubble tail, positioned exactly like the flow bubble's
+  // notch relative to its avatar: the box sits at the avatar-size edge
+  // (offsetX = avatarSize there, launcherHeight here), so the triangle's sharp
+  // corner lands on the launcher's inner corner and visibly points at it. It
+  // overlaps the card's edge by 1px — the flow bubble hides this seam behind
+  // its avatar; we have no avatar, so the overlap does the job.
+  const tailColor = themeSetting?.mainColor?.background;
+  const tailStyle: React.CSSProperties = {
+    position: 'absolute',
+    ...(alignTop ? { top: -(BUBBLE_TAIL_SIZE - 1) } : { bottom: -(BUBBLE_TAIL_SIZE - 1) }),
+    ...(alignLeft ? { left: launcherHeight } : { right: launcherHeight }),
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderTopWidth: alignTop ? 0 : BUBBLE_TAIL_SIZE,
+    borderBottomWidth: alignTop ? BUBBLE_TAIL_SIZE : 0,
+    borderLeftWidth: alignLeft ? 0 : BUBBLE_TAIL_SIZE,
+    borderRightWidth: alignLeft ? BUBBLE_TAIL_SIZE : 0,
+    borderTopColor: alignTop ? 'transparent' : tailColor,
+    borderBottomColor: alignTop ? tailColor : 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    pointerEvents: 'none',
+  };
 
   return (
     <div
@@ -239,6 +266,7 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
       style={{ ...positionStyle, width: `${width}px`, zIndex: zIndex + 1 }}
     >
       <div className={WidgetClass.surfaceShell}>
+        <div style={tailStyle} aria-hidden="true" />
         <div className={WidgetClass.surfaceFrame}>
           <Frame assets={assets} className={WidgetClass.surfaceViewport}>
             <PopupFrameContent globalStyle={globalStyle}>
@@ -247,16 +275,6 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
           </Frame>
         </div>
       </div>
-      {/* The tail pointing down at the launcher — negative offsetY pushes it
-          just below the card edge. */}
-      <PopperAvatarNotch
-        vertical="bottom"
-        horizontal={alignLeft ? 'left' : 'right'}
-        color={themeSetting?.mainColor?.background}
-        size={BUBBLE_NOTCH_SIZE}
-        offsetX={16}
-        offsetY={-BUBBLE_NOTCH_SIZE}
-      />
     </div>
   );
 };
