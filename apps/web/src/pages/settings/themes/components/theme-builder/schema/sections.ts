@@ -1053,6 +1053,30 @@ export const builderSections: BuilderSection[] = [
   },
 
   {
+    id: 'announcement',
+    label: 'themeBuilder.sections.announcement',
+    previewWidget: ThemeDetailPreviewType.ANNOUNCEMENT,
+    fields: [
+      {
+        type: 'number',
+        path: 'announcement.bubbleWidth',
+        label: 'themeBuilder.fields.announcement.bubbleWidth',
+        min: 200,
+        max: 600,
+        suffix: 'px',
+      },
+      {
+        type: 'number',
+        path: 'announcement.modalWidth',
+        label: 'themeBuilder.fields.announcement.modalWidth',
+        min: 300,
+        max: 1000,
+        suffix: 'px',
+      },
+    ],
+  },
+
+  {
     id: 'launcher-beacons',
     label: 'themeBuilder.sections.launcherBeacons',
     previewWidget: ThemeDetailPreviewType.LAUNCHER_BEACON,

@@ -2049,7 +2049,6 @@ const translations = {
             label: 'Modal',
             description: 'Centered overlay dialog',
           },
-          modalWidth: 'Width (px)',
         },
         content: 'Content',
         title: 'Title',
@@ -2464,6 +2463,7 @@ const translations = {
       checklistLauncher: 'Checklist launcher',
       resourceCenter: 'Resource center',
       resourceCenterLauncher: 'Resource center launcher',
+      announcement: 'Announcement',
       launcherBeacons: 'Launcher beacons',
       launcherIcons: 'Launcher icons',
       launcherButtons: 'Launcher buttons',
@@ -2580,6 +2580,10 @@ const translations = {
         largeWidth: 'Large width',
         maxHeight: 'Max height',
         transitionDuration: 'Transition duration',
+      },
+      announcement: {
+        bubbleWidth: 'Speech bubble width',
+        modalWidth: 'Modal width',
       },
       resourceCenterLauncher: {
         iconType: 'Icon type',
@@ -2698,6 +2702,7 @@ const translations = {
       nps: 'NPS',
       resourceCenter: 'Resource center',
       resourceCenterLauncher: 'Resource center launcher',
+      announcement: 'Announcement',
     },
   },
   contentBuilder: {

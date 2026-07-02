@@ -1,9 +1,12 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Frame, useFrame } from '@usertour/frame';
 import { useSize } from '@usertour/react-use-size';
-import type { ContentEditorClickableElement, PopupAnnouncement } from '@usertour/types';
+import type {
+  ContentEditorClickableElement,
+  PopupAnnouncement,
+  UserTourTypes,
+} from '@usertour/types';
 import { AnnouncementPopupStyle, ResourceCenterBlockType } from '@usertour/types';
-import { DEFAULT_POPUP_MODAL_WIDTH } from '@usertour/constants';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { Button } from '../../primitives';
 import { WidgetClass } from '../class-names';
@@ -62,7 +65,7 @@ const PopupFrameContent = (props: PopupFrameContentProps) => {
   return <div ref={setContentElement}>{children}</div>;
 };
 
-interface AnnouncementPopupBodyProps {
+export interface AnnouncementPopupBodyProps {
   popup: PopupAnnouncement;
   onDismiss: () => void;
   /**
@@ -70,11 +73,19 @@ interface AnnouncementPopupBodyProps {
    * expands the detail content inline — it has the space, so no navigation.
    */
   onReadMore?: () => void;
+  /** Content action handler (from the RC context in the live popup). */
+  onContentClick?: (element: ContentEditorClickableElement) => Promise<void>;
+  userAttributes?: UserTourTypes.Attributes;
 }
 
-const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
-  const { popup, onDismiss, onReadMore } = props;
-  const { onContentClick, userAttributes } = useResourceCenterContext();
+/**
+ * The popup's content: unread dot + title, date line, serialized intro (and
+ * inline-expanded detail), and the link-style Read more. Purely
+ * presentational — the live popup feeds it RC-context values; the
+ * theme-builder preview renders it with a mock payload.
+ */
+export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
+  const { popup, onDismiss, onReadMore, onContentClick, userAttributes } = props;
   const [inlineExpanded, setInlineExpanded] = useState(false);
 
   // The popup renders outside the RC session, so its referenced attributes
@@ -107,7 +118,12 @@ const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
   const showReadMore = popup.moreEnabled && !inlineExpanded;
 
   return (
-    <div className="relative flex flex-col gap-2 p-4 font-sdk text-sdk-base text-sdk-foreground">
+    // surfacePanel carries the theme's padding (--usertour-widget-popper-
+    // padding: modal.padding for the modal, 24px default for the bubble),
+    // background, radius, and border — the same shell flow content uses.
+    <div
+      className={`${WidgetClass.surfacePanel} relative flex flex-col gap-2 font-sdk text-sdk-base text-sdk-foreground`}
+    >
       <PopperClose onClick={onDismiss} />
       <div className="flex items-center gap-2 pr-8">
         <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
@@ -158,9 +174,19 @@ interface AnnouncementPopupModalProps {
 
 const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
   const { popup, assets, onDismiss } = props;
-  const { themeSettings: resourceCenterThemeSettings, zIndex } = useResourceCenterContext();
-  const { globalStyle } = useSettingsStyles(popup.themeSettings ?? resourceCenterThemeSettings);
-  const width = popup.popupConfig.modalWidth ?? DEFAULT_POPUP_MODAL_WIDTH;
+  const {
+    themeSettings: resourceCenterThemeSettings,
+    zIndex,
+    onContentClick,
+    userAttributes,
+  } = useResourceCenterContext();
+  // type 'modal' resolves --usertour-widget-popper-padding to the theme's
+  // modal.padding (same as flow modal steps).
+  const { globalStyle, themeSetting } = useSettingsStyles(
+    popup.themeSettings ?? resourceCenterThemeSettings,
+    { type: 'modal' },
+  );
+  const width = themeSetting?.announcement?.modalWidth ?? 600;
 
   return (
     <>
@@ -177,7 +203,12 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
           <div className={WidgetClass.surfaceFrame}>
             <Frame assets={assets} className={WidgetClass.surfaceViewport}>
               <PopupFrameContent globalStyle={globalStyle}>
-                <AnnouncementPopupBody popup={popup} onDismiss={onDismiss} />
+                <AnnouncementPopupBody
+                  popup={popup}
+                  onDismiss={onDismiss}
+                  onContentClick={onContentClick}
+                  userAttributes={userAttributes}
+                />
               </PopupFrameContent>
             </Frame>
           </div>
@@ -195,53 +226,29 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
 
 const BUBBLE_TAIL_SIZE = 24;
 
-interface AnnouncementPopupBubbleProps {
-  popup: PopupAnnouncement;
-  assets?: FrameAssets;
-  onDismiss: () => void;
-  onReadMore: () => void;
+/**
+ * The bubble's pure visual shell: card (surface/shell/frame) plus the
+ * speech-bubble tail. The tail uses the flow bubble notch's exact geometry —
+ * a border-drawn right triangle whose box sits at the launcher-size edge
+ * (offsetX = avatarSize there, launcherHeight here), so the sharp corner
+ * lands on the launcher's inner corner. It overlaps the card's edge by 1px —
+ * the flow bubble hides that seam behind its avatar; we have no avatar, so
+ * the overlap does the job. Shared by the live popup (iframe content) and the
+ * theme-builder preview (DOM content).
+ */
+export interface AnnouncementBubbleShellProps {
+  width: number;
+  alignLeft: boolean;
+  alignTop: boolean;
+  launcherHeight: number;
+  tailColor?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
 }
 
-const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
-  const { popup, assets, onDismiss, onReadMore } = props;
-  const {
-    themeSettings: resourceCenterThemeSettings,
-    themeSetting: resourceCenterThemeSetting,
-    zIndex,
-  } = useResourceCenterContext();
-  const { globalStyle, themeSetting } = useSettingsStyles(
-    popup.themeSettings ?? resourceCenterThemeSettings,
-  );
+export const AnnouncementBubbleShell = (props: AnnouncementBubbleShellProps) => {
+  const { width, alignLeft, alignTop, launcherHeight, tailColor, style, children } = props;
 
-  const width = themeSetting?.bubble?.width ?? 300;
-
-  // Full four-quadrant handling, like the flow bubble's useAnchorPosition: the
-  // launcher placement decides both sides. Bottom placements put the card
-  // above the launcher with the tail pointing down; top placements flip it.
-  // The bubble grows toward the viewport center.
-  const resourceCenter = resourceCenterThemeSetting.resourceCenter;
-  const placement = resourceCenter?.placement ?? RESOURCE_CENTER_DEFAULTS.placement;
-  const alignLeft = String(placement).includes('left');
-  const alignTop = String(placement).includes('top');
-  const position = resourceCenterPlacementToPosition(placement);
-  const launcherHeight = resourceCenterThemeSetting.resourceCenterLauncherButton?.height ?? 60;
-  const positionOffsetX = resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX;
-  // The tail (like the flow bubble's notch) IS the connector between the card
-  // and the launcher: the card sits exactly one tail-height away, no gap.
-  const positionOffsetY =
-    (resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY) +
-    launcherHeight +
-    BUBBLE_TAIL_SIZE;
-
-  const positionStyle = computePositionStyle(position, positionOffsetX, positionOffsetY);
-
-  // The classic speech-bubble tail, positioned exactly like the flow bubble's
-  // notch relative to its avatar: the box sits at the avatar-size edge
-  // (offsetX = avatarSize there, launcherHeight here), so the triangle's sharp
-  // corner lands on the launcher's inner corner and visibly points at it. It
-  // overlaps the card's edge by 1px — the flow bubble hides this seam behind
-  // its avatar; we have no avatar, so the overlap does the job.
-  const tailColor = themeSetting?.mainColor?.background;
   const tailStyle: React.CSSProperties = {
     position: 'absolute',
     ...(alignTop ? { top: -(BUBBLE_TAIL_SIZE - 1) } : { bottom: -(BUBBLE_TAIL_SIZE - 1) }),
@@ -263,19 +270,81 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
   return (
     <div
       className={`${WidgetClass.surface} ${WidgetClass.elevation}`}
-      style={{ ...positionStyle, width: `${width}px`, zIndex: zIndex + 1 }}
+      style={{ ...style, width: `${width}px` }}
     >
       <div className={WidgetClass.surfaceShell}>
         <div style={tailStyle} aria-hidden="true" />
-        <div className={WidgetClass.surfaceFrame}>
-          <Frame assets={assets} className={WidgetClass.surfaceViewport}>
-            <PopupFrameContent globalStyle={globalStyle}>
-              <AnnouncementPopupBody popup={popup} onDismiss={onDismiss} onReadMore={onReadMore} />
-            </PopupFrameContent>
-          </Frame>
-        </div>
+        <div className={WidgetClass.surfaceFrame}>{children}</div>
       </div>
     </div>
+  );
+};
+
+/** The tail is the connector between the card and the launcher — the card
+ * sits exactly one tail-height away, no gap. */
+export const ANNOUNCEMENT_BUBBLE_TAIL_SIZE = BUBBLE_TAIL_SIZE;
+
+interface AnnouncementPopupBubbleProps {
+  popup: PopupAnnouncement;
+  assets?: FrameAssets;
+  onDismiss: () => void;
+  onReadMore: () => void;
+}
+
+const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
+  const { popup, assets, onDismiss, onReadMore } = props;
+  const {
+    themeSettings: resourceCenterThemeSettings,
+    themeSetting: resourceCenterThemeSetting,
+    zIndex,
+    onContentClick,
+    userAttributes,
+  } = useResourceCenterContext();
+  const { globalStyle, themeSetting } = useSettingsStyles(
+    popup.themeSettings ?? resourceCenterThemeSettings,
+  );
+
+  const width = themeSetting?.announcement?.bubbleWidth ?? 480;
+
+  // Full four-quadrant handling, like the flow bubble's useAnchorPosition: the
+  // launcher placement decides both sides. Bottom placements put the card
+  // above the launcher with the tail pointing down; top placements flip it.
+  // The bubble grows toward the viewport center.
+  const resourceCenter = resourceCenterThemeSetting.resourceCenter;
+  const placement = resourceCenter?.placement ?? RESOURCE_CENTER_DEFAULTS.placement;
+  const alignLeft = String(placement).includes('left');
+  const alignTop = String(placement).includes('top');
+  const position = resourceCenterPlacementToPosition(placement);
+  const launcherHeight = resourceCenterThemeSetting.resourceCenterLauncherButton?.height ?? 60;
+  const positionOffsetX = resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX;
+  const positionOffsetY =
+    (resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY) +
+    launcherHeight +
+    BUBBLE_TAIL_SIZE;
+
+  const positionStyle = computePositionStyle(position, positionOffsetX, positionOffsetY);
+
+  return (
+    <AnnouncementBubbleShell
+      width={width}
+      alignLeft={alignLeft}
+      alignTop={alignTop}
+      launcherHeight={launcherHeight}
+      tailColor={themeSetting?.mainColor?.background}
+      style={{ ...positionStyle, zIndex: zIndex + 1 }}
+    >
+      <Frame assets={assets} className={WidgetClass.surfaceViewport}>
+        <PopupFrameContent globalStyle={globalStyle}>
+          <AnnouncementPopupBody
+            popup={popup}
+            onDismiss={onDismiss}
+            onReadMore={onReadMore}
+            onContentClick={onContentClick}
+            userAttributes={userAttributes}
+          />
+        </PopupFrameContent>
+      </Frame>
+    </AnnouncementBubbleShell>
   );
 };
 

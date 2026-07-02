@@ -285,6 +285,10 @@ export const defaultSettings: ThemeTypesSetting = {
     backgroundColor: '#ef4444',
     textColor: '#ffffff',
   },
+  announcement: {
+    bubbleWidth: 480,
+    modalWidth: 600,
+  },
 };
 
 export const standardDarkSettings: ThemeTypesSetting = {
@@ -559,5 +563,9 @@ export const standardDarkSettings: ThemeTypesSetting = {
   resourceCenterUnreadBadge: {
     backgroundColor: '#ef4444',
     textColor: '#ffffff',
+  },
+  announcement: {
+    bubbleWidth: 480,
+    modalWidth: 600,
   },
 };

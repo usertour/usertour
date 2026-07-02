@@ -39,9 +39,6 @@ export const DEFAULT_ANNOUNCEMENT_DATA: AnnouncementData = {
   distribution: AnnouncementDistribution.BADGE,
 };
 
-export const DEFAULT_POPUP_MODAL_WIDTH = 480;
-
 export const DEFAULT_POPUP_CONFIG: AnnouncementPopupConfig = {
   style: AnnouncementPopupStyle.BUBBLE,
-  modalWidth: DEFAULT_POPUP_MODAL_WIDTH,
 };

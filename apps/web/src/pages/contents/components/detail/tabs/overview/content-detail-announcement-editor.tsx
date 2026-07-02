@@ -22,11 +22,7 @@ import {
   RulesType,
   Theme,
 } from '@usertour/types';
-import {
-  DEFAULT_ANNOUNCEMENT_DATA,
-  DEFAULT_POPUP_CONFIG,
-  DEFAULT_POPUP_MODAL_WIDTH,
-} from '@usertour/constants';
+import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_POPUP_CONFIG } from '@usertour/constants';
 import {
   Card,
   CardContent,
@@ -199,26 +195,6 @@ const AnnouncementPopupSettings = (props: AnnouncementPopupSettingsProps) => {
           </SelectContent>
         </Select>
       </div>
-
-      {current.style === AnnouncementPopupStyle.MODAL && (
-        <div className="space-y-1.5">
-          <Label htmlFor="announcement-popup-modal-width" className="text-sm">
-            {t('contents.overview.announcement.popup.modalWidth')}
-          </Label>
-          <Input
-            id="announcement-popup-modal-width"
-            type="number"
-            value={current.modalWidth ?? DEFAULT_POPUP_MODAL_WIDTH}
-            onChange={(event) =>
-              onChange({
-                ...current,
-                modalWidth: Number(event.target.value) || DEFAULT_POPUP_MODAL_WIDTH,
-              })
-            }
-            disabled={disabled}
-          />
-        </div>
-      )}
     </div>
   );
 };

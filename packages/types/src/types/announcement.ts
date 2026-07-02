@@ -30,8 +30,6 @@ export enum AnnouncementPopupStyle {
 
 export interface AnnouncementPopupConfig {
   style: AnnouncementPopupStyle;
-  /** Only for MODAL style (default: 480). */
-  modalWidth?: number;
 }
 
 // ============================================================================

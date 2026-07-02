@@ -1940,7 +1940,6 @@ const translations = {
             label: '模态框',
             description: '居中的遮罩对话框',
           },
-          modalWidth: '宽度（px）',
         },
         content: '内容',
         title: '标题',
@@ -2328,6 +2327,7 @@ const translations = {
       checklistLauncher: '清单启动器',
       resourceCenter: '资源中心',
       resourceCenterLauncher: '资源中心启动器',
+      announcement: '公告',
       launcherBeacons: '启动器信标',
       launcherIcons: '启动器图标',
       launcherButtons: '启动器按钮',
@@ -2443,6 +2443,10 @@ const translations = {
         largeWidth: '大尺寸宽度',
         maxHeight: '最大高度',
         transitionDuration: '过渡时长',
+      },
+      announcement: {
+        bubbleWidth: '气泡宽度',
+        modalWidth: '模态框宽度',
       },
       resourceCenterLauncher: {
         iconType: '图标类型',
@@ -2561,6 +2565,7 @@ const translations = {
       nps: 'NPS',
       resourceCenter: '资源中心',
       resourceCenterLauncher: '资源中心启动器',
+      announcement: '公告',
     },
   },
   contentBuilder: {

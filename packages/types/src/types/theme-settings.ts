@@ -57,6 +57,15 @@ export type ResourceCenterUnreadBadgeThemeSettings = {
   textColor: string;
 };
 
+/**
+ * Announcement popup surfaces (speech bubble / modal) — widths are theme
+ * policy, not per-announcement content settings.
+ */
+export type AnnouncementThemeSettings = {
+  bubbleWidth: number;
+  modalWidth: number;
+};
+
 export enum ProgressBarType {
   FULL_WIDTH = 'full-width',
   NARROW = 'narrow',
@@ -236,6 +245,7 @@ export type ThemeTypesSetting = {
   resourceCenter?: ResourceCenterThemeSettings;
   resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
   resourceCenterUnreadBadge?: ResourceCenterUnreadBadgeThemeSettings;
+  announcement?: AnnouncementThemeSettings;
   // Raw CSS injected as a <style> tag into every widget iframe. The
   // sanctioned home for @font-face rules backing 'Custom font' and for
   // advanced widget style overrides.

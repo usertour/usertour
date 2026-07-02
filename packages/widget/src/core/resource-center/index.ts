@@ -15,9 +15,13 @@ export { ResourceCenterStyleProvider } from './resource-center-style-provider';
 // Unified Panel (replaces ResourceCenter, ResourceCenterFrame, ResourceCenterStatic)
 export { ResourceCenterPanel } from './resource-center-panel';
 
-// Self-presenting popup announcement (own stage — render as a sibling of the
-// style provider, not inside it)
-export { ResourceCenterAnnouncementPopup } from './resource-center-announcement-popup';
+// Self-presenting popup announcement (renders inside the RC stage)
+export {
+  ResourceCenterAnnouncementPopup,
+  AnnouncementBubbleShell,
+  AnnouncementPopupBody,
+  ANNOUNCEMENT_BUBBLE_TAIL_SIZE,
+} from './resource-center-announcement-popup';
 
 // Frame Root (shared inner layout)
 export { ResourceCenterFrameRoot } from './resource-center-frame-root';

@@ -553,3 +553,41 @@ export const NPS_PREVIEW_CONTENT = [
     ],
   },
 ] as ContentEditorRoot[];
+
+export const ANNOUNCEMENT_PREVIEW_CONTENT = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: {
+            type: 'fill',
+          },
+          justifyContent: 'justify-start',
+        },
+        children: [
+          {
+            element: {
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: 'We just shipped something new — here is a quick look at what changed.',
+                    },
+                  ],
+                },
+              ],
+              type: 'text',
+            },
+            children: null,
+          },
+        ],
+      },
+    ],
+  },
+] as ContentEditorRoot[];

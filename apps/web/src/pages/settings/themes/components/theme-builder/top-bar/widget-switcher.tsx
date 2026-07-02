@@ -1,4 +1,5 @@
 import {
+  AnnouncementIcon,
   BannerIcon,
   ChecklistIcon,
   FlowIcon,
@@ -105,6 +106,11 @@ export const WidgetSwitcher = (props: WidgetSwitcherProps) => {
         value: ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER,
         label: t('themeBuilder.previewTypes.resourceCenterLauncher'),
         Icon: ResourceCenterIcon,
+      },
+      {
+        value: ThemeDetailPreviewType.ANNOUNCEMENT,
+        label: t('themeBuilder.previewTypes.announcement'),
+        Icon: AnnouncementIcon,
       },
     ],
     [t],
