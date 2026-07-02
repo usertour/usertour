@@ -151,7 +151,7 @@ export class WebSocketV2MessageHandler {
 
     register(
       ClientMessageKind.LIST_ANNOUNCEMENTS,
-      async (context, payload) => await this.service.listAnnouncements(context, payload),
+      async (context, _payload) => await this.service.listAnnouncements(context),
     );
 
     register(
@@ -160,8 +160,8 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
-      ClientMessageKind.MARK_ANNOUNCEMENT_SEEN,
-      async (context, payload) => await this.service.markAnnouncementSeen(context, payload),
+      ClientMessageKind.MARK_ANNOUNCEMENTS_SEEN,
+      async (context, payload) => await this.service.markAnnouncementsSeen(context, payload),
     );
 
     register(

@@ -1,11 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import {
   AnnouncementData,
-  AnnouncementListItem,
-  BizEvents,
+  AnnouncementItemBase,
   ContentDataType,
   ContentEditorRoot,
+  DEFAULT_ANNOUNCEMENT_DATA,
 } from '@usertour/types';
 import { BizUser, Environment } from '@/common/types/schema';
 import { extractUserAttrCodes } from '@/utils/content-utils';
@@ -160,29 +162,64 @@ export class AnnouncementService {
   }
 
   /**
-   * Seen status is derived from ANNOUNCEMENT_SEEN events — a set-membership
-   * check, no separate table.
+   * Seen status reads from the BizAnnouncementSeen read-state table — one row
+   * per (user, announcement). The ANNOUNCEMENT_SEEN analytics event is derived
+   * from this state (fired when the row is first inserted), not the other way
+   * around, so analytics retention can never un-see an announcement.
    */
-  async getSeenAnnouncementIds(
-    bizUserId: string,
-    contentIds: string[],
-    environmentId: string,
-  ): Promise<Set<string>> {
+  async getSeenAnnouncementIds(bizUserId: string, contentIds: string[]): Promise<Set<string>> {
     if (contentIds.length === 0) return new Set();
 
-    const seenEvents = await this.prisma.bizEvent.findMany({
-      where: {
-        bizUserId,
-        contentId: { in: contentIds },
-        event: {
-          codeName: BizEvents.ANNOUNCEMENT_SEEN,
-          project: { environments: { some: { id: environmentId } } },
-        },
-      },
+    const seenRows = await this.prisma.bizAnnouncementSeen.findMany({
+      where: { bizUserId, contentId: { in: contentIds } },
       select: { contentId: true },
-      distinct: ['contentId'],
     });
-    return new Set(seenEvents.filter((event) => event.contentId).map((event) => event.contentId!));
+    return new Set(seenRows.map((row) => row.contentId));
+  }
+
+  /**
+   * Record that the user has seen the given announcements and return the
+   * contentIds that were seen for the FIRST time by this call.
+   *
+   * Only ids passing the shared candidate gate (published, non-deleted
+   * announcements whose scheduledAt has passed) are recorded, so a client
+   * can't write read-state rows for arbitrary content. The write is a single
+   * INSERT .. ON CONFLICT DO NOTHING RETURNING on the (bizUserId, contentId)
+   * unique key: idempotent under concurrent marks (feed refetch, second tab)
+   * with no locking, and the RETURNING set is exactly the first-seen edge —
+   * the caller fires one ANNOUNCEMENT_SEEN analytics event per returned id,
+   * so views are never double-counted.
+   */
+  async markAnnouncementsSeen(
+    environmentId: string,
+    bizUserId: string,
+    contentIds: string[],
+  ): Promise<string[]> {
+    const uniqueIds = [...new Set(contentIds)];
+    if (uniqueIds.length === 0) {
+      return [];
+    }
+
+    const candidates = await this.prisma.contentOnEnvironment.findMany({
+      where: { ...this.announcementCandidateWhere(environmentId), contentId: { in: uniqueIds } },
+      select: { contentId: true },
+    });
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    const values = Prisma.join(
+      candidates.map(
+        (candidate) => Prisma.sql`(${randomUUID()}, ${bizUserId}, ${candidate.contentId})`,
+      ),
+    );
+    const inserted = await this.prisma.$queryRaw<{ contentId: string }[]>`
+      INSERT INTO "BizAnnouncementSeen" ("id", "bizUserId", "contentId")
+      VALUES ${values}
+      ON CONFLICT ("bizUserId", "contentId") DO NOTHING
+      RETURNING "contentId"
+    `;
+    return inserted.map((row) => row.contentId);
   }
 
   /**
@@ -221,16 +258,16 @@ export class AnnouncementService {
 
   /**
    * Shared field mapping for an announcement's feed row and its detail view: the
-   * two read paths must expose identical values. `time` is the scheduledAt (the
-   * "Announcement time"), which publish stamps on first publish — always set for
-   * a published announcement (legacy rows are backfilled) — so there is no
-   * publishedAt fallback.
+   * two read paths must expose identical values. `seen` is per-read-path, so the
+   * caller adds it where the contract carries it (the feed). `time` is the
+   * scheduledAt (the "Announcement time"), which publish stamps on first publish
+   * — always set for a published announcement (legacy rows are backfilled) — so
+   * there is no publishedAt fallback.
    */
-  buildListItem(
+  buildItemBase(
     content: { id: string },
     publishedVersion: { id: string; data: unknown; scheduledAt: Date | null },
-    seen: boolean,
-  ): AnnouncementListItem {
+  ): AnnouncementItemBase {
     const data = (publishedVersion.data ?? {}) as unknown as AnnouncementData;
     return {
       id: content.id,
@@ -239,8 +276,7 @@ export class AnnouncementService {
       content: data.introContent ?? [],
       moreEnabled: data.enableReadMore ?? false,
       moreButtonText: data.readMoreLabel ?? 'Read more',
-      level: data.distribution ?? 'silent',
-      seen,
+      level: data.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution,
       time: publishedVersion.scheduledAt?.toISOString() ?? '',
     };
   }

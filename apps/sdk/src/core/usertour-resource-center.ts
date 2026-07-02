@@ -201,12 +201,12 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   // ── Announcement operations ──────────────────────────────────────────
 
-  async listAnnouncements(cursor: string | null): Promise<ListAnnouncementsResult> {
+  async listAnnouncements(): Promise<ListAnnouncementsResult> {
     try {
-      return await this.socketService.listAnnouncements({ cursor });
+      return await this.socketService.listAnnouncements();
     } catch (error) {
       logger.error('Failed to list announcements:', error);
-      return { announcements: [], pageSize: 0, truncated: false };
+      return { announcements: [] };
     }
   }
 
@@ -219,29 +219,32 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     }
   }
 
-  async markAnnouncementSeen(contentId: string, versionId: string): Promise<boolean> {
+  async markAnnouncementsSeen(items: { contentId: string; versionId: string }[]): Promise<boolean> {
+    if (items.length === 0) {
+      return true;
+    }
     // Optimistically drop the launcher badge so collapsing back to the launcher
     // reflects the just-opened feed without waiting for the next session rebuild.
     // The server's unreadCount stays the source of truth and reconciles on the
     // next build; this only avoids a stale badge for the rest of this session.
-    // The feed only marks its unseen items, so each call maps to one unread
-    // announcement and a single decrement is correct.
-    this.decrementAnnouncementUnreadCount();
+    // The feed sends one batch covering exactly its unseen items, so decrementing
+    // by the batch size matches what the server will mark.
+    this.decrementAnnouncementUnreadCount(items.length);
     try {
-      return await this.socketService.markAnnouncementSeen({ contentId, versionId });
+      return await this.socketService.markAnnouncementsSeen({ items });
     } catch (error) {
-      logger.error('Failed to mark announcement seen:', error);
+      logger.error('Failed to mark announcements seen:', error);
       return false;
     }
   }
 
   /**
-   * Decrement the announcement unreadCount by one (clamped at zero) on every
+   * Decrement the announcement unreadCount (clamped at zero) on every
    * announcement block. The server mirrors the same global count onto each block
    * and the badge takes the max across blocks (getAnnouncementBadgeCount), so
    * decrementing every block in step keeps the local badge consistent with both.
    */
-  private decrementAnnouncementUnreadCount(): void {
+  private decrementAnnouncementUnreadCount(count: number): void {
     const resourceCenterData = this.getStoreData()?.resourceCenterData;
     if (!resourceCenterData?.tabs) {
       return;
@@ -259,7 +262,10 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
           return block;
         }
         changed = true;
-        return { ...announcementBlock, unreadCount: (announcementBlock.unreadCount ?? 0) - 1 };
+        return {
+          ...announcementBlock,
+          unreadCount: Math.max(0, (announcementBlock.unreadCount ?? 0) - count),
+        };
       }),
     }));
 

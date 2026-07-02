@@ -10,7 +10,8 @@ import {
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
-import type { ResourceCenterAnnouncementBlock } from '@usertour/types';
+import type { AnnouncementData, ResourceCenterAnnouncementBlock } from '@usertour/types';
+import { AnnouncementDistribution, DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/types';
 import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
@@ -484,10 +485,13 @@ export class SessionBuilderService {
 
     // Only badge-distribution announcements contribute to the launcher badge.
     const badgeContentIds = visible
-      .filter(
-        (item) =>
-          (item.publishedVersion.data as Record<string, any> | null)?.distribution === 'badge',
-      )
+      .filter((item) => {
+        const data = item.publishedVersion.data as AnnouncementData | null;
+        return (
+          (data?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution) ===
+          AnnouncementDistribution.BADGE
+        );
+      })
       .map((item) => item.contentId);
     if (badgeContentIds.length === 0) {
       setUnread(0);
@@ -497,7 +501,6 @@ export class SessionBuilderService {
     const seenSet = await this.announcementService.getSeenAnnouncementIds(
       bizUser.id,
       badgeContentIds,
-      environment.id,
     );
     setUnread(badgeContentIds.filter((id) => !seenSet.has(id)).length);
   }

@@ -20,11 +20,10 @@ import {
   ClickResourceCenterDto,
   ListResourceCenterBlockContentDto,
   ResourceCenterBlockContentItem,
-  ListAnnouncementsDto,
   ListAnnouncementsResult,
   GetAnnouncementDto,
   AnnouncementDetail,
-  MarkAnnouncementSeenDto,
+  MarkAnnouncementsSeenDto,
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
@@ -76,9 +75,9 @@ export interface IUsertourSocket {
   ): Promise<ResourceCenterBlockContentItem[]>;
 
   // Announcement operations
-  listAnnouncements(params: ListAnnouncementsDto): Promise<ListAnnouncementsResult>;
+  listAnnouncements(): Promise<ListAnnouncementsResult>;
   getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null>;
-  markAnnouncementSeen(params: MarkAnnouncementSeenDto): Promise<boolean>;
+  markAnnouncementsSeen(params: MarkAnnouncementsSeenDto): Promise<boolean>;
 
   // Context and reporting
   updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean>;
@@ -499,23 +498,23 @@ export class UsertourSocket implements IUsertourSocket {
     }
   }
 
-  async listAnnouncements(params: ListAnnouncementsDto): Promise<ListAnnouncementsResult> {
+  async listAnnouncements(): Promise<ListAnnouncementsResult> {
     try {
       // EMIT_TIMEOUT bounds the ack (as emitClientMessage does) so a socket
       // buffering during a slow/failed reconnect rejects instead of leaving the
       // promise pending forever — which would hang the feed on 'Loading...'.
       const result = await this.socket?.emitWithAck(
         WebSocketEvents.CLIENT_MESSAGE,
-        { kind: ClientMessageKind.LIST_ANNOUNCEMENTS, payload: params, requestId: uuidV4() },
+        { kind: ClientMessageKind.LIST_ANNOUNCEMENTS, payload: {}, requestId: uuidV4() },
         this.EMIT_TIMEOUT,
       );
       if (result && typeof result === 'object' && 'announcements' in result) {
         return result as ListAnnouncementsResult;
       }
-      return { announcements: [], pageSize: 0, truncated: false };
+      return { announcements: [] };
     } catch (error) {
       logger.error('Failed to list announcements:', error);
-      return { announcements: [], pageSize: 0, truncated: false };
+      return { announcements: [] };
     }
   }
 
@@ -538,8 +537,8 @@ export class UsertourSocket implements IUsertourSocket {
     }
   }
 
-  async markAnnouncementSeen(params: MarkAnnouncementSeenDto): Promise<boolean> {
-    return await this.sendClientMessage(ClientMessageKind.MARK_ANNOUNCEMENT_SEEN, params);
+  async markAnnouncementsSeen(params: MarkAnnouncementsSeenDto): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.MARK_ANNOUNCEMENTS_SEEN, params);
   }
 
   // === Status Methods ===

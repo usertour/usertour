@@ -91,9 +91,9 @@ export interface ResourceCenterContextValue {
   contentListItems: ContentListDisplayItem[];
 
   // Announcements
-  onListAnnouncements?: (cursor: string | null) => Promise<ListAnnouncementsResult>;
+  onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
-  onMarkAnnouncementSeen?: (contentId: string, versionId: string) => Promise<boolean>;
+  onMarkAnnouncementsSeen?: (items: { contentId: string; versionId: string }[]) => Promise<boolean>;
 
   // Search
   searchQuery: string;

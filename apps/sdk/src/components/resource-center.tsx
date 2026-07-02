@@ -99,11 +99,9 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}
         onLiveChatClick={resourceCenter.handleLiveChatClick}
-        onListAnnouncements={(cursor) => resourceCenter.listAnnouncements(cursor)}
+        onListAnnouncements={() => resourceCenter.listAnnouncements()}
         onGetAnnouncement={(contentId) => resourceCenter.getAnnouncement(contentId)}
-        onMarkAnnouncementSeen={(contentId, versionId) =>
-          resourceCenter.markAnnouncementSeen(contentId, versionId)
-        }
+        onMarkAnnouncementsSeen={(items) => resourceCenter.markAnnouncementsSeen(items)}
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>

@@ -50,9 +50,9 @@ interface ResourceCenterRootProps {
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
-  onListAnnouncements?: (cursor: string | null) => Promise<ListAnnouncementsResult>;
+  onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
-  onMarkAnnouncementSeen?: (contentId: string, versionId: string) => Promise<boolean>;
+  onMarkAnnouncementsSeen?: (items: { contentId: string; versionId: string }[]) => Promise<boolean>;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;
   /**
@@ -86,7 +86,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onLiveChatClick,
     onListAnnouncements,
     onGetAnnouncement,
-    onMarkAnnouncementSeen,
+    onMarkAnnouncementsSeen,
     launcherHidden = false,
     initialNav,
     onNavChange,
@@ -330,7 +330,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onLiveChatClick,
       onListAnnouncements,
       onGetAnnouncement,
-      onMarkAnnouncementSeen,
+      onMarkAnnouncementsSeen,
       launcherHidden,
     }),
     [
@@ -363,7 +363,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onLiveChatClick,
       onListAnnouncements,
       onGetAnnouncement,
-      onMarkAnnouncementSeen,
+      onMarkAnnouncementsSeen,
       launcherHidden,
     ],
   );

@@ -434,7 +434,7 @@ interface AnnouncementListDetailProps {
 }
 
 export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
-  const { onListAnnouncements, onMarkAnnouncementSeen, onContentClick, actions, userAttributes } =
+  const { onListAnnouncements, onMarkAnnouncementsSeen, onContentClick, actions, userAttributes } =
     useResourceCenterContext();
   const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
   const [feedAttributes, setFeedAttributes] = useState<Record<string, any> | undefined>(undefined);
@@ -457,8 +457,8 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   // and run the load exactly once per open.
   const onListAnnouncementsRef = useRef(onListAnnouncements);
   onListAnnouncementsRef.current = onListAnnouncements;
-  const onMarkAnnouncementSeenRef = useRef(onMarkAnnouncementSeen);
-  onMarkAnnouncementSeenRef.current = onMarkAnnouncementSeen;
+  const onMarkAnnouncementsSeenRef = useRef(onMarkAnnouncementsSeen);
+  onMarkAnnouncementsSeenRef.current = onMarkAnnouncementsSeen;
 
   // Single load — the feed is capped server-side (newest N), so there is no
   // pagination to drive.
@@ -477,7 +477,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     // for) announcements the user never actually saw.
     let cancelled = false;
     setIsLoading(true);
-    listAnnouncements(null)
+    listAnnouncements()
       .then((result) => {
         if (cancelled) {
           return;
@@ -486,14 +486,16 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
         setFeedAttributes(result.attributes);
         // Displaying an announcement in the opened feed is what marks it seen,
         // independent of whether Read more is enabled. Every announcement passes
-        // through here before any detail view, so this is the only seen marker.
+        // through here before any detail view, so this is the only seen marker —
+        // one batch covering exactly the items the feed shows as unseen.
         // Local seen is left untouched on purpose: the unseen dot stays for the
         // rest of this session and clears on the next open, when the server
         // reports it seen.
-        for (const item of result.announcements) {
-          if (!item.seen) {
-            onMarkAnnouncementSeenRef.current?.(item.id, item.versionId);
-          }
+        const unseenItems = result.announcements
+          .filter((item) => !item.seen)
+          .map((item) => ({ contentId: item.id, versionId: item.versionId }));
+        if (unseenItems.length > 0) {
+          onMarkAnnouncementsSeenRef.current?.(unseenItems);
         }
       })
       .finally(() => {
@@ -558,7 +560,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                 {/* Intro content */}
                 <div className="text-sm text-sdk-foreground mt-1">
                   <ContentEditorSerialize
-                    contents={item.content as any}
+                    contents={item.content}
                     onClick={onContentClick}
                     userAttributes={mergedAttributes}
                   />
@@ -650,7 +652,7 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
 
       <div className="text-sm text-sdk-foreground">
         <ContentEditorSerialize
-          contents={detail.content as any}
+          contents={detail.content}
           onClick={onContentClick}
           userAttributes={mergedAttributes}
         />
@@ -659,7 +661,7 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
       {detail.moreContent && (
         <div className="text-sm text-sdk-foreground">
           <ContentEditorSerialize
-            contents={detail.moreContent as any}
+            contents={detail.moreContent}
             onClick={onContentClick}
             userAttributes={mergedAttributes}
           />
