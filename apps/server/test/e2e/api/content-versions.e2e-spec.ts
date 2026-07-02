@@ -426,6 +426,44 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(ok.status).toBe(200);
   });
 
+  it('reports EVERY violation in one response (error.issues with rules + paths)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    // One write, three problems: a modal with a tooltip-shape placement, an
+    // onClick off a tooltip, and an event condition in a step trigger.
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'T',
+          type: 'modal',
+          placement: { side: 'top', align: 'start' },
+          onClick: [{ type: 'dismiss' }],
+          content: [{ type: 'text', markdown: 'x' }],
+          triggers: [{ when: [{ type: 'event', event: 'x' }], do: [{ type: 'dismiss' }] }],
+        },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    const issues = res.body.error.issues;
+    expect(Array.isArray(issues)).toBe(true);
+    expect(issues).toHaveLength(3);
+    expect(issues.map((i: { rule: string }) => i.rule).sort()).toEqual([
+      'reactive_condition',
+      'step_shape',
+      'step_shape',
+    ]);
+    for (const issue of issues) {
+      expect(typeof issue.message).toBe('string');
+      expect(issue.path).toMatch(/^steps\[0\]/);
+    }
+    // the single message carries all of them (the MCP surface shows only the string)
+    expect(res.body.error.message).toContain(' | ');
+  });
+
   it('rejects a start_content action targeting a non-flow/checklist (400)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // start_content can launch a flow or a checklist — not a banner (the builder never lists it).

@@ -2,6 +2,8 @@ import { createZodValidationPipe } from 'nestjs-zod';
 
 import { ValidationError } from '@/common/errors/errors';
 
+import { zodIssuesToValidationIssues } from './zod-issues';
+
 /**
  * v2 request validation pipe. On a zod failure it throws the shared
  * {@link ValidationError} (code E1017) so the OpenAPIExceptionFilter renders the
@@ -12,7 +14,11 @@ import { ValidationError } from '@/common/errors/errors';
  */
 export const ApiValidationPipe = createZodValidationPipe({
   createValidationException: (error: unknown) => {
-    const issue = (error as { issues?: { message?: string }[] })?.issues?.[0];
-    return new ValidationError(issue?.message ?? 'Validation error');
+    // Report EVERY schema issue (with its path), not just the first — so a
+    // client fixes the whole request in one round-trip.
+    const issues = zodIssuesToValidationIssues(error);
+    return issues.length
+      ? ValidationError.fromIssues(issues)
+      : new ValidationError('Validation error');
   },
 });

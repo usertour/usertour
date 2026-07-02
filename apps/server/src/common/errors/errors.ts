@@ -549,18 +549,55 @@ export class InvalidOrderByError extends OpenAPIError {
   };
 }
 
+/**
+ * One structured validation problem. `rule` names the rule family so a client
+ * can group or react programmatically:
+ *  - `schema`             — the request body doesn't match the write schema;
+ *  - `reactive_condition` — a server-evaluated condition in a reactive (client-polled) slot;
+ *  - `action_not_allowed` — an action type this content type's slots don't offer;
+ *  - `step_shape`         — placement shape / onClick not matching the step kind;
+ *  - `reference_target`   — a cross-content reference to a type that can't be targeted;
+ *  - `auto_start`         — a start/hide-rule knob the content type doesn't support.
+ */
+export type ValidationIssue = {
+  rule:
+    | 'schema'
+    | 'reactive_condition'
+    | 'action_not_allowed'
+    | 'step_shape'
+    | 'reference_target'
+    | 'auto_start';
+  message: string;
+  /** Path into the request body (e.g. `steps[0].triggers[0].when[1]`). */
+  path?: string;
+};
+
 export class ValidationError extends OpenAPIError {
   code = 'E1017';
   statusCode = HttpStatus.BAD_REQUEST;
+  /** Present when the request had one or more structured issues. */
+  issues?: ValidationIssue[];
   messageDict = {
     en: 'Validation error',
     'zh-CN': '验证错误',
   };
 
-  constructor(message: string) {
+  constructor(message: string, issues?: ValidationIssue[]) {
     super();
     this.messageDict.en = message;
     this.messageDict['zh-CN'] = message;
+    if (issues?.length) {
+      this.issues = issues;
+    }
+  }
+
+  /**
+   * Aggregate several issues into one error. The message carries EVERY issue
+   * (joined), so single-string surfaces (the MCP tool error text) show them all;
+   * structured clients read `issues` from the REST error body instead.
+   */
+  static fromIssues(issues: ValidationIssue[]): ValidationError {
+    return new ValidationError(issues.map((i) => i.message).join(' | '), issues);
   }
 }
 

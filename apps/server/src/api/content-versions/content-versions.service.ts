@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { cuid } from '@usertour/helpers';
-import { ContentActionsItemType, ContentDataType } from '@usertour/types';
+import { ContentDataType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -9,17 +9,17 @@ import {
   ParamsError,
   ThemeNotFoundError,
   ValidationError,
+  type ValidationIssue,
 } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 import { ThemesService } from '@/themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
+import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
-  CONTENT_REFERENCE_TARGET_TYPE_SET,
-  REACTIVE_REJECTED_REP_CONDITION_TYPES,
-  contentActionCapabilities,
-  stepCapabilities,
-} from '../content-representation/contract-map';
+  type ContentReference,
+  collectWriteViolations,
+} from '../content-representation/write-guards';
 import { compileStep } from '../content-representation/representation.compile';
 import { decompileStep } from '../content-representation/representation.decompile';
 import { ContentVersion } from '../content-representation/representation.schema';
@@ -245,246 +245,41 @@ export class ApiContentVersionsService {
   }
 
   /**
-   * Reactive condition slots — a step's `triggers[].when` and a button block's
-   * `hiddenWhen` / `disabledWhen` — are evaluated LIVE in the browser (the SDK
-   * polls the DOM). The builder omits `event` / `segment` / content-state from these
-   * slots because those are server-evaluated and would silently never fire here.
-   * The general condition union (accepted by this write API) allows them, so gate
-   * it: reject those types in these slots at write, and point authors to start/hide
-   * rules or a checklist item's completeWhen (which ARE server-evaluated) instead.
+   * Batch target-type check for the cross-content references the write walk
+   * collected. Every reference — a content-state condition, a start_content
+   * action, a resource-center content-list item — must point at a FLOW or a
+   * CHECKLIST (the only types the builder lets you pick; only those record the
+   * per-user state / can be launched). A wrong-type reference would publish and
+   * silently never fire, so it's a deterministic write-time error; the
+   * existence/dangling-id half is forward-ref-tolerant and stays a validate
+   * warning in collectRuleIssues. Unknown / cross-project ids are left to that
+   * existence check.
    */
-  private assertStepReactiveConditions(steps: unknown[]): void {
-    steps.forEach((s, i) => {
-      const step = s as { triggers?: { when?: unknown }[]; content?: unknown };
-      (step.triggers ?? []).forEach((t, ti) =>
-        this.assertReactiveConditions(
-          t?.when,
-          `steps[${i}].triggers[${ti}].when`,
-          'a step trigger',
-        ),
-      );
-      this.assertButtonReactiveConditions(step.content, `steps[${i}].content`);
-    });
-  }
-
-  private assertButtonReactiveConditions(blocks: unknown, path: string): void {
-    if (!Array.isArray(blocks)) return;
-    blocks.forEach((b, i) => {
-      const block = b as {
-        type?: string;
-        hiddenWhen?: unknown;
-        disabledWhen?: unknown;
-        columns?: { blocks?: unknown }[];
-      };
-      const at = `${path}[${i}]`;
-      if (block?.type === 'button') {
-        const slot = 'a button show/hide/disable rule';
-        this.assertReactiveConditions(block.hiddenWhen, `${at}.hiddenWhen`, slot);
-        this.assertReactiveConditions(block.disabledWhen, `${at}.disabledWhen`, slot);
-      }
-      if (block?.type === 'columns' && Array.isArray(block.columns)) {
-        block.columns.forEach((col, ci) =>
-          this.assertButtonReactiveConditions(col?.blocks, `${at}.columns[${ci}].blocks`),
-        );
-      }
-    });
-  }
-
-  private assertReactiveConditions(conditions: unknown, path: string, slot: string): void {
-    if (!Array.isArray(conditions)) return;
-    conditions.forEach((c, i) => {
-      const at = `${path}[${i}]`;
-      const type = (c as { type?: unknown })?.type;
-      if (typeof type === 'string' && REACTIVE_REJECTED_REP_CONDITION_TYPES.has(type)) {
-        throw new ValidationError(
-          `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
-        );
-      }
-      if (type === 'group') {
-        this.assertReactiveConditions(
-          (c as { conditions?: unknown }).conditions,
-          `${at}.conditions`,
-          slot,
-        );
-      }
-    });
-  }
-
-  /**
-   * Walk a non-flow content body (checklist / launcher / banner / resource-center) and reject
-   * inputs the general write schema accepts but the builder never offers and the runtime can't
-   * honour on these content types:
-   *  - `goto_step` actions anywhere: goto_step navigates between the STEPS of a flow; a non-flow
-   *    content type has no steps, so the builder omits it and the runtime leaves it inert / dangling.
-   *  - button `hiddenWhen` / `disabledWhen` reactive conditions referencing server-evaluated types
-   *    (event / segment / content-state): the builder restricts these show/hide/disable rules to
-   *    client-polled types, and the runtime never re-checks server types mid-session, so the button
-   *    would fail open (always shown / enabled). This is the body.data counterpart of the flow-step
-   *    guard `assertStepReactiveConditions` (which only covers body.steps).
-   * checklist `completeWhen` intentionally allows the full condition set, so it is NOT touched here —
-   * only button hiddenWhen/disabledWhen carry the reactive-slot restriction.
-   */
-  private assertNonFlowData(data: unknown, contentType: string, slotHint: string): void {
-    const caps = contentActionCapabilities(contentType);
-    // goto_step is flow-only per the capability matrix — every non-flow type's action set
-    // excludes STEP_GOTO (unknown type: reject too; compile rejects the type right after).
-    const rejectGotoStep = !caps?.actions.includes(ContentActionsItemType.STEP_GOTO);
-    // A type with action slots but no dismiss variant (resource center: the builder registers
-    // dismiss only for flow / checklist / banner / launcher) can't dismiss — a `dismiss` there
-    // would compile to the default flow-dismiss and silently no-op in its renderer. Types with
-    // no action slots at all (tracker) are left to their own schema.
-    const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
-    const walk = (node: unknown, path: string): void => {
-      if (Array.isArray(node)) {
-        node.forEach((n, i) => walk(n, `${path}[${i}]`));
-        return;
-      }
-      if (!node || typeof node !== 'object') {
-        return;
-      }
-      const obj = node as Record<string, unknown>;
-      if (rejectGotoStep && obj.type === 'goto_step') {
-        throw new ValidationError(
-          `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_content, page_navigate, or dismiss instead.`,
-        );
-      }
-      if (rejectDismiss && obj.type === 'dismiss') {
-        throw new ValidationError(
-          `A "dismiss" action can't be used in ${slotHint} (at ${path}). A resource center has no dismiss action — use start_content or page_navigate, or let its built-in close button dismiss it.`,
-        );
-      }
-      if (obj.type === 'button') {
-        this.assertReactiveConditions(
-          obj.hiddenWhen,
-          `${path}.hiddenWhen`,
-          "a button's show/hide rule",
-        );
-        this.assertReactiveConditions(
-          obj.disabledWhen,
-          `${path}.disabledWhen`,
-          "a button's enable/disable rule",
-        );
-      }
-      for (const key of Object.keys(obj)) {
-        walk(obj[key], `${path}.${key}`);
-      }
-    };
-    walk(data, 'data');
-  }
-
-  /**
-   * Per-step shape checks the general step schema is too loose to enforce:
-   *  - placement shape must match the step kind. The placement union is non-discriminated,
-   *    so the schema accepts a tooltip-shape `{side,align}` on a modal (renders centered,
-   *    side/align dropped) or a modal-shape `{position}` on a tooltip (renders by side/align,
-   *    position dropped). Require tooltip→`{side,align}` and modal→`{position}`. bubble is
-   *    positioned by its theme (step placement is ignored by design) and hidden has no UI, so
-   *    neither is shape-checked.
-   *  - onClick (click-the-target-element to advance) only fires on a tooltip, which anchors to
-   *    a target element; on a modal / bubble / hidden step there is no target to click, so the
-   *    action silently never runs. An empty onClick (clearing the actions) is allowed anywhere.
-   */
-  private assertStepShape(steps: unknown[]): void {
-    steps.forEach((step, i) => {
-      if (!step || typeof step !== 'object') {
-        return;
-      }
-      const s = step as Record<string, unknown>;
-      const type = s.type;
-      const at = `steps[${i}]`;
-      const caps = stepCapabilities(type);
-      const placement = s.placement as Record<string, unknown> | undefined;
-      if (placement && typeof placement === 'object' && caps) {
-        const isTooltipShape = 'side' in placement;
-        const isModalShape = 'position' in placement;
-        if (caps.placement === 'anchor' && isModalShape) {
-          throw new ValidationError(
-            `A tooltip step (${at}) needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
-          );
-        }
-        if (caps.placement === 'grid' && isTooltipShape) {
-          throw new ValidationError(
-            `A modal step (${at}) needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
-          );
-        }
-      }
-      const onClick = s.onClick;
-      if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {
-        throw new ValidationError(
-          `onClick (click the target element to advance) only works on a tooltip step; a ${String(
-            type,
-          )} step (${at}) has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
-        );
-      }
-    });
-  }
-
-  /**
-   * Every cross-content reference must point at a FLOW or a CHECKLIST — the only types the
-   * builder lets you pick in these spots. Three carriers of the same rule:
-   *  - a content-state condition (`{ type: 'content_state', content, state }`) — only flows/checklists record
-   *    the per-user seen/completed/active state it gates on (FLOW_STEP_SEEN / CHECKLIST_SEEN, …);
-   *  - a `start_content` action (`{ type: 'start_content', content }`) — you can launch a flow or a
-   *    checklist, not a banner/launcher/RC/tracker;
-   *  - a resource-center content-list item (`{ content, contentType }`) — links to a flow/checklist.
-   * The write schema accepts any content id in all three, so a reference to a banner/launcher/RC/
-   * tracker publishes but never fires (condition never matches; action/list renders nothing). This
-   * is a deterministic type error (the target's type is fixed now), so — like the existence check's
-   * sibling — it's rejected at WRITE, not deferred to a publish warning. (Existence/dangling-id is
-   * the soft, forward-ref-tolerant half and stays a validate warning in collectRuleIssues.)
-   * Unknown / cross-project ids are left to that existence check — only a real content of the
-   * wrong type is flagged here.
-   */
-  private async assertContentReferenceTargets(
-    body: UpdateVersionBody,
+  private async contentReferenceIssues(
+    refs: ContentReference[],
     projectId: string,
-  ): Promise<void> {
-    const refs: { id: string; where: string; kind: string }[] = [];
-    const collect = (node: unknown, where: string): void => {
-      if (Array.isArray(node)) {
-        for (const n of node) {
-          collect(n, where);
-        }
-        return;
-      }
-      if (!node || typeof node !== 'object') {
-        return;
-      }
-      const obj = node as Record<string, unknown>;
-      if (obj.type === 'content_state' && typeof obj.content === 'string') {
-        refs.push({ id: obj.content, where, kind: 'A content-state condition' });
-      } else if (obj.type === 'start_content' && typeof obj.content === 'string') {
-        refs.push({ id: obj.content, where, kind: 'A start_content action' });
-      } else if (typeof obj.content === 'string' && typeof obj.contentType === 'string') {
-        // A resource-center content-list item: { content: <id>, contentType: 'flow'|'checklist' }.
-        refs.push({ id: obj.content, where, kind: 'A resource-center content-list item' });
-      }
-      for (const key of Object.keys(obj)) {
-        collect(obj[key], where);
-      }
-    };
-    collect(body.startRules?.when, 'a start rule');
-    collect(body.hideRules?.when, 'a hide rule');
-    collect(body.steps, 'a step'); // start_content actions live in flow step buttons/triggers/onClick
-    collect(body.data, "the content's data");
+  ): Promise<ValidationIssue[]> {
     if (refs.length === 0) {
-      return;
+      return [];
     }
-
     const ids = [...new Set(refs.map((r) => r.id))];
     const found = await this.prisma.content.findMany({
       where: { id: { in: ids }, projectId },
       select: { id: true, type: true },
     });
     const typeById = new Map(found.map((c) => [c.id, c.type]));
+    const issues: ValidationIssue[] = [];
     for (const r of refs) {
       const targetType = typeById.get(r.id);
       if (targetType && !CONTENT_REFERENCE_TARGET_TYPE_SET.has(targetType)) {
-        throw new ValidationError(
-          `${r.kind} (in ${r.where}) references a ${targetType}, but it can only reference a flow or a checklist. Point it at a flow or checklist instead.`,
-        );
+        issues.push({
+          rule: 'reference_target',
+          path: r.path,
+          message: `${r.kind} (in ${r.where}) references a ${targetType}, but it can only reference a flow or a checklist. Point it at a flow or checklist instead.`,
+        });
       }
     }
+    return issues;
   }
 
   async update(
@@ -502,23 +297,35 @@ export class ApiContentVersionsService {
     }
     const resolvers = await this.buildCompileResolvers(projectId);
     const content: Record<string, unknown> = {};
+    const contentType =
+      (version as { content?: { type?: string | null } | null }).content?.type ?? undefined;
 
-    // Every cross-content reference (content-state condition, start_content action, RC content-list
-    // item) can only point at a flow or checklist, the only types the builder lets you pick —
-    // reject a wrong-type target before compiling.
-    await this.assertContentReferenceTargets(body, projectId);
+    // ── Contract validation: ONE walk over steps / data / start / hide rules that
+    // collects EVERY violation (reactive slots, per-type actions, step shape) plus
+    // the cross-content references; per-type auto-start knobs and the reference
+    // target types are folded in, then everything is rejected in a single E1017
+    // whose `issues[]` lists each problem with its rule family and path — so a
+    // client fixes the whole request in one round-trip.
+    const { issues, refs } = collectWriteViolations({
+      steps: body.steps,
+      data: body.data,
+      startRules: body.startRules ?? undefined,
+      hideRules: body.hideRules ?? undefined,
+      contentType,
+    });
+    if (body.startRules !== undefined || body.hideRules !== undefined) {
+      issues.push(
+        ...validateAutoStartForType(body.startRules, body.hideRules, contentType).map(
+          (message) => ({ rule: 'auto_start' as const, message }),
+        ),
+      );
+    }
+    issues.push(...(await this.contentReferenceIssues(refs, projectId)));
+    if (issues.length > 0) {
+      throw ValidationError.fromIssues(issues);
+    }
 
     if (body.steps) {
-      // Reactive slots (step triggers + button show/hide/disable) only support
-      // client-evaluable conditions — reject event/segment/content-state up front (the
-      // builder omits them there and they'd silently never fire; those belong in
-      // start/hide rules or a checklist item's completeWhen).
-      this.assertStepReactiveConditions(body.steps as unknown[]);
-      // Placement shape + onClick must match the step kind: the placement union is
-      // non-discriminated, so a tooltip given a modal-shape `{position}` (or a modal given
-      // a tooltip-shape `{side,align}`) would silently drop the wrong-shape fields, and an
-      // onClick (click-the-target-to-advance) on a targetless step never fires.
-      this.assertStepShape(body.steps as unknown[]);
       // Per-step theme overrides must reference a live project theme (a null clears
       // the override → inherit the version theme, so only validate non-null strings).
       for (const themeId of new Set(
@@ -611,29 +418,6 @@ export class ApiContentVersionsService {
     }
 
     if (body.startRules !== undefined || body.hideRules !== undefined) {
-      // Enforce the per-type auto-start contract the builder enforces by hiding
-      // controls — the API/MCP must reject settings the content type can't use
-      // (e.g. a frequency on a launcher), not silently accept them.
-      const contentType = (version as { content?: { type?: string | null } | null }).content?.type;
-      const violations = validateAutoStartForType(
-        body.startRules,
-        body.hideRules,
-        contentType ?? undefined,
-      );
-      if (violations.length > 0) {
-        throw new ValidationError(violations.join(' '));
-      }
-      // A tracker fires its event when its start conditions match — evaluated live
-      // in the browser (client-driven), so (matching the builder's tracker editor)
-      // its conditions can't be server-side event / segment / content-state. Other
-      // types' start/hide rules ARE server-evaluated and accept the full union.
-      if (contentType === ContentDataType.TRACKER) {
-        this.assertReactiveConditions(
-          body.startRules?.when,
-          'startRules.when',
-          "a tracker's start conditions",
-        );
-      }
       const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
       if (body.startRules !== undefined) {
         Object.assign(config, compileStartRules(body.startRules ?? undefined, resolvers));
@@ -650,11 +434,9 @@ export class ApiContentVersionsService {
     }
 
     if (body.data !== undefined) {
-      const contentType = (version as { content?: { type?: string | null } | null }).content?.type;
       if (!contentType) {
         throw new ParamsError('Cannot resolve content type for this version');
       }
-      this.assertNonFlowData(body.data, contentType, `a ${contentType}'s content`);
       content.data = compileVersionData(
         contentType,
         body.data,

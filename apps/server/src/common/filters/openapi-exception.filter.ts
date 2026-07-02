@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { OpenAPIError } from '@/common/errors/errors';
+import { OpenAPIError, ValidationError } from '@/common/errors/errors';
 import { ExpiredApiKeyError, InvalidApiKeyError, MissingApiKeyError } from '@/common/errors';
 import { resolveOrigin } from '@/common/http/resolve-origin';
 
@@ -88,11 +88,15 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
         `code: ${errorCode}, status: ${status}`,
     );
 
-    // Return unified OpenAPI error response
+    // Return unified OpenAPI error response. A ValidationError may carry
+    // structured issues (rule / message / path per problem) — include them so
+    // clients can fix everything in one round-trip instead of one error at a time.
+    const issues = exception instanceof ValidationError ? exception.issues : undefined;
     return response.status(status).json({
       error: {
         code: errorCode,
         message,
+        ...(issues?.length ? { issues } : {}),
         doc_url: this.docUrl,
       },
     });

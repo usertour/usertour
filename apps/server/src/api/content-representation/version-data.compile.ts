@@ -5,6 +5,8 @@ import { z } from 'zod';
 
 import { ValidationError } from '@/common/errors/errors';
 
+import { zodIssuesToValidationIssues } from '../shared/zod-issues';
+
 import { dismissVariantFor } from './contract-map';
 import { compileContent } from './representation.compile';
 import { compileResourceCenter } from './resource-center.compile';
@@ -89,11 +91,18 @@ export function compileVersionData(
   }
 }
 
-/** Validate the representation payload against a type schema, mapping failures to E1017. */
+/**
+ * Validate the representation payload against a type schema, mapping failures to
+ * E1017 — reporting EVERY issue (with its `data.…` path), not just the first, so
+ * a client can fix the whole body in one round-trip.
+ */
 function parse<T>(schema: z.ZodType<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
-    throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid data body');
+    const issues = zodIssuesToValidationIssues(result.error, 'data');
+    throw issues.length
+      ? ValidationError.fromIssues(issues)
+      : new ValidationError('Invalid data body');
   }
   return result.data;
 }
