@@ -4,6 +4,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -434,11 +435,26 @@ interface AnnouncementListDetailProps {
 }
 
 export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
-  const { onListAnnouncements, onMarkAnnouncementsSeen, onContentClick, actions, userAttributes } =
-    useResourceCenterContext();
-  const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
-  const [feedAttributes, setFeedAttributes] = useState<Record<string, any> | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    onListAnnouncements,
+    onMarkAnnouncementsSeen,
+    onContentClick,
+    actions,
+    userAttributes,
+    announcementFeedCache,
+    bodyScrollRef,
+  } = useResourceCenterContext();
+  // Navigating into a detail page unmounts this list; the session cache (see
+  // AnnouncementFeedCache) lets Back restore the already-loaded feed instead
+  // of refetching and re-running the seen side effects.
+  const cachedFeed = announcementFeedCache.current;
+  const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>(
+    () => cachedFeed?.announcements ?? [],
+  );
+  const [feedAttributes, setFeedAttributes] = useState<Record<string, any> | undefined>(
+    () => cachedFeed?.attributes,
+  );
+  const [isLoading, setIsLoading] = useState(!cachedFeed);
 
   // The announcement content isn't part of the RC session, so its referenced
   // attributes aren't in the session's userAttributes; the feed returns their
@@ -461,8 +477,13 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   onMarkAnnouncementsSeenRef.current = onMarkAnnouncementsSeen;
 
   // Single load — the feed is capped server-side (newest N), so there is no
-  // pagination to drive.
+  // pagination to drive. Skipped entirely when the session cache has the feed:
+  // fetching again would flash 'Loading...' and re-fire the seen marks (which
+  // would double-decrement the optimistic badge).
   useEffect(() => {
+    if (announcementFeedCache.current) {
+      return;
+    }
     const listAnnouncements = onListAnnouncementsRef.current;
     // No provider (e.g. the builder preview embed passes no announcement
     // handlers): clear the initial loading state so we fall through to the
@@ -484,6 +505,11 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
         }
         setAnnouncements(result.announcements);
         setFeedAttributes(result.attributes);
+        announcementFeedCache.current = {
+          announcements: result.announcements,
+          attributes: result.attributes,
+          scrollTop: 0,
+        };
         // Displaying an announcement in the opened feed is what marks it seen,
         // independent of whether Read more is enabled. Every announcement passes
         // through here before any detail view, so this is the only seen marker —
@@ -506,7 +532,27 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [announcementFeedCache]);
+
+  // Restore the scroll position saved when the list last unmounted (Back from
+  // a detail page), and save it back on unmount. Layout effects: restore must
+  // land before paint, and save must read the container before React detaches
+  // the page.
+  useLayoutEffect(() => {
+    const scrollContainer = bodyScrollRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+    const cached = announcementFeedCache.current;
+    if (cached && cached.scrollTop > 0) {
+      scrollContainer.scrollTop = cached.scrollTop;
+    }
+    return () => {
+      if (announcementFeedCache.current) {
+        announcementFeedCache.current.scrollTop = scrollContainer.scrollTop;
+      }
+    };
+  }, [announcementFeedCache, bodyScrollRef]);
 
   // Click "Read more" — push detail page onto the stack. Seen is marked on feed
   // load, not here, so this only navigates.
@@ -747,7 +793,7 @@ function getHeaderBackgroundStyle(
 }
 
 export const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) => {
-  const { showBackButton, nav, data, themeSetting } = useResourceCenterContext();
+  const { showBackButton, nav, data, themeSetting, bodyScrollRef } = useResourceCenterContext();
   const isHomePage = !showBackButton && nav.activeTabId === (data.tabs[0]?.id ?? '');
 
   const headerBackgroundStyle = useMemo(
@@ -776,7 +822,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         </div>
       )}
       {/* Scrollable inner container */}
-      <div className="relative h-full overflow-y-auto overflow-x-hidden">
+      <div ref={bodyScrollRef} className="relative h-full overflow-y-auto overflow-x-hidden">
         {/* Background layer: absolute, overflows slightly to avoid edge gaps */}
         {isHomePage && !isHeaderNone && (
           <div className="overflow-hidden absolute -inset-x-3 -top-3 pointer-events-none">

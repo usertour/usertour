@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type {
   AnnouncementDetail,
+  AnnouncementListItem,
   ListAnnouncementsResult,
   PopupAnnouncement,
   ResourceCenterData,
@@ -12,6 +13,23 @@ import type {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
+
+// ============================================================================
+// Announcement feed session cache
+// ============================================================================
+
+/**
+ * The feed's state for one browsing session (while the panel stays expanded):
+ * navigating into a detail page unmounts the list, and without this the Back
+ * button would remount it — refetching, re-running the seen side effects, and
+ * losing the scroll position. Cleared when the panel collapses, so the next
+ * open fetches fresh data again.
+ */
+export interface AnnouncementFeedCache {
+  announcements: AnnouncementListItem[];
+  attributes?: Record<string, any>;
+  scrollTop: number;
+}
 
 // ============================================================================
 // Content list display item (resolved from ResourceCenterBlockContentItem)
@@ -101,6 +119,10 @@ export interface ResourceCenterContextValue {
   popupAnnouncement?: PopupAnnouncement;
   /** Any popup interaction (close, backdrop, read more, content action) — marks seen and hides. */
   onPopupDismiss?: () => void;
+  /** Mutable on purpose: reads/writes must not re-render the tree. */
+  announcementFeedCache: React.MutableRefObject<AnnouncementFeedCache | null>;
+  /** The body's scroll container — pages read/restore their scroll position through it. */
+  bodyScrollRef: React.RefObject<HTMLDivElement>;
 
   // Search
   searchQuery: string;

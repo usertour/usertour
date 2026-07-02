@@ -18,6 +18,7 @@ import { ResourceCenterBlockType } from '@usertour/types';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import {
   ResourceCenterRootContext,
+  type AnnouncementFeedCache,
   type ContentListDisplayItem,
   type ResourceCenterNavigationActions,
 } from './context';
@@ -103,6 +104,18 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const isOpen = expanded;
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef<number | null>(null);
+
+  // ── Announcement feed session cache ─────────────────────────────────
+  // Survives detail-page navigation (which unmounts the list) so Back
+  // restores the loaded feed and its scroll position; cleared on collapse so
+  // the next open fetches fresh data.
+  const announcementFeedCache = useRef<AnnouncementFeedCache | null>(null);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) {
+      announcementFeedCache.current = null;
+    }
+  }, [isOpen]);
 
   // ── Visible tabs ────────────────────────────────────────────────────
   // First tab is always kept (so the RC always has a landing tab, even if
@@ -341,6 +354,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onMarkAnnouncementsSeen,
       popupAnnouncement,
       onPopupDismiss,
+      announcementFeedCache,
+      bodyScrollRef,
       launcherHidden,
     }),
     [
@@ -377,6 +392,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onMarkAnnouncementsSeen,
       popupAnnouncement,
       onPopupDismiss,
+      announcementFeedCache,
+      bodyScrollRef,
       launcherHidden,
     ],
   );
