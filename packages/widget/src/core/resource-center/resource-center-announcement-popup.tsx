@@ -68,25 +68,34 @@ const PopupFrameContent = (props: PopupFrameContentProps) => {
 export interface AnnouncementPopupBodyProps {
   popup: PopupAnnouncement;
   onDismiss: () => void;
-  /**
-   * Bubble: navigate to the RC detail view. Omitted for the modal, which
-   * expands the detail content inline — it has the space, so no navigation.
-   */
+  /** Read more — opens the RC on the announcement detail page (both variants). */
   onReadMore?: () => void;
   /** Content action handler (from the RC context in the live popup). */
   onContentClick?: (element: ContentEditorClickableElement) => Promise<void>;
   userAttributes?: UserTourTypes.Attributes;
+  /**
+   * bubble (default): unread dot + base-size title, date line, right-aligned
+   * link-style Read more. modal: h1 title, no dot/date, centered primary
+   * Read more.
+   */
+  variant?: 'bubble' | 'modal';
 }
 
 /**
- * The popup's content: unread dot + title, date line, serialized intro (and
- * inline-expanded detail), and the link-style Read more. Purely
- * presentational — the live popup feeds it RC-context values; the
- * theme-builder preview renders it with a mock payload.
+ * The popup's content — purely presentational: the live popup feeds it
+ * RC-context values; the theme-builder preview renders it with a mock
+ * payload.
  */
 export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
-  const { popup, onDismiss, onReadMore, onContentClick, userAttributes } = props;
-  const [inlineExpanded, setInlineExpanded] = useState(false);
+  const {
+    popup,
+    onDismiss,
+    onReadMore,
+    onContentClick,
+    userAttributes,
+    variant = 'bubble',
+  } = props;
+  const isModal = variant === 'modal';
 
   // The popup renders outside the RC session, so its referenced attributes
   // aren't in the session's userAttributes; the payload carries their resolved
@@ -108,14 +117,10 @@ export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
   );
 
   const handleReadMore = useCallback(() => {
-    if (onReadMore) {
-      onReadMore();
-      return;
-    }
-    setInlineExpanded(true);
+    onReadMore?.();
   }, [onReadMore]);
 
-  const showReadMore = popup.moreEnabled && !inlineExpanded;
+  const showReadMore = popup.moreEnabled;
 
   return (
     // surfacePanel carries the theme's padding (--usertour-widget-popper-
@@ -125,39 +130,47 @@ export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
       className={`${WidgetClass.surfacePanel} relative flex flex-col gap-2 font-sdk text-sdk-base text-sdk-foreground`}
     >
       <PopperClose onClick={onDismiss} />
-      <div className="flex items-center gap-2 pr-8">
-        <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
-        <h3 className="font-sdk-bold">{popup.title}</h3>
-      </div>
-      {popup.time && (
-        <div className="text-xs text-sdk-foreground/50">{formatAnnouncementDate(popup.time)}</div>
+      {isModal ? (
+        <h1 className="text-sdk-h1 font-sdk-bold pr-8">{popup.title}</h1>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 pr-8">
+            <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
+            <h3 className="font-sdk-bold">{popup.title}</h3>
+          </div>
+          {popup.time && (
+            <div className="text-xs text-sdk-foreground/50">
+              {formatAnnouncementDate(popup.time)}
+            </div>
+          )}
+        </>
       )}
       <ContentEditorSerialize
         contents={popup.content}
         onClick={handleContentClick}
         userAttributes={mergedAttributes}
       />
-      {inlineExpanded && popup.moreContent && (
-        <ContentEditorSerialize
-          contents={popup.moreContent}
-          onClick={handleContentClick}
-          userAttributes={mergedAttributes}
-        />
-      )}
-      {showReadMore && (
-        <div className="flex justify-end">
-          {/* Link-style button (same idiom as the checklist dismiss link):
-              text-sdk-link is the theme's linkColor. */}
-          <Button
-            variant="custom"
-            className="inline-flex items-center gap-1 text-sdk-link hover:text-sdk-link/80 font-sdk-bold cursor-pointer"
-            onClick={handleReadMore}
-          >
-            {popup.moreButtonText || 'Read more'}
-            <span aria-hidden="true">→</span>
-          </Button>
-        </div>
-      )}
+      {showReadMore &&
+        (isModal ? (
+          <div className="flex justify-center pt-2">
+            <Button variant="default" onClick={handleReadMore}>
+              {popup.moreButtonText || 'Read more'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            {/* Link-style button (same idiom as the checklist dismiss link):
+                text-sdk-link is the theme's linkColor. */}
+            <Button
+              variant="custom"
+              className="inline-flex items-center gap-1 text-sdk-link hover:text-sdk-link/80 font-sdk-bold cursor-pointer"
+              onClick={handleReadMore}
+            >
+              {popup.moreButtonText || 'Read more'}
+              <span aria-hidden="true">→</span>
+            </Button>
+          </div>
+        ))}
     </div>
   );
 };
@@ -170,10 +183,11 @@ interface AnnouncementPopupModalProps {
   popup: PopupAnnouncement;
   assets?: FrameAssets;
   onDismiss: () => void;
+  onReadMore: () => void;
 }
 
 const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
-  const { popup, assets, onDismiss } = props;
+  const { popup, assets, onDismiss, onReadMore } = props;
   const {
     themeSettings: resourceCenterThemeSettings,
     zIndex,
@@ -206,8 +220,10 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
                 <AnnouncementPopupBody
                   popup={popup}
                   onDismiss={onDismiss}
+                  onReadMore={onReadMore}
                   onContentClick={onContentClick}
                   userAttributes={userAttributes}
+                  variant="modal"
                 />
               </PopupFrameContent>
             </Frame>
@@ -369,7 +385,7 @@ export const ResourceCenterAnnouncementPopup = memo(
     // Bubble "Read more": open the RC on the announcement detail page, then
     // dismiss (which marks seen). switchTab first — the detail ref resolves
     // its block against the active tab.
-    const handleBubbleReadMore = useCallback(() => {
+    const handleReadMore = useCallback(() => {
       if (!popupAnnouncement) {
         return;
       }
@@ -399,6 +415,7 @@ export const ResourceCenterAnnouncementPopup = memo(
           popup={popupAnnouncement}
           assets={assets}
           onDismiss={handleDismiss}
+          onReadMore={handleReadMore}
         />
       );
     }
@@ -407,7 +424,7 @@ export const ResourceCenterAnnouncementPopup = memo(
         popup={popupAnnouncement}
         assets={assets}
         onDismiss={handleDismiss}
-        onReadMore={handleBubbleReadMore}
+        onReadMore={handleReadMore}
       />
     );
   },

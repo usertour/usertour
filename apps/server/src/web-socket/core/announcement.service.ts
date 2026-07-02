@@ -295,10 +295,12 @@ export class AnnouncementService {
   /**
    * Build the self-presenting popup payload for a visible POPUP-level
    * announcement. The popup renders outside both the RC session and the feed,
-   * so everything it needs — detail content, resolved attribute values, and
-   * the announcement's own theme (per version.themeId, resolved through the
-   * same variation-aware pipeline flows use) — is bundled here to avoid a
-   * second round trip at presentation time.
+   * so what it shows — intro content, its resolved attribute values, and the
+   * announcement's own theme (per version.themeId, resolved through the same
+   * variation-aware pipeline flows use) — is bundled here to avoid a second
+   * round trip at presentation time. Detail content is NOT bundled: Read more
+   * navigates into the resource center's detail view, which fetches it on
+   * demand.
    */
   async buildPopupAnnouncement(
     visible: VisibleAnnouncement,
@@ -307,11 +309,10 @@ export class AnnouncementService {
     externalCompanyId: string,
   ): Promise<PopupAnnouncement> {
     const data = (visible.publishedVersion.data ?? {}) as unknown as AnnouncementData;
-    const moreContent = data.enableReadMore ? (data.detailContent ?? null) : null;
 
     const [attributes, themes] = await Promise.all([
       this.resolveContentAttributes(
-        moreContent ? [data.introContent, moreContent] : [data.introContent],
+        [data.introContent],
         environment,
         externalUserId,
         externalCompanyId,
@@ -322,7 +323,7 @@ export class AnnouncementService {
 
     return {
       ...this.buildItemBase(visible.content, visible.publishedVersion),
-      moreContent,
+      moreContent: null,
       attributes,
       popupConfig: data.popupConfig ?? DEFAULT_POPUP_CONFIG,
       themeSettings: theme ? (theme.settings as unknown as ThemeTypesSetting) : undefined,
