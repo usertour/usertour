@@ -393,7 +393,10 @@ ContentListDetail.displayName = 'ContentListDetail';
 // ============================================================================
 
 /**
- * Format a date string into a human-readable label like "Tuesday, Apr 14".
+ * Format a date string into a human-readable label like "Tuesday, Apr 14, 2026".
+ * The year is included so groupAnnouncementsByDate (which groups by this label)
+ * can't merge same-weekday/month/day announcements from different years under one
+ * separator.
  */
 const formatAnnouncementDate = (dateStr: string): string => {
   const date = new Date(dateStr);
@@ -401,6 +404,7 @@ const formatAnnouncementDate = (dateStr: string): string => {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
   });
 };
 
@@ -467,9 +471,17 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
       setIsLoading(false);
       return;
     }
+    // The request is bounded by the SDK's 30s emit timeout; if the user closes
+    // the feed before it resolves, skip the state updates and — critically — the
+    // mark-seen side-effect, so we don't mark (and badge-decrement / count views
+    // for) announcements the user never actually saw.
+    let cancelled = false;
     setIsLoading(true);
     listAnnouncements(null)
       .then((result) => {
+        if (cancelled) {
+          return;
+        }
         setAnnouncements(result.announcements);
         setFeedAttributes(result.attributes);
         // Displaying an announcement in the opened feed is what marks it seen,
@@ -484,7 +496,14 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
           }
         }
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Click "Read more" — push detail page onto the stack. Seen is marked on feed
