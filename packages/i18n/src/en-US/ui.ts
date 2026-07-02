@@ -1014,6 +1014,14 @@ const translations = {
         environment: 'Environment settings',
       },
       scopeNoWrite: 'No write API yet',
+      presets: {
+        placeholder: 'Select preset',
+        aiAgent: 'AI agent (full authoring)',
+        contentAuthoring: 'Content authoring',
+        userDataSync: 'User data sync',
+        readOnly: 'Read-only access',
+        allAccess: 'All access',
+      },
       revealTitle: 'Save your API key now',
       revealDescription:
         "This key is shown only once and can't be retrieved later. Copy and store it somewhere safe before closing this dialog.",

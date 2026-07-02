@@ -9,13 +9,22 @@ import {
   FormMessage,
   Input,
   QuestionTooltip,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
 } from '@usertour/ui';
 import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
 import { useRef } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { ScopesGrid, requiresEnvironmentScope } from '@/components/token-scopes';
+import {
+  SCOPE_PRESETS,
+  ScopesGrid,
+  presetOf,
+  requiresEnvironmentScope,
+} from '@/components/token-scopes';
 import { useAppContext } from '@/contexts/app-context';
 
 /** Shared shape for the create + edit token dialogs. */
@@ -164,9 +173,40 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
             field.onChange(next);
             void trigger('environmentIds');
           };
+          // Preset picker: shows the matching preset when the current selection IS
+          // one, otherwise the placeholder (custom). Applying one replaces the set.
+          const preset = presetOf(field.value);
           return (
             <FormItem>
-              <FormLabel>{t('settings.personalApiKeys.scopesLabel')}</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>{t('settings.personalApiKeys.scopesLabel')}</FormLabel>
+                <Select
+                  value={preset?.key ?? ''}
+                  onValueChange={(key) => {
+                    const chosen = SCOPE_PRESETS.find((p) => p.key === key);
+                    if (chosen) {
+                      setScopes([...chosen.scopes]);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-52">
+                    {/* Manual label: Radix SelectValue treats a controlled '' as a value and
+                        renders blank instead of the placeholder. */}
+                    <span className={preset ? undefined : 'text-muted-foreground'}>
+                      {preset
+                        ? t(preset.labelKey)
+                        : t('settings.personalApiKeys.presets.placeholder')}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SCOPE_PRESETS.map((p) => (
+                      <SelectItem key={p.key} value={p.key}>
+                        {t(p.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <ScopesGrid value={field.value} onChange={setScopes} />
               <FormMessage />
             </FormItem>

@@ -145,6 +145,82 @@ export const requiresEnvironmentScope = (scopes: string[]): boolean =>
 /** All read-level capabilities across every resource (for a "read-only" quick toggle). */
 export const READ_ONLY_CAPABILITIES: string[] = SCOPE_RESOURCES.flatMap((r) => r.read);
 
+// ── Presets ──────────────────────────────────────────────────────────────────
+
+/**
+ * A one-click starting point for the personal-key dialog's scope grid, named by
+ * PURPOSE ("what is this key for") so the safe-minimal choice is the easy one.
+ * Applying a preset replaces the whole scope selection; the grid stays editable
+ * afterwards — any manual change that leaves the exact set turns the picker back
+ * to its placeholder (custom).
+ */
+export interface ScopePreset {
+  key: string;
+  labelKey: string;
+  scopes: string[];
+}
+
+const capsOf = (level: 'read' | 'write', keys: string[]): string[] =>
+  SCOPE_RESOURCES.filter((r) => keys.includes(r.key)).flatMap((r) =>
+    level === 'read' ? r.read : [...r.read, ...(r.write ?? [])],
+  );
+
+export const SCOPE_PRESETS: readonly ScopePreset[] = [
+  {
+    // Everything an authoring agent (e.g. an MCP connection) needs: full content
+    // authoring + end-user data, but NOT environment management.
+    key: 'aiAgent',
+    labelKey: 'settings.personalApiKeys.presets.aiAgent',
+    scopes: [
+      ...capsOf('write', [
+        'content',
+        'theme',
+        'user',
+        'company',
+        'session',
+        'segment',
+        'attribute',
+        'event',
+      ]),
+      ...capsOf('read', ['analytics', 'environment']),
+    ],
+  },
+  {
+    // Content + its authoring dependencies; no end-user data. Environment read so
+    // the key can list environments to publish to.
+    key: 'contentAuthoring',
+    labelKey: 'settings.personalApiKeys.presets.contentAuthoring',
+    scopes: [
+      ...capsOf('write', ['content', 'theme', 'attribute', 'event']),
+      ...capsOf('read', ['environment']),
+    ],
+  },
+  {
+    // Server-side identify/track pipelines: upsert users/companies, nothing else.
+    key: 'userDataSync',
+    labelKey: 'settings.personalApiKeys.presets.userDataSync',
+    scopes: [...capsOf('write', ['user', 'company']), ...capsOf('read', ['environment'])],
+  },
+  {
+    key: 'readOnly',
+    labelKey: 'settings.personalApiKeys.presets.readOnly',
+    scopes: [...READ_ONLY_CAPABILITIES],
+  },
+  {
+    key: 'allAccess',
+    labelKey: 'settings.personalApiKeys.presets.allAccess',
+    scopes: SCOPE_RESOURCES.flatMap((r) => [...r.read, ...(r.write ?? [])]),
+  },
+];
+
+/** The preset exactly matching a scope list (order-independent), or undefined = custom. */
+export const presetOf = (scopes: string[]): ScopePreset | undefined => {
+  const set = new Set(scopes);
+  return SCOPE_PRESETS.find(
+    (p) => p.scopes.length === set.size && p.scopes.every((s) => set.has(s)),
+  );
+};
+
 /** Per-resource levels for display (drops resources with no access). */
 export const summarizeScopes = (
   scopes: string[],
