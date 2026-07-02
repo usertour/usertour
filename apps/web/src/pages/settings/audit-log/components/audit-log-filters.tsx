@@ -45,9 +45,21 @@ const RESOURCE_TYPES = [
   'environment',
   'member',
   'localization',
+  'api_token',
+  'oauth_grant',
+  'sso_provider',
+  'project_sso_settings',
 ];
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Multi-word technical types get a readable dropdown label (rows still show the raw type).
+const RESOURCE_LABELS: Record<string, string> = {
+  api_token: 'API key',
+  oauth_grant: 'Connected app',
+  sso_provider: 'SSO provider',
+  project_sso_settings: 'SSO settings',
+};
 
 /**
  * Filter bar for the audit log. All filters AND together; the server applies them.
@@ -107,7 +119,7 @@ export const AuditLogFilters = ({
   );
   const resourceOpts = withAll(
     t('settings.auditLog.filters.allResources'),
-    RESOURCE_TYPES.map((r) => ({ value: r, label: cap(r) })),
+    RESOURCE_TYPES.map((r) => ({ value: r, label: RESOURCE_LABELS[r] ?? cap(r) })),
   );
   const envOpts = withAll(
     t('settings.auditLog.filters.allEnvironments'),

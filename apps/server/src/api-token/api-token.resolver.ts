@@ -1,5 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import type { PrismaService } from 'nestjs-prisma';
 
+import { AuditWeb } from '@/audit/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
 
@@ -12,6 +14,22 @@ import {
 } from './dto/api-token.dto';
 
 type ApiTokenRow = Awaited<ReturnType<ApiTokenService['listTokens']>>[number];
+
+/**
+ * Personal keys are ACCOUNT-level (no `@RequirePermission` project context), but the
+ * audit log is project-scoped — attribute each entry to the key's own project so
+ * "who minted / rotated / revoked which key" shows up where its project's admins look.
+ */
+const tokenProjectId = async (
+  args: Record<string, unknown>,
+  prisma: PrismaService,
+): Promise<string | undefined> =>
+  (
+    await prisma.apiTokenOnProject.findFirst({
+      where: { apiTokenId: String(args.id) },
+      select: { projectId: true },
+    })
+  )?.projectId ?? undefined;
 
 /**
  * Self-service management of the caller's own API tokens. Authentication is
@@ -29,6 +47,15 @@ export class ApiTokenResolver {
   }
 
   @Mutation(() => CreatedApiToken)
+  // The result's plaintext `token` never reaches the log (SECRET_KEYS redaction).
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'api_token',
+    resourceId: (_args, result) =>
+      String((result as { apiToken?: { id?: string } })?.apiToken?.id ?? ''),
+    resolveProjectId: async (args) =>
+      (args.input as { projectIds?: string[] } | undefined)?.projectIds?.[0],
+  })
   async createApiToken(
     @UserEntity() user: User,
     @Args('input') input: CreateApiTokenInput,
@@ -38,6 +65,7 @@ export class ApiTokenResolver {
   }
 
   @Mutation(() => ApiToken)
+  @AuditWeb({ action: 'update', resourceType: 'api_token', resolveProjectId: tokenProjectId })
   async updateApiToken(
     @UserEntity() user: User,
     @Args('id') id: string,
@@ -48,12 +76,15 @@ export class ApiTokenResolver {
   }
 
   @Mutation(() => CreatedApiToken)
+  // Rotation is an update to the credential; the `operation` field records rotateApiToken.
+  @AuditWeb({ action: 'update', resourceType: 'api_token', resolveProjectId: tokenProjectId })
   async rotateApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<CreatedApiToken> {
     const { token, plaintext } = await this.apiTokenService.rotateToken(user.id, id);
     return { apiToken: this.toModel(token), token: plaintext };
   }
 
   @Mutation(() => Boolean)
+  @AuditWeb({ action: 'delete', resourceType: 'api_token', resolveProjectId: tokenProjectId })
   async deleteApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<boolean> {
     return this.apiTokenService.deleteToken(user.id, id);
   }

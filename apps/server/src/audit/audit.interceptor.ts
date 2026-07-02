@@ -112,7 +112,15 @@ export class AuditInterceptor implements NestInterceptor {
     const gqlCtx = GqlExecutionContext.create(context);
     const req = gqlCtx.getContext()?.req as AuditGqlRequest | undefined;
     const args = (gqlCtx.getArgs() ?? {}) as Record<string, unknown>;
-    const projectId = req?.auditProjectId;
+    let projectId = req?.auditProjectId;
+    if (!projectId && meta.resolveProjectId) {
+      // Account-level mutation: attribute the entry to the resource's own project.
+      try {
+        projectId = (await meta.resolveProjectId(args, this.prisma)) ?? undefined;
+      } catch (error) {
+        this.logger.error('Audit(web): resolveProjectId failed', error as Error);
+      }
+    }
     if (!projectId) {
       // Audited web mutations must also be @RequirePermission-guarded (the guard
       // resolves + stashes projectId). Surface the wiring bug; don't crash.
@@ -322,6 +330,12 @@ async function fetchBefore(
       return environmentId
         ? prisma.bizCompany.findFirst({ where: { externalId: String(id), environmentId } })
         : undefined;
+    case 'api_token':
+      return prisma.apiToken.findUnique({ where: { id: String(id) } });
+    case 'oauth_grant':
+      return prisma.oAuthGrant.findUnique({ where: { id: String(id) } });
+    case 'sso_provider':
+      return prisma.projectSSOIdentityProvider.findUnique({ where: { id: String(id) } });
     default: // content/environment → snapshot policy is 'none' anyway
       return undefined;
   }

@@ -22,10 +22,26 @@ const POLICY: Record<string, SnapshotPolicy> = {
   // Recoverable without an audit snapshot: content via version history, both via soft delete.
   content: 'none',
   environment: 'none',
+
+  // Access-lifecycle resources (who can get in, with what): config-shaped, no PII —
+  // but their rows/results can carry credentials, stripped by SECRET_KEYS below.
+  api_token: 'full',
+  oauth_grant: 'full',
+  sso_provider: 'full',
+  project_sso_settings: 'full',
 };
 
 /** Keys holding user-supplied attribute blobs (potential PII) on biz entities. */
 const PII_KEYS = ['data', 'attributes'];
+
+/**
+ * Keys that hold credentials. Stripped from EVERY stored snapshot regardless of
+ * policy — a secret must never land in the audit log. The concrete offenders:
+ * createApiToken/rotateApiToken results carry the plaintext `token`; ApiToken
+ * rows carry `hashedSecret`; OAuth grants `hashedRefreshToken`; SSO providers
+ * `clientSecret`.
+ */
+const SECRET_KEYS = ['token', 'hashedSecret', 'hashedRefreshToken', 'clientSecret'];
 
 export function snapshotPolicy(resourceType: string): SnapshotPolicy {
   // Unknown types default to `full` so a new resource is captured, not silently dropped.
@@ -41,18 +57,22 @@ export function redactSnapshot(resourceType: string, value: unknown): unknown {
   if (policy === 'none' || value == null) {
     return undefined;
   }
-  if (policy === 'full') {
+  if (typeof value !== 'object' || Array.isArray(value)) {
     return value;
   }
-  // redacted: keep the shape + ids, blank out PII attribute blobs.
-  if (typeof value === 'object' && !Array.isArray(value)) {
-    const out: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+  const out: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+  for (const key of SECRET_KEYS) {
+    if (key in out) {
+      out[key] = '[redacted]';
+    }
+  }
+  if (policy === 'redacted') {
+    // keep the shape + ids, blank out PII attribute blobs.
     for (const key of PII_KEYS) {
       if (key in out) {
         out[key] = '[redacted]';
       }
     }
-    return out;
   }
-  return value;
+  return out;
 }

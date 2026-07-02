@@ -1,3 +1,5 @@
+import type { PrismaService } from 'nestjs-prisma';
+
 /**
  * Domain event emitted on every audited mutation through the open write surface
  * (v2 API + MCP). Audit is its first subscriber; future consumers (webhooks,
@@ -77,4 +79,14 @@ export interface WebAuditMeta {
   resourceId?: (args: Record<string, unknown>, result: unknown) => string;
   /** env-scoped resources: extract environmentId from args (default: none → null). */
   environmentId?: (args: Record<string, unknown>) => string | undefined | null;
+  /**
+   * ACCOUNT-level mutations (no `@RequirePermission` project context — personal
+   * API keys, connected-app grants): resolve the project to attribute the entry
+   * to, e.g. the key's own project. Used only when the permission guard didn't
+   * stash `auditProjectId`.
+   */
+  resolveProjectId?: (
+    args: Record<string, unknown>,
+    prisma: PrismaService,
+  ) => Promise<string | null | undefined>;
 }

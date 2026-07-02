@@ -44,4 +44,32 @@ describe('redactSnapshot', () => {
     expect(redactSnapshot('segment', null)).toBeUndefined();
     expect(redactSnapshot('user', undefined)).toBeUndefined();
   });
+
+  it('strips credential keys from EVERY stored snapshot, regardless of policy', () => {
+    // createApiToken/rotateApiToken result: plaintext token at the top level.
+    expect(redactSnapshot('api_token', { apiToken: { id: 'k1' }, token: 'utp_secret' })).toEqual({
+      apiToken: { id: 'k1' },
+      token: '[redacted]',
+    });
+    // ApiToken row (before-snapshot on update/delete) carries the hash.
+    expect(redactSnapshot('api_token', { id: 'k1', name: 'CI', hashedSecret: 'sha' })).toEqual({
+      id: 'k1',
+      name: 'CI',
+      hashedSecret: '[redacted]',
+    });
+    // OAuth grant refresh lineage + SSO client secret.
+    expect(redactSnapshot('oauth_grant', { id: 'g1', hashedRefreshToken: 'sha' })).toEqual({
+      id: 'g1',
+      hashedRefreshToken: '[redacted]',
+    });
+    expect(redactSnapshot('sso_provider', { id: 'p1', clientSecret: 's3cr3t' })).toEqual({
+      id: 'p1',
+      clientSecret: '[redacted]',
+    });
+    // even on a 'redacted'-policy resource, a stray credential key is stripped too
+    expect(redactSnapshot('user', { externalId: 'e1', token: 'x' })).toEqual({
+      externalId: 'e1',
+      token: '[redacted]',
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
+import { AuditWeb } from '@/audit/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
 
@@ -22,6 +23,19 @@ export class OAuthGrantResolver {
   }
 
   @Mutation(() => Boolean)
+  // Account-level; the audit log is project-scoped, so attribute the entry to the
+  // grant's own project (OAuthGrant.projectId).
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'oauth_grant',
+    resolveProjectId: async (args, prisma) =>
+      (
+        await prisma.oAuthGrant.findUnique({
+          where: { id: String(args.id) },
+          select: { projectId: true },
+        })
+      )?.projectId,
+  })
   async revokeOAuthConnection(@UserEntity() user: User, @Args('id') id: string): Promise<boolean> {
     return this.oauth.revokeConnection(user.id, id);
   }
