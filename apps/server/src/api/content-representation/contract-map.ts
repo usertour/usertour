@@ -32,7 +32,7 @@ export const REP_CONDITION_TYPE_TO_INTERNAL: Record<string, RulesType> = {
   segment: RulesType.SEGMENT,
   current_url: RulesType.CURRENT_PAGE,
   element: RulesType.ELEMENT,
-  flow: RulesType.CONTENT,
+  content_state: RulesType.CONTENT,
   event: RulesType.EVENT,
   text_input: RulesType.TEXT_INPUT,
   text_filled: RulesType.TEXT_FILL,
@@ -45,7 +45,7 @@ export const REP_CONDITION_TYPE_TO_INTERNAL: Record<string, RulesType> = {
  */
 export const REP_ACTION_TYPE_TO_INTERNAL: Record<string, ContentActionsItemType> = {
   goto_step: ContentActionsItemType.STEP_GOTO,
-  start_flow: ContentActionsItemType.FLOW_START,
+  start_content: ContentActionsItemType.FLOW_START,
   navigate: ContentActionsItemType.PAGE_NAVIGATE,
   run_javascript: ContentActionsItemType.JAVASCRIPT_EVALUATE,
 };

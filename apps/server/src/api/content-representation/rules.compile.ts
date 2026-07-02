@@ -158,8 +158,8 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
         elementData: compileTargetToElementData(c.target),
         logic: ELEMENT_LOGIC[c.state] ?? 'present',
       });
-    case 'flow':
-      return rule('content', { contentId: c.flow, logic: CONTENT_LOGIC[c.state] ?? 'seen' });
+    case 'content_state':
+      return rule('content', { contentId: c.content, logic: CONTENT_LOGIC[c.state] ?? 'seen' });
     case 'event':
       return rule('event', {
         eventId: r.eventId(c.event),
@@ -245,8 +245,8 @@ function compileAction(
   switch (a.type) {
     case 'goto_step':
       return rule('step-goto', { stepCvid: r?.stepCvid ? r.stepCvid(a.step) : a.step });
-    case 'start_flow':
-      return rule('flow-start', { contentId: a.flow, ...(a.step ? { stepCvid: a.step } : {}) });
+    case 'start_content':
+      return rule('flow-start', { contentId: a.content, ...(a.step ? { stepCvid: a.step } : {}) });
     case 'navigate':
       // The URL is stored as a Slate rich-text `value` (the builder + runtime read
       // `data.value` and serialize it — this is what lets `{{ attribute }}` work in

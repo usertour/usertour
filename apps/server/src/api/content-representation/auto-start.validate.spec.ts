@@ -113,13 +113,13 @@ describe('validateAutoStartForType', () => {
         {
           type: 'group',
           match: 'all',
-          conditions: [{ type: 'flow', flow: 'f1', state: 'completed' }], // not allowed (nested)
+          conditions: [{ type: 'content_state', content: 'f1', state: 'completed' }], // not allowed (nested)
         },
       ],
     };
     const errs = validateAutoStartForType(start, undefined, 'tracker');
     expect(errs).toContain('tracker content does not support a `segment` start condition.');
-    expect(errs).toContain('tracker content does not support a `flow` start condition.');
+    expect(errs).toContain('tracker content does not support a `content_state` start condition.');
     expect(errs).not.toContain('tracker content does not support a `element` start condition.');
   });
 
@@ -127,7 +127,7 @@ describe('validateAutoStartForType', () => {
     const start: RepresentationStartRules = {
       when: [
         { type: 'segment', segment: 's1', in: true },
-        { type: 'flow', flow: 'f1', state: 'seen' },
+        { type: 'content_state', content: 'f1', state: 'seen' },
       ],
     };
     expect(validateAutoStartForType(start, undefined, 'flow')).toEqual([]);

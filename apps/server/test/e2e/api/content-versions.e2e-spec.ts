@@ -410,19 +410,25 @@ describe('API v2 /content-versions (e2e)', () => {
         token,
       ).send({ startRules: { when } });
 
-    const bannerSeen = await patch([{ type: 'flow', flow: bannerContent.id, state: 'seen' }]);
+    const bannerSeen = await patch([
+      { type: 'content_state', content: bannerContent.id, state: 'seen' },
+    ]);
     expect(bannerSeen.status).toBe(400);
-    const bannerActive = await patch([{ type: 'flow', flow: bannerContent.id, state: 'active' }]);
+    const bannerActive = await patch([
+      { type: 'content_state', content: bannerContent.id, state: 'active' },
+    ]);
     expect(bannerActive.status).toBe(400);
 
     // A checklist IS a valid target → allowed.
-    const ok = await patch([{ type: 'flow', flow: checklistContent.id, state: 'completed' }]);
+    const ok = await patch([
+      { type: 'content_state', content: checklistContent.id, state: 'completed' },
+    ]);
     expect(ok.status).toBe(200);
   });
 
-  it('rejects a start_flow action targeting a non-flow/checklist (400)', async () => {
+  it('rejects a start_content action targeting a non-flow/checklist (400)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-    // start_flow can launch a flow or a checklist — not a banner (the builder never lists it).
+    // start_content can launch a flow or a checklist — not a banner (the builder never lists it).
     const bannerContent = await buildContent(prisma, { projectId, type: 'banner' });
     const flowContent = await buildContent(prisma, { projectId, type: 'flow' });
     const patchSteps = (actions: unknown[]) =>
@@ -443,10 +449,10 @@ describe('API v2 /content-versions (e2e)', () => {
         ],
       });
 
-    const bad = await patchSteps([{ type: 'start_flow', flow: bannerContent.id }]);
+    const bad = await patchSteps([{ type: 'start_content', content: bannerContent.id }]);
     expect(bad.status).toBe(400);
 
-    const ok = await patchSteps([{ type: 'start_flow', flow: flowContent.id }]);
+    const ok = await patchSteps([{ type: 'start_content', content: flowContent.id }]);
     expect(ok.status).toBe(200);
   });
 

@@ -152,8 +152,8 @@ export type RepresentationCondition =
       state: 'present' | 'hidden' | 'disabled' | 'enabled' | 'clicked' | 'unclicked';
     }
   | {
-      type: 'flow';
-      flow: string;
+      type: 'content_state';
+      content: string;
       state: 'seen' | 'unseen' | 'completed' | 'uncompleted' | 'active' | 'inactive';
     }
   | {
@@ -300,18 +300,18 @@ export const representationCondition = z.lazy(() =>
       state: z.enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked']),
     }),
     z.object({
-      type: z.literal('flow'),
-      flow: z
+      type: z.literal('content_state'),
+      content: z
         .string()
         .describe(
-          'contentId of the content whose lifecycle state to check — despite the `flow` key name ' +
-            'this gates on ANY content type (flow, checklist, banner, launcher, resource-center), ' +
-            'e.g. start a tour only after a banner has been `seen` (from list_content).',
+          'contentId of the FLOW or CHECKLIST whose per-user state to check (from list_content). ' +
+            'Only flows and checklists record this state — referencing a banner / launcher / ' +
+            'resource-center / tracker is rejected at write.',
         ),
       state: z
         .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
         .describe(
-          "The referenced content's state for THIS user (any content type, not only flows). seen = started at least once (TRUE from the " +
+          "The referenced flow/checklist's state for THIS user. seen = started at least once (TRUE from the " +
             'moment it opens); unseen = never started; active = currently open/running; inactive = ' +
             'NOT currently running (covers both never-started and ran-then-closed); completed = ' +
             'reached a goal/completion step; uncompleted = not completed. To gate piece B until flow ' +
@@ -408,11 +408,11 @@ export const representationAction = z.discriminatedUnion('type', [
       ),
   }),
   z.object({
-    type: z.literal('start_flow'),
-    flow: z
+    type: z.literal('start_content'),
+    content: z
       .string()
       .describe(
-        'contentId of the flow OR checklist to launch (from list_content) — a raw content id, NOT ' +
+        'contentId of the flow or checklist to launch (from list_content) — a raw content id, NOT ' +
           'a step key (unlike goto_step). Must reference a flow or checklist (a banner / launcher / ' +
           'resource-center / tracker is rejected at write). The target must be PUBLISHED to actually ' +
           'start at runtime; an unknown/dangling id is rejected at validate.',

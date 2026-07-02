@@ -52,7 +52,7 @@ const CONDITION_ERROR_MESSAGES: Record<string, string> = {
   'conditions.errors.segment.selectSegment':
     'segment condition is missing or references an unknown segment',
   'conditions.errors.content.selectContent':
-    'flow condition is missing or references unknown content',
+    'content-state condition is missing or references unknown content',
   'conditions.errors.element.selectElement': 'element condition is missing a target element',
   'conditions.errors.time.enterStart': 'time condition needs a start time',
   'conditions.errors.event.selectEvent':

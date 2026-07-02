@@ -184,8 +184,8 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
     }
     case 'content':
       return {
-        type: 'flow',
-        flow: d.contentId ?? '',
+        type: 'content_state',
+        content: d.contentId ?? '',
         state: (CONTENT_STATE[d.logic] ?? 'seen') as never,
       };
     case 'event':
@@ -275,8 +275,8 @@ export function decompileAction(a: RuleNode): RepresentationAction {
       return { type: 'goto_step', step: d.stepCvid ?? '' };
     case 'flow-start':
       return {
-        type: 'start_flow',
-        flow: d.contentId ?? '',
+        type: 'start_content',
+        content: d.contentId ?? '',
         ...(d.stepCvid ? { step: d.stepCvid } : {}),
       };
     case 'page-navigate':

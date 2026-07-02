@@ -83,7 +83,7 @@ describe('compileConditions — `flow`-state condition gates any content type', 
   // gate on a BANNER (or checklist, etc.) being `seen`. Locks the documented
   // "despite the `flow` name, any content type works" behavior.
   const gateOn = (id: string) =>
-    compileConditions([{ type: 'flow', flow: id, state: 'seen' } as any], r);
+    compileConditions([{ type: 'content_state', content: id, state: 'seen' } as any], r);
 
   it('a banner contentId validates clean (existence-only, type-agnostic)', () => {
     const issues = collectRuleIssues(gateOn('banner-1'), {

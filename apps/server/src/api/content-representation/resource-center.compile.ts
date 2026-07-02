@@ -85,7 +85,7 @@ function compileBlock(
         // No DismissVariant is passed: a resource center has no dismiss action (there's no
         // `resource-center-dismis` handler — the builder registers dismiss only for
         // flow/checklist/banner/launcher). A `dismiss` here is rejected upstream by
-        // assertNonFlowData, so compileActions only ever sees start_flow / navigate here; the
+        // assertNonFlowData, so compileActions only ever sees start_content / navigate here; the
         // `flow-dismis` default would be wrong, but is unreachable. Keep both in sync if that
         // guard ever changes.
         clickedActions: compileActions(b.clickActions ?? []),

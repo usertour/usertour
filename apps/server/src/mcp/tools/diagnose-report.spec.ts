@@ -110,7 +110,7 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
       | Array<{ type: string; name?: string }>
       | undefined;
     expect(inner?.find((c) => c.type === 'segment')?.name).toBe('Pro Users');
-    expect(inner?.find((c) => c.type === 'flow')?.name).toBe('Welcome Tour');
+    expect(inner?.find((c) => c.type === 'content_state')?.name).toBe('Welcome Tour');
   });
 
   it('attaches the user ACTUAL value to user-scoped attribute leaves (present → value, absent → null)', () => {
@@ -156,7 +156,7 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     // Regression guard: segment/content are server-stamped — they must NOT be in LIVE_ONLY.
     const stamped: RulesCondition[] = [flowState(true)];
     const tree = annotateConditions(stamped, decompileConditions(stamped, resolvers), false);
-    expect(tree?.conditions?.[0].type).toBe('flow');
+    expect(tree?.conditions?.[0].type).toBe('content_state');
     expect(tree?.conditions?.[0].status).toBe('matched');
   });
 

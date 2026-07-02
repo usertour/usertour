@@ -128,8 +128,8 @@ describe('decompileAction', () => {
     expect(
       decompileAction({ type: 'flow-start', data: { contentId: 'c1', stepCvid: 'cv0' } }),
     ).toEqual({
-      type: 'start_flow',
-      flow: 'c1',
+      type: 'start_content',
+      content: 'c1',
       step: 'cv0',
     });
     expect(

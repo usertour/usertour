@@ -211,7 +211,7 @@ describe('codec corpus: flow steps are round-trip idempotent', () => {
                 match: 'all',
                 conditions: [
                   { type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' },
-                  { type: 'flow', flow: 'flow-1', state: 'completed' },
+                  { type: 'content_state', content: 'flow-1', state: 'completed' },
                 ],
               },
             ],

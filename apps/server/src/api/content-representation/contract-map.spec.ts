@@ -17,7 +17,11 @@ import {
  */
 describe('contract-map (capability matrix derivations)', () => {
   it('rejects exactly the server-evaluated condition types in reactive slots', () => {
-    expect([...REACTIVE_REJECTED_REP_CONDITION_TYPES].sort()).toEqual(['event', 'flow', 'segment']);
+    expect([...REACTIVE_REJECTED_REP_CONDITION_TYPES].sort()).toEqual([
+      'content_state',
+      'event',
+      'segment',
+    ]);
   });
 
   it('maps every general representation condition type to an internal type', () => {
@@ -29,7 +33,7 @@ describe('contract-map (capability matrix derivations)', () => {
       'segment',
       'current_url',
       'element',
-      'flow',
+      'content_state',
       'event',
       'text_input',
       'text_filled',

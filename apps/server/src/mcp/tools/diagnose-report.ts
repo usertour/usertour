@@ -37,7 +37,7 @@ export type AnnotatedCondition = RepresentationCondition & {
   actual?: unknown;
 };
 
-/** Collect the segment + content(flow) ids referenced anywhere in a condition tree, so the
+/** Collect the segment + content-state ids referenced anywhere in a condition tree, so the
  * MCP layer can batch-resolve their names (the representation keeps them as ids). */
 export const collectConditionRefs = (
   node?: AnnotatedCondition,
@@ -50,9 +50,9 @@ export const collectConditionRefs = (
       for (const c of n.conditions) walk(c);
       return;
     }
-    const ref = n as { type: string; segment?: string; flow?: string };
+    const ref = n as { type: string; segment?: string; content?: string };
     if (ref.type === 'segment' && ref.segment) segmentIds.add(ref.segment);
-    if (ref.type === 'flow' && ref.flow) flowIds.add(ref.flow);
+    if (ref.type === 'content_state' && ref.content) flowIds.add(ref.content);
   };
   walk(node);
   return { segmentIds: [...segmentIds], flowIds: [...flowIds] };
@@ -68,8 +68,9 @@ export const attachConditionNames = (
     for (const c of node.conditions) attachConditionNames(c, nameById);
     return;
   }
-  const ref = node as { type: string; segment?: string; flow?: string };
-  const id = ref.type === 'segment' ? ref.segment : ref.type === 'flow' ? ref.flow : undefined;
+  const ref = node as { type: string; segment?: string; content?: string };
+  const id =
+    ref.type === 'segment' ? ref.segment : ref.type === 'content_state' ? ref.content : undefined;
   if (id && nameById[id]) node.name = nameById[id];
 };
 

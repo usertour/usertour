@@ -247,7 +247,7 @@ export class ApiContentVersionsService {
   /**
    * Reactive condition slots — a step's `triggers[].when` and a button block's
    * `hiddenWhen` / `disabledWhen` — are evaluated LIVE in the browser (the SDK
-   * polls the DOM). The builder omits `event` / `segment` / `flow`-state from these
+   * polls the DOM). The builder omits `event` / `segment` / content-state from these
    * slots because those are server-evaluated and would silently never fire here.
    * The general condition union (accepted by this write API) allows them, so gate
    * it: reject those types in these slots at write, and point authors to start/hide
@@ -297,7 +297,7 @@ export class ApiContentVersionsService {
       const type = (c as { type?: unknown })?.type;
       if (typeof type === 'string' && REACTIVE_REJECTED_REP_CONDITION_TYPES.has(type)) {
         throw new ValidationError(
-          `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / flow-state conditions are server-evaluated and aren't supported here.`,
+          `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
         );
       }
       if (type === 'group') {
@@ -317,7 +317,7 @@ export class ApiContentVersionsService {
    *  - `goto_step` actions anywhere: goto_step navigates between the STEPS of a flow; a non-flow
    *    content type has no steps, so the builder omits it and the runtime leaves it inert / dangling.
    *  - button `hiddenWhen` / `disabledWhen` reactive conditions referencing server-evaluated types
-   *    (event / segment / flow-state): the builder restricts these show/hide/disable rules to
+   *    (event / segment / content-state): the builder restricts these show/hide/disable rules to
    *    client-polled types, and the runtime never re-checks server types mid-session, so the button
    *    would fail open (always shown / enabled). This is the body.data counterpart of the flow-step
    *    guard `assertStepReactiveConditions` (which only covers body.steps).
@@ -345,12 +345,12 @@ export class ApiContentVersionsService {
       const obj = node as Record<string, unknown>;
       if (rejectGotoStep && obj.type === 'goto_step') {
         throw new ValidationError(
-          `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_flow, page_navigate, or dismiss instead.`,
+          `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_content, page_navigate, or dismiss instead.`,
         );
       }
       if (rejectDismiss && obj.type === 'dismiss') {
         throw new ValidationError(
-          `A "dismiss" action can't be used in ${slotHint} (at ${path}). A resource center has no dismiss action — use start_flow or page_navigate, or let its built-in close button dismiss it.`,
+          `A "dismiss" action can't be used in ${slotHint} (at ${path}). A resource center has no dismiss action — use start_content or page_navigate, or let its built-in close button dismiss it.`,
         );
       }
       if (obj.type === 'button') {
@@ -422,9 +422,9 @@ export class ApiContentVersionsService {
   /**
    * Every cross-content reference must point at a FLOW or a CHECKLIST — the only types the
    * builder lets you pick in these spots. Three carriers of the same rule:
-   *  - a content-state condition (`{ type: 'flow', flow, state }`) — only flows/checklists record
+   *  - a content-state condition (`{ type: 'content_state', content, state }`) — only flows/checklists record
    *    the per-user seen/completed/active state it gates on (FLOW_STEP_SEEN / CHECKLIST_SEEN, …);
-   *  - a `start_flow` action (`{ type: 'start_flow', flow }`) — you can launch a flow or a
+   *  - a `start_content` action (`{ type: 'start_content', content }`) — you can launch a flow or a
    *    checklist, not a banner/launcher/RC/tracker;
    *  - a resource-center content-list item (`{ content, contentType }`) — links to a flow/checklist.
    * The write schema accepts any content id in all three, so a reference to a banner/launcher/RC/
@@ -451,10 +451,10 @@ export class ApiContentVersionsService {
         return;
       }
       const obj = node as Record<string, unknown>;
-      if (obj.type === 'flow' && typeof obj.flow === 'string') {
-        refs.push({ id: obj.flow, where, kind: 'A content-state condition' });
-      } else if (obj.type === 'start_flow' && typeof obj.flow === 'string') {
-        refs.push({ id: obj.flow, where, kind: 'A start_flow action' });
+      if (obj.type === 'content_state' && typeof obj.content === 'string') {
+        refs.push({ id: obj.content, where, kind: 'A content-state condition' });
+      } else if (obj.type === 'start_content' && typeof obj.content === 'string') {
+        refs.push({ id: obj.content, where, kind: 'A start_content action' });
       } else if (typeof obj.content === 'string' && typeof obj.contentType === 'string') {
         // A resource-center content-list item: { content: <id>, contentType: 'flow'|'checklist' }.
         refs.push({ id: obj.content, where, kind: 'A resource-center content-list item' });
@@ -465,7 +465,7 @@ export class ApiContentVersionsService {
     };
     collect(body.startRules?.when, 'a start rule');
     collect(body.hideRules?.when, 'a hide rule');
-    collect(body.steps, 'a step'); // start_flow actions live in flow step buttons/triggers/onClick
+    collect(body.steps, 'a step'); // start_content actions live in flow step buttons/triggers/onClick
     collect(body.data, "the content's data");
     if (refs.length === 0) {
       return;
@@ -503,14 +503,14 @@ export class ApiContentVersionsService {
     const resolvers = await this.buildCompileResolvers(projectId);
     const content: Record<string, unknown> = {};
 
-    // Every cross-content reference (content-state condition, start_flow action, RC content-list
+    // Every cross-content reference (content-state condition, start_content action, RC content-list
     // item) can only point at a flow or checklist, the only types the builder lets you pick —
     // reject a wrong-type target before compiling.
     await this.assertContentReferenceTargets(body, projectId);
 
     if (body.steps) {
       // Reactive slots (step triggers + button show/hide/disable) only support
-      // client-evaluable conditions — reject event/segment/flow-state up front (the
+      // client-evaluable conditions — reject event/segment/content-state up front (the
       // builder omits them there and they'd silently never fire; those belong in
       // start/hide rules or a checklist item's completeWhen).
       this.assertStepReactiveConditions(body.steps as unknown[]);
@@ -625,7 +625,7 @@ export class ApiContentVersionsService {
       }
       // A tracker fires its event when its start conditions match — evaluated live
       // in the browser (client-driven), so (matching the builder's tracker editor)
-      // its conditions can't be server-side event / segment / flow-state. Other
+      // its conditions can't be server-side event / segment / content-state. Other
       // types' start/hide rules ARE server-evaluated and accept the full union.
       if (contentType === ContentDataType.TRACKER) {
         this.assertReactiveConditions(
