@@ -7,8 +7,8 @@ import {
   AnnouncementItemBase,
   ContentDataType,
   ContentEditorRoot,
-  DEFAULT_ANNOUNCEMENT_DATA,
 } from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import { BizUser, Environment } from '@/common/types/schema';
 import { extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';

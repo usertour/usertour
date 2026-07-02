@@ -8,9 +8,8 @@ import {
   EventAttributes,
   UserAttributes,
   CompanyAttributes,
-  defaultSettings,
-  standardDarkSettings,
 } from '@usertour/types';
+import { defaultSettings, standardDarkSettings } from '@usertour/constants';
 
 export const initializationThemes: InitThemeInput[] = [
   {

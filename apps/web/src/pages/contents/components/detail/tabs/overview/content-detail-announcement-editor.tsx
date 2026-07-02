@@ -16,11 +16,11 @@ import {
   AnnouncementDistribution,
   ContentActionsItemType,
   ContentEditorElementType,
-  DEFAULT_ANNOUNCEMENT_DATA,
   RulesCondition,
   RulesType,
   Theme,
 } from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import {
   Card,
   CardContent,

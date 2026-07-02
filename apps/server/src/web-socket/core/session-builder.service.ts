@@ -11,7 +11,8 @@ import {
   ThemeVariation,
 } from '@usertour/types';
 import type { AnnouncementData, ResourceCenterAnnouncementBlock } from '@usertour/types';
-import { AnnouncementDistribution, DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/types';
+import { AnnouncementDistribution } from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,

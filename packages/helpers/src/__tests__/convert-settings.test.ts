@@ -1,8 +1,8 @@
+import { defaultSettings } from '@usertour/constants';
 import {
   MissingTooltipTargetBehavior,
   ModalBackdropClickBehavior,
   ThemeTypesSetting,
-  defaultSettings,
 } from '@usertour/types';
 import { convertSettings, convertToCssVars, mergeThemeDefaultSettings } from '../convert-settings';
 
