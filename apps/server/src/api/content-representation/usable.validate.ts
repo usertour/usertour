@@ -203,7 +203,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       validateFlow(asArray<Step>(input.steps), err, warn);
       break;
     case ContentDataType.CHECKLIST:
-      validateChecklist(parseData<ChecklistData>(input.data), err);
+      validateChecklist(parseData<ChecklistData>(input.data), err, warn);
       break;
     case ContentDataType.LAUNCHER:
       validateLauncher(parseData<LauncherData>(input.data), err);
@@ -378,6 +378,7 @@ function validateFlow(
 function validateChecklist(
   data: ChecklistData | null,
   err: (path: string, message: string) => void,
+  warn: (path: string, message: string) => void,
 ): void {
   const items = asArray<ChecklistData['items'][number]>(data?.items);
   if (items.length === 0) {
@@ -395,6 +396,14 @@ function validateChecklist(
       err(
         label,
         'Checklist item does nothing: it has no click action and no completion condition.',
+      );
+    } else if (complete.length === 0) {
+      // Publishable (the click action still works), but the box can never be
+      // checked — the checklist never reaches 100% and its completed event never
+      // fires. Fine for a purely informational row; surface it so it's a choice.
+      warn(
+        label,
+        'Checklist item has no completion condition, so it can never be checked off — the checklist can never reach 100% or fire its completed event. Add a completion condition (e.g. task_clicked) if this item should be completable.',
       );
     }
   });

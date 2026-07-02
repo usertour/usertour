@@ -170,6 +170,22 @@ describe('validateVersionUsable', () => {
       ]);
       expect(r.ok).toBe(true);
     });
+
+    it('warns (not errors) on an item that can never be completed', () => {
+      // click action but no completion condition: publishable, but the box can
+      // never be checked — the checklist never reaches 100%.
+      const r = checklist([
+        { name: 'Task', clickedActions: [{ type: 'x' }], completeConditions: [] },
+      ]);
+      expect(r.ok).toBe(true);
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0].message).toMatch(/never be checked off/);
+      // an item WITH a completion condition gets no such warning
+      const clean = checklist([
+        { name: 'Task', clickedActions: [{ type: 'x' }], completeConditions: [{ type: 'y' }] },
+      ]);
+      expect(clean.warnings).toHaveLength(0);
+    });
   });
 
   describe('launcher', () => {
