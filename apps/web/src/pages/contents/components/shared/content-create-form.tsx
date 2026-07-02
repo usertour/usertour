@@ -21,8 +21,8 @@ import {
 } from '@usertour/ui';
 import { useCreateContentMutation } from '@usertour/hooks';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
-import { ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
-import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
+import { ContentDataType } from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_CHECKLIST_DATA } from '@usertour/constants';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

@@ -29,6 +29,7 @@
     "@usertour/react-context": "workspace:^",
     "@usertour/react-use-size": "workspace:^",
     "@usertour/tailwind": "workspace:*",
+    "@usertour/constants": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour/types": "workspace:^"
   },

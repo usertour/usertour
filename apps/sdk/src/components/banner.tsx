@@ -1,3 +1,4 @@
+import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT } from '@usertour/constants';
 import { AssetAttributes } from '@usertour/frame';
 import {
   BannerRoot,
@@ -7,7 +8,6 @@ import {
   LinkDecoratorContext,
 } from '@usertour/widget';
 import {
-  BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   BannerData,
   BannerEmbedPlacement,
   ContentEditorClickableElement,

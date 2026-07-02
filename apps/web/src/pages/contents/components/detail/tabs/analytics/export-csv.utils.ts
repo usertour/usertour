@@ -1,3 +1,4 @@
+import { flowReasonTitleMap } from '@usertour/constants';
 import { extractQuestionData } from '@usertour/helpers';
 import {
   Attribute,
@@ -11,7 +12,6 @@ import {
   EventAttributes,
   contentEndReason,
   contentStartReason,
-  flowReasonTitleMap,
 } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 

@@ -1,3 +1,4 @@
+import { DEFAULT_BANNER_DATA } from '@usertour/constants';
 import {
   BannerContainer,
   BannerPreview as BannerWidget,
@@ -7,7 +8,6 @@ import {
 import {
   BannerEmbedPlacement,
   type ContentEditorRoot,
-  DEFAULT_BANNER_DATA,
   type ThemeTypesSetting,
 } from '@usertour/types';
 

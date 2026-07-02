@@ -4,7 +4,7 @@
  */
 
 import type { ButtonSemanticType, ButtonContextType, ButtonVariant } from '@usertour/types';
-import { BUTTON_VARIANT_MAP } from '@usertour/types';
+import { BUTTON_VARIANT_MAP } from '@usertour/constants';
 
 /**
  * Normalize stored button type to semantic type

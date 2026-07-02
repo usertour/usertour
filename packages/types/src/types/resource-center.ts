@@ -166,12 +166,6 @@ export interface ResourceCenterData {
   tabs: ResourceCenterTab[];
 }
 
-export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
-  buttonText: 'Help',
-  headerText: 'Resource Center',
-  tabs: [],
-};
-
 // ============================================================================
 // Navigation (used by widget)
 // ============================================================================

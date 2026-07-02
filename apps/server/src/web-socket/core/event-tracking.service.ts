@@ -1,3 +1,4 @@
+import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -31,7 +32,6 @@ import {
   BizEvents,
   CompanyAttributes,
   EventAttributes,
-  trackerSystemReservedEventAttributes,
   UserAttributes,
   ChecklistItemType,
 } from '@usertour/types';

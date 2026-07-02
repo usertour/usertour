@@ -33,13 +33,3 @@ export interface ChecklistItemType {
   onlyShowTask: boolean;
   onlyShowTaskConditions: RulesCondition[];
 }
-
-export const DEFAULT_CHECKLIST_DATA: ChecklistData = {
-  buttonText: 'Get Started',
-  initialDisplay: ChecklistInitialDisplay.EXPANDED,
-  completionOrder: ChecklistCompletionOrder.ANY,
-  preventDismissChecklist: false,
-  autoDismissChecklist: false,
-  items: [],
-  content: [],
-};
