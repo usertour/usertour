@@ -29,8 +29,6 @@ import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentRestoreForm } from '../../../shared/content-restore-form';
 
-const COLLAPSED_COUNT = 5;
-
 type RecordGroup = { key: string; label: string; records: ContentPublishRecord[] };
 
 const groupRecordsByDay = (records: ContentPublishRecord[], t: TFunction): RecordGroup[] => {
@@ -143,11 +141,6 @@ export const PublishHistoryList = () => {
   const [envFilter, setEnvFilter] = useState<string | undefined>(undefined);
   const { recordList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
     useListContentPublishRecordsQuery(contentId, envFilter);
-  // Collapsed by default: old entries are archaeology, not daily reading.
-  // "Show all" reveals the loaded pages and re-arms infinite scroll.
-  const [expanded, setExpanded] = useState(false);
-  const visibleList = expanded ? recordList : recordList.slice(0, COLLAPSED_COUNT);
-  const showAllButton = !expanded && totalCount > COLLAPSED_COUNT;
 
   // Fixed-width dropdown (not pills): pills grow with env count × name length and
   // wrap into a mess; a select stays put no matter how many environments exist.
@@ -163,7 +156,7 @@ export const PublishHistoryList = () => {
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loading || loadingMore,
-    hasNextPage: expanded && hasNextPage,
+    hasNextPage,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -171,7 +164,7 @@ export const PublishHistoryList = () => {
     rootRef(scrollRoot);
   }, [rootRef, scrollRoot]);
 
-  const grouped = useMemo(() => groupRecordsByDay(visibleList, t), [visibleList, t]);
+  const grouped = useMemo(() => groupRecordsByDay(recordList, t), [recordList, t]);
 
   if (loading && recordList.length === 0) {
     return (
@@ -250,27 +243,17 @@ export const PublishHistoryList = () => {
         </div>
       )}
 
-      {showAllButton && (
-        <Button
-          variant="ghost"
-          className="h-8 w-full text-xs text-muted-foreground"
-          onClick={() => setExpanded(true)}
-        >
-          {t('contents.publishHistory.showAll', { count: totalCount })}
-        </Button>
-      )}
-
       {/* Sentry only earns its footprint when there is (or was) more to load —
           a 3-row list that fits on screen doesn't need an "End of history" marker. */}
       <div
         ref={sentryRef}
         className={cn(
           'flex items-center justify-center',
-          expanded && (hasNextPage || recordList.length > 20) ? 'h-10' : 'h-0',
+          hasNextPage || recordList.length > 20 ? 'h-10' : 'h-0',
         )}
       >
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
-        {expanded && !hasNextPage && recordList.length > 20 && (
+        {!hasNextPage && recordList.length > 20 && (
           <span className="text-xs text-muted-foreground">
             {t('contents.publishHistory.endOfHistory')}
           </span>
