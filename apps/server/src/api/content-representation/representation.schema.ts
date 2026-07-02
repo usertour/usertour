@@ -628,7 +628,12 @@ const widthShape = z
 // shape for image/embed width & height.
 const mediaWidthShape = z
   .object({
-    unit: z.enum(['percent', 'pixels']),
+    // percent/pixels only (no `fill` — that's column-only). Since representationBlock is a
+    // discriminatedUnion, this branch's error reaches the caller, so give a clear message.
+    unit: z.enum(['percent', 'pixels'], {
+      error:
+        "An image or embed size uses unit 'percent' or 'pixels' — 'fill' is a column-only unit.",
+    }),
     value: z.number().nonnegative().optional(),
   })
   .optional();
@@ -644,7 +649,10 @@ const spacingShape = z
 const columnJustify = z.enum(['start', 'center', 'end', 'between', 'around', 'evenly']);
 const columnAlign = z.enum(['start', 'center', 'end', 'baseline']);
 export const representationBlock = z.lazy(() =>
-  z.union([
+  // discriminated on `type` (not a plain union): so a bad field on a KNOWN block kind reports
+  // that kind's specific error (e.g. an image's invalid width unit) instead of a generic
+  // "Invalid input" from every branch failing to match.
+  z.discriminatedUnion('type', [
     z.object({
       ...blockBase,
       type: z.literal('text'),

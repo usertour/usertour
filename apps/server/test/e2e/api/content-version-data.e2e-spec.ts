@@ -412,6 +412,8 @@ describe('API v2 version.data codec (e2e)', () => {
         token,
       );
       expect(res.status).toBe(400);
+      // discriminatedUnion surfaces the image branch's error — not a bare "Invalid input"
+      expect(res.body.error.message).toMatch(/percent|pixels|fill/i);
     });
 
     it('rejects an empty image url', async () => {
