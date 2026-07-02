@@ -26,8 +26,9 @@ import type {
  * duplication of the MCP tools' audit declarations): the capability encodes
  * resource + verb, and the actor/env/project come from the request the
  * ApiTokenGuard already populated. Read endpoints (e.g. `*:read`) derive to
- * `null` and are skipped. (v1 `src/openapi` uses a different guard and is not
- * covered here — a separate, small follow-up.)
+ * `null` and are skipped. v1 `src/openapi` (env-AccessToken auth, no
+ * capabilities) is covered via explicit `@Audit` decorators on its write
+ * endpoints; web-admin GraphQL via explicit `@AuditWeb` on lifecycle mutations.
  */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
