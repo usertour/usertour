@@ -333,6 +333,8 @@ async function fetchBefore(
         : undefined;
     case 'api_token':
       return prisma.apiToken.findUnique({ where: { id: String(id) } });
+    case 'access_token':
+      return prisma.accessToken.findUnique({ where: { id: String(id) } });
     case 'oauth_grant':
       return prisma.oAuthGrant.findUnique({ where: { id: String(id) } });
     case 'sso_provider':

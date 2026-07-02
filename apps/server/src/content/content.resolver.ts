@@ -86,6 +86,13 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  // Lifecycle boundary (once per edit session on published content) — audited, unlike
+  // the draft-edit stream (updateContentVersion etc.), whose ledger is version history.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
+  })
   async createContentVersion(@Args('data') data: ContentVersionInput) {
     return await this.contentService.createContentVersion(data);
   }
@@ -104,6 +111,13 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  // Restoring an old version wholesale replaces what's staged for publish — the
+  // classic "who did that?" action.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
+  })
   async restoreContentVersion(@Args('data') { versionId }: VersionIdInput) {
     return await this.contentService.restoreContentVersion(versionId);
   }

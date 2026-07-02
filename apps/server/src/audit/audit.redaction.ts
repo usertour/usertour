@@ -26,6 +26,8 @@ const POLICY: Record<string, SnapshotPolicy> = {
   // Access-lifecycle resources (who can get in, with what): config-shaped, no PII —
   // but their rows/results can carry credentials, stripped by SECRET_KEYS below.
   api_token: 'full',
+  // ak_ value is a public client-side key by design (the SDK ships it) — full is safe.
+  access_token: 'full',
   oauth_grant: 'full',
   sso_provider: 'full',
   project_sso_settings: 'full',

@@ -92,6 +92,14 @@ export class EnvironmentsResolver {
 
   @Mutation(() => AccessToken)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  // The ak_ value is a public client-side key by design (the SDK ships it), so the
+  // snapshot needs no redaction — the audit-worthy fact is the lifecycle itself.
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'access_token',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async createAccessToken(
     @Args('environmentId') environmentId: string,
     @Args('input') input: CreateAccessTokenInput,
@@ -105,6 +113,12 @@ export class EnvironmentsResolver {
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'access_token',
+    resourceId: (a) => String(a.accessTokenId ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async deleteAccessToken(
     @Args('environmentId') environmentId: string,
     @Args('accessTokenId') accessTokenId: string,

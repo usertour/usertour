@@ -46,6 +46,7 @@ const RESOURCE_TYPES = [
   'member',
   'localization',
   'api_token',
+  'access_token',
   'oauth_grant',
   'sso_provider',
   'project_sso_settings',
@@ -56,6 +57,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // Multi-word technical types get a readable dropdown label (rows still show the raw type).
 const RESOURCE_LABELS: Record<string, string> = {
   api_token: 'API key',
+  access_token: 'SDK token',
   oauth_grant: 'Connected app',
   sso_provider: 'SSO provider',
   project_sso_settings: 'SSO settings',
