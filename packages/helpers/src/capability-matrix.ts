@@ -21,8 +21,8 @@ import {
  * representation layer owns its own name mapping in the server codec.
  *
  * (AUTO_START_CAPABILITIES in ./content is the per-type auto-start half of the
- * same idea and predates this file; its tracker `conditionTypes` still uses
- * representation names — harmonizing it here is a follow-up.)
+ * same idea; its tracker `clientConditionsOnly` flag points back at
+ * SERVER_EVALUATED_CONDITION_TYPES here.)
  */
 
 /**

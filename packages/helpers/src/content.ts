@@ -139,30 +139,14 @@ export type AutoStartCapabilities = {
   /** The separate hide-rules card. */
   hideRules: boolean;
   /**
-   * Allowed start-condition `type`s (v2 representation names). `undefined` = all
-   * types allowed; only tracker narrows it. Groups are always allowed (structural)
-   * and their children are checked recursively.
+   * When true, start conditions are a reactive (client-polled) slot — only
+   * client-evaluable condition types are allowed (a tracker fires its event live
+   * in the browser). The concrete allowed set derives from the capability
+   * matrix's SERVER_EVALUATED_CONDITION_TYPES (see ./capability-matrix); only
+   * tracker sets this.
    */
-  conditionTypes?: string[];
+  clientConditionsOnly?: boolean;
 };
-
-// Tracker trigger conditions are limited to these (v2 representation type names) —
-// the client-evaluable subset: everything except the server-evaluated types
-// (SERVER_EVALUATED_CONDITION_TYPES in ./capability-matrix, which the builder's
-// tracker editor derives its filterItems from via CLIENT_EVALUABLE_CONDITION_TYPES).
-// This list states the same rule in representation names, mapped via the rules
-// codec: attribute=user-attr, current_url=current-page, text_filled=text-fill,
-// time_window=time; element / text_input / group unchanged. Harmonizing it into
-// the matrix (one vocabulary) is a follow-up.
-const TRACKER_CONDITION_TYPES = [
-  'group',
-  'attribute',
-  'current_url',
-  'element',
-  'text_input',
-  'text_filled',
-  'time_window',
-];
 
 const NO_AUTO_START_CAPABILITIES: AutoStartCapabilities = {
   frequency: false,
@@ -199,7 +183,7 @@ export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilit
   },
   [ContentDataType.TRACKER]: {
     ...NO_AUTO_START_CAPABILITIES,
-    conditionTypes: TRACKER_CONDITION_TYPES,
+    clientConditionsOnly: true,
   },
 };
 

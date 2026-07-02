@@ -2,6 +2,11 @@ import { AUTO_START_CAPABILITIES } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 
 import {
+  REACTIVE_REJECTED_REP_CONDITION_TYPES,
+  REP_CONDITION_TYPE_TO_INTERNAL,
+} from './contract-map';
+
+import {
   RepresentationCondition,
   RepresentationHideRules,
   RepresentationStartRules,
@@ -19,6 +24,18 @@ import {
  * conditions outside that whitelist are also rejected — recursively, so a banned
  * type nested in a group is caught too.
  */
+// The client-evaluable representation condition types — the general vocabulary
+// minus the server-evaluated set. This is the whitelist for a type whose start
+// conditions are a reactive slot (tracker: clientConditionsOnly). Derived from
+// the capability matrix via the codec's name map, so it can't drift from the
+// builder pickers or the write guards. `unsupported` (not in the map) stays
+// rejected, matching the previous hand-kept whitelist.
+const CLIENT_EVALUABLE_REP_CONDITION_TYPES: ReadonlySet<string> = new Set(
+  Object.keys(REP_CONDITION_TYPE_TO_INTERNAL).filter(
+    (type) => !REACTIVE_REJECTED_REP_CONDITION_TYPES.has(type),
+  ),
+);
+
 export function validateAutoStartForType(
   startRules: RepresentationStartRules | null | undefined,
   hideRules: RepresentationHideRules | null | undefined,
@@ -49,8 +66,8 @@ export function validateAutoStartForType(
     if (startRules.startIfNotComplete !== undefined && !caps.ifCompleted) {
       errs.push(unsupported('`startIfNotComplete`'));
     }
-    if (caps.conditionTypes) {
-      const allowed = new Set(caps.conditionTypes);
+    if (caps.clientConditionsOnly) {
+      const allowed = CLIENT_EVALUABLE_REP_CONDITION_TYPES;
       const offending = new Set<string>();
       const walk = (conds: RepresentationCondition[] | undefined) => {
         for (const c of conds ?? []) {
