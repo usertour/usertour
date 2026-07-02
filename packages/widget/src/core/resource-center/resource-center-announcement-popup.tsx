@@ -384,6 +384,12 @@ export const ResourceCenterAnnouncementPopup = memo(
         const block = tab.blocks.find((item) => item.type === ResourceCenterBlockType.ANNOUNCEMENT);
         if (block) {
           actions.switchTab(tab.id);
+          // Push the list page under the detail page, so Back walks
+          // detail → announcement list → home instead of skipping the list.
+          actions.push({
+            type: ResourceCenterBlockType.ANNOUNCEMENT,
+            blockId: block.id,
+          });
           actions.push({
             type: 'announcement_detail',
             blockId: block.id,
