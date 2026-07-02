@@ -210,7 +210,7 @@ export const eventAttributeCondition = z.object({
 export const taskClickedCondition = z.object({ type: z.literal('task_clicked') });
 /** An event's `where` accepts only event-attribute conditions + groups of them. */
 export const eventWhereCondition: z.ZodType<EventWhereCondition> = z.lazy(() =>
-  z.union([
+  z.discriminatedUnion('type', [
     eventAttributeCondition,
     z.object({
       type: z.literal('group'),
@@ -469,7 +469,7 @@ const questionNameField = z
       'as bare options with no question text.',
   );
 
-export const representationQuestion = z.union([
+export const representationQuestion = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('nps'),
     name: questionNameField,
