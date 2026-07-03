@@ -42,7 +42,8 @@ export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
           width={`${settings?.modal.width}px`}
         >
           <PopperContent>
-            <PopperClose />
+            {/* Anchor to the content panel, not `fixed` — see theme-preview-popper. */}
+            <PopperClose className="absolute" />
             {showTopProgress && (
               <PopperProgress
                 type={progressType}
