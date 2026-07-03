@@ -213,7 +213,8 @@ export function buildWriteTools(): McpTool[] {
         'Restore a historical content version by forking it forward as the new editable DRAFT ' +
         '(config / data / theme / steps copied from it). This only STAGES a draft — despite the ' +
         'name it does NOT change what end-users see; the live/published version is untouched until ' +
-        'you separately `publish_content` this restored draft. Returns the new version.',
+        'you separately `publish_content` this restored draft. To recover a DELETED content, use ' +
+        '`restore_content` instead. Returns the new version.',
       inputSchema: { contentId: z.string(), versionId: z.string() },
       handler: (args, ctx) =>
         ctx.services.contentVersions.restore(
