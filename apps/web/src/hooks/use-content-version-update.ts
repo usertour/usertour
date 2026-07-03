@@ -21,16 +21,19 @@ export const useContentVersionUpdate = () => {
   /**
    * If the current version is published, fork it and return the new editable
    * version ID. Otherwise return the current version ID directly.
+   *
+   * Forward `configOverride` as-is — do NOT fall back to `version.config`. A data
+   * / theme / scheduledAt save calls this with no override and must fork WITHOUT
+   * carrying config: the server then keeps the source version's config (fork) or
+   * leaves the reused draft's config untouched (reuse). Falling back to
+   * version.config made every such save ship this client's pre-edit config,
+   * which the reuse branch would apply — silently reverting a concurrent
+   * targeting edit. Only a real config save passes configOverride.
    */
   const ensureEditableVersionId = useCallback(
     async (configOverride?: ContentConfigObject): Promise<string> => {
       if (!version || !content) throw new Error('Missing version or content');
-      return resolveEditableVersionId(
-        content,
-        version.id,
-        createContentVersion,
-        configOverride ?? version.config,
-      );
+      return resolveEditableVersionId(content, version.id, createContentVersion, configOverride);
     },
     [version, content, createContentVersion],
   );
