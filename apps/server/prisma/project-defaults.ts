@@ -112,8 +112,10 @@ export const backfillProjectDefaults = async (
   prisma: PrismaClient,
 ): Promise<{ total: number; failed: { projectId: string; error: string }[] }> => {
   const projects = await prisma.project.findMany({ select: { id: true } });
+  console.log(`Starting project defaults backfill for ${projects.length} projects...`);
 
   const failed: { projectId: string; error: string }[] = [];
+  let processed = 0;
   for (const { id } of projects) {
     try {
       await prisma.$transaction((tx) => initializeProject(tx, id));
@@ -122,6 +124,13 @@ export const backfillProjectDefaults = async (
         projectId: id,
         error: error instanceof Error ? error.message : String(error),
       });
+    }
+    processed += 1;
+    // Progress ping so a large deploy-time run isn't silent (mirrors migration.ts).
+    if (processed % 50 === 0) {
+      console.log(
+        `Project defaults backfill: ${processed}/${projects.length} projects processed...`,
+      );
     }
   }
   return { total: projects.length, failed };
