@@ -16,7 +16,6 @@ import {
   getDefaultSegments,
   initialization,
   initializationThemes,
-  syncAllProjectDefaults,
 } from '@/common/initialization/initialization';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { PasswordService } from '@/auth/password.service';
@@ -35,39 +34,13 @@ export class AdminService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // Default events/attributes backfill for existing projects is a deploy-time
+    // data migration (prisma/seed.ts → project-defaults), not app runtime, so
+    // it isn't done here — a failure there mustn't take the server down.
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     if (isSelfHostedMode) {
       await this.ensureInstanceSetting();
     }
-    await this.backfillProjectDefaults();
-  }
-
-  /**
-   * Backfill default events/attributes into existing projects before the app
-   * accepts traffic (Nest awaits onModuleInit before listen), so a project
-   * created before a new default event was added — e.g. announcement_seen —
-   * records analytics from the first interaction instead of silently dropping
-   * the first batch.
-   *
-   * Awaited on purpose: idempotent, and steady-state it's cheap (empty scans).
-   * A hard failure (can't enumerate projects) propagates and aborts startup so
-   * it's visible rather than silently swallowed; a single project's failure is
-   * logged at error level but doesn't block the rest (no crash loop over one
-   * bad project).
-   */
-  private async backfillProjectDefaults() {
-    const { total, backfilled, failed } = await syncAllProjectDefaults(this.prisma);
-    if (failed.length > 0) {
-      // One line per failure with its reason — a project that keeps failing here
-      // silently loses analytics for the missing defaults, so the cause must be
-      // in the startup log, not just the id.
-      for (const { projectId, error } of failed) {
-        this.logger.error(`Project defaults backfill failed for ${projectId}: ${error}`);
-      }
-    }
-    this.logger.log(
-      `Project defaults backfill: ${backfilled} backfilled, ${failed.length} failed, ${total} total`,
-    );
   }
 
   /**

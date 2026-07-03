@@ -24,7 +24,7 @@ import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
-import { defaultEvents } from '@/common/initialization/initialization';
+import { defaultEvents } from '@usertour/constants';
 
 type AnalyticsConditions = {
   environmentId: string;
