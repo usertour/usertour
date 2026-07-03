@@ -534,8 +534,15 @@ const AnnouncementContentColumn = () => {
 
   useEffect(() => {
     if (!globalStyle) return;
-    if (introEditorRef.current) introEditorRef.current.style.cssText = globalStyle;
-    if (detailEditorRef.current) detailEditorRef.current.style.cssText = globalStyle;
+    // Pair the themed background with the themed foreground (and the heading /
+    // typography vars) that .usertour-widget-root applies. Applying only the
+    // foreground over the admin's own surface makes text unreadable when the
+    // theme's colors don't match the app's light/dark mode (e.g. a light theme's
+    // dark text on the dark editor). The theme guarantees fg/bg contrast, so
+    // pairing them keeps content legible on the surface it'll render on.
+    const themedStyle = `${globalStyle};background-color: hsl(var(--usertour-background));`;
+    if (introEditorRef.current) introEditorRef.current.style.cssText = themedStyle;
+    if (detailEditorRef.current) detailEditorRef.current.style.cssText = themedStyle;
   }, [globalStyle, data.enableReadMore]);
 
   const projectId = project?.id ?? '';
