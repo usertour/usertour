@@ -218,26 +218,6 @@ const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   );
 };
 
-const AnnouncementAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
-  const { t } = useTranslation();
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <AnalyticsCard
-        title={t('contents.analytics.views.announcement.views')}
-        tooltip={t('contents.analytics.views.announcement.viewsTooltip')}
-        value={analyticsData?.totalViews || 0}
-        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-      />
-      <AnalyticsCard
-        title={t('contents.analytics.views.announcement.uniqueViews')}
-        tooltip={t('contents.analytics.views.announcement.uniqueViewsTooltip')}
-        value={analyticsData?.uniqueViews || 0}
-        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-      />
-    </div>
-  );
-};
-
 export const AnalyticsViews = () => {
   const { analyticsData, loading } = useContentAnalytics();
   const { contentId } = useContentDetailUI();
@@ -255,7 +235,11 @@ export const AnalyticsViews = () => {
     return <TrackerAnalyticsViews analyticsData={analyticsData} />;
   }
   if (contentType === ContentDataType.ANNOUNCEMENT) {
-    return <AnnouncementAnalyticsViews analyticsData={analyticsData} />;
+    // An announcement is seen once per user (ANNOUNCEMENT_SEEN is first-seen
+    // only), so its only metric is Views. A lone number in its own Overview
+    // card reads as an empty card, so it lives in the Performance card header
+    // (see AnalyticsDays) alongside the views trend instead.
+    return null;
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherAnalyticsViews analyticsData={analyticsData} />;

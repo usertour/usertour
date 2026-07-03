@@ -454,9 +454,15 @@ export class SessionBuilderService {
     externalCompanyId: string,
   ): Promise<void> {
     // Announcement state is global; the block is only the navigation entry.
-    // Without one there is nothing to badge or pop.
+    // Require a VISIBLE announcement block: block-level "Only show block if..."
+    // conditions set isVisible=false, and the orchestrator strips those blocks
+    // before shipping. Counting a hidden one would light the badge / self-pop a
+    // popup for a user whose shipped data.tabs no longer contains the block —
+    // Read more would land nowhere and the badge could never be cleared.
     const hasAnnouncementBlock = (resourceCenterData.tabs ?? []).some((tab) =>
-      tab.blocks.some((block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT),
+      tab.blocks.some(
+        (block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT && block.isVisible !== false,
+      ),
     );
     if (!hasAnnouncementBlock) return;
 

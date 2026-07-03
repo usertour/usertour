@@ -1701,6 +1701,7 @@ const translations = {
         },
       },
       chart: {
+        views: 'Views',
         uniqueViews: 'Unique views',
         uniqueCompletions: 'Unique completions',
         totalViews: 'Total views',

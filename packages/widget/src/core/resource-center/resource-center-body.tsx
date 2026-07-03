@@ -473,6 +473,7 @@ interface AnnouncementListDetailProps {
 
 export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
   const {
+    isOpen,
     onListAnnouncements,
     onMarkAnnouncementsSeen,
     onContentClick,
@@ -513,12 +514,26 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   const onMarkAnnouncementsSeenRef = useRef(onMarkAnnouncementsSeen);
   onMarkAnnouncementsSeenRef.current = onMarkAnnouncementsSeen;
 
-  // Single load — the feed is capped server-side (newest N), so there is no
-  // pagination to drive. Skipped entirely when the session cache has the feed:
-  // fetching again would flash 'Loading...' and re-fire the seen marks (which
-  // would double-decrement the optimistic badge).
+  // Load + mark-seen only when the feed is actually VISIBLE to the user, i.e.
+  // the panel is open. The panel collapses via CSS (this component stays
+  // mounted) and nav is persisted across reloads, so a hidden mount — e.g.
+  // restored nav sitting on the Announcements page while the panel is collapsed
+  // — must NOT fetch or silently mark everything (including a pending POPUP)
+  // seen. Depending on isOpen also re-runs on reopen: the cache is cleared on
+  // collapse, so reopening after a new announcement was published refetches and
+  // clears the badge instead of showing stale data.
   useEffect(() => {
-    if (announcementFeedCache.current) {
+    if (!isOpen) {
+      return;
+    }
+    // Same-open-session revisit (Back from a detail page): the cache still holds
+    // the loaded feed — hydrate from it, don't refetch or re-fire the marks
+    // (which would double-decrement the optimistic badge).
+    const cached = announcementFeedCache.current;
+    if (cached) {
+      setAnnouncements(cached.announcements);
+      setFeedAttributes(cached.attributes);
+      setIsLoading(false);
       return;
     }
     const listAnnouncements = onListAnnouncementsRef.current;
@@ -569,7 +584,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     return () => {
       cancelled = true;
     };
-  }, [announcementFeedCache]);
+  }, [isOpen, announcementFeedCache]);
 
   // Restore the scroll position saved when the list last unmounted (Back from
   // a detail page), and save it back on unmount. Layout effects: restore must
@@ -677,9 +692,20 @@ interface AnnouncementDetailViewProps {
 }
 
 export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDetailViewProps) => {
-  const { onGetAnnouncement, onContentClick, userAttributes } = useResourceCenterContext();
+  const { onGetAnnouncement, onContentClick, userAttributes, bodyScrollRef } =
+    useResourceCenterContext();
   const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // List and detail share the body's scroll container. The list saves/restores
+  // its scroll position (for Back), so without this the detail page would open
+  // inheriting the list's scrollTop — mid-page for a long feed. Reset to top on
+  // entry, before paint.
+  useLayoutEffect(() => {
+    if (bodyScrollRef.current) {
+      bodyScrollRef.current.scrollTop = 0;
+    }
+  }, [bodyScrollRef]);
 
   // The SDK passes a fresh onGetAnnouncement identity every render, so depending
   // on it would re-run this fetch (flashing back to 'Loading...' + re-issuing the

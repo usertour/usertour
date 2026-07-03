@@ -58,7 +58,7 @@ export const ResourceCenterBadge = memo(({ count }: ResourceCenterBadgeProps) =>
   return (
     <div
       className={cn(
-        'flex items-center justify-center cursor-pointer',
+        'flex items-center justify-center',
         'size-6 rounded-full',
         'text-xs font-bold',
         'bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground',

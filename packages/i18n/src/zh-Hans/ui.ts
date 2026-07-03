@@ -1608,6 +1608,7 @@ const translations = {
         },
       },
       chart: {
+        views: '浏览量',
         uniqueViews: '独立浏览量',
         uniqueCompletions: '独立完成数',
         totalViews: '总浏览量',
