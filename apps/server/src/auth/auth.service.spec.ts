@@ -11,7 +11,6 @@ import {
 } from '@/common/errors';
 import {
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
-  QUEUE_INITIALIZE_PROJECT,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '@/common/consts/queen';
@@ -111,7 +110,6 @@ describe('AuthService', () => {
         { provide: TwoFactorService, useValue: twoFactor },
         { provide: getQueueToken(QUEUE_SEND_MAGIC_LINK_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_SEND_RESET_PASSWORD_EMAIL), useValue: noopQueue },
-        { provide: getQueueToken(QUEUE_INITIALIZE_PROJECT), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS), useValue: noopQueue },
       ],
     }).compile();
