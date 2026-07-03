@@ -143,6 +143,17 @@ export class ContentService {
           (env) => env.published && env.publishedVersionId === editedVersion.id,
         );
         if (!editedVersionPublished) {
+          // A concurrent save already forked this into an unpublished draft.
+          // Honor the same contract the fork branch does — the returned draft
+          // carries THIS caller's config, with regenerated condition ids — by
+          // applying it here. A data save passes no config and must leave the
+          // draft's targeting untouched.
+          if (config) {
+            return await tx.version.update({
+              where: { id: editedVersion.id },
+              data: { config: duplicateConfig(config as ContentConfigObject) },
+            });
+          }
           return editedVersion;
         }
 

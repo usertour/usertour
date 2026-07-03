@@ -160,26 +160,24 @@ export const useContentVersionUpdate = () => {
         const editableVersionId = await ensureEditableVersionId(cfg);
         const forked = editableVersionId !== version.id;
 
-        // Always write config explicitly. A fork only guarantees an editable
-        // draft exists — when the server reuses a draft a concurrent data save
-        // already forked, it returns that draft WITHOUT our config, so skipping
-        // this on `forked` would drop the targeting. Send ONLY config: partial
-        // scalar updates preserve data/themeId, so this never clobbers a
-        // concurrent data / theme edit (and writes to the new draft when forked).
-        const updated = await updateContentVersion(editableVersionId, {
-          config: cfg,
-        });
-        if (!updated?.id) {
-          throw new Error('Failed to update version');
-        }
-
-        // Fork: createContentVersion doesn't return the parent content's new
-        // editedVersionId, so refetch content to repoint useContentVersion at
-        // the new id (which then cache-and-network-fetches the new version).
-        // The version-list refresh is already done by
-        // useCreateContentVersionMutation's refetchQueries.
         if (forked) {
+          // The fork already applied cfg server-side WITH regenerated condition
+          // ids (both the fork and the draft-reuse branch of createContentVersion
+          // do this). Writing cfg again here would overwrite those fresh ids
+          // with the stale ones this client still holds — on republish the SDK
+          // dedupes conditions by id and would keep evaluating the pre-edit
+          // definition. So only refetch to repoint useContentVersion at the new
+          // draft; don't re-send config.
           await refetchContent();
+        } else {
+          // Editing an existing editable draft (no fork happened): the server
+          // hasn't applied cfg, so write it. ONLY config — partial scalar
+          // updates preserve data/themeId, so this never clobbers a concurrent
+          // data / theme edit.
+          const updated = await updateContentVersion(editableVersionId, { config: cfg });
+          if (!updated?.id) {
+            throw new Error('Failed to update version');
+          }
         }
         return true;
       } catch (error) {
