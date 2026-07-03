@@ -171,7 +171,8 @@ const FlowPreview = ({
         height={'auto'}
         arrowColor={themeSetting?.mainColor?.background}
       >
-        {currentStep.setting.skippable && <PopperClose />}
+        {/* absolute (not fixed) — same reason as the bubble branch above. */}
+        {currentStep.setting.skippable && <PopperClose className="absolute" />}
         {showTopProgress && (
           <PopperProgress
             type={progressType}

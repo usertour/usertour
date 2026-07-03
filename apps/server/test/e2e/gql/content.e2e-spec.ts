@@ -425,6 +425,38 @@ describe('GraphQL content (e2e)', () => {
       expect(rule.data.value).toBe('kept');
     });
 
+    it('fork branch: no config keeps the source version config (ids regenerated)', async () => {
+      // A data / theme save on a published content forks with NO config; the fork
+      // must carry the source version's config (with fresh ids) via the
+      // `config ?? editedVersion.config` fallback, not drop it. Every other fork
+      // test passes a config, so this is the only lock on the no-config path.
+      const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const version = await buildVersion(prisma, {
+        contentId: content.id,
+        sequence: 0,
+        config: configWithCondition('COND_SRC', 'src'),
+      });
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
+      });
+
+      const res = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: ContentVersionInput!) { createContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: version.id } }, // no config
+      });
+      const forked = gqlData(res).createContentVersion;
+      expect(forked.id).not.toBe(version.id); // forked a new version
+
+      const row = await prisma.version.findUnique({ where: { id: forked.id } });
+      const rule = (row?.config as any).autoStartRules[0];
+      expect(rule.data.value).toBe('src'); // source config preserved, not dropped
+      expect(rule.id).not.toBe('COND_SRC'); // ids regenerated on fork
+    });
+
     it('errors for an unknown source version', async () => {
       const res = await graphql(app, {
         token,
@@ -802,13 +834,10 @@ describe('GraphQL content (e2e)', () => {
   describe('deleteContent', () => {
     it('soft-deletes a content and drops its ContentOnEnvironment rows', async () => {
       const { content, version } = await seedContent();
-      await prisma.contentOnEnvironment.create({
-        data: {
-          environmentId,
-          contentId: content.id,
-          published: true,
-          publishedVersionId: version.id,
-        },
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
       });
 
       const res = await graphql(app, {

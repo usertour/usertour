@@ -94,54 +94,27 @@ const initializeProject = async (tx: Prisma.TransactionClient, projectId: string
 };
 
 /**
- * Backfill every project that is missing a default. Two aggregate reads
- * pre-filter to only projects short of the full default set, so once the fleet
- * is backfilled a deploy is just those reads and zero transactions.
+ * Backfill default events / attributes / relations into every project.
  *
- * The counts are scoped to CURRENT default codeNames (`codeName in defaults`),
- * so a project keeping an old, since-removed default doesn't mask a missing new
- * one — a "swap a default out for another" release still re-flags it. NOT
- * detected: a new attribute↔event relation between a pre-existing default event
- * AND attribute (neither codeName changes); that rare case needs a one-off run.
+ * No pre-filter — just run initializeProject on every project. It diffs then
+ * createMany(skipDuplicates), so it writes only the missing rows and inserts
+ * nothing for an already-complete project; the writes are identical whether or
+ * not projects are pre-filtered. A filter would only save the diff reads on
+ * already-complete projects, and this runs once per deploy from prisma/seed.ts
+ * (not per request/boot), so that saving isn't worth the complexity — and
+ * running everything removes any chance of a filter silently skipping a stale
+ * project (which would permanently drop that project's analytics).
  *
- * Each stale project runs in its own transaction; a single failure is collected
- * with its error, not aborting the rest.
+ * Each project runs in its own transaction; a single failure is collected with
+ * its error, not aborting the rest.
  */
 export const backfillProjectDefaults = async (
   prisma: PrismaClient,
-): Promise<{
-  total: number;
-  backfilled: number;
-  failed: { projectId: string; error: string }[];
-}> => {
+): Promise<{ total: number; failed: { projectId: string; error: string }[] }> => {
   const projects = await prisma.project.findMany({ select: { id: true } });
 
-  const defaultEventCodeNames = defaultEvents.map((event) => event.codeName);
-  const defaultAttributeCodeNames = defaultAttributes.map((attribute) => attribute.codeName);
-  const [eventCounts, attributeCounts] = await Promise.all([
-    prisma.event.groupBy({
-      by: ['projectId'],
-      where: { predefined: true, codeName: { in: defaultEventCodeNames } },
-      _count: { _all: true },
-    }),
-    prisma.attribute.groupBy({
-      by: ['projectId'],
-      where: { predefined: true, codeName: { in: defaultAttributeCodeNames } },
-      _count: { _all: true },
-    }),
-  ]);
-  const eventCountByProject = new Map(eventCounts.map((row) => [row.projectId, row._count._all]));
-  const attributeCountByProject = new Map(
-    attributeCounts.map((row) => [row.projectId, row._count._all]),
-  );
-  const stale = projects.filter(
-    ({ id }) =>
-      (eventCountByProject.get(id) ?? 0) < defaultEvents.length ||
-      (attributeCountByProject.get(id) ?? 0) < defaultAttributes.length,
-  );
-
   const failed: { projectId: string; error: string }[] = [];
-  for (const { id } of stale) {
+  for (const { id } of projects) {
     try {
       await prisma.$transaction((tx) => initializeProject(tx, id));
     } catch (error) {
@@ -151,5 +124,5 @@ export const backfillProjectDefaults = async (
       });
     }
   }
-  return { total: projects.length, backfilled: stale.length - failed.length, failed };
+  return { total: projects.length, failed };
 };

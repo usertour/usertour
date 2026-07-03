@@ -42,6 +42,17 @@ export interface VisibleAnnouncement {
 }
 
 /**
+ * Narrow a candidate row to one whose publishedVersion is present. The candidate
+ * gate filters on the publishedVersion relation so it's always set in practice,
+ * but the Prisma include types it as nullable — this keeps that narrowing in one
+ * place instead of repeating the type predicate at every filter site.
+ */
+const hasPublishedVersion = <T extends { publishedVersion: unknown }>(
+  item: T,
+): item is T & { publishedVersion: NonNullable<T['publishedVersion']> } =>
+  item.publishedVersion != null;
+
+/**
  * Single source of the announcement query / targeting / seen pipeline shared by
  * the feed and the launcher badge. Owning it here keeps the two read paths from
  * drifting (which would make the badge count and the feed disagree).
@@ -144,16 +155,11 @@ export class AnnouncementService {
       bizUser,
       externalCompanyId,
     );
-    return visible
-      .filter(
-        (item): item is (typeof visible)[number] & { publishedVersion: { id: string } } =>
-          item.publishedVersion != null,
-      )
-      .map((item) => ({
-        contentId: item.contentId,
-        content: item.content,
-        publishedVersion: item.publishedVersion,
-      }));
+    return visible.filter(hasPublishedVersion).map((item) => ({
+      contentId: item.contentId,
+      content: item.content,
+      publishedVersion: item.publishedVersion,
+    }));
   }
 
   /**
@@ -274,10 +280,7 @@ export class AnnouncementService {
       where: { ...this.announcementCandidateWhere(environment.id), contentId: { in: uniqueIds } },
       include: { publishedVersion: { select: { id: true } } },
     });
-    const visible = candidates.filter(
-      (item): item is (typeof candidates)[number] & { publishedVersion: { id: string } } =>
-        item.publishedVersion != null,
-    );
+    const visible = candidates.filter(hasPublishedVersion);
     if (visible.length === 0) {
       return [];
     }

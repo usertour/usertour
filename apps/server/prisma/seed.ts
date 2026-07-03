@@ -25,7 +25,7 @@ async function main() {
     }
   }
   console.log(
-    `✅ Project defaults backfill: ${defaults.backfilled} backfilled, ${defaults.failed.length} failed, ${defaults.total} total`,
+    `✅ Project defaults backfill: ${defaults.total - defaults.failed.length}/${defaults.total} projects ok, ${defaults.failed.length} failed`,
   );
 }
 

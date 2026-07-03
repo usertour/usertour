@@ -257,10 +257,12 @@ export async function buildVersion(
 }
 
 /**
- * Publish a version into an environment: flips Content.published /
- * publishedVersionId and writes the ContentOnEnvironment row (what
- * publishedContentVersion does). Used by editability / fork tests that need a
- * currently-published version.
+ * Minimal publish for tests: flips Content.published / publishedVersionId and
+ * writes the ContentOnEnvironment row so a version reads as currently published
+ * (editability / fork tests). It does NOT stamp the timestamps the real
+ * publishedContentVersion sets (Content/ContentOnEnvironment.publishedAt, an
+ * announcement's first-publish scheduledAt), so don't use it to test anything
+ * that reads those (e.g. feed ordering).
  */
 export async function publishVersion(
   prisma: PrismaClient,
