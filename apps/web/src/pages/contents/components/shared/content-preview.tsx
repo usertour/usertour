@@ -130,7 +130,10 @@ const FlowPreview = ({
           notchColor={themeSetting?.mainColor?.background}
           showAvatar={showAvatar}
         >
-          {currentStep.setting.skippable && <PopperClose />}
+          {/* Preview isn't in an iframe, so PopperClose's default `fixed` would
+              anchor to the scaled preview container, not the popper. Anchor to
+              the content panel (see theme-preview components). */}
+          {currentStep.setting.skippable && <PopperClose className="absolute" />}
           {showTopProgress && (
             <PopperProgress
               type={progressType}

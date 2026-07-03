@@ -18,6 +18,12 @@ import { AttributeBizTypes, EventAttributes } from '@usertour/types';
  * app's per-project initialization uses — so backfilled rows are byte-identical.
  * Everything is idempotent (createMany skipDuplicates), safe to run on every
  * deploy and across concurrent replicas.
+ *
+ * KEEP IN SYNC: initializeProject below mirrors apps/server
+ * src/common/initialization/initialization.ts's per-project logic (the no-src
+ * production constraint forces the duplication — this file can't import from
+ * src). Only the diff/insert mechanics are duplicated; the default DATA is
+ * shared via @usertour/constants, so the drift-prone part has one source.
  */
 
 const initializeProject = async (tx: Prisma.TransactionClient, projectId: string) => {
@@ -89,10 +95,15 @@ const initializeProject = async (tx: Prisma.TransactionClient, projectId: string
 
 /**
  * Backfill every project that is missing a default. Two aggregate reads
- * pre-filter to only projects short of the full default event / attribute set,
- * so once the fleet is backfilled a deploy is just those reads and zero
- * transactions. (A new attribute↔event relation between a pre-existing default
- * event AND attribute isn't detected here — that rare case needs a one-off run.)
+ * pre-filter to only projects short of the full default set, so once the fleet
+ * is backfilled a deploy is just those reads and zero transactions.
+ *
+ * The counts are scoped to CURRENT default codeNames (`codeName in defaults`),
+ * so a project keeping an old, since-removed default doesn't mask a missing new
+ * one — a "swap a default out for another" release still re-flags it. NOT
+ * detected: a new attribute↔event relation between a pre-existing default event
+ * AND attribute (neither codeName changes); that rare case needs a one-off run.
+ *
  * Each stale project runs in its own transaction; a single failure is collected
  * with its error, not aborting the rest.
  */
@@ -105,15 +116,17 @@ export const backfillProjectDefaults = async (
 }> => {
   const projects = await prisma.project.findMany({ select: { id: true } });
 
+  const defaultEventCodeNames = defaultEvents.map((event) => event.codeName);
+  const defaultAttributeCodeNames = defaultAttributes.map((attribute) => attribute.codeName);
   const [eventCounts, attributeCounts] = await Promise.all([
     prisma.event.groupBy({
       by: ['projectId'],
-      where: { predefined: true },
+      where: { predefined: true, codeName: { in: defaultEventCodeNames } },
       _count: { _all: true },
     }),
     prisma.attribute.groupBy({
       by: ['projectId'],
-      where: { predefined: true },
+      where: { predefined: true, codeName: { in: defaultAttributeCodeNames } },
       _count: { _all: true },
     }),
   ]);

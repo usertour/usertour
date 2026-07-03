@@ -108,6 +108,10 @@ const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, proj
   }
 };
 
+// KEEP IN SYNC: apps/server/prisma/project-defaults.ts's initializeProject
+// mirrors this per-project logic for the deploy-time backfill (it can't import
+// from src — production doesn't ship src). The default DATA is shared via
+// @usertour/constants, so only these diff/insert mechanics are duplicated.
 export const initialization = async (tx: Prisma.TransactionClient, projectId: string) => {
   await initializationAttributes(tx, projectId);
   await initializationEvents(tx, projectId);

@@ -1137,7 +1137,9 @@ export class WebSocketV2Service {
       }
 
       // Returns first-seen announcements with their authoritative published
-      // versionId — gated by the same targeting the feed uses.
+      // versionId. Gated only by the candidate gate (a published announcement in
+      // this env) — NOT by mark-time targeting: a dismiss must persist even after
+      // the user's attributes drift out of the rule (see markAnnouncementsSeen).
       const firstSeen = await this.announcementService.markAnnouncementsSeen(
         environment,
         bizUser,

@@ -256,6 +256,26 @@ export async function buildVersion(
   return version;
 }
 
+/**
+ * Publish a version into an environment: flips Content.published /
+ * publishedVersionId and writes the ContentOnEnvironment row (what
+ * publishedContentVersion does). Used by editability / fork tests that need a
+ * currently-published version.
+ */
+export async function publishVersion(
+  prisma: PrismaClient,
+  args: { environmentId: string; contentId: string; versionId: string },
+) {
+  const { environmentId, contentId, versionId } = args;
+  await prisma.content.update({
+    where: { id: contentId },
+    data: { published: true, publishedVersionId: versionId },
+  });
+  return prisma.contentOnEnvironment.create({
+    data: { environmentId, contentId, published: true, publishedVersionId: versionId },
+  });
+}
+
 export async function buildStep(
   prisma: PrismaClient,
   overrides: Partial<Prisma.StepUncheckedCreateInput> = {},

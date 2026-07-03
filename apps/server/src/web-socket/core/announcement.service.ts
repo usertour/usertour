@@ -144,17 +144,16 @@ export class AnnouncementService {
       bizUser,
       externalCompanyId,
     );
-    return visible.flatMap((item) =>
-      item.publishedVersion
-        ? [
-            {
-              contentId: item.contentId,
-              content: item.content,
-              publishedVersion: item.publishedVersion,
-            },
-          ]
-        : [],
-    );
+    return visible
+      .filter(
+        (item): item is (typeof visible)[number] & { publishedVersion: { id: string } } =>
+          item.publishedVersion != null,
+      )
+      .map((item) => ({
+        contentId: item.contentId,
+        content: item.content,
+        publishedVersion: item.publishedVersion,
+      }));
   }
 
   /**
@@ -246,6 +245,14 @@ export class AnnouncementService {
    * bounded risk is preferable to re-popping dismissed popups. The versionId is
    * derived from the published version here, never taken from the client, so the
    * analytics event can't be pointed at a foreign or stale version.
+   *
+   * Known, accepted trade-off: the candidate gate still requires published +
+   * schedule-reached AT MARK TIME. If an admin unpublishes or reschedules an
+   * announcement in the seconds a user has its popup on screen, that dismiss
+   * isn't recorded and the popup can re-appear if it goes live again. The window
+   * is seconds-wide and admin-triggered; unpublish also deletes the
+   * ContentOnEnvironment row (so there's no version to attribute anyway), so we
+   * keep the gate as-is rather than loosen a data-integrity path for it.
    *
    * The write is a single INSERT .. ON CONFLICT DO NOTHING RETURNING on the
    * (bizUserId, contentId) unique key: idempotent under concurrent marks (feed

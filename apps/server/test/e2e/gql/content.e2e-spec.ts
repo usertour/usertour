@@ -11,6 +11,7 @@ import {
   buildStep,
   buildSubscription,
   buildVersion,
+  publishVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
@@ -300,17 +301,10 @@ describe('GraphQL content (e2e)', () => {
       // createContentVersion only forks when the edited version is published; an
       // unpublished draft is reused in place. Publish so this exercises the fork
       // path it asserts.
-      await prisma.content.update({
-        where: { id: content.id },
-        data: { published: true, publishedVersionId: version.id },
-      });
-      await prisma.contentOnEnvironment.create({
-        data: {
-          environmentId,
-          contentId: content.id,
-          published: true,
-          publishedVersionId: version.id,
-        },
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
       });
 
       const res = await graphql(app, {
@@ -352,17 +346,10 @@ describe('GraphQL content (e2e)', () => {
         config: configWithCondition('COND_SEED', 'old'),
       });
       // Publish the edited version so the next edit forks a fresh draft.
-      await prisma.content.update({
-        where: { id: content.id },
-        data: { published: true, publishedVersionId: version.id },
-      });
-      await prisma.contentOnEnvironment.create({
-        data: {
-          environmentId,
-          contentId: content.id,
-          published: true,
-          publishedVersionId: version.id,
-        },
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
       });
 
       const res = await graphql(app, {
@@ -409,6 +396,33 @@ describe('GraphQL content (e2e)', () => {
       const rule = (row?.config as any).autoStartRules[0];
       expect(rule.data.value).toBe('new'); // #4: caller's config applied, not dropped
       expect(rule.id).not.toBe('COND_SEED'); // condition id regenerated on reuse
+    });
+
+    it('reuse branch: no config leaves the draft config (and its ids) untouched', async () => {
+      // A data / theme save calls createContentVersion with NO config. The reuse
+      // branch must leave the existing draft's config alone — not regenerate its
+      // condition ids (as it would if it mirrored the fork branch's
+      // `config ?? editedVersion.config`), or a concurrent targeting edit's fresh
+      // ids would be churned back out from under it.
+      const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const version = await buildVersion(prisma, {
+        contentId: content.id,
+        sequence: 0,
+        config: configWithCondition('COND_KEPT', 'kept'),
+      });
+
+      const res = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: ContentVersionInput!) { createContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: version.id } }, // no config
+      });
+      expect(gqlData(res).createContentVersion.id).toBe(version.id); // reused, no new version
+
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      const rule = (row?.config as any).autoStartRules[0];
+      expect(rule.id).toBe('COND_KEPT'); // untouched — NOT regenerated
+      expect(rule.data.value).toBe('kept');
     });
 
     it('errors for an unknown source version', async () => {
@@ -473,17 +487,10 @@ describe('GraphQL content (e2e)', () => {
     it('errors updating a published (non-editable) version', async () => {
       const { content, version } = await seedContent();
       // Publish the edited version → it is no longer editable.
-      await prisma.content.update({
-        where: { id: content.id },
-        data: { published: true, publishedVersionId: version.id },
-      });
-      await prisma.contentOnEnvironment.create({
-        data: {
-          environmentId,
-          contentId: content.id,
-          published: true,
-          publishedVersionId: version.id,
-        },
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
       });
 
       const res = await graphql(app, {

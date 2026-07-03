@@ -4,6 +4,7 @@ import {
   BizEvents,
   CompanyAttributes,
   EventAttributes,
+  type ProjectDefaultAttribute,
   UserAttributes,
 } from '@usertour/types';
 
@@ -12,15 +13,9 @@ import {
  * the app's project-creation path (apps/server initialization) and the
  * deploy-time backfill (apps/server/prisma/project-defaults), so a project
  * created before a default was added gets it backfilled with identical rows.
+ * The ProjectDefaultAttribute shape lives in @usertour/types (types package
+ * holds shapes; this package holds the instantiated values).
  */
-export interface ProjectDefaultAttribute {
-  codeName: string;
-  displayName: string;
-  bizType: AttributeBizTypes;
-  dataType: AttributeDataType;
-  description?: string;
-}
-
 export const defaultEvents = [
   {
     displayName: 'Page Viewed',

@@ -50,6 +50,18 @@ export enum AttributeDataType {
   RandomNumber = 7,
 }
 
+/**
+ * Shape of a default project attribute (seeded at project creation and by the
+ * deploy-time backfill). The instantiated lists live in @usertour/constants.
+ */
+export interface ProjectDefaultAttribute {
+  codeName: string;
+  displayName: string;
+  bizType: AttributeBizTypes;
+  dataType: AttributeDataType;
+  description?: string;
+}
+
 export interface SelectItemType {
   id: string;
   name: string;
