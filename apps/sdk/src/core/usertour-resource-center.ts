@@ -129,11 +129,22 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     block: ResourceCenterContentListBlock,
   ): Promise<ResourceCenterBlockContentItem[]> {
     const sessionId = this.getSessionId();
+    // Loading state so a retry (see below) gives feedback for up to the socket's
+    // emit timeout instead of looking inert.
+    this.updateStore({ contentListLoading: true, contentListError: false });
     try {
       const items = await this.socketService.listResourceCenterBlockContent({
         sessionId,
         blockId: block.id,
       });
+
+      // null = the fetch failed (timeout / dropped socket), distinct from an
+      // empty list. Flag the error so the view offers a retry rather than
+      // rendering "No items"; keep the previous items untouched.
+      if (items === null) {
+        this.updateStore({ contentListError: true, contentListLoading: false });
+        return [];
+      }
 
       // Enrich server response with per-item config (icon, navigate URL) from block data.
       // Server already filters items by onlyShowItemConditions, so we trust its list.
@@ -151,11 +162,15 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         };
       });
 
-      this.updateStore({ contentListItems: enrichedItems });
+      this.updateStore({
+        contentListItems: enrichedItems,
+        contentListError: false,
+        contentListLoading: false,
+      });
       return enrichedItems;
     } catch (error) {
       logger.error('Failed to fetch content list items:', error);
-      this.updateStore({ contentListItems: [] });
+      this.updateStore({ contentListError: true, contentListLoading: false });
       return [];
     }
   }
@@ -185,12 +200,14 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   // ── Announcement operations ──────────────────────────────────────────
 
-  async listAnnouncements(): Promise<ListAnnouncementsResult> {
+  async listAnnouncements(): Promise<ListAnnouncementsResult | null> {
     try {
+      // null = load failed (the socket layer already maps timeout/malformed to
+      // null); the feed distinguishes it from an empty feed and offers a retry.
       return await this.socketService.listAnnouncements();
     } catch (error) {
       logger.error('Failed to list announcements:', error);
-      return { announcements: [] };
+      return null;
     }
   }
 

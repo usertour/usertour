@@ -363,7 +363,14 @@ const ContentListItemIcon = memo(
 ContentListItemIcon.displayName = 'ContentListItemIcon';
 
 export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
-  const { contentListItems, onContentListItemClick, searchQuery } = useResourceCenterContext();
+  const {
+    contentListItems,
+    contentListLoading,
+    contentListError,
+    onContentListNavigate,
+    onContentListItemClick,
+    searchQuery,
+  } = useResourceCenterContext();
 
   const filteredItems = useMemo(() => {
     if (!block.showSearchField || !searchQuery.trim()) return contentListItems;
@@ -373,13 +380,30 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
 
   return (
     <div className="flex flex-col gap-3">
-      {filteredItems.length === 0 && (
+      {contentListLoading && (
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
+      )}
+
+      {!contentListLoading && contentListError && (
+        <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
+          <span>Couldn't load.</span>
+          <button
+            type="button"
+            className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
+            onClick={() => onContentListNavigate?.(block)}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!contentListLoading && !contentListError && filteredItems.length === 0 && (
         <div className="py-4 text-center text-sm text-sdk-foreground/50">
           {searchQuery.trim() ? 'No results found' : 'No items'}
         </div>
       )}
 
-      {filteredItems.length > 0 && (
+      {!contentListLoading && !contentListError && filteredItems.length > 0 && (
         <div className="flex flex-col">
           {filteredItems.map((item) => (
             <button
@@ -493,6 +517,11 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     () => cachedFeed?.attributes,
   );
   const [isLoading, setIsLoading] = useState(!cachedFeed);
+  // Feed load failed (timeout / dropped socket). Distinct from an empty feed so
+  // we show a retry instead of "No announcements yet". reloadKey re-runs the
+  // load effect on retry (the cache is left unset on error, so it refetches).
+  const [feedError, setFeedError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // The announcement content isn't part of the RC session, so its referenced
   // attributes aren't in the session's userAttributes; the feed returns their
@@ -547,9 +576,16 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     // for) announcements the user never actually saw.
     let cancelled = false;
     setIsLoading(true);
+    setFeedError(false);
     listAnnouncements()
       .then((result) => {
         if (cancelled) {
+          return;
+        }
+        // null = load failed (timeout / dropped socket). Show a retry instead of
+        // an empty feed, and don't cache — so retry / reopen refetches.
+        if (result === null) {
+          setFeedError(true);
           return;
         }
         setAnnouncements(result.announcements);
@@ -581,7 +617,14 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     return () => {
       cancelled = true;
     };
-  }, [isOpen, announcementFeedCache]);
+  }, [isOpen, announcementFeedCache, reloadKey]);
+
+  // Retry a failed feed load: the cache is unset on error, so bumping reloadKey
+  // re-runs the load effect and refetches.
+  const retryFeed = useCallback(() => {
+    setFeedError(false);
+    setReloadKey((key) => key + 1);
+  }, []);
 
   // Restore the scroll position saved when the list last unmounted (Back from
   // a detail page), and save it back on unmount. Layout effects: restore must
@@ -628,11 +671,25 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
         <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
       )}
 
-      {!isLoading && announcements.length === 0 && (
+      {!isLoading && feedError && (
+        <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
+          <span>Couldn't load announcements.</span>
+          <button
+            type="button"
+            className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
+            onClick={retryFeed}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!isLoading && !feedError && announcements.length === 0 && (
         <div className="py-4 text-center text-sm text-sdk-foreground/50">No announcements yet</div>
       )}
 
       {!isLoading &&
+        !feedError &&
         dateGroups.map((group) => (
           <div key={group.label}>
             {/* Date separator */}
@@ -697,6 +754,10 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
     useResourceCenterContext();
   const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Re-runs the fetch on retry. getAnnouncement returns null on failure; since
+  // the detail is reached from an existing feed item, a null is treated as a
+  // retryable error rather than a silent blank.
+  const [reloadKey, setReloadKey] = useState(0);
 
   // List and detail share the body's scroll container. The list saves/restores
   // its scroll position (for Back), so without this the detail page would open
@@ -729,7 +790,9 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
     getAnnouncement(announcementId)
       .then(setDetail)
       .finally(() => setIsLoading(false));
-  }, [announcementId]);
+  }, [announcementId, reloadKey]);
+
+  const retryDetail = useCallback(() => setReloadKey((key) => key + 1), []);
 
   // Merge the announcement's own resolved attributes (its content isn't part of
   // the RC session, so they aren't in the session's userAttributes) so intro /
@@ -743,7 +806,20 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
     return <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>;
   }
 
-  if (!detail) return null;
+  if (!detail) {
+    return (
+      <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
+        <span>Couldn't load.</span>
+        <button
+          type="button"
+          className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
+          onClick={retryDetail}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3 p-4">

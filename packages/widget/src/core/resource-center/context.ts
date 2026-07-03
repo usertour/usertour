@@ -4,6 +4,7 @@ import type {
   AnnouncementListItem,
   ListAnnouncementsResult,
   PopupAnnouncement,
+  ResourceCenterContentListBlock,
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
@@ -110,9 +111,14 @@ export interface ResourceCenterContextValue {
 
   // Content list
   contentListItems: ContentListDisplayItem[];
+  contentListLoading?: boolean;
+  /** Content-list fetch failed — render a retry instead of "No items". */
+  contentListError?: boolean;
+  /** Re-runs the content-list fetch (used by the error-state retry button). */
+  onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
 
   // Announcements
-  onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
+  onListAnnouncements?: () => Promise<ListAnnouncementsResult | null>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
   onMarkAnnouncementsSeen?: (items: { contentId: string }[]) => Promise<boolean>;
   /** The gated popup payload — when set, the popup renders (gating lives in the SDK). */

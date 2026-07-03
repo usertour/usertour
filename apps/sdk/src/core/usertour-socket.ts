@@ -70,12 +70,15 @@ export interface IUsertourSocket {
   openResourceCenter(params: OpenResourceCenterDto, options?: BatchOptions): Promise<boolean>;
   closeResourceCenter(params: CloseResourceCenterDto, options?: BatchOptions): Promise<boolean>;
   clickResourceCenter(params: ClickResourceCenterDto, options?: BatchOptions): Promise<boolean>;
+  // Read methods return null on failure (timeout / dropped socket / malformed
+  // response) so callers can tell "load failed" from "genuinely empty" and
+  // offer a retry instead of a misleading empty state.
   listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
-  ): Promise<ResourceCenterBlockContentItem[]>;
+  ): Promise<ResourceCenterBlockContentItem[] | null>;
 
   // Announcement operations
-  listAnnouncements(): Promise<ListAnnouncementsResult>;
+  listAnnouncements(): Promise<ListAnnouncementsResult | null>;
   getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null>;
   markAnnouncementsSeen(params: MarkAnnouncementsSeenDto): Promise<boolean>;
 
@@ -475,7 +478,7 @@ export class UsertourSocket implements IUsertourSocket {
 
   async listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
-  ): Promise<ResourceCenterBlockContentItem[]> {
+  ): Promise<ResourceCenterBlockContentItem[] | null> {
     try {
       // EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects instead of
       // hanging the caller forever (see listAnnouncements).
@@ -491,14 +494,16 @@ export class UsertourSocket implements IUsertourSocket {
       if (Array.isArray(result)) {
         return result as ResourceCenterBlockContentItem[];
       }
-      return [];
+      // Not an array = timeout/dropped socket/malformed. Null (not []) so the
+      // caller renders a retryable error, not a misleading empty list.
+      return null;
     } catch (error) {
       logger.error('Failed to list resource center block content:', error);
-      return [];
+      return null;
     }
   }
 
-  async listAnnouncements(): Promise<ListAnnouncementsResult> {
+  async listAnnouncements(): Promise<ListAnnouncementsResult | null> {
     try {
       // EMIT_TIMEOUT bounds the ack (as emitClientMessage does) so a socket
       // buffering during a slow/failed reconnect rejects instead of leaving the
@@ -511,10 +516,12 @@ export class UsertourSocket implements IUsertourSocket {
       if (result && typeof result === 'object' && 'announcements' in result) {
         return result as ListAnnouncementsResult;
       }
-      return { announcements: [] };
+      // Timeout/dropped socket/malformed → null (not an empty feed) so the feed
+      // shows a retryable error instead of "no announcements".
+      return null;
     } catch (error) {
       logger.error('Failed to list announcements:', error);
-      return { announcements: [] };
+      return null;
     }
   }
 

@@ -49,10 +49,12 @@ interface ResourceCenterRootProps {
   onBlockClick?: (blockId: string) => Promise<void>;
   showMadeWith?: boolean;
   contentListItems?: ContentListDisplayItem[];
+  contentListLoading?: boolean;
+  contentListError?: boolean;
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
-  onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
+  onListAnnouncements?: () => Promise<ListAnnouncementsResult | null>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
   onMarkAnnouncementsSeen?: (items: { contentId: string }[]) => Promise<boolean>;
   /** The gated popup payload (gating lives in the SDK — pass undefined to hide). */
@@ -87,6 +89,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onBlockClick,
     showMadeWith = true,
     contentListItems: contentListItemsProp = [],
+    contentListLoading = false,
+    contentListError = false,
     onContentListNavigate,
     onContentListItemClick,
     onLiveChatClick,
@@ -347,6 +351,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       searchQuery,
       setSearchQuery,
       contentListItems: contentListItemsProp,
+      contentListLoading,
+      contentListError,
+      onContentListNavigate,
       onContentListItemClick,
       onLiveChatClick,
       onListAnnouncements,
@@ -385,6 +392,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       searchQuery,
       setSearchQuery,
       contentListItemsProp,
+      contentListLoading,
+      contentListError,
+      onContentListNavigate,
       onContentListItemClick,
       onLiveChatClick,
       onListAnnouncements,

@@ -34,6 +34,8 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     linkUrlDecorator,
     assets,
     contentListItems,
+    contentListLoading,
+    contentListError,
     liveChatActive,
     launcherHidden,
   } = store;
@@ -52,6 +54,8 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     linkUrlDecorator,
     assets,
     contentListItems,
+    contentListLoading,
+    contentListError,
     liveChatActive,
     launcherHidden,
   };
@@ -73,6 +77,8 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     linkUrlDecorator,
     assets,
     contentListItems,
+    contentListLoading,
+    contentListError,
     liveChatActive,
     launcherHidden,
   } = store;
@@ -106,6 +112,8 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onBlockClick={resourceCenter.handleBlockClick}
         showMadeWith={!removeBranding}
         contentListItems={contentListItems ?? []}
+        contentListLoading={contentListLoading === true}
+        contentListError={contentListError === true}
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}
         onLiveChatClick={resourceCenter.handleLiveChatClick}

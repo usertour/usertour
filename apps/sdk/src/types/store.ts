@@ -61,6 +61,10 @@ export type ResourceCenterStore = BaseStore & {
    */
   initialNav?: ResourceCenterNavigationState | null;
   contentListItems?: ResourceCenterBlockContentItem[];
+  /** Content-list fetch in flight (drives the loading state + retry feedback). */
+  contentListLoading?: boolean;
+  /** Content-list fetch failed (timeout / dropped socket) — render a retry, not "No items". */
+  contentListError?: boolean;
   /** When true, the RC panel is visually hidden (a live chat provider is active) */
   liveChatActive?: boolean;
   /** Tracks whether the live chat provider widget is currently open */
