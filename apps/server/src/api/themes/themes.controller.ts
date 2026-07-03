@@ -95,11 +95,18 @@ export class ApiThemesController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.ThemeDelete)
-  @ApiOperation({ summary: 'Delete a theme' })
+  @ApiOperation({
+    summary: 'Delete a theme',
+    description:
+      'Rejected for the default / system theme, and while any live or draft version still uses ' +
+      'the theme (409 E1031 — switch that content to another theme first). Historical versions ' +
+      'do not block deletion.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 204, description: 'Theme deleted' })
   @ApiResponse({ status: 404, description: 'Theme not found' })
+  @ApiResponse({ status: 409, description: 'Theme is used by live or draft content (E1031)' })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

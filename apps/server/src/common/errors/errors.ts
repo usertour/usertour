@@ -303,6 +303,32 @@ export class EventDefinitionInUseError extends OpenAPIError {
   };
 }
 
+/**
+ * Deleting a theme that is still ACTIVELY used — referenced by a live published
+ * version or a content's current draft (version-level themeId or a per-step
+ * override). Without this guard the FK's ON DELETE SET NULL silently strips the
+ * theme from those versions and the SDK stops rendering them (there is no
+ * fallback theme at runtime). Historical-version references don't block.
+ */
+export class ThemeInUseError extends OpenAPIError {
+  code = 'E1031';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete a theme that is used by live or draft content. Switch that content to another theme first.',
+    'zh-CN': '无法删除正被线上或草稿内容使用的主题，请先为这些内容更换主题。',
+  };
+
+  // Same shape as ContentNotPublishableError: the caller may inline the
+  // offending content names so people/agents know what to re-theme.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
 export class SegmentNotFoundError extends OpenAPIError {
   code = 'E1025';
   statusCode = HttpStatus.NOT_FOUND;

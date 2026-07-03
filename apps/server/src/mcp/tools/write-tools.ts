@@ -596,7 +596,10 @@ export function buildWriteTools(): McpTool[] {
       ),
       title: 'Delete a theme',
       capability: Capability.ThemeDelete,
-      description: 'Delete a theme. The project default theme cannot be deleted.',
+      description:
+        'Delete a theme. Rejected for the project default / system themes, and while any live or ' +
+        'draft version still uses the theme (switch that content to another theme first — see ' +
+        'update_content_version themeId). Historical versions do not block deletion.',
       inputSchema: { id: z.string().describe('The theme id.') },
       handler: async (args, ctx) => {
         await ctx.services.themes.delete(String(args.id), ctx.projectId);

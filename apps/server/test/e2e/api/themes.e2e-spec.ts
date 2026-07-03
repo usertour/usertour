@@ -267,6 +267,59 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect((await api('get', `${basePath()}/${id}`, token)).status).toBe(404);
   });
 
+  it('cannot delete a theme used by a draft or live version (409 E1031); deletable once unreferenced', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeDelete,
+      Capability.ThemeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({ name: 'InUse' });
+    const inUseThemeId = created.body.id;
+
+    // a fresh content whose current DRAFT references the theme (buildVersion also
+    // links the version as Content.editedVersionId)
+    const environmentId = (await buildEnvironment(prisma, { projectId })).id;
+    const content = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'flow',
+      name: 'Uses InUse Theme',
+    });
+    const draft = await buildVersion(prisma, {
+      contentId: content.id,
+      sequence: 0,
+      themeId: inUseThemeId,
+    });
+
+    const blocked = await send('delete', `${basePath()}/${inUseThemeId}`, token).send();
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1031');
+    expect(blocked.body.error.message).toContain(content.name);
+
+    // live-published reference blocks too, even after the draft moves off the theme
+    await prisma.contentOnEnvironment.create({
+      data: {
+        environmentId,
+        contentId: content.id,
+        published: true,
+        publishedVersionId: draft.id,
+      },
+    });
+    await buildVersion(prisma, {
+      contentId: content.id,
+      sequence: 1,
+      themeId: defaultThemeId,
+    });
+    const stillBlocked = await send('delete', `${basePath()}/${inUseThemeId}`, token).send();
+    expect(stillBlocked.status).toBe(409);
+    expect(stillBlocked.body.error.code).toBe('E1031');
+
+    // unpublish -> only the HISTORICAL version still references it; that doesn't block
+    await prisma.contentOnEnvironment.deleteMany({ where: { contentId: content.id } });
+    const freed = await send('delete', `${basePath()}/${inUseThemeId}`, token).send();
+    expect(freed.status).toBe(204);
+  });
+
   it('cannot delete the default theme (400 E1017)', async () => {
     const token = await mint([Capability.ThemeDelete]);
     const res = await send('delete', `${basePath()}/${defaultThemeId}`, token).send();
