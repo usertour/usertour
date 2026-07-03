@@ -94,7 +94,10 @@ export const OAuthConsent = () => {
   // capabilities + environments differ). `grantable` is derived from projectId + info.
   useEffect(() => {
     setScopes(grantable);
-    setEnvironmentIds([]);
+    // A single-environment project is unambiguous — pre-select its only environment.
+    // Safe-first "none pre-selected" only protects when there is a choice to make.
+    const envs = info?.projects.find((p) => p.id === projectId)?.environments ?? [];
+    setEnvironmentIds(envs.length === 1 ? [envs[0].id] : []);
   }, [projectId, info]);
 
   const isReadOnly = scopes.length > 0 && scopes.every((s) => READ_ONLY_CAPABILITIES.includes(s));

@@ -15,7 +15,7 @@ import {
   SelectTrigger,
 } from '@usertour/ui';
 import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -72,9 +72,18 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
   const projectPortalRef = useRef<HTMLDivElement>(null);
   // The environment checklist lists the SELECTED project's environments (the form picks
   // one project). On project change we clear the env selection (old-project envs are invalid).
-  const { setValue, trigger } = useFormContext<TokenFormValues>();
+  const { setValue, trigger, getValues } = useFormContext<TokenFormValues>();
   const selectedProjectId = useWatch({ control, name: 'projectIds' })?.[0] ?? '';
   const { environmentList } = useGetUserEnvironmentsQuery(selectedProjectId || undefined);
+
+  // A single-environment project is unambiguous — pre-check its only environment once
+  // the list loads (safe-first "none pre-selected" only protects when there is a choice).
+  // Keyed on the loaded list, not the selection, so un-checking isn't fought.
+  useEffect(() => {
+    if (environmentList?.length === 1 && getValues('environmentIds').length === 0) {
+      setValue('environmentIds', [environmentList[0].id], { shouldValidate: true });
+    }
+  }, [environmentList, getValues, setValue]);
 
   return (
     <div className="space-y-4">
