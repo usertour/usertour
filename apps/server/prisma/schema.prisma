@@ -123,6 +123,9 @@ model Invite {
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @db.Timestamptz(6)
   code      String    @unique @default(cuid())
+  /// Environment ids the invited member may act on once they join (copied to
+  /// UserOnProject on accept). null = all environments.
+  allowedEnvironmentIds Json? @db.JsonB
   expired   Boolean   @default(false)
   canceled  Boolean   @default(false)
   deleted   Boolean   @default(false)
@@ -255,6 +258,10 @@ model UserOnProject {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   role      Role
   actived   Boolean
+  /// Environment ids this member may act on (the third permission dimension,
+  /// mirrors ApiToken.allowedEnvironmentIds). null = all environments; ignored
+  /// for OWNER. Personal API keys inherit this as a ceiling.
+  allowedEnvironmentIds Json? @db.JsonB
   project   Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   user      User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   projectId String?

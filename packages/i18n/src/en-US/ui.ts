@@ -544,7 +544,9 @@ const translations = {
         email: 'Email',
         role: 'Role',
         twoFactor: '2FA',
+        environments: 'Environments',
       },
+      envAll: 'All environments',
       twoFactor: {
         on: 'Enabled',
         off: 'Off',
@@ -560,6 +562,10 @@ const translations = {
         owner: 'Owner',
       },
       invite: {
+        environmentsLabel: 'Environments',
+        environmentsSelect: 'Select environments',
+        environmentsHelp:
+          'Which environments this member can act on (publishing, user data). All = no restriction.',
         title: 'Invite team member',
         nameLabel: 'Name',
         namePlaceholder: 'Enter member name',

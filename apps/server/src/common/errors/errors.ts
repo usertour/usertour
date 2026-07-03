@@ -121,6 +121,19 @@ export class NoPermissionError extends BaseError {
   };
 }
 
+/**
+ * The member's project membership restricts which environments they may act on
+ * (UserOnProject.allowedEnvironmentIds), and this request targets one outside
+ * that set — e.g. publishing to Production with a Development-only membership.
+ */
+export class MemberEnvironmentNotAllowedError extends BaseError {
+  code = 'E0055';
+  messageDict = {
+    en: 'Your project membership does not allow acting on this environment',
+    'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
+  };
+}
+
 export class ContentNotPublishedError extends BaseError {
   code = 'E0014';
   messageDict = {
@@ -949,6 +962,7 @@ const errorMap = {
   E0052: SsoRequiresActiveProviderError,
   E0053: SsoAccessDeniedError,
   E0054: EgressUrlNotAllowedError,
+  E0055: MemberEnvironmentNotAllowedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

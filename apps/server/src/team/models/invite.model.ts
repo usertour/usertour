@@ -43,6 +43,10 @@ export class Invite extends BaseModel {
   @Field(() => Boolean, { nullable: false })
   requireSso: boolean;
 
+  /** Environments the invited member may act on once they join; null = all. */
+  @Field(() => [String], { nullable: true })
+  allowedEnvironmentIds?: string[] | null;
+
   @Field(() => User, { nullable: true })
   user?: User;
 

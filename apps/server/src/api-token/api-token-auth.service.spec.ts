@@ -8,8 +8,11 @@ import { ApiTokenAuthService, type AuthedApiToken } from './api-token-auth.servi
 // assertEnvironmentInScope / allowedEnvironmentIds read only the token's JSON column —
 // no prisma needed, so a dummy is fine.
 const svc = new ApiTokenAuthService({} as unknown as PrismaService);
-const tok = (allowedEnvironmentIds: unknown): AuthedApiToken =>
-  ({ allowedEnvironmentIds }) as unknown as AuthedApiToken;
+const tok = (
+  allowedEnvironmentIds: unknown,
+  memberAllowedEnvironmentIds?: unknown,
+): AuthedApiToken =>
+  ({ allowedEnvironmentIds, memberAllowedEnvironmentIds }) as unknown as AuthedApiToken;
 const env = (id: string): Environment => ({ id }) as unknown as Environment;
 
 describe('ApiTokenAuthService — environment scope', () => {
@@ -33,5 +36,26 @@ describe('ApiTokenAuthService — environment scope', () => {
     expect(() => svc.assertEnvironmentInScope(tok([]), env('e1'))).toThrow(
       EnvironmentNotInTokenScopeError,
     );
+  });
+
+  // The owner's MEMBERSHIP restriction (cached by authorize) is a ceiling: the
+  // token's effective scope = token allowlist ∩ member allowlist. A restricted
+  // member must not escape by minting an unrestricted key.
+  it('member ceiling caps an unrestricted token', () => {
+    expect(svc.allowedEnvironmentIds(tok(null, ['e1']))).toEqual(['e1']);
+    expect(() => svc.assertEnvironmentInScope(tok(null, ['e1']), env('e1'))).not.toThrow();
+    expect(() => svc.assertEnvironmentInScope(tok(null, ['e1']), env('e2'))).toThrow(
+      EnvironmentNotInTokenScopeError,
+    );
+  });
+
+  it('token ∩ member ceiling intersects; disjoint sets can act nowhere', () => {
+    expect(svc.allowedEnvironmentIds(tok(['e1', 'e2'], ['e2', 'e3']))).toEqual(['e2']);
+    expect(svc.allowedEnvironmentIds(tok(['e1'], ['e2']))).toEqual([]);
+    expect(() => svc.assertEnvironmentInScope(tok(['e1'], ['e2']), env('e1'))).toThrow(
+      EnvironmentNotInTokenScopeError,
+    );
+    // null ceiling (owner / unrestricted member) leaves the token's own list intact
+    expect(svc.allowedEnvironmentIds(tok(['e1'], null))).toEqual(['e1']);
   });
 });

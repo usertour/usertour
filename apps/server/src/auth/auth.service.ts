@@ -77,6 +77,10 @@ interface SsoProvisionContext {
 }
 const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
 
+/** Invite.allowedEnvironmentIds (JsonB) -> the membership restriction to copy on accept. */
+const inviteEnvScope = (invite: { allowedEnvironmentIds?: unknown }): string[] | null =>
+  Array.isArray(invite.allowedEnvironmentIds) ? (invite.allowedEnvironmentIds as string[]) : null;
+
 @Injectable()
 export class AuthService implements OnModuleInit {
   private logger = new Logger(AuthService.name);
@@ -395,7 +399,13 @@ export class AuthService implements OnModuleInit {
         const invite = await this.teamService.getValidInviteByCode(inviteCode);
         if (invite) {
           await this.teamService.deleteInvite(tx, inviteCode);
-          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
+          await this.teamService.assignUserToProject(
+            tx,
+            newUser.id,
+            invite.projectId,
+            invite.role,
+            inviteEnvScope(invite),
+          );
         }
       } else {
         const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
@@ -953,7 +963,13 @@ export class AuthService implements OnModuleInit {
         // inside that call does not double-count this very invite as still
         // "pending" — otherwise the last seat is unreachable.
         await this.teamService.deleteInvite(tx, payload.code);
-        await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+        await this.teamService.assignUserToProject(
+          tx,
+          user.id,
+          invite.projectId,
+          invite.role,
+          inviteEnvScope(invite),
+        );
       },
     );
   }
@@ -1404,7 +1420,13 @@ export class AuthService implements OnModuleInit {
       // recheck inside that call does not double-count this very invite as
       // still "pending" — otherwise the last seat is unreachable.
       await this.teamService.deleteInvite(tx, invite.code);
-      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      await this.teamService.assignUserToProject(
+        tx,
+        user.id,
+        invite.projectId,
+        invite.role,
+        inviteEnvScope(invite),
+      );
     });
   }
 }

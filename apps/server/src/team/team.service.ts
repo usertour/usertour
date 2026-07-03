@@ -96,7 +96,14 @@ export class TeamService {
     }
   }
 
-  async changeTeamMemberRole(userId: string, projectId: string, role: Role) {
+  async changeTeamMemberRole(
+    userId: string,
+    projectId: string,
+    role: Role,
+    // undefined = leave the environment restriction unchanged; null = clear
+    // (all environments); array = set (must be the project's live envs).
+    environmentIds?: string[] | null,
+  ) {
     if (!userId || !projectId) {
       throw new ParamsError();
     }
@@ -109,6 +116,18 @@ export class TeamService {
       throw new ParamsError();
     }
 
+    if (environmentIds) {
+      if (environmentIds.length === 0) {
+        throw new ParamsError();
+      }
+      const count = await this.prisma.environment.count({
+        where: { id: { in: environmentIds }, projectId, deleted: false },
+      });
+      if (count !== environmentIds.length) {
+        throw new ParamsError();
+      }
+    }
+
     return await this.prisma.$transaction(async (tx) => {
       if (role === Role.OWNER) {
         // set the owner to admin before changing the role to owner
@@ -117,9 +136,16 @@ export class TeamService {
           data: { role: Role.ADMIN },
         });
       }
+      // An OWNER is always unrestricted — promoting clears any leftover list.
+      const envUpdate =
+        role === Role.OWNER || environmentIds === null
+          ? { allowedEnvironmentIds: Prisma.DbNull }
+          : environmentIds !== undefined
+            ? { allowedEnvironmentIds: environmentIds }
+            : {};
       await tx.userOnProject.updateMany({
         where: { id: userOnProject.id },
-        data: { role },
+        data: { role, ...envUpdate },
       });
     });
   }
@@ -161,9 +187,24 @@ export class TeamService {
     projectId: string,
     name: string,
     role: Role,
+    environmentIds?: string[],
   ) {
     if (role === Role.OWNER) {
       throw new ParamsError();
+    }
+    // Environment restriction (null/undefined = all): every id must be one of
+    // the project's live environments, and an explicit empty list is invalid —
+    // a member who can act nowhere is a config mistake, not a permission level.
+    if (environmentIds) {
+      if (environmentIds.length === 0) {
+        throw new ParamsError();
+      }
+      const count = await this.prisma.environment.count({
+        where: { id: { in: environmentIds }, projectId, deleted: false },
+      });
+      if (count !== environmentIds.length) {
+        throw new ParamsError();
+      }
     }
     const sender = await this.prisma.user.findUnique({
       where: { id: senderUserId },
@@ -216,6 +257,7 @@ export class TeamService {
           role,
           projectId,
           userId: sender.id,
+          allowedEnvironmentIds: environmentIds ?? undefined,
           expiresAt: new Date(Date.now() + INVITE_EXPIRY_MS),
         },
       });
@@ -301,6 +343,7 @@ export class TeamService {
     userId: string,
     projectId: string,
     role: string,
+    allowedEnvironmentIds?: string[] | null,
   ) {
     // Re-check seat limit at accept time — the project may have downgraded
     // since the invite was created, or other invites may have consumed the
@@ -323,6 +366,7 @@ export class TeamService {
         projectId,
         role: role as Role,
         actived: true,
+        allowedEnvironmentIds: allowedEnvironmentIds ?? undefined,
       },
     });
   }

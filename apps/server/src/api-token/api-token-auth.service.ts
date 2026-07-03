@@ -19,7 +19,16 @@ import { hashApiTokenSecret, stripTokenPrefix } from './api-token.crypto';
 /** An authenticated ApiToken row with its project scope loaded. */
 export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
   include: { projects: { select: { projectId: true } } };
-}>;
+}> & {
+  /**
+   * The key OWNER's membership-level environment restriction on the authorized
+   * project (UserOnProject.allowedEnvironmentIds; null/undefined = all, OWNER
+   * exempt). Cached by {@link ApiTokenAuthService.authorize} so the token's
+   * effective environment scope can never exceed its owner's — a restricted
+   * member must not escape their ceiling by minting an unrestricted key.
+   */
+  memberAllowedEnvironmentIds?: string[] | null;
+};
 
 /**
  * Shared ApiToken auth primitives, used by both {@link ApiTokenGuard} (v2
@@ -76,9 +85,18 @@ export class ApiTokenAuthService {
    * deliberately granted every environment).
    */
   allowedEnvironmentIds(token: AuthedApiToken): string[] | null {
-    return Array.isArray(token.allowedEnvironmentIds)
+    const own = Array.isArray(token.allowedEnvironmentIds)
       ? (token.allowedEnvironmentIds as string[])
       : null;
+    // Intersect with the owner's membership ceiling (cached by authorize).
+    const ceiling = token.memberAllowedEnvironmentIds ?? null;
+    if (own === null) {
+      return ceiling;
+    }
+    if (ceiling === null) {
+      return own;
+    }
+    return own.filter((id) => ceiling.includes(id));
   }
 
   /**
@@ -114,6 +132,14 @@ export class ApiTokenAuthService {
     if (!membership) {
       throw new ProjectNotInTokenScopeError();
     }
+    // Cache the owner's membership-level environment ceiling for
+    // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
+    token.memberAllowedEnvironmentIds =
+      membership.role === 'OWNER'
+        ? null
+        : Array.isArray(membership.allowedEnvironmentIds)
+          ? (membership.allowedEnvironmentIds as string[])
+          : null;
     if (capability) {
       const roleOk = roleCan(membership.role as Role, capability);
       const scopeOk = this.scopes(token).includes(capability);

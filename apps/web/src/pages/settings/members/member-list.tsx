@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useMemberList } from '@/hooks/use-member-list';
 import {
   UserAvatar,
@@ -40,7 +41,11 @@ const sortMembers = (members: readonly TeamMember[]) =>
 
 export const SettingsMemberList = () => {
   const { members, loading, refetch } = useMemberList();
+  const { environmentList } = useEnvironmentList();
   const { t } = useTranslation();
+
+  const envNames = (ids: string[]) =>
+    ids.map((id) => environmentList?.find((env) => env.id === id)?.name ?? id).join(', ');
 
   const rows = useMemo(() => sortMembers(members ?? []), [members]);
 
@@ -67,6 +72,19 @@ export const SettingsMemberList = () => {
       header: t('settings.team.columns.role'),
       headerClassName: 'w-28',
       cell: (member) => t(`settings.team.roles.${member.role.toLowerCase()}`, member.role),
+    },
+    {
+      header: t('settings.team.columns.environments'),
+      headerClassName: 'hidden lg:table-cell',
+      className: 'hidden lg:table-cell max-w-48 truncate',
+      cell: (member) =>
+        member.allowedEnvironmentIds ? (
+          <span title={envNames(member.allowedEnvironmentIds)}>
+            {envNames(member.allowedEnvironmentIds)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">{t('settings.team.envAll')}</span>
+        ),
     },
     {
       header: t('settings.team.columns.twoFactor'),

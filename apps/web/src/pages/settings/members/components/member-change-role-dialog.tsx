@@ -14,9 +14,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FacetedMultiSelect,
+  FormDescription,
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
+import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
 import { type TeamMember, TeamMemberRole } from '@usertour/types';
 import { z } from 'zod';
@@ -38,6 +41,7 @@ interface MemberChangeRoleDialogProps {
 
 const schema = z.object({
   role: z.string(),
+  environmentIds: z.array(z.string()).min(1, 'Select at least one environment'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -46,11 +50,16 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
   const { projectId, open, onOpenChange, data, onSubmit } = props;
   const { invoke } = useChangeTeamMemberRoleMutation();
   const { t } = useTranslation();
+  const { environmentList } = useEnvironmentList();
+
+  // null restriction = every environment selected in the picker.
+  const initialEnvironmentIds = () =>
+    data.allowedEnvironmentIds ?? (environmentList ?? []).map((env) => env.id);
 
   const state = useSettingsForm<FormValues>({
     schema,
-    defaultValues: { role: data.role },
-    submit: async ({ role }) => {
+    defaultValues: { role: data.role, environmentIds: initialEnvironmentIds() },
+    submit: async ({ role, environmentIds }) => {
       if (!data.userId) {
         // A bare `return` here would land in useSettingsForm's success
         // path — success toast + form reset, dialog stays open. Treat
@@ -58,7 +67,10 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
         // happening.
         throw new Error(t('settings.team.changeRole.failure'));
       }
-      const success = await invoke(projectId, data.userId, role);
+      // Full selection clears the restriction (null = all, includes future envs).
+      const restriction =
+        environmentIds.length === (environmentList?.length ?? 0) ? null : environmentIds;
+      const success = await invoke(projectId, data.userId, role, restriction);
       if (!success) {
         throw new Error(t('settings.team.changeRole.failure'));
       }
@@ -69,10 +81,10 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
 
   useEffect(() => {
     if (open) {
-      state.form.reset({ role: data.role });
+      state.form.reset({ role: data.role, environmentIds: initialEnvironmentIds() });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, data.role]);
+  }, [open, data.role, data.allowedEnvironmentIds, environmentList]);
 
   return (
     <SettingsDialogForm
@@ -127,6 +139,32 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
             </FormItem>
           );
         }}
+      />
+      <FormField
+        control={state.form.control}
+        name="environmentIds"
+        render={({ field }) => (
+          <FormItem className="mt-4">
+            <FormLabel>{t('settings.team.invite.environmentsLabel')}</FormLabel>
+            <FormControl>
+              {/* Block wrapper: the select is an inline-flex button and would
+                  otherwise share a line with the (inline) form label. */}
+              <div>
+                <FacetedMultiSelect
+                  label={t('settings.team.invite.environmentsSelect')}
+                  options={(environmentList ?? []).map((env) => ({
+                    label: env.name,
+                    value: env.id,
+                  }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              </div>
+            </FormControl>
+            <FormDescription>{t('settings.team.invite.environmentsHelp')}</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
       />
     </SettingsDialogForm>
   );

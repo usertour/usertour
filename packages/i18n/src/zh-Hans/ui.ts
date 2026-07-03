@@ -518,7 +518,9 @@ const translations = {
         email: '邮箱',
         role: '角色',
         twoFactor: '两步验证',
+        environments: '环境',
       },
+      envAll: '全部环境',
       twoFactor: {
         on: '已开启',
         off: '未开启',
@@ -534,6 +536,9 @@ const translations = {
         owner: '所有者',
       },
       invite: {
+        environmentsLabel: '环境',
+        environmentsSelect: '选择环境',
+        environmentsHelp: '该成员可以操作哪些环境（发布、用户数据等）。全选 = 不限制。',
         title: '邀请团队成员',
         nameLabel: '姓名',
         namePlaceholder: '请输入成员姓名',

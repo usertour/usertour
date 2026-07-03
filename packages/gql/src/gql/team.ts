@@ -6,6 +6,7 @@ export const getTeamMembers = gql`
       id
       role
       createdAt
+      allowedEnvironmentIds
       user {
         id
         name
@@ -25,18 +26,26 @@ export const getInvites = gql`
       email
       role
       createdAt
+      allowedEnvironmentIds
     }
   }
 `;
 
 export const inviteTeamMember = gql`
-  mutation inviteTeamMember($projectId: String!, $name: String!, $email: String!, $role: Role!) {
+  mutation inviteTeamMember(
+    $projectId: String!
+    $name: String!
+    $email: String!
+    $role: Role!
+    $environmentIds: [String!]
+  ) {
     inviteTeamMember(
       data: {
         name: $name
         projectId: $projectId
         email: $email
         role: $role
+        environmentIds: $environmentIds
       }
     )
  }
@@ -55,8 +64,20 @@ export const removeTeamMember = gql`
 `;
 
 export const changeTeamMemberRole = gql`
-  mutation changeTeamMemberRole($projectId: String!, $userId: String!, $role: Role!) {
-    changeTeamMemberRole(data: { projectId: $projectId, userId: $userId, role: $role } )
+  mutation changeTeamMemberRole(
+    $projectId: String!
+    $userId: String!
+    $role: Role!
+    $environmentIds: [String!]
+  ) {
+    changeTeamMemberRole(
+      data: {
+        projectId: $projectId
+        userId: $userId
+        role: $role
+        environmentIds: $environmentIds
+      }
+    )
   }
 `;
 

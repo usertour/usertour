@@ -29,6 +29,7 @@ describe('API v2 content publish (e2e)', () => {
 
   let ownerToken: string;
   let ownerUserId: string;
+  let adminUserId: string;
   let projectId: string;
   let environmentId: string;
   let otherEnvironmentId: string;
@@ -82,10 +83,10 @@ describe('API v2 content publish (e2e)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      await prisma.apiToken.deleteMany({ where: { userId: ownerUserId } });
+      await prisma.apiToken.deleteMany({ where: { userId: { in: [ownerUserId, adminUserId] } } });
       await prisma.userOnProject.deleteMany({ where: { projectId } });
       await teardownProject(prisma, projectId);
-      await prisma.user.deleteMany({ where: { id: ownerUserId } });
+      await prisma.user.deleteMany({ where: { id: { in: [ownerUserId, adminUserId] } } });
     }
     await app?.close();
   });
@@ -167,6 +168,40 @@ describe('API v2 content publish (e2e)', () => {
     expect(res.body.environments).toContainEqual(
       expect.objectContaining({ environmentId, published: true }),
     );
+  });
+
+  it('member env ceiling caps the token: a restricted ADMIN cannot escape via an unrestricted key', async () => {
+    // ADMIN member limited to `environmentId`; they mint a key WITHOUT env
+    // restriction — the membership ceiling must still cap it (E1029), else a
+    // restricted member escapes their environment scope by minting a key.
+    const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+    adminUserId = admin.user.id;
+    await prisma.userOnProject.updateMany({
+      where: { userId: adminUserId, projectId },
+      data: { allowedEnvironmentIds: [environmentId] },
+    });
+    const res = await graphql(app, {
+      query: CREATE,
+      variables: {
+        input: {
+          name: 'admin-unrestricted',
+          scopes: [Capability.ContentRead, Capability.ContentPublish],
+          projectIds: [projectId],
+        },
+      },
+      token: admin.token,
+    });
+    const token = gqlData(res).createApiToken.token;
+
+    const denied = await api('post', publishPath(), token).send({
+      environmentId: otherEnvironmentId,
+      versionId,
+    });
+    expect(denied.status).toBe(403);
+    expect(denied.body.error.code).toBe('E1029');
+
+    const allowed = await api('post', publishPath(), token).send({ environmentId, versionId });
+    expect(allowed.status).toBe(200);
   });
 
   it('rejects publish without the publish scope (403 E1012)', async () => {

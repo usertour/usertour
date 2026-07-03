@@ -5,11 +5,11 @@ import { roleCan } from '@usertour/constants';
 import { Role } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { NoPermissionError } from '@/common/errors';
+import { MemberEnvironmentNotAllowedError, NoPermissionError } from '@/common/errors';
 import { ProjectsService } from '@/projects/projects.service';
 
 import { RequirePermission } from './require-permission.decorator';
-import { type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
+import { ScopeKind, type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
 
 /**
  * Single authorization guard, capability-driven.
@@ -122,6 +122,81 @@ export class PermissionGuard implements CanActivate {
       throw new NoPermissionError();
     }
 
+    // Third permission dimension (mirrors ApiToken.allowedEnvironmentIds): a
+    // membership may be restricted to a set of environments. OWNER is exempt —
+    // the invariant that owners can never lock themselves out of their project.
+    if (userProject.role !== Role.OWNER) {
+      const allowed = Array.isArray(userProject.allowedEnvironmentIds)
+        ? (userProject.allowedEnvironmentIds as string[])
+        : null;
+      if (allowed) {
+        const targets = await this.resolveTargetEnvironmentIds(required.scope, args);
+        if (targets.some((envId) => !allowed.includes(envId))) {
+          throw new MemberEnvironmentNotAllowedError();
+        }
+      }
+    }
+
     return true;
+  }
+
+  /**
+   * The environment(s) a request ACTS ON, for the membership env check. Explicit
+   * environment arguments cover env-scoped endpoints and env-as-parameter writes
+   * (publish/unpublish `data.environmentId`, duplicate `data.targetEnvironmentId`);
+   * integration / mapping / session endpoints carry their environment implicitly
+   * and are resolved through the row. Project-level scopes yield nothing.
+   */
+  private async resolveTargetEnvironmentIds(
+    scope: ScopeKind,
+    args: Record<string, any>,
+  ): Promise<string[]> {
+    const explicit = [
+      args.environmentId,
+      args.data?.environmentId,
+      args.query?.environmentId,
+      args.data?.targetEnvironmentId,
+    ];
+    // Environment-scoped endpoints address the environment row itself as `data.id`.
+    if (scope === ScopeKind.Environment) {
+      explicit.push(args.data?.id);
+    }
+    if (scope === ScopeKind.Integration) {
+      const integrationId = args.integrationId || args.data?.integrationId;
+      const mappingId = args.id || args.data?.id;
+      if (integrationId) {
+        explicit.push(
+          (
+            await this.prisma.integration.findUnique({
+              where: { id: integrationId },
+              select: { environmentId: true },
+            })
+          )?.environmentId,
+        );
+      } else if (mappingId) {
+        explicit.push(
+          (
+            await this.prisma.integrationObjectMapping.findUnique({
+              where: { id: mappingId },
+              select: { integration: { select: { environmentId: true } } },
+            })
+          )?.integration?.environmentId,
+        );
+      }
+    }
+    if (scope === ScopeKind.Session) {
+      const sessionId = args.sessionId || args.query?.sessionId || args.data?.sessionId;
+      if (sessionId) {
+        explicit.push(
+          (
+            await this.prisma.bizSession.findUnique({
+              where: { id: sessionId },
+              select: { environmentId: true },
+            })
+          )?.environmentId,
+        );
+      }
+    }
+    return [...new Set(explicit.filter((v): v is string => typeof v === 'string' && v !== ''))];
   }
 }

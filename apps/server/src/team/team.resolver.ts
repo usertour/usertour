@@ -62,6 +62,7 @@ export class TeamResolver {
       data.projectId,
       data.name,
       data.role as Role,
+      data.environmentIds ?? undefined,
     );
     return true;
   }
@@ -86,7 +87,12 @@ export class TeamResolver {
     resourceId: (a) => (a.data as { userId: string }).userId,
   })
   async changeTeamMemberRole(@Args('data') data: ChangeTeamMemberRoleInput) {
-    await this.teamService.changeTeamMemberRole(data.userId, data.projectId, data.role);
+    await this.teamService.changeTeamMemberRole(
+      data.userId,
+      data.projectId,
+      data.role,
+      data.environmentIds,
+    );
     return true;
   }
 
