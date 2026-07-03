@@ -254,6 +254,8 @@ export function buildWriteTools(): McpTool[] {
         "Publish a version as an environment's live version (idempotent). Publishing is " +
         'per-environment: if the token can act on a single environment it defaults to that one, ' +
         'but if it can act on multiple you must pass `environmentId` (it is NOT chosen for you). ' +
+        'When the user has not named a target environment, never choose one yourself: ask, or ' +
+        'leave the version unpublished and report that publishing needs an environment choice. ' +
         'Returns the content with refreshed `environments[]`.',
       inputSchema: {
         contentId: z.string(),
