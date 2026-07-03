@@ -107,38 +107,33 @@ const ResourceCenterMainViewBody = () => {
                     className="min-w-[280px]"
                     style={{ zIndex: BUILDER_Z.popover }}
                   >
-                    {BLOCK_TYPE_OPTIONS.map(
-                      ({ key, value, label, description, icon: Icon, disabled }) => {
-                        const isAnnouncementTaken =
-                          value === ResourceCenterBlockType.ANNOUNCEMENT && hasAnnouncementBlock;
-                        return (
-                          <DropdownMenuItem
-                            key={key}
-                            disabled={disabled || isAnnouncementTaken}
-                            className="min-w-[220px] gap-2 py-1.5 text-xs"
-                            onSelect={() => value && startCreateBlock(value)}
-                          >
-                            <Icon
-                              width={16}
-                              height={16}
-                              className="shrink-0 text-foreground opacity-70"
-                            />
-                            <span className="min-w-0 leading-none">
-                              <span className="text-xs font-medium text-foreground">
-                                {t(label)}
-                              </span>
-                              <span className="ml-1 text-xs text-muted-foreground">
-                                {isAnnouncementTaken
-                                  ? t(
-                                      'contentBuilder.resourceCenter.blockType.announcement.alreadyAdded',
-                                    )
-                                  : t(description)}
-                              </span>
+                    {BLOCK_TYPE_OPTIONS.filter(
+                      // A resource center supports one announcement block —
+                      // hide the option entirely once one exists.
+                      ({ value }) =>
+                        !(value === ResourceCenterBlockType.ANNOUNCEMENT && hasAnnouncementBlock),
+                    ).map(({ key, value, label, description, icon: Icon, disabled }) => {
+                      return (
+                        <DropdownMenuItem
+                          key={key}
+                          disabled={disabled}
+                          className="min-w-[220px] gap-2 py-1.5 text-xs"
+                          onSelect={() => value && startCreateBlock(value)}
+                        >
+                          <Icon
+                            width={16}
+                            height={16}
+                            className="shrink-0 text-foreground opacity-70"
+                          />
+                          <span className="min-w-0 leading-none">
+                            <span className="text-xs font-medium text-foreground">{t(label)}</span>
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              {t(description)}
                             </span>
-                          </DropdownMenuItem>
-                        );
-                      },
-                    )}
+                          </span>
+                        </DropdownMenuItem>
+                      );
+                    })}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

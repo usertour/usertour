@@ -3284,7 +3284,6 @@ const translations = {
         announcement: {
           label: 'Announcements',
           description: 'Show a list of published announcements',
-          alreadyAdded: 'Already added — a resource center supports one announcement block',
         },
       },
       onlyShowBlock: 'Only show block if...',

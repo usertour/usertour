@@ -3125,7 +3125,6 @@ const translations = {
         announcement: {
           label: '公告',
           description: '展示已发布的公告列表',
-          alreadyAdded: '已添加——每个资源中心只支持一个公告区块',
         },
       },
       onlyShowBlock: '仅在满足条件时显示该区块…',
