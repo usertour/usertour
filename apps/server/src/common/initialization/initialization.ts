@@ -2,6 +2,7 @@ import { AttributeBizType, AttributeDataType } from '@/attributes/models/attribu
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { InitThemeInput } from '@/themes/dto/theme.input';
 import { Attribute, Prisma } from '@prisma/client';
+import type { PrismaService } from 'nestjs-prisma';
 import {
   BizEvents,
   ColumnSetting,
@@ -1082,6 +1083,38 @@ export const initialization = async (tx: Prisma.TransactionClient, projectId: st
   await initializationAttributes(tx, projectId);
   await initializationEvents(tx, projectId);
   await initializationAttributeOnEvent(tx, projectId);
+};
+
+/**
+ * Re-run the (idempotent) default event/attribute initialization for every
+ * existing project.
+ *
+ * `initialization` runs only at project creation, so defaults added to
+ * `defaultEvents` / `defaultAttributes` afterwards never reach older projects.
+ * That silently breaks analytics for the new event: trackDirectContentEvent
+ * looks up the Event row by (codeName, projectId) and no-ops when it's absent,
+ * so e.g. announcement_seen would write read-state but record no view /
+ * activity-feed data on a pre-existing project.
+ *
+ * Each project runs in its own transaction; a single project's failure is
+ * collected (returned to the caller to log) rather than aborting the rest. A
+ * failure to even enumerate projects propagates — the caller treats that as a
+ * hard startup error. Safe to run on every boot and across concurrent
+ * instances: initialization only inserts what's missing.
+ */
+export const syncAllProjectDefaults = async (
+  prisma: Pick<PrismaService, 'project' | '$transaction'>,
+): Promise<{ total: number; failedProjectIds: string[] }> => {
+  const projects = await prisma.project.findMany({ select: { id: true } });
+  const failedProjectIds: string[] = [];
+  for (const { id } of projects) {
+    try {
+      await prisma.$transaction((tx) => initialization(tx, id));
+    } catch {
+      failedProjectIds.push(id);
+    }
+  }
+  return { total: projects.length, failedProjectIds };
 };
 
 export interface DefaultSegmentInput {
