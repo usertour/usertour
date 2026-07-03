@@ -10,7 +10,11 @@ import {
   PopupAnnouncement,
   ThemeTypesSetting,
 } from '@usertour/types';
-import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_POPUP_CONFIG } from '@usertour/constants';
+import {
+  ANNOUNCEMENT_FEED_SCAN_LIMIT,
+  DEFAULT_ANNOUNCEMENT_DATA,
+  DEFAULT_POPUP_CONFIG,
+} from '@usertour/constants';
 import { BizUser, Environment } from '@/common/types/schema';
 import { extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
@@ -45,8 +49,9 @@ export interface VisibleAnnouncement {
 @Injectable()
 export class AnnouncementService {
   // Announcements older than the newest N are not shown; the cap bounds both the
-  // feed scan and the targeting evaluation.
-  static readonly SCAN_LIMIT = 50;
+  // feed scan and the targeting evaluation. Shared with the mark-seen payload
+  // validator via @usertour/constants so the two can't drift.
+  static readonly SCAN_LIMIT = ANNOUNCEMENT_FEED_SCAN_LIMIT;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -79,6 +84,36 @@ export class AnnouncementService {
   }
 
   /**
+   * The per-user "Only show if..." targeting decision, in one place. Both read
+   * paths (feed scan, by-id fetch) filter through here so the feed, the direct
+   * fetch, and the badge can never diverge on who may see an announcement.
+   * Candidates with no publishedVersion are dropped; untargeted ones
+   * short-circuit inside isVisibleByAutoStartRules without a DB hit.
+   */
+  private async filterByTargeting<T extends { publishedVersion: { config: unknown } | null }>(
+    candidates: T[],
+    environment: Environment,
+    bizUser: BizUser,
+    externalCompanyId: string,
+  ): Promise<T[]> {
+    if (candidates.length === 0) {
+      return [];
+    }
+    const context = await this.buildEvaluationContext(environment, bizUser, externalCompanyId);
+    const visibility = await Promise.all(
+      candidates.map((item) =>
+        item.publishedVersion
+          ? this.conditionEvaluationService.isVisibleByAutoStartRules(
+              item.publishedVersion.config as unknown as AutoStartRulesConfig,
+              context,
+            )
+          : Promise.resolve(false),
+      ),
+    );
+    return candidates.filter((_item, index) => visibility[index]);
+  }
+
+  /**
    * Newest N published announcements whose scheduledAt has passed (or is unset),
    * filtered to those the user may see per their targeting. Ordered by
    * scheduledAt desc — publish stamps scheduledAt on first publish, so the order
@@ -103,29 +138,23 @@ export class AnnouncementService {
       take: limit,
     });
 
-    const context = await this.buildEvaluationContext(environment, bizUser, externalCompanyId);
-    const visibility = await Promise.all(
-      candidates.map((item) =>
-        item.publishedVersion
-          ? this.conditionEvaluationService.isVisibleByAutoStartRules(
-              item.publishedVersion.config as unknown as AutoStartRulesConfig,
-              context,
-            )
-          : Promise.resolve(false),
-      ),
+    const visible = await this.filterByTargeting(
+      candidates,
+      environment,
+      bizUser,
+      externalCompanyId,
     );
-
-    const visible: VisibleAnnouncement[] = [];
-    candidates.forEach((item, index) => {
-      if (visibility[index] && item.publishedVersion) {
-        visible.push({
-          contentId: item.contentId,
-          content: item.content,
-          publishedVersion: item.publishedVersion,
-        });
-      }
-    });
-    return visible;
+    return visible.flatMap((item) =>
+      item.publishedVersion
+        ? [
+            {
+              contentId: item.contentId,
+              content: item.content,
+              publishedVersion: item.publishedVersion,
+            },
+          ]
+        : [],
+    );
   }
 
   /**
@@ -163,8 +192,13 @@ export class AnnouncementService {
 
     const config = item.publishedVersion.config as unknown as AutoStartRulesConfig;
     if (bizUser) {
-      const context = await this.buildEvaluationContext(environment, bizUser, externalCompanyId);
-      if (!(await this.conditionEvaluationService.isVisibleByAutoStartRules(config, context))) {
+      const [visible] = await this.filterByTargeting(
+        [item],
+        environment,
+        bizUser,
+        externalCompanyId,
+      );
+      if (!visible) {
         return null;
       }
     } else if (config?.enabledAutoStartRules && config.autoStartRules?.length) {
@@ -200,11 +234,17 @@ export class AnnouncementService {
    * seen for the FIRST time by this call, each with its authoritative
    * published versionId.
    *
-   * Gated by the SAME visibility the feed and badge use — the shared candidate
-   * gate AND the "Only show if..." targeting — so a targeted announcement the
-   * user doesn't match is never recorded (nor does it fire a view event),
-   * exactly like it would never appear in their feed. The versionId is derived
-   * from the published version here, never taken from the client, so the
+   * Gated ONLY by the shared candidate gate (a published, non-deleted,
+   * schedule-reached announcement in this environment). It deliberately does NOT
+   * re-evaluate "Only show if..." targeting at mark time: seen-state must be
+   * permanent once the user has acted on a popup/feed item. Re-checking targeting
+   * would silently drop a dismiss made after the user's attributes drifted out of
+   * the rule (e.g. free→pro mid-session), and the popup would re-pop once they
+   * matched again — breaking the "a dismiss is permanent" dual of the
+   * popup-exists=unread invariant. A crafted client could at most mark a
+   * published-but-targeted-away announcement (an inert seen row + one view); that
+   * bounded risk is preferable to re-popping dismissed popups. The versionId is
+   * derived from the published version here, never taken from the client, so the
    * analytics event can't be pointed at a foreign or stale version.
    *
    * The write is a single INSERT .. ON CONFLICT DO NOTHING RETURNING on the
@@ -216,7 +256,6 @@ export class AnnouncementService {
   async markAnnouncementsSeen(
     environment: Environment,
     bizUser: BizUser,
-    externalCompanyId: string,
     contentIds: string[],
   ): Promise<{ contentId: string; versionId: string }[]> {
     const uniqueIds = [...new Set(contentIds)];
@@ -226,28 +265,12 @@ export class AnnouncementService {
 
     const candidates = await this.prisma.contentOnEnvironment.findMany({
       where: { ...this.announcementCandidateWhere(environment.id), contentId: { in: uniqueIds } },
-      include: { publishedVersion: { select: { id: true, config: true } } },
+      include: { publishedVersion: { select: { id: true } } },
     });
-    if (candidates.length === 0) {
-      return [];
-    }
-
-    // Apply the same targeting the feed does, so seen-state / view events can't
-    // include announcements the user was never eligible to see.
-    const context = await this.buildEvaluationContext(environment, bizUser, externalCompanyId);
-    const visibility = await Promise.all(
-      candidates.map((item) =>
-        item.publishedVersion
-          ? this.conditionEvaluationService.isVisibleByAutoStartRules(
-              item.publishedVersion.config as unknown as AutoStartRulesConfig,
-              context,
-            )
-          : Promise.resolve(false),
-      ),
-    );
     const visible = candidates.filter(
-      (item, index) => visibility[index] && item.publishedVersion,
-    ) as ((typeof candidates)[number] & { publishedVersion: { id: string } })[];
+      (item): item is (typeof candidates)[number] & { publishedVersion: { id: string } } =>
+        item.publishedVersion != null,
+    );
     if (visible.length === 0) {
       return [];
     }

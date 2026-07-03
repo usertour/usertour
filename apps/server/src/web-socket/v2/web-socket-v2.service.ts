@@ -40,6 +40,7 @@ import {
   AnnouncementListItem,
   AnnouncementData,
 } from '@usertour/types';
+import { ANNOUNCEMENT_SEEN_SOURCES } from '@usertour/constants';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
@@ -1140,7 +1141,6 @@ export class WebSocketV2Service {
       const firstSeen = await this.announcementService.markAnnouncementsSeen(
         environment,
         bizUser,
-        socketData.externalCompanyId,
         contentIds,
       );
       if (firstSeen.length === 0) {
@@ -1150,8 +1150,11 @@ export class WebSocketV2Service {
       // The surface that marked them, recorded on the analytics event.
       // Whitelisted rather than passed through, so a client can't invent
       // arbitrary source values.
-      const source: AnnouncementSeenSource =
-        params.source === 'modal' || params.source === 'bubble' ? params.source : 'resource_center';
+      const source: AnnouncementSeenSource = ANNOUNCEMENT_SEEN_SOURCES.includes(
+        params.source as AnnouncementSeenSource,
+      )
+        ? (params.source as AnnouncementSeenSource)
+        : 'resource_center';
 
       // Fire the analytics trail only for first-seen announcements, with the
       // server-derived versionId (never the client's).

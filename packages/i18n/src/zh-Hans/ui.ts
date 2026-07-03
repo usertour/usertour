@@ -1602,9 +1602,6 @@ const translations = {
         },
         announcement: {
           views: '浏览量',
-          viewsTooltip: '该公告被查看的总次数。',
-          uniqueViews: '独立浏览量',
-          uniqueViewsTooltip: '看过该公告的独立用户数。',
         },
       },
       chart: {

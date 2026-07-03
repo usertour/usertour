@@ -56,14 +56,18 @@ export class AdminService implements OnModuleInit {
    * bad project).
    */
   private async backfillProjectDefaults() {
-    const { total, failedProjectIds } = await syncAllProjectDefaults(this.prisma);
-    if (failedProjectIds.length > 0) {
-      this.logger.error(
-        `Project defaults backfill: ${failedProjectIds.length}/${total} projects failed: ${failedProjectIds.join(', ')}`,
-      );
-    } else {
-      this.logger.log(`Project defaults backfill: ${total} projects ok`);
+    const { total, backfilled, failed } = await syncAllProjectDefaults(this.prisma);
+    if (failed.length > 0) {
+      // One line per failure with its reason — a project that keeps failing here
+      // silently loses analytics for the missing defaults, so the cause must be
+      // in the startup log, not just the id.
+      for (const { projectId, error } of failed) {
+        this.logger.error(`Project defaults backfill failed for ${projectId}: ${error}`);
+      }
     }
+    this.logger.log(
+      `Project defaults backfill: ${backfilled} backfilled, ${failed.length} failed, ${total} total`,
+    );
   }
 
   /**

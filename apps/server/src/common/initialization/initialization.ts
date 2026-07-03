@@ -1096,25 +1096,65 @@ export const initialization = async (tx: Prisma.TransactionClient, projectId: st
  * so e.g. announcement_seen would write read-state but record no view /
  * activity-feed data on a pre-existing project.
  *
- * Each project runs in its own transaction; a single project's failure is
- * collected (returned to the caller to log) rather than aborting the rest. A
- * failure to even enumerate projects propagates — the caller treats that as a
- * hard startup error. Safe to run on every boot and across concurrent
+ * Only projects actually missing a default are touched: two aggregate reads
+ * count predefined events / attributes per project, and a project with all of
+ * both is skipped. New releases add rows to `defaultEvents` / `defaultAttributes`,
+ * so once a project is backfilled every later boot is just those two reads and
+ * zero transactions — the per-project transaction no longer runs on every boot
+ * for every project (which grew boot time linearly with project count and could
+ * trip a readiness probe on large deployments). Not detected: a new
+ * attribute↔event relation between a pre-existing default event AND attribute;
+ * that rare case needs a one-off forced run.
+ *
+ * Each stale project runs in its own transaction; a single project's failure is
+ * collected WITH its error (returned to the caller to log) rather than aborting
+ * the rest. A failure to even enumerate projects propagates — the caller treats
+ * that as a hard startup error. Safe to run on every boot and across concurrent
  * instances: initialization only inserts what's missing.
  */
 export const syncAllProjectDefaults = async (
-  prisma: Pick<PrismaService, 'project' | '$transaction'>,
-): Promise<{ total: number; failedProjectIds: string[] }> => {
+  prisma: Pick<PrismaService, 'project' | 'event' | 'attribute' | '$transaction'>,
+): Promise<{
+  total: number;
+  backfilled: number;
+  failed: { projectId: string; error: string }[];
+}> => {
   const projects = await prisma.project.findMany({ select: { id: true } });
-  const failedProjectIds: string[] = [];
-  for (const { id } of projects) {
+
+  const [eventCounts, attributeCounts] = await Promise.all([
+    prisma.event.groupBy({
+      by: ['projectId'],
+      where: { predefined: true },
+      _count: { _all: true },
+    }),
+    prisma.attribute.groupBy({
+      by: ['projectId'],
+      where: { predefined: true },
+      _count: { _all: true },
+    }),
+  ]);
+  const eventCountByProject = new Map(eventCounts.map((row) => [row.projectId, row._count._all]));
+  const attributeCountByProject = new Map(
+    attributeCounts.map((row) => [row.projectId, row._count._all]),
+  );
+  const stale = projects.filter(
+    ({ id }) =>
+      (eventCountByProject.get(id) ?? 0) < defaultEvents.length ||
+      (attributeCountByProject.get(id) ?? 0) < defaultAttributes.length,
+  );
+
+  const failed: { projectId: string; error: string }[] = [];
+  for (const { id } of stale) {
     try {
       await prisma.$transaction((tx) => initialization(tx, id));
-    } catch {
-      failedProjectIds.push(id);
+    } catch (error) {
+      failed.push({
+        projectId: id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
-  return { total: projects.length, failedProjectIds };
+  return { total: projects.length, backfilled: stale.length - failed.length, failed };
 };
 
 export interface DefaultSegmentInput {

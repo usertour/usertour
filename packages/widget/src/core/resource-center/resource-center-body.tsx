@@ -527,13 +527,10 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
       return;
     }
     // Same-open-session revisit (Back from a detail page): the cache still holds
-    // the loaded feed — hydrate from it, don't refetch or re-fire the marks
-    // (which would double-decrement the optimistic badge).
-    const cached = announcementFeedCache.current;
-    if (cached) {
-      setAnnouncements(cached.announcements);
-      setFeedAttributes(cached.attributes);
-      setIsLoading(false);
+    // the loaded feed. The useState initializers already hydrated from this same
+    // cache on (re)mount, so there's nothing to re-set — just skip the refetch
+    // and the mark-seen (which would double-decrement the optimistic badge).
+    if (announcementFeedCache.current) {
       return;
     }
     const listAnnouncements = onListAnnouncementsRef.current;
@@ -595,8 +592,12 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     if (!scrollContainer) {
       return;
     }
+    // Restore the saved position, including 0: after visiting a detail page the
+    // shared scroll container is left wherever the detail was, so a list that was
+    // at the top (saved 0) must be forced back to 0 on Back — a `> 0` guard would
+    // skip that and leave the feed stuck at the detail's scroll offset.
     const cached = announcementFeedCache.current;
-    if (cached && cached.scrollTop > 0) {
+    if (cached) {
       scrollContainer.scrollTop = cached.scrollTop;
     }
     return () => {

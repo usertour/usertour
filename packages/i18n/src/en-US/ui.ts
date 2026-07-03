@@ -1695,9 +1695,6 @@ const translations = {
         },
         announcement: {
           views: 'Views',
-          viewsTooltip: 'Total number of times this announcement was seen.',
-          uniqueViews: 'Unique views',
-          uniqueViewsTooltip: 'Unique users who saw this announcement.',
         },
       },
       chart: {

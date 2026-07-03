@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ClientMessageKind, ContentDataType, contentStartReason } from '@usertour/types';
+import { ANNOUNCEMENT_FEED_SCAN_LIMIT, ANNOUNCEMENT_SEEN_SOURCES } from '@usertour/constants';
 
 // ============================================================================
 // Maximum payload size constant
@@ -318,18 +319,20 @@ export class MarkAnnouncementsSeenItemPayload {
 }
 
 /**
- * Mark announcements seen payload validator. The item cap mirrors
- * AnnouncementService.SCAN_LIMIT — the feed never legitimately sends more.
+ * Mark announcements seen payload validator. The item cap and the source
+ * whitelist are shared with the service via @usertour/constants — the feed never
+ * legitimately sends more than the scan limit, and the source must be a known
+ * seen surface.
  */
 export class MarkAnnouncementsSeenPayload {
   @IsArray()
-  @ArrayMaxSize(50)
+  @ArrayMaxSize(ANNOUNCEMENT_FEED_SCAN_LIMIT)
   @ValidateNested({ each: true })
   @Type(() => MarkAnnouncementsSeenItemPayload)
   items: MarkAnnouncementsSeenItemPayload[];
 
   @IsOptional()
-  @IsIn(['resource_center', 'modal', 'bubble'])
+  @IsIn(ANNOUNCEMENT_SEEN_SOURCES)
   source?: string;
 }
 
