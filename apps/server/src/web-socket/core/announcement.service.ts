@@ -141,6 +141,13 @@ export class AnnouncementService {
     bizUser: BizUser | null,
     externalCompanyId: string,
   ): Promise<VisibleAnnouncement | null> {
+    // Fail fast on a missing id: `contentId: undefined` in a Prisma where is
+    // silently dropped, which would turn this by-id lookup into "first
+    // visible announcement".
+    if (!contentId) {
+      return null;
+    }
+
     const item = await this.prisma.contentOnEnvironment.findFirst({
       where: { ...this.announcementCandidateWhere(environment.id), contentId },
       include: {
