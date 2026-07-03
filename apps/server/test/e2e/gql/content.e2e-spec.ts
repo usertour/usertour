@@ -297,6 +297,21 @@ describe('GraphQL content (e2e)', () => {
     it('clones the edited version into a new version and re-points editedVersionId', async () => {
       const { content, version } = await seedContent();
       await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip' });
+      // createContentVersion only forks when the edited version is published; an
+      // unpublished draft is reused in place. Publish so this exercises the fork
+      // path it asserts.
+      await prisma.content.update({
+        where: { id: content.id },
+        data: { published: true, publishedVersionId: version.id },
+      });
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId,
+          contentId: content.id,
+          published: true,
+          publishedVersionId: version.id,
+        },
+      });
 
       const res = await graphql(app, {
         token,
@@ -314,6 +329,86 @@ describe('GraphQL content (e2e)', () => {
 
       const clonedSteps = await prisma.step.findMany({ where: { versionId: newVersion.id } });
       expect(clonedSteps).toHaveLength(1);
+    });
+
+    // Editing a published content's targeting must ship the *new* condition ids
+    // the server regenerates — the SDK dedupes tracked conditions by id, so
+    // reusing a stale id makes a republished targeting change a silent no-op.
+    // These two cases lock both branches of createContentVersion.
+    const configWithCondition = (conditionId: string, value: string) => ({
+      enabledAutoStartRules: true,
+      enabledHideRules: false,
+      autoStartRules: [
+        { type: 'user-attr', id: conditionId, operators: 'and', data: { logic: 'is', value } },
+      ],
+      hideRules: [],
+    });
+
+    it('fork branch: regenerates condition ids and applies the new config', async () => {
+      const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const version = await buildVersion(prisma, {
+        contentId: content.id,
+        sequence: 0,
+        config: configWithCondition('COND_SEED', 'old'),
+      });
+      // Publish the edited version so the next edit forks a fresh draft.
+      await prisma.content.update({
+        where: { id: content.id },
+        data: { published: true, publishedVersionId: version.id },
+      });
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId,
+          contentId: content.id,
+          published: true,
+          publishedVersionId: version.id,
+        },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentVersionInput!) {
+          createContentVersion(data: $data) { id sequence contentId }
+        }`,
+        variables: {
+          data: { versionId: version.id, config: configWithCondition('COND_SEED', 'new') },
+        },
+      });
+      const newVersion = gqlData(res).createContentVersion;
+      expect(newVersion.id).not.toBe(version.id);
+
+      const row = await prisma.version.findUnique({ where: { id: newVersion.id } });
+      const rule = (row?.config as any).autoStartRules[0];
+      expect(rule.data.value).toBe('new'); // caller's edit applied
+      expect(rule.id).not.toBe('COND_SEED'); // condition id regenerated on fork
+    });
+
+    it('reuse branch: applies the new config (not dropped) with regenerated ids', async () => {
+      // No publish → the edited version is already an unpublished draft, so a
+      // concurrent-save-style createContentVersion reuses it instead of forking.
+      const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const version = await buildVersion(prisma, {
+        contentId: content.id,
+        sequence: 0,
+        config: configWithCondition('COND_SEED', 'old'),
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentVersionInput!) {
+          createContentVersion(data: $data) { id }
+        }`,
+        variables: {
+          data: { versionId: version.id, config: configWithCondition('COND_SEED', 'new') },
+        },
+      });
+      const reused = gqlData(res).createContentVersion;
+      expect(reused.id).toBe(version.id); // reused the draft, no new version
+
+      const row = await prisma.version.findUnique({ where: { id: version.id } });
+      const rule = (row?.config as any).autoStartRules[0];
+      expect(rule.data.value).toBe('new'); // #4: caller's config applied, not dropped
+      expect(rule.id).not.toBe('COND_SEED'); // condition id regenerated on reuse
     });
 
     it('errors for an unknown source version', async () => {
