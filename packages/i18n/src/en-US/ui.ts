@@ -543,6 +543,11 @@ const translations = {
         name: 'Name',
         email: 'Email',
         role: 'Role',
+        twoFactor: '2FA',
+      },
+      twoFactor: {
+        on: 'Enabled',
+        off: 'Off',
       },
       invitePending: 'Invite pending',
       cancelInviteMenuItem: 'Cancel invite',

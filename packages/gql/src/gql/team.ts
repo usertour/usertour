@@ -11,6 +11,7 @@ export const getTeamMembers = gql`
         name
         email
         avatarUrl
+        twoFactorEnabled
       }
     }
   }

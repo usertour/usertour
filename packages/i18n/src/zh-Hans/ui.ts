@@ -517,6 +517,11 @@ const translations = {
         name: '姓名',
         email: '邮箱',
         role: '角色',
+        twoFactor: '两步验证',
+      },
+      twoFactor: {
+        on: '已开启',
+        off: '未开启',
       },
       invitePending: '邀请待接受',
       cancelInviteMenuItem: '取消邀请',

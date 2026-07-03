@@ -69,6 +69,19 @@ export const SettingsMemberList = () => {
       cell: (member) => t(`settings.team.roles.${member.role.toLowerCase()}`, member.role),
     },
     {
+      header: t('settings.team.columns.twoFactor'),
+      headerClassName: 'w-24 hidden sm:table-cell',
+      className: 'hidden sm:table-cell',
+      cell: (member) =>
+        member.isInvite ? (
+          <span className="text-muted-foreground">—</span>
+        ) : member.twoFactorEnabled ? (
+          <Badge variant="success">{t('settings.team.twoFactor.on')}</Badge>
+        ) : (
+          <span className="text-muted-foreground">{t('settings.team.twoFactor.off')}</span>
+        ),
+    },
+    {
       header: '',
       headerClassName: 'w-20',
       cell: (member) => <MemberRowActions data={member} />,
