@@ -1123,8 +1123,10 @@ export class WebSocketV2Service {
       // The feed never returns more than SCAN_LIMIT rows, so a legit client
       // never sends more; cap here so a hostile payload can't inflate the
       // candidate query.
-      const items = (params.items ?? []).slice(0, AnnouncementService.SCAN_LIMIT);
-      if (items.length === 0) {
+      const contentIds = (params.items ?? [])
+        .slice(0, AnnouncementService.SCAN_LIMIT)
+        .map((item) => item.contentId);
+      if (contentIds.length === 0) {
         return true;
       }
 
@@ -1133,12 +1135,15 @@ export class WebSocketV2Service {
         return false;
       }
 
-      const firstSeenIds = await this.announcementService.markAnnouncementsSeen(
-        environment.id,
-        bizUser.id,
-        items.map((item) => item.contentId),
+      // Returns first-seen announcements with their authoritative published
+      // versionId — gated by the same targeting the feed uses.
+      const firstSeen = await this.announcementService.markAnnouncementsSeen(
+        environment,
+        bizUser,
+        socketData.externalCompanyId,
+        contentIds,
       );
-      if (firstSeenIds.length === 0) {
+      if (firstSeen.length === 0) {
         return true;
       }
 
@@ -1148,17 +1153,11 @@ export class WebSocketV2Service {
       const source: AnnouncementSeenSource =
         params.source === 'modal' || params.source === 'bubble' ? params.source : 'resource_center';
 
-      // Fire the analytics trail only for first-seen announcements. The event
-      // records the version the user actually saw (the one the feed served),
-      // which the client round-trips per item.
-      const versionIdByContentId = new Map(items.map((item) => [item.contentId, item.versionId]));
+      // Fire the analytics trail only for first-seen announcements, with the
+      // server-derived versionId (never the client's).
       await Promise.all(
-        firstSeenIds.map((contentId) => {
-          const versionId = versionIdByContentId.get(contentId);
-          if (!versionId) {
-            return Promise.resolve(false);
-          }
-          return this.eventTrackingService.trackDirectContentEvent({
+        firstSeen.map(({ contentId, versionId }) =>
+          this.eventTrackingService.trackDirectContentEvent({
             environment,
             externalUserId,
             clientContext,
@@ -1168,8 +1167,8 @@ export class WebSocketV2Service {
             buildEventData: (content, version) =>
               buildAnnouncementSeenEventData(content, version, source),
             bizCompanyId,
-          });
-        }),
+          }),
+        ),
       );
       return true;
     } catch (error) {

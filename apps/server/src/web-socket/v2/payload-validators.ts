@@ -315,10 +315,6 @@ export class MarkAnnouncementsSeenItemPayload {
   @IsString()
   @MaxLength(255)
   contentId: string;
-
-  @IsString()
-  @MaxLength(255)
-  versionId: string;
 }
 
 /**

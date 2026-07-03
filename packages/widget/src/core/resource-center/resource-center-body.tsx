@@ -556,7 +556,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
         // reports it seen.
         const unseenItems = result.announcements
           .filter((item) => !item.seen)
-          .map((item) => ({ contentId: item.id, versionId: item.versionId }));
+          .map((item) => ({ contentId: item.id }));
         if (unseenItems.length > 0) {
           onMarkAnnouncementsSeenRef.current?.(unseenItems);
         }

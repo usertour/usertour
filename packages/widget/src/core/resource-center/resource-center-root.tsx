@@ -54,7 +54,7 @@ interface ResourceCenterRootProps {
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
   onListAnnouncements?: () => Promise<ListAnnouncementsResult>;
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
-  onMarkAnnouncementsSeen?: (items: { contentId: string; versionId: string }[]) => Promise<boolean>;
+  onMarkAnnouncementsSeen?: (items: { contentId: string }[]) => Promise<boolean>;
   /** The gated popup payload (gating lives in the SDK — pass undefined to hide). */
   popupAnnouncement?: PopupAnnouncement;
   /** Any popup interaction (close, backdrop, read more, content action). */

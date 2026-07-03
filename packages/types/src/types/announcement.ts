@@ -129,13 +129,13 @@ export type AnnouncementSeenSource = 'resource_center' | 'modal' | 'bubble';
 /**
  * Mark announcements as seen request — one batch per surface interaction: the
  * feed sends every announcement it displayed as unseen on open; a popup sends
- * its single announcement when the user interacts with it.
+ * its single announcement when the user interacts with it. Only contentId is
+ * sent: the server derives the published versionId for the analytics event
+ * itself, so it can't be pointed at a foreign or stale version.
  */
 export type MarkAnnouncementsSeenDto = {
   items: {
     contentId: string;
-    /** The published version the user actually saw, for the analytics event. */
-    versionId: string;
   }[];
   /** Which surface marked them (defaults to 'resource_center'). */
   source?: AnnouncementSeenSource;

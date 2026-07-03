@@ -204,7 +204,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   }
 
   async markAnnouncementsSeen(
-    items: { contentId: string; versionId: string }[],
+    items: { contentId: string }[],
     source?: AnnouncementSeenSource,
   ): Promise<boolean> {
     if (items.length === 0) {
@@ -249,7 +249,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
     const source: AnnouncementSeenSource =
       popup.popupConfig.style === AnnouncementPopupStyle.MODAL ? 'modal' : 'bubble';
-    await this.markAnnouncementsSeen([{ contentId: popup.id, versionId: popup.versionId }], source);
+    await this.markAnnouncementsSeen([{ contentId: popup.id }], source);
   }
 
   /**

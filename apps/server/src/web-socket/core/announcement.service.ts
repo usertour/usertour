@@ -196,40 +196,67 @@ export class AnnouncementService {
   }
 
   /**
-   * Record that the user has seen the given announcements and return the
-   * contentIds that were seen for the FIRST time by this call.
+   * Record that the user has seen the given announcements and return the ones
+   * seen for the FIRST time by this call, each with its authoritative
+   * published versionId.
    *
-   * Only ids passing the shared candidate gate (published, non-deleted
-   * announcements whose scheduledAt has passed) are recorded, so a client
-   * can't write read-state rows for arbitrary content. The write is a single
-   * INSERT .. ON CONFLICT DO NOTHING RETURNING on the (bizUserId, contentId)
-   * unique key: idempotent under concurrent marks (feed refetch, second tab)
-   * with no locking, and the RETURNING set is exactly the first-seen edge —
-   * the caller fires one ANNOUNCEMENT_SEEN analytics event per returned id,
-   * so views are never double-counted.
+   * Gated by the SAME visibility the feed and badge use — the shared candidate
+   * gate AND the "Only show if..." targeting — so a targeted announcement the
+   * user doesn't match is never recorded (nor does it fire a view event),
+   * exactly like it would never appear in their feed. The versionId is derived
+   * from the published version here, never taken from the client, so the
+   * analytics event can't be pointed at a foreign or stale version.
+   *
+   * The write is a single INSERT .. ON CONFLICT DO NOTHING RETURNING on the
+   * (bizUserId, contentId) unique key: idempotent under concurrent marks (feed
+   * refetch, second tab) with no locking, and the RETURNING set is exactly the
+   * first-seen edge — the caller fires one ANNOUNCEMENT_SEEN analytics event
+   * per returned item, so views are never double-counted.
    */
   async markAnnouncementsSeen(
-    environmentId: string,
-    bizUserId: string,
+    environment: Environment,
+    bizUser: BizUser,
+    externalCompanyId: string,
     contentIds: string[],
-  ): Promise<string[]> {
+  ): Promise<{ contentId: string; versionId: string }[]> {
     const uniqueIds = [...new Set(contentIds)];
     if (uniqueIds.length === 0) {
       return [];
     }
 
     const candidates = await this.prisma.contentOnEnvironment.findMany({
-      where: { ...this.announcementCandidateWhere(environmentId), contentId: { in: uniqueIds } },
-      select: { contentId: true },
+      where: { ...this.announcementCandidateWhere(environment.id), contentId: { in: uniqueIds } },
+      include: { publishedVersion: { select: { id: true, config: true } } },
     });
     if (candidates.length === 0) {
       return [];
     }
 
-    const values = Prisma.join(
-      candidates.map(
-        (candidate) => Prisma.sql`(${randomUUID()}, ${bizUserId}, ${candidate.contentId})`,
+    // Apply the same targeting the feed does, so seen-state / view events can't
+    // include announcements the user was never eligible to see.
+    const context = await this.buildEvaluationContext(environment, bizUser, externalCompanyId);
+    const visibility = await Promise.all(
+      candidates.map((item) =>
+        item.publishedVersion
+          ? this.conditionEvaluationService.isVisibleByAutoStartRules(
+              item.publishedVersion.config as unknown as AutoStartRulesConfig,
+              context,
+            )
+          : Promise.resolve(false),
       ),
+    );
+    const visible = candidates.filter(
+      (item, index) => visibility[index] && item.publishedVersion,
+    ) as ((typeof candidates)[number] & { publishedVersion: { id: string } })[];
+    if (visible.length === 0) {
+      return [];
+    }
+
+    const versionIdByContentId = new Map(
+      visible.map((item) => [item.contentId, item.publishedVersion.id]),
+    );
+    const values = Prisma.join(
+      visible.map((item) => Prisma.sql`(${randomUUID()}, ${bizUser.id}, ${item.contentId})`),
     );
     const inserted = await this.prisma.$queryRaw<{ contentId: string }[]>`
       INSERT INTO "BizAnnouncementSeen" ("id", "bizUserId", "contentId")
@@ -237,7 +264,11 @@ export class AnnouncementService {
       ON CONFLICT ("bizUserId", "contentId") DO NOTHING
       RETURNING "contentId"
     `;
-    return inserted.map((row) => row.contentId);
+    return inserted.map((row) => ({
+      contentId: row.contentId,
+      // Non-null: every inserted contentId came from `visible`, which is keyed here.
+      versionId: versionIdByContentId.get(row.contentId) as string,
+    }));
   }
 
   /**
