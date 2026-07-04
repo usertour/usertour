@@ -8,7 +8,15 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExtraModels,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -19,8 +27,13 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import {
   AnalyticsQueryDto,
-  ContentAnalyticsDto,
+  BannerAnalyticsDto,
+  ChecklistAnalyticsDto,
+  FlowAnalyticsDto,
+  LauncherAnalyticsDto,
   QuestionAnalyticsResponseDto,
+  ResourceCenterAnalyticsDto,
+  TrackerAnalyticsDto,
 } from './analytics.schema';
 import { ApiAnalyticsService } from './analytics.service';
 
@@ -48,13 +61,38 @@ export class ApiAnalyticsController {
   @ApiOperation({
     summary: 'Get content analytics',
     description:
-      'Views / completions (unique + total), a per-day series, and the per-type breakdown: ' +
-      'per-step funnel with tooltip-target-missing counts (flows), per-task completion ' +
-      '(checklists), per-block clicks (resource centers). Defaults to the last 30 days, UTC.',
+      'The response shape follows the content type (discriminated on `contentType`): ' +
+      'flows report starts + completions and a per-step funnel with tooltip-target-missing ' +
+      'counts; checklists starts + completions and per-task rows; launchers seen + ' +
+      'activations; banners seen + dismissals; resource centers opens + block clicks; ' +
+      'trackers users + occurrences of the tracked event. All with a per-day series. ' +
+      'Defaults to the last 30 days, UTC.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
-  @ApiResponse({ status: 200, description: 'Content analytics', type: ContentAnalyticsDto })
+  @ApiExtraModels(
+    FlowAnalyticsDto,
+    ChecklistAnalyticsDto,
+    LauncherAnalyticsDto,
+    BannerAnalyticsDto,
+    ResourceCenterAnalyticsDto,
+    TrackerAnalyticsDto,
+  )
+  @ApiResponse({
+    status: 200,
+    description: 'Content analytics — the shape follows the content type',
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(FlowAnalyticsDto) },
+        { $ref: getSchemaPath(ChecklistAnalyticsDto) },
+        { $ref: getSchemaPath(LauncherAnalyticsDto) },
+        { $ref: getSchemaPath(BannerAnalyticsDto) },
+        { $ref: getSchemaPath(ResourceCenterAnalyticsDto) },
+        { $ref: getSchemaPath(TrackerAnalyticsDto) },
+      ],
+      discriminator: { propertyName: 'contentType' },
+    },
+  })
   @ApiResponse({ status: 404, description: 'Content or environment not found' })
   async contentAnalytics(
     @Param('id') id: string,

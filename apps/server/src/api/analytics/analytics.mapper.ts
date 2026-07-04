@@ -5,13 +5,12 @@ import type { ContentAnalytics, QuestionAnalytics } from './analytics.schema';
 
 /**
  * Pure domain -> API mapping (no DI, unit-testable). The domain service returns
- * loosely-shaped objects (the GraphQL layer exposes them as opaque JSON); the
- * mapper normalizes them into the typed v2 contract:
- * - the per-type breakdown lands in exactly one of steps/tasks/blocks, gated by
- *   the CONTENT TYPE (the domain signals "not applicable" inconsistently:
- *   `false`, `null`, or `[]` depending on the code path);
- * - Date objects become ISO dates;
- * - step tooltip-target-missing counters lose their internal `...Count` suffix.
+ * loosely-shaped objects under a uniform internal views/completions vocabulary
+ * (each content type maps those to a different event pair); the mapper renames
+ * them to the per-type contract variant — starts/completions, seen/dismissals,
+ * opens/clicks, users/occurrences — so the public field names say what is
+ * actually counted. Date objects become ISO dates; step tooltip-target-missing
+ * counters lose their internal `...Count` suffix.
  */
 
 const isoDate = (value: unknown): string => {
@@ -35,6 +34,37 @@ const counts = (raw: RawCounts | undefined) => ({
   totalCompletions: int(raw?.totalCompletions),
 });
 
+// Per-variant renames of the domain's internal views/completions counters.
+const startsCompletions = (c: ReturnType<typeof counts>) => ({
+  uniqueStarts: c.uniqueViews,
+  totalStarts: c.totalViews,
+  uniqueCompletions: c.uniqueCompletions,
+  totalCompletions: c.totalCompletions,
+});
+const seenActivations = (c: ReturnType<typeof counts>) => ({
+  uniqueSeen: c.uniqueViews,
+  totalSeen: c.totalViews,
+  uniqueActivations: c.uniqueCompletions,
+  totalActivations: c.totalCompletions,
+});
+const seenDismissals = (c: ReturnType<typeof counts>) => ({
+  uniqueSeen: c.uniqueViews,
+  totalSeen: c.totalViews,
+  uniqueDismissals: c.uniqueCompletions,
+  totalDismissals: c.totalCompletions,
+});
+const opensClicks = (c: ReturnType<typeof counts>) => ({
+  uniqueOpens: c.uniqueViews,
+  totalOpens: c.totalViews,
+  uniqueClicks: c.uniqueCompletions,
+  totalClicks: c.totalCompletions,
+});
+// Tracker "completions" mirror views in the domain — fake data, not surfaced.
+const usersOccurrences = (c: ReturnType<typeof counts>) => ({
+  uniqueUsers: c.uniqueViews,
+  totalOccurrences: c.totalViews,
+});
+
 export interface AnalyticsMeta {
   contentId: string;
   contentType: string;
@@ -46,62 +76,101 @@ export interface AnalyticsMeta {
 
 // biome-ignore lint/suspicious/noExplicitAny: domain analytics payloads are untyped JSON
 export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnalytics {
-  const byDay = Array.isArray(raw?.viewsByDay)
-    ? // biome-ignore lint/suspicious/noExplicitAny: see above
-      raw.viewsByDay.map((day: any) => ({ date: isoDate(day.date), ...counts(day) }))
-    : [];
-
-  const steps =
-    meta.contentType === ContentDataType.FLOW && Array.isArray(raw?.viewsByStep)
-      ? // biome-ignore lint/suspicious/noExplicitAny: see above
-        raw.viewsByStep.map((row: any) => ({
-          name: String(row.name ?? ''),
-          cvid: String(row.cvid ?? ''),
-          stepIndex: int(row.stepIndex),
-          type: String(row.type ?? ''),
-          ...counts(row.analytics),
-          uniqueTooltipTargetMissing: int(row.analytics?.uniqueTooltipTargetMissingCount),
-          totalTooltipTargetMissing: int(row.analytics?.tooltipTargetMissingCount),
-        }))
-      : null;
-
-  const tasks =
-    meta.contentType === ContentDataType.CHECKLIST && Array.isArray(raw?.viewsByTask)
-      ? // biome-ignore lint/suspicious/noExplicitAny: see above
-        raw.viewsByTask.map((row: any) => ({
-          name: String(row.name ?? ''),
-          taskId: String(row.taskId ?? ''),
-          ...counts(row.analytics),
-          uniqueClicks: int(row.analytics?.uniqueClicks),
-          totalClicks: int(row.analytics?.totalClicks),
-        }))
-      : null;
-
-  const blocks =
-    meta.contentType === ContentDataType.RESOURCE_CENTER && Array.isArray(raw?.viewsByBlock)
-      ? // biome-ignore lint/suspicious/noExplicitAny: see above
-        raw.viewsByBlock.map((row: any) => ({
-          name: String(row.name ?? ''),
-          blockId: String(row.blockId ?? ''),
-          tabName: row.tabName != null ? String(row.tabName) : null,
-          uniqueClicks: int(row.analytics?.uniqueClicks),
-          totalClicks: int(row.analytics?.totalClicks),
-        }))
-      : null;
-
-  return {
-    object: ApiObjectType.CONTENT_ANALYTICS,
+  const base = {
+    object: ApiObjectType.CONTENT_ANALYTICS as const,
     contentId: meta.contentId,
     environmentId: meta.environmentId,
     startDate: meta.startDate,
     endDate: meta.endDate,
     timezone: meta.timezone,
-    ...counts(raw),
-    byDay,
-    steps,
-    tasks,
-    blocks,
   };
+  const top = counts(raw);
+  const days: { date: string; counts: ReturnType<typeof counts> }[] = Array.isArray(raw?.viewsByDay)
+    ? // biome-ignore lint/suspicious/noExplicitAny: see above
+      raw.viewsByDay.map((day: any) => ({ date: isoDate(day.date), counts: counts(day) }))
+    : [];
+  const byDay = <T extends object>(rename: (c: ReturnType<typeof counts>) => T) =>
+    days.map((day) => ({ date: day.date, ...rename(day.counts) }));
+
+  switch (meta.contentType) {
+    case ContentDataType.FLOW:
+      return {
+        ...base,
+        contentType: 'flow',
+        ...startsCompletions(top),
+        byDay: byDay(startsCompletions),
+        steps: Array.isArray(raw?.viewsByStep)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByStep.map((row: any) => ({
+              name: String(row.name ?? ''),
+              cvid: String(row.cvid ?? ''),
+              stepIndex: int(row.stepIndex),
+              type: String(row.type ?? ''),
+              ...counts(row.analytics),
+              uniqueTooltipTargetMissing: int(row.analytics?.uniqueTooltipTargetMissingCount),
+              totalTooltipTargetMissing: int(row.analytics?.tooltipTargetMissingCount),
+            }))
+          : [],
+      };
+    case ContentDataType.CHECKLIST:
+      return {
+        ...base,
+        contentType: 'checklist',
+        ...startsCompletions(top),
+        byDay: byDay(startsCompletions),
+        tasks: Array.isArray(raw?.viewsByTask)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByTask.map((row: any) => ({
+              name: String(row.name ?? ''),
+              taskId: String(row.taskId ?? ''),
+              ...counts(row.analytics),
+              uniqueClicks: int(row.analytics?.uniqueClicks),
+              totalClicks: int(row.analytics?.totalClicks),
+            }))
+          : [],
+      };
+    case ContentDataType.LAUNCHER:
+      return {
+        ...base,
+        contentType: 'launcher',
+        ...seenActivations(top),
+        byDay: byDay(seenActivations),
+      };
+    case ContentDataType.BANNER:
+      return {
+        ...base,
+        contentType: 'banner',
+        ...seenDismissals(top),
+        byDay: byDay(seenDismissals),
+      };
+    case ContentDataType.RESOURCE_CENTER:
+      return {
+        ...base,
+        contentType: 'resource-center',
+        ...opensClicks(top),
+        byDay: byDay(opensClicks),
+        blocks: Array.isArray(raw?.viewsByBlock)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByBlock.map((row: any) => ({
+              name: String(row.name ?? ''),
+              blockId: String(row.blockId ?? ''),
+              tabName: row.tabName != null ? String(row.tabName) : null,
+              uniqueClicks: int(row.analytics?.uniqueClicks),
+              totalClicks: int(row.analytics?.totalClicks),
+            }))
+          : [],
+      };
+    case ContentDataType.TRACKER:
+      return {
+        ...base,
+        contentType: 'tracker',
+        ...usersOccurrences(top),
+        byDay: byDay(usersOccurrences),
+      };
+    default:
+      // The service rejects non-v2 content types before mapping.
+      throw new Error(`Unsupported content type for analytics: ${meta.contentType}`);
+  }
 }
 
 const share = (raw: { count?: number; percentage?: number } | undefined) => ({

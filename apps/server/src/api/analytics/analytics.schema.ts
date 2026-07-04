@@ -24,86 +24,162 @@ export const analyticsQuery = z.object({
 export class AnalyticsQueryDto extends createZodDto(analyticsQuery) {}
 export type AnalyticsQuery = z.infer<typeof analyticsQuery>;
 
-const counts = {
-  uniqueViews: z.number().int(),
-  totalViews: z.number().int(),
-  uniqueCompletions: z.number().int(),
-  totalCompletions: z.number().int(),
-};
+/**
+ * The response is a discriminated union on `contentType`: each content kind
+ * reports the numbers it actually has, under their real names (a banner has
+ * dismissals, not "completions"; a resource center has opens and clicks).
+ * The uniform views/completions vocabulary is the dashboard's INTERNAL reuse
+ * convenience — it does not leak into this contract.
+ */
 
-// What the top-level counters actually count depends on the content type (the
-// domain maps each type to its own start/complete event pair). Inside the
-// steps/tasks rows the meaning does NOT drift — there a completion is simply
-// "this step / this task completed" — so only the top-level fields carry these.
-const VIEW_SEMANTICS =
-  'What counts as a view, by content type: flow/checklist = started, banner/launcher = seen, resource-center = panel opened.';
-const COMPLETION_SEMANTICS =
-  'What counts as a completion, by content type: flow = reached the end (or an explicit completion step), checklist = every visible task done, launcher = activated (clicked), banner = dismissed, resource-center = a block clicked.';
+const int = () => z.number().int();
 
-export const analyticsByDay = z.object({
-  date: z.string().describe('ISO date (bucketed in the requested timezone).'),
-  ...counts,
-});
-
-/** Per-step funnel row — flows only. */
-export const stepAnalytics = z.object({
-  name: z.string(),
-  cvid: z.string(),
-  stepIndex: z.number().int(),
-  type: z.string(),
-  ...counts,
-  /** Sessions where this tooltip step's target element was never found — the selector-health signal. */
-  uniqueTooltipTargetMissing: z.number().int(),
-  totalTooltipTargetMissing: z.number().int(),
-});
-
-/** Per-task row — checklists only. */
-export const taskAnalytics = z.object({
-  name: z.string(),
-  taskId: z.string(),
-  ...counts,
-  uniqueClicks: z.number().int(),
-  totalClicks: z.number().int(),
-});
-
-/** Per-block click row — resource centers only. */
-export const blockAnalytics = z.object({
-  name: z.string(),
-  blockId: z.string(),
-  tabName: z.string().nullable(),
-  uniqueClicks: z.number().int(),
-  totalClicks: z.number().int(),
-});
-
-export const contentAnalytics = z.object({
+const analyticsBase = {
   object: z.literal(ApiObjectType.CONTENT_ANALYTICS),
   contentId: z.string(),
   environmentId: z.string(),
   startDate: z.string(),
   endDate: z.string(),
   timezone: z.string(),
-  uniqueViews: counts.uniqueViews.describe(
-    `Distinct users with a view in range. ${VIEW_SEMANTICS}`,
-  ),
-  totalViews: counts.totalViews.describe(
-    `View events in range, repeats included. ${VIEW_SEMANTICS}`,
-  ),
-  uniqueCompletions: counts.uniqueCompletions.describe(
-    `Distinct users with a completion in range. ${COMPLETION_SEMANTICS}`,
-  ),
-  totalCompletions: counts.totalCompletions.describe(
-    `Completion events in range, repeats included. ${COMPLETION_SEMANTICS}`,
-  ),
-  byDay: z.array(analyticsByDay),
-  /** Populated for flows; null for every other content type. */
-  steps: z.array(stepAnalytics).nullable(),
-  /** Populated for checklists; null otherwise. */
-  tasks: z.array(taskAnalytics).nullable(),
-  /** Populated for resource centers; null otherwise. */
-  blocks: z.array(blockAnalytics).nullable(),
+};
+
+const date = z.string().describe('ISO date (bucketed in the requested timezone).');
+
+// unique* = distinct users in range; total* = events in range, repeats included.
+const startsCompletions = {
+  uniqueStarts: int(),
+  totalStarts: int(),
+  uniqueCompletions: int(),
+  totalCompletions: int(),
+};
+const seenActivations = {
+  uniqueSeen: int(),
+  totalSeen: int(),
+  uniqueActivations: int().describe('Distinct users who clicked (activated) the launcher.'),
+  totalActivations: int(),
+};
+const seenDismissals = {
+  uniqueSeen: int(),
+  totalSeen: int(),
+  uniqueDismissals: int().describe('Distinct users who closed the banner.'),
+  totalDismissals: int(),
+};
+const opensClicks = {
+  uniqueOpens: int(),
+  totalOpens: int(),
+  uniqueClicks: int().describe('Distinct users who clicked a block inside the panel.'),
+  totalClicks: int(),
+};
+const usersOccurrences = {
+  uniqueUsers: int().describe('Distinct users who fired the tracked event.'),
+  totalOccurrences: int().describe('Occurrences of the tracked event.'),
+};
+
+/** Per-step funnel row — a step's own view/complete counts (semantics do not vary here). */
+export const stepAnalytics = z.object({
+  name: z.string(),
+  cvid: z.string(),
+  stepIndex: int(),
+  type: z.string(),
+  uniqueViews: int(),
+  totalViews: int(),
+  uniqueCompletions: int(),
+  totalCompletions: int(),
+  /** Sessions where this tooltip step's target element was never found — the selector-health signal. */
+  uniqueTooltipTargetMissing: int(),
+  totalTooltipTargetMissing: int(),
 });
-export class ContentAnalyticsDto extends createZodDto(contentAnalytics) {}
+
+/** Per-task row — the task's own view/complete/click counts. */
+export const taskAnalytics = z.object({
+  name: z.string(),
+  taskId: z.string(),
+  uniqueViews: int(),
+  totalViews: int(),
+  uniqueCompletions: int(),
+  totalCompletions: int(),
+  uniqueClicks: int(),
+  totalClicks: int(),
+});
+
+/** Per-block click row. */
+export const blockAnalytics = z.object({
+  name: z.string(),
+  blockId: z.string(),
+  tabName: z.string().nullable(),
+  uniqueClicks: int(),
+  totalClicks: int(),
+});
+
+export const flowAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('flow'),
+  ...startsCompletions,
+  uniqueCompletions: startsCompletions.uniqueCompletions.describe(
+    'Distinct users who reached the end of the flow (or an explicit completion step).',
+  ),
+  byDay: z.array(z.object({ date, ...startsCompletions })),
+  steps: z.array(stepAnalytics),
+});
+
+export const checklistAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('checklist'),
+  ...startsCompletions,
+  uniqueCompletions: startsCompletions.uniqueCompletions.describe(
+    'Distinct users who completed every visible task.',
+  ),
+  byDay: z.array(z.object({ date, ...startsCompletions })),
+  tasks: z.array(taskAnalytics),
+});
+
+export const launcherAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('launcher'),
+  ...seenActivations,
+  byDay: z.array(z.object({ date, ...seenActivations })),
+});
+
+export const bannerAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('banner'),
+  ...seenDismissals,
+  byDay: z.array(z.object({ date, ...seenDismissals })),
+});
+
+export const resourceCenterAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('resource-center'),
+  ...opensClicks,
+  byDay: z.array(z.object({ date, ...opensClicks })),
+  blocks: z.array(blockAnalytics),
+});
+
+export const trackerAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('tracker'),
+  ...usersOccurrences,
+  byDay: z.array(z.object({ date, ...usersOccurrences })),
+});
+
+export const contentAnalytics = z.discriminatedUnion('contentType', [
+  flowAnalytics,
+  checklistAnalytics,
+  launcherAnalytics,
+  bannerAnalytics,
+  resourceCenterAnalytics,
+  trackerAnalytics,
+]);
 export type ContentAnalytics = z.infer<typeof contentAnalytics>;
+
+// A class cannot extend a union type, so the OpenAPI layer gets one DTO per
+// variant; the controller stitches them together with oneOf + discriminator.
+export class FlowAnalyticsDto extends createZodDto(flowAnalytics) {}
+export class ChecklistAnalyticsDto extends createZodDto(checklistAnalytics) {}
+export class LauncherAnalyticsDto extends createZodDto(launcherAnalytics) {}
+export class BannerAnalyticsDto extends createZodDto(bannerAnalytics) {}
+export class ResourceCenterAnalyticsDto extends createZodDto(resourceCenterAnalytics) {}
+export class TrackerAnalyticsDto extends createZodDto(trackerAnalytics) {}
 
 // ── question analytics (surveys) ─────────────────────────────────────────────
 

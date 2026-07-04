@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ContentDataType } from '@usertour/types';
 import { fromZonedTime } from 'date-fns-tz';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -13,6 +14,8 @@ import type { AnalyticsQuery, ContentAnalytics, QuestionAnalytics } from './anal
  * {@link AnalyticsService} the dashboard already uses. Range defaults to the
  * last 30 days; day bucketing defaults to UTC.
  */
+const V2_CONTENT_TYPES = new Set<string>(Object.values(ContentDataType));
+
 @Injectable()
 export class ApiAnalyticsService {
   constructor(
@@ -69,7 +72,9 @@ export class ApiAnalyticsService {
       where: { id, projectId, deleted: false },
       select: { id: true, type: true },
     });
-    if (!content) {
+    // Legacy pre-v2 kinds (nps/survey/event) are outside the v2 surface — the
+    // per-type response union has no shape for them.
+    if (!content || !V2_CONTENT_TYPES.has(content.type)) {
       throw new ContentNotFoundError();
     }
     return content;

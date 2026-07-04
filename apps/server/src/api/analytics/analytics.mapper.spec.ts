@@ -12,7 +12,8 @@ const meta = (contentType: string) => ({
   timezone: 'UTC',
 });
 
-const baseCounts = {
+// Domain-internal counter names — the mapper renames these per content type.
+const rawCounts = {
   uniqueViews: 10,
   totalViews: 14,
   uniqueCompletions: 4,
@@ -20,10 +21,10 @@ const baseCounts = {
 };
 
 describe('mapContentAnalytics (pure)', () => {
-  it('maps a flow: counters, byDay dates, step rows with renamed tooltip counters', () => {
+  it('flow: starts/completions naming, byDay dates, step rows with renamed tooltip counters', () => {
     const raw = {
-      ...baseCounts,
-      viewsByDay: [{ date: new Date('2026-07-01T10:00:00Z'), ...baseCounts }],
+      ...rawCounts,
+      viewsByDay: [{ date: new Date('2026-07-01T10:00:00Z'), ...rawCounts }],
       viewsByStep: [
         {
           name: 'Step A',
@@ -33,7 +34,7 @@ describe('mapContentAnalytics (pure)', () => {
           explicitCompletionStep: true, // internal — must not leak
           target: { customSelector: '#x' }, // internal — must not leak
           analytics: {
-            ...baseCounts,
+            ...rawCounts,
             uniqueTooltipTargetMissingCount: 2,
             tooltipTargetMissingCount: 3,
           },
@@ -46,62 +47,91 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out).toMatchObject({
       object: 'contentAnalytics',
       contentId: 'c1',
+      contentType: 'flow',
       environmentId: 'e1',
-      ...baseCounts,
-      tasks: null,
-      blocks: null,
+      uniqueStarts: 10,
+      totalStarts: 14,
+      uniqueCompletions: 4,
+      totalCompletions: 5,
     });
-    expect(out.byDay).toEqual([{ date: '2026-07-01', ...baseCounts }]);
-    expect(out.steps).toEqual([
+    // No foreign-variant keys — the union carries only what the type has.
+    expect(out).not.toHaveProperty('tasks');
+    expect(out).not.toHaveProperty('blocks');
+    expect(out).not.toHaveProperty('uniqueViews');
+    expect(out.byDay).toEqual([
+      {
+        date: '2026-07-01',
+        uniqueStarts: 10,
+        totalStarts: 14,
+        uniqueCompletions: 4,
+        totalCompletions: 5,
+      },
+    ]);
+    expect(out.contentType === 'flow' && out.steps).toEqual([
       {
         name: 'Step A',
         cvid: 'cv1',
         stepIndex: 0,
         type: 'tooltip',
-        ...baseCounts,
+        ...rawCounts,
         uniqueTooltipTargetMissing: 2,
         totalTooltipTargetMissing: 3,
       },
     ]);
   });
 
-  it('normalizes the domain "not applicable" signals (false / []) to null by content type', () => {
-    // Checklist path: viewsByStep comes back as `false`, tasks as rows.
+  it('checklist: starts/completions + task rows; non-array domain signals normalize to []', () => {
+    // Checklist path: viewsByStep comes back as `false`, viewsByDay as null.
     const raw = {
-      ...baseCounts,
+      ...rawCounts,
       viewsByDay: null,
       viewsByStep: false,
       viewsByTask: [
-        { name: 'T1', taskId: 't1', analytics: { ...baseCounts, uniqueClicks: 7, totalClicks: 9 } },
+        { name: 'T1', taskId: 't1', analytics: { ...rawCounts, uniqueClicks: 7, totalClicks: 9 } },
       ],
       viewsByBlock: [],
     };
     const out = mapContentAnalytics(raw, meta(ContentDataType.CHECKLIST));
-    expect(out.steps).toBeNull();
-    expect(out.blocks).toBeNull();
+    expect(out).toMatchObject({ contentType: 'checklist', uniqueStarts: 10, uniqueCompletions: 4 });
     expect(out.byDay).toEqual([]);
-    expect(out.tasks).toEqual([
-      { name: 'T1', taskId: 't1', ...baseCounts, uniqueClicks: 7, totalClicks: 9 },
+    expect(out).not.toHaveProperty('steps');
+    expect(out.contentType === 'checklist' && out.tasks).toEqual([
+      { name: 'T1', taskId: 't1', ...rawCounts, uniqueClicks: 7, totalClicks: 9 },
     ]);
   });
 
-  it('a banner gets counters only — every breakdown is null even when arrays are present', () => {
-    const raw = {
-      ...baseCounts,
-      viewsByDay: [],
-      viewsByStep: [],
-      viewsByTask: [],
-      viewsByBlock: [],
-    };
-    const out = mapContentAnalytics(raw, meta(ContentDataType.BANNER));
-    expect(out.steps).toBeNull();
-    expect(out.tasks).toBeNull();
-    expect(out.blocks).toBeNull();
+  it('launcher: seen/activations naming, no breakdown', () => {
+    const out = mapContentAnalytics(
+      { ...rawCounts, viewsByDay: [] },
+      meta(ContentDataType.LAUNCHER),
+    );
+    expect(out).toMatchObject({
+      contentType: 'launcher',
+      uniqueSeen: 10,
+      totalSeen: 14,
+      uniqueActivations: 4,
+      totalActivations: 5,
+    });
+    expect(out).not.toHaveProperty('steps');
+    expect(out).not.toHaveProperty('uniqueCompletions');
   });
 
-  it('resource center maps block click rows', () => {
+  it("banner: a dismissal is a dismissal — no 'completions' field exists", () => {
+    const out = mapContentAnalytics({ ...rawCounts, viewsByDay: [] }, meta(ContentDataType.BANNER));
+    expect(out).toMatchObject({
+      contentType: 'banner',
+      uniqueSeen: 10,
+      totalSeen: 14,
+      uniqueDismissals: 4,
+      totalDismissals: 5,
+    });
+    expect(out).not.toHaveProperty('uniqueCompletions');
+  });
+
+  it('resource center: opens/clicks naming + block click rows', () => {
     const raw = {
-      ...baseCounts,
+      ...rawCounts,
+      viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }],
       viewsByBlock: [
         {
           name: 'Docs',
@@ -118,10 +148,37 @@ describe('mapContentAnalytics (pure)', () => {
       ],
     };
     const out = mapContentAnalytics(raw, meta(ContentDataType.RESOURCE_CENTER));
-    expect(out.blocks).toEqual([
+    expect(out).toMatchObject({
+      contentType: 'resource-center',
+      uniqueOpens: 10,
+      totalOpens: 14,
+      uniqueClicks: 4,
+      totalClicks: 5,
+    });
+    expect(out.byDay).toEqual([
+      { date: '2026-07-01', uniqueOpens: 10, totalOpens: 14, uniqueClicks: 4, totalClicks: 5 },
+    ]);
+    expect(out.contentType === 'resource-center' && out.blocks).toEqual([
       { name: 'Docs', blockId: 'b1', tabName: 'Help', uniqueClicks: 1, totalClicks: 2 },
       { name: 'Chat', blockId: 'b2', tabName: null, uniqueClicks: 0, totalClicks: 0 },
     ]);
+  });
+
+  it('tracker: users/occurrences only — the domain mirrors completions from views (fake data, dropped)', () => {
+    const raw = {
+      ...rawCounts,
+      viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }],
+    };
+    const out = mapContentAnalytics(raw, meta(ContentDataType.TRACKER));
+    expect(out).toMatchObject({ contentType: 'tracker', uniqueUsers: 10, totalOccurrences: 14 });
+    expect(out).not.toHaveProperty('uniqueCompletions');
+    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueUsers: 10, totalOccurrences: 14 }]);
+  });
+
+  it('rejects content types outside the v2 union', () => {
+    expect(() => mapContentAnalytics(rawCounts, meta('survey'))).toThrow(
+      /Unsupported content type/,
+    );
   });
 });
 

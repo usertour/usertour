@@ -987,13 +987,12 @@ export function buildReadTools(): McpTool[] {
       title: 'Get content analytics',
       capability: Capability.AnalyticsRead,
       description:
-        'How is this content performing? Views / completions (unique + total), a per-day ' +
-        'series, and the per-type breakdown: per-step funnel with tooltip-target-missing ' +
-        'counts (flows — the selector-health signal), per-task completion (checklists), ' +
-        'per-block clicks (resource centers). Defaults to the last 30 days, UTC. ' +
-        "'Completion' is per-type: flow = reached the end (or an explicit completion step), " +
-        'checklist = all visible tasks done, launcher = activated, banner = dismissed, ' +
-        'resource-center = a block clicked.',
+        'How is this content performing? The response shape follows the content type: flows ' +
+        'report starts + completions and a per-step funnel with tooltip-target-missing counts ' +
+        '(the selector-health signal); checklists starts + completions (= every visible task ' +
+        'done) and per-task rows; launchers seen + activations; banners seen + dismissals; ' +
+        'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
+        'event. All with a per-day series. Defaults to the last 30 days, UTC.',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,

@@ -82,21 +82,25 @@ describe('API v2 content analytics (e2e)', () => {
     expect(res.body).toMatchObject({
       object: 'contentAnalytics',
       contentId,
+      contentType: 'flow',
       environmentId,
       timezone: 'UTC',
-      uniqueViews: 0,
-      totalViews: 0,
+      uniqueStarts: 0,
+      totalStarts: 0,
       uniqueCompletions: 0,
       totalCompletions: 0,
-      tasks: null,
-      blocks: null,
     });
+    // The union carries only the flow variant's fields — no foreign keys, no
+    // internal views/completions vocabulary.
+    expect(res.body).not.toHaveProperty('uniqueViews');
+    expect(res.body).not.toHaveProperty('tasks');
+    expect(res.body).not.toHaveProperty('blocks');
     // Defaults: trailing 30 days as ISO dates.
     expect(res.body.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(res.body.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(Array.isArray(res.body.byDay)).toBe(true);
-    // Flow breakdown: rows or null on the empty path — never false/undefined.
-    expect(res.body.steps === null || Array.isArray(res.body.steps)).toBe(true);
+    // Flow breakdown: always an array, even on the empty path (domain returns false there).
+    expect(Array.isArray(res.body.steps)).toBe(true);
   });
 
   it('question analytics returns an empty result set for a flow without questions', async () => {
