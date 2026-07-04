@@ -983,6 +983,65 @@ export function buildReadTools(): McpTool[] {
     },
 
     {
+      name: 'get_content_analytics',
+      title: 'Get content analytics',
+      capability: Capability.AnalyticsRead,
+      description:
+        'How is this content performing? Views / completions (unique + total), a per-day ' +
+        'series, and the per-type breakdown: per-step funnel with tooltip-target-missing ' +
+        'counts (flows — the selector-health signal), per-task completion (checklists), ' +
+        'per-block clicks (resource centers). Defaults to the last 30 days, UTC.',
+      inputSchema: {
+        contentId: z.string(),
+        environmentId: environmentIdSchema,
+        startDate: z.string().optional().describe('ISO date, inclusive. Default: 30 days ago.'),
+        endDate: z.string().optional().describe('ISO date, inclusive. Default: today.'),
+        timezone: z
+          .string()
+          .optional()
+          .describe('IANA timezone for the per-day bucketing. Default: UTC.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.analytics.contentAnalytics(String(args.contentId), ctx.projectId, {
+          environmentId: environment.id,
+          startDate: asString(args.startDate),
+          endDate: asString(args.endDate),
+          timezone: asString(args.timezone),
+        });
+      },
+    },
+    {
+      name: 'get_content_question_analytics',
+      title: 'Get question analytics',
+      capability: Capability.AnalyticsRead,
+      description:
+        'Survey results for this content, aggregated per question: answer distribution, NPS ' +
+        'score with promoter/passive/detractor shares, rating averages — each with a ' +
+        'rolling-window daily series. Defaults to the last 30 days, UTC.',
+      inputSchema: {
+        contentId: z.string(),
+        environmentId: environmentIdSchema,
+        startDate: z.string().optional().describe('ISO date, inclusive. Default: 30 days ago.'),
+        endDate: z.string().optional().describe('ISO date, inclusive. Default: today.'),
+        timezone: z
+          .string()
+          .optional()
+          .describe('IANA timezone for the per-day bucketing. Default: UTC.'),
+      },
+      async handler(args, ctx) {
+        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+        const environment = await resolveEnvironment(args, ctx);
+        return ctx.services.analytics.questionAnalytics(String(args.contentId), ctx.projectId, {
+          environmentId: environment.id,
+          startDate: asString(args.startDate),
+          endDate: asString(args.endDate),
+          timezone: asString(args.timezone),
+        });
+      },
+    },
+    {
       name: 'list_environments',
       title: 'List environments',
       capability: Capability.EnvironmentRead,

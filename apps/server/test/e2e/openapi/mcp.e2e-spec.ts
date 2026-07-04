@@ -9,6 +9,7 @@ import {
   buildBizUser,
   buildBizUserOnCompany,
   buildContent,
+  buildVersion,
   buildEnvironment,
   buildProject,
   buildSubscription,
@@ -218,6 +219,38 @@ describe('MCP endpoint (e2e)', () => {
   });
 
   describe('tools/call', () => {
+    it('get_content_analytics returns the typed envelope (analytics:read)', async () => {
+      const token = await mint([Capability.AnalyticsRead], [projectA]);
+      const content = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+      await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'get_content_analytics',
+            arguments: { contentId: content.id, environmentId: envA },
+          },
+        },
+        token,
+      );
+      const result = extractResult(res);
+      expect(result.result.isError).toBeFalsy();
+      const payload = parseToolContent(result);
+      expect(payload).toMatchObject({
+        object: 'contentAnalytics',
+        contentId: content.id,
+        environmentId: envA,
+        uniqueViews: 0,
+        tasks: null,
+      });
+    });
+
     it('list_users returns the seeded user in the text content', async () => {
       const token = await mint([Capability.UserRead], [projectA]);
       const res = await rpc(

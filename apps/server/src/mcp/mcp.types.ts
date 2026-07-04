@@ -8,6 +8,7 @@ import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';
 import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
+import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiSegmentsService } from '@/api/segments/segments.service';
@@ -33,6 +34,7 @@ export interface McpServices {
   segments: ApiSegmentsService;
   sessions: ApiContentSessionsService;
   environments: ApiEnvironmentsService;
+  analytics: ApiAnalyticsService;
 }
 
 /**

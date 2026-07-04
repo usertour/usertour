@@ -10,6 +10,8 @@ import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { ThemesModule } from '@/themes/themes.module';
 
+import { ApiAnalyticsController } from './analytics/analytics.controller';
+import { ApiAnalyticsService } from './analytics/analytics.service';
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesController } from './companies/companies.controller';
@@ -52,6 +54,7 @@ import { ApiUsersService } from './users/users.service';
   // which is what the docs sidebar renders: core content first, audience next,
   // schema/definitions last.
   controllers: [
+    ApiAnalyticsController,
     ApiContentController,
     ApiContentVersionsController,
     ApiThemesController,
@@ -65,6 +68,7 @@ import { ApiUsersService } from './users/users.service';
     ApiEnvironmentsController,
   ],
   providers: [
+    ApiAnalyticsService,
     ApiEventDefinitionsService,
     ApiAttributeDefinitionsService,
     ApiContentService,
@@ -79,6 +83,7 @@ import { ApiUsersService } from './users/users.service';
   ],
   // Exported for the MCP module, which binds these read services as tools.
   exports: [
+    ApiAnalyticsService,
     ApiContentService,
     ApiContentVersionsService,
     ApiAttributeDefinitionsService,
