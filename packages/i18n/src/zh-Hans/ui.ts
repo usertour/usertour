@@ -245,15 +245,17 @@ const translations = {
       title: 'MCP 服务器',
       subtitle:
         '把 Claude、Cursor、ChatGPT 等 AI 助手连接到 Usertour——它们可以通过对话为你构建、发布和管理引导内容。',
+      docsLink: '文档',
       serverUrlLabel: '服务器地址',
       clientsTitle: '连接客户端',
       clientsSubtitle: '选择你的 AI 助手——下面所有值都已按当前实例预填好。',
       consentNote:
         '一个服务器搞定一切：连接能做什么——哪个项目、哪些环境、只读还是完整权限——都在连接时的授权页上选择。',
       copied: '已复制到剪贴板',
-      safety: {
-        title: '让写权限远离不可信文本',
-        body: '如果某个会话会读取终端用户提交的内容（问卷回答、用户属性），请以只读方式连接；发布、删除等写操作放到一个不读取不可信文本的独立连接中。',
+      notes: {
+        permissions:
+          '连接后，AI 助手将以你的身份行事——权限上限是你的角色，并可在授权页进一步收窄（只读、指定环境）。它做出的变更（发布、删除）都记在你名下。',
+        audit: 'AI 助手通过 MCP 执行的所有操作，都会记入审计日志，归属于你的账户。',
       },
       clients: {
         claude: {

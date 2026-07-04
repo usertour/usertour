@@ -250,6 +250,7 @@ const translations = {
       title: 'MCP server',
       subtitle:
         'Connect AI assistants like Claude, Cursor, and ChatGPT to Usertour — they can build, publish, and manage your onboarding through conversation.',
+      docsLink: 'Docs',
       serverUrlLabel: 'Server URL',
       clientsTitle: 'Connect a client',
       clientsSubtitle:
@@ -257,9 +258,11 @@ const translations = {
       consentNote:
         'One server for everything: what a connection may do — which project, which environments, read-only or full access — is chosen on the authorization screen when you connect.',
       copied: 'Copied to clipboard',
-      safety: {
-        title: 'Keep write access away from untrusted text',
-        body: 'If a chat will read end-user submitted content (survey answers, user attributes), connect it read-only. Do writes — publishing, deleting — in a separate connection that never reads untrusted text.',
+      notes: {
+        permissions:
+          'Once connected, an AI assistant acts as you — capped by your role, and further narrowed by whatever you grant on the authorization screen (read-only, specific environments). Changes it makes (publishing, deleting) count as yours.',
+        audit:
+          'Every action an assistant takes via MCP is recorded in the audit log under your account.',
       },
       clients: {
         claude: {

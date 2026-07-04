@@ -2,6 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import {
   RiClaudeFill,
   RiCursorAiFill,
+  RiErrorWarningLine,
   RiExternalLinkLine,
   RiOpenaiFill,
   RiPuzzleLine,
@@ -11,6 +12,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  Alert,
+  AlertDescription,
   Button,
   Label,
   Separator,
@@ -103,7 +106,18 @@ export const SettingsMcpPage = () => {
             <div className="flex h-10 flex-row items-center">
               <h3 className="text-xl font-medium tracking-tight">{t('settings.mcp.title')}</h3>
             </div>
-            <p className="text-sm text-muted-foreground">{t('settings.mcp.subtitle')}</p>
+            <p className="text-sm text-muted-foreground">
+              {t('settings.mcp.subtitle')}{' '}
+              <a
+                href="https://docs.usertour.io/api-reference-v2/mcp"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-0.5 text-primary hover:underline"
+              >
+                {t('settings.mcp.docsLink')}
+                <RiExternalLinkLine className="h-3.5 w-3.5" />
+              </a>
+            </p>
           </div>
           <Separator />
           <div className="space-y-1.5">
@@ -111,9 +125,21 @@ export const SettingsMcpPage = () => {
             <CopyableInput value={serverUrl} copiedMessage={copied} />
             <p className="text-sm text-muted-foreground">{t('settings.mcp.consentNote')}</p>
           </div>
-          <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-            <div className="font-medium">{t('settings.mcp.safety.title')}</div>
-            <p className="mt-1 text-muted-foreground">{t('settings.mcp.safety.body')}</p>
+          <div className="space-y-3">
+            <Alert className="border-warning/40 bg-warning/10 [&:has(svg)]:pl-4">
+              {/* Icon flows with the text (the Alert's own svg slot pins it to the
+                  top corner, which drifts on single-line notes). */}
+              <AlertDescription className="flex gap-2.5">
+                <RiErrorWarningLine className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                <span>{t('settings.mcp.notes.permissions')}</span>
+              </AlertDescription>
+            </Alert>
+            <Alert className="border-warning/40 bg-warning/10 [&:has(svg)]:pl-4">
+              <AlertDescription className="flex gap-2.5">
+                <RiErrorWarningLine className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                <span>{t('settings.mcp.notes.audit')}</span>
+              </AlertDescription>
+            </Alert>
           </div>
         </div>
       </SettingsCard>
