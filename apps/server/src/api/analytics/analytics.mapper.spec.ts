@@ -1,6 +1,7 @@
 import { ContentDataType } from '@usertour/types';
 
 import { mapContentAnalytics, mapQuestionAnalytics } from './analytics.mapper';
+import { toDayBoundary } from './analytics.service';
 
 const meta = (contentType: string) => ({
   contentId: 'c1',
@@ -198,5 +199,27 @@ describe('mapQuestionAnalytics (pure)', () => {
     expect(text.nps).toBeNull();
     expect(text.rating).toBeNull();
     expect(text.totalResponses).toBe(2);
+  });
+});
+
+describe('toDayBoundary', () => {
+  it('expands an inclusive date to full-day bounds (the domain filters createdAt <= raw value)', () => {
+    // Regression: passing bare '2026-07-04' straight through meant MIDNIGHT,
+    // silently dropping the entire end day — live-verified as all-zero
+    // analytics while 33 sessions existed on that day.
+    expect(toDayBoundary('2026-07-04', 'UTC', 'start')).toBe('2026-07-04T00:00:00.000Z');
+    expect(toDayBoundary('2026-07-04', 'UTC', 'end')).toBe('2026-07-04T23:59:59.999Z');
+  });
+
+  it('respects the requested timezone for the day edges', () => {
+    // Shanghai (UTC+8): the local day starts 8h before UTC midnight.
+    expect(toDayBoundary('2026-07-04', 'Asia/Shanghai', 'start')).toBe('2026-07-03T16:00:00.000Z');
+    expect(toDayBoundary('2026-07-04', 'Asia/Shanghai', 'end')).toBe('2026-07-04T15:59:59.999Z');
+  });
+
+  it('passes full timestamps through untouched', () => {
+    expect(toDayBoundary('2026-07-04T12:30:00.000Z', 'UTC', 'end')).toBe(
+      '2026-07-04T12:30:00.000Z',
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { fromZonedTime } from 'date-fns-tz';
 import { PrismaService } from 'nestjs-prisma';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
@@ -30,15 +31,17 @@ export class ApiAnalyticsService {
     const raw = await this.analytics.queryContentAnalytics(
       query.environmentId,
       id,
-      range.startDate,
-      range.endDate,
+      range.domainStartDate,
+      range.domainEndDate,
       range.timezone,
     );
     return mapContentAnalytics(raw, {
       contentId: id,
       contentType: content.type,
       environmentId: query.environmentId,
-      ...range,
+      startDate: range.startDate,
+      endDate: range.endDate,
+      timezone: range.timezone,
     });
   }
 
@@ -53,8 +56,8 @@ export class ApiAnalyticsService {
     const raw = await this.analytics.queryContentQuestionAnalytics(
       query.environmentId,
       id,
-      range.startDate,
-      range.endDate,
+      range.domainStartDate,
+      range.domainEndDate,
       range.timezone,
     );
     // Domain returns `false` when no version exists yet — no questions, not an error.
@@ -83,17 +86,44 @@ export class ApiAnalyticsService {
   }
 }
 
-/** Missing dates default to the trailing 30 days; timezone to UTC. */
+/**
+ * Missing dates default to the trailing 30 days; timezone to UTC.
+ *
+ * The domain filters `createdAt <= endDate` on the RAW value, and the dashboard
+ * passes full end-of-day timestamps — a bare '2026-07-04' would mean MIDNIGHT
+ * and silently exclude the whole end day (today's sessions vanish). Normalize
+ * caller-supplied inclusive DATES to day-boundary timestamps in the requested
+ * timezone; full timestamps pass through untouched.
+ */
 function resolveRange(query: AnalyticsQuery): {
   startDate: string;
   endDate: string;
   timezone: string;
+  domainStartDate: string;
+  domainEndDate: string;
 } {
   const today = new Date();
   const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const timezone = query.timezone || 'UTC';
+  const startDate = query.startDate || monthAgo.toISOString().slice(0, 10);
+  const endDate = query.endDate || today.toISOString().slice(0, 10);
   return {
-    startDate: query.startDate || monthAgo.toISOString().slice(0, 10),
-    endDate: query.endDate || today.toISOString().slice(0, 10),
-    timezone: query.timezone || 'UTC',
+    startDate,
+    endDate,
+    timezone,
+    domainStartDate: toDayBoundary(startDate, timezone, 'start'),
+    domainEndDate: toDayBoundary(endDate, timezone, 'end'),
   };
+}
+
+/** '2026-07-04' -> that day's first/last instant in `timezone`; timestamps pass through. */
+export function toDayBoundary(value: string, timezone: string, edge: 'start' | 'end'): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value; // already a timestamp — caller controls the instant
+  }
+  // fromZonedTime: "this wall-clock time in that zone" -> the UTC instant.
+  // Building the end edge from its own wall-clock time (not start + 24h)
+  // keeps DST-transition days (23h/25h) correct.
+  const wallClock = edge === 'start' ? `${value} 00:00:00.000` : `${value} 23:59:59.999`;
+  return fromZonedTime(wallClock, timezone).toISOString();
 }
