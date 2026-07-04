@@ -990,7 +990,10 @@ export function buildReadTools(): McpTool[] {
         'How is this content performing? Views / completions (unique + total), a per-day ' +
         'series, and the per-type breakdown: per-step funnel with tooltip-target-missing ' +
         'counts (flows — the selector-health signal), per-task completion (checklists), ' +
-        'per-block clicks (resource centers). Defaults to the last 30 days, UTC.',
+        'per-block clicks (resource centers). Defaults to the last 30 days, UTC. ' +
+        "'Completion' is per-type: flow = reached the end (or an explicit completion step), " +
+        'checklist = all visible tasks done, launcher = activated, banner = dismissed, ' +
+        'resource-center = a block clicked.',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,

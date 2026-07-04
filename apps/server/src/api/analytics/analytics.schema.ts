@@ -31,6 +31,15 @@ const counts = {
   totalCompletions: z.number().int(),
 };
 
+// What the top-level counters actually count depends on the content type (the
+// domain maps each type to its own start/complete event pair). Inside the
+// steps/tasks rows the meaning does NOT drift — there a completion is simply
+// "this step / this task completed" — so only the top-level fields carry these.
+const VIEW_SEMANTICS =
+  'What counts as a view, by content type: flow/checklist = started, banner/launcher = seen, resource-center = panel opened.';
+const COMPLETION_SEMANTICS =
+  'What counts as a completion, by content type: flow = reached the end (or an explicit completion step), checklist = every visible task done, launcher = activated (clicked), banner = dismissed, resource-center = a block clicked.';
+
 export const analyticsByDay = z.object({
   date: z.string().describe('ISO date (bucketed in the requested timezone).'),
   ...counts,
@@ -73,7 +82,18 @@ export const contentAnalytics = z.object({
   startDate: z.string(),
   endDate: z.string(),
   timezone: z.string(),
-  ...counts,
+  uniqueViews: counts.uniqueViews.describe(
+    `Distinct users with a view in range. ${VIEW_SEMANTICS}`,
+  ),
+  totalViews: counts.totalViews.describe(
+    `View events in range, repeats included. ${VIEW_SEMANTICS}`,
+  ),
+  uniqueCompletions: counts.uniqueCompletions.describe(
+    `Distinct users with a completion in range. ${COMPLETION_SEMANTICS}`,
+  ),
+  totalCompletions: counts.totalCompletions.describe(
+    `Completion events in range, repeats included. ${COMPLETION_SEMANTICS}`,
+  ),
   byDay: z.array(analyticsByDay),
   /** Populated for flows; null for every other content type. */
   steps: z.array(stepAnalytics).nullable(),
