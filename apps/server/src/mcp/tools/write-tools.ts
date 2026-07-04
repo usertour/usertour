@@ -196,7 +196,9 @@ export function buildWriteTools(): McpTool[] {
         'the previous draft is frozen as history. Use this to edit PUBLISHED/locked content: it ' +
         'copies the steps and data, and each step keeps its `cvid` (only the primary `id` is ' +
         'regenerated), so you can keep targeting steps by `cvid`/`key` without re-reading. ' +
-        'Returns the new version.',
+        'The response is the slim version envelope (id / number / themeId / timestamps) — it does ' +
+        'NOT inline the copied `steps`/`data`. The copy is complete; to inspect it, read the new ' +
+        'version with `get_content_version` and `expand`.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) =>
         ctx.services.contentVersions.create(ctx.projectId, String(args.contentId), {

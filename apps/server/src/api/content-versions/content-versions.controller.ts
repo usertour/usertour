@@ -101,7 +101,10 @@ export class ApiContentVersionsController {
   @RequireCapability(Capability.ContentUpdate)
   @ApiOperation({
     summary: 'Create a content version',
-    description: "Fork the content's current edited version into a new draft.",
+    description:
+      "Fork the content's current edited version into a new draft. Returns the slim version " +
+      'envelope — the copied steps/data are not inlined; read the version with `expand` to ' +
+      'inspect them.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'contentId', description: 'Content ID' })

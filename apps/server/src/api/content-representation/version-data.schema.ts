@@ -202,7 +202,11 @@ export const representationBanner = z.object({
         .optional()
         .describe(
           'When true the banner floats over the page; when false it takes its own space and ' +
-            'pushes the page content down.',
+            "pushes the page content down. Push mode only displaces normal-flow content — the host app's " +
+            '`position: fixed` bars (top nav, sidebars) do NOT move and will overlap the banner. For such ' +
+            'apps, either float the banner over the content (true), or use a container/element-relative ' +
+            '`placement` so the banner lives inside the scrolling content area instead of fighting the ' +
+            'fixed bars.',
         ),
       stickToTop: z
         .boolean()
