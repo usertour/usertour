@@ -1,5 +1,6 @@
 import type { AssetAttributes } from '@usertour/frame';
 import { Frame, useFrame } from '@usertour/frame';
+import { useSize } from '@usertour/react-use-size';
 import { RiCloseLargeFill } from '@usertour/icons';
 import type { BannerAnimationTiming, BannerData, ThemeTypesSetting } from '@usertour/types';
 import { BannerEmbedPlacement } from '@usertour/types';
@@ -12,6 +13,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useState,
 } from 'react';
 
 import { useComposedRefs } from '@usertour/react-compose-refs';
@@ -39,6 +41,15 @@ interface BannerRootContextValue {
   zIndex?: number;
   assets?: AssetAttributes[];
   onDismiss?: () => void;
+  /**
+   * Live-measured banner height (content + padding), reported from inside the
+   * frame. null until the first measurement — the wrapper falls back to the
+   * stored data.height (a builder-era snapshot; API-authored banners have
+   * none) and, when the reveal animation is on, stays hidden so the animation
+   * only ever runs against the real height.
+   */
+  measuredHeight: number | null;
+  onContentSizeChange?: (rect: { width: number; height: number }) => void;
 }
 
 const BannerRootContext = createContext<BannerRootContextValue | null>(null);
@@ -70,12 +81,15 @@ export function getBannerWrapperStyle(
   data: BannerData,
   themeSetting?: ThemeTypesSetting,
   zIndex?: number,
+  measuredHeight?: number | null,
 ): CSSProperties {
-  // Note: data.height stores content height (without padding)
-  // Add current theme's padding to get the actual wrapper height
+  // The live in-frame measurement (content + padding) is authoritative — the
+  // stored data.height is a builder-era snapshot (absent on API-authored
+  // banners, stale after theme font changes). Until the first measurement,
+  // fall back to the snapshot + current theme padding, like before.
   const bannerPadding = themeSetting?.banner?.padding ?? 8; // default padding is 8px
   const contentHeight = data?.height ?? BANNER_DEFAULT_HEIGHT_PX;
-  const heightPx = contentHeight + bannerPadding * 2;
+  const heightPx = measuredHeight ?? contentHeight + bannerPadding * 2;
   const overlay = data?.overlayEmbedOverAppContent ?? false;
   const sticky = data?.stickToTopOfViewport ?? false;
 
@@ -114,12 +128,22 @@ export function getBannerWrapperStyle(
   }
 
   if (data?.animateWhenEmbedAppears) {
-    const duration =
-      themeSetting?.banner?.animationDuration ?? BANNER_DEFAULT_ANIMATION_DURATION_MS;
-    const timing = themeSetting?.banner?.animationTiming ?? BANNER_DEFAULT_ANIMATION_TIMING;
-    style.animationName = WidgetAnimation.bannerReveal;
-    style.animationDuration = `${duration}ms`;
-    style.animationTimingFunction = BANNER_ANIMATION_TIMING_PRESETS[timing];
+    // `undefined` = caller doesn't participate in measure-then-reveal (legacy
+    // path, e.g. the SDK's direct call) -> old behavior, always visible.
+    // `null` = measurement pending -> stay hidden until it lands.
+    if (measuredHeight === null) {
+      // Measure-then-reveal: keep the banner invisible until the real height
+      // is known, so the reveal animation never runs against the fallback
+      // height and then visibly jumps to the corrected one.
+      style.visibility = 'hidden';
+    } else {
+      const duration =
+        themeSetting?.banner?.animationDuration ?? BANNER_DEFAULT_ANIMATION_DURATION_MS;
+      const timing = themeSetting?.banner?.animationTiming ?? BANNER_DEFAULT_ANIMATION_TIMING;
+      style.animationName = WidgetAnimation.bannerReveal;
+      style.animationDuration = `${duration}ms`;
+      style.animationTimingFunction = BANNER_ANIMATION_TIMING_PRESETS[timing];
+    }
   }
 
   return style;
@@ -177,19 +201,21 @@ interface BannerContentContainerProps {
   className?: string;
 }
 
-const BannerContentContainer = memo((props: BannerContentContainerProps) => {
-  const { children, style, className } = props;
-  const containerClassName = cn(
-    'h-full w-full relative flex justify-between gap-x-2 p-sdk-banner bg-sdk-banner text-sdk-banner-foreground',
-    className,
-  );
+const BannerContentContainer = memo(
+  forwardRef<HTMLDivElement, BannerContentContainerProps>((props, ref) => {
+    const { children, style, className } = props;
+    const containerClassName = cn(
+      'h-full w-full relative flex justify-between gap-x-2 p-sdk-banner bg-sdk-banner text-sdk-banner-foreground',
+      className,
+    );
 
-  return (
-    <div className={containerClassName} style={style}>
-      {children}
-    </div>
-  );
-});
+    return (
+      <div ref={ref} className={containerClassName} style={style}>
+        {children}
+      </div>
+    );
+  }),
+);
 
 BannerContentContainer.displayName = 'BannerContentContainer';
 
@@ -200,15 +226,49 @@ interface BannerRootProps {
   assets?: AssetAttributes[];
   globalStyle?: string;
   onDismiss?: () => void;
+  /**
+   * Fires with the live-measured banner height (content + padding) — and with
+   * the fail-open fallback if no measurement lands. Hosts that style their own
+   * wrapper element (the SDK's portal mount node) feed this back into
+   * getBannerWrapperStyle's 4th argument.
+   */
+  onMeasuredHeightChange?: (height: number | null) => void;
   children?: React.ReactNode;
 }
 
 const BannerRoot = memo((props: BannerRootProps) => {
-  const { data, zIndex, assets, onDismiss, themeSettings, children } = props;
+  const { data, zIndex, assets, onDismiss, themeSettings, onMeasuredHeightChange, children } =
+    props;
   const { globalStyle: derivedGlobalStyle, themeSetting } = useSettingsStyles(themeSettings, {
     type: 'banner',
   });
   const globalStyle = props.globalStyle ?? derivedGlobalStyle;
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  const onContentSizeChange = useCallback((rect: { width: number; height: number }) => {
+    if (rect.height > 0) {
+      setMeasuredHeight(rect.height);
+    }
+  }, []);
+  useEffect(() => {
+    onMeasuredHeightChange?.(measuredHeight);
+  }, [measuredHeight, onMeasuredHeightChange]);
+  // Fail open: if no measurement arrives (observer quirk, empty content),
+  // reveal at the fallback height rather than staying hidden forever.
+  useEffect(() => {
+    if (measuredHeight !== null) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setMeasuredHeight((current) => {
+        if (current !== null) {
+          return current;
+        }
+        const padding = themeSetting?.banner?.padding ?? 8;
+        return (data?.height ?? BANNER_DEFAULT_HEIGHT_PX) + padding * 2;
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [measuredHeight, data?.height, themeSetting]);
 
   const contextValue = useMemo<BannerRootContextValue>(
     () => ({
@@ -218,8 +278,19 @@ const BannerRoot = memo((props: BannerRootProps) => {
       zIndex,
       assets,
       onDismiss,
+      measuredHeight,
+      onContentSizeChange,
     }),
-    [globalStyle, themeSetting, data, zIndex, assets, onDismiss],
+    [
+      globalStyle,
+      themeSetting,
+      data,
+      zIndex,
+      assets,
+      onDismiss,
+      measuredHeight,
+      onContentSizeChange,
+    ],
   );
 
   return <BannerRootContext.Provider value={contextValue}>{children}</BannerRootContext.Provider>;
@@ -254,7 +325,7 @@ interface BannerWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
 const BannerWrapper = memo(
   forwardRef<HTMLDivElement, BannerWrapperProps>((props, ref) => {
     const { children, previewMode, ...restProps } = props;
-    const { data, themeSetting, zIndex } = useBannerRootContext();
+    const { data, themeSetting, zIndex, measuredHeight } = useBannerRootContext();
     const wrapperStyle = useMemo(() => {
       if (previewMode) {
         return {
@@ -262,8 +333,8 @@ const BannerWrapper = memo(
           ['--usertour-widget-banner-height' as string]: 'auto',
         } as CSSProperties;
       }
-      return getBannerWrapperStyle(data, themeSetting, zIndex);
-    }, [data, previewMode, themeSetting, zIndex]);
+      return getBannerWrapperStyle(data, themeSetting, zIndex, measuredHeight);
+    }, [data, previewMode, themeSetting, zIndex, measuredHeight]);
     return (
       <div ref={ref} className="usertour-widget-banner" style={wrapperStyle} {...restProps}>
         {children}
@@ -307,8 +378,29 @@ interface BannerInFrameProps {
 
 const BannerInFrame = memo((props: BannerInFrameProps) => {
   const { globalStyle, children } = props;
-  const { data, onDismiss } = useBannerRootContext();
+  const { data, onDismiss, onContentSizeChange } = useBannerRootContext();
   const { document } = useFrame();
+  // Live-measure the rendered banner (content + its padding) and report it to
+  // the host-side wrapper — same measure-inside/apply-outside pattern as
+  // PopperContentInFrame. An iframe can't size itself to its content.
+  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
+  const containerRect = useSize(containerEl);
+  useEffect(() => {
+    if (containerRect) {
+      onContentSizeChange?.(containerRect);
+    }
+  }, [containerRect, onContentSizeChange]);
+  // Don't wait for the ResizeObserver's first tick (it can lag or, in some
+  // frame setups, never fire): measure synchronously as soon as the element
+  // mounts so the reveal isn't gated on observer plumbing.
+  useEffect(() => {
+    if (containerEl) {
+      const rect = containerEl.getBoundingClientRect();
+      if (rect.height > 0) {
+        onContentSizeChange?.({ width: rect.width, height: rect.height });
+      }
+    }
+  }, [containerEl, onContentSizeChange]);
 
   useEffect(() => {
     if (document?.body) {
@@ -337,7 +429,11 @@ const BannerInFrame = memo((props: BannerInFrameProps) => {
   }, [onDismiss]);
 
   return (
-    <BannerContentContainer>
+    // h-auto (overrides the container's h-full): the measurement must read the
+    // CONTENT's natural height — with h-full the container tracks the iframe,
+    // which tracks this very measurement (circular). The frame is sized to the
+    // container, so nothing is lost by not stretching.
+    <BannerContentContainer ref={setContainerEl} className="h-auto">
       <div
         className="min-w-0 flex-1 w-full mx-auto flex flex-col justify-center"
         style={contentMaxWidth}
