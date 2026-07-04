@@ -241,6 +241,66 @@ const translations = {
     },
   },
   settings: {
+    mcp: {
+      title: 'MCP 服务器',
+      subtitle:
+        '把 Claude、Cursor、ChatGPT 等 AI 助手连接到 Usertour——它们可以通过对话为你构建、发布和管理引导内容。',
+      serverUrlLabel: '服务器地址',
+      clientsTitle: '连接客户端',
+      clientsSubtitle: '选择你的 AI 助手——下面所有值都已按当前实例预填好。',
+      consentNote:
+        '一个服务器搞定一切：连接能做什么——哪个项目、哪些环境、只读还是完整权限——都在连接时的授权页上选择。',
+      copied: '已复制到剪贴板',
+      safety: {
+        title: '让写权限远离不可信文本',
+        body: '如果某个会话会读取终端用户提交的内容（问卷回答、用户属性），请以只读方式连接；发布、删除等写操作放到一个不读取不可信文本的独立连接中。',
+      },
+      clients: {
+        claude: {
+          title: 'Claude（claude.ai）',
+          blurb: '在 claude.ai 中把 Usertour 添加为自定义连接器。',
+          step1: '打开 Settings → Connectors，点击 "Add custom connector"：',
+          step2: '设置连接器名称：',
+          step3: '粘贴服务器地址：',
+          step4: '点击 Add——Claude 会打开 Usertour 授权页。选择项目、环境和权限级别后批准。',
+        },
+        chatgpt: {
+          title: 'ChatGPT',
+          blurb: '通过 ChatGPT 开发者模式的连接器接入。',
+          step1: '打开 Settings → Connectors → Advanced，开启 Developer mode，点击 "Create app"。',
+          step2: '设置名称和 MCP Server URL：',
+          step3: 'Authentication 保持 OAuth 并提交——ChatGPT 会打开 Usertour 授权页，批准即连接。',
+        },
+        cursor: {
+          title: 'Cursor',
+          blurb: '通过 Cursor 深链一键安装。',
+          button: '添加到 Cursor',
+          step1: '点击「添加到 Cursor」——Cursor 会带着预填好的服务器打开并引导你完成授权。',
+          step2: '想手动添加？Cursor → Settings → MCP → Add new MCP server，使用此地址：',
+        },
+        claudeCode: {
+          title: 'Claude Code',
+          blurb: '一条命令行即可添加。',
+          step1: '在任意终端运行：',
+          step2: '然后在 Claude Code 里运行 /mcp 完成授权——Usertour 授权页会在浏览器中打开。',
+        },
+        other: {
+          title: '其他客户端',
+          blurb: '任何读取 mcpServers.json 的客户端（Continue、Zed 等）。',
+          body: '任何读取 mcpServers.json 的客户端（Continue、Zed 等）：添加下面的配置，首次使用时会自动走授权流程。',
+        },
+      },
+      manage: {
+        prefix: '在',
+        connectedApps: 'Connected apps',
+        suffix: ' 中查看或撤销已连接的助手。',
+      },
+      apiKeyNote: {
+        prefix: '客户端不支持 OAuth？创建一个',
+        link: '个人 API 密钥',
+        suffix: '，通过 mcp-remote 以 Bearer 头连接。',
+      },
+    },
     nav: {
       heading: '设置',
       general: '常规',
@@ -262,6 +322,7 @@ const translations = {
         'connected-apps': '已连接的应用',
         installation: '安装',
         api: 'API',
+        mcp: 'MCP',
         integrations: '集成',
       },
     },

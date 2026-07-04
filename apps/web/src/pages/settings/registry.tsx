@@ -6,6 +6,7 @@ import {
   RiBox1Line,
   RiFlashlightLine,
   RiKey2Line,
+  RiRobot2Line,
   RiKeyLine,
   RiPaletteLine,
   RiPlugLine,
@@ -45,6 +46,7 @@ export type SettingsSectionKey =
   | 'personal-api-keys'
   | 'connected-apps'
   | 'api'
+  | 'mcp'
   | 'integrations'
   | 'sso';
 
@@ -283,6 +285,16 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     component: lazy(() => import('./api').then((module) => ({ default: module.SettingsApiList }))),
+  },
+  {
+    key: 'mcp',
+    title: 'MCP',
+    icon: <RiRobot2Line className={ICON_CLASS} />,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout (like sso) — sits on the muted surface.
+    surface: 'muted',
+    component: lazy(() => import('./mcp').then((module) => ({ default: module.SettingsMcpPage }))),
   },
   {
     key: 'integrations',

@@ -45,6 +45,11 @@ const config: Config = {
   app: {
     homepageUrl: process.env.APP_HOMEPAGE_URL || '',
     apiUrl: process.env.API_URL || '',
+    // Full public MCP endpoint shown in Settings -> MCP (e.g. https://api.usertour.io/mcp).
+    // Defaults to `${API_URL}/mcp` when unset.
+    mcpServerUrl:
+      process.env.MCP_SERVER_URL ||
+      (process.env.API_URL ? `${process.env.API_URL.replace(/\/+$/, '')}/mcp` : ''),
     docUrl: process.env.DOC_URL || '',
     // The SSO OIDC redirect URI, defined once: override with SSO_CALLBACK_URL,
     // otherwise derived from API_URL (fixed path). Both the openid-client

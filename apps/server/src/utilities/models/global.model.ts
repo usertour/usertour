@@ -8,6 +8,10 @@ export class GlobalConfig {
   @Field(() => String, { nullable: true })
   apiUrl: string;
 
+  /** Full public MCP endpoint (Settings -> MCP shows it verbatim). */
+  @Field(() => String, { nullable: true })
+  mcpServerUrl: string;
+
   @Field(() => String, { nullable: true })
   ssoCallbackUrl: string;
 

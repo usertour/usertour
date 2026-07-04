@@ -101,6 +101,7 @@ export class UtilitiesService {
   async globalConfig() {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     const apiUrl = this.configService.get('app.apiUrl');
+    const mcpServerUrl = this.configService.get('app.mcpServerUrl');
     let allowUserRegistration = true;
     let allowProjectLevelSubscriptionManagement = true;
     let needsSystemAdminSetup = false;
@@ -142,6 +143,7 @@ export class UtilitiesService {
     return {
       isSelfHostedMode,
       apiUrl,
+      mcpServerUrl,
       ssoCallbackUrl: this.configService.get('app.ssoCallbackUrl'),
       allowUserRegistration,
       allowProjectLevelSubscriptionManagement,

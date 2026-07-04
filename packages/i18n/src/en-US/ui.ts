@@ -246,6 +246,73 @@ const translations = {
     },
   },
   settings: {
+    mcp: {
+      title: 'MCP server',
+      subtitle:
+        'Connect AI assistants like Claude, Cursor, and ChatGPT to Usertour — they can build, publish, and manage your onboarding through conversation.',
+      serverUrlLabel: 'Server URL',
+      clientsTitle: 'Connect a client',
+      clientsSubtitle:
+        'Pick your AI assistant — every value below is pre-filled for this instance.',
+      consentNote:
+        'One server for everything: what a connection may do — which project, which environments, read-only or full access — is chosen on the authorization screen when you connect.',
+      copied: 'Copied to clipboard',
+      safety: {
+        title: 'Keep write access away from untrusted text',
+        body: 'If a chat will read end-user submitted content (survey answers, user attributes), connect it read-only. Do writes — publishing, deleting — in a separate connection that never reads untrusted text.',
+      },
+      clients: {
+        claude: {
+          title: 'Claude (claude.ai)',
+          blurb: 'Add Usertour as a custom connector inside claude.ai.',
+          step1: 'Open Settings → Connectors and click "Add custom connector":',
+          step2: 'Set the connector name:',
+          step3: 'Paste the Server URL:',
+          step4:
+            'Click Add — Claude opens the Usertour authorization screen. Pick the project, environments, and access level, then approve.',
+        },
+        chatgpt: {
+          title: 'ChatGPT',
+          blurb: "Connect via ChatGPT's Developer-mode connectors.",
+          step1:
+            'Open Settings → Connectors → Advanced, toggle Developer mode on, and click "Create app".',
+          step2: 'Set the name and MCP Server URL:',
+          step3:
+            'Leave Authentication on OAuth and submit — ChatGPT opens the Usertour authorization screen. Approve to connect.',
+        },
+        cursor: {
+          title: 'Cursor',
+          blurb: 'One-click install via the Cursor deeplink.',
+          button: 'Add to Cursor',
+          step1:
+            'Click "Add to Cursor" — Cursor opens with the server pre-filled and walks you through authorization.',
+          step2:
+            'Prefer manual setup? Cursor → Settings → MCP → Add new MCP server, with this URL:',
+        },
+        claudeCode: {
+          title: 'Claude Code',
+          blurb: 'Add the server with a single CLI command.',
+          step1: 'Run this in any terminal:',
+          step2:
+            'Then run /mcp inside Claude Code to authorize — the Usertour authorization screen opens in your browser.',
+        },
+        other: {
+          title: 'Other clients',
+          blurb: 'Any client that reads an mcpServers.json (Continue, Zed, …).',
+          body: 'Any client that reads an mcpServers.json (Continue, Zed, …): add the entry below. The authorization flow runs automatically on first use.',
+        },
+      },
+      manage: {
+        prefix: 'Manage or revoke connected assistants in',
+        connectedApps: 'Connected apps',
+        suffix: '.',
+      },
+      apiKeyNote: {
+        prefix: 'Client without OAuth support? Create a',
+        link: 'personal API key',
+        suffix: ' and connect via mcp-remote with a Bearer header.',
+      },
+    },
     nav: {
       heading: 'Settings',
       general: 'General',
@@ -267,6 +334,7 @@ const translations = {
         'connected-apps': 'Connected apps',
         installation: 'Installation',
         api: 'API',
+        mcp: 'MCP',
         integrations: 'Integrations',
       },
     },
