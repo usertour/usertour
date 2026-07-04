@@ -294,10 +294,14 @@ const translations = {
         },
         claudeCode: {
           title: 'Claude Code',
-          blurb: 'Add the server with a single CLI command.',
-          step1: 'Run this in any terminal:',
-          step2:
-            'Then run /mcp inside Claude Code to authorize — the Usertour authorization screen opens in your browser.',
+          blurb: 'Install the plugin — skills and the MCP connection in one.',
+          envStep:
+            'Self-hosted / custom instance: set your server URL in the shell you launch Claude Code from (the plugin defaults to Usertour Cloud):',
+          pluginStep:
+            'Inside Claude Code, install the Usertour plugin — it registers the MCP connection AND the authoring skills:',
+          authStep:
+            'Run /mcp inside Claude Code to authorize — the Usertour authorization screen opens in your browser.',
+          mcpOnly: 'Prefer the MCP connection only (without the skills)? One command:',
         },
         other: {
           title: 'Other clients',

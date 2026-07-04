@@ -92,6 +92,11 @@ export const SettingsMcpPage = () => {
     SERVER_NAME.toLowerCase(),
   )}&config=${btoa(JSON.stringify({ url: serverUrl }))}`;
   const claudeCodeCommand = `claude mcp add --transport http usertour ${serverUrl}`;
+  // The plugin's bundled .mcp.json defaults to the cloud endpoint; only a
+  // custom/self-hosted instance needs the env override before launch.
+  const CLOUD_MCP_URL = 'https://mcp.usertour.io/mcp';
+  const needsEnvOverride = serverUrl !== '' && serverUrl !== CLOUD_MCP_URL;
+  const envExportCommand = `export USERTOUR_MCP_URL="${serverUrl}"`;
   const mcpServersJson = JSON.stringify(
     { mcpServers: { [SERVER_NAME]: { url: serverUrl } } },
     null,
@@ -232,13 +237,27 @@ export const SettingsMcpPage = () => {
               title={t('settings.mcp.clients.claudeCode.title')}
               blurb={t('settings.mcp.clients.claudeCode.blurb')}
             >
-              <Step n={1}>
-                <span>{t('settings.mcp.clients.claudeCode.step1')}</span>
-                <CopyableInput value={claudeCodeCommand} copiedMessage={copied} />
+              {needsEnvOverride && (
+                <Step n={1}>
+                  <span>{t('settings.mcp.clients.claudeCode.envStep')}</span>
+                  <CopyableInput value={envExportCommand} copiedMessage={copied} />
+                </Step>
+              )}
+              <Step n={needsEnvOverride ? 2 : 1}>
+                <span>{t('settings.mcp.clients.claudeCode.pluginStep')}</span>
+                <CopyableInput
+                  value="/plugin marketplace add usertour/skills"
+                  copiedMessage={copied}
+                />
+                <CopyableInput value="/plugin install usertour@usertour" copiedMessage={copied} />
               </Step>
-              <Step n={2}>
-                <span>{t('settings.mcp.clients.claudeCode.step2')}</span>
+              <Step n={needsEnvOverride ? 3 : 2}>
+                <span>{t('settings.mcp.clients.claudeCode.authStep')}</span>
               </Step>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.mcp.clients.claudeCode.mcpOnly')}
+              </p>
+              <CopyableInput value={claudeCodeCommand} copiedMessage={copied} />
             </ClientItem>
 
             <ClientItem

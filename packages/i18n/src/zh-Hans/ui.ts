@@ -282,9 +282,12 @@ const translations = {
         },
         claudeCode: {
           title: 'Claude Code',
-          blurb: '一条命令行即可添加。',
-          step1: '在任意终端运行：',
-          step2: '然后在 Claude Code 里运行 /mcp 完成授权——Usertour 授权页会在浏览器中打开。',
+          blurb: '安装插件——技能与 MCP 连接一步到位。',
+          envStep:
+            '自部署 / 自定义实例：在启动 Claude Code 的终端里先设置服务器地址（插件默认指向 Usertour 云端）：',
+          pluginStep: '在 Claude Code 里安装 Usertour 插件——同时注册 MCP 连接和创作技能：',
+          authStep: '然后运行 /mcp 完成授权——Usertour 授权页会在浏览器中打开。',
+          mcpOnly: '只要 MCP 连接、不装技能？一条命令：',
         },
         other: {
           title: '其他客户端',
