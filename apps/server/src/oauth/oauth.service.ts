@@ -286,7 +286,14 @@ export class OAuthService {
   /** The user's active OAuth grants, with client + project names + last use. */
   async listConnections(userId: string) {
     const grants = await this.prisma.oAuthGrant.findMany({
-      where: { userId, revokedAt: null },
+      // Hide dead connections: a grant whose refresh chain has expired can never
+      // be used again (access tokens live 1h), so listing it as "connected" is a
+      // zombie row. The row itself is kept (audit); only the listing filters.
+      where: {
+        userId,
+        revokedAt: null,
+        OR: [{ refreshExpiresAt: null }, { refreshExpiresAt: { gt: new Date() } }],
+      },
       orderBy: { createdAt: 'desc' },
     });
     if (grants.length === 0) {

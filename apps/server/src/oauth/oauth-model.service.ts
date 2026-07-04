@@ -169,6 +169,37 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
     const u = user as OAuthUser;
     const scopes = token.scope ?? [];
 
+    // Replace semantics: a fresh authorization from the same installation —
+    // same (user, clientId, project) — SUPERSEDES any previous active grant.
+    // Without this, re-authorizing to narrow scopes/environments leaves the
+    // old broader grant alive ("thought I tightened it, the old key still
+    // works"). Other machines register their own clientId via DCR, so their
+    // grants are untouched and coexist. Also self-heals pre-policy duplicates
+    // on refresh rotation (own grantId excluded).
+    const stale = await this.prisma.oAuthGrant.findMany({
+      where: {
+        userId: u.id,
+        clientId: client.id,
+        projectId: u.projectId,
+        revokedAt: null,
+        id: { not: u.grantId },
+      },
+      select: { id: true },
+    });
+    if (stale.length > 0) {
+      const ids = stale.map((g) => g.id);
+      await this.prisma.$transaction([
+        this.prisma.apiToken.updateMany({
+          where: { oauthGrantId: { in: ids } },
+          data: { isActive: false },
+        }),
+        this.prisma.oAuthGrant.updateMany({
+          where: { id: { in: ids } },
+          data: { revokedAt: new Date(), hashedRefreshToken: null },
+        }),
+      ]);
+    }
+
     // Upsert the durable grant; rotating refresh overwrites the prior hash so an
     // old refresh token no longer resolves (reuse detection).
     await this.prisma.oAuthGrant.upsert({
