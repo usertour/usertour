@@ -15,6 +15,34 @@ const empty: never[] = [];
 const paths = (issues: { path: string }[]) => issues.map((i) => i.path);
 
 describe('validateVersionUsable', () => {
+  describe('url patterns (cross-cutting)', () => {
+    it('warns when a start-rule URL include is the root-only "*/" pattern', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [{ type: StepContentType.MODAL, data: textBlocks, sequence: 0, cvid: 'a' } as never],
+        config: {
+          autoStartRules: [
+            { type: 'current-page', data: { includes: ['*/'], excludes: [] } } as never,
+          ],
+        },
+      });
+      expect(paths(r.warnings)).toContain('config.autoStartRules');
+      // a plain "*" include does not warn
+      const ok = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [{ type: StepContentType.MODAL, data: textBlocks, sequence: 0, cvid: 'a' } as never],
+        config: {
+          autoStartRules: [
+            { type: 'current-page', data: { includes: ['*'], excludes: [] } } as never,
+          ],
+        },
+      });
+      expect(paths(ok.warnings)).not.toContain('config.autoStartRules');
+    });
+  });
+
   describe('theme (cross-cutting)', () => {
     it('errors when a UI type has no theme', () => {
       const r = validateVersionUsable({

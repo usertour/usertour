@@ -63,6 +63,7 @@ A \`target\` identifies one element by a CSS \`selector\`, optionally refined by
 - only the homepage → \`*/\` (path is exactly \`/\`)
 - one exact page → \`*/pricing\`
 - a section and everything under it → \`*/app/*\`
+- **any page at all → \`*\` (NOT \`*/\`).** \`*/\` matches only a bare ROOT path (\`https://x.com/\`) — not \`/app\`, not \`/app/\`, not any deeper page — so a rule built on it fires almost nowhere.
 - any page on a host → \`yourapp.com/*\` (or omit the path)
 - exclude an area → put \`*/app/admin/*\` in \`excludes\`
 
@@ -79,6 +80,14 @@ A \`target\` identifies one element by a CSS \`selector\`, optionally refined by
 **No auto-start ≠ unreachable.** With no \`startRules\` (or when none match) the content won't launch on its own — but it can still be started programmatically from the host app via the SDK \`usertour.start(contentId)\` call. Choose this when you want to trigger content from your own button/route rather than by page conditions.
 
 **Wiring pieces to LAUNCH each other — reference a PUBLISHED \`contentId\`.** To make one piece start another, put a \`start_content\` action on a button / checklist-item \`clickActions\`: \`{ "type": "start_content", "content": "<contentId>" }\` (a flow or checklist contentId from \`list_content\` — a raw content id, NOT a step key like \`goto_step\` takes). To re-surface flows/checklists from a Resource Center, list them in a \`content-list\` block: \`items: [{ "content": "<contentId>", "contentType": "flow" | "checklist" }]\`. **Publish the referenced pieces BEFORE the piece that references them:** \`validate_content_version\` rejects a contentId that doesn't EXIST, but it does NOT check that the target is PUBLISHED — a reference to an unpublished draft validates + publishes clean yet launches / lists nothing for a real user. So in a multi-piece program, create + publish the dependencies (the launched flows) first, then wire the checklist / resource center to their ids.
+
+**The standard onboarding shape: a checklist of tasks, each task launching a guide FLOW.** When the job is "walk new users through N setup tasks", do NOT hand-roll it with \`navigate\` clicks plus \`element\`-clicked completion — that pattern leaves any guide flows you built ORPHANED (nothing starts them) and makes task completion hostage to selectors that may not exist. The proven wiring, per task:
+1. Build one guide flow per task (multi-step: tooltip anchored on the real control, advance on interaction, \`dismiss\` on the last step). Leave the flow's auto-start DISABLED — the checklist is its start path.
+2. Publish the flows FIRST, then wire each checklist item:
+   - \`clickActions: [{ "type": "start_content", "content": "<flowId>" }]\` — clicking the task starts its guide (prepend a \`navigate\` action when the guide's page is elsewhere);
+   - \`completeWhen: [{ "type": "content_state", "content": "<flowId>", "state": "completed" }]\` — the task checks itself off when the user finishes the guide. No selector involved, nothing to break.
+3. Publish the checklist to the SAME environment as the flows.
+Before you call the build done, walk every flow you created and confirm it has a start path — auto-start rules, an inbound \`start_content\`, or a resource-center \`content-list\` entry. A flow with auto-start disabled that nothing references is published yet UNREACHABLE: no user can ever see it. **Default to a guide flow for EVERY task that involves doing something in the UI** — an item that only navigates and then waits for a click gives a new user no direction at all ("the page opened… now what?"), exactly the low-value shape this recipe exists to prevent. Skip the guide flow only when the task is self-evident (e.g. "finish the welcome tour" itself) or its completion signal is an app-fired \`event\` for an action the user already knows how to do.
 
 ## Making it appear (the SDK)
 Authoring + publishing only stores the content — it renders only once the host app loads the Usertour SDK. You author here; the app does these (see https://docs.usertour.io/developers/usertourjs-reference/installation):

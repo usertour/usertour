@@ -230,6 +230,25 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
   // never appear on its own (see AUTO_START_REQUIRED_TYPES) yet publishes fine — the
   // silent "I published it and nothing shows" trap. Warn, not error: it can still be
   // launched via usertour.start().
+  // The URL pattern "*/" matches ONLY a bare root path — a recurring agent
+  // mistake that silently kills auto-start everywhere but the site root.
+  const flagRootOnlyPattern = (conds: RulesCondition[] | null | undefined, path: string) => {
+    for (const c of conds ?? []) {
+      if (c.type === 'group') {
+        flagRootOnlyPattern((c as { conditions?: RulesCondition[] }).conditions, path);
+      } else if (c.type === 'current-page') {
+        const includes = (c.data as { includes?: string[] } | undefined)?.includes ?? [];
+        if (includes.includes('*/')) {
+          warn(
+            path,
+            'URL pattern "*/" matches only the site ROOT path — to match any page use "*".',
+          );
+        }
+      }
+    }
+  };
+  flagRootOnlyPattern(input.config?.autoStartRules, 'config.autoStartRules');
+
   if (AUTO_START_REQUIRED_TYPES.has(input.type)) {
     const rules = input.config?.autoStartRules;
     if (!rules || rules.length === 0) {
