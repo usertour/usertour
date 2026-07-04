@@ -27,8 +27,9 @@ const SERVER_NAME = 'Usertour';
 
 /** Numbered manual step line (mirrors the connector guides users already know). */
 const Step = ({ n, children }: { n: number; children: ReactNode }) => (
-  <div className="flex gap-2 text-sm">
-    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+  <div className="flex gap-2.5 text-sm leading-6">
+    {/* mt-0.5 optically centers the 20px chip on the 24px first text line. */}
+    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
       {n}
     </span>
     <div className="min-w-0 flex-1 space-y-2">{children}</div>
@@ -61,7 +62,7 @@ const ClientItem = ({
         </div>
       </div>
     </AccordionTrigger>
-    <AccordionContent className="space-y-4 pb-5">{children}</AccordionContent>
+    <AccordionContent className="space-y-4 pb-5 pt-1">{children}</AccordionContent>
   </AccordionItem>
 );
 
@@ -183,11 +184,11 @@ export const SettingsMcpPage = () => {
               title={t('settings.mcp.clients.cursor.title')}
               blurb={t('settings.mcp.clients.cursor.blurb')}
             >
-              <Button asChild className="w-fit">
-                <a href={cursorDeeplink}>{t('settings.mcp.clients.cursor.button')}</a>
-              </Button>
               <Step n={1}>
                 <span>{t('settings.mcp.clients.cursor.step1')}</span>
+                <Button asChild className="w-fit">
+                  <a href={cursorDeeplink}>{t('settings.mcp.clients.cursor.button')}</a>
+                </Button>
               </Step>
               <Step n={2}>
                 <span>{t('settings.mcp.clients.cursor.step2')}</span>
