@@ -39,6 +39,7 @@ export class ApiEnvironmentsService {
     requestUrl: string,
     projectId: string,
     query: ListEnvironmentsQuery,
+    allowedEnvironmentIds: string[] | null = null,
   ): Promise<{ results: Environment[]; next: string | null; previous: string | null }> {
     const { limit, cursor, name } = query;
     const orderBy = parseOrderBy(query.orderBy, [
@@ -61,25 +62,33 @@ export class ApiEnvironmentsService {
           () => this.prisma.environment.count({ where }),
           params,
         ),
-      map: (row) => mapEnvironment(row),
+      map: (row) => mapEnvironment(row, allowedEnvironmentIds),
     });
   }
 
-  async get(id: string, projectId: string): Promise<Environment> {
+  async get(
+    id: string,
+    projectId: string,
+    allowedEnvironmentIds: string[] | null = null,
+  ): Promise<Environment> {
     const env = await this.prisma.environment.findFirst({
       where: { id, projectId, deleted: false },
     });
     if (!env) {
       throw new EnvironmentNotFoundError();
     }
-    return mapEnvironment(env);
+    return mapEnvironment(env, allowedEnvironmentIds);
   }
 
   /** Create an environment in the project. The first env is made primary by the domain. */
-  async create(projectId: string, body: CreateEnvironmentBody): Promise<Environment> {
+  async create(
+    projectId: string,
+    body: CreateEnvironmentBody,
+    allowedEnvironmentIds: string[] | null = null,
+  ): Promise<Environment> {
     try {
       const env = await this.environments.create({ name: body.name, projectId });
-      return mapEnvironment(env);
+      return mapEnvironment(env, allowedEnvironmentIds);
     } catch (error) {
       // Domain plan-limit error is a BaseError (renders 500); surface it as 400.
       if (error instanceof EnvironmentLimitError) {
@@ -90,10 +99,15 @@ export class ApiEnvironmentsService {
   }
 
   /** Rename an environment (isPrimary is intentionally not settable here). */
-  async update(id: string, projectId: string, body: UpdateEnvironmentBody): Promise<Environment> {
+  async update(
+    id: string,
+    projectId: string,
+    body: UpdateEnvironmentBody,
+    allowedEnvironmentIds: string[] | null = null,
+  ): Promise<Environment> {
     await this.get(id, projectId); // 404 if not in this project
     const env = await this.environments.update({ id, name: body.name });
-    return mapEnvironment(env);
+    return mapEnvironment(env, allowedEnvironmentIds);
   }
 
   /** Delete an environment. The primary / last environment cannot be deleted. */

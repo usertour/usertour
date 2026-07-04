@@ -34,6 +34,8 @@ export class ListAttributeDefinitionsQueryDto extends createZodDto(listAttribute
 export const attribute = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.ATTRIBUTE_DEFINITION),
+  /** Built-in attribute (seeded by Usertour): not editable or deletable. */
+  predefined: z.boolean(),
   createdAt: z.string(),
   dataType: z.nativeEnum(AttributeDataTypeNames),
   description: z.string(),

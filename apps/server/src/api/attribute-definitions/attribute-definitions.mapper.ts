@@ -9,6 +9,7 @@ type AttributeNode = {
   displayName: string;
   codeName: string;
   bizType: number;
+  predefined?: boolean;
 };
 
 /** Pure domain-attribute -> API attribute-definition mapping (no DI, unit-testable). */
@@ -22,5 +23,6 @@ export function mapAttribute(node: AttributeNode): Attribute {
     displayName: node.displayName,
     codeName: node.codeName,
     scope: mapBizTypeToScope(node.bizType),
+    predefined: Boolean(node.predefined),
   };
 }

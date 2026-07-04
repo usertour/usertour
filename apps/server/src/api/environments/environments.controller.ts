@@ -11,10 +11,12 @@ import {
   UseFilters,
   UseGuards,
   UsePipes,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
+import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
@@ -38,7 +40,10 @@ import {
 @UsePipes(ApiValidationPipe)
 @ApiBearerAuth()
 export class ApiEnvironmentsController {
-  constructor(private readonly service: ApiEnvironmentsService) {}
+  constructor(
+    private readonly service: ApiEnvironmentsService,
+    private readonly auth: ApiTokenAuthService,
+  ) {}
 
   @Get()
   @RequireCapability(Capability.EnvironmentRead)
@@ -53,8 +58,9 @@ export class ApiEnvironmentsController {
     @RequestUrl() requestUrl: string,
     @Param('projectId') projectId: string,
     @Query() query: ListEnvironmentsQueryDto,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
-    return this.service.list(requestUrl, projectId, query);
+    return this.service.list(requestUrl, projectId, query, this.scope(req));
   }
 
   @Get(':id')
@@ -64,8 +70,12 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 200, description: 'Environment found', type: EnvironmentDto })
   @ApiResponse({ status: 404, description: 'Environment not found' })
-  async get(@Param('id') id: string, @Param('projectId') projectId: string) {
-    return this.service.get(id, projectId);
+  async get(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    return this.service.get(id, projectId, this.scope(req));
   }
 
   @Post()
@@ -108,5 +118,10 @@ export class ApiEnvironmentsController {
   @ApiResponse({ status: 404, description: 'Environment not found' })
   async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
     await this.service.delete(id, projectId);
+  }
+
+  /** The credential's effective environment scope (token allowlist ∩ member ceiling). */
+  private scope(req: { apiToken: AuthedApiToken }): string[] | null {
+    return this.auth.allowedEnvironmentIds(req.apiToken);
   }
 }

@@ -988,8 +988,9 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.EnvironmentRead,
       description:
         "List the project's environments — the environment ids that the env-scoped tools and " +
-        '`publish_content` accept. Optionally filter by `name`. ' +
-        'Returns `{ items, nextCursor }`.',
+        '`publish_content` accept. Each item carries `inTokenScope`: whether THIS credential may ' +
+        'act on that environment — plan against it up front rather than discovering scope limits ' +
+        'from write errors. Optionally filter by `name`. Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         limit: limitSchema,
@@ -998,12 +999,17 @@ export function buildReadTools(): McpTool[] {
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
-        const result = await ctx.services.environments.list('mcp://environments', ctx.projectId, {
-          limit: asLimit(args.limit),
-          cursor: asString(args.cursor),
-          orderBy: asOrderBy(args.orderBy),
-          name: asString(args.name),
-        });
+        const result = await ctx.services.environments.list(
+          'mcp://environments',
+          ctx.projectId,
+          {
+            limit: asLimit(args.limit),
+            cursor: asString(args.cursor),
+            orderBy: asOrderBy(args.orderBy),
+            name: asString(args.name),
+          },
+          ctx.auth.allowedEnvironmentIds(ctx.token),
+        );
         return toListPayload(result);
       },
     },
@@ -1020,7 +1026,11 @@ export function buildReadTools(): McpTool[] {
         if (!id) {
           throw new Error('`id` is required.');
         }
-        return ctx.services.environments.get(id, ctx.projectId);
+        return ctx.services.environments.get(
+          id,
+          ctx.projectId,
+          ctx.auth.allowedEnvironmentIds(ctx.token),
+        );
       },
     },
   ];

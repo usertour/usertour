@@ -21,6 +21,12 @@ export const environment = z.object({
     .describe(
       "The environment's SDK token — pass it to usertour.init() to load this environment's published content.",
     ),
+  /**
+   * Whether the CURRENT credential may act on this environment (token
+   * environment allowlist ∩ its owner's membership scope). false = listed for
+   * discovery but reads/writes/publish targeting it will be rejected (E1029).
+   */
+  inTokenScope: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

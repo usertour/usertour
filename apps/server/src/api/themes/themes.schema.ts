@@ -37,6 +37,8 @@ export const theme = z.object({
   object: z.literal(ApiObjectType.THEME),
   name: z.string(),
   isDefault: z.boolean(),
+  /** System themes are read-only: not updatable, not deletable — create your own instead. */
+  isSystem: z.boolean(),
   updatedAt: z.string(),
   createdAt: z.string(),
   // Present only when the corresponding expand is requested.

@@ -9,6 +9,7 @@ type ThemeNode = {
   id: string;
   name: string;
   isDefault: boolean;
+  isSystem?: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
   settings?: unknown;
@@ -47,6 +48,7 @@ export function mapTheme(
     object: ApiObjectType.THEME,
     name: node.name,
     isDefault: node.isDefault,
+    isSystem: Boolean(node.isSystem),
     createdAt: new Date(node.createdAt).toISOString(),
     updatedAt: new Date(node.updatedAt).toISOString(),
     ...(expand.includes('settings')
