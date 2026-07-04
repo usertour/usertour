@@ -65,7 +65,11 @@ const ClientItem = ({
         </div>
       </div>
     </AccordionTrigger>
-    <AccordionContent className="space-y-4 pb-5 pt-1">{children}</AccordionContent>
+    {/* Spacing lives on an inner div — padding on the height-animated
+        AccordionContent itself makes the collapse end in a visible snap. */}
+    <AccordionContent>
+      <div className="space-y-4 pb-1 pt-1">{children}</div>
+    </AccordionContent>
   </AccordionItem>
 );
 
