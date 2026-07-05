@@ -12,12 +12,12 @@ import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { BizSession, Event } from '@prisma/client';
-import { isBefore, format } from 'date-fns';
+import { isBefore } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.input';
-import { toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
@@ -324,7 +324,7 @@ export class AnalyticsService {
       { date: string; totalViews: number; uniqueUserIds: Set<string> }
     >();
     for (const item of trackerEvents) {
-      const date = format(toZonedTime(item.createdAt, timezone), 'yyyy-MM-dd');
+      const date = formatInTimeZone(item.createdAt, timezone, 'yyyy-MM-dd');
       const current = viewsByDayMap.get(date) ?? {
         date,
         totalViews: 0,
