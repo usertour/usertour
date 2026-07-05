@@ -19,9 +19,11 @@ const POLICY: Record<string, SnapshotPolicy> = {
   companyMember: 'redacted',
   session: 'redacted',
 
-  // Recoverable without an audit snapshot: content via version history, both via soft delete.
+  // Recoverable without an audit snapshot: version history records every change,
+  // soft delete keeps the row. Only content qualifies — an environment RENAME has
+  // no history anywhere else, so environments snapshot below.
   content: 'none',
-  environment: 'none',
+  environment: 'full',
 
   // Access-lifecycle resources (who can get in, with what): config-shaped, no PII —
   // but their rows/results can carry credentials, stripped by SECRET_KEYS below.

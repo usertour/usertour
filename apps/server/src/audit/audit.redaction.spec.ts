@@ -7,7 +7,9 @@ describe('audit snapshot policy', () => {
     expect(snapshotPolicy('user')).toBe('redacted');
     expect(snapshotPolicy('company')).toBe('redacted');
     expect(snapshotPolicy('content')).toBe('none');
-    expect(snapshotPolicy('environment')).toBe('none');
+    // An environment rename has no history anywhere else (no version history) —
+    // unlike content, it snapshots despite being soft-deletable.
+    expect(snapshotPolicy('environment')).toBe('full');
   });
 
   it('defaults an unknown resource to full (capture, do not silently drop)', () => {
@@ -37,7 +39,14 @@ describe('redactSnapshot', () => {
 
   it('returns undefined for none-policy resources (no snapshot stored)', () => {
     expect(redactSnapshot('content', { id: 'c1' })).toBeUndefined();
-    expect(redactSnapshot('environment', { id: 'e1' })).toBeUndefined();
+  });
+
+  it('keeps environment snapshots but blanks the token (global SECRET_KEYS)', () => {
+    expect(redactSnapshot('environment', { id: 'e1', name: 'Dev', token: 'ak_x' })).toEqual({
+      id: 'e1',
+      name: 'Dev',
+      token: '[redacted]',
+    });
   });
 
   it('returns undefined for null/absent values', () => {

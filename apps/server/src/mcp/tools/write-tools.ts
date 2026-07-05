@@ -770,7 +770,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'update_environment',
-      audit: auditUpdate('environment', undefined),
+      audit: auditUpdate('environment', (args, ctx) =>
+        ctx.prisma.environment.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Update an environment',
       capability: Capability.EnvironmentManage,
       description: 'Rename an environment.',
@@ -787,7 +789,9 @@ export function buildWriteTools(): McpTool[] {
     },
     {
       name: 'delete_environment',
-      audit: auditDelete('environment', undefined),
+      audit: auditDelete('environment', (args, ctx) =>
+        ctx.prisma.environment.findUnique({ where: { id: String(args.id) } }),
+      ),
       title: 'Delete an environment',
       capability: Capability.EnvironmentManage,
       description: 'Delete an environment. The primary / last environment cannot be deleted.',
