@@ -12,8 +12,6 @@ import { PrismaService } from 'nestjs-prisma';
 import { ParamsError } from '@/common/errors';
 import { SubscriptionPlanModel } from './subscription.model';
 import { parseSubscriptionPlan } from '@/utils/subscription';
-import { startOfMonth, endOfMonth } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
@@ -472,10 +470,12 @@ export class SubscriptionService implements OnModuleInit {
   }
 
   async getSubscriptionUsage(projectId: string) {
+    // Billing month = the current UTC calendar month, independent of the
+    // server's timezone. (The old toZonedTime + startOfMonth/endOfMonth combo
+    // cut the edges with the SERVER calendar — correct only on UTC machines.)
     const now = new Date();
-    const utcNow = toZonedTime(now, 'UTC');
-    const firstDayOfMonth = startOfMonth(utcNow);
-    const lastDayOfMonth = endOfMonth(utcNow);
+    const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const lastDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) - 1);
 
     return this.prisma.bizSession.count({
       where: {
