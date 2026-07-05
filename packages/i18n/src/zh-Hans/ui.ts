@@ -753,7 +753,6 @@ const translations = {
           integrations: '集成(即将推出)',
           alerting: '告警(即将推出)',
           sso: '单点登录（SSO）',
-          auditLog: '审计日志（即将推出）',
         },
       },
       banner: {

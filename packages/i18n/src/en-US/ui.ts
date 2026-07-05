@@ -791,7 +791,6 @@ const translations = {
           integrations: 'Integrations (coming soon)',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',
-          auditLog: 'Audit log (coming soon)',
         },
       },
       banner: {

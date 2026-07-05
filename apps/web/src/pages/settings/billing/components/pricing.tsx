@@ -514,12 +514,6 @@ const ComparisonTable = ({
           values: matrixRow('customCss', currentPlanType, overridePlan),
         },
         {
-          name: t('settings.billing.comparison.rows.auditLogs'),
-          values: matrixRow('auditLogRetentionDays', currentPlanType, overridePlan).map((v) =>
-            formatAuditWindow(v, t),
-          ),
-        },
-        {
           name: t('settings.billing.comparison.rows.customAttributes'),
           values: [true, true, true, true],
         },
@@ -555,10 +549,10 @@ const ComparisonTable = ({
           values: matrixRow('ssoOidc', currentPlanType, overridePlan),
         },
         {
-          // Audit log isn't shipped yet; show it as a Business-tier feature
-          // that's coming soon (mirrors the alerting row's coming-soon label).
-          name: t('settings.billing.comparison.rows.auditLog'),
-          values: [false, false, false, true],
+          name: t('settings.billing.comparison.rows.auditLogs'),
+          values: matrixRow('auditLogRetentionDays', currentPlanType, overridePlan).map((v) =>
+            formatAuditWindow(v, t),
+          ),
         },
       ],
     },
