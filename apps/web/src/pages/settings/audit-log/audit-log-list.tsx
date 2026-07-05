@@ -1,6 +1,7 @@
-import { endOfDay, format, startOfDay } from 'date-fns';
+import { endOfDay, format, startOfDay, subDays } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import {
   Badge,
@@ -88,6 +89,15 @@ export const AuditLogList = () => {
   );
   const { t } = useTranslation();
   const [selected, setSelected] = useState<AuditLog | null>(null);
+  const isSelfHosted = !!globalConfig?.isSelfHostedMode;
+
+  // The selected range starts on a day that is ENTIRELY outside the plan's read
+  // window (boundary days that are only partially clipped don't warn) — the
+  // server silently clamps, so without this the missing rows read as data loss.
+  const rangeBeyondWindow =
+    retentionDays > 0 &&
+    !!filters.dateRange?.from &&
+    endOfDay(filters.dateRange.from) < subDays(new Date(), retentionDays);
 
   // Sentinel-driven infinite scroll. `rootRef` must point at the settings
   // ScrollArea Viewport (published by AdminSettingsLayout) — otherwise the IO
@@ -163,7 +173,22 @@ export const AuditLogList = () => {
           )
         }
         description={t('settings.auditLog.description')}
-        toolbar={<AuditLogFilters value={filters} setValue={setFilters} />}
+        toolbar={
+          <div className="flex flex-col gap-2">
+            <AuditLogFilters value={filters} setValue={setFilters} />
+            {rangeBeyondWindow && (
+              <p className="text-xs text-muted-foreground">
+                {t('settings.auditLog.retention.rangeBeyondWindow', { days: retentionDays })}
+                {!isSelfHosted && (
+                  <>
+                    {' '}
+                    <UpgradeLink projectId={project?.id} />
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        }
         columns={columns}
         rows={auditLogs}
         loading={loading || (configLoading && !projectConfig)}
@@ -173,16 +198,47 @@ export const AuditLogList = () => {
         footer={
           <div ref={sentryRef} className="flex h-10 items-center justify-center">
             {loadingMore && <SpinnerIcon className="h-5 w-5 animate-spin text-primary" />}
-            {!hasNextPage && auditLogs.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {t('settings.auditLog.endOfLog')}
-              </span>
-            )}
+            {!hasNextPage &&
+              auditLogs.length > 0 &&
+              (retentionDays > 0 ? (
+                // Not the end of the log — the end of the plan's read window.
+                <span className="text-xs text-muted-foreground">
+                  {t('settings.auditLog.retention.endOfWindow', { days: retentionDays })}
+                  {!isSelfHosted && (
+                    <>
+                      {' '}
+                      <UpgradeLink projectId={project?.id} />
+                    </>
+                  )}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {t('settings.auditLog.endOfLog')}
+                </span>
+              ))}
           </div>
         }
       />
       <AuditDetailDialog log={selected} onClose={() => setSelected(null)} />
     </>
+  );
+};
+
+/**
+ * Inline "upgrade for full history" link, cloud only — self-hosted has no
+ * billing page (the license upsell copy lives on the locked view instead).
+ */
+const UpgradeLink = ({ projectId }: { projectId: string | undefined }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      className="text-primary hover:underline"
+      onClick={() => navigate(`/project/${projectId}/settings/billing`)}
+    >
+      {t('settings.auditLog.retention.upgrade')}
+    </button>
   );
 };
 

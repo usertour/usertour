@@ -958,6 +958,9 @@ const translations = {
       },
       retention: {
         tooltip: '仅显示最近 {{days}} 天,升级 Business 查看完整历史。',
+        endOfWindow: '仅显示最近 {{days}} 天的记录。',
+        rangeBeyondWindow: '所选区间中早于 {{days}} 天的记录不在当前套餐可见范围内。',
+        upgrade: '升级查看完整历史',
       },
       filters: {
         allSources: '全部来源',

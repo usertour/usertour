@@ -1008,6 +1008,9 @@ const translations = {
       },
       retention: {
         tooltip: 'Showing the last {{days}} days. Upgrade to Business for full history.',
+        endOfWindow: 'Showing the last {{days}} days only.',
+        rangeBeyondWindow: 'Records older than {{days}} days are not visible on your current plan.',
+        upgrade: 'Upgrade for full history',
       },
       filters: {
         allSources: 'All sources',
