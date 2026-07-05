@@ -217,7 +217,7 @@ describe('mapQuestionAnalytics (pure)', () => {
         ],
       },
     ];
-    const [out] = mapQuestionAnalytics(raw);
+    const [out] = mapQuestionAnalytics(raw, 'UTC');
     expect(out.question).toEqual({ cvid: 'q1', name: 'How satisfied?', type: 'nps' });
     expect(out.totalResponses).toBe(57);
     expect(out.distribution).toEqual([{ answer: 9, count: 21, percentage: 36.8 }]);
@@ -247,7 +247,7 @@ describe('mapQuestionAnalytics (pure)', () => {
         answer: [{ answer: 'Great', count: 1, percentage: 50 }],
       },
     ];
-    const [rating, text] = mapQuestionAnalytics(raw);
+    const [rating, text] = mapQuestionAnalytics(raw, 'UTC');
     expect(rating.nps).toBeNull();
     expect(rating.rating).toEqual({
       average: 4.2,
@@ -256,6 +256,21 @@ describe('mapQuestionAnalytics (pure)', () => {
     expect(text.nps).toBeNull();
     expect(text.rating).toBeNull();
     expect(text.totalResponses).toBe(2);
+  });
+
+  it('labels byDay dates in the REQUESTED timezone, not UTC', () => {
+    // Start of the Shanghai day 2026-07-05 — a UTC slice would mislabel it 07-04.
+    const shanghaiMidnight = new Date('2026-07-04T16:00:00.000Z');
+    const raw = [
+      {
+        totalResponse: 1,
+        question: { type: 'nps', data: { cvid: 'q1', name: 'n' } },
+        answer: [],
+        npsAnalysisByDay: [day(shanghaiMidnight.toISOString(), { npsScore: 100, total: 1 })],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'Asia/Shanghai');
+    expect(out.nps?.byDay).toEqual([{ date: '2026-07-05', score: 100, total: 1 }]);
   });
 });
 

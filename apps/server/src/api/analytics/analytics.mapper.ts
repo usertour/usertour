@@ -1,4 +1,5 @@
 import { ContentDataType } from '@usertour/types';
+import { formatInTimeZone } from 'date-fns-tz';
 
 import { ApiObjectType } from '../shared/object-type';
 import type { ContentAnalytics, QuestionAnalytics } from './analytics.schema';
@@ -13,9 +14,12 @@ import type { ContentAnalytics, QuestionAnalytics } from './analytics.schema';
  * counters lose their internal `...Count` suffix.
  */
 
-const isoDate = (value: unknown): string => {
+/** Day label in the REQUESTED timezone — a UTC slice would shift the label a day for eastern-timezone requests. */
+const dayLabelIn = (timezone: string, value: unknown): string => {
   const date = value instanceof Date ? value : new Date(String(value));
-  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : formatInTimeZone(date, timezone, 'yyyy-MM-dd');
 };
 
 const int = (value: unknown): number => (typeof value === 'number' ? Math.trunc(value) : 0);
@@ -87,7 +91,10 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
   const top = counts(raw);
   const days: { date: string; counts: ReturnType<typeof counts> }[] = Array.isArray(raw?.viewsByDay)
     ? // biome-ignore lint/suspicious/noExplicitAny: see above
-      raw.viewsByDay.map((day: any) => ({ date: isoDate(day.date), counts: counts(day) }))
+      raw.viewsByDay.map((day: any) => ({
+        date: dayLabelIn(meta.timezone, day.date),
+        counts: counts(day),
+      }))
     : [];
   const byDay = <T extends object>(rename: (c: ReturnType<typeof counts>) => T) =>
     days.map((day) => ({ date: day.date, ...rename(day.counts) }));
@@ -178,8 +185,14 @@ const share = (raw: { count?: number; percentage?: number } | undefined) => ({
   percentage: typeof raw?.percentage === 'number' ? raw.percentage : 0,
 });
 
+/**
+ * The domain's rolling-series `day` is the first instant of that calendar day
+ * in the REQUESTED timezone — label it with the same timezone (a UTC slice
+ * would shift the label a day for eastern-timezone requests).
+ */
 // biome-ignore lint/suspicious/noExplicitAny: domain analytics payloads are untyped JSON
-export function mapQuestionAnalytics(rawList: any[]): QuestionAnalytics[] {
+export function mapQuestionAnalytics(rawList: any[], timezone: string): QuestionAnalytics[] {
+  const dayLabel = (value: unknown): string => dayLabelIn(timezone, value);
   return (rawList ?? []).map((raw) => {
     const question = raw?.question ?? {};
     const npsDays: unknown[] | null = Array.isArray(raw?.npsAnalysisByDay)
@@ -214,7 +227,7 @@ export function mapQuestionAnalytics(rawList: any[]): QuestionAnalytics[] {
             detractors: share(lastNps?.metrics?.detractors),
             // biome-ignore lint/suspicious/noExplicitAny: see above
             byDay: npsDays.map((day: any) => ({
-              date: isoDate(day.day),
+              date: dayLabel(day.day),
               score: typeof day?.metrics?.npsScore === 'number' ? day.metrics.npsScore : 0,
               total: int(day?.metrics?.total),
             })),
@@ -226,7 +239,7 @@ export function mapQuestionAnalytics(rawList: any[]): QuestionAnalytics[] {
               typeof lastRating?.metrics?.average === 'number' ? lastRating.metrics.average : 0,
             // biome-ignore lint/suspicious/noExplicitAny: see above
             byDay: ratingDays.map((day: any) => ({
-              date: isoDate(day.day),
+              date: dayLabel(day.day),
               average: typeof day?.metrics?.average === 'number' ? day.metrics.average : 0,
               total: int(day?.metrics?.total),
             })),

@@ -5,13 +5,14 @@ import {
   StepSettings,
   contentEndReason,
 } from '@usertour/types';
+import { rollingDayWindows } from '@/analytics/rolling-day-windows';
 import { createdAtWhere } from '@/api/shared/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { BizSession, Event } from '@prisma/client';
-import { addDays, isBefore, lightFormat, format, subDays, endOfDay, startOfDay } from 'date-fns';
+import { addDays, isBefore, lightFormat, format } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
@@ -1778,26 +1779,24 @@ export class AnalyticsService {
     startEventId: string | null,
   ): Promise<Array<NPSMetricsByDay | RatingMetricsByDay>> {
     const data: Array<NPSMetricsByDay | RatingMetricsByDay> = [];
-    const startDate = startOfDay(toZonedTime(new Date(startDateStr), timezone));
-    const endDate = endOfDay(toZonedTime(new Date(endDateStr), timezone));
     const isNps = type === 'nps';
 
-    let currentDate = startDate;
-    while (isBefore(currentDate, endDate)) {
-      // Calculate start date for rolling window
-
-      const windowStartDate = startOfDay(
-        toZonedTime(subDays(currentDate, rollingWindow - 1), timezone),
-      );
-      const windowEndDate = endOfDay(toZonedTime(currentDate, timezone));
-
+    // Day grid + per-day rolling-window bounds, all in the REQUESTED timezone
+    // (timezone-pure — see rollingDayWindows; the server's own timezone must
+    // not participate, or results change with the deployment).
+    for (const { dayStart, windowStart, windowEnd } of rollingDayWindows(
+      startDateStr,
+      endDateStr,
+      timezone,
+      rollingWindow,
+    )) {
       // Get answers within the rolling window period
       const distribution = await this.aggregationQuestionAnswer(
         environmentId,
         contentId,
         questionCvid,
-        windowStartDate.toISOString(),
-        windowEndDate.toISOString(),
+        windowStart.toISOString(),
+        windowEnd.toISOString(),
         'numberAnswer',
       );
 
@@ -1810,8 +1809,8 @@ export class AnalyticsService {
             environmentId,
             contentId,
             eventId: startEventId,
-            startDateStr: windowStartDate.toISOString(),
-            endDateStr: windowEndDate.toISOString(),
+            startDateStr: windowStart.toISOString(),
+            endDateStr: windowEnd.toISOString(),
             isDistinct: false,
           })
         : 0;
@@ -1822,9 +1821,9 @@ export class AnalyticsService {
         : { ...this.calculateRatingMetrics(distribution), views };
 
       const baseData: BaseMetricsByDay = {
-        day: currentDate,
-        startDate: windowStartDate,
-        endDate: windowEndDate,
+        day: dayStart,
+        startDate: windowStart,
+        endDate: windowEnd,
         distribution: isNps ? completeDistribution(distribution) : distribution,
       };
 
@@ -1839,8 +1838,6 @@ export class AnalyticsService {
           metrics,
         } as RatingMetricsByDay);
       }
-
-      currentDate = addDays(currentDate, 1);
     }
 
     return data;

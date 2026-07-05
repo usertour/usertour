@@ -64,7 +64,7 @@ export class ApiAnalyticsService {
       range.timezone,
     );
     // Domain returns `false` when no version exists yet — no questions, not an error.
-    return { results: Array.isArray(raw) ? mapQuestionAnalytics(raw) : [] };
+    return { results: Array.isArray(raw) ? mapQuestionAnalytics(raw, range.timezone) : [] };
   }
 
   private async requireContent(id: string, projectId: string) {
