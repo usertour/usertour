@@ -1909,7 +1909,7 @@ const translations = {
         timeTooltip: '设置公告何时可见。留空则立即发布。',
         immediately: '立即',
         theme: '主题',
-        themeTooltip: '应用于资源中心内公告内容的视觉主题。',
+        themeTooltip: '应用于该公告弹窗(模态框 / 气泡)的主题。',
         themePlaceholder: '选择主题',
         distribution: {
           label: '通知方式',

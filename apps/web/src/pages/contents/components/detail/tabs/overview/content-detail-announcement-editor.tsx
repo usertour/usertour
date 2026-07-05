@@ -360,37 +360,6 @@ const AnnouncementSettingsColumn = () => {
             />
           </div>
 
-          {/* Theme */}
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <span className="text-sm font-semibold">
-                {t('contents.overview.announcement.theme')}
-              </span>
-              <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
-                {t('contents.overview.announcement.themeTooltip')}
-              </QuestionTooltip>
-            </div>
-            <Select
-              value={version.themeId ?? ''}
-              onValueChange={handleThemeChange}
-              disabled={isViewOnly}
-            >
-              <SelectTrigger className="justify-start flex h-9">
-                <RiPaletteFill size={16} className="flex-none mr-2 text-muted-foreground" />
-                <div className="grow text-left">
-                  <SelectValue placeholder={t('contents.overview.announcement.themePlaceholder')} />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {themeList?.map((theme: Theme) => (
-                  <SelectItem value={theme.id} key={theme.id}>
-                    {theme.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Distribution */}
           <div className="space-y-2">
             <div className="flex items-center">
@@ -444,13 +413,50 @@ const AnnouncementSettingsColumn = () => {
             </Select>
           </div>
 
-          {/* Popup presentation (only for POPUP level) */}
+          {/* Theme + popup presentation — only for POPUP: the theme styles the
+              pop-up, and the in-panel feed uses the resource center's own theme,
+              so the theme has no effect for SILENT / BADGE. */}
           {data.distribution === AnnouncementDistribution.POPUP && (
-            <AnnouncementPopupSettings
-              config={data.popupConfig}
-              onChange={handlePopupConfigChange}
-              disabled={isViewOnly}
-            />
+            <>
+              {/* Theme */}
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <span className="text-sm font-semibold">
+                    {t('contents.overview.announcement.theme')}
+                  </span>
+                  <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+                    {t('contents.overview.announcement.themeTooltip')}
+                  </QuestionTooltip>
+                </div>
+                <Select
+                  value={version.themeId ?? ''}
+                  onValueChange={handleThemeChange}
+                  disabled={isViewOnly}
+                >
+                  <SelectTrigger className="justify-start flex h-9">
+                    <RiPaletteFill size={16} className="flex-none mr-2 text-muted-foreground" />
+                    <div className="grow text-left">
+                      <SelectValue
+                        placeholder={t('contents.overview.announcement.themePlaceholder')}
+                      />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {themeList?.map((theme: Theme) => (
+                      <SelectItem value={theme.id} key={theme.id}>
+                        {theme.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <AnnouncementPopupSettings
+                config={data.popupConfig}
+                onChange={handlePopupConfigChange}
+                disabled={isViewOnly}
+              />
+            </>
           )}
         </CardContent>
       </Card>

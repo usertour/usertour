@@ -2018,7 +2018,7 @@ const translations = {
         immediately: 'Immediately',
         theme: 'Theme',
         themeTooltip:
-          'The visual theme applied to the announcement content in the resource center.',
+          'The theme applied to the pop-up (modal or speech bubble) shown for this announcement.',
         themePlaceholder: 'Select theme',
         distribution: {
           label: 'Notification style',
