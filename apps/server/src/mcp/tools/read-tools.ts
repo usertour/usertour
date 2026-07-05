@@ -930,7 +930,11 @@ export function buildReadTools(): McpTool[] {
         expand: z
           .array(z.enum(['answers', 'content', 'company', 'user', 'version']))
           .optional()
-          .describe('Inline content / user / company / version / answers on each item.'),
+          .describe(
+            'Inline content / user / company / version / answers on each item. `answers` is ' +
+              'the only way to read raw per-question responses — including free-text questions, ' +
+              'which get_content_question_analytics omits entirely.',
+          ),
         ...createdAtRangeFields,
         limit: limitSchema,
         cursor: cursorSchema,
@@ -1021,7 +1025,11 @@ export function buildReadTools(): McpTool[] {
       description:
         'Survey results for this content, aggregated per question: answer distribution, NPS ' +
         'score with promoter/passive/detractor shares, rating averages — each with a ' +
-        'rolling-window daily series. Defaults to the last 30 days, UTC.',
+        'rolling-window daily series. Defaults to the last 30 days, UTC. ' +
+        'Free-text questions (single/multi-line text) are NOT included — there is no ' +
+        'aggregate signal for open text. To read what people actually wrote, use ' +
+        "list_sessions with expand:['answers'] (each answer carries the raw value, " +
+        'including free text).',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,

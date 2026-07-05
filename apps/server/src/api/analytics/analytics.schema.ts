@@ -224,6 +224,13 @@ export class QuestionAnalyticsDto extends createZodDto(questionAnalytics) {}
 export type QuestionAnalytics = z.infer<typeof questionAnalytics>;
 
 export const questionAnalyticsResponse = z.object({
-  results: z.array(questionAnalytics),
+  results: z
+    .array(questionAnalytics)
+    .describe(
+      'One entry per aggregable question (nps / rating / choice). Free-text questions ' +
+        '(single/multi-line text) are omitted entirely — no aggregate signal for open text. ' +
+        'To read raw answers (including free text), fetch sessions for this content with ' +
+        'answers expanded.',
+    ),
 });
 export class QuestionAnalyticsResponseDto extends createZodDto(questionAnalyticsResponse) {}
