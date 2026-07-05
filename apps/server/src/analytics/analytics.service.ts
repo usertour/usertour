@@ -12,7 +12,7 @@ import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { BizSession, Event } from '@prisma/client';
-import { addDays, isBefore, lightFormat, format } from 'date-fns';
+import { isBefore, format } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
@@ -335,19 +335,23 @@ export class AnalyticsService {
       viewsByDayMap.set(date, current);
     }
 
+    // Calendar walk in the requested timezone (NOT 24h stepping, which lands
+    // twice on a 25h DST fall-back day and duplicates/drops rows).
     const viewsByDay = [];
-    let currentDate = startDateObj;
-    while (isBefore(currentDate, endDateObj)) {
-      const date = format(toZonedTime(currentDate, timezone), 'yyyy-MM-dd');
+    for (const { day: date, dayStart } of rollingDayWindows(
+      startDateObj,
+      endDateObj,
+      timezone,
+      1,
+    )) {
       const day = viewsByDayMap.get(date);
       viewsByDay.push({
-        date: currentDate,
+        date: dayStart,
         uniqueViews: day?.uniqueUserIds.size ?? 0,
         uniqueCompletions: day?.uniqueUserIds.size ?? 0,
         totalViews: day?.totalViews ?? 0,
         totalCompletions: day?.totalViews ?? 0,
       });
-      currentDate = addDays(currentDate, 1);
     }
 
     return {
@@ -679,36 +683,20 @@ export class AnalyticsService {
           timezone,
         );
 
+    // Calendar walk in the requested timezone (NOT 24h stepping — see the
+    // tracker path). The SQL buckets label days as plain `to_char` strings in
+    // the same timezone, so matching is string === string; no Date parsing
+    // round-trip (the old lightFormat(new Date(day)) read a UTC-parsed bucket
+    // with the SERVER clock and shifted a day on negative-offset machines).
     const data = [];
-    let currentDate = startDate;
-    const finalEndDate = endDate;
-
-    // Iterate through each day in the date range
-    while (isBefore(currentDate, finalEndDate)) {
-      // Format date considering timezone
-      const dd = format(toZonedTime(currentDate, timezone), 'yyyy-MM-dd');
-
-      // Build daily statistics object with default value 0 for missing data
+    for (const { day: dd, dayStart } of rollingDayWindows(startDate, endDate, timezone, 1)) {
       data.push({
-        date: currentDate,
-        uniqueViews:
-          uniqueViewsByDay.find((views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd)
-            ?.count || 0,
-        totalViews:
-          totalViewsByDay.find((views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd)
-            ?.count || 0,
-        uniqueCompletions:
-          uniqueCompletionByDay.find(
-            (views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd,
-          )?.count || 0,
-        totalCompletions:
-          totalCompletionByDay.find(
-            (views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd,
-          )?.count || 0,
+        date: dayStart,
+        uniqueViews: uniqueViewsByDay.find((views) => views.day === dd)?.count || 0,
+        totalViews: totalViewsByDay.find((views) => views.day === dd)?.count || 0,
+        uniqueCompletions: uniqueCompletionByDay.find((views) => views.day === dd)?.count || 0,
+        totalCompletions: totalCompletionByDay.find((views) => views.day === dd)?.count || 0,
       });
-
-      // Move to next day
-      currentDate = addDays(currentDate, 1);
     }
 
     return data;
@@ -972,12 +960,16 @@ export class AnalyticsService {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
+    // The day label leaves SQL as TEXT ('YYYY-MM-DD' in the requested
+    // timezone). A DATE_TRUNC timestamp here gets parsed as UTC by Prisma and
+    // any local re-formatting shifts it a day on negative-offset servers —
+    // calendar names travel as strings, never as instants.
     let data: [{ day: string; count: number }];
     if (!isDistinct) {
       // Count total sessions per day
       data = await this.prisma.$queryRaw`
-        SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
-          Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
+        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+          Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -986,8 +978,8 @@ export class AnalyticsService {
     } else {
       // Count unique users per day
       data = await this.prisma.$queryRaw`
-        SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
-          Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent" 
+        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+          Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -1015,7 +1007,7 @@ export class AnalyticsService {
         SELECT DISTINCT ON (be."bizUserId")
           be."bizUserId",
           be."createdAt",
-          DATE_TRUNC('DAY', be."createdAt" AT TIME ZONE ${timezone}) AS day
+          to_char(be."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS day
         FROM "BizEvent" be
         LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
         WHERE
@@ -1029,10 +1021,11 @@ export class AnalyticsService {
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
       GROUP BY day
       ORDER BY day
-    `) as Array<{ day: Date | string; count: bigint }>;
+    `) as Array<{ day: string; count: bigint }>;
 
+    // `day` is already a plain 'YYYY-MM-DD' label in the requested timezone.
     return data.map((dd) => ({
-      day: dd.day instanceof Date ? dd.day.toISOString() : String(dd.day),
+      day: dd.day,
       count: Number(dd.count),
     }));
   }
