@@ -289,6 +289,20 @@ const translations = {
           authStep: '然后运行 /mcp 完成授权——Usertour 授权页会在浏览器中打开。',
           mcpOnly: '只要 MCP 连接、不装技能？一条命令：',
         },
+        codex: {
+          title: 'Codex（CLI 与 IDE 插件）',
+          blurb: '注册服务器——CLI 和 IDE 插件共用同一份配置（不含 Codex Cloud 云端版本）。',
+          step1: '运行这条命令注册服务器：',
+          loginNote:
+            'Codex 原生支持 OAuth,首次使用 Usertour 工具时会自动弹出授权。想立刻授权，运行：',
+        },
+        vscode: {
+          title: 'VS Code',
+          blurb: '添加到 mcp.json,配合 GitHub Copilot Chat 的 Agent 模式使用。',
+          step1: '打开命令面板,运行 "MCP: Open User Configuration" 打开 mcp.json。',
+          step2: '加入这段配置（根键是 `servers`,不是 `mcpServers`）：',
+          step3: '保存文件——下次在 Agent 模式下和 Copilot 对话时就能用了。首次使用会提示授权。',
+        },
         other: {
           title: '其他客户端',
           blurb: '任何读取 mcpServers.json 的客户端（Continue、Zed 等）。',

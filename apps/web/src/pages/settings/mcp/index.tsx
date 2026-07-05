@@ -6,6 +6,7 @@ import {
   RiExternalLinkLine,
   RiOpenaiFill,
   RiPuzzleLine,
+  VSCodeIcon,
 } from '@usertour/icons';
 import {
   Accordion,
@@ -102,6 +103,20 @@ export const SettingsMcpPage = () => {
     null,
     2,
   );
+  // `codex mcp add --url` registers a streamable-HTTP server directly — no
+  // manual config.toml edit needed (config.toml is shared by the CLI and IDE
+  // extension either way). Codex does its own OAuth handshake; `mcp login` is
+  // the explicit form, offered alongside since the CLI prompts on first use.
+  const codexAddCommand = `codex mcp add ${SERVER_NAME.toLowerCase()} --url "${serverUrl}"`;
+  const codexLoginCommand = `codex mcp login ${SERVER_NAME.toLowerCase()}`;
+  // VS Code's MCP config root key is "servers" (not "mcpServers" — the #1 mistake
+  // when copy-pasting a Cursor/Claude config in). No `--add-mcp` CLI form is
+  // documented for HTTP/url servers, only for stdio, so this stays manual-edit.
+  const vscodeServersJson = JSON.stringify(
+    { servers: { [SERVER_NAME.toLowerCase()]: { type: 'http', url: serverUrl } } },
+    null,
+    2,
+  );
 
   const iconClass = 'h-5 w-5';
 
@@ -162,6 +177,106 @@ export const SettingsMcpPage = () => {
           </div>
           <Accordion type="single" collapsible className="w-full">
             <ClientItem
+              value="claude-code"
+              icon={<RiClaudeFill className={iconClass} />}
+              title={t('settings.mcp.clients.claudeCode.title')}
+              blurb={t('settings.mcp.clients.claudeCode.blurb')}
+            >
+              {needsEnvOverride && (
+                <Step n={1}>
+                  <span>{t('settings.mcp.clients.claudeCode.envStep')}</span>
+                  <CopyableInput value={envExportCommand} copiedMessage={copied} />
+                </Step>
+              )}
+              <Step n={needsEnvOverride ? 2 : 1}>
+                <span>{t('settings.mcp.clients.claudeCode.pluginStep')}</span>
+                <CopyableInput
+                  value="/plugin marketplace add usertour/skills"
+                  copiedMessage={copied}
+                />
+                <CopyableInput value="/plugin install usertour@usertour" copiedMessage={copied} />
+              </Step>
+              <Step n={needsEnvOverride ? 3 : 2}>
+                <span>{t('settings.mcp.clients.claudeCode.authStep')}</span>
+              </Step>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.mcp.clients.claudeCode.mcpOnly')}
+              </p>
+              <CopyableInput value={claudeCodeCommand} copiedMessage={copied} />
+            </ClientItem>
+
+            <ClientItem
+              value="cursor"
+              icon={<RiCursorAiFill className={iconClass} />}
+              title={t('settings.mcp.clients.cursor.title')}
+              blurb={t('settings.mcp.clients.cursor.blurb')}
+            >
+              <Step n={1}>
+                <span>{t('settings.mcp.clients.cursor.step1')}</span>
+                <Button asChild className="w-fit">
+                  <a href={cursorDeeplink}>{t('settings.mcp.clients.cursor.button')}</a>
+                </Button>
+              </Step>
+              <Step n={2}>
+                <span>{t('settings.mcp.clients.cursor.step2')}</span>
+                <CopyableInput value={serverUrl} copiedMessage={copied} />
+              </Step>
+            </ClientItem>
+
+            <ClientItem
+              value="codex"
+              icon={<RiOpenaiFill className={iconClass} />}
+              title={t('settings.mcp.clients.codex.title')}
+              blurb={t('settings.mcp.clients.codex.blurb')}
+            >
+              <Step n={1}>
+                <span>{t('settings.mcp.clients.codex.step1')}</span>
+                <CopyableInput value={codexAddCommand} copiedMessage={copied} />
+              </Step>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.mcp.clients.codex.loginNote')}
+              </p>
+              <CopyableInput value={codexLoginCommand} copiedMessage={copied} />
+            </ClientItem>
+
+            <ClientItem
+              value="vscode"
+              icon={<VSCodeIcon className={iconClass} />}
+              title={t('settings.mcp.clients.vscode.title')}
+              blurb={t('settings.mcp.clients.vscode.blurb')}
+            >
+              <Step n={1}>
+                <span>{t('settings.mcp.clients.vscode.step1')}</span>
+              </Step>
+              <Step n={2}>
+                <span>{t('settings.mcp.clients.vscode.step2')}</span>
+                <CodeBlock code={vscodeServersJson} language="javascript" copiedMessage={copied} />
+              </Step>
+              <Step n={3}>
+                <span>{t('settings.mcp.clients.vscode.step3')}</span>
+              </Step>
+            </ClientItem>
+
+            <ClientItem
+              value="chatgpt"
+              icon={<RiOpenaiFill className={iconClass} />}
+              title={t('settings.mcp.clients.chatgpt.title')}
+              blurb={t('settings.mcp.clients.chatgpt.blurb')}
+            >
+              <Step n={1}>
+                <span>{t('settings.mcp.clients.chatgpt.step1')}</span>
+              </Step>
+              <Step n={2}>
+                <span>{t('settings.mcp.clients.chatgpt.step2')}</span>
+                <CopyableInput value={SERVER_NAME} copiedMessage={copied} />
+                <CopyableInput value={serverUrl} copiedMessage={copied} />
+              </Step>
+              <Step n={3}>
+                <span>{t('settings.mcp.clients.chatgpt.step3')}</span>
+              </Step>
+            </ClientItem>
+
+            <ClientItem
               value="claude"
               icon={<RiClaudeFill className={iconClass} />}
               title={t('settings.mcp.clients.claude.title')}
@@ -192,72 +307,6 @@ export const SettingsMcpPage = () => {
               <Step n={4}>
                 <span>{t('settings.mcp.clients.claude.step4')}</span>
               </Step>
-            </ClientItem>
-
-            <ClientItem
-              value="chatgpt"
-              icon={<RiOpenaiFill className={iconClass} />}
-              title={t('settings.mcp.clients.chatgpt.title')}
-              blurb={t('settings.mcp.clients.chatgpt.blurb')}
-            >
-              <Step n={1}>
-                <span>{t('settings.mcp.clients.chatgpt.step1')}</span>
-              </Step>
-              <Step n={2}>
-                <span>{t('settings.mcp.clients.chatgpt.step2')}</span>
-                <CopyableInput value={SERVER_NAME} copiedMessage={copied} />
-                <CopyableInput value={serverUrl} copiedMessage={copied} />
-              </Step>
-              <Step n={3}>
-                <span>{t('settings.mcp.clients.chatgpt.step3')}</span>
-              </Step>
-            </ClientItem>
-
-            <ClientItem
-              value="cursor"
-              icon={<RiCursorAiFill className={iconClass} />}
-              title={t('settings.mcp.clients.cursor.title')}
-              blurb={t('settings.mcp.clients.cursor.blurb')}
-            >
-              <Step n={1}>
-                <span>{t('settings.mcp.clients.cursor.step1')}</span>
-                <Button asChild className="w-fit">
-                  <a href={cursorDeeplink}>{t('settings.mcp.clients.cursor.button')}</a>
-                </Button>
-              </Step>
-              <Step n={2}>
-                <span>{t('settings.mcp.clients.cursor.step2')}</span>
-                <CopyableInput value={serverUrl} copiedMessage={copied} />
-              </Step>
-            </ClientItem>
-
-            <ClientItem
-              value="claude-code"
-              icon={<RiClaudeFill className={iconClass} />}
-              title={t('settings.mcp.clients.claudeCode.title')}
-              blurb={t('settings.mcp.clients.claudeCode.blurb')}
-            >
-              {needsEnvOverride && (
-                <Step n={1}>
-                  <span>{t('settings.mcp.clients.claudeCode.envStep')}</span>
-                  <CopyableInput value={envExportCommand} copiedMessage={copied} />
-                </Step>
-              )}
-              <Step n={needsEnvOverride ? 2 : 1}>
-                <span>{t('settings.mcp.clients.claudeCode.pluginStep')}</span>
-                <CopyableInput
-                  value="/plugin marketplace add usertour/skills"
-                  copiedMessage={copied}
-                />
-                <CopyableInput value="/plugin install usertour@usertour" copiedMessage={copied} />
-              </Step>
-              <Step n={needsEnvOverride ? 3 : 2}>
-                <span>{t('settings.mcp.clients.claudeCode.authStep')}</span>
-              </Step>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.mcp.clients.claudeCode.mcpOnly')}
-              </p>
-              <CopyableInput value={claudeCodeCommand} copiedMessage={copied} />
             </ClientItem>
 
             <ClientItem

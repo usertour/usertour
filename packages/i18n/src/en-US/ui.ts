@@ -303,6 +303,22 @@ const translations = {
             'Run /mcp inside Claude Code to authorize — the Usertour authorization screen opens in your browser.',
           mcpOnly: 'Prefer the MCP connection only (without the skills)? One command:',
         },
+        codex: {
+          title: 'Codex (CLI & IDE extension)',
+          blurb: "Register the server — shared by Codex's CLI and IDE extension (not Codex Cloud).",
+          step1: 'Run this to register the server:',
+          loginNote:
+            'Codex supports OAuth natively and prompts you to authorize the first time you use a Usertour tool. To authorize right away instead, run:',
+        },
+        vscode: {
+          title: 'VS Code',
+          blurb: 'Add it to mcp.json for GitHub Copilot Chat (Agent mode).',
+          step1:
+            'Open the Command Palette and run "MCP: Open User Configuration" to open your mcp.json.',
+          step2: 'Add this entry (the root key is `servers`, not `mcpServers`):',
+          step3:
+            'Save the file — the server is available next time you chat with Copilot in Agent mode. First use prompts you to authorize.',
+        },
         other: {
           title: 'Other clients',
           blurb: 'Any client that reads an mcpServers.json (Continue, Zed, …).',
