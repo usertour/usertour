@@ -109,6 +109,11 @@ export const SettingsMcpPage = () => {
   // the explicit form, offered alongside since the CLI prompts on first use.
   const codexAddCommand = `codex mcp add ${SERVER_NAME.toLowerCase()} --url "${serverUrl}"`;
   const codexLoginCommand = `codex mcp login ${SERVER_NAME.toLowerCase()}`;
+  // Skill install is a SEPARATE mechanism from the MCP connection for Cursor and
+  // Codex (unlike Claude Code's plugin, which bundles both) — optional, per the
+  // skill's own thin-skill/thick-MCP design, so this is a bolt-on note, not a step.
+  const SKILLS_REPO = 'usertour/skills';
+  const skillsAddCommand = `npx skills add https://github.com/${SKILLS_REPO}`;
   // VS Code's MCP config root key is "servers" (not "mcpServers" — the #1 mistake
   // when copy-pasting a Cursor/Claude config in). No `--add-mcp` CLI form is
   // documented for HTTP/url servers, only for stdio, so this stays manual-edit.
@@ -221,6 +226,10 @@ export const SettingsMcpPage = () => {
                 <span>{t('settings.mcp.clients.cursor.step2')}</span>
                 <CopyableInput value={serverUrl} copiedMessage={copied} />
               </Step>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.mcp.clients.cursor.skillNote')}
+              </p>
+              <CopyableInput value={skillsAddCommand} copiedMessage={copied} />
             </ClientItem>
 
             <ClientItem
@@ -237,6 +246,10 @@ export const SettingsMcpPage = () => {
                 {t('settings.mcp.clients.codex.loginNote')}
               </p>
               <CopyableInput value={codexLoginCommand} copiedMessage={copied} />
+              <p className="text-sm text-muted-foreground">
+                {t('settings.mcp.clients.codex.skillNote')}
+              </p>
+              <CopyableInput value={skillsAddCommand} copiedMessage={copied} />
             </ClientItem>
 
             <ClientItem

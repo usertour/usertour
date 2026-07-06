@@ -291,6 +291,7 @@ const translations = {
             'Click "Add to Cursor" — Cursor opens with the server pre-filled and walks you through authorization.',
           step2:
             'Prefer manual setup? Cursor → Settings → MCP → Add new MCP server, with this URL:',
+          skillNote: 'Optional: also install the authoring skill for workflow guidance:',
         },
         claudeCode: {
           title: 'Claude Code',
@@ -309,6 +310,7 @@ const translations = {
           step1: 'Run this to register the server:',
           loginNote:
             'Codex supports OAuth natively and prompts you to authorize the first time you use a Usertour tool. To authorize right away instead, run:',
+          skillNote: 'Optional: also install the authoring skill for workflow guidance:',
         },
         vscode: {
           title: 'VS Code',

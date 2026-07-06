@@ -279,6 +279,7 @@ const translations = {
           button: '添加到 Cursor',
           step1: '点击「添加到 Cursor」——Cursor 会带着预填好的服务器打开并引导你完成授权。',
           step2: '想手动添加？Cursor → Settings → MCP → Add new MCP server，使用此地址：',
+          skillNote: '可选：再装一下创作技能,获得完整工作流引导：',
         },
         claudeCode: {
           title: 'Claude Code',
@@ -295,6 +296,7 @@ const translations = {
           step1: '运行这条命令注册服务器：',
           loginNote:
             'Codex 原生支持 OAuth,首次使用 Usertour 工具时会自动弹出授权。想立刻授权，运行：',
+          skillNote: '可选：再装一下创作技能,获得完整工作流引导：',
         },
         vscode: {
           title: 'VS Code',
