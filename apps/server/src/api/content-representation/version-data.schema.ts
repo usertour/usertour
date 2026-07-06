@@ -118,10 +118,31 @@ export type RepresentationChecklist = z.infer<typeof representationChecklist>;
 // behavior `actions` are actions (perform-action mode). Screenshot / zIndex are
 // dropped on read and preserved on write.
 const launcherPlacement = z.object({
-  side: z.enum(['top', 'right', 'bottom', 'left']),
-  align: z.enum(['start', 'center', 'end']),
+  side: z
+    .enum(['top', 'right', 'bottom', 'left'])
+    .optional()
+    .describe(
+      'Which side of the target the tooltip opens on. OMIT side+align to auto-position ' +
+        '(picks a spot + flips to avoid the viewport edge); setting side (or align) pins that ' +
+        'direction (no auto-flip). Same auto/fixed derivation as a flow tooltip.',
+    ),
+  align: z
+    .enum(['start', 'center', 'end'])
+    .optional()
+    .describe('Alignment along the side. See `side`.'),
   sideOffset: z.number().optional(),
   alignOffset: z.number().optional(),
+  // Position mode, derived on compile like a flow tooltip: explicit wins;
+  // else side/align given → `fixed`; else `auto`. Exposed so `align` can
+  // actually take effect (a launcher left in `auto` renders center regardless).
+  alignType: z
+    .enum(['auto', 'fixed'])
+    .optional()
+    .describe(
+      'Position mode. `auto` auto-positions + flips (ignoring side/align); `fixed` pins to ' +
+        'side/align. Usually omit — providing side/align implies `fixed`, omitting them implies ' +
+        '`auto`. Without this, an `auto` launcher renders center and your `align` is ignored.',
+    ),
 });
 export const representationLauncher = z.object({
   style: z.enum(['beacon', 'icon', 'hidden', 'button']).optional(),

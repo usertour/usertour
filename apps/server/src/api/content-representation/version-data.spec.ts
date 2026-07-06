@@ -20,6 +20,21 @@ describe('version-data builder settings round-trip', () => {
     expect(back.tooltip.reference).toBe('launcher');
   });
 
+  it('launcher tooltip placement: side/align derive alignType:fixed so align takes effect', () => {
+    // A launcher left in alignType:'auto' renders center regardless of align —
+    // exposing alignType + deriving 'fixed' from a provided side/align makes the
+    // authored direction actually render.
+    const rep = {
+      style: 'icon',
+      target: { selector: '.x' },
+      tooltip: { reference: 'target', placement: { side: 'right', align: 'start' }, content: [] },
+    };
+    const internal: any = compileVersionData('launcher', rep, undefined, ids);
+    expect(internal.tooltip.alignment.side).toBe('right');
+    expect(internal.tooltip.alignment.align).toBe('start');
+    expect(internal.tooltip.alignment.alignType).toBe('fixed');
+  });
+
   it('banner zIndex', () => {
     const rep = { placement: 'top-of-page', zIndex: 99, content: [] };
     const internal: any = compileVersionData('banner', rep, undefined, ids);

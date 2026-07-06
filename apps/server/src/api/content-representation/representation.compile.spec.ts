@@ -654,7 +654,7 @@ describe('step setting: builder defaults seeded on create (SDK needs them)', () 
     expect((compiled.setting as any).position).toBe('rightBottom');
   });
 
-  it('seeds builder defaults (skippable close button, alignType collision-avoidance) on create', () => {
+  it('a tooltip that provides side/align derives alignType:fixed (honor the direction)', () => {
     const compiled = compileStep(
       mk('tooltip', { side: 'right', align: 'center' }) as never,
       undefined,
@@ -664,7 +664,17 @@ describe('step setting: builder defaults seeded on create (SDK needs them)', () 
     expect(s.side).toBe('right'); // authored value wins
     expect(s.align).toBe('center');
     expect(s.skippable).toBe(true); // builder default → close button
-    expect(s.alignType).toBe('auto'); // builder default → collision avoidance
+    // Providing a direction pins it: runtime ignores side/align in `auto`, so
+    // compile derives `fixed` to make the authored direction actually render.
+    expect(s.alignType).toBe('fixed');
+  });
+
+  it('a tooltip with NO placement keeps the seeded alignType:auto (auto-position + flip)', () => {
+    const compiled = compileStep(mk('tooltip', undefined) as never, undefined, ids);
+    const s = compiled.setting as any;
+    // No side/align given → leave the builder default: auto-position and flip to
+    // avoid the viewport edge (the safety net when the author can't see the element).
+    expect(s.alignType).toBe('auto');
   });
 
   it('round-trips tooltip backdrop / blockTarget / fixed alignType', () => {

@@ -89,8 +89,13 @@ export function collectWriteViolations(input: {
     const caps = stepCapabilities(type);
     const placement = s.placement as Record<string, unknown> | undefined;
     if (placement && typeof placement === 'object' && caps) {
-      const isTooltipShape = 'side' in placement;
+      // Placement is a 2-member union: a `position` key = modal shape; anything
+      // else (side/align/alignType/offsets, or even an empty object now that
+      // side/align are optional) = tooltip shape. Keyed on the sole modal
+      // discriminant so a partial tooltip shape (e.g. only `align`) on a modal
+      // step is still flagged.
       const isModalShape = 'position' in placement;
+      const isTooltipShape = !isModalShape;
       if (caps.placement === 'anchor' && isModalShape) {
         issues.push({
           rule: 'step_shape',

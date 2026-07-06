@@ -56,36 +56,66 @@ export type RepresentationTarget = z.infer<typeof representationTarget>;
 // ── Placement (simplified StepSettings) ──────────────────────────────────────
 export const representationPlacement = z
   .union([
-    z.object({
-      side: z.enum(['top', 'right', 'bottom', 'left']),
-      align: z.enum(['start', 'center', 'end']),
-      sideOffset: z.number().optional(),
-      alignOffset: z.number().optional(),
-      // `auto` (default) lets the tooltip flip to avoid the viewport edge; `fixed`
-      // pins it to the given side/align.
-      alignType: z.enum(['auto', 'fixed']).optional(),
-      // A tooltip may dim the page (backdrop) and block clicks on its target.
-      backdrop: z.boolean().optional(),
-      blockTarget: z.boolean().optional(),
-    }),
-    z.object({
-      // 9-cell grid — matches ModalPosition (@usertour/types).
-      position: z.enum([
-        'leftTop',
-        'centerTop',
-        'rightTop',
-        'leftCenter',
-        'center',
-        'rightCenter',
-        'leftBottom',
-        'centerBottom',
-        'rightBottom',
-      ]),
-      offsetX: z.number().optional(),
-      offsetY: z.number().optional(),
-      backdrop: z.boolean().optional(),
-      blockTarget: z.boolean().optional(),
-    }),
+    z
+      .object({
+        side: z
+          .enum(['top', 'right', 'bottom', 'left'])
+          .optional()
+          .describe(
+            'Which side of the target the tooltip sits on. OMIT side+align to auto-position ' +
+              '(the tooltip picks a spot and flips to avoid the viewport edge — best when you ' +
+              "can't see the element). Setting side (or align) pins that direction: the tooltip " +
+              'renders exactly there and no longer auto-flips, so only pin when the element is ' +
+              'not near a screen edge.',
+          ),
+        align: z
+          .enum(['start', 'center', 'end'])
+          .optional()
+          .describe('Alignment along the side. See `side`.'),
+        sideOffset: z.number().optional(),
+        alignOffset: z.number().optional(),
+        // Position mode. `auto` = pick a spot + flip to avoid the viewport edge
+        // (ignores side/align). `fixed` = pin to side/align, no flipping. Compile
+        // derives it: omitted here but side/align given → `fixed` (honor the
+        // author's direction); nothing given → `auto`.
+        alignType: z
+          .enum(['auto', 'fixed'])
+          .optional()
+          .describe(
+            'Position mode. `auto` auto-positions and flips to avoid the viewport edge (ignoring ' +
+              'side/align); `fixed` pins to side/align without flipping. Usually omit it: providing ' +
+              'side/align implies `fixed`, and omitting them implies `auto`. Set it only to override ' +
+              'that (e.g. `auto` while still passing a side/align you want ignored).',
+          ),
+        // A tooltip may dim the page (backdrop) and block clicks on its target.
+        backdrop: z.boolean().optional(),
+        blockTarget: z.boolean().optional(),
+      })
+      // `.strict()`: reject unknown keys so a modal-shape `{ position }` does NOT
+      // match this branch (all its own fields are optional now) and get silently
+      // stripped — it must route to the modal member, where the step-shape guard
+      // then flags "modal placement on a tooltip step" instead of passing.
+      .strict(),
+    z
+      .object({
+        // 9-cell grid — matches ModalPosition (@usertour/types).
+        position: z.enum([
+          'leftTop',
+          'centerTop',
+          'rightTop',
+          'leftCenter',
+          'center',
+          'rightCenter',
+          'leftBottom',
+          'centerBottom',
+          'rightBottom',
+        ]),
+        offsetX: z.number().optional(),
+        offsetY: z.number().optional(),
+        backdrop: z.boolean().optional(),
+        blockTarget: z.boolean().optional(),
+      })
+      .strict(),
   ])
   .describe(
     'Two placement shapes, by step kind: a TOOLTIP (anchored to a `target`) uses ' +

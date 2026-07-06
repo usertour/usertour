@@ -188,12 +188,18 @@ function compileLauncher(
     const t: Record<string, any> = { ...(base.tooltip ?? {}) };
     const p = rep.tooltip.placement;
     if (p !== undefined) {
+      // Derive alignType like a flow tooltip: explicit wins; else giving side or
+      // align means "pin here" → `fixed`; else leave the seeded value. Without a
+      // `fixed`, the runtime forces align to center (align is ignored in `auto`).
+      const derivedAlignType =
+        p.alignType ?? (p.side !== undefined || p.align !== undefined ? 'fixed' : undefined);
       t.alignment = {
         ...(base.tooltip?.alignment ?? {}),
-        side: p.side,
-        align: p.align,
+        ...(p.side !== undefined ? { side: p.side } : {}),
+        ...(p.align !== undefined ? { align: p.align } : {}),
         ...(p.sideOffset !== undefined ? { sideOffset: p.sideOffset } : {}),
         ...(p.alignOffset !== undefined ? { alignOffset: p.alignOffset } : {}),
+        ...(derivedAlignType !== undefined ? { alignType: derivedAlignType } : {}),
       };
     }
     if (rep.tooltip.width !== undefined) t.width = rep.tooltip.width;

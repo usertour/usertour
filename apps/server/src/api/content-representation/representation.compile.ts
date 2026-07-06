@@ -113,20 +113,30 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
       : DEFAULT_STEP_SETTING),
   };
   const p = step.placement;
-  if (p && 'side' in p) {
-    s.side = p.side;
-    s.align = p.align;
-    if (p.sideOffset !== undefined) s.sideOffset = p.sideOffset;
-    if (p.alignOffset !== undefined) s.alignOffset = p.alignOffset;
-    if (p.alignType !== undefined) s.alignType = p.alignType;
-    if (p.backdrop !== undefined) s.enabledBackdrop = p.backdrop;
-    if (p.blockTarget !== undefined) s.enabledBlockTarget = p.blockTarget;
-  } else if (p && 'position' in p) {
+  if (p && 'position' in p) {
     s.position = p.position;
     if (p.offsetX !== undefined) s.positionOffsetX = p.offsetX;
     if (p.offsetY !== undefined) s.positionOffsetY = p.offsetY;
     if (p.backdrop !== undefined) s.enabledBackdrop = p.backdrop;
     if (p.blockTarget !== undefined) s.enabledBlockTarget = p.blockTarget;
+  } else if (p) {
+    // Tooltip placement (the non-modal member; side/align/alignType all
+    // optional). alignType is DERIVED so the author's direction is honored
+    // without them knowing the internal auto/fixed flag: an explicit alignType
+    // wins; otherwise giving side or align means "pin here" → `fixed`; giving
+    // neither leaves the seeded `auto` (auto-position + flip to avoid the edge).
+    const tp = p as Exclude<RepresentationPlacement, { position: unknown }>;
+    if (tp.side !== undefined) s.side = tp.side;
+    if (tp.align !== undefined) s.align = tp.align;
+    if (tp.sideOffset !== undefined) s.sideOffset = tp.sideOffset;
+    if (tp.alignOffset !== undefined) s.alignOffset = tp.alignOffset;
+    if (tp.alignType !== undefined) {
+      s.alignType = tp.alignType;
+    } else if (tp.side !== undefined || tp.align !== undefined) {
+      s.alignType = 'fixed';
+    }
+    if (tp.backdrop !== undefined) s.enabledBackdrop = tp.backdrop;
+    if (tp.blockTarget !== undefined) s.enabledBlockTarget = tp.blockTarget;
   }
   if (step.width !== undefined) s.width = step.width;
   if (step.skippable !== undefined) s.skippable = step.skippable;

@@ -48,10 +48,23 @@ export const ATTR_OP_TO_LOGIC = {
 
 export type RepresentationAttrOp = keyof typeof ATTR_OP_TO_LOGIC;
 
-/** Tuple of every representation op, for `z.enum`. */
-export const ATTR_OPS = Object.keys(ATTR_OP_TO_LOGIC) as [
-  RepresentationAttrOp,
-  ...RepresentationAttrOp[],
+/**
+ * Ops that apply ONLY to `text_input` (a regex match against a live page input),
+ * never to a stored attribute value — no attribute dataType accepts them and the
+ * runtime attribute evaluator has no branch for them. They stay in
+ * ATTR_OP_TO_LOGIC (text_input's compile reuses that map for its op→logic
+ * mapping) but must NOT appear in the attribute / event_attribute `op` enum.
+ */
+const TEXT_INPUT_ONLY_OPS = ['match', 'unmatch'] as const;
+
+/** Op vocabulary for `attribute` / `event_attribute` conditions (excludes the
+ * text_input-only ops above), for `z.enum`. */
+export const ATTR_OPS = (Object.keys(ATTR_OP_TO_LOGIC) as RepresentationAttrOp[]).filter(
+  (op): op is Exclude<RepresentationAttrOp, (typeof TEXT_INPUT_ONLY_OPS)[number]> =>
+    !(TEXT_INPUT_ONLY_OPS as readonly string[]).includes(op),
+) as [
+  Exclude<RepresentationAttrOp, (typeof TEXT_INPUT_ONLY_OPS)[number]>,
+  ...Exclude<RepresentationAttrOp, (typeof TEXT_INPUT_ONLY_OPS)[number]>[],
 ];
 
 /** internal logic token → representation op (inverse, for decompile). */
