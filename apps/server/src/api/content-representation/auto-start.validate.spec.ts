@@ -13,7 +13,7 @@ describe('validateAutoStartForType', () => {
         atLeast: { duration: 5, unit: 'minutes' },
       },
       priority: 'high',
-      waitMs: 1000,
+      waitSeconds: 1000,
       startIfNotComplete: true,
     };
     expect(validateAutoStartForType(start, { when }, 'flow')).toEqual([]);
@@ -24,7 +24,7 @@ describe('validateAutoStartForType', () => {
       when,
       frequency: { mode: 'multiple', every: { times: 2, duration: 1, unit: 'days' } },
       priority: 'low',
-      waitMs: 0,
+      waitSeconds: 0,
       startIfNotComplete: false,
     };
     expect(validateAutoStartForType(ok, { when }, 'checklist')).toEqual([]);
@@ -48,14 +48,14 @@ describe('validateAutoStartForType', () => {
         when,
         frequency: { mode: 'once' },
         priority: 'high',
-        waitMs: 500,
+        waitSeconds: 500,
         startIfNotComplete: true,
       };
       const errs = validateAutoStartForType(start, { when }, type);
       expect(errs).toEqual([
         `${type} content does not support a start \`frequency\`.`,
         `${type} content does not support a start \`priority\`.`,
-        `${type} content does not support a start \`waitMs\`.`,
+        `${type} content does not support a start \`waitSeconds\`.`,
         `${type} content does not support \`startIfNotComplete\`.`,
         `${type} content does not support \`hideRules\`.`,
       ]);
@@ -70,12 +70,12 @@ describe('validateAutoStartForType', () => {
     const start: RepresentationStartRules = {
       when,
       frequency: { mode: 'once' },
-      waitMs: 100,
+      waitSeconds: 100,
       startIfNotComplete: true,
     };
     expect(validateAutoStartForType(start, undefined, 'resource-center')).toEqual([
       'resource-center content does not support a start `frequency`.',
-      'resource-center content does not support a start `waitMs`.',
+      'resource-center content does not support a start `waitSeconds`.',
       'resource-center content does not support `startIfNotComplete`.',
     ]);
   });

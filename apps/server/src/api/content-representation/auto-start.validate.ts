@@ -60,8 +60,8 @@ export function validateAutoStartForType(
     if (startRules.priority !== undefined && !caps.priority) {
       errs.push(unsupported('a start `priority`'));
     }
-    if (startRules.waitMs !== undefined && !caps.wait) {
-      errs.push(unsupported('a start `waitMs`'));
+    if (startRules.waitSeconds !== undefined && !caps.wait) {
+      errs.push(unsupported('a start `waitSeconds`'));
     }
     if (startRules.startIfNotComplete !== undefined && !caps.ifCompleted) {
       errs.push(unsupported('`startIfNotComplete`'));

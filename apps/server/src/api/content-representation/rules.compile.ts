@@ -280,7 +280,8 @@ export function compileTriggers(
     id: cuid(),
     conditions: compileConditions(t.when, r),
     actions: compileActions(t.do, r, dismiss),
-    ...(t.waitMs !== undefined ? { wait: t.waitMs } : {}),
+    // `wait` is SECONDS in the builder/runtime (setTimeout multiplies by 1000).
+    ...(t.waitSeconds !== undefined ? { wait: t.waitSeconds } : {}),
   })) as unknown as Rule[];
 }
 
@@ -318,7 +319,8 @@ export function compileStartRules(
   if (start.priority) {
     setting.priority = start.priority;
   }
-  if (start.waitMs !== undefined) setting.wait = start.waitMs;
+  // `wait` is SECONDS in the builder/runtime.
+  if (start.waitSeconds !== undefined) setting.wait = start.waitSeconds;
   if (start.startIfNotComplete !== undefined) setting.startIfNotComplete = start.startIfNotComplete;
   return {
     enabledAutoStartRules: true,

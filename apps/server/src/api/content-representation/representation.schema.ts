@@ -438,7 +438,14 @@ export type RepresentationAction = z.infer<typeof representationAction>;
 export const representationTrigger = z.object({
   when: z.array(representationCondition).optional(),
   do: z.array(representationAction),
-  waitMs: z.number().optional(),
+  waitSeconds: z
+    .number()
+    .optional()
+    .describe(
+      'Delay in SECONDS between the `when` conditions matching and the `do` actions firing. ' +
+        'The conditions must keep matching for the entire wait, or the actions do not fire. ' +
+        'Capped at 300 seconds by the runtime (a larger value is clamped).',
+    ),
 });
 export type RepresentationTrigger = z.infer<typeof representationTrigger>;
 
@@ -801,12 +808,13 @@ export const representationStartRules = z.object({
       'Tie-breaker when a user matches the start conditions for more than one piece of content at ' +
         'the same time — the higher priority starts first.',
     ),
-  waitMs: z
+  waitSeconds: z
     .number()
     .optional()
     .describe(
-      'Delay in milliseconds between the conditions matching and the start firing. The conditions ' +
-        'must keep matching for the entire wait, or it will not start.',
+      'Delay in SECONDS between the conditions matching and the start firing. The conditions ' +
+        'must keep matching for the entire wait, or it will not start. Capped at 300 seconds ' +
+        'by the runtime (a larger value is clamped).',
     ),
   startIfNotComplete: z
     .boolean()

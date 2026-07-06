@@ -1,3 +1,4 @@
+import { compileStartRules, compileTriggers } from './rules.compile';
 import {
   IDENTITY_RESOLVERS,
   decompileAction,
@@ -148,7 +149,7 @@ describe('decompileAction', () => {
 });
 
 describe('decompileTriggers', () => {
-  it('maps when + do + waitMs', () => {
+  it('maps when + do + waitSeconds', () => {
     expect(
       decompileTriggers(
         [
@@ -164,9 +165,24 @@ describe('decompileTriggers', () => {
       {
         when: [{ type: 'segment', segment: 's1', in: true }],
         do: [{ type: 'dismiss' }],
-        waitMs: 500,
+        waitSeconds: 500,
       },
     ]);
+  });
+
+  // Unit lock: `waitSeconds` compiles to the internal `wait` UNCHANGED (both are
+  // seconds; the runtime multiplies by 1000). A round-trip can't catch a stray
+  // ×1000 on both sides — this pins the literal value.
+  it('compiles waitSeconds to internal `wait` with the same number (seconds, no conversion)', () => {
+    const ids = { attributeId: (c: string) => c, eventId: (c: string) => c };
+    const [rule] = compileTriggers([{ do: [{ type: 'dismiss' }], waitSeconds: 42 }], ids as never);
+    expect((rule as unknown as { wait: number }).wait).toBe(42);
+
+    const start = compileStartRules(
+      { when: [], waitSeconds: 42 } as never,
+      ids as never,
+    ) as unknown as { autoStartRulesSetting: { wait: number } };
+    expect(start.autoStartRulesSetting.wait).toBe(42);
   });
 });
 
@@ -186,7 +202,7 @@ describe('start / hide rules', () => {
       when: [{ type: 'segment', segment: 's1', in: true }],
       frequency: { mode: 'multiple', every: { times: 3, duration: 1, unit: 'days' } },
       priority: 'high',
-      waitMs: 200,
+      waitSeconds: 200,
       startIfNotComplete: true,
     });
   });

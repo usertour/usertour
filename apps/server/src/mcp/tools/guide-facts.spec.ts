@@ -58,7 +58,7 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(typesWith('priority')).toEqual(['checklist', 'flow', 'resource-center']);
     // guide side: the sentence carrying the claim
     expect(AUTHORING_GUIDE).toContain(
-      '`frequency`, `waitMs`, `startIfNotComplete` are **flow + checklist** only',
+      '`frequency`, `waitSeconds`, `startIfNotComplete` are **flow + checklist** only',
     );
     expect(AUTHORING_GUIDE).toContain('(`frequency.atLeast`, flow only)');
     expect(AUTHORING_GUIDE).toContain('`priority` is flow + checklist + resource-center');

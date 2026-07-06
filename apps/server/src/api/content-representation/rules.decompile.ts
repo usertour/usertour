@@ -310,7 +310,7 @@ function decompileTrigger(t: any, r: DecompileResolvers): RepresentationTrigger 
       ? { when: decompileWhen(t.conditions, r) }
       : {}),
     do: decompileActions(t?.actions),
-    ...(typeof t?.wait === 'number' ? { waitMs: t.wait } : {}),
+    ...(typeof t?.wait === 'number' ? { waitSeconds: t.wait } : {}),
   };
 }
 
@@ -328,7 +328,7 @@ export function decompileStartRules(
     when: decompileWhen(config.autoStartRules, r),
     ...(setting.frequency ? { frequency: mapFrequency(setting.frequency) } : {}),
     ...(setting.priority ? { priority: setting.priority } : {}),
-    ...(typeof setting.wait === 'number' ? { waitMs: setting.wait } : {}),
+    ...(typeof setting.wait === 'number' ? { waitSeconds: setting.wait } : {}),
     ...(typeof setting.startIfNotComplete === 'boolean'
       ? { startIfNotComplete: setting.startIfNotComplete }
       : {}),

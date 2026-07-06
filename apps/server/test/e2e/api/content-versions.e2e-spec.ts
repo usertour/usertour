@@ -222,7 +222,7 @@ describe('API v2 /content-versions (e2e)', () => {
       token,
     );
     const step = res.body.steps.find((s: { cvid: string }) => s.cvid === 'cv-1');
-    expect(step.triggers).toEqual([{ do: [{ type: 'dismiss' }], waitMs: 0 }]);
+    expect(step.triggers).toEqual([{ do: [{ type: 'dismiss' }], waitSeconds: 0 }]);
   });
 
   it('omits steps without the expand', async () => {
@@ -765,7 +765,7 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(r.body.hideRules).toEqual({ when: [{ type: 'current_url', includes: ['/done'] }] });
     });
 
-    it('round-trips the full start-rule setting (frequency + priority + waitMs + startIfNotComplete)', async () => {
+    it('round-trips the full start-rule setting (frequency + priority + waitSeconds + startIfNotComplete)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
       const w = await write(
         {
@@ -773,7 +773,7 @@ describe('API v2 /content-versions (e2e)', () => {
             when: [{ type: 'current_url', includes: ['/app/*'] }],
             frequency: { mode: 'multiple', every: { times: 3, duration: 7, unit: 'days' } },
             priority: 'high',
-            waitMs: 5000,
+            waitSeconds: 5000,
             startIfNotComplete: true,
           },
         },
@@ -786,7 +786,7 @@ describe('API v2 /content-versions (e2e)', () => {
         when: [{ type: 'current_url', includes: ['/app/*'] }],
         frequency: { mode: 'multiple', every: { times: 3, duration: 7, unit: 'days' } },
         priority: 'high',
-        waitMs: 5000,
+        waitSeconds: 5000,
         startIfNotComplete: true,
       });
     });
