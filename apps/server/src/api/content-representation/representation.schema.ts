@@ -710,19 +710,35 @@ export const representationBlock = z.lazy(() =>
             "it doubles up with the question's own submit affordance.",
         ),
     }),
-    z.object({
-      ...blockBase,
-      type: z.literal('columns'),
-      columns: z.array(
-        z.object({
-          width: widthShape,
-          justify: columnJustify.optional(),
-          align: columnAlign.optional(),
-          padding: spacingShape,
-          blocks: z.array(representationBlock),
-        }),
+    z
+      .object({
+        ...blockBase,
+        type: z.literal('columns'),
+        columns: z
+          .array(
+            z.object({
+              width: widthShape,
+              justify: columnJustify
+                .optional()
+                .describe(
+                  'Horizontal alignment of this column\'s own block(s) within the column\'s width — use "end"/"center" to right-align or center a lone button (a single-column `columns` block).',
+                ),
+              align: columnAlign.optional(),
+              padding: spacingShape,
+              blocks: z.array(representationBlock),
+            }),
+          )
+          .describe(
+            'One entry per column, laid out left-to-right. Each column is a mini vertical stack of `blocks` (usually one).',
+          ),
+      })
+      .describe(
+        'Lays 2+ blocks out side by side in one row. Top-level `content` blocks otherwise ' +
+          'stack vertically — each is its own full-width row — so two `button` blocks placed ' +
+          'directly in `content` render as two stacked rows, NOT a button pair. For a modal/' +
+          'tooltip footer with a Skip + primary button: one `columns` block with two `{ width: ' +
+          '{ unit: "fill" }, blocks: [...] }` entries, one button per column.',
       ),
-    }),
     z.object({ ...blockBase, type: z.literal('unsupported'), note: z.string().optional() }),
   ]),
 ) as unknown as z.ZodType<RepresentationBlock>;
