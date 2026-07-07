@@ -679,7 +679,7 @@ const translations = {
           flowTriggering: 'Automatic, segmented flow triggering',
           versionHistory: 'Version history',
           companyProfiles: 'Company profiles and events',
-          localization: 'Localization (coming soon)',
+          localization: 'Localization',
           integrations: 'Integrations (coming soon)',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',

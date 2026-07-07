@@ -651,7 +651,7 @@ const translations = {
           flowTriggering: '基于分群自动触发流程',
           versionHistory: '版本历史',
           companyProfiles: '公司资料与事件',
-          localization: '本地化(即将推出)',
+          localization: '本地化',
           integrations: '集成(即将推出)',
           alerting: '告警(即将推出)',
           sso: '单点登录（SSO）',
