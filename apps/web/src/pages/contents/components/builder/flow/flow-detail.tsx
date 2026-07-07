@@ -10,6 +10,7 @@ import {
   EditableTitle,
   ScrollArea,
   Separator,
+  useToast,
 } from '@usertour/ui';
 import {
   Align,
@@ -231,6 +232,7 @@ const FlowBuilderDetailBody = () => {
 const FlowBuilderDetailFooter = () => {
   const contentRef = useBuilderContentRef();
   const { currentStep, setIsShowError, exitToFlow } = useFlowEditor();
+  const { toast } = useToast();
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const actionsGate = useActionsSaveGate();
   const { t } = useTranslation();
@@ -245,6 +247,16 @@ const FlowBuilderDetailFooter = () => {
       return;
     }
     if (currentStep.type !== StepContentType.HIDDEN && hasMissingRequiredData(currentStep.data)) {
+      // Surface why the save didn't go through instead of a silent dead button.
+      // setIsShowError reddens the blocks that read it (button / question); image
+      // and embed editors don't, so the toast is what tells the user in those cases.
+      setIsShowError(true);
+      toast({
+        variant: 'destructive',
+        title: 'Fill in required fields before saving',
+        description:
+          'A block is missing required content (e.g. a button label, or an image / embed URL).',
+      });
       return;
     }
     if (
@@ -301,7 +313,7 @@ const FlowBuilderDetailFooter = () => {
       };
     });
     exitToFlow();
-  }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow]);
+  }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow, toast]);
 
   return (
     <CardFooter className="flex-none border-t border-border/50 p-4">

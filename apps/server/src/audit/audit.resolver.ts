@@ -41,12 +41,20 @@ export class AuditResolver {
     if (!config.auditLogs) {
       throw new FeatureRequiresLicenseError();
     }
-    // Read-window by plan: -1 = unlimited (no cutoff), N = last N days. Rows are
-    // never deleted; lower tiers just can't read past the window.
+    // Read-window by plan, tri-state: -1 = unlimited (no cutoff), 0 = none, N =
+    // last N days. Rows are never deleted; the window just gates reads. `0` must
+    // read NOTHING — a far-future cutoff excludes every row (the listAuditLogs
+    // lower bound is max(cutoff, user `createdAtFrom`), so it can't be widened).
+    // Guarding only `> 0` would lump `0` into the unlimited branch and leak the
+    // whole history (reachable when a cloud overridePlan enables auditLogs on a
+    // base plan whose retentionDays is 0).
+    const days = config.auditLogRetentionDays;
     const cutoff =
-      config.auditLogRetentionDays > 0
-        ? new Date(Date.now() - config.auditLogRetentionDays * 24 * 60 * 60 * 1000)
-        : undefined;
+      days === 0
+        ? new Date(8_640_000_000_000_000) // "none": exclude everything
+        : days > 0
+          ? new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+          : undefined; // -1 = unlimited
     return this.auditService.listAuditLogs(projectId, query, pagination, orderBy, cutoff);
   }
 }
