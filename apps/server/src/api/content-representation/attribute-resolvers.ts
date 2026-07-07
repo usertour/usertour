@@ -1,3 +1,5 @@
+import { PrismaService } from 'nestjs-prisma';
+
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 
 import { AttributeScope, CompileResolvers } from './rules.compile';
@@ -60,5 +62,58 @@ export function buildDecompileResolversFrom(
     attributeCode: (id) => attrMap.get(id) ?? id,
     attributeScope: (id) => scopeMap.get(id) ?? 'user',
     eventCode: (id) => eventMap.get(id) ?? id,
+  };
+}
+
+/**
+ * Load a project's attribute + event catalogs — the shared input for both resolver
+ * maps, defined once here (was copy-pasted across content-versions / themes /
+ * segments). Soft-deleted rows are intentionally INCLUDED: decompile (id→code)
+ * must still resolve a since-deleted attribute's id to its readable codeName (else
+ * the API shows a raw id), and the write path rejects references to deleted attrs
+ * downstream (condition-context filters them). That is why these catalogs do NOT
+ * apply the `deleted: false` the usability validator uses.
+ */
+export async function loadResolverCatalogs(prisma: PrismaService, projectId: string) {
+  return Promise.all([
+    prisma.attribute.findMany({
+      where: { projectId },
+      select: { id: true, codeName: true, bizType: true },
+    }),
+    prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
+  ]);
+}
+
+/** Load + build the decompile (id→code) resolvers for a project. */
+export async function loadDecompileResolvers(
+  prisma: PrismaService,
+  projectId: string,
+): Promise<DecompileResolvers> {
+  const [attributes, events] = await loadResolverCatalogs(prisma, projectId);
+  return buildDecompileResolversFrom(attributes, events);
+}
+
+/** Load + build the compile (code→id) resolvers for a project. */
+export async function loadCompileResolvers(
+  prisma: PrismaService,
+  projectId: string,
+): Promise<CompileResolvers> {
+  const [attributes, events] = await loadResolverCatalogs(prisma, projectId);
+  return buildCompileResolversFrom(attributes, events);
+}
+
+/**
+ * Load the catalogs ONCE and build BOTH resolver maps — a write compiles the
+ * representation and then decompiles the saved row for its response, and both
+ * directions share the same catalogs.
+ */
+export async function loadResolvers(
+  prisma: PrismaService,
+  projectId: string,
+): Promise<{ compile: CompileResolvers; decompile: DecompileResolvers }> {
+  const [attributes, events] = await loadResolverCatalogs(prisma, projectId);
+  return {
+    compile: buildCompileResolversFrom(attributes, events),
+    decompile: buildDecompileResolversFrom(attributes, events),
   };
 }

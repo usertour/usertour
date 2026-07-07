@@ -16,11 +16,10 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 
 import { loadConditionContext } from '../content-representation/condition-context';
 import { collectRuleIssues } from '../content-representation/condition-validate';
-import { type CompileResolvers, compileConditions } from '../content-representation/rules.compile';
-import { type DecompileResolvers } from '../content-representation/rules.decompile';
+import { compileConditions } from '../content-representation/rules.compile';
 import {
-  buildCompileResolversFrom,
-  buildDecompileResolversFrom,
+  loadDecompileResolvers,
+  loadResolvers,
 } from '../content-representation/attribute-resolvers';
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
@@ -51,7 +50,7 @@ export class ApiSegmentsService {
     query: ListSegmentsQuery,
   ): Promise<{ results: Segment[]; next: string | null; previous: string | null }> {
     const { bizType: bizTypeFilter, limit, cursor, name } = query;
-    const resolvers = await this.buildDecompileResolvers(projectId);
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     const nameFilter = nameContains(name);
     const bizType =
       bizTypeFilter === 'company'
@@ -85,7 +84,7 @@ export class ApiSegmentsService {
 
   async get(id: string, projectId: string): Promise<Segment> {
     const seg = await this.requireSegment(id, projectId);
-    const resolvers = await this.buildDecompileResolvers(projectId);
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     return mapSegment(seg, resolvers);
   }
 
@@ -93,7 +92,7 @@ export class ApiSegmentsService {
   async create(projectId: string, body: CreateSegmentBody): Promise<Segment> {
     const bizType = body.bizType === 'company' ? SegmentBizType.COMPANY : SegmentBizType.USER;
     const dataType = body.kind === 'condition' ? SegmentDataType.CONDITION : SegmentDataType.MANUAL;
-    const resolvers = await this.buildResolvers(projectId);
+    const resolvers = await loadResolvers(this.prisma, projectId);
     let data: JsonValue | undefined;
     if (body.kind === 'condition') {
       this.assertSegmentConditionTypes(body.conditions);
@@ -116,7 +115,7 @@ export class ApiSegmentsService {
     if (seg.dataType === SegmentDataType.ALL) {
       throw new ValidationError('Cannot modify the built-in "all" segment.');
     }
-    const resolvers = await this.buildResolvers(projectId);
+    const resolvers = await loadResolvers(this.prisma, projectId);
     let data: JsonValue | undefined;
     if (body.conditions !== undefined) {
       if (seg.dataType !== SegmentDataType.CONDITION) {
@@ -253,39 +252,5 @@ export class ApiSegmentsService {
       throw new ValidationError('Members can only be managed on a manual segment.');
     }
     return seg;
-  }
-
-  /** Load the project's attribute + event catalogs once — the shared input for the
-   * compile (code→id) and decompile (id→code) resolver maps. */
-  private async loadResolverCatalogs(projectId: string) {
-    return Promise.all([
-      this.prisma.attribute.findMany({
-        where: { projectId },
-        select: { id: true, codeName: true, bizType: true },
-      }),
-      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
-    ]);
-  }
-
-  /** Internal attribute / event ids -> stable codeName (read; fallback: the id). */
-  private async buildDecompileResolvers(projectId: string): Promise<DecompileResolvers> {
-    const [attributes, events] = await this.loadResolverCatalogs(projectId);
-    return buildDecompileResolversFrom(attributes, events);
-  }
-
-  /**
-   * Build BOTH resolver maps (write: code→id, read: id→code) from a SINGLE catalog
-   * load. A segment write compiles the conditions and then decompiles the saved
-   * row for the response; both directions share the same attribute/event catalogs,
-   * so loading them once (not once per direction) halves the queries.
-   */
-  private async buildResolvers(
-    projectId: string,
-  ): Promise<{ compile: CompileResolvers; decompile: DecompileResolvers }> {
-    const [attributes, events] = await this.loadResolverCatalogs(projectId);
-    return {
-      compile: buildCompileResolversFrom(attributes, events),
-      decompile: buildDecompileResolversFrom(attributes, events),
-    };
   }
 }

@@ -34,8 +34,8 @@ import {
   decompileStartRules,
 } from '../content-representation/rules.decompile';
 import {
-  buildCompileResolversFrom,
-  buildDecompileResolversFrom,
+  loadCompileResolvers,
+  loadDecompileResolvers,
 } from '../content-representation/attribute-resolvers';
 import {
   type UsabilityReport,
@@ -91,7 +91,7 @@ export class ApiContentVersionsService {
     if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
-    const resolvers = await this.buildResolvers(projectId);
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     return this.toVersion(version, projectId, toArray(query.expand), resolvers);
   }
 
@@ -111,7 +111,7 @@ export class ApiContentVersionsService {
     if (!content) {
       throw new ContentNotFoundError();
     }
-    const resolvers = await this.buildResolvers(projectId);
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
 
     return paginate({
       requestUrl,
@@ -171,18 +171,6 @@ export class ApiContentVersionsService {
       steps: { orderBy: { sequence: 'asc' } },
     });
     return version?.steps ?? [];
-  }
-
-  /** Map internal attribute / event ids to their stable codeName (read fallback: the id). */
-  private async buildResolvers(projectId: string): Promise<DecompileResolvers> {
-    const [attributes, events] = await Promise.all([
-      this.prisma.attribute.findMany({
-        where: { projectId },
-        select: { id: true, codeName: true, bizType: true },
-      }),
-      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
-    ]);
-    return buildDecompileResolversFrom(attributes, events);
   }
 
   /**
@@ -292,7 +280,7 @@ export class ApiContentVersionsService {
     if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
-    const resolvers = await this.buildCompileResolvers(projectId);
+    const resolvers = await loadCompileResolvers(this.prisma, projectId);
     const content: Record<string, unknown> = {};
     const contentType =
       (version as { content?: { type?: string | null } | null }).content?.type ?? undefined;
@@ -512,17 +500,5 @@ export class ApiContentVersionsService {
       config: v.config as { autoStartRules?: RulesCondition[] } | null,
       conditionContext: await loadConditionContext(this.prisma, projectId),
     });
-  }
-
-  /** Map stable codes back to internal ids (code→id; fallback: the code itself). */
-  private async buildCompileResolvers(projectId: string): Promise<CompileResolvers> {
-    const [attributes, events] = await Promise.all([
-      this.prisma.attribute.findMany({
-        where: { projectId },
-        select: { id: true, codeName: true, bizType: true },
-      }),
-      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
-    ]);
-    return buildCompileResolversFrom(attributes, events);
   }
 }

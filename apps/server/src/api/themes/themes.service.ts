@@ -11,8 +11,10 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
-import { type DecompileResolvers } from '../content-representation/rules.decompile';
-import { buildDecompileResolversFrom } from '../content-representation/attribute-resolvers';
+import {
+  buildDecompileResolversFrom,
+  loadDecompileResolvers,
+} from '../content-representation/attribute-resolvers';
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -51,7 +53,7 @@ export class ApiThemesService {
     // Resolvers are only consumed when decompiling variation conditions; skip the
     // two catalog queries on the common read path that doesn't expand variations.
     const resolvers = expand.includes('variations')
-      ? await this.buildDecompileResolvers(projectId)
+      ? await loadDecompileResolvers(this.prisma, projectId)
       : buildDecompileResolversFrom([], []);
     const orderBy = parseOrderBy(query.orderBy, [
       'createdAt',
@@ -82,7 +84,7 @@ export class ApiThemesService {
     const expand = toArray(query.expand);
     const theme = await this.requireTheme(id, projectId);
     const resolvers = expand.includes('variations')
-      ? await this.buildDecompileResolvers(projectId)
+      ? await loadDecompileResolvers(this.prisma, projectId)
       : buildDecompileResolversFrom([], []);
     return mapTheme(theme, expand, resolvers);
   }
@@ -124,7 +126,7 @@ export class ApiThemesService {
       settings: settings as unknown as JsonValue,
       variations: [] as unknown as JsonValue,
     });
-    const resolvers = await this.buildDecompileResolvers(projectId);
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     return mapTheme(created, FULL, resolvers);
   }
 
@@ -154,7 +156,7 @@ export class ApiThemesService {
       ...(body.isDefault !== undefined ? { isDefault: body.isDefault } : {}),
       ...settingsUpdate,
     });
-    const resolvers = await this.buildDecompileResolvers(projectId);
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     return mapTheme(updated, FULL, resolvers);
   }
 
@@ -174,17 +176,5 @@ export class ApiThemesService {
       throw new ThemeNotFoundError();
     }
     return theme;
-  }
-
-  /** Internal attribute / event ids -> stable codeName (read; fallback: the id). */
-  private async buildDecompileResolvers(projectId: string): Promise<DecompileResolvers> {
-    const [attributes, events] = await Promise.all([
-      this.prisma.attribute.findMany({
-        where: { projectId },
-        select: { id: true, codeName: true, bizType: true },
-      }),
-      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
-    ]);
-    return buildDecompileResolversFrom(attributes, events);
   }
 }
