@@ -1,5 +1,9 @@
-import { calculateStepProgress } from './event-v2';
-import { StepSettings } from '@usertour/types';
+import {
+  assignDeliveredLocale,
+  calculateStepProgress,
+  resolveDeliveredLocaleCode,
+} from './event-v2';
+import { EventAttributes, StepSettings } from '@usertour/types';
 import type { Step } from '@/common/types/schema';
 
 describe('calculateStepProgress', () => {
@@ -214,5 +218,31 @@ describe('calculateStepProgress', () => {
       expect(calculateStepProgress(steps, 1)).toBe(50);
       expect(calculateStepProgress(steps, 2)).toBe(100);
     });
+  });
+});
+
+describe('resolveDeliveredLocaleCode / assignDeliveredLocale', () => {
+  const translations = [{ localization: { code: 'fr' } }, { localization: { code: 'zh-CN' } }];
+
+  it('returns the matched translation code (exact, then primary subtag)', () => {
+    expect(resolveDeliveredLocaleCode({ locale_code: 'zh-CN' }, translations)).toBe('zh-CN');
+    expect(resolveDeliveredLocaleCode({ locale_code: 'fr-CA' }, translations)).toBe('fr');
+  });
+
+  it('returns null when the user has no locale or nothing matches', () => {
+    expect(resolveDeliveredLocaleCode({}, translations)).toBeNull();
+    expect(resolveDeliveredLocaleCode(null, translations)).toBeNull();
+    expect(resolveDeliveredLocaleCode({ locale_code: 'ja' }, translations)).toBeNull();
+    expect(resolveDeliveredLocaleCode({ locale_code: 'fr' }, [])).toBeNull();
+    expect(resolveDeliveredLocaleCode({ locale_code: 'fr' }, undefined)).toBeNull();
+  });
+
+  it('stamps locale_code onto event data only when a locale resolves', () => {
+    const stamped = assignDeliveredLocale({ flow_id: 'f1' }, { locale_code: 'fr' }, translations);
+    expect(stamped).toEqual({ flow_id: 'f1', [EventAttributes.LOCALE_CODE]: 'fr' });
+
+    const untouched = assignDeliveredLocale({ flow_id: 'f1' }, { locale_code: 'ja' }, translations);
+    expect(untouched).toEqual({ flow_id: 'f1' });
+    expect(EventAttributes.LOCALE_CODE in untouched).toBe(false);
   });
 });

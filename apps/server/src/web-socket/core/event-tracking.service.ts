@@ -27,6 +27,7 @@ import {
   buildTrackerCompletedEventData,
   getAnswer,
   assignClientContext,
+  assignDeliveredLocale,
 } from '@/utils/event-v2';
 import {
   BizEvents,
@@ -361,7 +362,15 @@ export class EventTrackingService {
         }),
         tx.version.findUnique({
           where: { id: versionId },
-          select: { id: true, sequence: true, data: true },
+          select: {
+            id: true,
+            sequence: true,
+            data: true,
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localization: { select: { code: true } } },
+            },
+          },
         }),
         tx.event.findFirst({
           where: { codeName: eventCodeName, projectId: environment.projectId },
@@ -373,7 +382,10 @@ export class EventTrackingService {
       }
 
       const rawData = buildEventData(content, version);
-      const eventData = assignClientContext(rawData, clientContext);
+      const eventData = assignClientContext(
+        assignDeliveredLocale(rawData, bizUser.data, version.versionOnLocalization),
+        clientContext,
+      );
 
       const filteredData = await this.filterEventDataByAttributes(
         event.id,
@@ -784,7 +796,14 @@ export class EventTrackingService {
         include: {
           content: true,
           bizEvent: { include: { event: true } },
-          version: true,
+          version: {
+            include: {
+              versionOnLocalization: {
+                where: { enabled: true },
+                select: { localization: { select: { code: true } } },
+              },
+            },
+          },
         },
       }),
       tx.event.findFirst({
@@ -797,7 +816,10 @@ export class EventTrackingService {
       return false;
     }
 
-    const eventData = assignClientContext(data, clientContext);
+    const eventData = assignClientContext(
+      assignDeliveredLocale(data, bizUser.data, bizSession.version?.versionOnLocalization),
+      clientContext,
+    );
     // Filter event data
     const events = await this.filterEventDataByAttributes(event.id, eventData);
     if (!events) {

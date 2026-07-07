@@ -7,11 +7,13 @@ import {
   ContentDataType,
   ResourceCenterData,
   AnnouncementData,
+  UserAttributes,
 } from '@usertour/types';
 import {
   isDisplayOnlyBlockType,
   isEmptyString,
   isNullish,
+  matchTranslationByLocale,
   serializeBlockName,
 } from '@usertour/helpers';
 import {
@@ -786,6 +788,49 @@ export const assignClientContext = (
     [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
     [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
   };
+};
+
+/**
+ * The locale being delivered to the user right now: their locale_code
+ * attribute matched against the version's enabled translations, using the
+ * same rules as the delivery pipeline (exact code, then primary language
+ * subtag). Null when the user has no locale or nothing matches — the user
+ * sees the authored source then, and the event simply omits the attribute.
+ *
+ * Resolved at event time rather than frozen per session: delivery re-resolves
+ * the locale on every session (re)emission, so a mid-session locale switch
+ * changes what the user sees under the same session id, and each event should
+ * record the language in effect when it fired.
+ */
+export const resolveDeliveredLocaleCode = (
+  bizUserData: unknown,
+  translations: { localization: { code: string } }[] | null | undefined,
+): string | null => {
+  if (!translations || translations.length === 0) {
+    return null;
+  }
+  const attributes = bizUserData as Record<string, unknown> | null | undefined;
+  const localeCode = attributes?.[UserAttributes.LOCALE_CODE];
+  if (typeof localeCode !== 'string' || localeCode.trim() === '') {
+    return null;
+  }
+  return matchTranslationByLocale(translations, localeCode)?.localization.code ?? null;
+};
+
+/**
+ * Add the delivered locale to event data when one resolves; otherwise return
+ * the data untouched so the attribute is absent, not null.
+ */
+export const assignDeliveredLocale = (
+  data: Record<string, unknown>,
+  bizUserData: unknown,
+  translations: { localization: { code: string } }[] | null | undefined,
+): Record<string, unknown> => {
+  const deliveredLocaleCode = resolveDeliveredLocaleCode(bizUserData, translations);
+  if (!deliveredLocaleCode) {
+    return data;
+  }
+  return { ...data, [EventAttributes.LOCALE_CODE]: deliveredLocaleCode };
 };
 
 /**

@@ -5,6 +5,7 @@ import { createConditionsFilter, createFilterItem } from '@/common/attribute/fil
 import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
+import { assignDeliveredLocale } from '@/utils/event-v2';
 import { Injectable, Logger } from '@nestjs/common';
 import {
   BizUser,
@@ -1223,7 +1224,14 @@ export class WebSocketService {
       include: {
         content: { include: { contentOnEnvironments: true } },
         bizEvent: { include: { event: true } },
-        version: true,
+        version: {
+          include: {
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localization: { select: { code: true } } },
+            },
+          },
+        },
       },
     });
     if (!bizSession || bizSession.state === 1) {
@@ -1235,7 +1243,10 @@ export class WebSocketService {
     if (!event) {
       return false;
     }
-    const events = await this.getFilterdEventData(event.id, eventData);
+    const events = await this.getFilterdEventData(
+      event.id,
+      assignDeliveredLocale(eventData, bizUser.data, bizSession.version?.versionOnLocalization),
+    );
     if (!events) {
       return false;
     }
