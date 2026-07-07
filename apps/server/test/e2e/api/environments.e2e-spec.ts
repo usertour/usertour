@@ -144,10 +144,11 @@ describe('API v2 /environments (e2e)', () => {
     expect(res.body.error.code).toBe('E1012');
   });
 
-  // The item routes use `:environmentId`, so ApiTokenGuard enforces the token's
-  // environment allowlist on the target — a token scoped to one environment must
-  // not read, rename, or DELETE another, even with the right capability.
-  describe('environment allowlist enforcement (guard fires on :environmentId)', () => {
+  // The item routes use `:id` (not `:environmentId`), so the guard's path-param
+  // scope check never fires — the handlers assert the token's env allowlist
+  // themselves. A token scoped to one environment must not read, rename, or
+  // DELETE another, even with the right capability.
+  describe('environment allowlist enforcement (handler asserts on :id)', () => {
     it('rejects DELETE of an out-of-scope environment (403 E1029)', async () => {
       const token = await mint([Capability.EnvironmentManage], [primaryEnvId]);
       const res = await send('delete', `${base()}/${otherEnvId}`, token).send();
