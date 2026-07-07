@@ -462,13 +462,14 @@ const translations = {
       empty: '暂无本地化。',
       form: {
         localeLabel: '语言区域',
-        localeTooltip: 'locale 表示一种语言 + 地区的组合。',
+        localeTooltip:
+          '从列表选择会自动填充下方的名称和代码；列表里没有的语言，也可以手动输入任意 BCP-47 代码。',
         nameLabel: '名称',
-        nameTooltip: 'locale 的可读名称。',
+        nameTooltip: '仅在管理后台显示的名称，终端用户不会看到。',
         namePlaceholder: '请输入显示名',
         codeLabel: '代码',
         codeTooltip:
-          '用户在 Usertour.js 中的 locale_code 属性必须与此完全一致才能匹配该本地化设置。',
+          '与用户的 locale_code 属性匹配；未设置该属性时回退到浏览器语言。优先精确匹配，否则按主语言匹配——locale_code 为 fr-CA 的用户会命中代码为 fr 的本地化。',
         codePlaceholder: '请输入代码',
       },
     },

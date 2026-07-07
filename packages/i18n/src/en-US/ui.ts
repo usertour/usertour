@@ -487,13 +487,14 @@ const translations = {
       empty: 'No localizations yet.',
       form: {
         localeLabel: 'Locale',
-        localeTooltip: "A locale represents a user's language and region.",
+        localeTooltip:
+          'Picking a locale fills in the name and code below. Need one that is not listed? Enter any BCP-47 code by hand.',
         nameLabel: 'Name',
-        nameTooltip: 'Human-readable name of the locale.',
+        nameTooltip: 'Display name used across the dashboard. End users never see it.',
         namePlaceholder: 'Enter display name',
         codeLabel: 'Code',
         codeTooltip:
-          "The value that users of this locale must have in their locale_code attribute in your Usertour.js installation. It's important that this code matches exactly.",
+          "Matched against each user's locale_code attribute — or their browser language when the attribute isn't set. An exact match wins; otherwise the primary language matches, so a user with fr-CA gets a localization coded fr.",
         codePlaceholder: 'Enter code',
       },
     },

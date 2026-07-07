@@ -1,5 +1,15 @@
 import type { ContentEditorRoot } from './editor';
 
+/**
+ * One entry of the locale picker catalog (@usertour/constants `locates`):
+ * the BCP-47 locale tag and the display name the picker renders — also the
+ * default name for a localization created from it.
+ */
+export interface LocaleOption {
+  locale: string;
+  name: string;
+}
+
 export type Localization = {
   id: string;
   projectId: string;

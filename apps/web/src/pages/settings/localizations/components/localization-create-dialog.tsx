@@ -61,7 +61,7 @@ export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) =
   }, [open]);
 
   const handleOnSelect = (item: LocateItem) => {
-    state.form.setValue('name', `${item.language.name} (${item.country.code})`);
+    state.form.setValue('name', item.name);
     state.form.setValue('code', item.locale);
     state.form.setValue('locale', item.locale);
   };
