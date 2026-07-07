@@ -170,6 +170,26 @@ describe('decompileTriggers', () => {
     ]);
   });
 
+  // Legacy-name lock: `waitMs` (the field's pre-release name) must be REJECTED
+  // with a migration hint, not silently stripped — a stale agent prompt sending
+  // waitMs would otherwise lose the delay without a trace.
+  it('rejects the legacy `waitMs` key on triggers and startRules with a migration hint', async () => {
+    const { representationTrigger, representationStartRules } = await import(
+      './representation.schema'
+    );
+    for (const schema of [representationTrigger, representationStartRules]) {
+      const bad = schema.safeParse({ when: [], do: [{ type: 'dismiss' }], waitMs: 300 });
+      expect(bad.success).toBe(false);
+      const issue = bad.error?.issues.find((i) => i.path.join('.') === 'waitMs');
+      expect(issue?.message).toContain('waitSeconds');
+      expect(issue?.message).toContain('SECONDS');
+    }
+    // waitSeconds itself still parses.
+    expect(
+      representationTrigger.safeParse({ do: [{ type: 'dismiss' }], waitSeconds: 3 }).success,
+    ).toBe(true);
+  });
+
   // Unit lock: `waitSeconds` compiles to the internal `wait` UNCHANGED (both are
   // seconds; the runtime multiplies by 1000). A round-trip can't catch a stray
   // ×1000 on both sides — this pins the literal value.

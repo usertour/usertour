@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -23,7 +26,25 @@ import { buildMcpAuditEntry } from './tools/audit-meta';
 import { buildReadTools, resolveEnvironment } from './tools/read-tools';
 import { buildWriteTools } from './tools/write-tools';
 
-const SERVER_INFO = { name: 'usertour', version: '1.0.0' };
+/**
+ * The real server release from package.json (../../ resolves to apps/server from
+ * both src/mcp and the flat dist/mcp build output), so an MCP client's
+ * `serverInfo.version` reflects the actual deployment instead of a hardcoded
+ * constant — the only signal a client has that the server (and with it the tool
+ * schemas it caches at connect time) has changed.
+ */
+function readServerVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')) as {
+      version?: unknown;
+    };
+    return typeof pkg.version === 'string' ? pkg.version : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
+const SERVER_INFO = { name: 'usertour', version: readServerVersion() };
 
 /**
  * The MCP application layer. Owns the read-only tool registry and builds a fresh

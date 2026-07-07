@@ -705,4 +705,40 @@ describe('validateVersionUsable', () => {
       expect(warnsNoStart({ type: ContentDataType.FLOW, themeId: 't' })).toBe(false);
     });
   });
+
+  // A wait over 60s is almost always a milliseconds value pasted into the
+  // SECONDS field (300 meant as 300ms waits 5 minutes) — warn, never block.
+  describe('suspiciously long waitSeconds (cross-cutting)', () => {
+    it('warns on a start-rules wait over 60s and says the unit is seconds', () => {
+      const report = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        config: { autoStartRules: [], autoStartRulesSetting: { wait: 300 } },
+      });
+      // Warning only — it must never appear among the blocking errors.
+      expect(paths(report.errors)).not.toContain('startRules.waitSeconds');
+      const w = report.warnings.find((x) => x.path === 'startRules.waitSeconds');
+      expect(w?.message).toContain('SECONDS');
+      expect(w?.message).toContain('300');
+    });
+
+    it('warns on a step trigger wait over 60s (path names the step + trigger)', () => {
+      const report = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [{ name: 'S1', trigger: [{ wait: 120 }] } as never],
+      });
+      expect(paths(report.warnings)).toContain('steps[0] "S1".triggers[0].waitSeconds');
+    });
+
+    it('does not warn at 60s or below', () => {
+      const report = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        config: { autoStartRules: [], autoStartRulesSetting: { wait: 60 } },
+        steps: [{ trigger: [{ wait: 5 }] } as never],
+      });
+      expect(report.warnings.filter((w) => w.path.includes('waitSeconds'))).toEqual([]);
+    });
+  });
 });

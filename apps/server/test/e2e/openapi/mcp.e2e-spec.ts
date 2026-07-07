@@ -157,7 +157,10 @@ describe('MCP endpoint (e2e)', () => {
       expect(result.jsonrpc).toBe('2.0');
       expect(result.id).toBe(1);
       expect(result.result.protocolVersion).toBe('2025-06-18');
-      expect(result.result.serverInfo).toEqual({ name: 'usertour', version: '1.0.0' });
+      // serverInfo.version must be the REAL release from package.json (an MCP
+      // client's only signal that the server changed), never a hardcoded constant.
+      const pkg = require('../../../package.json') as { version: string };
+      expect(result.result.serverInfo).toEqual({ name: 'usertour', version: pkg.version });
       expect(result.result.capabilities.tools).toBeDefined();
     });
   });
@@ -242,13 +245,24 @@ describe('MCP endpoint (e2e)', () => {
       const result = extractResult(res);
       expect(result.result.isError).toBeFalsy();
       const payload = parseToolContent(result);
+      // The envelope is PER-TYPE: a flow reports starts/completions (renamed
+      // from the domain's internal views vocabulary) and a `steps` breakdown —
+      // no `uniqueViews`, no other types' arrays. Zero data still yields the
+      // full shape (zeros + empty arrays), never missing fields.
       expect(payload).toMatchObject({
         object: 'contentAnalytics',
         contentId: content.id,
         environmentId: envA,
-        uniqueViews: 0,
-        tasks: null,
+        contentType: 'flow',
+        uniqueStarts: 0,
+        totalStarts: 0,
+        uniqueCompletions: 0,
+        totalCompletions: 0,
+        byDay: [],
+        steps: [],
       });
+      expect(payload).not.toHaveProperty('uniqueViews');
+      expect(payload).not.toHaveProperty('tasks');
     });
 
     it('list_users returns the seeded user in the text content', async () => {

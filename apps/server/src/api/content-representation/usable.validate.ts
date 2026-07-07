@@ -54,8 +54,11 @@ export interface ValidateUsableInput {
   steps?: Step[] | null;
   /** Non-flow version data (the compiled @usertour/types model, parsed). */
   data?: unknown;
-  /** version.config (carries autoStartRules). */
-  config?: { autoStartRules?: RulesCondition[] | null } | null;
+  /** version.config (carries autoStartRules + the start-delay setting). */
+  config?: {
+    autoStartRules?: RulesCondition[] | null;
+    autoStartRulesSetting?: { wait?: number } | null;
+  } | null;
   /**
    * Project reference lists for SEMANTIC condition validation (attribute
    * datatype/op fit + existence; segment / content existence; required values).
@@ -248,6 +251,36 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     }
   };
   flagRootOnlyPattern(input.config?.autoStartRules, 'config.autoStartRules');
+
+  // A delay over 60s is almost always a milliseconds value pasted into the
+  // SECONDS field (e.g. 300 meant as 300ms waits 5 minutes). It's legal — the
+  // runtime clamps at 300s — so warn, don't block.
+  const WAIT_WARN_SECONDS = 60;
+  const flagSuspiciouslyLongWait = (wait: unknown, path: string) => {
+    if (typeof wait === 'number' && wait > WAIT_WARN_SECONDS) {
+      const minutes = Math.round((wait / 60) * 10) / 10;
+      warn(
+        path,
+        `waitSeconds is ${wait} — a ${minutes}-minute delay before anything happens. The unit is SECONDS, not milliseconds (${wait} ms would be waitSeconds: ${wait / 1000}). The runtime caps the wait at 300 seconds. If the long delay is intentional, ignore this warning.`,
+      );
+    }
+  };
+  flagSuspiciouslyLongWait(input.config?.autoStartRulesSetting?.wait, 'startRules.waitSeconds');
+  {
+    const steps = asArray<Step>(input.steps);
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      const label = (s as { name?: string })?.name;
+      const trigger = (s as { trigger?: unknown }).trigger;
+      if (!Array.isArray(trigger)) continue;
+      for (let j = 0; j < trigger.length; j++) {
+        flagSuspiciouslyLongWait(
+          (trigger[j] as { wait?: unknown })?.wait,
+          `steps[${i}]${label ? ` "${label}"` : ''}.triggers[${j}].waitSeconds`,
+        );
+      }
+    }
+  }
 
   if (AUTO_START_REQUIRED_TYPES.has(input.type)) {
     const rules = input.config?.autoStartRules;

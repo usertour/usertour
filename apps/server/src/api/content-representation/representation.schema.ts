@@ -465,18 +465,40 @@ export const representationAction = z.discriminatedUnion('type', [
 ]);
 export type RepresentationAction = z.infer<typeof representationAction>;
 
-export const representationTrigger = z.object({
-  when: z.array(representationCondition).optional(),
-  do: z.array(representationAction),
-  waitSeconds: z
-    .number()
-    .optional()
-    .describe(
-      'Delay in SECONDS between the `when` conditions matching and the `do` actions firing. ' +
-        'The conditions must keep matching for the entire wait, or the actions do not fire. ' +
-        'Capped at 300 seconds by the runtime (a larger value is clamped).',
-    ),
-});
+/**
+ * `waitMs` was the field's pre-release name; agents with stale prompts/schema
+ * caches still send it, and as an unknown key zod would silently STRIP it — the
+ * author's intended delay would be dropped without a trace. Runs as a preprocess
+ * (before parsing strips unknown keys) to reject it with a migration hint.
+ */
+const rejectLegacyWaitMs = (raw: unknown, ctx: z.RefinementCtx): unknown => {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'waitMs' in raw) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['waitMs'],
+      message:
+        'Unknown field `waitMs` — the field is `waitSeconds` and its unit is SECONDS ' +
+        '(the runtime multiplies by 1000). If you meant a 3-second delay, send `waitSeconds: 3`.',
+    });
+  }
+  return raw;
+};
+
+export const representationTrigger = z.preprocess(
+  rejectLegacyWaitMs,
+  z.object({
+    when: z.array(representationCondition).optional(),
+    do: z.array(representationAction),
+    waitSeconds: z
+      .number()
+      .optional()
+      .describe(
+        'Delay in SECONDS between the `when` conditions matching and the `do` actions firing. ' +
+          'The conditions must keep matching for the entire wait, or the actions do not fire. ' +
+          'Capped at 300 seconds by the runtime (a larger value is clamped).',
+      ),
+  }),
+);
 export type RepresentationTrigger = z.infer<typeof representationTrigger>;
 
 // ── Questions ────────────────────────────────────────────────────────────────
@@ -808,49 +830,54 @@ export type RepresentationStep = z.infer<typeof representationStep>;
 
 // ── Version-level start / hide rules ─────────────────────────────────────────
 const durationUnit = z.enum(['seconds', 'minutes', 'hours', 'days']);
-export const representationStartRules = z.object({
-  when: z.array(representationCondition),
-  frequency: z
-    .object({
-      mode: z
-        .enum(['once', 'multiple', 'unlimited'])
-        .describe(
-          'once = show a single time; multiple = up to N times per window; unlimited = every time the conditions match (subject to `every`).',
-        ),
-      every: z
-        .object({ times: z.number().optional(), duration: z.number(), unit: durationUnit })
-        .optional()
-        .describe(
-          'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied. Manual and programmatic starts also count toward the `multiple` limit.',
-        ),
-      atLeast: z
-        .object({ duration: z.number(), unit: durationUnit })
-        .optional()
-        .describe(
-          'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
-        ),
-    })
-    .optional(),
-  priority: z
-    .enum(['highest', 'high', 'medium', 'low', 'lowest'])
-    .optional()
-    .describe(
-      'Tie-breaker when a user matches the start conditions for more than one piece of content at ' +
-        'the same time — the higher priority starts first.',
-    ),
-  waitSeconds: z
-    .number()
-    .optional()
-    .describe(
-      'Delay in SECONDS between the conditions matching and the start firing. The conditions ' +
-        'must keep matching for the entire wait, or it will not start. Capped at 300 seconds ' +
-        'by the runtime (a larger value is clamped).',
-    ),
-  startIfNotComplete: z
-    .boolean()
-    .optional()
-    .describe("When true, this content won't auto-start for users who have already completed it."),
-});
+export const representationStartRules = z.preprocess(
+  rejectLegacyWaitMs,
+  z.object({
+    when: z.array(representationCondition),
+    frequency: z
+      .object({
+        mode: z
+          .enum(['once', 'multiple', 'unlimited'])
+          .describe(
+            'once = show a single time; multiple = up to N times per window; unlimited = every time the conditions match (subject to `every`).',
+          ),
+        every: z
+          .object({ times: z.number().optional(), duration: z.number(), unit: durationUnit })
+          .optional()
+          .describe(
+            'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied. Manual and programmatic starts also count toward the `multiple` limit.',
+          ),
+        atLeast: z
+          .object({ duration: z.number(), unit: durationUnit })
+          .optional()
+          .describe(
+            'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
+          ),
+      })
+      .optional(),
+    priority: z
+      .enum(['highest', 'high', 'medium', 'low', 'lowest'])
+      .optional()
+      .describe(
+        'Tie-breaker when a user matches the start conditions for more than one piece of content at ' +
+          'the same time — the higher priority starts first.',
+      ),
+    waitSeconds: z
+      .number()
+      .optional()
+      .describe(
+        'Delay in SECONDS between the conditions matching and the start firing. The conditions ' +
+          'must keep matching for the entire wait, or it will not start. Capped at 300 seconds ' +
+          'by the runtime (a larger value is clamped).',
+      ),
+    startIfNotComplete: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, this content won't auto-start for users who have already completed it.",
+      ),
+  }),
+);
 export type RepresentationStartRules = z.infer<typeof representationStartRules>;
 
 export const representationHideRules = z.object({ when: z.array(representationCondition) });
