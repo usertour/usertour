@@ -737,6 +737,12 @@ export interface LocalizationTranslationUnit {
   path: string;
   sourceText: string;
   translatedText: string;
+  /**
+   * Media URLs (image/embed) travel in the exchange so a CSV round-trip can
+   * swap them, but they are not text: machine translation and missing counts
+   * must skip optional units.
+   */
+  optional: boolean;
 }
 
 const createTranslationUnitCollector = (
@@ -750,6 +756,7 @@ const createTranslationUnitCollector = (
       path: visit.path,
       sourceText: visit.sourceText,
       translatedText: visit.partnerText ?? '',
+      optional: visit.optional,
     });
   };
 };

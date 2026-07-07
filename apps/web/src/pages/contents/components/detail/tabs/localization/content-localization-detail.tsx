@@ -32,14 +32,19 @@ import type {
   VersionOnLocalization,
 } from '@usertour/types';
 import { ContentDataType } from '@usertour/types';
-import { Badge, Card } from '@usertour/ui';
+import { Badge, Checkbox } from '@usertour/ui';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { FIELD_GRID, LocalizedEditorContents } from './localized-fields';
 import { LocalizationTransferActions } from './localization-transfer-actions';
-import { MachineTranslationButton } from './machine-translation-button';
+import { MachineTranslationButton, useUnitTranslateText } from './machine-translation-button';
+import {
+  LocalizationGroupCard,
+  LocalizationViewProvider,
+  countMissingUnits,
+} from './localization-view';
 import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 import {
   AnnouncementLocalizationSections,
@@ -60,6 +65,10 @@ interface LocalizationEditorShellProps {
   saveState: LocalizationSaveState;
   locked: boolean;
   sourceLocaleName: string;
+  /** Untranslated units across the whole content, shown next to the filter. */
+  missingCount: number;
+  /** Per-row machine translation; null when unavailable. */
+  translateText: ((sourceText: string) => Promise<string | null>) | null;
   /** Right-side header actions (export/import). */
   actions?: ReactNode;
   children: ReactNode;
@@ -72,50 +81,76 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
     saveState,
     locked,
     sourceLocaleName,
+    missingCount,
+    translateText,
     actions,
     children,
   } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showOnlyMissing, setShowOnlyMissing] = useState(false);
+
+  const viewValue = useMemo(
+    () => ({ showOnlyMissing, translateText }),
+    [showOnlyMissing, translateText],
+  );
 
   return (
-    <div className="flex justify-center space-x-8 px-6 py-8 xl:px-8">
-      <div className="mx-auto flex max-w-screen-xl grow flex-col space-y-6">
-        <div className="flex flex-row items-center space-x-2">
-          <RiArrowLeftLine
-            className="h-4 w-4 flex-none cursor-pointer"
-            onClick={() => {
-              navigate(location.pathname.replace(`/${localization.locale}`, ''));
-            }}
-          />
-          <h3 className="text-lg font-medium">{localization.name}</h3>
-          {contentLocalization?.enabled ? (
-            <Badge variant="success">{t('contents.localization.status.enabled')}</Badge>
-          ) : (
-            <Badge variant="destructive">{t('contents.localization.status.disabled')}</Badge>
+    <LocalizationViewProvider value={viewValue}>
+      <div className="flex justify-center space-x-8 px-6 py-8 xl:px-8">
+        <div className="mx-auto flex max-w-screen-xl grow flex-col space-y-6">
+          <div className="flex flex-row items-center space-x-2">
+            <RiArrowLeftLine
+              className="h-4 w-4 flex-none cursor-pointer"
+              onClick={() => {
+                navigate(location.pathname.replace(`/${localization.locale}`, ''));
+              }}
+            />
+            <h3 className="text-lg font-medium">{localization.name}</h3>
+            {contentLocalization?.enabled ? (
+              <Badge variant="success">{t('contents.localization.status.enabled')}</Badge>
+            ) : (
+              <Badge variant="destructive">{t('contents.localization.status.disabled')}</Badge>
+            )}
+            <div className="!ml-auto flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {saveState === 'saving' && t('contents.localization.saving')}
+                {saveState === 'saved' && t('contents.localization.saved')}
+              </span>
+              {actions}
+            </div>
+          </div>
+          {locked && (
+            <div className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
+              {t('contents.localization.publishedLock')}
+            </div>
           )}
-          <div className="!ml-auto flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {saveState === 'saving' && t('contents.localization.saving')}
-              {saveState === 'saved' && t('contents.localization.saved')}
-            </span>
-            {actions}
+          <div className="flex flex-col gap-4">
+            <label
+              htmlFor="show-only-missing"
+              className="flex w-fit cursor-pointer items-center gap-2 px-4 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <Checkbox
+                id="show-only-missing"
+                checked={showOnlyMissing}
+                onCheckedChange={(checked) => setShowOnlyMissing(checked === true)}
+                // The default hairline vanishes against the page's gray shell.
+                className="border-muted-foreground/40 bg-background"
+              />
+              {t('contents.localization.onlyUntranslated')}
+              <span className="-ml-1">({missingCount})</span>
+            </label>
+            <div className={cn(FIELD_GRID, 'px-4 text-xs text-muted-foreground')}>
+              <div />
+              <div>{sourceLocaleName}</div>
+              <div>{localization.name}</div>
+            </div>
+            {children}
           </div>
         </div>
-        {locked && (
-          <div className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
-            {t('contents.localization.publishedLock')}
-          </div>
-        )}
-        <div className={cn(FIELD_GRID, 'text-xs text-muted-foreground')}>
-          <div />
-          <div>{sourceLocaleName}</div>
-          <div>{localization.name}</div>
-        </div>
-        {children}
       </div>
-    </div>
+    </LocalizationViewProvider>
   );
 };
 
@@ -220,6 +255,31 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     [steps, working],
   );
 
+  const stepStats = useMemo(() => {
+    const stats = new Map<string, { missing: number; outdated: number }>();
+    for (const step of steps) {
+      const units = extractContentsTranslationUnits(
+        step.data as ContentEditorRoot[],
+        working[step.cvid],
+      );
+      stats.set(step.cvid, {
+        missing: countMissingUnits(units),
+        outdated: outdatedByStep.get(step.cvid)?.size ?? 0,
+      });
+    }
+    return stats;
+  }, [steps, working, outdatedByStep]);
+  const missingCount = useMemo(
+    () => [...stepStats.values()].reduce((sum, stat) => sum + stat.missing, 0),
+    [stepStats],
+  );
+
+  const translateText = useUnitTranslateText({
+    versionId: version.id,
+    localizationId: localization.id,
+    disabled,
+  });
+
   const handleImportTranslations = useCallback(
     (translations: ReadonlyMap<string, string>) => {
       setWorking((previous) => {
@@ -254,6 +314,8 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
       saveState={saveState}
       locked={locked}
       sourceLocaleName={sourceLocaleName}
+      missingCount={missingCount}
+      translateText={translateText}
       actions={
         <>
           <MachineTranslationButton
@@ -273,12 +335,15 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
         </>
       }
     >
-      {steps.map((step, index) => (
-        <Card key={step.cvid} className="flex flex-col space-y-4 p-4">
-          <div className="font-medium">
-            {index + 1}. {step.name}
-          </div>
-          <div className="flex flex-col space-y-4">
+      {steps.map((step, index) => {
+        const stats = stepStats.get(step.cvid) ?? { missing: 0, outdated: 0 };
+        return (
+          <LocalizationGroupCard
+            key={step.cvid}
+            title={`${index + 1}. ${step.name}`}
+            missingCount={stats.missing}
+            outdatedCount={stats.outdated}
+          >
             <LocalizedEditorContents
               sourceContents={(step.data ?? []) as ContentEditorRoot[]}
               workingContents={working[step.cvid] ?? []}
@@ -286,9 +351,9 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
               disabled={disabled}
               onContentsChange={(contents) => handleStepContentsChange(step.cvid, contents)}
             />
-          </div>
-        </Card>
-      ))}
+          </LocalizationGroupCard>
+        );
+      })}
     </LocalizationEditorShell>
   );
 };
@@ -339,10 +404,18 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     [scheduleSave],
   );
 
-  const buildTransferUnits = useCallback(
+  const units = useMemo(
     () => extractVersionDataTranslationUnits(content.type, sourceData, workingData),
     [content.type, sourceData, workingData],
   );
+  const missingCount = useMemo(() => countMissingUnits(units), [units]);
+  const buildTransferUnits = useCallback(() => units, [units]);
+
+  const translateText = useUnitTranslateText({
+    versionId: version.id,
+    localizationId: localization.id,
+    disabled,
+  });
 
   const handleImportTranslations = useCallback(
     (translations: ReadonlyMap<string, string>) => {
@@ -361,7 +434,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   );
 
   const sections = (() => {
-    const sectionProps = { outdatedPaths, disabled, onDataChange: handleDataChange };
+    const sectionProps = { units, outdatedPaths, disabled, onDataChange: handleDataChange };
     switch (content.type) {
       case ContentDataType.CHECKLIST:
         return (
@@ -415,6 +488,8 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
       saveState={saveState}
       locked={locked}
       sourceLocaleName={sourceLocaleName}
+      missingCount={missingCount}
+      translateText={translateText}
       actions={
         <>
           <MachineTranslationButton
@@ -457,16 +532,24 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
 
   // First-load gating only — a background refetch flips `loading` while the
   // list stays populated, and unmounting the editor then would drop unsaved
-  // translation state.
-  const hasLoadedRef = useRef(false);
-  if (!loading) {
-    hasLoadedRef.current = true;
+  // translation state. Loaded is tracked per version id: while the query is
+  // skipped (version not resolved yet) `loading` is false without any fetch
+  // having happened, and treating that as loaded would mount the editor with
+  // an empty translation list, hiding every saved translation.
+  const loadedVersionIdRef = useRef<string | null>(null);
+  if (version?.id && !loading) {
+    loadedVersionIdRef.current = version.id;
   }
 
   const localization = localizationList?.find((item) => item.locale === locateCode);
   const defaultLocalization = localizationList?.find((item) => item.isDefault);
 
-  if (!content || !version?.id || !localization || (loading && !hasLoadedRef.current)) {
+  if (
+    !content ||
+    !version?.id ||
+    !localization ||
+    (loading && loadedVersionIdRef.current !== version.id)
+  ) {
     return <></>;
   }
   if (content.type === ContentDataType.TRACKER) {

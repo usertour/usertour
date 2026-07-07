@@ -1967,6 +1967,12 @@ const translations = {
       saving: 'Saving…',
       saved: 'Saved',
       sourceChanged: 'Source changed',
+      onlyUntranslated: 'Only untranslated',
+      cardMissing: '{{count}} untranslated',
+      cardOutdated: '{{count}} outdated',
+      allTranslated: 'All translated',
+      translateUnit: 'AI translate this text',
+      statusUntranslated: 'Untranslated',
       publishedLock:
         'This version is live and read-only. Edit the flow to create a new draft before changing translations.',
     },

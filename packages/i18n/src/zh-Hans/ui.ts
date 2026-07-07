@@ -1868,6 +1868,12 @@ const translations = {
       saving: '保存中…',
       saved: '已保存',
       sourceChanged: '原文已变更',
+      onlyUntranslated: '仅看未翻译',
+      cardMissing: '{{count}} 条未翻译',
+      cardOutdated: '{{count}} 条原文已变更',
+      allTranslated: '已全部翻译',
+      translateUnit: 'AI 翻译此条',
+      statusUntranslated: '未翻译',
       publishedLock: '该版本已发布，当前为只读。请先在构建器中编辑内容生成新草稿，再修改翻译。',
     },
     overview: {

@@ -1,4 +1,5 @@
 import { deepClone, extractTranslatableUnits } from '@usertour/helpers';
+import type { LocalizationTranslationUnit } from '@usertour/helpers';
 import type {
   AnnouncementData,
   BannerData,
@@ -10,9 +11,9 @@ import type {
   ResourceCenterData,
   ResourceCenterTab,
 } from '@usertour/types';
-import { Card } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
+import { LocalizationGroupCard, countMissingUnits, countOutdatedPaths } from './localization-view';
 import {
   LocalizedEditorContents,
   LocalizedFieldRow,
@@ -30,6 +31,8 @@ import {
 export interface VersionDataSectionsProps<T> {
   sourceData: T;
   workingData: T;
+  /** Flat transfer units of the whole data object, for per-card counts. */
+  units: LocalizationTranslationUnit[];
   outdatedPaths: Set<string>;
   disabled: boolean;
   onDataChange: (data: T) => void;
@@ -47,8 +50,12 @@ const asContents = (contents: unknown): ContentEditorRoot[] => {
 // Checklist
 // ---------------------------------------------------------------------------
 
+const checklistGeneralMatch = (path: string) =>
+  path === 'buttonText' || path.startsWith('content/');
+const checklistTasksMatch = (path: string) => path.startsWith('items.');
+
 export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<ChecklistData>) => {
-  const { sourceData, workingData, outdatedPaths, disabled, onDataChange } = props;
+  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
   const { t } = useTranslation();
   const items = Array.isArray(sourceData.items) ? sourceData.items : [];
 
@@ -63,8 +70,11 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
 
   return (
     <>
-      <Card className="flex flex-col space-y-4 p-4">
-        <div className="font-medium">{t('contents.localization.section.general')}</div>
+      <LocalizationGroupCard
+        title={t('contents.localization.section.general')}
+        missingCount={countMissingUnits(units, checklistGeneralMatch)}
+        outdatedCount={countOutdatedPaths(outdatedPaths, checklistGeneralMatch)}
+      >
         {toText(sourceData.buttonText) !== '' && (
           <LocalizedFieldRow
             label={t('contents.localization.field.buttonText')}
@@ -84,10 +94,13 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
           disabled={disabled}
           onContentsChange={(contents) => onDataChange({ ...workingData, content: contents })}
         />
-      </Card>
+      </LocalizationGroupCard>
       {items.length > 0 && (
-        <Card className="flex flex-col space-y-4 p-4">
-          <div className="font-medium">{t('contents.localization.section.tasks')}</div>
+        <LocalizationGroupCard
+          title={t('contents.localization.section.tasks')}
+          missingCount={countMissingUnits(units, checklistTasksMatch)}
+          outdatedCount={countOutdatedPaths(outdatedPaths, checklistTasksMatch)}
+        >
           {items.map((item) => {
             const workingItem = (workingData.items ?? []).find(
               (candidate) => candidate.id === item.id,
@@ -107,7 +120,7 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
                 {toText(item.description) !== '' && (
                   <LocalizedFieldRow
                     label={t('contents.localization.field.taskDescription')}
-                    source={item.description}
+                    source={toText(item.description)}
                     value={toText(workingItem?.description)}
                     placeholder={item.description}
                     disabled={disabled}
@@ -118,7 +131,7 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
               </div>
             );
           })}
-        </Card>
+        </LocalizationGroupCard>
       )}
     </>
   );
@@ -129,16 +142,19 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
 // ---------------------------------------------------------------------------
 
 export const LauncherLocalizationSections = (props: VersionDataSectionsProps<LauncherData>) => {
-  const { sourceData, workingData, outdatedPaths, disabled, onDataChange } = props;
+  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
   const { t } = useTranslation();
 
   return (
-    <Card className="flex flex-col space-y-4 p-4">
-      <div className="font-medium">{t('contents.localization.section.general')}</div>
+    <LocalizationGroupCard
+      title={t('contents.localization.section.general')}
+      missingCount={countMissingUnits(units)}
+      outdatedCount={countOutdatedPaths(outdatedPaths)}
+    >
       {toText(sourceData.buttonText) !== '' && (
         <LocalizedFieldRow
           label={t('contents.localization.field.buttonText')}
-          source={sourceData.buttonText}
+          source={toText(sourceData.buttonText)}
           value={toText(workingData.buttonText)}
           placeholder={sourceData.buttonText}
           disabled={disabled}
@@ -159,7 +175,7 @@ export const LauncherLocalizationSections = (props: VersionDataSectionsProps<Lau
           })
         }
       />
-    </Card>
+    </LocalizationGroupCard>
   );
 };
 
@@ -168,12 +184,15 @@ export const LauncherLocalizationSections = (props: VersionDataSectionsProps<Lau
 // ---------------------------------------------------------------------------
 
 export const BannerLocalizationSections = (props: VersionDataSectionsProps<BannerData>) => {
-  const { sourceData, workingData, outdatedPaths, disabled, onDataChange } = props;
+  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
   const { t } = useTranslation();
 
   return (
-    <Card className="flex flex-col space-y-4 p-4">
-      <div className="font-medium">{t('contents.localization.section.general')}</div>
+    <LocalizationGroupCard
+      title={t('contents.localization.section.general')}
+      missingCount={countMissingUnits(units)}
+      outdatedCount={countOutdatedPaths(outdatedPaths)}
+    >
       <LocalizedEditorContents
         sourceContents={asContents(sourceData.contents)}
         workingContents={asContents(workingData.contents)}
@@ -182,7 +201,7 @@ export const BannerLocalizationSections = (props: VersionDataSectionsProps<Banne
         disabled={disabled}
         onContentsChange={(contents) => onDataChange({ ...workingData, contents })}
       />
-    </Card>
+    </LocalizationGroupCard>
   );
 };
 
@@ -190,16 +209,23 @@ export const BannerLocalizationSections = (props: VersionDataSectionsProps<Banne
 // Announcement
 // ---------------------------------------------------------------------------
 
+const announcementGeneralMatch = (path: string) => path === 'title' || path === 'readMoreLabel';
+const announcementIntroMatch = (path: string) => path.startsWith('introContent/');
+const announcementDetailMatch = (path: string) => path.startsWith('detailContent/');
+
 export const AnnouncementLocalizationSections = (
   props: VersionDataSectionsProps<AnnouncementData>,
 ) => {
-  const { sourceData, workingData, outdatedPaths, disabled, onDataChange } = props;
+  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
   const { t } = useTranslation();
 
   return (
     <>
-      <Card className="flex flex-col space-y-4 p-4">
-        <div className="font-medium">{t('contents.localization.section.general')}</div>
+      <LocalizationGroupCard
+        title={t('contents.localization.section.general')}
+        missingCount={countMissingUnits(units, announcementGeneralMatch)}
+        outdatedCount={countOutdatedPaths(outdatedPaths, announcementGeneralMatch)}
+      >
         {toText(sourceData.title) !== '' && (
           <LocalizedFieldRow
             label={t('contents.localization.field.title')}
@@ -222,10 +248,13 @@ export const AnnouncementLocalizationSections = (
             onValueChange={(value) => onDataChange({ ...workingData, readMoreLabel: value })}
           />
         )}
-      </Card>
+      </LocalizationGroupCard>
       {hasTranslatableTree(sourceData.introContent) && (
-        <Card className="flex flex-col space-y-4 p-4">
-          <div className="font-medium">{t('contents.localization.section.introContent')}</div>
+        <LocalizationGroupCard
+          title={t('contents.localization.section.introContent')}
+          missingCount={countMissingUnits(units, announcementIntroMatch)}
+          outdatedCount={countOutdatedPaths(outdatedPaths, announcementIntroMatch)}
+        >
           <LocalizedEditorContents
             sourceContents={sourceData.introContent}
             workingContents={asContents(workingData.introContent)}
@@ -236,11 +265,14 @@ export const AnnouncementLocalizationSections = (
               onDataChange({ ...workingData, introContent: contents })
             }
           />
-        </Card>
+        </LocalizationGroupCard>
       )}
       {hasTranslatableTree(sourceData.detailContent) && (
-        <Card className="flex flex-col space-y-4 p-4">
-          <div className="font-medium">{t('contents.localization.section.detailContent')}</div>
+        <LocalizationGroupCard
+          title={t('contents.localization.section.detailContent')}
+          missingCount={countMissingUnits(units, announcementDetailMatch)}
+          outdatedCount={countOutdatedPaths(outdatedPaths, announcementDetailMatch)}
+        >
           <LocalizedEditorContents
             sourceContents={sourceData.detailContent}
             workingContents={asContents(workingData.detailContent)}
@@ -251,7 +283,7 @@ export const AnnouncementLocalizationSections = (
               onDataChange({ ...workingData, detailContent: contents })
             }
           />
-        </Card>
+        </LocalizationGroupCard>
       )}
     </>
   );
@@ -261,10 +293,21 @@ export const AnnouncementLocalizationSections = (
 // Resource center
 // ---------------------------------------------------------------------------
 
+const resourceCenterGeneralMatch = (path: string) => path === 'buttonText' || path === 'headerText';
+const createResourceCenterTabMatch = (tabId: string) => {
+  // Unit paths carry a `:field` suffix; outdated element paths do not — the
+  // bare `tabs.<id>` form is the tab name's outdated marker.
+  const exact = `tabs.${tabId}`;
+  const namePrefix = `tabs.${tabId}:`;
+  const blocksPrefix = `tabs.${tabId}.`;
+  return (path: string) =>
+    path === exact || path.startsWith(namePrefix) || path.startsWith(blocksPrefix);
+};
+
 export const ResourceCenterLocalizationSections = (
   props: VersionDataSectionsProps<ResourceCenterData>,
 ) => {
-  const { sourceData, workingData, outdatedPaths, disabled, onDataChange } = props;
+  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
   const { t } = useTranslation();
   const tabs = Array.isArray(sourceData.tabs) ? sourceData.tabs : [];
 
@@ -290,8 +333,11 @@ export const ResourceCenterLocalizationSections = (
 
   return (
     <>
-      <Card className="flex flex-col space-y-4 p-4">
-        <div className="font-medium">{t('contents.localization.section.general')}</div>
+      <LocalizationGroupCard
+        title={t('contents.localization.section.general')}
+        missingCount={countMissingUnits(units, resourceCenterGeneralMatch)}
+        outdatedCount={countOutdatedPaths(outdatedPaths, resourceCenterGeneralMatch)}
+      >
         {toText(sourceData.buttonText) !== '' && (
           <LocalizedFieldRow
             label={t('contents.localization.field.buttonText')}
@@ -314,13 +360,18 @@ export const ResourceCenterLocalizationSections = (
             onValueChange={(value) => onDataChange({ ...workingData, headerText: value })}
           />
         )}
-      </Card>
+      </LocalizationGroupCard>
       {tabs.map((tab) => {
         const workingTab = (workingData.tabs ?? []).find((candidate) => candidate.id === tab.id);
         const blocks = Array.isArray(tab.blocks) ? tab.blocks : [];
+        const tabMatch = createResourceCenterTabMatch(tab.id);
         return (
-          <Card key={tab.id} className="flex flex-col space-y-4 p-4">
-            <div className="font-medium">{tab.name}</div>
+          <LocalizationGroupCard
+            key={tab.id}
+            title={tab.name}
+            missingCount={countMissingUnits(units, tabMatch)}
+            outdatedCount={countOutdatedPaths(outdatedPaths, tabMatch)}
+          >
             {toText(tab.name) !== '' && (
               <LocalizedFieldRow
                 label={t('contents.localization.field.tabName')}
@@ -389,7 +440,7 @@ export const ResourceCenterLocalizationSections = (
                 </div>
               );
             })}
-          </Card>
+          </LocalizationGroupCard>
         );
       })}
     </>

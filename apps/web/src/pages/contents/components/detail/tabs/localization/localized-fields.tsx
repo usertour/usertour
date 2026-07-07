@@ -1,7 +1,8 @@
 import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
-import { deepClone, formatElementPath } from '@usertour/helpers';
+import { deepClone, formatElementPath, getErrorMessage } from '@usertour/helpers';
 import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
-import { ImageEditIcon, SpinnerIcon } from '@usertour/icons';
+import { ImageEditIcon, RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import type {
   ContentEditorButtonElement,
   ContentEditorElement,
@@ -12,11 +13,23 @@ import type {
   ContentEditorTextElement,
 } from '@usertour/types';
 import { ContentEditorElementType } from '@usertour/types';
-import { Badge, Button, Input, Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import {
+  Button,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useToast,
+} from '@usertour/ui';
 import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
 import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { useLocalizationView } from './localization-view';
 
 export const toText = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
@@ -93,9 +106,82 @@ export const setSlateLeafText = (nodes: SlateNode[], path: number[], text: strin
 
 export const FIELD_GRID = 'grid grid-cols-[8rem_1fr_1fr] items-start gap-3';
 
+/** Amber "source changed" chip shared by rows and element sections. */
+export const OutdatedChip = () => {
+  const { t } = useTranslation();
+  return (
+    <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+      {t('contents.localization.sourceChanged')}
+    </span>
+  );
+};
+
+/**
+ * Hover-revealed single-unit machine translation button, rendered inside the
+ * translation input. Hidden when machine translation is unavailable.
+ */
+interface UnitTranslateButtonProps {
+  sourceText: string;
+  onTranslated: (value: string) => void;
+}
+
+const UnitTranslateButton = (props: UnitTranslateButtonProps) => {
+  const { sourceText, onTranslated } = props;
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const { translateText } = useLocalizationView();
+  const [translating, setTranslating] = useState(false);
+
+  if (!translateText) {
+    return null;
+  }
+
+  const handleTranslate = async () => {
+    if (translating) {
+      return;
+    }
+    setTranslating(true);
+    try {
+      const translated = await translateText(sourceText);
+      if (translated && translated.trim() !== '') {
+        onTranslated(translated);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: t('contents.localization.toast.translateFailure'),
+        });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className={cn(
+        'h-6 w-6 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 group-focus-within/row:opacity-100',
+        translating && 'opacity-100',
+      )}
+      aria-label={t('contents.localization.translateUnit')}
+      onClick={() => void handleTranslate()}
+    >
+      {translating ? (
+        <SpinnerIcon className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <RiSparkling2Line className="h-3.5 w-3.5" />
+      )}
+    </Button>
+  );
+};
+
 export interface LocalizedFieldRowProps {
   label?: string;
-  source: ReactNode;
+  source: string;
   value: string;
   placeholder?: string;
   disabled: boolean;
@@ -106,25 +192,44 @@ export interface LocalizedFieldRowProps {
 export const LocalizedFieldRow = (props: LocalizedFieldRowProps) => {
   const { label, source, value, placeholder, disabled, outdated, onValueChange } = props;
   const { t } = useTranslation();
+  const { showOnlyMissing, translateText } = useLocalizationView();
+
+  const missing = value.trim() === '';
+  if (showOnlyMissing && !missing) {
+    return null;
+  }
+
   return (
     <div className={FIELD_GRID}>
-      <div className="pt-2 text-xs text-muted-foreground">
-        <div>{label}</div>
-        {outdated && (
-          <Badge variant="secondary" className="mt-1">
-            {t('contents.localization.sourceChanged')}
-          </Badge>
-        )}
-      </div>
+      <div className="pt-2 text-xs text-muted-foreground">{label}</div>
       <div className="min-h-9 whitespace-pre-wrap rounded-md bg-secondary px-3 py-2 text-sm">
         {source}
       </div>
-      <Input
-        value={value}
-        placeholder={placeholder}
-        disabled={disabled}
-        onChange={(event) => onValueChange(event.target.value)}
-      />
+      <div className="group/row relative">
+        <Input
+          value={value}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={cn(translateText && !disabled ? 'pr-14' : 'pr-8')}
+          onChange={(event) => onValueChange(event.target.value)}
+        />
+        <div className="absolute inset-y-0 right-2.5 flex items-center gap-1.5">
+          {!disabled && <UnitTranslateButton sourceText={source} onTranslated={onValueChange} />}
+          {missing ? (
+            <span
+              title={t('contents.localization.statusUntranslated')}
+              className="h-1.5 w-1.5 flex-none rounded-full bg-destructive/70"
+            />
+          ) : (
+            outdated && (
+              <span
+                title={t('contents.localization.sourceChanged')}
+                className="h-1.5 w-1.5 flex-none rounded-full bg-warning"
+              />
+            )
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -137,12 +242,11 @@ export interface LocalizedElementSectionProps {
 
 export const LocalizedElementSection = (props: LocalizedElementSectionProps) => {
   const { label, outdated, children } = props;
-  const { t } = useTranslation();
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        {outdated && <Badge variant="secondary">{t('contents.localization.sourceChanged')}</Badge>}
+        {outdated && <OutdatedChip />}
       </div>
       {children}
     </div>
@@ -166,11 +270,13 @@ interface LocalizedElementEditorProps {
 
 const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
   const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorTextElement;
   const working = workingElement as ContentEditorTextElement;
   const sourceData = Array.isArray(source.data) ? (source.data as SlateNode[]) : [];
   const workingData = Array.isArray(working.data) ? (working.data as SlateNode[]) : [];
-  const pairs = collectSlateLeafPairs(sourceData, workingData);
+  const allPairs = collectSlateLeafPairs(sourceData, workingData);
+  const pairs = showOnlyMissing ? allPairs.filter((pair) => pair.value.trim() === '') : allPairs;
   if (pairs.length === 0) {
     return null;
   }
@@ -199,10 +305,14 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
 
 const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
   const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorButtonElement;
   const working = workingElement as ContentEditorButtonElement;
   const sourceText = toText(source.data?.text);
   if (sourceText === '') {
+    return null;
+  }
+  if (showOnlyMissing && toText(working.data?.text).trim() !== '') {
     return null;
   }
   return (
@@ -218,14 +328,48 @@ const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
   );
 };
 
+interface MediaActionButtonProps {
+  tooltip: string;
+  disabled: boolean;
+  icon: ReactNode;
+  onClick?: () => void;
+}
+
+const MediaActionButton = (props: MediaActionButtonProps) => {
+  const { tooltip, disabled, icon, onClick } = props;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          disabled={disabled}
+          onClick={onClick}
+        >
+          {icon}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  );
+};
+
 const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
   const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
   const { t } = useTranslation();
   const { upload } = useAws();
+  const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorImageElement;
   const working = workingElement as ContentEditorImageElement;
   const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  // Media rows are never "untranslated" — keeping the original is the norm.
+  if (showOnlyMissing) {
+    return null;
+  }
 
   const handleImageUrlChange = (url: string) => {
     onElementChange({ ...working, url });
@@ -242,99 +386,100 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
   };
 
   return (
-    <LocalizedElementSection label={label} outdated={outdated}>
-      <Popover>
-        <div className={FIELD_GRID}>
-          <div />
-          <div className="rounded-md bg-secondary p-2">
-            <img src={source.url} className="max-h-40 max-w-full rounded" />
-          </div>
-          <div className="flex flex-col gap-2">
-            {isUploading ? (
-              <div className="flex h-24 items-center justify-center">
-                <SpinnerIcon className="h-8 w-8 animate-spin" />
-              </div>
-            ) : working.url ? (
-              <img src={working.url} className="max-h-40 max-w-full rounded" />
-            ) : (
-              <div className="flex h-24 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
-                {t('contents.localization.image.usingOriginal')}
-              </div>
-            )}
-            <div className="flex flex-row flex-wrap gap-1">
-              <Upload
-                accept="image/*"
+    <Popover>
+      <div className={FIELD_GRID}>
+        <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+          {label}
+          {outdated && <OutdatedChip />}
+        </div>
+        <div className="flex items-center rounded-md bg-secondary px-3 py-1.5">
+          <img src={source.url} className="h-10 max-w-full rounded object-contain" />
+        </div>
+        <div className="flex min-h-9 items-center gap-2">
+          {isUploading ? (
+            <SpinnerIcon className="h-5 w-5 animate-spin" />
+          ) : working.url ? (
+            <img src={working.url} className="h-10 max-w-40 rounded object-contain" />
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              {t('contents.localization.image.usingOriginal')}
+            </span>
+          )}
+          <div className="ml-auto flex flex-none items-center">
+            <Upload
+              accept="image/*"
+              disabled={disabled}
+              customRequest={(option) => {
+                void handleCustomUploadRequest(option as UploadRequestOption);
+              }}
+            >
+              <MediaActionButton
+                tooltip={t('contents.localization.image.uploadImage')}
                 disabled={disabled}
-                customRequest={(option) => {
-                  void handleCustomUploadRequest(option as UploadRequestOption);
-                }}
-              >
-                <Button
-                  variant="ghost"
-                  disabled={disabled}
-                  className="h-auto w-auto p-1 text-primary hover:text-primary"
-                >
-                  <ImageEditIcon className="mx-1 fill-primary" />
-                  {t('contents.localization.image.uploadImage')}
-                </Button>
-              </Upload>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  disabled={disabled}
-                  className="h-auto w-auto p-1 text-primary hover:text-primary"
-                >
-                  <KeyboardIcon className="mx-1 fill-primary" />
-                  {t('contents.localization.image.enterUrl')}
-                </Button>
-              </PopoverTrigger>
+                icon={<ImageEditIcon className="h-4 w-4 fill-current" />}
+              />
+            </Upload>
+            <PopoverTrigger asChild>
               <Button
+                type="button"
                 variant="ghost"
-                disabled={disabled || working.url === ''}
-                className="h-auto w-auto p-1 text-primary hover:text-primary"
-                onClick={() => handleImageUrlChange('')}
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                disabled={disabled}
+                title={t('contents.localization.image.enterUrl')}
               >
-                <ResetIcon className="mx-1 fill-primary" />
-                {t('contents.localization.image.useOriginal')}
+                <KeyboardIcon className="h-4 w-4" />
               </Button>
-            </div>
+            </PopoverTrigger>
+            <MediaActionButton
+              tooltip={t('contents.localization.image.useOriginal')}
+              disabled={disabled || working.url === ''}
+              icon={<ResetIcon className="h-4 w-4" />}
+              onClick={() => handleImageUrlChange('')}
+            />
           </div>
         </div>
-        <PopoverContent
-          className="w-[400px] bg-background dark:bg-card"
-          side="top"
-          align="center"
-          sideOffset={5}
-        >
-          <div className="flex flex-row space-x-2">
-            <Input
-              placeholder={t('contents.localization.image.enterUrl')}
-              value={remoteImageUrl}
-              onChange={(event) => setRemoteImageUrl(event.target.value)}
-              className="w-80 bg-background dark:bg-card"
-            />
-            <Button
-              className="h-9 flex-none py-1"
-              variant="ghost"
-              onClick={() => handleImageUrlChange(remoteImageUrl)}
-            >
-              <ArrowRightIcon className="mr-1" />
-              {t('contents.localization.image.load')}
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </LocalizedElementSection>
+      </div>
+      <PopoverContent
+        className="w-[400px] bg-background dark:bg-card"
+        side="top"
+        align="center"
+        sideOffset={5}
+      >
+        <div className="flex flex-row space-x-2">
+          <Input
+            placeholder={t('contents.localization.image.enterUrl')}
+            value={remoteImageUrl}
+            onChange={(event) => setRemoteImageUrl(event.target.value)}
+            className="w-80 bg-background dark:bg-card"
+          />
+          <Button
+            className="h-9 flex-none py-1"
+            variant="ghost"
+            onClick={() => handleImageUrlChange(remoteImageUrl)}
+          >
+            <ArrowRightIcon className="mr-1" />
+            {t('contents.localization.image.load')}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
 const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
   const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
   const { t } = useTranslation();
+  const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorEmebedElement;
   const working = workingElement as ContentEditorEmebedElement;
   const { invoke: queryOembedInfo, loading: resolving } = useQueryOembedInfoLazyQuery();
   const [draftUrl, setDraftUrl] = useState<string>(toText(working.url));
+
+  // Media rows are never "untranslated" — keeping the original is the norm.
+  if (showOnlyMissing) {
+    return null;
+  }
 
   // The widget renders embeds from parsedUrl/oembed, so a translated URL has
   // to be resolved the same way the builder does before it can ship.
@@ -349,44 +494,41 @@ const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
   };
 
   return (
-    <LocalizedElementSection label={label} outdated={outdated}>
-      <div className={FIELD_GRID}>
-        <div />
-        <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">
-          {source.url}
-        </div>
-        <div className="flex flex-row gap-2">
-          <Input
-            value={draftUrl}
-            placeholder={source.url}
-            disabled={disabled}
-            onChange={(event) => setDraftUrl(event.target.value)}
-          />
-          <Button
-            variant="ghost"
-            className="h-9 flex-none py-1"
-            disabled={disabled || resolving}
-            onClick={() => void handleApplyUrl(draftUrl.trim())}
-          >
-            {resolving ? (
-              <SpinnerIcon className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowRightIcon className="mr-1" />
-            )}
-            {t('contents.localization.image.load')}
-          </Button>
-          <Button
-            variant="ghost"
-            className="h-9 flex-none py-1"
-            disabled={disabled || toText(working.url) === ''}
-            onClick={() => void handleApplyUrl('')}
-          >
-            <ResetIcon className="mr-1" />
-            {t('contents.localization.image.useOriginal')}
-          </Button>
-        </div>
+    <div className={FIELD_GRID}>
+      <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+        {label}
+        {outdated && <OutdatedChip />}
       </div>
-    </LocalizedElementSection>
+      <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">
+        {source.url}
+      </div>
+      <div className="flex flex-row items-center gap-1.5">
+        <Input
+          value={draftUrl}
+          placeholder={t('contents.localization.image.usingOriginal')}
+          disabled={disabled}
+          onChange={(event) => setDraftUrl(event.target.value)}
+        />
+        <MediaActionButton
+          tooltip={t('contents.localization.image.load')}
+          disabled={disabled || resolving}
+          icon={
+            resolving ? (
+              <SpinnerIcon className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRightIcon className="h-4 w-4" />
+            )
+          }
+          onClick={() => void handleApplyUrl(draftUrl.trim())}
+        />
+        <MediaActionButton
+          tooltip={t('contents.localization.image.useOriginal')}
+          disabled={disabled || toText(working.url) === ''}
+          icon={<ResetIcon className="h-4 w-4" />}
+          onClick={() => void handleApplyUrl('')}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -442,10 +584,11 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
   const { sourceElement, workingElement, fields, label, outdated, disabled, onElementChange } =
     props;
   const { t } = useTranslation();
+  const { showOnlyMissing } = useLocalizationView();
   const sourceData = getElementData(sourceElement);
   const workingData = getElementData(workingElement);
 
-  const sourceOptions =
+  const allSourceOptions =
     sourceElement.type === ContentEditorElementType.MULTIPLE_CHOICE &&
     Array.isArray((sourceElement as ContentEditorMultipleChoiceElement).data?.options)
       ? (sourceElement as ContentEditorMultipleChoiceElement).data.options
@@ -455,8 +598,23 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
       ? ((workingElement as ContentEditorMultipleChoiceElement).data?.options ?? [])
       : [];
 
-  const presentFields = fields.filter((field) => toText(sourceData[field.key]) !== '');
-  if (presentFields.length === 0 && sourceOptions.length === 0) {
+  const presentFields = fields.filter((field) => {
+    if (toText(sourceData[field.key]) === '') {
+      return false;
+    }
+    return !showOnlyMissing || toText(workingData[field.key]).trim() === '';
+  });
+  // Filtering must keep the original indices — option lookups and writes are
+  // positional against the working options.
+  const visibleOptions = allSourceOptions
+    .map((option, optionIndex) => ({ option, optionIndex }))
+    .filter(({ option, optionIndex }) => {
+      if (toText(option.label) === '') {
+        return false;
+      }
+      return !showOnlyMissing || toText(workingOptions[optionIndex]?.label).trim() === '';
+    });
+  if (presentFields.length === 0 && visibleOptions.length === 0) {
     return null;
   }
 
@@ -485,11 +643,8 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
           />
         );
       })}
-      {sourceOptions.map((option, optionIndex) => {
+      {visibleOptions.map(({ option, optionIndex }) => {
         const sourceText = toText(option.label);
-        if (sourceText === '') {
-          return null;
-        }
         return (
           <LocalizedFieldRow
             key={`option-${option.value}-${optionIndex}`}
