@@ -55,8 +55,13 @@ const makeFakePrisma = (rows: Row[]) => {
         return { ...r, projects: [] };
       },
     },
-    // validateProjects checks the caller belongs to each target project.
-    userOnProject: { findFirst: async () => ({ id: 'membership' }) },
+    // validateProjects checks the caller belongs to each target project (one findMany
+    // over all requested ids — return a membership row for each so all are allowed).
+    userOnProject: {
+      findFirst: async () => ({ id: 'membership' }),
+      findMany: async ({ where }: { where: { projectId: { in: string[] } } }) =>
+        where.projectId.in.map((projectId) => ({ projectId })),
+    },
   } as unknown as PrismaService;
 };
 

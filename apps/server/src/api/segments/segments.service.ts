@@ -93,11 +93,11 @@ export class ApiSegmentsService {
   async create(projectId: string, body: CreateSegmentBody): Promise<Segment> {
     const bizType = body.bizType === 'company' ? SegmentBizType.COMPANY : SegmentBizType.USER;
     const dataType = body.kind === 'condition' ? SegmentDataType.CONDITION : SegmentDataType.MANUAL;
+    const resolvers = await this.buildResolvers(projectId);
     let data: JsonValue | undefined;
     if (body.kind === 'condition') {
       this.assertSegmentConditionTypes(body.conditions);
-      const compileResolvers = await this.buildCompileResolvers(projectId);
-      data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
+      data = compileConditions(body.conditions, resolvers.compile) as unknown as JsonValue;
       await this.assertConditionsValid(data, projectId);
     }
     const created = await this.biz.creatSegment({
@@ -107,8 +107,7 @@ export class ApiSegmentsService {
       dataType,
       ...(data !== undefined ? { data } : {}),
     });
-    const resolvers = await this.buildDecompileResolvers(projectId);
-    return mapSegment(created, resolvers);
+    return mapSegment(created, resolvers.decompile);
   }
 
   /** Update name and/or conditions (conditions only on condition segments). */
@@ -117,14 +116,14 @@ export class ApiSegmentsService {
     if (seg.dataType === SegmentDataType.ALL) {
       throw new ValidationError('Cannot modify the built-in "all" segment.');
     }
+    const resolvers = await this.buildResolvers(projectId);
     let data: JsonValue | undefined;
     if (body.conditions !== undefined) {
       if (seg.dataType !== SegmentDataType.CONDITION) {
         throw new ValidationError('Conditions can only be set on a condition segment.');
       }
       this.assertSegmentConditionTypes(body.conditions);
-      const compileResolvers = await this.buildCompileResolvers(projectId);
-      data = compileConditions(body.conditions, compileResolvers) as unknown as JsonValue;
+      data = compileConditions(body.conditions, resolvers.compile) as unknown as JsonValue;
       await this.assertConditionsValid(data, projectId);
     }
     await this.biz.updateSegment({
@@ -132,8 +131,7 @@ export class ApiSegmentsService {
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(data !== undefined ? { data } : {}),
     });
-    const resolvers = await this.buildDecompileResolvers(projectId);
-    return mapSegment(await this.requireSegment(id, projectId), resolvers);
+    return mapSegment(await this.requireSegment(id, projectId), resolvers.decompile);
   }
 
   /**
@@ -275,9 +273,19 @@ export class ApiSegmentsService {
     return buildDecompileResolversFrom(attributes, events);
   }
 
-  /** Stable codeName -> internal attribute / event id (write; fallback: the code). */
-  private async buildCompileResolvers(projectId: string): Promise<CompileResolvers> {
+  /**
+   * Build BOTH resolver maps (write: code→id, read: id→code) from a SINGLE catalog
+   * load. A segment write compiles the conditions and then decompiles the saved
+   * row for the response; both directions share the same attribute/event catalogs,
+   * so loading them once (not once per direction) halves the queries.
+   */
+  private async buildResolvers(
+    projectId: string,
+  ): Promise<{ compile: CompileResolvers; decompile: DecompileResolvers }> {
     const [attributes, events] = await this.loadResolverCatalogs(projectId);
-    return buildCompileResolversFrom(attributes, events);
+    return {
+      compile: buildCompileResolversFrom(attributes, events),
+      decompile: buildDecompileResolversFrom(attributes, events),
+    };
   }
 }

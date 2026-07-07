@@ -120,7 +120,7 @@ export class ApiContentService {
     versionId: string,
     actor?: WriteActor,
   ): Promise<Content> {
-    await this.requireContent(id, projectId);
+    const content = await this.requireContent(id, projectId);
     await this.requireEnvironment(environmentId, projectId);
     const version = await this.content.getContentVersionById(versionId);
     if (!version || version.contentId !== id) {
@@ -128,13 +128,10 @@ export class ApiContentService {
     }
     // A version must actually be usable before it can go live. The builder relies
     // on a live preview for this; the API enforces it so agent-authored content
-    // can't be published into a silent non-render.
-    const content = await this.prisma.content.findUnique({
-      where: { id },
-      select: { type: true },
-    });
+    // can't be published into a silent non-render. `content` is reused from the
+    // requireContent fetch above (no second read just for `type`).
     const report = validateVersionUsable({
-      type: content?.type ?? 'flow',
+      type: (content as { type?: string }).type ?? 'flow',
       themeId: version.themeId,
       steps: version.steps as unknown as Step[],
       data: version.data,
@@ -218,11 +215,12 @@ export class ApiContentService {
     }
   }
 
-  private async requireContent(id: string, projectId: string): Promise<void> {
+  private async requireContent(id: string, projectId: string) {
     const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
     if (!node || (node as { deleted?: boolean }).deleted) {
       throw new ContentNotFoundError();
     }
+    return node;
   }
 
   private async primaryEnvironment(projectId: string) {

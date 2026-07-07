@@ -237,13 +237,15 @@ export class ApiTokenService {
     if (projectIds.length === 0) {
       throw new ParamsError('At least one project is required');
     }
-    for (const projectId of projectIds) {
-      const membership = await this.prisma.userOnProject.findFirst({
-        where: { userId, projectId },
-      });
-      if (!membership) {
-        throw new ParamsError(`No access to project: ${projectId}`);
-      }
+    // One membership query for all target projects (not a findFirst per project).
+    const memberships = await this.prisma.userOnProject.findMany({
+      where: { userId, projectId: { in: projectIds } },
+      select: { projectId: true },
+    });
+    const allowed = new Set(memberships.map((m) => m.projectId));
+    const missing = projectIds.find((projectId) => !allowed.has(projectId));
+    if (missing) {
+      throw new ParamsError(`No access to project: ${missing}`);
     }
     return projectIds;
   }

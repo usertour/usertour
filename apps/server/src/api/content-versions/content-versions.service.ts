@@ -325,11 +325,14 @@ export class ApiContentVersionsService {
     if (body.steps) {
       // Per-step theme overrides must reference a live project theme (a null clears
       // the override → inherit the version theme, so only validate non-null strings).
-      for (const themeId of new Set(
-        body.steps.map((s) => s.themeId).filter((t): t is string => typeof t === 'string'),
-      )) {
-        await this.themes.requireTheme(themeId, projectId);
-      }
+      // Distinct overrides are independent reads, so check them concurrently.
+      await Promise.all(
+        [
+          ...new Set(
+            body.steps.map((s) => s.themeId).filter((t): t is string => typeof t === 'string'),
+          ),
+        ].map((themeId) => this.themes.requireTheme(themeId, projectId)),
+      );
 
       // Steps merge by handle (echo to update, omit to create). The primary `id`
       // is the default key, but it is regenerated on fork (create_content_version)
