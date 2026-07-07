@@ -250,6 +250,15 @@ export const createConditionsFilter = (conditions: any, attributes: Attribute[])
   const AND = [];
   const OR = [];
 
+  // Is this level purely OR-joined (no `and` joiner anywhere)? Only then is it safe
+  // to DROP an unevaluable branch and keep the surviving alternatives. An AND-joined
+  // (or mixed) level must fail CLOSED on any unevaluable branch, because dropping a
+  // required conjunct would WIDEN the match (fail-open) — e.g. "plan=pro AND
+  // role=admin" whose `role` attribute was deleted would then match every pro user,
+  // admin or not. Note the FIRST condition's `operators` is absent (it buckets as
+  // OR), so we can't decide per-condition — the whole level's join type governs.
+  const orJoined = conditions.every((c: any) => c.operators !== 'and');
+
   for (const condition of conditions) {
     const { operators } = condition;
     const item =
@@ -257,16 +266,17 @@ export const createConditionsFilter = (conditions: any, attributes: Attribute[])
         ? createFilterItem(condition, attributes)
         : createConditionsFilter(condition.conditions, attributes);
     if (!item) {
-      // Fail CLOSED. A falsy item means this condition can't be turned into a
-      // membership query — either an unsupported condition type (segments only
-      // evaluate attribute conditions; event / page / element / flow / etc. are
-      // not translated) or a broken leaf (deleted attribute, malformed value).
-      // Skipping it would DROP the constraint and widen the match — a segment of
-      // only-unevaluable conditions would then match EVERY user (fail-open). So
-      // instead the whole segment matches nobody until it's fixed. (Conservative
-      // for OR-with-an-unevaluable-branch, but "too few" is safe for targeting;
-      // "everyone" is not. The v2/MCP write path rejects these types outright —
-      // this guards segments created via other paths or before that gate.)
+      // A falsy item means this condition can't be turned into a membership query —
+      // an unsupported condition type (segments only evaluate attribute conditions;
+      // event / page / element / flow / etc. are not translated) or a broken leaf
+      // (deleted attribute, malformed value). In a pure-OR level, drop just this
+      // branch and let the surviving alternatives define the match; otherwise fail
+      // CLOSED so a dropped conjunct never widens the match. (The v2/MCP write path
+      // rejects these types outright — this guards segments from other paths or
+      // authored before that gate.)
+      if (orJoined) {
+        continue;
+      }
       return NEVER_MATCH;
     }
     if (operators === 'and') {
@@ -274,6 +284,12 @@ export const createConditionsFilter = (conditions: any, attributes: Attribute[])
     } else {
       OR.push(item);
     }
+  }
+
+  // Every branch of a pure-OR level was unevaluable → an empty filter would match
+  // EVERY user (fail-open). Fail closed instead.
+  if (AND.length === 0 && OR.length === 0) {
+    return NEVER_MATCH;
   }
 
   const filter: Record<string, any> = {};

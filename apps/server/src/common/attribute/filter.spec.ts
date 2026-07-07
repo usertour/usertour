@@ -55,3 +55,47 @@ describe('createConditionsFilter — fail closed on unevaluable conditions', () 
     expect(createConditionsFilter([], [stringAttr])).toBe(false);
   });
 });
+
+describe('createConditionsFilter — OR branches survive, AND fails closed', () => {
+  const orCond = (attrId: string, value: string) => ({
+    type: 'user-attr',
+    operators: 'or',
+    data: { attrId, logic: 'is', value },
+  });
+
+  it('drops only the unevaluable OR branch and matches on the survivor', () => {
+    // "plan=trial OR <deleted attr>" — the deleted branch drops; users matching the
+    // surviving branch must still match, not have the whole segment fail closed.
+    const f = createConditionsFilter(
+      [orCond('a1', 'trial'), orCond('gone', 'x')],
+      [stringAttr],
+    ) as any;
+    expect(f).not.toEqual(NEVER);
+    expect(f.OR?.[0]?.data).toMatchObject({ path: ['plan'], equals: 'trial' });
+  });
+
+  it('fails closed when EVERY OR branch is unevaluable (no empty match-all)', () => {
+    const f = createConditionsFilter(
+      [{ type: 'event', operators: 'or', data: { eventId: 'e1' } }, orCond('gone', 'x')],
+      [stringAttr],
+    );
+    expect(f).toEqual(NEVER);
+  });
+
+  it('an AND group whose FIRST branch is unevaluable fails closed (never fail-open on the rest)', () => {
+    // The 2nd condition's `and` joiner marks the group AND-joined; dropping the
+    // unevaluable first conjunct would WIDEN the match, so it must fail closed.
+    const f = createConditionsFilter(
+      [
+        orCond('gone', 'x'),
+        {
+          type: 'user-attr',
+          operators: 'and',
+          data: { attrId: 'a1', logic: 'is', value: 'trial' },
+        },
+      ],
+      [stringAttr],
+    );
+    expect(f).toEqual(NEVER);
+  });
+});
