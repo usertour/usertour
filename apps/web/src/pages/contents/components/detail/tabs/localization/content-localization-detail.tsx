@@ -15,8 +15,7 @@ import {
   extractContentsTranslationUnits,
   extractVersionDataTranslationUnits,
 } from '@usertour/helpers';
-import { RiArrowLeftLine } from '@usertour/icons';
-import { cn } from '@usertour/tailwind';
+import { RiArrowLeftLine, RiArrowRightLine } from '@usertour/icons';
 import type {
   AnnouncementData,
   BannerData,
@@ -32,12 +31,12 @@ import type {
   VersionOnLocalization,
 } from '@usertour/types';
 import { ContentDataType } from '@usertour/types';
-import { Badge, Checkbox } from '@usertour/ui';
+import { Badge, Checkbox, TooltipProvider } from '@usertour/ui';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { FIELD_GRID, LocalizedEditorContents } from './localized-fields';
+import { LocalizedEditorContents } from './localized-fields';
 import { LocalizationTransferActions } from './localization-transfer-actions';
 import { MachineTranslationButton, useUnitTranslateText } from './machine-translation-button';
 import {
@@ -98,58 +97,60 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
 
   return (
     <LocalizationViewProvider value={viewValue}>
-      <div className="flex justify-center space-x-8 px-6 py-8 xl:px-8">
-        <div className="mx-auto flex max-w-screen-xl grow flex-col space-y-6">
-          <div className="flex flex-row items-center space-x-2">
-            <RiArrowLeftLine
-              className="h-4 w-4 flex-none cursor-pointer"
-              onClick={() => {
-                navigate(location.pathname.replace(`/${localization.locale}`, ''));
-              }}
-            />
-            <h3 className="text-lg font-medium">{localization.name}</h3>
-            {contentLocalization?.enabled ? (
-              <Badge variant="success">{t('contents.localization.status.enabled')}</Badge>
-            ) : (
-              <Badge variant="destructive">{t('contents.localization.status.disabled')}</Badge>
-            )}
-            <div className="!ml-auto flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {saveState === 'saving' && t('contents.localization.saving')}
-                {saveState === 'saved' && t('contents.localization.saved')}
-              </span>
-              {actions}
-            </div>
-          </div>
-          {locked && (
-            <div className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
-              {t('contents.localization.publishedLock')}
-            </div>
-          )}
-          <div className="flex flex-col gap-4">
-            <label
-              htmlFor="show-only-missing"
-              className="flex w-fit cursor-pointer items-center gap-2 px-4 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <Checkbox
-                id="show-only-missing"
-                checked={showOnlyMissing}
-                onCheckedChange={(checked) => setShowOnlyMissing(checked === true)}
-                // The default hairline vanishes against the page's gray shell.
-                className="border-muted-foreground/40 bg-background"
+      <TooltipProvider>
+        <div className="flex justify-center space-x-8 px-6 py-8 xl:px-8">
+          <div className="mx-auto flex max-w-screen-xl grow flex-col space-y-6">
+            <div className="flex flex-row items-center space-x-2">
+              <RiArrowLeftLine
+                className="h-4 w-4 flex-none cursor-pointer"
+                onClick={() => {
+                  navigate(location.pathname.replace(`/${localization.locale}`, ''));
+                }}
               />
-              {t('contents.localization.onlyUntranslated')}
-              <span className="-ml-1">({missingCount})</span>
-            </label>
-            <div className={cn(FIELD_GRID, 'px-4 text-xs text-muted-foreground')}>
-              <div />
-              <div>{sourceLocaleName}</div>
-              <div>{localization.name}</div>
+              <h3 className="text-lg font-medium">{localization.name}</h3>
+              {contentLocalization?.enabled ? (
+                <Badge variant="success">{t('contents.localization.status.enabled')}</Badge>
+              ) : (
+                <Badge variant="destructive">{t('contents.localization.status.disabled')}</Badge>
+              )}
+              <span className="flex items-center gap-1 pl-2 text-sm text-muted-foreground">
+                {sourceLocaleName}
+                <RiArrowRightLine className="h-3.5 w-3.5" />
+                {localization.name}
+              </span>
+              <div className="!ml-auto flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {saveState === 'saving' && t('contents.localization.saving')}
+                  {saveState === 'saved' && t('contents.localization.saved')}
+                </span>
+                {actions}
+              </div>
             </div>
-            {children}
+            {locked && (
+              <div className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
+                {t('contents.localization.publishedLock')}
+              </div>
+            )}
+            <div className="flex flex-col gap-4">
+              <label
+                htmlFor="show-only-missing"
+                className="flex w-fit cursor-pointer items-center gap-2 px-4 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Checkbox
+                  id="show-only-missing"
+                  checked={showOnlyMissing}
+                  onCheckedChange={(checked) => setShowOnlyMissing(checked === true)}
+                  // The default hairline vanishes against the page's gray shell.
+                  className="border-muted-foreground/40 bg-background"
+                />
+                {t('contents.localization.onlyUntranslated')}
+                <span className="-ml-1">({missingCount})</span>
+              </label>
+              {children}
+            </div>
           </div>
         </div>
-      </div>
+      </TooltipProvider>
     </LocalizationViewProvider>
   );
 };
