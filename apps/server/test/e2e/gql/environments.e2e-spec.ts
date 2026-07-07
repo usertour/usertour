@@ -340,4 +340,37 @@ describe('GraphQL environments (e2e)', () => {
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
   });
+
+  describe('projectHasEnvironmentAccessTokens', () => {
+    const hasKeys = (pid: string) =>
+      graphql(app, {
+        token,
+        query:
+          'query ($projectId: String!) { projectHasEnvironmentAccessTokens(projectId: $projectId) }',
+        variables: { projectId: pid },
+      });
+
+    it('is false for a project whose environments hold no access keys', async () => {
+      const fresh = await buildProject(prisma, { name: 'gql-has-keys-none' });
+      await buildMembership(prisma, { userId: userIds[0], projectId: fresh.id, role: 'OWNER' });
+      await buildEnvironment(prisma, { projectId: fresh.id });
+      const res = await hasKeys(fresh.id);
+      expect(gqlData(res).projectHasEnvironmentAccessTokens).toBe(false);
+      await teardownProject(prisma, fresh.id);
+    });
+
+    it('is true when ANY environment in the project holds a key (project-level, not the current env)', async () => {
+      const fresh = await buildProject(prisma, { name: 'gql-has-keys-some' });
+      await buildMembership(prisma, { userId: userIds[0], projectId: fresh.id, role: 'OWNER' });
+      // Two envs; only the second holds a key. A per-environment check on the
+      // first env would report "no keys" — the project-level query must still
+      // return true. This is the behaviour the sidebar fix depends on.
+      await buildEnvironment(prisma, { projectId: fresh.id });
+      const envB = await buildEnvironment(prisma, { projectId: fresh.id });
+      await buildAccessToken(prisma, { environmentId: envB.id });
+      const res = await hasKeys(fresh.id);
+      expect(gqlData(res).projectHasEnvironmentAccessTokens).toBe(true);
+      await teardownProject(prisma, fresh.id);
+    });
+  });
 });

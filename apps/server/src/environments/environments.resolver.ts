@@ -67,6 +67,12 @@ export class EnvironmentsResolver {
     return this.environmentsService.verifyInstallation(environmentId);
   }
 
+  @Query(() => Boolean)
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Project })
+  projectHasEnvironmentAccessTokens(@Args() { projectId }: ProjectIdArgs) {
+    return this.environmentsService.projectHasAccessTokens(projectId);
+  }
+
   @Query(() => [AccessToken])
   @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async listAccessTokens(@Args('environmentId') environmentId: string) {

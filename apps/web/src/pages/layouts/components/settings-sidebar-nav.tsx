@@ -9,7 +9,7 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { useAppContext } from '@/contexts/app-context';
-import { useListAccessTokensQuery } from '@usertour/hooks';
+import { useProjectHasEnvironmentAccessTokensQuery } from '@usertour/hooks';
 import { Capability } from '@usertour/types';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
@@ -80,7 +80,7 @@ const GROUP_LABEL_KEY: Record<SettingsSectionGroup, string> = {
 export const SettingsSidebarNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project, environment, globalConfig, can } = useAppContext();
+  const { project, globalConfig, can } = useAppContext();
   const { t } = useTranslation();
 
   const currentMode = globalConfig?.isSelfHostedMode
@@ -89,16 +89,18 @@ export const SettingsSidebarNav = () => {
 
   // The legacy env-key API ("API" item) is being deprecated: show it only while
   // the project still has env keys, steering new projects to Personal API keys.
-  // Only query when the caller can actually read env keys —
-  // otherwise listAccessTokens returns a permission error that the global Apollo
-  // error link turns into a full-page redirect. Users without the capability
-  // don't see the API item anyway (capability filter below).
+  // This is project-level — a key in ANY environment keeps the item visible — so
+  // it must not be pinned to the currently-selected environment. Only query when
+  // the caller can actually read env keys — otherwise the query returns a
+  // permission error that the global Apollo error link turns into a full-page
+  // redirect. Users without the capability don't see the API item anyway
+  // (capability filter below).
   const canReadEnvKeys = can(Capability.AccessTokenRead);
-  const { accessTokens } = useListAccessTokensQuery(
-    canReadEnvKeys ? environment?.id : undefined,
+  const { hasEnvironmentAccessTokens } = useProjectHasEnvironmentAccessTokensQuery(
+    canReadEnvKeys ? project?.id : undefined,
     SHARED_CACHE_QUERY_OPTIONS,
   );
-  const hasEnvKeys = (accessTokens?.length ?? 0) > 0;
+  const hasEnvKeys = hasEnvironmentAccessTokens ?? false;
 
   const visibleItems = SETTINGS_SECTIONS.filter((section) => {
     if (section.hideFromSidebar) {

@@ -197,6 +197,18 @@ export class EnvironmentsService {
     });
   }
 
+  /**
+   * Whether ANY environment in the project holds an env access key. Drives the
+   * deprecated "API" settings item, which is project-level (hidden once no env in
+   * the project has keys) — the per-environment list can't answer that.
+   */
+  async projectHasAccessTokens(projectId: string): Promise<boolean> {
+    const count = await this.prisma.accessToken.count({
+      where: { environment: { projectId } },
+    });
+    return count > 0;
+  }
+
   async findOneAccessToken(environmentId: string, id: string) {
     const accessToken = await this.prisma.accessToken.findUnique({
       where: { id, environmentId },

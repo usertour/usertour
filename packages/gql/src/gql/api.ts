@@ -1,5 +1,11 @@
 import { gql } from '@apollo/client';
 
+export const ProjectHasEnvironmentAccessTokens = gql`
+  query ProjectHasEnvironmentAccessTokens($projectId: String!) {
+    projectHasEnvironmentAccessTokens(projectId: $projectId)
+  }
+`;
+
 export const ListAccessTokens = gql`
   query ListAccessTokens($environmentId: String!) {
     listAccessTokens(environmentId: $environmentId) {
