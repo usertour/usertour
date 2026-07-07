@@ -111,6 +111,15 @@ const config: Config = {
         : -1,
     },
   },
+  machineTranslation: {
+    // 'anthropic' (default) or 'openai-compatible' — the latter covers any
+    // OpenAI-shaped gateway. The feature is enabled by setting the API key;
+    // without it the capability flag stays off and the endpoint rejects.
+    provider: process.env.TRANSLATION_LLM_PROVIDER || 'anthropic',
+    apiKey: process.env.TRANSLATION_LLM_API_KEY || '',
+    model: process.env.TRANSLATION_LLM_MODEL || 'claude-opus-4-8',
+    baseUrl: process.env.TRANSLATION_LLM_BASE_URL || '',
+  },
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
     // Whether the server may make outbound requests to private / internal

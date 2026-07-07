@@ -39,6 +39,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { FIELD_GRID, LocalizedEditorContents } from './localized-fields';
 import { LocalizationTransferActions } from './localization-transfer-actions';
+import { MachineTranslationButton } from './machine-translation-button';
 import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 import {
   AnnouncementLocalizationSections,
@@ -254,13 +255,22 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
       locked={locked}
       sourceLocaleName={sourceLocaleName}
       actions={
-        <LocalizationTransferActions
-          contentName={content.name ?? ''}
-          localeCode={localization.code}
-          importDisabled={disabled}
-          buildUnits={buildTransferUnits}
-          onImport={handleImportTranslations}
-        />
+        <>
+          <MachineTranslationButton
+            versionId={version.id}
+            localizationId={localization.id}
+            disabled={disabled}
+            buildUnits={buildTransferUnits}
+            onApply={handleImportTranslations}
+          />
+          <LocalizationTransferActions
+            contentName={content.name ?? ''}
+            localeCode={localization.code}
+            importDisabled={disabled}
+            buildUnits={buildTransferUnits}
+            onImport={handleImportTranslations}
+          />
+        </>
       }
     >
       {steps.map((step, index) => (
@@ -406,13 +416,22 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
       locked={locked}
       sourceLocaleName={sourceLocaleName}
       actions={
-        <LocalizationTransferActions
-          contentName={content.name ?? ''}
-          localeCode={localization.code}
-          importDisabled={disabled}
-          buildUnits={buildTransferUnits}
-          onImport={handleImportTranslations}
-        />
+        <>
+          <MachineTranslationButton
+            versionId={version.id}
+            localizationId={localization.id}
+            disabled={disabled}
+            buildUnits={buildTransferUnits}
+            onApply={handleImportTranslations}
+          />
+          <LocalizationTransferActions
+            contentName={content.name ?? ''}
+            localeCode={localization.code}
+            importDisabled={disabled}
+            buildUnits={buildTransferUnits}
+            onImport={handleImportTranslations}
+          />
+        </>
       }
     >
       {sections}

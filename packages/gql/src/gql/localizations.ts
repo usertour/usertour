@@ -53,3 +53,12 @@ export const setDefaultLocalization = gql`
     }
   }
 `;
+
+export const translateLocalizationUnits = gql`
+  mutation translateLocalizationUnits($data: TranslateLocalizationUnitsInput!) {
+    translateLocalizationUnits(data: $data) {
+      path
+      translatedText
+    }
+  }
+`;

@@ -537,6 +537,19 @@ export const ENDPOINTS: Endpoint[] = [
 
   // --- localizations (scope: localization) ---
   {
+    key: 'localizations.translateLocalizationUnits',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:TranslateLocalizationUnitsInput!){translateLocalizationUnits(data:$d){__typename}}',
+    vars: (s) => ({
+      d: {
+        versionId: s.versionId,
+        localizationId: s.localizationId,
+        units: [{ path: '0.0.0:button.text', sourceText: 'Next' }],
+      },
+    }),
+  },
+  {
     key: 'localizations.createLocalization',
     tier: 'W',
     op: 'mutation',

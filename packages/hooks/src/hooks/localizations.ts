@@ -4,6 +4,7 @@ import {
   deleteLocalization,
   listVersionLocalizations,
   setDefaultLocalization,
+  translateLocalizationUnits,
   updateLocalization,
   upsertVersionLocalization,
 } from '@usertour/gql';
@@ -107,6 +108,28 @@ export const useSetDefaultLocalizationMutation = () => {
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { id } });
     return !!response.data?.setDefaultLocalization?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export interface TranslateLocalizationUnitsInput {
+  versionId: string;
+  localizationId: string;
+  units: { path: string; sourceText: string }[];
+}
+
+export interface TranslatedLocalizationUnit {
+  path: string;
+  translatedText: string;
+}
+
+export const useTranslateLocalizationUnitsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(translateLocalizationUnits);
+  const invoke = async (
+    input: TranslateLocalizationUnitsInput,
+  ): Promise<TranslatedLocalizationUnit[]> => {
+    const response = await mutation({ variables: { data: input } });
+    return response.data?.translateLocalizationUnits ?? [];
   };
   return { invoke, loading, error };
 };

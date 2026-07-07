@@ -147,6 +147,9 @@ export class UtilitiesService {
       allowProjectLevelSubscriptionManagement,
       needsSystemAdminSetup,
       require2FA,
+      machineTranslationEnabled: Boolean(
+        this.configService.get<string>('machineTranslation.apiKey'),
+      ),
       authProviders: this.getAuthProviders(),
     };
   }

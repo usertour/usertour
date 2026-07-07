@@ -99,6 +99,12 @@ export interface Config {
       survey: number;
     };
   };
+  machineTranslation: {
+    provider: string;
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+  };
   globalConfig: {
     isSelfHostedMode: boolean;
     allowPrivateNetworkEgress: boolean;

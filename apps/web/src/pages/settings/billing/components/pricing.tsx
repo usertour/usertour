@@ -523,6 +523,10 @@ const ComparisonTable = ({
           values: [true, true, true, true],
         },
         {
+          name: t('settings.billing.comparison.rows.aiTranslation'),
+          values: [false, true, true, true],
+        },
+        {
           name: t('settings.billing.comparison.rows.integrations'),
           values: [true, true, true, true],
         },

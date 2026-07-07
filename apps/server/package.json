@@ -43,6 +43,8 @@
     "prepare": "pnpm run prisma:generate"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.8",
+    "@ai-sdk/openai-compatible": "^3.0.5",
     "@apollo/server": "^4.13.0",
     "@aws-sdk/client-s3": "^3.1002.0",
     "@aws-sdk/credential-providers": "^3.1002.0",
@@ -87,6 +89,7 @@
     "@usertour/helpers": "workspace:^",
     "@usertour/license": "^0.0.3",
     "@usertour/types": "workspace:^",
+    "ai": "^7.0.16",
     "argon2": "^0.41.1",
     "axios": "^1.6.2",
     "bcryptjs": "2.4.3",
@@ -160,7 +163,7 @@
     "ts-morph": "^17.0.1",
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.1.2",
-    "typescript": "4.9.5"
+    "typescript": "5.3.3"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -170,7 +173,10 @@
     "rootDir": ".",
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
-      "^src/(.*)$": "<rootDir>/src/$1"
+      "^src/(.*)$": "<rootDir>/src/$1",
+      "^ai$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
+      "^@ai-sdk/anthropic$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
+      "^@ai-sdk/openai-compatible$": "<rootDir>/test/mocks/ai-sdk.stub.ts"
     },
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
