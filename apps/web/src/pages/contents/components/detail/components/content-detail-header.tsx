@@ -27,12 +27,13 @@ import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
 const TABS = [
   { key: 'analytics', href: '/analytics' },
   { key: 'content', href: '/detail' },
+  { key: 'localization', href: '/localization' },
   { key: 'versions', href: '/versions' },
 ] as const;
 
 // Every content type is localizable except trackers, which render no
 // user-facing text.
-const LOCALIZATION_TAB = { key: 'localization', href: '/localization' } as const;
+const NON_LOCALIZABLE_TABS = TABS.filter((tab) => tab.key !== 'localization');
 
 interface MainNavProps {
   className?: string;
@@ -46,7 +47,7 @@ function MainNav({ className }: MainNavProps) {
   const baseUrl = `/env/${environment?.id}/${contentType}/${contentId}`;
   const { t } = useTranslation();
 
-  const tabs = contentType === ContentTypeName.TRACKERS ? TABS : [...TABS, LOCALIZATION_TAB];
+  const tabs = contentType === ContentTypeName.TRACKERS ? NON_LOCALIZABLE_TABS : TABS;
 
   return (
     <nav className={cn('flex items-center gap-4 lg:gap-6', className)}>
