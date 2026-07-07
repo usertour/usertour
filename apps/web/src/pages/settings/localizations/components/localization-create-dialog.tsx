@@ -74,9 +74,9 @@ export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) =
       state={state}
       submitLabel={t('settings.localizations.createButton')}
       cancelLabel={t('settings.common.cancel')}
-      contentClassName="!w-auto"
+      contentClassName="max-w-xl"
     >
-      <div className="w-[450px] flex flex-col space-y-2">
+      <div className="flex flex-col space-y-2">
         <FormField
           control={state.form.control}
           name="locale"
@@ -89,7 +89,7 @@ export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) =
                 </QuestionTooltip>
               </FormLabel>
               <LocateSelect
-                popperContentClass="w-[450px]"
+                popperContentClass="w-[var(--radix-popover-trigger-width)]"
                 triggerPlaceholder={t('common.locale.triggerPlaceholder')}
                 searchPlaceholder={t('common.locale.searchPlaceholder')}
                 emptyMessage={t('common.locale.empty')}

@@ -74,7 +74,7 @@ export const LocalizationEditDialog = (props: LocalizationEditDialogProps) => {
       state={state}
       submitLabel={t('settings.localizations.saveButton')}
       cancelLabel={t('settings.common.cancel')}
-      contentClassName="max-w-2xl"
+      contentClassName="max-w-xl"
     >
       <div className="flex flex-col space-y-2">
         <FormField
@@ -89,7 +89,7 @@ export const LocalizationEditDialog = (props: LocalizationEditDialogProps) => {
                 </QuestionTooltip>
               </FormLabel>
               <LocateSelect
-                popperContentClass="w-[450px]"
+                popperContentClass="w-[var(--radix-popover-trigger-width)]"
                 defaultValue={state.form.getValues('locale')}
                 triggerPlaceholder={t('common.locale.triggerPlaceholder')}
                 searchPlaceholder={t('common.locale.searchPlaceholder')}
