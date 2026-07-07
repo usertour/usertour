@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
 import { cuid } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
@@ -52,13 +53,6 @@ import {
   ListContentVersionsQuery,
   UpdateVersionBody,
 } from './content-versions.schema';
-
-function toArray<T>(value: T | T[] | undefined): T[] {
-  if (value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
 
 type VersionNode = {
   id: string;

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
 
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
@@ -20,13 +21,6 @@ import {
   UpsertCompanyBody,
   UpsertMembershipBody,
 } from './companies.schema';
-
-function toArray<T>(value: T | T[] | undefined): T[] {
-  if (value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
 
 /**
  * v2 companies handler (environment-scoped). Prisma->API mapping + the per-method

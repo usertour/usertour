@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -30,13 +31,6 @@ import {
   ListContentQuery,
   UpdateContentBody,
 } from './content.schema';
-
-function toArray<T>(value: T | T[] | undefined): T[] {
-  if (value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
 
 /**
  * v2 content handler. Publishing is per-environment, so the response exposes

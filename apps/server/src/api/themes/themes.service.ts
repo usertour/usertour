@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
 import { Prisma, type Theme as PrismaTheme } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { deepMergeThemeSettings, deriveThemeAutoColors } from '@usertour/helpers';
@@ -25,13 +26,6 @@ import {
   ThemeExpand,
   UpdateThemeBody,
 } from './themes.schema';
-
-function toArray(value: ThemeExpand | ThemeExpand[] | undefined): ThemeExpand[] {
-  if (value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
 
 const FULL: ThemeExpand[] = ['settings', 'variations'];
 

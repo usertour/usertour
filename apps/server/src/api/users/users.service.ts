@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
 
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
@@ -9,13 +10,6 @@ import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapUser } from './users.mapper';
 import { GetUserQuery, ListUsersQuery, UpsertUserBody, User, UserExpand } from './users.schema';
-
-function toArray<T>(value: T | T[] | undefined): T[] {
-  if (value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
 
 const USER_INCLUDE = { bizUsersOnCompany: { include: { bizCompany: true } } };
 

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
@@ -15,13 +16,6 @@ import {
   ListContentSessionsQuery,
   SessionExpand,
 } from './content-sessions.schema';
-
-function toArray<T>(value: T | T[] | undefined): T[] {
-  if (value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
 
 const SESSION_INCLUDE = { content: true, bizCompany: true, bizUser: true, version: true };
 
