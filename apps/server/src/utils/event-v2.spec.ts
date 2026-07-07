@@ -237,6 +237,14 @@ describe('resolveDeliveredLocaleCode / assignDeliveredLocale', () => {
     expect(resolveDeliveredLocaleCode({ locale_code: 'fr' }, undefined)).toBeNull();
   });
 
+  it('uses the client-reported locale as fallback when the attribute is absent', () => {
+    expect(resolveDeliveredLocaleCode({}, translations, 'fr-CA')).toBe('fr');
+    // The explicit attribute wins over the fallback.
+    expect(resolveDeliveredLocaleCode({ locale_code: 'zh-CN' }, translations, 'fr-CA')).toBe(
+      'zh-CN',
+    );
+  });
+
   it('stamps locale_code onto event data only when a locale resolves', () => {
     const stamped = assignDeliveredLocale({ flow_id: 'f1' }, { locale_code: 'fr' }, translations);
     expect(stamped).toEqual({ flow_id: 'f1', [EventAttributes.LOCALE_CODE]: 'fr' });

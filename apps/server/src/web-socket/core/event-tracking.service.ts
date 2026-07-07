@@ -383,7 +383,12 @@ export class EventTrackingService {
 
       const rawData = buildEventData(content, version);
       const eventData = assignClientContext(
-        assignDeliveredLocale(rawData, bizUser.data, version.versionOnLocalization),
+        assignDeliveredLocale(
+          rawData,
+          bizUser.data,
+          version.versionOnLocalization,
+          clientContext?.locale,
+        ),
         clientContext,
       );
 
@@ -817,7 +822,12 @@ export class EventTrackingService {
     }
 
     const eventData = assignClientContext(
-      assignDeliveredLocale(data, bizUser.data, bizSession.version?.versionOnLocalization),
+      assignDeliveredLocale(
+        data,
+        bizUser.data,
+        bizSession.version?.versionOnLocalization,
+        clientContext?.locale,
+      ),
       clientContext,
     );
     // Filter event data

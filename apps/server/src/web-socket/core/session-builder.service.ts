@@ -432,6 +432,7 @@ export class SessionBuilderService {
       environment,
       externalUserId,
       externalCompanyId,
+      clientContext?.locale,
     );
 
     session.version.resourceCenter = resourceCenterData;
@@ -452,6 +453,7 @@ export class SessionBuilderService {
     environment: Environment,
     externalUserId: string,
     externalCompanyId: string,
+    clientLocale?: string,
   ): Promise<void> {
     // Announcement state is global; the block is only the navigation entry.
     // Require a VISIBLE announcement block: block-level "Only show block if..."
@@ -484,6 +486,7 @@ export class SessionBuilderService {
       environment,
       bizUser,
       externalCompanyId,
+      clientLocale,
     );
 
     const distributionOf = (item: VisibleAnnouncement): AnnouncementDistribution => {

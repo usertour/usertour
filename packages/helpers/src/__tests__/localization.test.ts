@@ -32,6 +32,7 @@ import {
   formatElementPath,
   matchTranslationByLocale,
   mergeLocalizedEditorContents,
+  resolveUserLocaleCode,
   mergeLocalizedVersionData,
 } from '../localization';
 import { deepClone } from '../utils';
@@ -512,5 +513,22 @@ describe('matchTranslationByLocale', () => {
 
   it('returns undefined when nothing matches', () => {
     expect(matchTranslationByLocale(translations, 'ja')).toBeUndefined();
+  });
+});
+
+describe('resolveUserLocaleCode', () => {
+  it('prefers the explicit locale_code attribute over the client fallback', () => {
+    expect(resolveUserLocaleCode({ locale_code: 'fr' }, 'en-US')).toBe('fr');
+  });
+
+  it('falls back to the client locale when the attribute is absent or empty', () => {
+    expect(resolveUserLocaleCode({}, 'en-US')).toBe('en-US');
+    expect(resolveUserLocaleCode({ locale_code: '  ' }, 'en-US')).toBe('en-US');
+    expect(resolveUserLocaleCode(null, 'en-US')).toBe('en-US');
+  });
+
+  it('returns null when neither source is set', () => {
+    expect(resolveUserLocaleCode({}, undefined)).toBeNull();
+    expect(resolveUserLocaleCode(null, '')).toBeNull();
   });
 });

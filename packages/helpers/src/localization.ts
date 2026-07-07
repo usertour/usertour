@@ -12,7 +12,7 @@ import type {
   LauncherData,
   ResourceCenterData,
 } from '@usertour/types';
-import { ContentDataType, ContentEditorElementType } from '@usertour/types';
+import { ContentDataType, ContentEditorElementType, UserAttributes } from '@usertour/types';
 
 import { isQuestionElement } from './content-helper';
 import { isArray } from './type-utils';
@@ -733,6 +733,26 @@ export const collectOutdatedVersionDataPaths = (
 export interface LocaleTranslationCandidate {
   localization: { code: string };
 }
+
+/**
+ * The locale a user should be served in: their explicit locale_code
+ * attribute when set, else the client-reported fallback (the SDK sends
+ * navigator.language), else null — meaning the authored source.
+ */
+export const resolveUserLocaleCode = (
+  userAttributes: unknown,
+  fallbackLocale?: string | null,
+): string | null => {
+  const attributes = userAttributes as Record<string, unknown> | null | undefined;
+  const explicit = attributes?.[UserAttributes.LOCALE_CODE];
+  if (typeof explicit === 'string' && explicit.trim() !== '') {
+    return explicit;
+  }
+  if (typeof fallbackLocale === 'string' && fallbackLocale.trim() !== '') {
+    return fallbackLocale;
+  }
+  return null;
+};
 
 /**
  * Pick the translation for a user's locale: exact code match first

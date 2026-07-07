@@ -16,6 +16,7 @@ import {
 } from '@/common/types/schema';
 import {
   BizEvents,
+  ClientContext,
   ContentConfigObject,
   ChecklistData,
   ContentDataType,
@@ -25,7 +26,6 @@ import {
   RulesCondition,
   SessionAttribute,
   ThemeVariation,
-  UserAttributes,
 } from '@usertour/types';
 import {
   buildConfig,
@@ -34,6 +34,7 @@ import {
   matchTranslationByLocale,
   mergeLocalizedEditorContents,
   mergeLocalizedVersionData,
+  resolveUserLocaleCode,
 } from '@usertour/helpers';
 import { getAttributeValue, getPublishedVersionId } from '@/utils/content-utils';
 import { CustomContentVersion, ContentSessionCollection } from '@/common/types/content';
@@ -65,6 +66,8 @@ export interface ContentQueryContext {
   readonly environment: Environment;
   readonly externalUserId: string;
   readonly externalCompanyId?: string;
+  /** Client-reported context; carries the browser locale fallback. */
+  readonly clientContext?: ClientContext;
 }
 
 /**
@@ -75,6 +78,8 @@ type ContentProcessingContext = {
   readonly bizUser: BizUser;
   readonly attributes: Attribute[];
   readonly externalCompanyId?: string;
+  /** Browser locale fallback for users without an explicit locale_code attribute. */
+  readonly clientLocale?: string;
 };
 
 /**
@@ -188,6 +193,7 @@ export class ContentDataService {
         bizUser,
         attributes,
         externalCompanyId,
+        clientLocale: queryContext.clientContext?.locale,
       };
 
       return await this.processVersions(versions, context, sessions);
@@ -1083,7 +1089,11 @@ export class ContentDataService {
       externalCompanyId: context.externalCompanyId,
     };
 
-    const localizedVersion = this.localizeVersionForUser(version, context.bizUser);
+    const localizedVersion = this.localizeVersionForUser(
+      version,
+      context.bizUser,
+      context.clientLocale,
+    );
 
     const [config, data, steps] = await Promise.all([
       this.processConfig(version, evaluationContext),
@@ -1110,22 +1120,24 @@ export class ContentDataService {
    * launcher / banner / resource center — announcements go through
    * AnnouncementService, which localizes the same way).
    *
-   * The user's `locale_code` attribute is matched against the version's
-   * enabled translations — exact locale first, then primary language subtag
-   * (`fr-CA` falls back to `fr`). No match delivers the authored source; the
-   * merge itself also falls back per text field, so a partial translation
-   * can never blank content.
+   * The user's locale — their explicit `locale_code` attribute, else the
+   * SDK-reported browser locale — is matched against the version's enabled
+   * translations, exact locale first, then primary language subtag (`fr-CA`
+   * falls back to `fr`). No match delivers the authored source; the merge
+   * itself also falls back per text field, so a partial translation can
+   * never blank content.
    */
   private localizeVersionForUser(
     version: VersionWithStepsAndContent,
     bizUser: BizUser,
+    clientLocale?: string,
   ): VersionWithStepsAndContent {
     const translations = version.versionOnLocalization;
     if (!translations || translations.length === 0) {
       return version;
     }
-    const localeCode = getAttributeValue(bizUser.data, UserAttributes.LOCALE_CODE);
-    if (typeof localeCode !== 'string' || localeCode.trim() === '') {
+    const localeCode = resolveUserLocaleCode(bizUser.data, clientLocale);
+    if (!localeCode) {
       return version;
     }
     const matched = matchTranslationByLocale(translations, localeCode);

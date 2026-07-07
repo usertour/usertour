@@ -1036,6 +1036,7 @@ export class WebSocketV2Service {
       socketData.environment,
       bizUser,
       socketData.externalCompanyId,
+      socketData.clientContext?.locale,
     );
 
     // Seen status and the intro-content attributes are independent (different
@@ -1080,6 +1081,7 @@ export class WebSocketV2Service {
       socketData.environment,
       bizUser,
       socketData.externalCompanyId,
+      socketData.clientContext?.locale,
     );
     if (!visible) {
       return null;

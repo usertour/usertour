@@ -1,4 +1,9 @@
-import { cuid, matchTranslationByLocale, mergeLocalizedVersionData } from '@usertour/helpers';
+import {
+  cuid,
+  matchTranslationByLocale,
+  mergeLocalizedVersionData,
+  resolveUserLocaleCode,
+} from '@usertour/helpers';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -9,7 +14,6 @@ import {
   ContentEditorRoot,
   PopupAnnouncement,
   ThemeTypesSetting,
-  UserAttributes,
 } from '@usertour/types';
 import {
   ANNOUNCEMENT_FEED_SCAN_LIMIT,
@@ -17,7 +21,7 @@ import {
   DEFAULT_POPUP_CONFIG,
 } from '@usertour/constants';
 import { BizUser, Environment } from '@/common/types/schema';
-import { extractUserAttrCodes, getAttributeValue } from '@/utils/content-utils';
+import { extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
 import {
   type AutoStartRulesConfig,
@@ -136,6 +140,7 @@ export class AnnouncementService {
     environment: Environment,
     bizUser: BizUser,
     externalCompanyId: string,
+    clientLocale?: string,
     limit: number = AnnouncementService.SCAN_LIMIT,
   ): Promise<VisibleAnnouncement[]> {
     const candidates = await this.prisma.contentOnEnvironment.findMany({
@@ -169,7 +174,7 @@ export class AnnouncementService {
     return visible.filter(hasPublishedVersion).map((item) => ({
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser, clientLocale),
     }));
   }
 
@@ -185,6 +190,7 @@ export class AnnouncementService {
     environment: Environment,
     bizUser: BizUser | null,
     externalCompanyId: string,
+    clientLocale?: string,
   ): Promise<VisibleAnnouncement | null> {
     // Fail fast on a missing id: `contentId: undefined` in a Prisma where is
     // silently dropped, which would turn this by-id lookup into "first
@@ -235,17 +241,18 @@ export class AnnouncementService {
     return {
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser, clientLocale),
     };
   }
 
   /**
    * Substitute the user's locale translation into the announcement's version
-   * data — same matching rules as the session delivery pipeline (exact locale
-   * first, then primary language subtag). Every announcement read path (feed,
-   * by-id detail, popup) flows through the two find methods above, so
-   * localizing here covers all surfaces, including the attribute extraction
-   * that runs on the returned content.
+   * data — same rules as the session delivery pipeline (explicit locale_code
+   * attribute, else the SDK-reported browser locale; exact code match first,
+   * then primary language subtag). Every announcement read path (feed, by-id
+   * detail, popup) flows through the two find methods above, so localizing
+   * here covers all surfaces, including the attribute extraction that runs
+   * on the returned content.
    */
   private localizePublishedVersion(
     publishedVersion: {
@@ -256,13 +263,14 @@ export class AnnouncementService {
       versionOnLocalization: { localized: unknown; localization: { code: string } }[];
     },
     bizUser: BizUser | null,
+    clientLocale?: string,
   ): VisibleAnnouncement['publishedVersion'] {
     const { versionOnLocalization, ...version } = publishedVersion;
-    if (versionOnLocalization.length === 0 || !bizUser || !version.data) {
+    if (versionOnLocalization.length === 0 || !version.data) {
       return version;
     }
-    const localeCode = getAttributeValue(bizUser.data, UserAttributes.LOCALE_CODE);
-    if (typeof localeCode !== 'string' || localeCode.trim() === '') {
+    const localeCode = resolveUserLocaleCode(bizUser?.data, clientLocale);
+    if (!localeCode) {
       return version;
     }
     const matched = matchTranslationByLocale(versionOnLocalization, localeCode);
