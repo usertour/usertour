@@ -10,11 +10,10 @@ import {
   ContentNotPublishableError,
   EnvironmentNotInTokenScopeError,
   ParamsError,
-  ThemeNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
 import { ContentService, type WriteActor } from '@/content/content.service';
-import { ThemesService } from '@/themes/themes.service';
+import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
 import { requiresTheme, validateVersionUsable } from '../content-representation/usable.validate';
@@ -42,7 +41,7 @@ export class ApiContentService {
   constructor(
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
-    private readonly themes: ThemesService,
+    private readonly themes: ApiThemesService,
   ) {}
 
   /** Create content (+ its initial draft version) in the project's primary environment. */
@@ -56,9 +55,9 @@ export class ApiContentService {
       if (!body.themeId) {
         throw new ValidationError(`themeId is required for content type "${body.type}".`);
       }
-      await this.requireTheme(body.themeId, projectId);
+      await this.themes.requireTheme(body.themeId, projectId);
     } else if (body.themeId) {
-      await this.requireTheme(body.themeId, projectId);
+      await this.themes.requireTheme(body.themeId, projectId);
     }
     const created = await this.content.createContent({
       type: body.type,
@@ -223,14 +222,6 @@ export class ApiContentService {
     const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
     if (!node || (node as { deleted?: boolean }).deleted) {
       throw new ContentNotFoundError();
-    }
-  }
-
-  /** Assert a theme exists in the project (and is live) before writing it as themeId. */
-  private async requireTheme(themeId: string, projectId: string): Promise<void> {
-    const theme = await this.themes.getTheme(themeId);
-    if (!theme || theme.projectId !== projectId || (theme as { deleted?: boolean }).deleted) {
-      throw new ThemeNotFoundError();
     }
   }
 

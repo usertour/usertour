@@ -8,12 +8,11 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   ContentNotFoundError,
   ParamsError,
-  ThemeNotFoundError,
   ValidationError,
   type ValidationIssue,
 } from '@/common/errors/errors';
 import { ContentService, type WriteActor } from '@/content/content.service';
-import { ThemesService } from '@/themes/themes.service';
+import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
@@ -77,7 +76,7 @@ export class ApiContentVersionsService {
   constructor(
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
-    private readonly themes: ThemesService,
+    private readonly themes: ApiThemesService,
   ) {}
 
   async get(
@@ -329,7 +328,7 @@ export class ApiContentVersionsService {
       for (const themeId of new Set(
         body.steps.map((s) => s.themeId).filter((t): t is string => typeof t === 'string'),
       )) {
-        await this.requireTheme(themeId, projectId);
+        await this.themes.requireTheme(themeId, projectId);
       }
 
       // Steps merge by handle (echo to update, omit to create). The primary `id`
@@ -431,7 +430,7 @@ export class ApiContentVersionsService {
     }
 
     if (body.themeId !== undefined) {
-      await this.requireTheme(body.themeId, projectId);
+      await this.themes.requireTheme(body.themeId, projectId);
       content.themeId = body.themeId;
     }
 
@@ -495,14 +494,6 @@ export class ApiContentVersionsService {
       config: v.config as { autoStartRules?: RulesCondition[] } | null,
       conditionContext: await loadConditionContext(this.prisma, projectId),
     });
-  }
-
-  /** Assert a theme exists in the project (and is live) before writing it as themeId. */
-  private async requireTheme(themeId: string, projectId: string): Promise<void> {
-    const theme = await this.themes.getTheme(themeId);
-    if (!theme || theme.projectId !== projectId || (theme as { deleted?: boolean }).deleted) {
-      throw new ThemeNotFoundError();
-    }
   }
 
   /** Map stable codes back to internal ids (code→id; fallback: the code itself). */

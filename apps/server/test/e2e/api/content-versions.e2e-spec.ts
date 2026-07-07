@@ -300,6 +300,17 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('rejects a version write with an unknown themeId (404 E1021)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+      token,
+    ).send({ themeId: 'theme_does_not_exist' });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('E1021');
+  });
+
   it('matches a step by cvid when the id is stale (fork survivability — no drop)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const url = `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`;
