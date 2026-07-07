@@ -49,12 +49,17 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
   constructor(private readonly prisma: PrismaService) {}
 
   // ── Client ────────────────────────────────────────────────────────────────
+  // The library calls getClient in BOTH the authorize flow (issuing a code, with a
+  // null secret) and the token flow. So it only VERIFIES a secret when one is
+  // presented — it must return a confidential client during authorize where no
+  // secret is sent. Requiring a confidential client to authenticate on the TOKEN
+  // endpoint is enforced separately, in OAuthService.token (which knows the
+  // endpoint), so this stays usable by both flows.
   async getClient(clientId: string, clientSecret: string): Promise<Client | Falsey> {
     const client = await this.prisma.oAuthClient.findUnique({ where: { id: clientId } });
     if (!client) {
       return false;
     }
-    // A secret is only presented by confidential clients on the token endpoint.
     if (clientSecret) {
       if (!client.clientSecretHash || hashSecret(clientSecret) !== client.clientSecretHash) {
         return false;

@@ -5,7 +5,7 @@ import { cuid } from '@usertour/helpers';
 import { PrismaService } from 'nestjs-prisma';
 
 import { OAuthModelService } from './oauth-model.service';
-import { generateOpaqueSecret, hashSecret } from './oauth.crypto';
+import { accessTokenSecret, generateOpaqueSecret, hashSecret } from './oauth.crypto';
 import { isAllowedRedirectUri } from './redirect-allowlist';
 
 const ACCESS_TOKEN_LIFETIME = 60 * 60; // 1h
@@ -178,6 +178,7 @@ export class OAuthService {
     query: Record<string, string>;
     body: unknown;
   }) {
+    await this.requireConfidentialClientSecret(req.body);
     const request = new OAuth2Server.Request(req);
     const response = new OAuth2Server.Response();
     const token = await this.server.token(request, response, {
@@ -195,21 +196,60 @@ export class OAuthService {
     };
   }
 
+  /**
+   * A CONFIDENTIAL client (registered with a secret, so `clientSecretHash` is set)
+   * MUST authenticate on the token endpoint — for every grant. The library is
+   * configured `requireClientAuthentication.refresh_token = false` so PUBLIC / PKCE
+   * clients can refresh without a secret; that also waives the demand for
+   * confidential clients, so without this an attacker holding only the refresh token
+   * could mint new tokens (RFC 6749 §6). We enforce it here (not in the model's
+   * getClient, which the authorize flow also calls with no secret). Public clients
+   * have no hash and are unaffected. Auth method is client_secret_post (body) — the
+   * only confidential method this server advertises.
+   */
+  private async requireConfidentialClientSecret(body: unknown): Promise<void> {
+    const b = (body ?? {}) as Record<string, unknown>;
+    const clientId = typeof b.client_id === 'string' ? b.client_id : undefined;
+    if (!clientId) {
+      return; // the library rejects a missing/invalid client_id
+    }
+    const client = await this.prisma.oAuthClient.findUnique({
+      where: { id: clientId },
+      select: { clientSecretHash: true },
+    });
+    if (!client?.clientSecretHash) {
+      return; // unknown or public client — nothing to enforce here
+    }
+    const presented = typeof b.client_secret === 'string' ? b.client_secret : '';
+    if (!presented || hashSecret(presented) !== client.clientSecretHash) {
+      throw new BadRequestException('invalid_client: client authentication failed');
+    }
+  }
+
   // ── Revoke (RFC 7009) ───────────────────────────────────────────────────────
   async revoke(token: string): Promise<void> {
     if (!token) {
       return;
     }
-    const hash = hashSecret(token.includes('_') ? token.slice(token.indexOf('_') + 1) : token);
     // Refresh token → revoke the whole grant (+ its access tokens via guard's isActive).
-    const grant = await this.prisma.oAuthGrant.findFirst({ where: { hashedRefreshToken: hash } });
+    // Refresh tokens are stored/looked up as the hash of the FULL `utr_…` string
+    // (saveToken / getRefreshToken), so hash it whole here — stripping the prefix
+    // (as an access token needs) would never match a grant and the revoke would no-op.
+    const grant = await this.prisma.oAuthGrant.findFirst({
+      where: { hashedRefreshToken: hashSecret(token) },
+    });
     if (grant) {
       await this.revokeGrant(grant.id);
       return;
     }
-    // Access token → deactivate just that ApiToken.
+    // Access token → deactivate just that ApiToken. Access tokens are stored as the
+    // hash of the BARE secret (prefix stripped), matching getAccessToken.
+    const secret = accessTokenSecret(token);
+    if (!secret) {
+      return;
+    }
     await this.prisma.apiToken.updateMany({
-      where: { hashedSecret: hash, clientId: { not: null } },
+      where: { hashedSecret: hashSecret(secret), clientId: { not: null } },
       data: { isActive: false },
     });
   }

@@ -217,6 +217,126 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     expect(after.status).toBe(401);
   });
 
+  // Run authorize (PKCE) → consent → token exchange for a client and return the
+  // token response. `tokenExtra` carries a confidential client's `client_secret`.
+  async function runFlow(cid: string, tokenExtra: Record<string, string> = {}) {
+    const auth = await http()
+      .get('/oauth/authorize')
+      .query({
+        response_type: 'code',
+        client_id: cid,
+        redirect_uri: redirectUri,
+        scope: 'content:read',
+        state: 'st',
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+      })
+      .expect(302);
+    const transaction = new URL(auth.headers.location).searchParams.get('transaction') as string;
+    const consent = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId, approved: true })
+      .expect(201);
+    const code = new URL(consent.body.redirect).searchParams.get('code') as string;
+    const tok = await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: cid,
+        code_verifier: verifier,
+        ...tokenExtra,
+      })
+      .expect(200);
+    return tok.body;
+  }
+
+  it('revoking a REFRESH token kills the grant (RFC 7009 refresh path)', async () => {
+    // Own client so this doesn't disturb the module client's grant (saveToken's
+    // replace-semantics would revoke a sibling grant for the same user+client).
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Revoke-refresh',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    try {
+      const tokens = await runFlow(cid);
+      // Revoke the REFRESH token (not the access token). The grant's refresh hash is
+      // over the FULL `utr_…` string, so revoke must hash it whole to find the grant —
+      // the old prefix-stripping made this a silent no-op.
+      await http().post('/oauth/revoke').send({ token: tokens.refresh_token }).expect(201);
+      // The refresh token can no longer mint tokens…
+      await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({ grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: cid })
+        .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+      // …and the grant's access token is dead too (revokeGrant deactivated it).
+      const mcp = await http()
+        .post('/mcp')
+        .set('Authorization', `Bearer ${tokens.access_token}`)
+        .set('Accept', 'application/json, text/event-stream')
+        .send({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      expect(mcp.status).toBe(401);
+    } finally {
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
+  it('a confidential client MUST present its secret on refresh (RFC 6749 §6)', async () => {
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Confidential',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'client_secret_post',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    const secret = reg.body.client_secret as string;
+    expect(secret).toBeTruthy();
+    try {
+      // Code exchange authenticates with the secret.
+      const tokens = await runFlow(cid, { client_secret: secret });
+      // Refresh WITHOUT the secret is rejected — the hole this closes (an attacker
+      // holding only the refresh token can't mint new ones).
+      await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({
+          grant_type: 'refresh_token',
+          refresh_token: tokens.refresh_token,
+          client_id: cid,
+        })
+        .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+      // Refresh WITH the correct secret still works.
+      const ok = await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({
+          grant_type: 'refresh_token',
+          refresh_token: tokens.refresh_token,
+          client_id: cid,
+          client_secret: secret,
+        })
+        .expect(200);
+      expect(ok.body.access_token).toMatch(/^uto_/);
+    } finally {
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
   it('grants the full role when the client requests no scope', async () => {
     const reg = await http()
       .post('/oauth/register')
