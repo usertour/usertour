@@ -31,7 +31,7 @@ import type {
   VersionOnLocalization,
 } from '@usertour/types';
 import { ContentDataType } from '@usertour/types';
-import { Badge, Checkbox, TooltipProvider } from '@usertour/ui';
+import { Badge, Checkbox, InlineAlert, TooltipProvider } from '@usertour/ui';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -127,9 +127,7 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
               </div>
             </div>
             {locked && (
-              <div className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
-                {t('contents.localization.publishedLock')}
-              </div>
+              <InlineAlert variant="info" message={t('contents.localization.publishedLock')} />
             )}
             <div className="flex flex-col gap-4">
               <label
