@@ -843,6 +843,36 @@ describe('API v2 /content-versions (e2e)', () => {
       });
     });
 
+    it('a partial start-rule setting update merges — an unspecified sibling (priority) is kept, not dropped', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      // Establish frequency + priority together.
+      await write(
+        {
+          startRules: {
+            when: [{ type: 'current_url', includes: ['/app/*'] }],
+            frequency: { mode: 'once' },
+            priority: 'high',
+          },
+        },
+        token,
+      );
+      // Update ONLY frequency (no priority in this request) — priority must survive.
+      const w = await write(
+        {
+          startRules: {
+            when: [{ type: 'current_url', includes: ['/app/*'] }],
+            frequency: { mode: 'unlimited' },
+          },
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const r = await read(token);
+      expect(r.body.startRules.frequency.mode).toBe('unlimited'); // updated
+      expect(r.body.startRules.priority).toBe('high'); // NOT silently discarded
+    });
+
     it('defaults `every` (window only, no times) for an unlimited frequency authored without it', async () => {
       // A bare `{ mode: 'unlimited' }` must still compile to an `every` WINDOW
       // (duration/unit) so the builder picker + SDK have one — but NOT a `times`

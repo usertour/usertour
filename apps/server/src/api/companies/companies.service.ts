@@ -128,6 +128,13 @@ export class ApiCompaniesService {
     if (!bizUser) {
       throw new UserNotFoundError();
     }
+    // v2 is strict: reject a type-mismatched membership attribute instead of
+    // silently dropping it (mirrors the user/company upsert paths above).
+    await this.biz.assertAttributeValueTypes(
+      environment.id,
+      AttributeBizType.MEMBERSHIP,
+      body.attributes,
+    );
     await this.biz.upsertBizCompanyMembership(
       environment.projectId,
       bizCompany.id,

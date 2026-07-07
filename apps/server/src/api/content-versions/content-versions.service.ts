@@ -424,7 +424,22 @@ export class ApiContentVersionsService {
     if (body.startRules !== undefined || body.hideRules !== undefined) {
       const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
       if (body.startRules !== undefined) {
-        Object.assign(config, compileStartRules(body.startRules ?? undefined, resolvers));
+        const compiled = compileStartRules(body.startRules ?? undefined, resolvers) as {
+          autoStartRulesSetting?: Record<string, unknown>;
+        } & Record<string, unknown>;
+        // The start-rule SETTING (frequency / priority / wait / startIfNotComplete) is a
+        // PARTIAL patch: compileStartRules emits only the fields the caller supplied, so
+        // merge them onto the existing setting rather than replacing it wholesale —
+        // otherwise sending `frequency` alone would silently drop a stored `priority`.
+        // (The `when` conditions ARE a full replace — the caller sends the entire set.)
+        const existingSetting =
+          (config as { autoStartRulesSetting?: Record<string, unknown> }).autoStartRulesSetting ??
+          {};
+        Object.assign(config, compiled);
+        const mergedSetting = { ...existingSetting, ...(compiled.autoStartRulesSetting ?? {}) };
+        if (Object.keys(mergedSetting).length > 0) {
+          (config as { autoStartRulesSetting?: unknown }).autoStartRulesSetting = mergedSetting;
+        }
       }
       if (body.hideRules !== undefined) {
         Object.assign(config, compileHideRules(body.hideRules, resolvers));

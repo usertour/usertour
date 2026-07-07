@@ -2,7 +2,7 @@ import { ContentDataType } from '@usertour/types';
 
 import { decompileContent } from './representation.decompile';
 import { decompileActions, decompileWhen, DecompileResolvers } from './rules.decompile';
-import { decompileText } from './text.decompile';
+import { decompilePlainText } from './text.decompile';
 import {
   RepresentationResourceCenter,
   RepresentationResourceCenterBlock,
@@ -65,7 +65,7 @@ function decompileBlock(
       return {
         ...base,
         type: 'action',
-        name: decompileText(b.name),
+        name: decompilePlainText(b.name),
         ...(ic ? { icon: ic } : {}),
         clickActions: decompileActions(b.clickedActions),
       };
@@ -73,7 +73,7 @@ function decompileBlock(
       return {
         ...base,
         type: 'sub-page',
-        name: decompileText(b.name),
+        name: decompilePlainText(b.name),
         ...(ic ? { icon: ic } : {}),
         content: decompileContent(b.content, r).blocks,
       };
@@ -81,7 +81,7 @@ function decompileBlock(
       return {
         ...base,
         type: 'content-list',
-        name: decompileText(b.name),
+        name: decompilePlainText(b.name),
         ...(ic ? { icon: ic } : {}),
         ...(icon(b.flowIconSource, b.flowIconType, b.flowIconUrl)
           ? { flowIcon: icon(b.flowIconSource, b.flowIconType, b.flowIconUrl) }
@@ -100,7 +100,7 @@ function decompileBlock(
             ...(icon(it.iconSource, it.iconType, it.iconUrl)
               ? { icon: icon(it.iconSource, it.iconType, it.iconUrl) }
               : {}),
-            ...(it.navigateUrl ? { navigateUrl: decompileText(it.navigateUrl) } : {}),
+            ...(it.navigateUrl ? { navigateUrl: decompilePlainText(it.navigateUrl) } : {}),
             ...(it.navigateOpenType ? { navigateOpenType: it.navigateOpenType } : {}),
             ...(it.onlyShowItem
               ? { onlyShowWhen: decompileWhen(it.onlyShowItemConditions, r) }
@@ -112,7 +112,7 @@ function decompileBlock(
       return {
         ...base,
         type: 'live-chat',
-        name: decompileText(b.name),
+        name: decompilePlainText(b.name),
         ...(ic ? { icon: ic } : {}),
         provider: b.liveChatProvider ?? 'custom',
         ...(typeof b.customLiveChatCode === 'string' ? { customCode: b.customLiveChatCode } : {}),

@@ -1,10 +1,12 @@
 import { INestApplication } from '@nestjs/common';
-import { Capability } from '@usertour/types';
+import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { BizAttributeTypes, Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
 import {
+  buildAttribute,
   buildBizCompany,
   buildBizUser,
   buildBizUserOnCompany,
@@ -198,6 +200,23 @@ describe('API v2 /companies parity with v1 (e2e)', () => {
     const again = await auth('delete', '/co-mem-x/memberships/bu-parity-jane', token).send();
     expect(again.status).toBe(404);
     expect(again.body.error.code).toBe('E1003');
+  });
+
+  it('membership PUT rejects a type-mismatched attribute (400 E1017), like the user/company upsert', async () => {
+    // A membership Number attribute; a string value must be REJECTED (strict v2),
+    // not silently dropped — the same guard user/company upsert already run.
+    await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      bizType: AttributeBizType.MEMBERSHIP,
+      dataType: BizAttributeTypes.Number,
+      codeName: 'seat_count',
+    });
+    const token = await mint([Capability.CompanyWrite]);
+    const res = await auth('put', '/co-parity-acme/memberships/bu-parity-jane', token).send({
+      attributes: { seat_count: 'lots' },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
   });
 
   it('membership PUT 404s when the user (E1001) or company (E1002) is missing', async () => {

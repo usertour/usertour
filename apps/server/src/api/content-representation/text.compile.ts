@@ -41,6 +41,47 @@ const mdParser = new MarkdownIt({ html: false, linkify: false, breaks: false });
 mdParser.normalizeLink = (url) => url;
 mdParser.validateLink = () => true;
 
+/** Index of the `}}` that closes the `{{` at `open`, skipping any `}}` inside a
+ * quoted filter value (so `{{ x | default: "a}}b" }}` isn't cut short); -1 if none. */
+function liquidTokenEnd(src: string, open: number): number {
+  let quote: string | null = null;
+  for (let i = open + 2; i < src.length - 1; i++) {
+    const ch = src[i];
+    if (quote) {
+      if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === '}' && src[i + 1] === '}') {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/** Split on `sep` at the top level, ignoring separators inside quoted strings —
+ * so a `|` inside `default: "Pro | Team"` doesn't split the filter list. */
+function splitTopLevel(s: string, sep: string): string[] {
+  const parts: string[] = [];
+  let cur = '';
+  let quote: string | null = null;
+  for (const ch of s) {
+    if (quote) {
+      cur += ch;
+      if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      cur += ch;
+    } else if (ch === sep) {
+      parts.push(cur);
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  parts.push(cur);
+  return parts;
+}
+
 // Inline rule: capture `{{ … }}` as a single `liquid` token BEFORE emphasis/link
 // rules run, so markdown-significant chars inside the liquid are never parsed.
 mdParser.inline.ruler.before(
@@ -53,7 +94,7 @@ mdParser.inline.ruler.before(
     if (src.charCodeAt(start) !== 0x7b /* { */ || src.charCodeAt(start + 1) !== 0x7b) {
       return false;
     }
-    const end = src.indexOf('}}', start + 2);
+    const end = liquidTokenEnd(src, start);
     if (end === -1) {
       return false;
     }
@@ -76,7 +117,7 @@ function stripQuotes(s: string): string {
 
 /** `code | default: "x"` (the inside of `{{ }}`) → a user-attribute Slate node. */
 function liquidNode(inner: string): SlateNode {
-  const [codePart, ...filters] = (inner ?? '').split('|').map((s) => s.trim());
+  const [codePart, ...filters] = splitTopLevel(inner ?? '', '|').map((s) => s.trim());
   let fallback = '';
   const def = filters.find((f) => f.startsWith('default'));
   if (def) {
@@ -266,19 +307,28 @@ export function compileText(md: string): SlateNode[] {
  */
 export function compilePlainText(s: string): SlateNode[] {
   const nodes: SlateNode[] = [];
-  let rest = s ?? '';
-  const RE = /\{\{([^}]*)\}\}/;
-  let m = rest.match(RE);
-  while (m && m.index !== undefined) {
-    if (m.index > 0) {
-      nodes.push({ text: rest.slice(0, m.index) });
+  const src = s ?? '';
+  let pos = 0;
+  // Scan for `{{ … }}` with the same quote-aware end-finder the markdown inline
+  // rule uses, so a `}}` or `|` inside a `default: "…"` value can't cut the token
+  // short (a plain regex `\{\{([^}]*)\}\}` would).
+  while (pos < src.length) {
+    const open = src.indexOf('{{', pos);
+    if (open === -1) {
+      break;
     }
-    nodes.push(liquidNode(m[1]));
-    rest = rest.slice(m.index + m[0].length);
-    m = rest.match(RE);
+    const close = liquidTokenEnd(src, open);
+    if (close === -1) {
+      break;
+    }
+    if (open > pos) {
+      nodes.push({ text: src.slice(pos, open) });
+    }
+    nodes.push(liquidNode(src.slice(open + 2, close)));
+    pos = close + 2;
   }
-  if (rest) {
-    nodes.push({ text: rest });
+  if (pos < src.length) {
+    nodes.push({ text: src.slice(pos) });
   }
   return [{ type: 'paragraph', children: nodes.length > 0 ? nodes : [{ text: '' }] }];
 }

@@ -102,3 +102,26 @@ export function decompileText(data: unknown): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
+
+/**
+ * Inverse of `compilePlainText`: raw leaf text + `{{ }}` user-attribute inlines,
+ * with NO markdown marks. For fields whose value is PLAIN text (resource-center
+ * block names / navigate URLs). Decompiling those with the markdown `decompileText`
+ * would emit `**` / `*` / `[](…)` that `compilePlainText` then stores literally,
+ * silently corrupting the value on an otherwise-unmodified round-trip.
+ */
+export function decompilePlainText(data: unknown): string {
+  if (!Array.isArray(data)) {
+    return '';
+  }
+  const inline = (node: SlateNode): string => {
+    if (isLeaf(node)) {
+      return node.text ?? '';
+    }
+    if (node.type === 'user-attribute') {
+      return userAttrToLiquid(node);
+    }
+    return (node.children ?? []).map(inline).join('');
+  };
+  return (data as SlateNode[]).map(inline).join('').trim();
+}

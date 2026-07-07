@@ -1,5 +1,6 @@
 import { decompileContent, decompileStep } from './representation.decompile';
-import { decompileText } from './text.decompile';
+import { compilePlainText } from './text.compile';
+import { decompilePlainText, decompileText } from './text.decompile';
 
 /** Pure decompiler — testable with plain internal-shape fixtures (no DB/DI). */
 
@@ -215,5 +216,23 @@ describe('decompileStep', () => {
     const out = decompileStep(step);
     expect(out.target).toBeUndefined();
     expect(out.placement).toEqual({ position: 'center', offsetX: 10, backdrop: true });
+  });
+});
+
+describe('decompilePlainText — inverse of compilePlainText (plain-text fields)', () => {
+  it('emits raw text without markdown marks (a bold leaf keeps no asterisks)', () => {
+    // decompileText would emit **Get started**, which compilePlainText then stores
+    // literally — the resource-center block-name round-trip corruption.
+    const nameDoc = [{ type: 'paragraph', children: [{ text: 'Get started', bold: true }] }];
+    expect(decompileText(nameDoc)).toBe('**Get started**'); // the markdown decompile
+    expect(decompilePlainText(nameDoc)).toBe('Get started'); // the plain one used now
+  });
+
+  it('is the inverse of compilePlainText (round-trips text + {{ liquid }})', () => {
+    const value = 'Hi {{ name | default: "there" }}';
+    expect(decompilePlainText(compilePlainText(value))).toBe(value);
+    // stable across a second round-trip
+    const once = compilePlainText(value);
+    expect(decompilePlainText(compilePlainText(decompilePlainText(once)))).toBe(value);
   });
 });

@@ -92,6 +92,25 @@ describe('markdown-it migration: content preservation + plain-string path', () =
     const ua = (blocks[0].children as any[]).find((c) => c.type === 'user-attribute');
     expect(ua).toMatchObject({ type: 'user-attribute', attrCode: 'name', fallback: '*VIP*' });
   });
+
+  it('preserves a literal pipe inside the liquid default fallback (round-trips)', () => {
+    const blocks = compileText('{{ plan | default: "Pro | Team" }}') as any[];
+    const ua = (blocks[0].children as any[]).find((c) => c.type === 'user-attribute');
+    expect(ua).toMatchObject({ attrCode: 'plan', fallback: 'Pro | Team' });
+    expect(decompileText(blocks)).toBe('{{ plan | default: "Pro | Team" }}');
+  });
+
+  it('preserves a literal }} inside the liquid default fallback (no early close / spilled text)', () => {
+    const blocks = compileText('{{ name | default: "a}}b" }}') as any[];
+    const ua = (blocks[0].children as any[]).find((c) => c.type === 'user-attribute');
+    expect(ua).toMatchObject({ attrCode: 'name', fallback: 'a}}b' });
+    // The `}}` inside the quotes must NOT close the token early and spill `b" }}`.
+    const spilled = (blocks[0].children as any[]).filter(
+      (c) => typeof c.text === 'string' && c.text,
+    );
+    expect(spilled).toHaveLength(0);
+    expect(decompileText(blocks)).toBe('{{ name | default: "a}}b" }}');
+  });
 });
 
 describe('navigate action compiles to the builder shape (data.value, not data.url)', () => {
