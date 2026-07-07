@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { cuid } from '@usertour/helpers';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -289,7 +289,9 @@ export class AnnouncementService {
       visible.map((item) => [item.contentId, item.publishedVersion.id]),
     );
     const values = Prisma.join(
-      visible.map((item) => Prisma.sql`(${randomUUID()}, ${bizUser.id}, ${item.contentId})`),
+      // Raw SQL bypasses the Prisma client, so @default(cuid()) never applies —
+      // supply the id here, in the same cuid style the schema declares.
+      visible.map((item) => Prisma.sql`(${cuid()}, ${bizUser.id}, ${item.contentId})`),
     );
     const inserted = await this.prisma.$queryRaw<{ contentId: string }[]>`
       INSERT INTO "BizAnnouncementSeen" ("id", "bizUserId", "contentId")
