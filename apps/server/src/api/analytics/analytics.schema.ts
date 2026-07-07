@@ -24,12 +24,25 @@ const isValidTimeZone = (tz: string): boolean => {
   }
 };
 
+// A date/timestamp string the range code can actually parse — an unparseable value
+// otherwise flows to `new Date(str)` in the domain query as `Invalid Date` → a 500.
+const isValidDate = (v: string): boolean => !Number.isNaN(Date.parse(v));
+const dateMsg = { message: 'Not a valid date — use YYYY-MM-DD or an ISO timestamp.' };
+
 export const analyticsQuery = z.object({
   environmentId: z
     .string()
     .describe('Environment whose sessions to aggregate (content is project-level; pick the env).'),
-  startDate: z.string().optional().describe('ISO date, inclusive. Default: 30 days ago.'),
-  endDate: z.string().optional().describe('ISO date, inclusive. Default: today.'),
+  startDate: z
+    .string()
+    .refine(isValidDate, dateMsg)
+    .optional()
+    .describe('ISO date, inclusive. Default: 30 days ago.'),
+  endDate: z
+    .string()
+    .refine(isValidDate, dateMsg)
+    .optional()
+    .describe('ISO date, inclusive. Default: today.'),
   timezone: z
     .string()
     .refine(isValidTimeZone, {

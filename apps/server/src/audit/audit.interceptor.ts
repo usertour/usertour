@@ -74,7 +74,12 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const environmentId = req.environment?.id ?? null;
+    // The guard sets req.environment only for `:environmentId` path routes. v2 writes
+    // that carry the target env in the BODY (publish / unpublish / duplicate) would
+    // otherwise record a null environmentId — fall back to the body value so the
+    // audit entry still names the environment acted on.
+    const bodyEnvId = typeof req.body?.environmentId === 'string' ? req.body.environmentId : null;
+    const environmentId = req.environment?.id ?? bodyEnvId;
     let before: unknown;
     try {
       before = await fetchBefore(resourceType, action, req.params, environmentId, this.prisma);

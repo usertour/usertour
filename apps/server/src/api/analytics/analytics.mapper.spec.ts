@@ -343,4 +343,20 @@ describe('analyticsQuery timezone validation (IANA at the boundary → 400, not 
   it('accepts an omitted timezone (defaults to UTC)', () => {
     expect(parse(undefined).success).toBe(true);
   });
+
+  it('rejects an unparseable startDate/endDate (would be Invalid Date → 500)', () => {
+    expect(analyticsQuery.safeParse({ environmentId: 'e', startDate: 'garbage' }).success).toBe(
+      false,
+    );
+    expect(analyticsQuery.safeParse({ environmentId: 'e', endDate: 'not-a-date' }).success).toBe(
+      false,
+    );
+    // real forms pass
+    expect(analyticsQuery.safeParse({ environmentId: 'e', startDate: '2026-07-01' }).success).toBe(
+      true,
+    );
+    expect(
+      analyticsQuery.safeParse({ environmentId: 'e', endDate: '2026-07-01T12:00:00.000Z' }).success,
+    ).toBe(true);
+  });
 });
