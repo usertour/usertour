@@ -11,7 +11,7 @@ import { EnterIcon } from '@radix-ui/react-icons';
 import { useUpdateContentMutation } from '@usertour/hooks';
 import { PlaneIcon, RiArrowRightSLine, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { ContentDataType } from '@usertour/types';
+import { ContentDataType, ContentTypeName } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -30,6 +30,10 @@ const TABS = [
   { key: 'versions', href: '/versions' },
 ] as const;
 
+// Every content type is localizable except trackers, which render no
+// user-facing text.
+const LOCALIZATION_TAB = { key: 'localization', href: '/localization' } as const;
+
 interface MainNavProps {
   className?: string;
 }
@@ -42,9 +46,11 @@ function MainNav({ className }: MainNavProps) {
   const baseUrl = `/env/${environment?.id}/${contentType}/${contentId}`;
   const { t } = useTranslation();
 
+  const tabs = contentType === ContentTypeName.TRACKERS ? TABS : [...TABS, LOCALIZATION_TAB];
+
   return (
     <nav className={cn('flex items-center gap-4 lg:gap-6', className)}>
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const href = baseUrl + tab.href;
         const active = location.pathname.includes(href);
         return (

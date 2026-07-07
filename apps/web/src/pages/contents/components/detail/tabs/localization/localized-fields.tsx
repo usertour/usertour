@@ -1,0 +1,661 @@
+import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
+import { deepClone, formatElementPath } from '@usertour/helpers';
+import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
+import { ImageEditIcon, SpinnerIcon } from '@usertour/icons';
+import type {
+  ContentEditorButtonElement,
+  ContentEditorElement,
+  ContentEditorEmebedElement,
+  ContentEditorImageElement,
+  ContentEditorMultipleChoiceElement,
+  ContentEditorRoot,
+  ContentEditorTextElement,
+} from '@usertour/types';
+import { ContentEditorElementType } from '@usertour/types';
+import { Badge, Button, Input, Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import Upload from 'rc-upload';
+import { UploadRequestOption } from 'rc-upload/lib/interface';
+import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+export const toText = (value: unknown): string => {
+  return typeof value === 'string' ? value : '';
+};
+
+// ---------------------------------------------------------------------------
+// Slate helpers — a working tree is a structural clone of its source tree
+// (createLocalizedWorkingContents / createLocalizedWorkingVersionData
+// guarantee it), so both can be walked with the same index paths.
+// ---------------------------------------------------------------------------
+
+export type SlateNode = {
+  text?: unknown;
+  children?: unknown;
+} & Record<string, unknown>;
+
+export interface SlateLeafPair {
+  path: number[];
+  sourceText: string;
+  value: string;
+}
+
+export const collectSlateLeafPairs = (
+  sourceNodes: SlateNode[],
+  workingNodes: SlateNode[],
+  path: number[] = [],
+): SlateLeafPair[] => {
+  const pairs: SlateLeafPair[] = [];
+  sourceNodes.forEach((sourceNode, index) => {
+    if (!sourceNode || typeof sourceNode !== 'object') {
+      return;
+    }
+    const workingNode = workingNodes?.[index];
+    const nodePath = [...path, index];
+    if (typeof sourceNode.text === 'string') {
+      if (sourceNode.text !== '') {
+        pairs.push({
+          path: nodePath,
+          sourceText: sourceNode.text,
+          value: toText(workingNode?.text),
+        });
+      }
+      return;
+    }
+    if (Array.isArray(sourceNode.children)) {
+      pairs.push(
+        ...collectSlateLeafPairs(
+          sourceNode.children as SlateNode[],
+          (Array.isArray(workingNode?.children) ? workingNode.children : []) as SlateNode[],
+          nodePath,
+        ),
+      );
+    }
+  });
+  return pairs;
+};
+
+export const setSlateLeafText = (nodes: SlateNode[], path: number[], text: string): void => {
+  let node: SlateNode | undefined = nodes[path[0]];
+  for (const index of path.slice(1)) {
+    if (!node || !Array.isArray(node.children)) {
+      return;
+    }
+    node = (node.children as SlateNode[])[index];
+  }
+  if (node) {
+    node.text = text;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Layout primitives
+// ---------------------------------------------------------------------------
+
+export const FIELD_GRID = 'grid grid-cols-[8rem_1fr_1fr] items-start gap-3';
+
+export interface LocalizedFieldRowProps {
+  label?: string;
+  source: ReactNode;
+  value: string;
+  placeholder?: string;
+  disabled: boolean;
+  outdated?: boolean;
+  onValueChange: (value: string) => void;
+}
+
+export const LocalizedFieldRow = (props: LocalizedFieldRowProps) => {
+  const { label, source, value, placeholder, disabled, outdated, onValueChange } = props;
+  const { t } = useTranslation();
+  return (
+    <div className={FIELD_GRID}>
+      <div className="pt-2 text-xs text-muted-foreground">
+        <div>{label}</div>
+        {outdated && (
+          <Badge variant="secondary" className="mt-1">
+            {t('contents.localization.sourceChanged')}
+          </Badge>
+        )}
+      </div>
+      <div className="min-h-9 whitespace-pre-wrap rounded-md bg-secondary px-3 py-2 text-sm">
+        {source}
+      </div>
+      <Input
+        value={value}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={(event) => onValueChange(event.target.value)}
+      />
+    </div>
+  );
+};
+
+export interface LocalizedElementSectionProps {
+  label: string;
+  outdated: boolean;
+  children: ReactNode;
+}
+
+export const LocalizedElementSection = (props: LocalizedElementSectionProps) => {
+  const { label, outdated, children } = props;
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        {outdated && <Badge variant="secondary">{t('contents.localization.sourceChanged')}</Badge>}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Per-element editors — each receives the source element (read-only), the
+// aligned working element (holds the translation, '' = untranslated) and
+// emits a full replacement working element.
+// ---------------------------------------------------------------------------
+
+interface LocalizedElementEditorProps {
+  sourceElement: ContentEditorElement;
+  workingElement: ContentEditorElement;
+  label: string;
+  outdated: boolean;
+  disabled: boolean;
+  onElementChange: (element: ContentEditorElement) => void;
+}
+
+const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
+  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const source = sourceElement as ContentEditorTextElement;
+  const working = workingElement as ContentEditorTextElement;
+  const sourceData = Array.isArray(source.data) ? (source.data as SlateNode[]) : [];
+  const workingData = Array.isArray(working.data) ? (working.data as SlateNode[]) : [];
+  const pairs = collectSlateLeafPairs(sourceData, workingData);
+  if (pairs.length === 0) {
+    return null;
+  }
+
+  const handleLeafChange = (path: number[], text: string) => {
+    const nextData = deepClone(workingData);
+    setSlateLeafText(nextData, path, text);
+    onElementChange({ ...working, data: nextData });
+  };
+
+  return (
+    <LocalizedElementSection label={label} outdated={outdated}>
+      {pairs.map((pair) => (
+        <LocalizedFieldRow
+          key={pair.path.join('.')}
+          source={pair.sourceText}
+          value={pair.value}
+          placeholder={pair.sourceText}
+          disabled={disabled}
+          onValueChange={(text) => handleLeafChange(pair.path, text)}
+        />
+      ))}
+    </LocalizedElementSection>
+  );
+};
+
+const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
+  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const source = sourceElement as ContentEditorButtonElement;
+  const working = workingElement as ContentEditorButtonElement;
+  const sourceText = toText(source.data?.text);
+  if (sourceText === '') {
+    return null;
+  }
+  return (
+    <LocalizedElementSection label={label} outdated={outdated}>
+      <LocalizedFieldRow
+        source={sourceText}
+        value={toText(working.data?.text)}
+        placeholder={sourceText}
+        disabled={disabled}
+        onValueChange={(text) => onElementChange({ ...working, data: { ...working.data, text } })}
+      />
+    </LocalizedElementSection>
+  );
+};
+
+const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
+  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const { t } = useTranslation();
+  const { upload } = useAws();
+  const source = sourceElement as ContentEditorImageElement;
+  const working = workingElement as ContentEditorImageElement;
+  const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  const handleImageUrlChange = (url: string) => {
+    onElementChange({ ...working, url });
+  };
+
+  const handleCustomUploadRequest = async (option: UploadRequestOption) => {
+    setIsUploading(true);
+    try {
+      const url = await upload(option.file as File);
+      handleImageUrlChange(url);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <LocalizedElementSection label={label} outdated={outdated}>
+      <Popover>
+        <div className={FIELD_GRID}>
+          <div />
+          <div className="rounded-md bg-secondary p-2">
+            <img src={source.url} className="max-h-40 max-w-full rounded" />
+          </div>
+          <div className="flex flex-col gap-2">
+            {isUploading ? (
+              <div className="flex h-24 items-center justify-center">
+                <SpinnerIcon className="h-8 w-8 animate-spin" />
+              </div>
+            ) : working.url ? (
+              <img src={working.url} className="max-h-40 max-w-full rounded" />
+            ) : (
+              <div className="flex h-24 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+                {t('contents.localization.image.usingOriginal')}
+              </div>
+            )}
+            <div className="flex flex-row flex-wrap gap-1">
+              <Upload
+                accept="image/*"
+                disabled={disabled}
+                customRequest={(option) => {
+                  void handleCustomUploadRequest(option as UploadRequestOption);
+                }}
+              >
+                <Button
+                  variant="ghost"
+                  disabled={disabled}
+                  className="h-auto w-auto p-1 text-primary hover:text-primary"
+                >
+                  <ImageEditIcon className="mx-1 fill-primary" />
+                  {t('contents.localization.image.uploadImage')}
+                </Button>
+              </Upload>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  disabled={disabled}
+                  className="h-auto w-auto p-1 text-primary hover:text-primary"
+                >
+                  <KeyboardIcon className="mx-1 fill-primary" />
+                  {t('contents.localization.image.enterUrl')}
+                </Button>
+              </PopoverTrigger>
+              <Button
+                variant="ghost"
+                disabled={disabled || working.url === ''}
+                className="h-auto w-auto p-1 text-primary hover:text-primary"
+                onClick={() => handleImageUrlChange('')}
+              >
+                <ResetIcon className="mx-1 fill-primary" />
+                {t('contents.localization.image.useOriginal')}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <PopoverContent
+          className="w-[400px] bg-background dark:bg-card"
+          side="top"
+          align="center"
+          sideOffset={5}
+        >
+          <div className="flex flex-row space-x-2">
+            <Input
+              placeholder={t('contents.localization.image.enterUrl')}
+              value={remoteImageUrl}
+              onChange={(event) => setRemoteImageUrl(event.target.value)}
+              className="w-80 bg-background dark:bg-card"
+            />
+            <Button
+              className="h-9 flex-none py-1"
+              variant="ghost"
+              onClick={() => handleImageUrlChange(remoteImageUrl)}
+            >
+              <ArrowRightIcon className="mr-1" />
+              {t('contents.localization.image.load')}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </LocalizedElementSection>
+  );
+};
+
+const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
+  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const { t } = useTranslation();
+  const source = sourceElement as ContentEditorEmebedElement;
+  const working = workingElement as ContentEditorEmebedElement;
+  const { invoke: queryOembedInfo, loading: resolving } = useQueryOembedInfoLazyQuery();
+  const [draftUrl, setDraftUrl] = useState<string>(toText(working.url));
+
+  // The widget renders embeds from parsedUrl/oembed, so a translated URL has
+  // to be resolved the same way the builder does before it can ship.
+  const handleApplyUrl = async (url: string) => {
+    if (url === '') {
+      setDraftUrl('');
+      onElementChange({ ...working, url: '', parsedUrl: undefined, oembed: undefined });
+      return;
+    }
+    const oembed = await queryOembedInfo(url);
+    onElementChange({ ...working, url, parsedUrl: url, oembed: oembed ?? undefined });
+  };
+
+  return (
+    <LocalizedElementSection label={label} outdated={outdated}>
+      <div className={FIELD_GRID}>
+        <div />
+        <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">
+          {source.url}
+        </div>
+        <div className="flex flex-row gap-2">
+          <Input
+            value={draftUrl}
+            placeholder={source.url}
+            disabled={disabled}
+            onChange={(event) => setDraftUrl(event.target.value)}
+          />
+          <Button
+            variant="ghost"
+            className="h-9 flex-none py-1"
+            disabled={disabled || resolving}
+            onClick={() => void handleApplyUrl(draftUrl.trim())}
+          >
+            {resolving ? (
+              <SpinnerIcon className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRightIcon className="mr-1" />
+            )}
+            {t('contents.localization.image.load')}
+          </Button>
+          <Button
+            variant="ghost"
+            className="h-9 flex-none py-1"
+            disabled={disabled || toText(working.url) === ''}
+            onClick={() => void handleApplyUrl('')}
+          >
+            <ResetIcon className="mr-1" />
+            {t('contents.localization.image.useOriginal')}
+          </Button>
+        </div>
+      </div>
+    </LocalizedElementSection>
+  );
+};
+
+type QuestionFieldKey =
+  | 'name'
+  | 'lowLabel'
+  | 'highLabel'
+  | 'placeholder'
+  | 'buttonText'
+  | 'otherPlaceholder';
+
+interface QuestionFieldDescriptor {
+  key: QuestionFieldKey;
+  labelKey: string;
+}
+
+const SCALE_LIKE_FIELDS: QuestionFieldDescriptor[] = [
+  { key: 'name', labelKey: 'contents.localization.field.question' },
+  { key: 'lowLabel', labelKey: 'contents.localization.field.lowLabel' },
+  { key: 'highLabel', labelKey: 'contents.localization.field.highLabel' },
+];
+
+const FREE_TEXT_FIELDS: QuestionFieldDescriptor[] = [
+  { key: 'name', labelKey: 'contents.localization.field.question' },
+  { key: 'placeholder', labelKey: 'contents.localization.field.placeholder' },
+  { key: 'buttonText', labelKey: 'contents.localization.field.buttonText' },
+];
+
+const MULTIPLE_CHOICE_FIELDS: QuestionFieldDescriptor[] = [
+  { key: 'name', labelKey: 'contents.localization.field.question' },
+  { key: 'buttonText', labelKey: 'contents.localization.field.buttonText' },
+  { key: 'otherPlaceholder', labelKey: 'contents.localization.field.otherPlaceholder' },
+];
+
+type QuestionElementData = Record<string, unknown>;
+
+const getElementData = (element: ContentEditorElement): QuestionElementData => {
+  return ((element as { data?: QuestionElementData }).data ?? {}) as QuestionElementData;
+};
+
+const withElementData = (
+  element: ContentEditorElement,
+  patch: QuestionElementData,
+): ContentEditorElement => {
+  return { ...element, data: { ...getElementData(element), ...patch } } as ContentEditorElement;
+};
+
+interface LocalizedQuestionFieldsProps extends LocalizedElementEditorProps {
+  fields: QuestionFieldDescriptor[];
+}
+
+const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
+  const { sourceElement, workingElement, fields, label, outdated, disabled, onElementChange } =
+    props;
+  const { t } = useTranslation();
+  const sourceData = getElementData(sourceElement);
+  const workingData = getElementData(workingElement);
+
+  const sourceOptions =
+    sourceElement.type === ContentEditorElementType.MULTIPLE_CHOICE &&
+    Array.isArray((sourceElement as ContentEditorMultipleChoiceElement).data?.options)
+      ? (sourceElement as ContentEditorMultipleChoiceElement).data.options
+      : [];
+  const workingOptions =
+    workingElement.type === ContentEditorElementType.MULTIPLE_CHOICE
+      ? ((workingElement as ContentEditorMultipleChoiceElement).data?.options ?? [])
+      : [];
+
+  const presentFields = fields.filter((field) => toText(sourceData[field.key]) !== '');
+  if (presentFields.length === 0 && sourceOptions.length === 0) {
+    return null;
+  }
+
+  const handleOptionLabelChange = (optionIndex: number, labelText: string) => {
+    const nextOptions = workingOptions.map((option, index) =>
+      index === optionIndex ? { ...option, label: labelText } : option,
+    );
+    onElementChange(withElementData(workingElement, { options: nextOptions }));
+  };
+
+  return (
+    <LocalizedElementSection label={label} outdated={outdated}>
+      {presentFields.map((field) => {
+        const sourceText = toText(sourceData[field.key]);
+        return (
+          <LocalizedFieldRow
+            key={field.key}
+            label={t(field.labelKey)}
+            source={sourceText}
+            value={toText(workingData[field.key])}
+            placeholder={sourceText}
+            disabled={disabled}
+            onValueChange={(value) =>
+              onElementChange(withElementData(workingElement, { [field.key]: value }))
+            }
+          />
+        );
+      })}
+      {sourceOptions.map((option, optionIndex) => {
+        const sourceText = toText(option.label);
+        if (sourceText === '') {
+          return null;
+        }
+        return (
+          <LocalizedFieldRow
+            key={`option-${option.value}-${optionIndex}`}
+            label={t('contents.localization.field.optionLabel', { index: optionIndex + 1 })}
+            source={sourceText}
+            value={toText(workingOptions[optionIndex]?.label)}
+            placeholder={sourceText}
+            disabled={disabled}
+            onValueChange={(value) => handleOptionLabelChange(optionIndex, value)}
+          />
+        );
+      })}
+    </LocalizedElementSection>
+  );
+};
+
+const ELEMENT_LABEL_KEYS: Partial<Record<ContentEditorElementType, string>> = {
+  [ContentEditorElementType.TEXT]: 'contents.localization.element.content',
+  [ContentEditorElementType.IMAGE]: 'contents.localization.element.image',
+  [ContentEditorElementType.EMBED]: 'contents.localization.element.video',
+  [ContentEditorElementType.BUTTON]: 'contents.localization.element.button',
+  [ContentEditorElementType.NPS]: 'contents.localization.element.nps',
+  [ContentEditorElementType.STAR_RATING]: 'contents.localization.element.starRating',
+  [ContentEditorElementType.SCALE]: 'contents.localization.element.scale',
+  [ContentEditorElementType.SINGLE_LINE_TEXT]: 'contents.localization.element.singleLineText',
+  [ContentEditorElementType.MULTI_LINE_TEXT]: 'contents.localization.element.multiLineText',
+  [ContentEditorElementType.MULTIPLE_CHOICE]: 'contents.localization.element.multipleChoice',
+};
+
+interface LocalizedElementProps {
+  sourceElement: ContentEditorElement;
+  workingElement: ContentEditorElement | undefined;
+  outdated: boolean;
+  disabled: boolean;
+  onElementChange: (element: ContentEditorElement) => void;
+}
+
+const LocalizedElement = (props: LocalizedElementProps) => {
+  const { sourceElement, workingElement, outdated, disabled, onElementChange } = props;
+  const { t } = useTranslation();
+  const labelKey = ELEMENT_LABEL_KEYS[sourceElement.type];
+  // A missing working counterpart means the working tree drifted from the
+  // source tree, which the structural-clone invariant rules out — bail
+  // defensively rather than render mismatched pairs.
+  if (!labelKey || !workingElement || workingElement.type !== sourceElement.type) {
+    return null;
+  }
+  const editorProps: LocalizedElementEditorProps = {
+    sourceElement,
+    workingElement,
+    label: t(labelKey),
+    outdated,
+    disabled,
+    onElementChange,
+  };
+
+  switch (sourceElement.type) {
+    case ContentEditorElementType.TEXT:
+      return <LocalizedTextElement {...editorProps} />;
+    case ContentEditorElementType.BUTTON:
+      return <LocalizedButtonElement {...editorProps} />;
+    case ContentEditorElementType.IMAGE:
+      return <LocalizedImageElement {...editorProps} />;
+    case ContentEditorElementType.EMBED:
+      return <LocalizedEmbedElement {...editorProps} />;
+    case ContentEditorElementType.NPS:
+    case ContentEditorElementType.STAR_RATING:
+    case ContentEditorElementType.SCALE:
+      return <LocalizedQuestionFields {...editorProps} fields={SCALE_LIKE_FIELDS} />;
+    case ContentEditorElementType.SINGLE_LINE_TEXT:
+    case ContentEditorElementType.MULTI_LINE_TEXT:
+      return <LocalizedQuestionFields {...editorProps} fields={FREE_TEXT_FIELDS} />;
+    case ContentEditorElementType.MULTIPLE_CHOICE:
+      return <LocalizedQuestionFields {...editorProps} fields={MULTIPLE_CHOICE_FIELDS} />;
+    default:
+      return null;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Editor-tree renderer — walks a source tree and its aligned working clone,
+// rendering one editor per translatable element. Reused by the flow step
+// cards and by embedded trees inside version data.
+// ---------------------------------------------------------------------------
+
+const updateElementAt = (
+  contents: ContentEditorRoot[],
+  groupIndex: number,
+  columnIndex: number,
+  elementIndex: number,
+  nextElement: ContentEditorElement,
+): ContentEditorRoot[] => {
+  return contents.map((group, gi) =>
+    gi !== groupIndex
+      ? group
+      : {
+          ...group,
+          children: group.children.map((column, ci) =>
+            ci !== columnIndex
+              ? column
+              : {
+                  ...column,
+                  children: column.children.map((item, ei) =>
+                    ei !== elementIndex ? item : { ...item, element: nextElement },
+                  ),
+                },
+          ),
+        },
+  );
+};
+
+export interface LocalizedEditorContentsProps {
+  sourceContents: ContentEditorRoot[];
+  workingContents: ContentEditorRoot[];
+  outdatedElementPaths: Set<string> | undefined;
+  /** Prepended to element paths for outdated lookups when the tree is embedded in version data. */
+  outdatedPathPrefix?: string;
+  disabled: boolean;
+  onContentsChange: (contents: ContentEditorRoot[]) => void;
+}
+
+export const LocalizedEditorContents = (props: LocalizedEditorContentsProps) => {
+  const {
+    sourceContents,
+    workingContents,
+    outdatedElementPaths,
+    outdatedPathPrefix,
+    disabled,
+    onContentsChange,
+  } = props;
+
+  return (
+    <>
+      {sourceContents.map((group, groupIndex) =>
+        (group.children ?? []).map((column, columnIndex) =>
+          (column.children ?? []).map((item, elementIndex) => {
+            const elementPath = formatElementPath(groupIndex, columnIndex, elementIndex);
+            const outdatedKey = outdatedPathPrefix
+              ? `${outdatedPathPrefix}/${elementPath}`
+              : elementPath;
+            const workingElement =
+              workingContents[groupIndex]?.children?.[columnIndex]?.children?.[elementIndex]
+                ?.element;
+            return (
+              <LocalizedElement
+                key={elementPath}
+                sourceElement={item.element}
+                workingElement={workingElement}
+                outdated={outdatedElementPaths?.has(outdatedKey) ?? false}
+                disabled={disabled}
+                onElementChange={(nextElement) =>
+                  onContentsChange(
+                    updateElementAt(
+                      workingContents,
+                      groupIndex,
+                      columnIndex,
+                      elementIndex,
+                      nextElement,
+                    ),
+                  )
+                }
+              />
+            );
+          }),
+        ),
+      )}
+    </>
+  );
+};

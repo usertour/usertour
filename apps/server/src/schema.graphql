@@ -893,8 +893,8 @@ type Mutation {
   updateUser(data: UpdateUserInput!): User!
   updateUserDisabled(disabled: Boolean!, userId: String!): User!
   updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
-  updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
+  upsertVersionLocalization(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   verifyTwoFactor(data: VerifyTwoFactorInput!): Auth!
 }
 
@@ -968,7 +968,6 @@ type Query {
   adminProjects(page: Int, pageSize: Int, query: String, usesInstanceLicense: String): AdminProjectList!
   adminSettings: AdminSettingsInfo!
   adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
-  findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getContent(contentId: String!): Content
   getContentVersion(versionId: String!): Version!
@@ -1003,6 +1002,7 @@ type Query {
   listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
+  listVersionLocalizations(versionId: String!): [VersionOnLocalization!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryBizCompanyEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!

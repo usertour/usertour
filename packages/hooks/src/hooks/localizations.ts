@@ -2,10 +2,12 @@ import { useMutation } from '@apollo/client';
 import {
   createLocalization,
   deleteLocalization,
+  listVersionLocalizations,
   setDefaultLocalization,
   updateLocalization,
-  updateVersionLocationData,
+  upsertVersionLocalization,
 } from '@usertour/gql';
+import type { VersionOnLocalization } from '@usertour/types';
 
 export interface CreateLocalizationInput {
   projectId: string;
@@ -57,7 +59,7 @@ export const useDeleteLocalizationMutation = () => {
   return { invoke, loading, error };
 };
 
-export interface UpdateVersionLocationDataInput {
+export interface UpsertVersionLocalizationInput {
   localizationId: string;
   versionId: string;
   localized?: unknown;
@@ -65,13 +67,32 @@ export interface UpdateVersionLocationDataInput {
   enabled?: boolean;
 }
 
-export const useUpdateVersionLocationDataMutation = () => {
-  // Auto-merged into the `VersionOnLocalization:id` slot — the table
-  // re-renders the toggled row without a manual refetch.
-  const [mutation, { loading, error }] = useMutation(updateVersionLocationData);
-  const invoke = async (input: UpdateVersionLocationDataInput): Promise<boolean> => {
-    const response = await mutation({ variables: { data: input } });
-    return !!response.data?.updateVersionLocationData?.id;
+export const useUpsertVersionLocalizationMutation = () => {
+  // In-place saves auto-merge into the `VersionOnLocalization:id` slot; a
+  // first save CREATES the row, which the normalized cache can't place into
+  // the version's list by itself — insert the ref there.
+  const [mutation, { loading, error }] = useMutation(upsertVersionLocalization);
+  const invoke = async (input: UpsertVersionLocalizationInput): Promise<boolean> => {
+    const response = await mutation({
+      variables: { data: input },
+      update(cache, { data }) {
+        const upserted = data?.upsertVersionLocalization as VersionOnLocalization | undefined;
+        if (!upserted) {
+          return;
+        }
+        cache.updateQuery(
+          { query: listVersionLocalizations, variables: { versionId: input.versionId } },
+          (existing: { listVersionLocalizations: VersionOnLocalization[] } | null) => {
+            const rows = existing?.listVersionLocalizations;
+            if (!rows || rows.some((row) => row.id === upserted.id)) {
+              return existing ?? undefined;
+            }
+            return { listVersionLocalizations: [...rows, upserted] };
+          },
+        );
+      },
+    });
+    return !!response.data?.upsertVersionLocalization?.id;
   };
   return { invoke, loading, error };
 };

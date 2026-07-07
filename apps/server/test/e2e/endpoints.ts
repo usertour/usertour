@@ -139,10 +139,10 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ c: s.contentId }),
   },
   {
-    key: 'content.updateVersionLocationData',
+    key: 'content.upsertVersionLocalization',
     tier: 'W',
     op: 'mutation',
-    doc: 'mutation($d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:$d){__typename}}',
+    doc: 'mutation($d:VersionUpdateLocalizationInput!){upsertVersionLocalization(data:$d){__typename}}',
     vars: (s) => ({
       d: {
         backup: {},
@@ -212,10 +212,10 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ c: s.contentId }),
   },
   {
-    key: 'content.findManyVersionLocations',
+    key: 'content.listVersionLocalizations',
     tier: 'R',
     op: 'query',
-    doc: 'query($v:String!){findManyVersionLocations(versionId:$v){__typename}}',
+    doc: 'query($v:String!){listVersionLocalizations(versionId:$v){__typename}}',
     vars: (s) => ({ v: s.versionId }),
   },
   // deleteContent runs last among the content W-mutations so that the steps /

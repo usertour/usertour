@@ -38,8 +38,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'content.unpublishedContentVersion': W,
   'content.deleteContent': W,
   'content.listContentVersions': R,
-  'content.findManyVersionLocations': R,
-  'content.updateVersionLocationData': W,
+  'content.listVersionLocalizations': R,
+  'content.upsertVersionLocalization': W,
   'content.queryContent': R,
   // environments
   'environments.createEnvironments': W,

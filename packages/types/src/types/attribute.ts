@@ -93,6 +93,7 @@ export enum UserAttributes {
   FIRST_SEEN_AT = 'first_seen_at',
   LAST_SEEN_AT = 'last_seen_at',
   SIGNED_UP_AT = 'signed_up_at',
+  LOCALE_CODE = 'locale_code',
 }
 
 export enum BizEvents {

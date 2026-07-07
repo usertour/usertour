@@ -2,10 +2,10 @@ import { type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   createContent,
   duplicateContent,
-  findManyVersionLocations,
   getContent,
   getContentVersion,
   listContentVersions,
+  listVersionLocalizations,
   publishedContentVersion,
   queryContent,
   restoreContentVersion,
@@ -63,17 +63,17 @@ export const useGetContentVersionQuery = (
   return { version, loading, refetch, error };
 };
 
-export const useFindManyVersionLocationsQuery = (
+export const useListVersionLocalizationsQuery = (
   versionId: string | undefined,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, refetch, error } = useQuery(findManyVersionLocations, {
+  const { data, loading, refetch, error } = useQuery(listVersionLocalizations, {
     variables: { versionId },
     skip: !versionId,
     ...options,
   });
 
-  const contentLocalizationList: VersionOnLocalization[] = data?.findManyVersionLocations ?? [];
+  const contentLocalizationList: VersionOnLocalization[] = data?.listVersionLocalizations ?? [];
 
   return { contentLocalizationList, loading, refetch, error };
 };

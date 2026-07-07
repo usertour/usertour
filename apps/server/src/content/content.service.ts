@@ -181,6 +181,8 @@ export class ContentService {
           } as any,
         });
 
+        await this.copyVersionLocalizations(tx, sourceVersion.id, version.id);
+
         // Update content to point to the new edited version
         await tx.content.update({
           where: { id: contentId },
@@ -611,6 +613,7 @@ export class ContentService {
             steps: { create: [...oldSteps] },
           } as any,
         });
+        await this.copyVersionLocalizations(tx, restoreVersion.id, version.id);
         await tx.content.update({
           where: { id: contentId },
           data: { editedVersionId: version.id },
@@ -707,56 +710,51 @@ export class ContentService {
     }
   }
 
-  async findManyVersionLocations(versionId: string) {
-    const version = await this.prisma.version.findUnique({
-      where: { id: versionId },
-      include: { content: true },
-    });
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: version.content.environmentId },
-    });
-
-    const localizations = await this.prisma.localization.findMany({
-      where: { projectId: environment.projectId },
-    });
-
-    for (let index = 0; index < localizations.length; index++) {
-      const localization = localizations[index];
-      const relation = await this.prisma.versionOnLocalization.findFirst({
-        where: { versionId, localizationId: localization.id },
-      });
-      if (!relation) {
-        await this.prisma.versionOnLocalization.create({
-          data: {
-            versionId,
-            localizationId: localization.id,
-            localized: {},
-            backup: {},
-          },
-        });
-      }
-    }
-
+  async listVersionLocalizations(versionId: string) {
+    // Pure read: locales without a row are simply untranslated — the web
+    // client renders them from listLocalizations and the row appears on the
+    // first upsert.
     return await this.prisma.versionOnLocalization.findMany({
       where: { versionId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
-  async upsertVersionLocationData(input: VersionUpdateLocalizationInput) {
+  async upsertVersionLocalization(input: VersionUpdateLocalizationInput) {
     const { versionId, localizationId, localized, backup, enabled } = input;
     if (!(await this.contentVersionIsEditable(versionId))) {
       throw new ParamsError();
     }
-    const relation = await this.prisma.versionOnLocalization.findFirst({
-      where: { versionId, localizationId },
+    return await this.prisma.versionOnLocalization.upsert({
+      where: { versionId_localizationId: { versionId, localizationId } },
+      create: { versionId, localizationId, localized, backup, enabled },
+      update: { localized, backup, enabled },
     });
-    if (!relation) {
-      throw new ParamsError();
+  }
+
+  /**
+   * Translations are keyed by step cvid, which step copies carry verbatim, so
+   * a forked or restored version can reuse the source version's rows as-is.
+   */
+  private async copyVersionLocalizations(
+    tx: Prisma.TransactionClient,
+    fromVersionId: string,
+    toVersionId: string,
+  ) {
+    const versionLocalizations = await tx.versionOnLocalization.findMany({
+      where: { versionId: fromVersionId },
+    });
+    if (versionLocalizations.length === 0) {
+      return;
     }
-    return await this.prisma.versionOnLocalization.update({
-      where: { id: relation.id },
-      data: { localized, backup, enabled },
+    await tx.versionOnLocalization.createMany({
+      data: versionLocalizations.map((versionLocalization) => ({
+        versionId: toVersionId,
+        localizationId: versionLocalization.localizationId,
+        enabled: versionLocalization.enabled,
+        localized: versionLocalization.localized as Prisma.InputJsonValue,
+        backup: versionLocalization.backup as Prisma.InputJsonValue,
+      })),
     });
   }
 

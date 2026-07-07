@@ -514,6 +514,13 @@ export const defaultAttributes: ProjectDefaultAttribute[] = [
     description: 'When the user first signed up to your app',
   },
   {
+    codeName: UserAttributes.LOCALE_CODE,
+    displayName: 'Locale Code',
+    bizType: AttributeBizTypes.User,
+    dataType: AttributeDataType.String,
+    description: "The user's locale, used to pick which localized content to deliver",
+  },
+  {
     codeName: CompanyAttributes.NAME,
     displayName: 'Company Name',
     bizType: AttributeBizTypes.Company,

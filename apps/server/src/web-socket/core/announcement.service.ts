@@ -1,4 +1,4 @@
-import { cuid } from '@usertour/helpers';
+import { cuid, matchTranslationByLocale, mergeLocalizedVersionData } from '@usertour/helpers';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -9,6 +9,7 @@ import {
   ContentEditorRoot,
   PopupAnnouncement,
   ThemeTypesSetting,
+  UserAttributes,
 } from '@usertour/types';
 import {
   ANNOUNCEMENT_FEED_SCAN_LIMIT,
@@ -16,7 +17,7 @@ import {
   DEFAULT_POPUP_CONFIG,
 } from '@usertour/constants';
 import { BizUser, Environment } from '@/common/types/schema';
-import { extractUserAttrCodes } from '@/utils/content-utils';
+import { extractUserAttrCodes, getAttributeValue } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
 import {
   type AutoStartRulesConfig,
@@ -142,7 +143,17 @@ export class AnnouncementService {
       include: {
         content: { select: { id: true, name: true } },
         publishedVersion: {
-          select: { id: true, data: true, config: true, scheduledAt: true, themeId: true },
+          select: {
+            id: true,
+            data: true,
+            config: true,
+            scheduledAt: true,
+            themeId: true,
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localized: true, localization: { select: { code: true } } },
+            },
+          },
         },
       },
       orderBy: { publishedVersion: { scheduledAt: 'desc' } },
@@ -158,7 +169,7 @@ export class AnnouncementService {
     return visible.filter(hasPublishedVersion).map((item) => ({
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: item.publishedVersion,
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
     }));
   }
 
@@ -187,7 +198,17 @@ export class AnnouncementService {
       include: {
         content: { select: { id: true, name: true } },
         publishedVersion: {
-          select: { id: true, data: true, config: true, scheduledAt: true, themeId: true },
+          select: {
+            id: true,
+            data: true,
+            config: true,
+            scheduledAt: true,
+            themeId: true,
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localized: true, localization: { select: { code: true } } },
+            },
+          },
         },
       },
     });
@@ -214,7 +235,47 @@ export class AnnouncementService {
     return {
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: item.publishedVersion,
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
+    };
+  }
+
+  /**
+   * Substitute the user's locale translation into the announcement's version
+   * data — same matching rules as the session delivery pipeline (exact locale
+   * first, then primary language subtag). Every announcement read path (feed,
+   * by-id detail, popup) flows through the two find methods above, so
+   * localizing here covers all surfaces, including the attribute extraction
+   * that runs on the returned content.
+   */
+  private localizePublishedVersion(
+    publishedVersion: {
+      id: string;
+      data: unknown;
+      scheduledAt: Date | null;
+      themeId: string | null;
+      versionOnLocalization: { localized: unknown; localization: { code: string } }[];
+    },
+    bizUser: BizUser | null,
+  ): VisibleAnnouncement['publishedVersion'] {
+    const { versionOnLocalization, ...version } = publishedVersion;
+    if (versionOnLocalization.length === 0 || !bizUser || !version.data) {
+      return version;
+    }
+    const localeCode = getAttributeValue(bizUser.data, UserAttributes.LOCALE_CODE);
+    if (typeof localeCode !== 'string' || localeCode.trim() === '') {
+      return version;
+    }
+    const matched = matchTranslationByLocale(versionOnLocalization, localeCode);
+    if (!matched?.localized) {
+      return version;
+    }
+    return {
+      ...version,
+      data: mergeLocalizedVersionData(
+        ContentDataType.ANNOUNCEMENT,
+        version.data,
+        matched.localized,
+      ),
     };
   }
 

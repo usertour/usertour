@@ -12,7 +12,7 @@ export const ContentLocalizationList = () => {
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
 
-  if (!version?.id) {
+  if (!content || !version?.id) {
     return <></>;
   }
 
@@ -21,7 +21,7 @@ export const ContentLocalizationList = () => {
       <Card className="flex flex-col p-4 space-y-6 w-full  max-w-screen-xl mx-auto">
         <h3 className="text-lg font-medium">{t('contents.localization.title')}</h3>
         <Separator />
-        <ContentLocalizationTable versionId={version.id} />
+        <ContentLocalizationTable contentType={content.type} version={version} />
       </Card>
     </div>
   );

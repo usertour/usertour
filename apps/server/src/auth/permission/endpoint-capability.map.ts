@@ -36,8 +36,8 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'content.unpublishedContentVersion': Capability.ContentPublish, // W
   'content.deleteContent': Capability.ContentDelete, // W
   'content.listContentVersions': Capability.ContentRead, // R
-  'content.findManyVersionLocations': Capability.ContentRead, // R
-  'content.updateVersionLocationData': Capability.ContentUpdate, // W
+  'content.listVersionLocalizations': Capability.ContentRead, // R
+  'content.upsertVersionLocalization': Capability.ContentUpdate, // W
   'content.queryContent': Capability.ContentRead, // R
 
   // environments
