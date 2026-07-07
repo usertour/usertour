@@ -480,10 +480,9 @@ const translations = {
       editTitle: 'Edit localization',
       saveButton: 'Save localization',
       createButton: 'Create localization',
-      description:
-        "Localization enables you to tailor your Usertour content to align with your users' language and regional preferences. A locale defines the user's specific language and region settings.",
+      description: 'Define the languages your content can be translated into.',
       descriptionContinuation:
-        "By including the user's locale through the <code>locale_code</code> attribute in your app's Usertour.js setup, you ensure that Usertour delivers content in the appropriate language seamlessly.",
+        "Each user sees the language matching their <code>locale_code</code> attribute — or their browser language when it isn't set.",
       empty: 'No localizations yet.',
       form: {
         localeLabel: 'Locale',

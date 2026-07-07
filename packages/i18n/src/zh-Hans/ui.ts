@@ -455,10 +455,9 @@ const translations = {
       editTitle: '编辑本地化',
       saveButton: '保存本地化',
       createButton: '创建本地化',
-      description:
-        '通过本地化,您可以根据用户的语言和区域偏好定制 Usertour 内容。locale 表示用户的语言和地区。',
+      description: '定义内容可以翻译成的语言。',
       descriptionContinuation:
-        '在 Usertour.js 中通过 <code>locale_code</code> 属性传入用户的 locale,即可让 Usertour 自动以对应语言推送内容。',
+        '用户会看到与其 <code>locale_code</code> 属性匹配的语言；未设置该属性时按浏览器语言匹配。',
       empty: '暂无本地化。',
       form: {
         localeLabel: '语言区域',

@@ -386,84 +386,89 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
   };
 
   return (
-    <Popover>
-      <div className={FIELD_GRID}>
-        <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
-          {label}
-          {outdated && <OutdatedChip />}
-        </div>
-        <div className="flex items-center rounded-md bg-secondary px-3 py-1.5">
-          <img src={source.url} className="h-10 max-w-full rounded object-contain" />
-        </div>
-        <div className="flex min-h-9 items-center gap-2">
-          {isUploading ? (
-            <SpinnerIcon className="h-5 w-5 animate-spin" />
-          ) : working.url ? (
-            <img src={working.url} className="h-10 max-w-40 rounded object-contain" />
-          ) : (
-            <span className="text-sm text-muted-foreground">
-              {t('contents.localization.image.usingOriginal')}
-            </span>
-          )}
-          <div className="ml-auto flex flex-none items-center">
-            <Upload
-              accept="image/*"
-              disabled={disabled}
-              customRequest={(option) => {
-                void handleCustomUploadRequest(option as UploadRequestOption);
-              }}
-            >
-              <MediaActionButton
-                tooltip={t('contents.localization.image.uploadImage')}
+    <LocalizedElementSection label={label} outdated={outdated}>
+      <Popover>
+        <div className={FIELD_GRID}>
+          <div />
+          <div className="rounded-md bg-secondary p-2">
+            <img src={source.url} className="max-h-40 max-w-full rounded" />
+          </div>
+          <div className="flex flex-col gap-2">
+            {isUploading ? (
+              <div className="flex h-24 items-center justify-center">
+                <SpinnerIcon className="h-8 w-8 animate-spin" />
+              </div>
+            ) : working.url ? (
+              <img src={working.url} className="max-h-40 max-w-full rounded" />
+            ) : (
+              <div className="flex h-24 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+                {t('contents.localization.image.usingOriginal')}
+              </div>
+            )}
+            <div className="flex flex-row flex-wrap gap-1">
+              <Upload
+                accept="image/*"
                 disabled={disabled}
-                icon={<ImageEditIcon className="h-4 w-4 fill-current" />}
-              />
-            </Upload>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                disabled={disabled}
-                title={t('contents.localization.image.enterUrl')}
+                customRequest={(option) => {
+                  void handleCustomUploadRequest(option as UploadRequestOption);
+                }}
               >
-                <KeyboardIcon className="h-4 w-4" />
+                <Button
+                  variant="ghost"
+                  disabled={disabled}
+                  className="h-auto w-auto p-1 text-primary hover:text-primary"
+                >
+                  <ImageEditIcon className="mx-1 fill-primary" />
+                  {t('contents.localization.image.uploadImage')}
+                </Button>
+              </Upload>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  disabled={disabled}
+                  className="h-auto w-auto p-1 text-primary hover:text-primary"
+                >
+                  <KeyboardIcon className="mx-1 fill-primary" />
+                  {t('contents.localization.image.enterUrl')}
+                </Button>
+              </PopoverTrigger>
+              <Button
+                variant="ghost"
+                disabled={disabled || working.url === ''}
+                className="h-auto w-auto p-1 text-primary hover:text-primary"
+                onClick={() => handleImageUrlChange('')}
+              >
+                <ResetIcon className="mx-1 fill-primary" />
+                {t('contents.localization.image.useOriginal')}
               </Button>
-            </PopoverTrigger>
-            <MediaActionButton
-              tooltip={t('contents.localization.image.useOriginal')}
-              disabled={disabled || working.url === ''}
-              icon={<ResetIcon className="h-4 w-4" />}
-              onClick={() => handleImageUrlChange('')}
-            />
+            </div>
           </div>
         </div>
-      </div>
-      <PopoverContent
-        className="w-[400px] bg-background dark:bg-card"
-        side="top"
-        align="center"
-        sideOffset={5}
-      >
-        <div className="flex flex-row space-x-2">
-          <Input
-            placeholder={t('contents.localization.image.enterUrl')}
-            value={remoteImageUrl}
-            onChange={(event) => setRemoteImageUrl(event.target.value)}
-            className="w-80 bg-background dark:bg-card"
-          />
-          <Button
-            className="h-9 flex-none py-1"
-            variant="ghost"
-            onClick={() => handleImageUrlChange(remoteImageUrl)}
-          >
-            <ArrowRightIcon className="mr-1" />
-            {t('contents.localization.image.load')}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+        <PopoverContent
+          className="w-[400px] bg-background dark:bg-card"
+          side="top"
+          align="center"
+          sideOffset={5}
+        >
+          <div className="flex flex-row space-x-2">
+            <Input
+              placeholder={t('contents.localization.image.enterUrl')}
+              value={remoteImageUrl}
+              onChange={(event) => setRemoteImageUrl(event.target.value)}
+              className="w-80 bg-background dark:bg-card"
+            />
+            <Button
+              className="h-9 flex-none py-1"
+              variant="ghost"
+              onClick={() => handleImageUrlChange(remoteImageUrl)}
+            >
+              <ArrowRightIcon className="mr-1" />
+              {t('contents.localization.image.load')}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </LocalizedElementSection>
   );
 };
 
