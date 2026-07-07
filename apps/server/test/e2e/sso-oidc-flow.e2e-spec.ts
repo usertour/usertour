@@ -214,6 +214,7 @@ describe('SSO OIDC login flow (e2e)', () => {
         projectId,
         email,
         role: 'VIEWER' as never, // differs from the project default (ADMIN)
+        allowedEnvironmentIds: ['env-jit-scoped'], // env-restricted invite
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
       userIds.push(invite.userId);
@@ -228,6 +229,9 @@ describe('SSO OIDC login flow (e2e)', () => {
         where: { projectId, userId: user!.id },
       });
       expect(membership?.role).toBe('VIEWER'); // invite role wins over the default
+      // The invite's environment restriction must carry onto the membership —
+      // an env-scoped invite accepted via SSO must NOT grant all environments.
+      expect(membership?.allowedEnvironmentIds).toEqual(['env-jit-scoped']);
       const inviteRow = await prisma.invite.findUnique({ where: { id: invite.id } });
       expect(inviteRow?.deleted).toBe(true);
     });
@@ -307,6 +311,9 @@ describe('SSO OIDC login flow (e2e)', () => {
         where: { projectId, userId: rejoiner.id },
       });
       expect(membership?.role).toBe('VIEWER'); // settings.defaultRole
+      // Auto-provision has no invite, so the membership is unrestricted (null) —
+      // locks the null-guard: only an invite-driven SSO join carries a restriction.
+      expect(membership?.allowedEnvironmentIds).toBeNull();
       // Reset so later tests keep the invite-required default.
       await setAutoProvision(false);
     });
@@ -331,6 +338,7 @@ describe('SSO OIDC login flow (e2e)', () => {
         projectId,
         email: EMAILS.invited,
         role: 'ADMIN' as never,
+        allowedEnvironmentIds: ['env-invited-scoped'], // env-restricted invite
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
       userIds.push(invite.userId); // the invite's creator
@@ -345,6 +353,8 @@ describe('SSO OIDC login flow (e2e)', () => {
         where: { projectId, userId: invited.id },
       });
       expect(membership?.role).toBe('ADMIN');
+      // …and with the invite's environment restriction (existing-user SSO path).
+      expect(membership?.allowedEnvironmentIds).toEqual(['env-invited-scoped']);
       expect(await prisma.user.findMany({ where: { email: EMAILS.invited } })).toHaveLength(1);
 
       // Invite consumed (soft-deleted) and the SSO identity linked.
