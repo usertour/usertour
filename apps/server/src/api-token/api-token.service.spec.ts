@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import type { PrismaService } from 'nestjs-prisma';
 
 import { ParamsError } from '@/common/errors';
@@ -54,6 +55,8 @@ const makeFakePrisma = (rows: Row[]) => {
         return { ...r, projects: [] };
       },
     },
+    // validateProjects checks the caller belongs to each target project.
+    userOnProject: { findFirst: async () => ({ id: 'membership' }) },
   } as unknown as PrismaService;
 };
 
@@ -114,5 +117,26 @@ describe('ApiTokenService — personal/OAuth separation', () => {
       name: 'renamed',
     });
     await expect(service.rotateToken('u1', 'p1')).resolves.toHaveProperty('plaintext');
+  });
+
+  // Changing a token's project without a new environment list must clear the old
+  // env allowlist — env ids never span projects, so a stale allowlist would brick
+  // every env-scoped call under the new project (EnvironmentNotInTokenScopeError).
+  it('clears the env allowlist when the project changes without a new env list', async () => {
+    const rows = [personal({ allowedEnvironmentIds: ['old-project-env'] } as never)];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', { projectIds: ['projB'] })) as {
+      allowedEnvironmentIds: unknown;
+    };
+    expect(res.allowedEnvironmentIds).toBe(Prisma.DbNull);
+  });
+
+  it('leaves the env allowlist untouched on a name-only update', async () => {
+    const rows = [personal({ allowedEnvironmentIds: ['e1'] } as never)];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', { name: 'renamed' })) as {
+      allowedEnvironmentIds: unknown;
+    };
+    expect(res.allowedEnvironmentIds).toEqual(['e1']);
   });
 });

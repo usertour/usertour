@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -83,7 +84,7 @@ export class ApiTokenService {
     const data: {
       name?: string;
       scopes?: string[];
-      allowedEnvironmentIds?: string[];
+      allowedEnvironmentIds?: string[] | typeof Prisma.DbNull;
       projects?: { deleteMany: Record<string, never>; create: { projectId: string }[] };
     } = {};
 
@@ -110,6 +111,13 @@ export class ApiTokenService {
         scopeProjects,
         input.environmentIds,
       );
+    } else if (projectIds !== undefined) {
+      // The project set changed without a new environment list. The old allowlist
+      // holds the PREVIOUS project's environment ids (env ids never span projects),
+      // so leaving it would brick every env-scoped call under the new project
+      // (EnvironmentNotInTokenScopeError). Clear it → unrestricted within the new
+      // project, matching a freshly-created token that names no environments.
+      data.allowedEnvironmentIds = Prisma.DbNull;
     }
 
     return this.prisma.apiToken.update({
