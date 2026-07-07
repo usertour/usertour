@@ -8,6 +8,8 @@
  * Resource labels resolve via i18n (`settings.personalApiKeys.scopeResources.*`), levels via
  * (`settings.personalApiKeys.scopeLevels.*`).
  */
+import { Capability } from '@usertour/types';
+
 export type ScopeLevel = 'none' | 'read' | 'write';
 
 export interface ScopeResource {
@@ -23,62 +25,67 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
   {
     key: 'content',
     labelKey: 'settings.personalApiKeys.scopeResources.content',
-    read: ['content:read'],
-    write: ['content:create', 'content:update', 'content:delete', 'content:publish'],
+    read: [Capability.ContentRead],
+    write: [
+      Capability.ContentCreate,
+      Capability.ContentUpdate,
+      Capability.ContentDelete,
+      Capability.ContentPublish,
+    ],
   },
   {
     key: 'theme',
     labelKey: 'settings.personalApiKeys.scopeResources.theme',
-    read: ['theme:read'],
-    write: ['theme:create', 'theme:update', 'theme:delete'],
+    read: [Capability.ThemeRead],
+    write: [Capability.ThemeCreate, Capability.ThemeUpdate, Capability.ThemeDelete],
   },
   {
     key: 'user',
     labelKey: 'settings.personalApiKeys.scopeResources.user',
-    read: ['user:read'],
-    write: ['user:write', 'user:delete'],
+    read: [Capability.UserRead],
+    write: [Capability.UserWrite, Capability.UserDelete],
   },
   {
     key: 'company',
     labelKey: 'settings.personalApiKeys.scopeResources.company',
-    read: ['company:read'],
-    write: ['company:write', 'company:delete'],
+    read: [Capability.CompanyRead],
+    write: [Capability.CompanyWrite, Capability.CompanyDelete],
   },
   {
     key: 'session',
     labelKey: 'settings.personalApiKeys.scopeResources.session',
-    read: ['session:read'],
-    write: ['session:manage'],
+    read: [Capability.SessionRead],
+    write: [Capability.SessionManage],
   },
   {
     key: 'segment',
     labelKey: 'settings.personalApiKeys.scopeResources.segment',
-    read: ['segment:read'],
-    write: ['segment:create', 'segment:update', 'segment:delete'],
+    read: [Capability.SegmentRead],
+    write: [Capability.SegmentCreate, Capability.SegmentUpdate, Capability.SegmentDelete],
   },
   {
     key: 'attribute',
     labelKey: 'settings.personalApiKeys.scopeResources.attribute',
-    read: ['attribute:read'],
-    write: ['attribute:create', 'attribute:update', 'attribute:delete'],
+    read: [Capability.AttributeRead],
+    write: [Capability.AttributeCreate, Capability.AttributeUpdate, Capability.AttributeDelete],
   },
   {
     key: 'event',
     labelKey: 'settings.personalApiKeys.scopeResources.event',
-    read: ['event:read'],
-    write: ['event:create', 'event:update', 'event:delete'],
+    read: [Capability.EventRead],
+    write: [Capability.EventCreate, Capability.EventUpdate, Capability.EventDelete],
   },
   {
     key: 'analytics',
     labelKey: 'settings.personalApiKeys.scopeResources.analytics',
-    read: ['analytics:read'],
+    read: [Capability.AnalyticsRead],
     write: null,
   },
   {
     key: 'environment',
     labelKey: 'settings.personalApiKeys.scopeResources.environment',
-    read: ['environment:read'],
-    write: ['environment:manage'],
+    read: [Capability.EnvironmentRead],
+    write: [Capability.EnvironmentManage],
   },
 ];
 

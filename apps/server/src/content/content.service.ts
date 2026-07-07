@@ -1,4 +1,4 @@
-import { createdAtWhere, nameContains } from '@/api/shared/filters';
+import { createdAtWhere, nameContains } from '@/common/filters';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateContentInput } from './dto/content-update.input';

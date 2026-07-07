@@ -9,7 +9,7 @@ import {
   UnknownError,
   ValidationError,
 } from '@/common/errors';
-import { nameContains } from '@/api/shared/filters';
+import { nameContains } from '@/common/filters';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { PaginationConnection } from '@/common/openapi/pagination';
 import { Event, Prisma } from '@prisma/client';

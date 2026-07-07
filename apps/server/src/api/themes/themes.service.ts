@@ -12,7 +12,7 @@ import { ThemesService } from '@/themes/themes.service';
 
 import { type DecompileResolvers } from '../content-representation/rules.decompile';
 import { buildDecompileResolversFrom } from '../content-representation/attribute-resolvers';
-import { nameContains } from '../shared/filters';
+import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { themeSettingsPatchSchema } from './settings.schema';

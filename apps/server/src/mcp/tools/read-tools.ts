@@ -19,7 +19,7 @@ import {
 import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { UserExpand } from '@/api/users/users.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
-import { createdAtRangeFields, nameSearchField } from '@/api/shared/filters';
+import { createdAtRangeFields, nameSearchField } from '@/common/filters';
 import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
 import { ThemeExpand } from '@/api/themes/themes.schema';
 

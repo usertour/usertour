@@ -3,7 +3,7 @@ import {
   AttributeBizType,
   AttributeDataType,
 } from '@/attributes/models/attribute.model';
-import { createdAtWhere } from '@/api/shared/filters';
+import { createdAtWhere } from '@/common/filters';
 import { SegmentNotFoundError } from '@/common/errors';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';

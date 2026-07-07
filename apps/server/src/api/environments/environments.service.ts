@@ -12,7 +12,7 @@ import {
 } from '@/common/errors/errors';
 import { EnvironmentsService } from '@/environments/environments.service';
 
-import { nameContains } from '../shared/filters';
+import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapEnvironment } from './environments.mapper';

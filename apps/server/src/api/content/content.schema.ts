@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
 
 import { contentVersion } from '../content-representation/representation.schema';
-import { createdAtRangeFields, nameSearchField } from '../shared/filters';
+import { createdAtRangeFields, nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 

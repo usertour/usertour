@@ -22,7 +22,7 @@ import {
   buildCompileResolversFrom,
   buildDecompileResolversFrom,
 } from '../content-representation/attribute-resolvers';
-import { nameContains } from '../shared/filters';
+import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapSegment } from './segments.mapper';

@@ -4,7 +4,7 @@ import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.inpu
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { nameContains } from '@/api/shared/filters';
+import { nameContains } from '@/common/filters';
 import { ResourceAlreadyExistsError, ValidationError } from '@/common/errors';
 
 @Injectable()

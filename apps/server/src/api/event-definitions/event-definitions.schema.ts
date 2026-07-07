@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
 
 import { codeName as codeNameSchema } from '../shared/codename';
-import { nameSearchField } from '../shared/filters';
+import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 

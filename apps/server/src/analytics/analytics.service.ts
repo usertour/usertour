@@ -6,7 +6,7 @@ import {
   contentEndReason,
 } from '@usertour/types';
 import { rollingDayWindows } from '@/analytics/rolling-day-windows';
-import { createdAtWhere } from '@/api/shared/filters';
+import { createdAtWhere } from '@/common/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
