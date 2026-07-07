@@ -356,14 +356,23 @@ export const representationCondition = z.lazy(() =>
       count: z
         .object({
           op: z.enum(['at_least', 'at_most', 'exactly', 'between']),
-          n: z.number(),
-          n2: z.number().optional(),
+          n: z.number().int().min(0),
+          n2: z.number().int().min(0).optional(),
+        })
+        // `at_least`/`between` with n:0 matches EVERY user regardless of the event
+        // (runtime is `eventCount >= 0`) — reject it. `at_most`/`exactly` with 0 are
+        // legitimate ("the event has never happened"), so they stay allowed.
+        .refine((c) => !((c.op === 'at_least' || c.op === 'between') && c.n < 1), {
+          message:
+            '`at_least` / `between` need n ≥ 1 (n:0 matches every user regardless of the event). ' +
+            'For "the event has never happened" use `at_most` or `exactly` with n:0.',
         })
         .optional()
         .describe(
           'How many times the event must have occurred. Omit it for the common case "the event ' +
             'has happened" (treated as at_least 1). Set `op`/`n` for a threshold (`between` needs ' +
-            '`n` and `n2`).',
+            '`n` and `n2`). `at_least`/`between` require n ≥ 1; use `at_most`/`exactly` with 0 for ' +
+            '"never happened".',
         ),
       within: z
         .object({

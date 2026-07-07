@@ -1,7 +1,8 @@
 import { ContentDataType } from '@usertour/types';
 
 import { mapContentAnalytics, mapQuestionAnalytics } from './analytics.mapper';
-import { toDayBoundary } from './analytics.service';
+import { analyticsQuery } from './analytics.schema';
+import { resolveRange, toDayBoundary } from './analytics.service';
 
 const meta = (contentType: string) => ({
   contentId: 'c1',
@@ -293,5 +294,53 @@ describe('toDayBoundary', () => {
     expect(toDayBoundary('2026-07-04T12:30:00.000Z', 'UTC', 'end')).toBe(
       '2026-07-04T12:30:00.000Z',
     );
+  });
+});
+
+describe('resolveRange default dates (in the requested timezone)', () => {
+  const q = (timezone?: string) => ({ environmentId: 'e', timezone });
+
+  it('defaults "today" to the LOCAL date, not the UTC date (ahead-of-UTC morning)', () => {
+    // 08:30 Tokyo = 2026-07-04T23:30Z: UTC is still on July 4, but Tokyo is July 5.
+    const now = new Date('2026-07-04T23:30:00.000Z');
+    expect(resolveRange(q('Asia/Tokyo'), now).endDate).toBe('2026-07-05'); // local, not '2026-07-04'
+    // domain end must then cover through end of the Tokyo day (future vs now) — not the past.
+    expect(resolveRange(q('Asia/Tokyo'), now).domainEndDate).toBe('2026-07-05T14:59:59.999Z');
+  });
+
+  it('UTC default is unaffected (same instant)', () => {
+    const now = new Date('2026-07-04T23:30:00.000Z');
+    expect(resolveRange(q('UTC'), now).endDate).toBe('2026-07-04');
+  });
+
+  it('an explicit endDate is respected verbatim', () => {
+    const now = new Date('2026-07-04T23:30:00.000Z');
+    expect(resolveRange({ environmentId: 'e', endDate: '2026-06-01' }, now).endDate).toBe(
+      '2026-06-01',
+    );
+  });
+});
+
+describe('analyticsQuery timezone validation (IANA at the boundary → 400, not a 500)', () => {
+  const parse = (timezone?: string) => analyticsQuery.safeParse({ environmentId: 'e', timezone });
+
+  it('rejects a timezone the runtime cannot use (would RangeError → 500)', () => {
+    // Validate exactly what fromZonedTime/formatInTimeZone accept: a typo or garbage
+    // zone throws in Intl, so it must be a 400 here, not a deep 500.
+    expect(parse('America/Los_Angles').success).toBe(false); // typo
+    expect(parse('Foo/Bar').success).toBe(false);
+  });
+
+  it('accepts everything the runtime CAN use (real IANA zones, UTC, ICU aliases)', () => {
+    expect(parse('UTC').success).toBe(true);
+    expect(parse('Asia/Tokyo').success).toBe(true);
+    expect(parse('America/New_York').success).toBe(true);
+    // ICU accepts these legacy aliases, and so does fromZonedTime — so they must NOT
+    // be rejected (rejecting a zone the runtime handles fine would be its own bug).
+    expect(parse('PST').success).toBe(true);
+  });
+
+  it('accepts an omitted timezone (defaults to UTC)', () => {
+    expect(parse(undefined).success).toBe(true);
   });
 });

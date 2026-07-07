@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ContentDataType } from '@usertour/types';
-import { fromZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { PrismaService } from 'nestjs-prisma';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
@@ -100,18 +100,24 @@ export class ApiAnalyticsService {
  * caller-supplied inclusive DATES to day-boundary timestamps in the requested
  * timezone; full timestamps pass through untouched.
  */
-function resolveRange(query: AnalyticsQuery): {
+export function resolveRange(
+  query: AnalyticsQuery,
+  now: Date = new Date(),
+): {
   startDate: string;
   endDate: string;
   timezone: string;
   domainStartDate: string;
   domainEndDate: string;
 } {
-  const today = new Date();
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
   const timezone = query.timezone || 'UTC';
-  const startDate = query.startDate || monthAgo.toISOString().slice(0, 10);
-  const endDate = query.endDate || today.toISOString().slice(0, 10);
+  // Default "today"/"30 days ago" must be the calendar date IN the requested
+  // timezone — using the UTC date (toISOString) drops the current local day for
+  // ahead-of-UTC zones during their morning (e.g. 08:00 Tokyo is still "yesterday"
+  // in UTC), silently excluding today's data.
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const startDate = query.startDate || formatInTimeZone(monthAgo, timezone, 'yyyy-MM-dd');
+  const endDate = query.endDate || formatInTimeZone(now, timezone, 'yyyy-MM-dd');
   return {
     startDate,
     endDate,

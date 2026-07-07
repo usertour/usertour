@@ -10,6 +10,20 @@ import { ApiObjectType } from '../shared/object-type';
  * types them properly — that typing IS the feature.
  */
 
+/**
+ * Reject a non-IANA timezone at the boundary (400), not deep inside `fromZonedTime`
+ * / the `AT TIME ZONE` SQL (which throw a RangeError / Postgres error → 500). Tests
+ * the exact thing the runtime uses the zone for.
+ */
+const isValidTimeZone = (tz: string): boolean => {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const analyticsQuery = z.object({
   environmentId: z
     .string()
@@ -18,6 +32,9 @@ export const analyticsQuery = z.object({
   endDate: z.string().optional().describe('ISO date, inclusive. Default: today.'),
   timezone: z
     .string()
+    .refine(isValidTimeZone, {
+      message: 'Not a valid IANA timezone (e.g. "UTC", "America/New_York", "Asia/Tokyo").',
+    })
     .optional()
     .describe('IANA timezone used for the per-day bucketing. Default: UTC.'),
 });
