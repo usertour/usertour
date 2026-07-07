@@ -5,7 +5,7 @@ import { cuid } from '@usertour/helpers';
 import { PrismaService } from 'nestjs-prisma';
 
 import { OAuthModelService } from './oauth-model.service';
-import { accessTokenSecret, generateOpaqueSecret, hashSecret } from './oauth.crypto';
+import { generateOpaqueSecret, hashSecret, tokenFingerprint } from './oauth.crypto';
 import { isAllowedRedirectUri } from './redirect-allowlist';
 
 const ACCESS_TOKEN_LIFETIME = 60 * 60; // 1h
@@ -228,28 +228,25 @@ export class OAuthService {
 
   // ── Revoke (RFC 7009) ───────────────────────────────────────────────────────
   async revoke(token: string): Promise<void> {
-    if (!token) {
+    // Every prefixed token's DB fingerprint is the hash of its BARE secret
+    // (tokenFingerprint), so ONE fingerprint checks both tables: a refresh token
+    // matches a grant (→ revoke the whole grant, killing its access tokens too);
+    // an access token matches its ApiToken row (→ deactivate just that one). The
+    // `clientId: { not: null }` guard keeps a personal `utp_` key from being
+    // revoked through the OAuth endpoint.
+    const fingerprint = token ? tokenFingerprint(token) : null;
+    if (!fingerprint) {
       return;
     }
-    // Refresh token → revoke the whole grant (+ its access tokens via guard's isActive).
-    // Refresh tokens are stored/looked up as the hash of the FULL `utr_…` string
-    // (saveToken / getRefreshToken), so hash it whole here — stripping the prefix
-    // (as an access token needs) would never match a grant and the revoke would no-op.
     const grant = await this.prisma.oAuthGrant.findFirst({
-      where: { hashedRefreshToken: hashSecret(token) },
+      where: { hashedRefreshToken: fingerprint },
     });
     if (grant) {
       await this.revokeGrant(grant.id);
       return;
     }
-    // Access token → deactivate just that ApiToken. Access tokens are stored as the
-    // hash of the BARE secret (prefix stripped), matching getAccessToken.
-    const secret = accessTokenSecret(token);
-    if (!secret) {
-      return;
-    }
     await this.prisma.apiToken.updateMany({
-      where: { hashedSecret: hashSecret(secret), clientId: { not: null } },
+      where: { hashedSecret: fingerprint, clientId: { not: null } },
       data: { isActive: false },
     });
   }

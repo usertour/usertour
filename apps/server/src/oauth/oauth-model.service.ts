@@ -20,6 +20,7 @@ import {
   composeOAuthRefreshToken,
   generateOpaqueSecret,
   hashSecret,
+  tokenFingerprint,
 } from './oauth.crypto';
 
 const ALL_CAPABILITIES = new Set<string>(Object.values(Capability));
@@ -216,13 +217,13 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
         projectId: u.projectId,
         scopes,
         allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
-        hashedRefreshToken: token.refreshToken ? hashSecret(token.refreshToken) : null,
+        hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
         refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
       },
       update: {
         scopes,
         allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
-        hashedRefreshToken: token.refreshToken ? hashSecret(token.refreshToken) : null,
+        hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
         refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
         revokedAt: null,
       },
@@ -273,8 +274,12 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
   }
 
   async getRefreshToken(refreshToken: string): Promise<RefreshToken | Falsey> {
+    const fingerprint = tokenFingerprint(refreshToken);
+    if (!fingerprint) {
+      return false;
+    }
     const grant = await this.prisma.oAuthGrant.findUnique({
-      where: { hashedRefreshToken: hashSecret(refreshToken) },
+      where: { hashedRefreshToken: fingerprint },
     });
     if (
       !grant ||

@@ -24,7 +24,34 @@ export function accessTokenSecret(token: string): string | null {
   return stripTokenPrefix(token);
 }
 
-/** Compose / hash the plaintext OAuth refresh token (`utr_…`, opaque to us). */
+/** Compose the plaintext OAuth refresh token (`utr_…`, opaque to us). */
 export function composeOAuthRefreshToken(secret: string): string {
   return `${OAUTH_REFRESH_TOKEN_PREFIX}${secret}`;
+}
+
+/**
+ * The bare secret of a refresh token (`utr_…`). Deliberately SEPARATE from the
+ * API-token guard's `stripTokenPrefix` (which only accepts `utp_`/`uto_`): `utr_`
+ * must never be strippable there, or a refresh token could be replayed as a
+ * bearer/access token.
+ */
+export function refreshTokenSecret(token: string): string | null {
+  if (!token.startsWith(OAUTH_REFRESH_TOKEN_PREFIX)) {
+    return null;
+  }
+  const secret = token.slice(OAUTH_REFRESH_TOKEN_PREFIX.length);
+  return secret.length > 0 ? secret : null;
+}
+
+/**
+ * The ONE storage rule for every prefixed token this server keeps — access
+ * (`uto_`/`utp_`) and refresh (`utr_`): the DB fingerprint is the SHA-256 of the
+ * BARE secret, prefix stripped. Every place that stores or looks up a token hash
+ * goes through this, so a write and its matching read can never use different
+ * recipes (the drift that made refresh-token revocation a silent no-op). Returns
+ * null for a token with no recognized prefix.
+ */
+export function tokenFingerprint(token: string): string | null {
+  const secret = accessTokenSecret(token) ?? refreshTokenSecret(token);
+  return secret ? hashSecret(secret) : null;
 }
