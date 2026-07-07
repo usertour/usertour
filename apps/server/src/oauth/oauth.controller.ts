@@ -22,11 +22,12 @@ import { resolveOrigin } from '@/common/http/resolve-origin';
 
 import { OAuthService } from './oauth.service';
 
-/** Bearer value from an Authorization header, or null. */
+/** Bearer value from an Authorization header, or null. The scheme is matched
+ * case-insensitively (RFC 7235 §2.1), like the api-token guard's extractBearer. */
 function bearer(header: string | undefined): string | null {
   if (!header) return null;
   const [type, value] = header.split(' ');
-  return type === 'Bearer' && value ? value : null;
+  return type?.toLowerCase() === 'bearer' && value ? value : null;
 }
 
 /**

@@ -85,6 +85,30 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     clientId = res.body.client_id;
   });
 
+  it('reads a client registration with a case-insensitive bearer scheme (RFC 7235)', async () => {
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'E2E bearer-case',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    const rat = reg.body.registration_access_token as string;
+    expect(rat).toBeTruthy();
+
+    // Lowercase `bearer` is spec-valid (RFC 7235 §2.1) and must be accepted — it
+    // returned 401 before the fix.
+    const lower = await http().get(`/oauth/register/${cid}`).set('Authorization', `bearer ${rat}`);
+    expect(lower.status).toBe(200);
+    expect(lower.body.client_id).toBe(cid);
+
+    // Canonical `Bearer` still works.
+    const upper = await http().get(`/oauth/register/${cid}`).set('Authorization', `Bearer ${rat}`);
+    expect(upper.status).toBe(200);
+  });
+
   it('requires PKCE on authorize and redirects to consent when valid', async () => {
     await http()
       .get('/oauth/authorize')

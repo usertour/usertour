@@ -48,7 +48,11 @@ export class ApiThemesService {
   ): Promise<{ results: Theme[]; next: string | null; previous: string | null }> {
     const { limit, cursor, name } = query;
     const expand = toArray(query.expand);
-    const resolvers = await this.buildDecompileResolvers(projectId);
+    // Resolvers are only consumed when decompiling variation conditions; skip the
+    // two catalog queries on the common read path that doesn't expand variations.
+    const resolvers = expand.includes('variations')
+      ? await this.buildDecompileResolvers(projectId)
+      : buildDecompileResolversFrom([], []);
     const orderBy = parseOrderBy(query.orderBy, [
       'createdAt',
     ]) as Prisma.ThemeOrderByWithRelationInput[];
@@ -77,7 +81,9 @@ export class ApiThemesService {
   async get(id: string, projectId: string, query: GetThemeQuery): Promise<Theme> {
     const expand = toArray(query.expand);
     const theme = await this.requireTheme(id, projectId);
-    const resolvers = await this.buildDecompileResolvers(projectId);
+    const resolvers = expand.includes('variations')
+      ? await this.buildDecompileResolvers(projectId)
+      : buildDecompileResolversFrom([], []);
     return mapTheme(theme, expand, resolvers);
   }
 
