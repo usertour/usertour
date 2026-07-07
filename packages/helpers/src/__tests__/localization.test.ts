@@ -22,13 +22,17 @@ import {
 } from '@usertour/types';
 
 import {
+  applyContentsTranslationUnits,
+  applyVersionDataTranslationUnits,
   collectOutdatedElementPaths,
   collectOutdatedVersionDataPaths,
   countMissingTranslations,
   countMissingVersionDataTranslations,
   createLocalizedWorkingContents,
   createLocalizedWorkingVersionData,
+  extractContentsTranslationUnits,
   extractTranslatableUnits,
+  extractVersionDataTranslationUnits,
   formatElementPath,
   matchTranslationByLocale,
   mergeLocalizedEditorContents,
@@ -530,5 +534,75 @@ describe('resolveUserLocaleCode', () => {
   it('returns null when neither source is set', () => {
     expect(resolveUserLocaleCode({}, undefined)).toBeNull();
     expect(resolveUserLocaleCode(null, '')).toBeNull();
+  });
+});
+
+describe('translation exchange (extract/apply units)', () => {
+  it('round-trips editor-tree translations through flat units', () => {
+    const source = createSourceContents();
+    const units = extractContentsTranslationUnits(source, undefined);
+    const buttonUnit = units.find((unit) => unit.path === '0.0.1:button.text');
+    expect(buttonUnit).toMatchObject({ sourceText: 'Next', translatedText: '' });
+
+    const applied = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map([
+        ['0.0.1:button.text', 'Suivant'],
+        ['0.0.0:text.0.1', 'monde'],
+      ]),
+    );
+    expect(getElement<ContentEditorButtonElement>(applied, 1).data.text).toBe('Suivant');
+    expect(getElement<ContentEditorTextElement>(applied, 0).data[0].children[1].text).toBe('monde');
+
+    const reExported = extractContentsTranslationUnits(source, applied);
+    expect(reExported.find((unit) => unit.path === '0.0.1:button.text')?.translatedText).toBe(
+      'Suivant',
+    );
+  });
+
+  it('keeps existing translations for unknown paths and empty cells', () => {
+    const source = createSourceContents();
+    const existing = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map([['0.0.1:button.text', 'Suivant']]),
+    );
+
+    const applied = applyContentsTranslationUnits(
+      source,
+      existing,
+      new Map([
+        ['0.0.1:button.text', '  '],
+        ['9.9.9:button.text', 'stale'],
+        ['0.0.2:question.name', 'Nous recommanderiez-vous ?'],
+      ]),
+    );
+    expect(getElement<ContentEditorButtonElement>(applied, 1).data.text).toBe('Suivant');
+    expect(getElement<ContentEditorNPSElement>(applied, 2).data.name).toBe(
+      'Nous recommanderiez-vous ?',
+    );
+  });
+
+  it('round-trips version-data translations through flat units', () => {
+    const source = createChecklistData();
+    const units = extractVersionDataTranslationUnits(ContentDataType.CHECKLIST, source, undefined);
+    expect(units.find((unit) => unit.path === 'items.item-1:name')?.sourceText).toBe(
+      'Invite your team',
+    );
+
+    const applied = applyVersionDataTranslationUnits(
+      ContentDataType.CHECKLIST,
+      source,
+      undefined,
+      new Map([
+        ['buttonText', 'Commencer'],
+        ['items.item-1:name', 'Invitez votre équipe'],
+      ]),
+    );
+    expect(applied.buttonText).toBe('Commencer');
+    expect(applied.items[0].name).toBe('Invitez votre équipe');
+    // Untouched fields stay untranslated in the working clone.
+    expect(applied.items[1].name).toBe('');
   });
 });

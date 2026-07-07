@@ -727,6 +727,89 @@ export const collectOutdatedVersionDataPaths = (
 };
 
 // ---------------------------------------------------------------------------
+// Translation exchange — flat source/translation pairs over the same walks,
+// for export/import round-trips (CSV/XLIFF). Paths are the walker's unit
+// paths, so a row exported from a version applies back onto the same version;
+// rows whose path no longer matches simply don't apply.
+// ---------------------------------------------------------------------------
+
+export interface LocalizationTranslationUnit {
+  path: string;
+  sourceText: string;
+  translatedText: string;
+}
+
+const createTranslationUnitCollector = (
+  units: LocalizationTranslationUnit[],
+): TranslatableFieldVisitor => {
+  return (visit) => {
+    if (visit.sourceText === '') {
+      return;
+    }
+    units.push({
+      path: visit.path,
+      sourceText: visit.sourceText,
+      translatedText: visit.partnerText ?? '',
+    });
+  };
+};
+
+/**
+ * Imported cells only ever add or replace a translation: empty cells keep
+ * the existing value, unknown paths are ignored.
+ */
+const createTranslationApplier = (
+  translations: ReadonlyMap<string, string>,
+): TranslatableFieldVisitor => {
+  return (visit) => {
+    const value = translations.get(visit.path);
+    if (typeof value === 'string' && value.trim() !== '') {
+      visit.assign(value);
+    }
+  };
+};
+
+export const extractContentsTranslationUnits = (
+  source: ContentEditorRoot[] | undefined,
+  localized: ContentEditorRoot[] | undefined,
+): LocalizationTranslationUnit[] => {
+  const units: LocalizationTranslationUnit[] = [];
+  walkTranslatableFields(source ?? [], localized, createTranslationUnitCollector(units));
+  return units;
+};
+
+export const extractVersionDataTranslationUnits = (
+  contentType: string,
+  source: unknown,
+  localized: unknown,
+): LocalizationTranslationUnit[] => {
+  const units: LocalizationTranslationUnit[] = [];
+  walkVersionDataFields(contentType, source, localized, createTranslationUnitCollector(units));
+  return units;
+};
+
+export const applyContentsTranslationUnits = (
+  source: ContentEditorRoot[] | undefined,
+  localized: ContentEditorRoot[] | undefined,
+  translations: ReadonlyMap<string, string>,
+): ContentEditorRoot[] => {
+  const working = applyLocalizedText(source, localized, 'empty');
+  walkTranslatableFields(working, undefined, createTranslationApplier(translations));
+  return working;
+};
+
+export const applyVersionDataTranslationUnits = <T>(
+  contentType: string,
+  source: T,
+  localized: unknown,
+  translations: ReadonlyMap<string, string>,
+): T => {
+  const working = createLocalizedWorkingVersionData(contentType, source, localized);
+  walkVersionDataFields(contentType, working, undefined, createTranslationApplier(translations));
+  return working;
+};
+
+// ---------------------------------------------------------------------------
 // Locale matching
 // ---------------------------------------------------------------------------
 

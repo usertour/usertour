@@ -1809,7 +1809,13 @@ const translations = {
         applySuccess: '更改已成功应用。',
         applyFailure: '应用更改失败。',
         saveFailure: '保存翻译失败。',
+        exportEmpty: '当前内容没有可导出的文案。',
+        importInvalid: '无法将该文件解析为翻译 CSV。',
+        importNoMatches: '没有匹配当前内容的行。请重新导出文件后再试。',
+        importSuccess: '已导入 {{count}} 条翻译。',
       },
+      exportButton: '导出 CSV',
+      importButton: '导入 CSV',
       element: {
         image: '图片',
         video: '视频',

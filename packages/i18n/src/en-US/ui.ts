@@ -1908,7 +1908,13 @@ const translations = {
         applySuccess: 'The changes have been applied successfully.',
         applyFailure: 'Failed to apply the changes.',
         saveFailure: 'Failed to save the translation.',
+        exportEmpty: 'There is nothing to export for this content.',
+        importInvalid: 'The file could not be read as a translations CSV.',
+        importNoMatches: 'No rows matched the current content. Export a fresh file and try again.',
+        importSuccess: 'Imported {{count}} translations.',
       },
+      exportButton: 'Export CSV',
+      importButton: 'Import CSV',
       element: {
         image: 'Image',
         video: 'Video',

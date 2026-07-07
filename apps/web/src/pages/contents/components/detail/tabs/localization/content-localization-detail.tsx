@@ -6,10 +6,14 @@ import { useContentVersion } from '@/hooks/use-content-version';
 import { useLocalizationList } from '@/hooks/use-localization-list';
 import { isVersionPublished } from '@/utils/content';
 import {
+  applyContentsTranslationUnits,
+  applyVersionDataTranslationUnits,
   collectOutdatedElementPaths,
   collectOutdatedVersionDataPaths,
   createLocalizedWorkingContents,
   createLocalizedWorkingVersionData,
+  extractContentsTranslationUnits,
+  extractVersionDataTranslationUnits,
 } from '@usertour/helpers';
 import { RiArrowLeftLine } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
@@ -34,6 +38,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { FIELD_GRID, LocalizedEditorContents } from './localized-fields';
+import { LocalizationTransferActions } from './localization-transfer-actions';
 import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 import {
   AnnouncementLocalizationSections,
@@ -54,12 +59,21 @@ interface LocalizationEditorShellProps {
   saveState: LocalizationSaveState;
   locked: boolean;
   sourceLocaleName: string;
+  /** Right-side header actions (export/import). */
+  actions?: ReactNode;
   children: ReactNode;
 }
 
 const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
-  const { localization, contentLocalization, saveState, locked, sourceLocaleName, children } =
-    props;
+  const {
+    localization,
+    contentLocalization,
+    saveState,
+    locked,
+    sourceLocaleName,
+    actions,
+    children,
+  } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,10 +94,13 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
           ) : (
             <Badge variant="destructive">{t('contents.localization.status.disabled')}</Badge>
           )}
-          <span className="!ml-auto text-sm text-muted-foreground">
-            {saveState === 'saving' && t('contents.localization.saving')}
-            {saveState === 'saved' && t('contents.localization.saved')}
-          </span>
+          <div className="!ml-auto flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {saveState === 'saving' && t('contents.localization.saving')}
+              {saveState === 'saved' && t('contents.localization.saved')}
+            </span>
+            {actions}
+          </div>
         </div>
         {locked && (
           <div className="rounded-md border border-border bg-secondary px-4 py-3 text-sm text-muted-foreground">
@@ -191,6 +208,44 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     [scheduleSave],
   );
 
+  // Export/import addresses flow units as `steps/<cvid>/<unit path>`.
+  const buildTransferUnits = useCallback(
+    () =>
+      steps.flatMap((step) =>
+        extractContentsTranslationUnits(step.data as ContentEditorRoot[], working[step.cvid]).map(
+          (unit) => ({ ...unit, path: `steps/${step.cvid}/${unit.path}` }),
+        ),
+      ),
+    [steps, working],
+  );
+
+  const handleImportTranslations = useCallback(
+    (translations: ReadonlyMap<string, string>) => {
+      setWorking((previous) => {
+        const next: LocalizedFlowContent = { ...previous };
+        for (const step of steps) {
+          const prefix = `steps/${step.cvid}/`;
+          const stepTranslations = new Map<string, string>();
+          translations.forEach((value, key) => {
+            if (key.startsWith(prefix)) {
+              stepTranslations.set(key.slice(prefix.length), value);
+            }
+          });
+          if (stepTranslations.size > 0) {
+            next[step.cvid] = applyContentsTranslationUnits(
+              step.data as ContentEditorRoot[],
+              previous[step.cvid],
+              stepTranslations,
+            );
+          }
+        }
+        scheduleSave(next);
+        return next;
+      });
+    },
+    [steps, scheduleSave],
+  );
+
   return (
     <LocalizationEditorShell
       localization={localization}
@@ -198,6 +253,15 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
       saveState={saveState}
       locked={locked}
       sourceLocaleName={sourceLocaleName}
+      actions={
+        <LocalizationTransferActions
+          contentName={content.name ?? ''}
+          localeCode={localization.code}
+          importDisabled={disabled}
+          buildUnits={buildTransferUnits}
+          onImport={handleImportTranslations}
+        />
+      }
     >
       {steps.map((step, index) => (
         <Card key={step.cvid} className="flex flex-col space-y-4 p-4">
@@ -265,6 +329,27 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     [scheduleSave],
   );
 
+  const buildTransferUnits = useCallback(
+    () => extractVersionDataTranslationUnits(content.type, sourceData, workingData),
+    [content.type, sourceData, workingData],
+  );
+
+  const handleImportTranslations = useCallback(
+    (translations: ReadonlyMap<string, string>) => {
+      setWorkingData((previous: unknown) => {
+        const next = applyVersionDataTranslationUnits(
+          content.type,
+          sourceData,
+          previous,
+          translations,
+        );
+        scheduleSave(next);
+        return next;
+      });
+    },
+    [content.type, sourceData, scheduleSave],
+  );
+
   const sections = (() => {
     const sectionProps = { outdatedPaths, disabled, onDataChange: handleDataChange };
     switch (content.type) {
@@ -320,6 +405,15 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
       saveState={saveState}
       locked={locked}
       sourceLocaleName={sourceLocaleName}
+      actions={
+        <LocalizationTransferActions
+          contentName={content.name ?? ''}
+          localeCode={localization.code}
+          importDisabled={disabled}
+          buildUnits={buildTransferUnits}
+          onImport={handleImportTranslations}
+        />
+      }
     >
       {sections}
     </LocalizationEditorShell>
