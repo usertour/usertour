@@ -45,6 +45,7 @@ type InternalStep = {
   data?: unknown;
   target?: unknown;
   setting?: unknown;
+  trigger?: unknown;
 };
 
 /** The fields the compiler reads — satisfied by both the read step and write input. */
@@ -90,7 +91,14 @@ export function compileStep(
     sequence: step.sequence,
     data: compileContent(step.content, existing?.data, r),
     target,
-    trigger: compileTriggers(step.triggers, r),
+    // Omit (undefined) preserves the existing step's triggers, like themeId /
+    // onClick above — otherwise a partial update that doesn't re-send `triggers`
+    // would silently wipe auto-advance / conditional-dismiss / navigate rules
+    // (compileTriggers(undefined) → []).
+    trigger:
+      step.triggers !== undefined
+        ? compileTriggers(step.triggers, r)
+        : ((existing?.trigger as ReturnType<typeof compileTriggers>) ?? []),
     setting: compileSetting(step, existing?.setting),
   };
 }

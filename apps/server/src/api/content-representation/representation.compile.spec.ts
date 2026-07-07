@@ -436,6 +436,26 @@ describe('per-step themeId override (set / preserve / clear / inherit)', () => {
     expect(compiled.themeId).toBeNull();
   });
 
+  it('omitting triggers preserves the existing step triggers (field-merge, like themeId)', () => {
+    const existingTrigger = [{ conditions: [], actions: [{ type: 'flow-dismis', data: {} }] }];
+    const compiled = compileStep(
+      { name: 'S', type: 'tooltip', cvid: 'cv1', sequence: 0, content: [] } as any,
+      { cvid: 'cv1', trigger: existingTrigger } as any,
+      ids,
+    );
+    // triggers omitted → keep what was there, NOT wipe to []
+    expect(compiled.trigger).toEqual(existingTrigger);
+  });
+
+  it('explicit empty triggers clears them (distinct from omitting)', () => {
+    const compiled = compileStep(
+      { name: 'S', type: 'tooltip', cvid: 'cv1', sequence: 0, content: [], triggers: [] } as any,
+      { cvid: 'cv1', trigger: [{ conditions: [], actions: [] }] } as any,
+      ids,
+    );
+    expect(compiled.trigger).toEqual([]);
+  });
+
   it('decompile emits themeId (null when the step has no override)', () => {
     const back = decompileStep({ id: 's1', cvid: 'cv1', name: 'S', type: 'tooltip', sequence: 0 });
     expect(back.themeId).toBeNull();

@@ -300,6 +300,47 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('matches a step by cvid when the id is stale (fork survivability — no drop)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const url = `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`;
+
+    // 1. Create a step; capture its server-owned cvid.
+    const first = await api('patch', url, token).send({
+      steps: [
+        {
+          name: 'Original',
+          type: 'modal',
+          placement: { position: 'center' },
+          content: [{ type: 'text', markdown: 'v1' }],
+        },
+      ],
+    });
+    expect(first.status).toBe(200);
+    const cvid = first.body.steps.find((s: { name: string }) => s.name === 'Original').cvid;
+    expect(typeof cvid).toBe('string');
+
+    // 2. Update echoing a STALE id (as a fork leaves — new id, preserved cvid) + the
+    //    real cvid. Must match by cvid and update in place, NOT treat it as a new
+    //    step and drop the original.
+    const second = await api('patch', url, token).send({
+      steps: [
+        {
+          id: 'stale-nonexistent-id',
+          cvid,
+          name: 'Renamed',
+          type: 'modal',
+          placement: { position: 'center' },
+          content: [{ type: 'text', markdown: 'v2' }],
+        },
+      ],
+    });
+    expect(second.status).toBe(200);
+    expect(second.body.steps).toHaveLength(1);
+    expect(second.body.steps[0].cvid).toBe(cvid); // matched by cvid, cvid NOT re-minted
+    expect(second.body.steps[0].name).toBe('Renamed'); // updated in place
+    expect(second.body.steps[0].content[0]).toMatchObject({ type: 'text', markdown: 'v2' });
+  });
+
   it('rejects server-side conditions (event/segment/flow) in a step trigger or button rule (400 E1017)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const patch = (steps: unknown[]) =>

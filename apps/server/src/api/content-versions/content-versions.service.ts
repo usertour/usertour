@@ -363,11 +363,15 @@ export class ApiContentVersionsService {
       // an existing cvid). Those references resolve to the real cvid here — no
       // read-back round-trip, and forward/cyclic links work in one pass.
       const planned = body.steps.map((s, i) => {
-        const existing = s.id
-          ? existingById.get(s.id)
-          : s.cvid
-            ? existingByCvid.get(s.cvid)
-            : undefined;
+        // Match by id first, then cvid — falling back on a MISS, not on the
+        // absence of id. A fork (create_content_version) regenerates every step
+        // id but preserves cvid, so a caller echoing a forked version carries a
+        // stale id AND a valid cvid; keying on `s.id ? byId : byCvid` would take
+        // the id branch, miss, and treat every step as new (dropping the originals
+        // in the wholesale upsert). The `??` retries cvid when the id lookup fails.
+        const existing =
+          (s.id ? existingById.get(s.id) : undefined) ??
+          (s.cvid ? existingByCvid.get(s.cvid) : undefined);
         return {
           input: s,
           existing,
