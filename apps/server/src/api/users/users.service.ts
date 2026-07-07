@@ -37,9 +37,7 @@ export class ApiUsersService {
   ): Promise<{ results: User[]; next: string | null; previous: string | null }> {
     const { limit, cursor, email, companyId, segmentId, createdAfter, createdBefore } = query;
     const expand = toArray<UserExpand>(query.expand);
-    const orderBy = parseOrderBy(
-      toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
-    );
+    const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
     // A foreign segmentId must 404, not silently apply another tenant's segment.
     if (segmentId) {

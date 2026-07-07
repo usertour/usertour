@@ -54,9 +54,7 @@ export class ApiCompaniesService {
     // v1: always load the membership rows; load the user only when needed.
     const includeBizUser = expand.includes('memberships.user') || expand.includes('users');
     const include = { bizUsersOnCompany: { include: { bizUser: includeBizUser } } };
-    const orderBy = parseOrderBy(
-      toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
-    );
+    const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
     // A foreign segmentId must 404, not silently apply another tenant's segment.
     if (segmentId) {

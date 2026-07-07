@@ -104,9 +104,7 @@ export class ApiContentVersionsService {
   ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
     const { limit, cursor } = query;
     const expand = toArray(query.expand);
-    const orderBy = parseOrderBy(
-      toArray(query.orderBy).length ? toArray(query.orderBy) : ['createdAt'],
-    );
+    const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
     // Scope the existence check to the project so a foreign contentId is a 404,
     // not a 200-empty (which would leak cross-tenant content-id existence).
