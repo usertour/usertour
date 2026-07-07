@@ -257,27 +257,27 @@ export class ApiSegmentsService {
     return seg;
   }
 
-  /** Internal attribute / event ids -> stable codeName (read; fallback: the id). */
-  private async buildDecompileResolvers(projectId: string): Promise<DecompileResolvers> {
-    const [attributes, events] = await Promise.all([
+  /** Load the project's attribute + event catalogs once — the shared input for the
+   * compile (code→id) and decompile (id→code) resolver maps. */
+  private async loadResolverCatalogs(projectId: string) {
+    return Promise.all([
       this.prisma.attribute.findMany({
         where: { projectId },
         select: { id: true, codeName: true, bizType: true },
       }),
       this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
     ]);
+  }
+
+  /** Internal attribute / event ids -> stable codeName (read; fallback: the id). */
+  private async buildDecompileResolvers(projectId: string): Promise<DecompileResolvers> {
+    const [attributes, events] = await this.loadResolverCatalogs(projectId);
     return buildDecompileResolversFrom(attributes, events);
   }
 
   /** Stable codeName -> internal attribute / event id (write; fallback: the code). */
   private async buildCompileResolvers(projectId: string): Promise<CompileResolvers> {
-    const [attributes, events] = await Promise.all([
-      this.prisma.attribute.findMany({
-        where: { projectId },
-        select: { id: true, codeName: true, bizType: true },
-      }),
-      this.prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
-    ]);
+    const [attributes, events] = await this.loadResolverCatalogs(projectId);
     return buildCompileResolversFrom(attributes, events);
   }
 }

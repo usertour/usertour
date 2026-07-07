@@ -18,6 +18,7 @@
  * Run:  DATABASE_URL=... npx ts-node -r tsconfig-paths/register scripts/verify-codec.ts [limitPerType]
  */
 import { PrismaClient } from '@prisma/client';
+import { stripIds, diffPaths } from './codec-diff';
 
 import { compileActions, compileConditions } from '../src/api/content-representation/rules.compile';
 import {
@@ -55,55 +56,6 @@ const idR = { attributeCode: (i: string) => i, eventCode: (i: string) => i };
 const comR = { attributeId: (c: string) => c, eventId: (c: string) => c };
 
 /** Recursively drop volatile server-owned ids so they don't count as diffs. */
-function stripIds(v: any): any {
-  if (Array.isArray(v)) return v.map(stripIds);
-  if (v && typeof v === 'object') {
-    const out: any = {};
-    for (const k of Object.keys(v)) {
-      if (k === 'id') continue;
-      out[k] = stripIds(v[k]);
-    }
-    return out;
-  }
-  return v;
-}
-function deepEqual(a: any, b: any): boolean {
-  if (a === b) return true;
-  if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object') return false;
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-  if (Array.isArray(a)) {
-    if (a.length !== b.length) return false;
-    return a.every((x, i) => deepEqual(x, b[i]));
-  }
-  const ka = Object.keys(a);
-  const kb = Object.keys(b);
-  if (ka.length !== kb.length) return false;
-  return ka.every((k) => k in b && deepEqual(a[k], b[k]));
-}
-
-/** Field-path deltas between original and round-trip (both id-stripped). */
-function diffPaths(a: any, b: any, base = '', out: string[] = []): string[] {
-  if (deepEqual(a, b)) return out;
-  const ao = a && typeof a === 'object';
-  const bo = b && typeof b === 'object';
-  if (!ao || !bo || Array.isArray(a) !== Array.isArray(b)) {
-    out.push(`changed:${base || '.'}`);
-    return out;
-  }
-  if (Array.isArray(a)) {
-    if (a.length !== b.length) out.push(`len:${base}`);
-    for (let i = 0; i < Math.max(a.length, b.length); i++) diffPaths(a[i], b[i], `${base}[]`, out);
-    return out;
-  }
-  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
-    const p = base ? `${base}.${k}` : k;
-    if (!(k in a)) out.push(`added:${p}`);
-    else if (!(k in b)) out.push(`removed:${p}`);
-    else diffPaths(a[k], b[k], p, out);
-  }
-  return out;
-}
-
 type Stat = { total: number; bad: number; sigs: Map<string, { count: number; sample?: any }> };
 const stats = new Map<string, Stat>();
 function get(type: string): Stat {
