@@ -5,6 +5,7 @@ import { Environment, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
 import {
+  EnvironmentNotFoundError,
   EnvironmentNotInTokenScopeError,
   EnvironmentProjectMismatchError,
   ExpiredApiKeyError,
@@ -155,7 +156,10 @@ export class ApiTokenAuthService {
       where: { id: environmentId },
     });
     if (!environment || environment.deleted) {
-      throw new InvalidApiKeyError();
+      // A path-param environment that doesn't exist is a 404, not a credential
+      // failure — throwing InvalidApiKeyError here mislabeled a bad :environmentId
+      // as "invalid API key".
+      throw new EnvironmentNotFoundError();
     }
     if (environment.projectId !== projectId) {
       throw new EnvironmentProjectMismatchError();
@@ -168,7 +172,8 @@ export class ApiTokenAuthService {
       return null;
     }
     const [type, value] = authHeader.split(' ');
-    if (type !== 'Bearer') {
+    // The auth scheme is case-insensitive per RFC 7235 (`bearer` / `BEARER` are valid).
+    if (type?.toLowerCase() !== 'bearer') {
       return null;
     }
     return value ?? null;

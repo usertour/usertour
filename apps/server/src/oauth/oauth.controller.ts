@@ -108,7 +108,7 @@ export class OAuthController {
       select: { id: true, name: true, projectId: true },
       orderBy: { createdAt: 'asc' },
     });
-    // The consent page shows a PostHog-style picker — the user grants a subset of what the
+    // The consent page shows a scope picker — the user grants a subset of what the
     // client requested ∩ their role on the chosen project, and which environments it covers.
     const projects = visible.map((m) => ({
       id: m.projectId,
@@ -161,7 +161,7 @@ export class OAuthController {
     }
     const roleCaps = (ROLE_CAPABILITIES[membership.role as Role] ?? []) as Capability[];
     // Max grantable = what the client requested ∩ the user's role (full role if it asked for
-    // nothing). The consent page may narrow further (PostHog-style); clamp to never exceed.
+    // nothing). The consent page may narrow further; clamp to never exceed.
     const grantable: string[] =
       claims.scope.length > 0
         ? claims.scope.filter((s) => roleCaps.includes(s as Capability))

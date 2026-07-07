@@ -142,11 +142,23 @@ export class AuthService implements OnModuleInit {
   // be exchanged again (refreshAccessToken's `expiresAt > now` filter rejects
   // them), so removing them is safe and keeps the table bounded.
   async cleanExpiredRefreshTokens() {
+    const now = new Date();
     const { count } = await this.prisma.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
+      where: { expiresAt: { lt: now } },
     });
-    if (count > 0) {
-      this.logger.log(`Cleaned ${count} expired refresh tokens`);
+    // OAuth writes a fresh short-lived (1h) access token as an ApiToken row on every
+    // authorization AND every refresh rotation, so expired OAuth token rows pile up
+    // unbounded with no other cleanup. Prune them here too — only clientId-set rows
+    // (personal `utp_` keys have no expiry and must stay). An expired row is already
+    // unusable (getAccessToken checks expiresAt), and the grant + its live token are
+    // untouched, so this is pure dead-weight removal.
+    const { count: oauthCount } = await this.prisma.apiToken.deleteMany({
+      where: { clientId: { not: null }, expiresAt: { lt: now } },
+    });
+    if (count > 0 || oauthCount > 0) {
+      this.logger.log(
+        `Cleaned ${count} expired refresh tokens, ${oauthCount} expired OAuth access tokens`,
+      );
     }
   }
 

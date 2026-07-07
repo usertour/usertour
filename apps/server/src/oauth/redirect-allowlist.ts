@@ -3,7 +3,8 @@
  * attacker register an arbitrary `redirect_uri` (open-redirect / code exfil). We
  * accept only the callback shapes real MCP clients use: loopback HTTP (native /
  * CLI flows), custom app schemes, and a small allowlist of vendor web callbacks.
- * Mirrors Bytebase's DCR redirect policy. Human consent is the second gate.
+ * This mirrors the standard DCR redirect policy for remote OAuth servers. Human
+ * consent is the second gate.
  */
 
 // Custom-scheme native clients (Cursor, VS Code, JetBrains, …).

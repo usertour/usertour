@@ -51,7 +51,9 @@ describe('AuthService', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn(),
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
+      apiToken: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
       // Force-SSO gate lookup — default to "not a member of any enforced project".
       userOnProject: { findMany: jest.fn().mockResolvedValue([]) },
       $transaction: jest.fn((cb: any) => cb(prisma)),
@@ -298,6 +300,20 @@ describe('AuthService', () => {
       const result = await service.issueTokensOrChallenge('user-1', true);
       expect(result.kind).toBe('tokens');
       expect(prisma.userOnProject.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanExpiredRefreshTokens', () => {
+    it('also prunes expired OAuth access-token rows (clientId set), never personal keys', async () => {
+      await service.cleanExpiredRefreshTokens();
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { expiresAt: { lt: expect.any(Date) } },
+      });
+      // OAuth access tokens accumulate as ApiToken rows on every refresh rotation —
+      // prune the expired ones, scoped to clientId-set (personal `utp_` keys stay).
+      expect(prisma.apiToken.deleteMany).toHaveBeenCalledWith({
+        where: { clientId: { not: null }, expiresAt: { lt: expect.any(Date) } },
+      });
     });
   });
 });
