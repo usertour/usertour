@@ -75,6 +75,7 @@ export class ApiEnvironmentsController {
     @Param('projectId') projectId: string,
     @Req() req: { apiToken: AuthedApiToken },
   ) {
+    this.requireEnvironmentInScope(req, id);
     return this.service.get(id, projectId, this.scope(req));
   }
 
@@ -101,7 +102,9 @@ export class ApiEnvironmentsController {
     @Param('id') id: string,
     @Param('projectId') projectId: string,
     @Body() body: UpdateEnvironmentBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
+    this.requireEnvironmentInScope(req, id);
     return this.service.update(id, projectId, body);
   }
 
@@ -116,8 +119,27 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 204, description: 'Environment deleted' })
   @ApiResponse({ status: 404, description: 'Environment not found' })
-  async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
+  async remove(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    this.requireEnvironmentInScope(req, id);
     await this.service.delete(id, projectId);
+  }
+
+  /**
+   * The environments item routes use `:id` (not `:environmentId`), so the guard's
+   * path-param scope check never fires — enforce the token's env allowlist here.
+   * A pure allowlist check (no DB lookup), so a NON-existent env still 404s from the
+   * service (E1026) rather than being masked as a scope error; an out-of-scope env
+   * is refused up front (E1029).
+   */
+  private requireEnvironmentInScope(
+    req: { apiToken: AuthedApiToken },
+    environmentId: string,
+  ): void {
+    this.auth.assertEnvironmentInScope(req.apiToken, { id: environmentId });
   }
 
   /** The credential's effective environment scope (token allowlist ∩ member ceiling). */

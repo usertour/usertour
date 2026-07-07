@@ -161,8 +161,17 @@ export class ApiContentController {
     @Param('id') id: string,
     @Param('projectId') projectId: string,
     @Body() body: DuplicateContentBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
   ) {
-    return this.service.duplicate(id, projectId, body);
+    // Duplicate carries the target environment in the BODY (or defaults to the
+    // source content's env), so the guard's path-param scope check never fires —
+    // pass the token's allowlist so the service enforces it on the effective target.
+    return this.service.duplicate(
+      id,
+      projectId,
+      body,
+      this.auth.allowedEnvironmentIds(req.apiToken),
+    );
   }
 
   @Post(':id/publish')

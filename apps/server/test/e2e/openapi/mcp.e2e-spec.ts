@@ -43,6 +43,7 @@ describe('MCP endpoint (e2e)', () => {
   let ownerUserId: string;
   let projectA: string;
   let envA: string;
+  let envB: string;
   let themeId: string;
   const bizUserExternalId = 'mcp-biz-1';
 
@@ -53,13 +54,27 @@ describe('MCP endpoint (e2e)', () => {
     }
   }`;
 
-  async function mint(scopes: Capability[], projectIds: string[]): Promise<string> {
-    const res = await graphql(app, {
-      query: CREATE,
-      variables: { input: { name: 'mcp', scopes, projectIds } },
-      token: ownerToken,
-    });
+  async function mint(
+    scopes: Capability[],
+    projectIds: string[],
+    environmentIds?: string[],
+  ): Promise<string> {
+    const input: Record<string, unknown> = { name: 'mcp', scopes, projectIds };
+    if (environmentIds) {
+      input.environmentIds = environmentIds;
+    }
+    const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
+  }
+
+  // Extract a tools/call result object (the `{ content, isError }` shape).
+  async function callTool(name: string, args: Record<string, unknown>, token: string) {
+    return extractResult(
+      await rpc(
+        { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
+        token,
+      ),
+    ).result;
   }
 
   // POST a JSON-RPC message to /mcp with the headers a real MCP client sends.
@@ -1337,6 +1352,56 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
       expect(env).toMatchObject({ object: 'environment', name: 'MCP env' });
+    });
+
+    // update/delete_environment and duplicate_content take the env id as a plain
+    // arg (not the `environmentId` the dispatch wrapper scope-checks), so each
+    // handler must assert the token's allowlist itself — else an env-restricted
+    // token could rename/delete or duplicate into an environment outside its scope.
+    // envB lives only for this block (a 2nd env would otherwise break the
+    // single-env auto-defaulting the other write-tool tests rely on).
+    describe('environment allowlist enforcement (plain-id args)', () => {
+      beforeAll(async () => {
+        envB = (await buildEnvironment(prisma, { projectId: projectA, name: 'mcp-b' })).id;
+      });
+      afterAll(async () => {
+        await prisma.environment.deleteMany({ where: { id: envB } });
+      });
+
+      it('update_environment rejects an out-of-scope target (E1029)', async () => {
+        const token = await mint([Capability.EnvironmentManage], [projectA], [envA]);
+        const result = await callTool('update_environment', { id: envB, name: 'Hijacked' }, token);
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('E1029');
+      });
+
+      it('delete_environment rejects an out-of-scope target (E1029)', async () => {
+        const token = await mint([Capability.EnvironmentManage], [projectA], [envA]);
+        const result = await callTool('delete_environment', { id: envB }, token);
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('E1029');
+      });
+
+      it('duplicate_content rejects duplicating into an out-of-scope environment (E1029)', async () => {
+        const source = await buildContent(prisma, {
+          projectId: projectA,
+          environmentId: envA,
+          type: 'flow',
+        });
+        await buildVersion(prisma, { contentId: source.id, sequence: 0 });
+        const token = await mint(
+          [Capability.ContentCreate, Capability.ContentRead],
+          [projectA],
+          [envA],
+        );
+        const result = await callTool(
+          'duplicate_content',
+          { contentId: source.id, environmentId: envB },
+          token,
+        );
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('E1029');
+      });
     });
 
     it('get_theme_schema returns the writable settings fields', async () => {

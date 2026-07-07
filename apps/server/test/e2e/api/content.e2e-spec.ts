@@ -27,6 +27,7 @@ describe('API v2 /content (e2e)', () => {
   let ownerUserId: string;
   let projectId: string;
   let environmentId: string;
+  let otherEnvironmentId: string;
   let flowId: string;
   let flowVersionId: string;
   let publishedId: string;
@@ -37,12 +38,12 @@ describe('API v2 /content (e2e)', () => {
     createApiToken(input: $input){ token apiToken { id } }
   }`;
 
-  async function mint(scopes: Capability[]): Promise<string> {
-    const res = await graphql(app, {
-      query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds: [projectId] } },
-      token: ownerToken,
-    });
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
+    const input: Record<string, unknown> = { name: 'k', scopes, projectIds: [projectId] };
+    if (environmentIds) {
+      input.environmentIds = environmentIds;
+    }
+    const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
   }
 
@@ -57,6 +58,9 @@ describe('API v2 /content (e2e)', () => {
 
     projectId = (await buildProject(prisma, { name: 'api-v2-content' })).id;
     environmentId = (await buildEnvironment(prisma, { projectId })).id;
+    // A second environment in the same project, to prove environment-scoped tokens
+    // can't duplicate content into (or out of) an environment they weren't granted.
+    otherEnvironmentId = (await buildEnvironment(prisma, { projectId })).id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
     ownerUserId = owner.user.id;
@@ -362,6 +366,46 @@ describe('API v2 /content (e2e)', () => {
     ).send({});
     expect(res.status).toBe(201);
     expect(res.body.name).toBe('Onboarding'); // source name
+  });
+
+  // Duplicate carries its target environment in the body (or defaults to the
+  // source content's env), so the guard's path-param scope check never fires —
+  // the service must enforce the token's env allowlist on the EFFECTIVE target.
+  it('rejects duplicate INTO an out-of-scope environment (explicit target, 403 E1029)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate], [environmentId]);
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
+      token,
+    ).send({ environmentId: otherEnvironmentId });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1029');
+  });
+
+  it('rejects duplicate that DEFAULTS to a source env outside scope (omitted target, 403 E1029)', async () => {
+    // flow is homed in `environmentId`; a token scoped only to `otherEnvironmentId`
+    // omitting the target would copy into `environmentId` — must be refused.
+    const token = await mint(
+      [Capability.ContentRead, Capability.ContentCreate],
+      [otherEnvironmentId],
+    );
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
+      token,
+    ).send({});
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1029');
+  });
+
+  it('allows duplicate into an IN-scope environment', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate], [environmentId]);
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
+      token,
+    ).send({ environmentId });
+    expect(res.status).toBe(201);
   });
 
   it('returns 404 duplicating unknown content (E1004)', async () => {

@@ -23,12 +23,12 @@ describe('API v2 /environments (e2e)', () => {
     createApiToken(input: $input){ token apiToken { id } }
   }`;
 
-  async function mint(scopes: Capability[]): Promise<string> {
-    const res = await graphql(app, {
-      query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds: [projectId] } },
-      token: ownerToken,
-    });
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
+    const input: Record<string, unknown> = { name: 'k', scopes, projectIds: [projectId] };
+    if (environmentIds) {
+      input.environmentIds = environmentIds;
+    }
+    const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
   }
 
@@ -142,5 +142,41 @@ describe('API v2 /environments (e2e)', () => {
     const res = await send('post', base(), token).send({ name: 'Nope' });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
+  });
+
+  // The item routes use `:environmentId`, so ApiTokenGuard enforces the token's
+  // environment allowlist on the target — a token scoped to one environment must
+  // not read, rename, or DELETE another, even with the right capability.
+  describe('environment allowlist enforcement (guard fires on :environmentId)', () => {
+    it('rejects DELETE of an out-of-scope environment (403 E1029)', async () => {
+      const token = await mint([Capability.EnvironmentManage], [primaryEnvId]);
+      const res = await send('delete', `${base()}/${otherEnvId}`, token).send();
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1029');
+    });
+
+    it('rejects PATCH-rename of an out-of-scope environment (403 E1029)', async () => {
+      const token = await mint([Capability.EnvironmentManage], [primaryEnvId]);
+      const res = await send('patch', `${base()}/${otherEnvId}`, token).send({ name: 'Hijacked' });
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1029');
+    });
+
+    it('rejects GET of an out-of-scope environment (403 E1029)', async () => {
+      const token = await mint([Capability.EnvironmentRead], [primaryEnvId]);
+      const res = await api('get', `${base()}/${otherEnvId}`, token);
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('E1029');
+    });
+
+    it('allows PATCH-rename of an IN-scope environment', async () => {
+      const token = await mint(
+        [Capability.EnvironmentManage, Capability.EnvironmentRead],
+        [otherEnvId],
+      );
+      const res = await send('patch', `${base()}/${otherEnvId}`, token).send({ name: 'Staging 2' });
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('Staging 2');
+    });
   });
 });

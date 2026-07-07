@@ -242,10 +242,18 @@ export function buildWriteTools(): McpTool[] {
         environmentId: z.string().optional(),
       },
       handler: (args, ctx) =>
-        ctx.services.content.duplicate(String(args.contentId), ctx.projectId, {
-          name: args.name as string | undefined,
-          environmentId: args.environmentId as string | undefined,
-        }),
+        // Pass the token's env allowlist so the service enforces it on the effective
+        // target (explicit `environmentId`, or the source content's env when omitted) —
+        // this tool isn't `envScoped`, so the dispatch wrapper doesn't resolve it.
+        ctx.services.content.duplicate(
+          String(args.contentId),
+          ctx.projectId,
+          {
+            name: args.name as string | undefined,
+            environmentId: args.environmentId as string | undefined,
+          },
+          ctx.auth.allowedEnvironmentIds(ctx.token),
+        ),
     },
     {
       name: 'publish_content',
@@ -780,12 +788,18 @@ export function buildWriteTools(): McpTool[] {
         id: z.string().describe('The environment id.'),
         ...updateEnvironmentBody.shape,
       },
-      handler: (args, ctx) =>
-        ctx.services.environments.update(
+      handler: (args, ctx) => {
+        // The target env is a plain `id` arg, not an `environmentId` the dispatch
+        // wrapper would scope-check — assert the token's allowlist on it here, or a
+        // restricted token could rename an environment outside its scope. Pure
+        // allowlist check (no lookup) so a non-existent env still 404s from the service.
+        ctx.auth.assertEnvironmentInScope(ctx.token, { id: String(args.id) });
+        return ctx.services.environments.update(
           String(args.id),
           ctx.projectId,
           args as unknown as UpdateEnvironmentBody,
-        ),
+        );
+      },
     },
     {
       name: 'delete_environment',
@@ -797,6 +811,9 @@ export function buildWriteTools(): McpTool[] {
       description: 'Delete an environment. The primary / last environment cannot be deleted.',
       inputSchema: { id: z.string().describe('The environment id.') },
       handler: async (args, ctx) => {
+        // Assert the token's env allowlist on the target — a plain `id` arg isn't
+        // scope-checked by the dispatch wrapper (see update_environment).
+        ctx.auth.assertEnvironmentInScope(ctx.token, { id: String(args.id) });
         await ctx.services.environments.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
