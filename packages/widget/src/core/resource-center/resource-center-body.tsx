@@ -475,40 +475,21 @@ export const AnnouncementReadMoreButton = (props: AnnouncementReadMoreButtonProp
 };
 
 /**
- * Format a date string into a human-readable label like "Tuesday, Apr 14, 2026".
- * The year is included so groupAnnouncementsByDate (which groups by this label)
- * can't merge same-weekday/month/day announcements from different years under
- * one separator.
+ * Format a date string into a human-readable label like "Tuesday, Apr 14".
+ * The year is shown only for dates outside the current year, so recent
+ * announcements read light ("Friday, Jul 3") while an old one can't be
+ * mistaken for this year's date. Shared by the feed separators, the detail
+ * header, and the popup bubble.
  */
 export const formatAnnouncementDate = (dateStr: string): string => {
   const date = new Date(dateStr);
+  const isCurrentYear = date.getFullYear() === new Date().getFullYear();
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
+    ...(isCurrentYear ? {} : { year: 'numeric' }),
   });
-};
-
-/**
- * Group announcements by date label and return groups in order.
- */
-const groupAnnouncementsByDate = (items: AnnouncementListItem[]) => {
-  const groups: { label: string; items: AnnouncementListItem[] }[] = [];
-  // null sentinel, not '': an item with an empty time (label '') still starts a
-  // group instead of pushing into groups[-1]. A null-scheduledAt row can sort
-  // first (server allows it and Postgres orders NULLS FIRST desc), and its time
-  // is '' — without this the first push would read undefined and crash the feed.
-  let currentLabel: string | null = null;
-  for (const item of items) {
-    const label = item.time ? formatAnnouncementDate(item.time) : '';
-    if (groups.length === 0 || label !== currentLabel) {
-      currentLabel = label;
-      groups.push({ label, items: [] });
-    }
-    groups[groups.length - 1].items.push(item);
-  }
-  return groups;
 };
 
 interface AnnouncementListDetailProps {
@@ -683,8 +664,6 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     [actions, block.id],
   );
 
-  const dateGroups = useMemo(() => groupAnnouncementsByDate(announcements), [announcements]);
-
   return (
     <div className="flex flex-col p-4">
       {isLoading && (
@@ -701,49 +680,51 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
 
       {!isLoading &&
         !feedError &&
-        dateGroups.map((group) => (
-          <div key={group.label}>
-            {/* Date separator */}
-            {group.label && (
-              <div className="flex items-center gap-3 my-3">
-                <div className="flex-1 h-px bg-sdk-foreground/15" />
+        announcements.map((item) => (
+          <div key={item.id} className="mb-4">
+            {/* Every announcement opens with its own captioned date separator
+                (no day grouping): the intro is free-form rich text, so a bold
+                title plus spacing isn't a reliable boundary between items — a
+                uniform separator is, and it keeps each item's date in view at
+                any scroll position. Same-day repetition reads as rhythm, not
+                noise. An item with no time (defensive: publish always stamps
+                scheduledAt) still gets a plain divider line. */}
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 h-px bg-sdk-foreground/15" />
+              {item.time && (
                 <span className="text-xs text-sdk-foreground/50 whitespace-nowrap">
-                  {group.label}
+                  {formatAnnouncementDate(item.time)}
                 </span>
-                <div className="flex-1 h-px bg-sdk-foreground/15" />
+              )}
+              <div className="flex-1 h-px bg-sdk-foreground/15" />
+            </div>
+
+            {/* Title */}
+            <div className="flex items-center gap-2">
+              {!item.seen && (
+                <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
+              )}
+              <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
+            </div>
+
+            {/* Intro content */}
+            <div className="text-sm text-sdk-foreground mt-1">
+              <ContentEditorSerialize
+                contents={item.content}
+                onClick={onContentClick}
+                userAttributes={mergedAttributes}
+              />
+            </div>
+
+            {/* Read more button */}
+            {item.moreEnabled && (
+              <div className="flex justify-end mt-2">
+                <AnnouncementReadMoreButton
+                  label={item.moreButtonText}
+                  onClick={() => handleReadMore(item)}
+                />
               </div>
             )}
-
-            {group.items.map((item) => (
-              <div key={item.id} className="mb-4">
-                {/* Title */}
-                <div className="flex items-center gap-2">
-                  {!item.seen && (
-                    <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
-                  )}
-                  <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
-                </div>
-
-                {/* Intro content */}
-                <div className="text-sm text-sdk-foreground mt-1">
-                  <ContentEditorSerialize
-                    contents={item.content}
-                    onClick={onContentClick}
-                    userAttributes={mergedAttributes}
-                  />
-                </div>
-
-                {/* Read more button */}
-                {item.moreEnabled && (
-                  <div className="flex justify-end mt-2">
-                    <AnnouncementReadMoreButton
-                      label={item.moreButtonText}
-                      onClick={() => handleReadMore(item)}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         ))}
     </div>
