@@ -83,9 +83,14 @@ export const ResourceCenterTabBar = memo(() => {
           // announcements — a single-block tab auto-expands, so the row badge
           // never renders, and the launcher badge is hidden while expanded.
           // Mirrors the launcher badge (same count, same theme colors), sized
-          // down for the tab bar.
+          // down for the tab bar. ACTIVE tab excluded: its own content already
+          // shows the state (the row badge on a multi-block tab, the feed
+          // itself when auto-expanded) — a tab badge there would duplicate the
+          // row badge on screen. The tab badge's job is only "somewhere you
+          // are NOT has unread".
           const hasUnreadAnnouncements =
             badgeCount > 0 &&
+            nav.activeTabId !== tab.id &&
             tab.blocks.some((block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT);
           return (
             <button
