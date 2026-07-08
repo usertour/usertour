@@ -320,7 +320,6 @@ export const useCreateContentMutation = () => {
 export interface DuplicateContentInput {
   contentId: string;
   name: string;
-  targetEnvironmentId?: string;
 }
 
 export const useDuplicateContentMutation = () => {

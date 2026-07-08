@@ -612,7 +612,7 @@ export class ContentService {
     return [...envIds];
   }
 
-  async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {
+  async duplicateContent(contentId: string, name: string) {
     const duplicateContent = await this.prisma.content.findUnique({
       where: { id: contentId },
       include: { environment: true },
@@ -631,7 +631,9 @@ export class ContentService {
           data: {
             name: name || duplicateContent.name,
             buildUrl: duplicateContent.buildUrl,
-            environmentId: targetEnvironmentId || duplicateContent.environmentId,
+            // Homing follows the source — the legacy column is inert (nothing
+            // user-visible reads WHICH env it names), so there is no target choice.
+            environmentId: duplicateContent.environmentId,
             type: duplicateContent.type,
             projectId: duplicateContent.projectId,
           },

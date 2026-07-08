@@ -69,11 +69,7 @@ export class ContentResolver {
     resourceId: (_a, r) => (r as { id: string }).id,
   })
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
-    return await this.contentService.duplicateContent(
-      data.contentId,
-      data.name,
-      data.targetEnvironmentId,
-    );
+    return await this.contentService.duplicateContent(data.contentId, data.name);
   }
 
   // Nullable: the underlying service filters soft-deleted rows, so a contentId

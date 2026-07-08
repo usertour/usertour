@@ -698,7 +698,7 @@ describe('GraphQL content (e2e)', () => {
   // ── deleteContent ────────────────────────────────────────────────
 
   describe('deleteContent', () => {
-    it('soft-deletes a content and drops its ContentOnEnvironment rows', async () => {
+    it('refuses to delete published content (E1028), then soft-deletes once unpublished', async () => {
       const { content, version } = await seedContent();
       await prisma.contentOnEnvironment.create({
         data: {
@@ -709,6 +709,17 @@ describe('GraphQL content (e2e)', () => {
         },
       });
 
+      // Still live in an environment → delete must refuse, not silently take
+      // the content down (the builder unpublish-first contract, E1028).
+      const refused = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentIdInput!) { deleteContent(data: $data) { success } }',
+        variables: { data: { contentId: content.id } },
+      });
+      expect(refused.body.errors?.[0]?.extensions?.code).toBe('E1028');
+
+      await prisma.contentOnEnvironment.deleteMany({ where: { contentId: content.id } });
+
       const res = await graphql(app, {
         token,
         query: 'mutation ($data: ContentIdInput!) { deleteContent(data: $data) { success } }',
@@ -718,11 +729,6 @@ describe('GraphQL content (e2e)', () => {
 
       const row = await prisma.content.findUnique({ where: { id: content.id } });
       expect(row?.deleted).toBe(true);
-
-      const coes = await prisma.contentOnEnvironment.findMany({
-        where: { contentId: content.id },
-      });
-      expect(coes).toEqual([]);
     });
 
     it('errors deleting an unknown content', async () => {

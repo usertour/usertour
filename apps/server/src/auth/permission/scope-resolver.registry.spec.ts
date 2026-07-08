@@ -77,13 +77,6 @@ describe('scope resolvers', () => {
         'proj-1',
       );
     });
-    it('throws when duplicate target environment is in another project', async () => {
-      await expect(
-        resolvers[ScopeKind.Content]({
-          data: { contentId: 'content-1', targetEnvironmentId: 'env-2' },
-        }),
-      ).rejects.toBeInstanceOf(NoPermissionError);
-    });
     it('throws when referenced localization is in another project', async () => {
       await expect(
         resolvers[ScopeKind.Content]({ data: { versionId: 'version-1', localizationId: 'loc-2' } }),

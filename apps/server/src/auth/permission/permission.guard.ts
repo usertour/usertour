@@ -143,7 +143,7 @@ export class PermissionGuard implements CanActivate {
   /**
    * The environment(s) a request ACTS ON, for the membership env check. Explicit
    * environment arguments cover env-scoped endpoints and env-as-parameter writes
-   * (publish/unpublish `data.environmentId`, duplicate `data.targetEnvironmentId`);
+   * (publish/unpublish `data.environmentId`);
    * integration / mapping / session endpoints carry their environment implicitly
    * and are resolved through the row. Project-level scopes yield nothing.
    */
@@ -151,12 +151,7 @@ export class PermissionGuard implements CanActivate {
     scope: ScopeKind,
     args: Record<string, any>,
   ): Promise<string[]> {
-    const explicit = [
-      args.environmentId,
-      args.data?.environmentId,
-      args.query?.environmentId,
-      args.data?.targetEnvironmentId,
-    ];
+    const explicit = [args.environmentId, args.data?.environmentId, args.query?.environmentId];
     // Environment-scoped endpoints address the environment row itself as `data.id`.
     if (scope === ScopeKind.Environment) {
       explicit.push(args.data?.id);

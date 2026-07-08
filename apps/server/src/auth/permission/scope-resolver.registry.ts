@@ -133,14 +133,6 @@ const fromContent =
       return null;
     }
 
-    // Duplicate-to-another-environment: the target must be in the same project.
-    const targetEnvironmentId = args.data?.targetEnvironmentId;
-    if (targetEnvironmentId) {
-      const targetProjectId = await services.getEnvironmentProjectId(targetEnvironmentId);
-      if (!targetProjectId || targetProjectId !== projectId) {
-        throw new NoPermissionError();
-      }
-    }
     // Localization referenced in the request must belong to the same project.
     const localizationId =
       args.localizationId || args.data?.localizationId || args.query?.localizationId;
