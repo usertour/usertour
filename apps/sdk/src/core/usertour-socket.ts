@@ -476,72 +476,59 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.sendClientMessage(ClientMessageKind.CLICK_RESOURCE_CENTER, params, options);
   }
 
+  /**
+   * Emit a read-style client message and validate the ack. Returns null on
+   * timeout / dropped socket / malformed response — never an empty value — so
+   * callers can tell "load failed" (render a retryable error) from "genuinely
+   * empty". EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects
+   * instead of hanging the caller on 'Loading...' forever; sub-timeout
+   * disconnects are buffered by socket.io and flush on reconnect.
+   */
+  private async requestClientMessage<T>(
+    kind: ClientMessageKind,
+    payload: unknown,
+    isValid: (result: unknown) => boolean,
+  ): Promise<T | null> {
+    try {
+      const result = await this.socket?.emitWithAck(
+        WebSocketEvents.CLIENT_MESSAGE,
+        { kind, payload, requestId: uuidV4() },
+        this.EMIT_TIMEOUT,
+      );
+      if (isValid(result)) {
+        return result as T;
+      }
+      return null;
+    } catch (error) {
+      logger.error(`Failed to request ${kind}:`, error);
+      return null;
+    }
+  }
+
   async listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
   ): Promise<ResourceCenterBlockContentItem[] | null> {
-    try {
-      // EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects instead of
-      // hanging the caller forever (see listAnnouncements).
-      const result = await this.socket?.emitWithAck(
-        WebSocketEvents.CLIENT_MESSAGE,
-        {
-          kind: ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
-          payload: params,
-          requestId: uuidV4(),
-        },
-        this.EMIT_TIMEOUT,
-      );
-      if (Array.isArray(result)) {
-        return result as ResourceCenterBlockContentItem[];
-      }
-      // Not an array = timeout/dropped socket/malformed. Null (not []) so the
-      // caller renders a retryable error, not a misleading empty list.
-      return null;
-    } catch (error) {
-      logger.error('Failed to list resource center block content:', error);
-      return null;
-    }
+    return await this.requestClientMessage(
+      ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
+      params,
+      (result) => Array.isArray(result),
+    );
   }
 
   async listAnnouncements(): Promise<ListAnnouncementsResult | null> {
-    try {
-      // EMIT_TIMEOUT bounds the ack (as emitClientMessage does) so a socket
-      // buffering during a slow/failed reconnect rejects instead of leaving the
-      // promise pending forever — which would hang the feed on 'Loading...'.
-      const result = await this.socket?.emitWithAck(
-        WebSocketEvents.CLIENT_MESSAGE,
-        { kind: ClientMessageKind.LIST_ANNOUNCEMENTS, payload: {}, requestId: uuidV4() },
-        this.EMIT_TIMEOUT,
-      );
-      if (result && typeof result === 'object' && 'announcements' in result) {
-        return result as ListAnnouncementsResult;
-      }
-      // Timeout/dropped socket/malformed → null (not an empty feed) so the feed
-      // shows a retryable error instead of "no announcements".
-      return null;
-    } catch (error) {
-      logger.error('Failed to list announcements:', error);
-      return null;
-    }
+    return await this.requestClientMessage(
+      ClientMessageKind.LIST_ANNOUNCEMENTS,
+      {},
+      (result) => result != null && typeof result === 'object' && 'announcements' in result,
+    );
   }
 
   async getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null> {
-    try {
-      // EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects instead of
-      // hanging the detail view on 'Loading...' forever (see listAnnouncements).
-      const result = await this.socket?.emitWithAck(
-        WebSocketEvents.CLIENT_MESSAGE,
-        { kind: ClientMessageKind.GET_ANNOUNCEMENT, payload: params, requestId: uuidV4() },
-        this.EMIT_TIMEOUT,
-      );
-      if (result && typeof result === 'object' && 'id' in result) {
-        return result as AnnouncementDetail;
-      }
-      return null;
-    } catch (error) {
-      logger.error('Failed to get announcement:', error);
-      return null;
-    }
+    return await this.requestClientMessage(
+      ClientMessageKind.GET_ANNOUNCEMENT,
+      params,
+      (result) => result != null && typeof result === 'object' && 'id' in result,
+    );
   }
 
   async markAnnouncementsSeen(params: MarkAnnouncementsSeenDto): Promise<boolean> {

@@ -306,6 +306,35 @@ SubPageDetail.displayName = 'SubPageDetail';
 // Content List detail view
 // ============================================================================
 
+// ============================================================================
+// LoadErrorRetry — shared failure state for on-demand reads
+// ============================================================================
+
+interface LoadErrorRetryProps {
+  onRetry: () => void;
+  message?: string;
+}
+
+/**
+ * Shared load-failure state for the on-demand reads (content list, announcement
+ * feed / detail): an explicit "couldn't load" line plus a Retry button, so a
+ * timed-out fetch never renders as a misleading empty state.
+ */
+const LoadErrorRetry = memo(({ onRetry, message = "Couldn't load." }: LoadErrorRetryProps) => (
+  <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
+    <span>{message}</span>
+    <button
+      type="button"
+      className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
+      onClick={onRetry}
+    >
+      Retry
+    </button>
+  </div>
+));
+
+LoadErrorRetry.displayName = 'LoadErrorRetry';
+
 interface ContentListDetailProps {
   block: ResourceCenterContentListBlock;
 }
@@ -385,16 +414,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
       )}
 
       {!contentListLoading && contentListError && (
-        <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-          <span>Couldn't load.</span>
-          <button
-            type="button"
-            className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-            onClick={() => onContentListNavigate?.(block)}
-          >
-            Retry
-          </button>
-        </div>
+        <LoadErrorRetry onRetry={() => onContentListNavigate?.(block)} />
       )}
 
       {!contentListLoading && !contentListError && filteredItems.length === 0 && (
@@ -429,12 +449,6 @@ ContentListDetail.displayName = 'ContentListDetail';
 // ============================================================================
 
 /**
- * Format a date string into a human-readable label like "Tuesday, Apr 14, 2026".
- * The year is included so groupAnnouncementsByDate (which groups by this label)
- * can't merge same-weekday/month/day announcements from different years under one
- * separator.
- */
-/**
  * The announcement Read more button — brand-colored text in a pill that gains
  * the theme hover/active background. Shared by the feed rows and the popup
  * bubble so the two surfaces can't drift.
@@ -460,6 +474,12 @@ export const AnnouncementReadMoreButton = (props: AnnouncementReadMoreButtonProp
   );
 };
 
+/**
+ * Format a date string into a human-readable label like "Tuesday, Apr 14, 2026".
+ * The year is included so groupAnnouncementsByDate (which groups by this label)
+ * can't merge same-weekday/month/day announcements from different years under
+ * one separator.
+ */
 export const formatAnnouncementDate = (dateStr: string): string => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', {
@@ -532,10 +552,10 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     [userAttributes, feedAttributes],
   );
 
-  // The SDK passes fresh inline callbacks on every render, and marking seen
-  // optimistically updates the store (to drop the badge), which re-renders the
-  // provider and churns those callback identities. Depending on the callbacks
-  // here would re-run this load on that churn — refetching the feed and
+  // These callbacks are public-API props — the widget must not assume stable
+  // identities (our own SDK passes stable arrow-properties today, but any
+  // consumer can pass fresh inline arrows every render). Depending on them
+  // here would re-run this load on identity churn — refetching the feed and
   // re-firing marks that race the still-in-flight ones. So read them from refs
   // and run the load exactly once per open.
   const onListAnnouncementsRef = useRef(onListAnnouncements);
@@ -672,16 +692,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
       )}
 
       {!isLoading && feedError && (
-        <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-          <span>Couldn't load announcements.</span>
-          <button
-            type="button"
-            className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-            onClick={retryFeed}
-          >
-            Retry
-          </button>
-        </div>
+        <LoadErrorRetry message="Couldn't load announcements." onRetry={retryFeed} />
       )}
 
       {!isLoading && !feedError && announcements.length === 0 && (
@@ -769,10 +780,11 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
     }
   }, [bodyScrollRef]);
 
-  // The SDK passes a fresh onGetAnnouncement identity every render, so depending
-  // on it would re-run this fetch (flashing back to 'Loading...' + re-issuing the
-  // socket request) on every widget re-render. Read it from a ref and fetch once
-  // per announcementId — same reason the list view refs its callbacks.
+  // onGetAnnouncement is a public-API prop with no stability guarantee (a
+  // consumer may pass a fresh inline arrow every render); depending on it would
+  // re-run this fetch (flashing back to 'Loading...' + re-issuing the socket
+  // request) on every widget re-render. Read it from a ref and fetch once per
+  // announcementId — same reason the list view refs its callbacks.
   const onGetAnnouncementRef = useRef(onGetAnnouncement);
   onGetAnnouncementRef.current = onGetAnnouncement;
 
@@ -807,18 +819,7 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   }
 
   if (!detail) {
-    return (
-      <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-        <span>Couldn't load.</span>
-        <button
-          type="button"
-          className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-          onClick={retryDetail}
-        >
-          Retry
-        </button>
-      </div>
-    );
+    return <LoadErrorRetry onRetry={retryDetail} />;
   }
 
   return (

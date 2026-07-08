@@ -7,6 +7,7 @@ import type {
   UserTourTypes,
 } from '@usertour/types';
 import { AnnouncementPopupStyle, ResourceCenterBlockType } from '@usertour/types';
+import { defaultSettings } from '@usertour/constants';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { Button } from '../../primitives';
 import { WidgetClass } from '../class-names';
@@ -191,7 +192,11 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
     popup.themeSettings ?? resourceCenterThemeSettings,
     { type: 'modal' },
   );
-  const width = themeSetting?.announcement?.modalWidth ?? 600;
+  // The fallback never fires at runtime (useSettingsStyles deep-merges
+  // defaultSettings), but the raw settings TYPE keeps the announcement section
+  // optional — so fall back to the same constant the merge uses rather than a
+  // stale literal.
+  const width = themeSetting.announcement?.modalWidth ?? defaultSettings.announcement.modalWidth;
 
   return (
     <>
@@ -311,7 +316,9 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
     popup.themeSettings ?? resourceCenterThemeSettings,
   );
 
-  const width = themeSetting?.announcement?.bubbleWidth ?? 480;
+  // Runtime-dead fallback from the same constant the merge uses — see the
+  // modal width note above.
+  const width = themeSetting.announcement?.bubbleWidth ?? defaultSettings.announcement.bubbleWidth;
 
   // Full four-quadrant handling, like the flow bubble's useAnchorPosition: the
   // launcher placement decides both sides. Bottom placements put the card

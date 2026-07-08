@@ -200,7 +200,11 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   // ── Announcement operations ──────────────────────────────────────────
 
-  async listAnnouncements(): Promise<ListAnnouncementsResult | null> {
+  // Arrow properties (like handleLiveChatClick): stable identities that can be
+  // passed to the widget directly, instead of inline arrows re-created every
+  // render — which forced the widget to mirror them into refs to avoid
+  // re-running its load effects on every provider re-render.
+  listAnnouncements = async (): Promise<ListAnnouncementsResult | null> => {
     try {
       // null = load failed (the socket layer already maps timeout/malformed to
       // null); the feed distinguishes it from an empty feed and offers a retry.
@@ -209,21 +213,21 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       logger.error('Failed to list announcements:', error);
       return null;
     }
-  }
+  };
 
-  async getAnnouncement(contentId: string): Promise<AnnouncementDetail | null> {
+  getAnnouncement = async (contentId: string): Promise<AnnouncementDetail | null> => {
     try {
       return await this.socketService.getAnnouncement({ contentId });
     } catch (error) {
       logger.error('Failed to get announcement:', error);
       return null;
     }
-  }
+  };
 
-  async markAnnouncementsSeen(
+  markAnnouncementsSeen = async (
     items: { contentId: string }[],
     source?: AnnouncementSeenSource,
-  ): Promise<boolean> {
+  ): Promise<boolean> => {
     if (items.length === 0) {
       return true;
     }
@@ -248,9 +252,16 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       return await this.socketService.markAnnouncementsSeen({ items, source });
     } catch (error) {
       logger.error('Failed to mark announcements seen:', error);
+      // Accepted trade-off: the optimistic updates above are NOT rolled back
+      // and there is no retry. Sub-30s disconnects never land here (socket.io
+      // buffers the emit and flushes on reconnect); on a longer outage the
+      // server never records seen, so the popup/badge legitimately return on
+      // the next session build — the server stays the source of truth and the
+      // state self-heals. Rolling back would flash the popup back mid-session
+      // for a marginal gain; a retry queue is not worth the machinery.
       return false;
     }
-  }
+  };
 
   /**
    * Dismiss the self-presenting popup announcement by marking it seen — the
@@ -258,7 +269,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
    * delivering it on future session builds. Every popup interaction (close,
    * backdrop, read more, content action) funnels through here.
    */
-  async dismissPopupAnnouncement(): Promise<void> {
+  dismissPopupAnnouncement = async (): Promise<void> => {
     const popup = this.getStoreData()?.resourceCenterData?.popupAnnouncement;
     if (!popup) {
       return;
@@ -267,7 +278,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     const source: AnnouncementSeenSource =
       popup.popupConfig.style === AnnouncementPopupStyle.MODAL ? 'modal' : 'bubble';
     await this.markAnnouncementsSeen([{ contentId: popup.id }], source);
-  }
+  };
 
   /**
    * Drop the popup payload from the local store. Called only from
