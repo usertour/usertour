@@ -9,6 +9,7 @@ import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useAws, useContentListQuery } from '@usertour/hooks';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
+import { ContentEditorSerialize } from '@usertour/widget';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import {
@@ -603,18 +604,22 @@ const AnnouncementContentColumn = () => {
               ref={introEditorRef}
               className="border rounded-md p-3 min-h-[120px] usertour-widget-root"
             >
-              <ContentEditor
-                zIndex={10002}
-                customUploadRequest={upload}
-                initialValue={data.introContent}
-                onValueChange={handleIntroContentChange}
-                projectId={projectId}
-                attributes={attributeList}
-                contentList={contentList}
-                enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
-                actionItems={ANNOUNCEMENT_ACTION_ITEMS}
-                getOembedInfo={getOembedInfo}
-              />
+              {isViewOnly ? (
+                <ContentEditorSerialize contents={data.introContent} />
+              ) : (
+                <ContentEditor
+                  zIndex={10002}
+                  customUploadRequest={upload}
+                  initialValue={data.introContent}
+                  onValueChange={handleIntroContentChange}
+                  projectId={projectId}
+                  attributes={attributeList}
+                  contentList={contentList}
+                  enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                  actionItems={ANNOUNCEMENT_ACTION_ITEMS}
+                  getOembedInfo={getOembedInfo}
+                />
+              )}
             </div>
           </div>
         </CardContent>
@@ -672,18 +677,22 @@ const AnnouncementContentColumn = () => {
                 ref={detailEditorRef}
                 className={cn('border rounded-md p-3 min-h-[120px] usertour-widget-root')}
               >
-                <ContentEditor
-                  zIndex={10003}
-                  customUploadRequest={upload}
-                  initialValue={data.detailContent}
-                  onValueChange={handleDetailContentChange}
-                  projectId={projectId}
-                  attributes={attributeList}
-                  contentList={contentList}
-                  enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
-                  actionItems={ANNOUNCEMENT_ACTION_ITEMS}
-                  getOembedInfo={getOembedInfo}
-                />
+                {isViewOnly ? (
+                  <ContentEditorSerialize contents={data.detailContent} />
+                ) : (
+                  <ContentEditor
+                    zIndex={10003}
+                    customUploadRequest={upload}
+                    initialValue={data.detailContent}
+                    onValueChange={handleDetailContentChange}
+                    projectId={projectId}
+                    attributes={attributeList}
+                    contentList={contentList}
+                    enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                    actionItems={ANNOUNCEMENT_ACTION_ITEMS}
+                    getOembedInfo={getOembedInfo}
+                  />
+                )}
               </div>
             </div>
           </CardContent>
