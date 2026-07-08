@@ -34,8 +34,8 @@ import {
   decompileStartRules,
 } from '../content-representation/rules.decompile';
 import {
-  loadCompileResolvers,
   loadDecompileResolvers,
+  loadResolvers,
 } from '../content-representation/attribute-resolvers';
 import {
   type UsabilityReport,
@@ -84,6 +84,9 @@ export class ApiContentVersionsService {
     contentId: string,
     projectId: string,
     query: GetContentVersionQuery,
+    // Write paths that already loaded the catalogs pass their decompile side in,
+    // so the read-back doesn't re-run the two catalog queries.
+    preloadedResolvers?: DecompileResolvers,
   ): Promise<ContentVersion> {
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       content: true,
@@ -91,7 +94,7 @@ export class ApiContentVersionsService {
     if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
-    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
+    const resolvers = preloadedResolvers ?? (await loadDecompileResolvers(this.prisma, projectId));
     return this.toVersion(version, projectId, toArray(query.expand), resolvers);
   }
 
@@ -141,13 +144,11 @@ export class ApiContentVersionsService {
     expand: string[],
     resolvers: DecompileResolvers,
   ): Promise<ContentVersion> {
+    const startRules = decompileStartRules(version.config, resolvers);
+    const hideRules = decompileHideRules(version.config, resolvers);
     const rules = {
-      ...(decompileStartRules(version.config, resolvers)
-        ? { startRules: decompileStartRules(version.config, resolvers) }
-        : {}),
-      ...(decompileHideRules(version.config, resolvers)
-        ? { hideRules: decompileHideRules(version.config, resolvers) }
-        : {}),
+      ...(startRules ? { startRules } : {}),
+      ...(hideRules ? { hideRules } : {}),
     };
     // Type-specific body (checklist / launcher / banner / tracker / resource-center).
     const data =
@@ -280,7 +281,9 @@ export class ApiContentVersionsService {
     if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
-    const resolvers = await loadCompileResolvers(this.prisma, projectId);
+    // One catalog load builds both directions: `compile` for this write, `decompile`
+    // for the read-back response (passed into get() below so it doesn't re-load).
+    const { compile: resolvers, decompile } = await loadResolvers(this.prisma, projectId);
     const content: Record<string, unknown> = {};
     const contentType =
       (version as { content?: { type?: string | null } | null }).content?.type ?? undefined;
@@ -469,7 +472,7 @@ export class ApiContentVersionsService {
     // resource-center) so the write response confirms what was persisted in one
     // round-trip — a flow has no `data` and a non-flow has empty `steps`, so the
     // mapper just omits the irrelevant one.
-    return this.get(id, contentId, projectId, { expand: ['steps', 'data'] });
+    return this.get(id, contentId, projectId, { expand: ['steps', 'data'] }, decompile);
   }
 
   /**

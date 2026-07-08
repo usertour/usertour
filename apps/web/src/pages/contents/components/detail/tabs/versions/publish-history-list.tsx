@@ -20,7 +20,7 @@ import { SpinnerIcon } from '@usertour/icons';
 import { useListContentPublishRecordsQuery } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';
 import type { ContentPublishRecord, ContentVersion } from '@usertour/types';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format } from 'date-fns';
 import { PlaneIcon } from '@usertour/icons';
 import type { TFunction } from 'i18next';
 import { useEffect, useMemo, useState } from 'react';
@@ -28,25 +28,7 @@ import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentRestoreForm } from '../../../shared/content-restore-form';
-
-type RecordGroup = { key: string; label: string; records: ContentPublishRecord[] };
-
-const groupRecordsByDay = (records: ContentPublishRecord[], t: TFunction): RecordGroup[] => {
-  const groups = new Map<string, RecordGroup>();
-  for (const record of records) {
-    const date = new Date(record.createdAt);
-    const key = format(date, 'yyyy-MM-dd');
-    let label: string;
-    if (isToday(date)) label = t('contents.versions.group.today');
-    else if (isYesterday(date)) label = t('contents.versions.group.yesterday');
-    else label = format(date, 'PP');
-
-    const existing = groups.get(key);
-    if (existing) existing.records.push(record);
-    else groups.set(key, { key, label, records: [record] });
-  }
-  return Array.from(groups.values());
-};
+import { groupByDay } from './group-by-day';
 
 /** Who did it: "by S61", "by S61 · via CI key", or "via CI key" when the token has no owner name. */
 const actorText = (record: ContentPublishRecord, t: TFunction): string | null => {
@@ -164,7 +146,10 @@ export const PublishHistoryList = () => {
     rootRef(scrollRoot);
   }, [rootRef, scrollRoot]);
 
-  const grouped = useMemo(() => groupRecordsByDay(recordList, t), [recordList, t]);
+  const grouped = useMemo(
+    () => groupByDay(recordList, (r) => new Date(r.createdAt), t),
+    [recordList, t],
+  );
 
   if (loading && recordList.length === 0) {
     return (
@@ -217,13 +202,13 @@ export const PublishHistoryList = () => {
                 {group.label}
               </div>
               <div className="relative ml-4">
-                {group.records.length > 1 && (
+                {group.items.length > 1 && (
                   <span
                     aria-hidden
                     className="pointer-events-none absolute left-0 top-4 bottom-4 w-px bg-border"
                   />
                 )}
-                {group.records.map((record) => (
+                {group.items.map((record) => (
                   <div key={record.id} className="relative pl-6">
                     <span
                       aria-hidden

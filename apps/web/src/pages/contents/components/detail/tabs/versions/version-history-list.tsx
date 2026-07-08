@@ -5,32 +5,12 @@ import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { ListSkeleton, Card, Separator, QuestionTooltip } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import { SpinnerIcon } from '@usertour/icons';
-import { Content, ContentVersion } from '@usertour/types';
-import { format, isToday, isYesterday } from 'date-fns';
+import { Content } from '@usertour/types';
 import { useEffect, useMemo } from 'react';
-import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import useInfiniteScroll from 'react-infinite-scroll-hook';
+import { groupByDay } from './group-by-day';
 import { VersionRow, VersionRowChip } from './version-row';
-
-type VersionGroup = { key: string; label: string; versions: ContentVersion[] };
-
-const groupVersionsByDay = (versions: ContentVersion[], t: TFunction): VersionGroup[] => {
-  const groups = new Map<string, VersionGroup>();
-  for (const version of versions) {
-    const date = new Date(version.createdAt ?? Date.now());
-    const key = format(date, 'yyyy-MM-dd');
-    let label: string;
-    if (isToday(date)) label = t('contents.versions.group.today');
-    else if (isYesterday(date)) label = t('contents.versions.group.yesterday');
-    else label = format(date, 'PP');
-
-    const existing = groups.get(key);
-    if (existing) existing.versions.push(version);
-    else groups.set(key, { key, label, versions: [version] });
-  }
-  return Array.from(groups.values());
-};
 
 const buildAllChipsMap = (content: Content | null): Map<string, VersionRowChip[]> => {
   const map = new Map<string, VersionRowChip[]>();
@@ -84,7 +64,10 @@ export const VersionHistoryList = () => {
 
   const chipsMap = useMemo(() => buildAllChipsMap(content), [content]);
 
-  const groupedHistory = useMemo(() => groupVersionsByDay(versionList, t), [versionList, t]);
+  const groupedHistory = useMemo(
+    () => groupByDay(versionList, (v) => new Date(v.createdAt ?? Date.now()), t),
+    [versionList, t],
+  );
 
   // First-load gating only — once any versions are in cache, a
   // background refetch shouldn't collapse the list to a skeleton.
@@ -128,13 +111,13 @@ export const VersionHistoryList = () => {
                 {group.label}
               </div>
               <div className="relative ml-4">
-                {group.versions.length > 1 && (
+                {group.items.length > 1 && (
                   <span
                     aria-hidden
                     className="pointer-events-none absolute left-0 top-4 bottom-4 w-px bg-border"
                   />
                 )}
-                {group.versions.map((version) => {
+                {group.items.map((version) => {
                   const versionChips = chipsMap.get(version.id) ?? [];
                   const hasLive = versionChips.some((chip) => chip.kind === 'live');
                   const hasDraft = versionChips.some((chip) => chip.kind === 'draft');
