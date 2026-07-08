@@ -133,7 +133,7 @@ const ContentPreview = ({
     );
   }
 
-  if (type === ContentDataType.LAUNCHER && currentTheme && currentVersion) {
+  if (type === ContentDataType.LAUNCHER && currentTheme && currentVersion && currentVersion.data) {
     return (
       <AutoScaledPreviewContainer padding={16}>
         <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />

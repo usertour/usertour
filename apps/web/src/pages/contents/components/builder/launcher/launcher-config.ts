@@ -1,6 +1,6 @@
 import type { LauncherData } from '@usertour/types';
+import { DEFAULT_LAUNCHER_DATA } from '@usertour/constants';
 import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
-import { defaultLauncherData } from '@/pages/contents/components/builder/utils/default-data';
 
 // Launcher has two per-type UI buffers — the in-flight `tooltip` and
 // `target` drafts the user is editing in the sub-modes — so TUIState
@@ -12,13 +12,13 @@ export interface LauncherUIState {
   target: LauncherData['target'] | undefined;
 }
 
-// Launcher's server payload is already fully populated by V1's
+// Launcher's server payload is already fully populated by the
 // initial-create flow (defaults baked at creation), so normalize is a
-// straight fallback to defaultLauncherData when data is missing.
+// straight fallback to DEFAULT_LAUNCHER_DATA when data is missing.
 // Unlike Banner / Checklist there's no per-field merge — the legacy
-// LauncherProvider also just did `currentVersion.data || defaultLauncherData`.
+// LauncherProvider also just did `currentVersion.data || DEFAULT_LAUNCHER_DATA`.
 
 export const launcherTypeConfig: BuilderTypeConfig<LauncherData, LauncherUIState> = {
-  defaultData: defaultLauncherData,
+  defaultData: DEFAULT_LAUNCHER_DATA,
   defaultUIState: { tooltip: undefined, target: undefined },
 };
