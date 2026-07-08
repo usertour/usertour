@@ -42,6 +42,13 @@ const makeFakePrisma = (rows: Row[]) => {
         const r = rows.find((row) => matches(row, where));
         return r ? { id: r.id } : null;
       },
+      // ownTokenProjectIds: row + its project joins (default none).
+      findUnique: async ({ where }: { where: { id: string } }) => {
+        const r = rows.find((row) => row.id === where.id);
+        return r
+          ? { ...r, projects: (r as { projects?: { projectId: string }[] }).projects ?? [] }
+          : null;
+      },
       deleteMany: async ({ where }: { where: Record<string, unknown> }) => {
         const keep = rows.filter((r) => !matches(r, where));
         const count = rows.length - keep.length;
@@ -128,12 +135,34 @@ describe('ApiTokenService — personal/OAuth separation', () => {
   // env allowlist — env ids never span projects, so a stale allowlist would brick
   // every env-scoped call under the new project (EnvironmentNotInTokenScopeError).
   it('clears the env allowlist when the project changes without a new env list', async () => {
-    const rows = [personal({ allowedEnvironmentIds: ['old-project-env'] } as never)];
+    const rows = [
+      personal({
+        allowedEnvironmentIds: ['old-project-env'],
+        projects: [{ projectId: 'projA' }],
+      } as never),
+    ];
     const service = new ApiTokenService(makeFakePrisma(rows));
     const res = (await service.updateToken('u1', 'p1', { projectIds: ['projB'] })) as {
       allowedEnvironmentIds: unknown;
     };
     expect(res.allowedEnvironmentIds).toBe(Prisma.DbNull);
+  });
+
+  it('keeps the env allowlist when the echoed projectIds are unchanged (rename must not widen)', async () => {
+    // A client renaming a token naturally echoes the current projectIds — an
+    // env-restricted token must NOT be silently widened to all environments.
+    const rows = [
+      personal({
+        allowedEnvironmentIds: ['env-staging'],
+        projects: [{ projectId: 'projA' }],
+      } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', {
+      name: 'renamed',
+      projectIds: ['projA'],
+    })) as { allowedEnvironmentIds: unknown };
+    expect(res.allowedEnvironmentIds).toEqual(['env-staging']);
   });
 
   it('leaves the env allowlist untouched on a name-only update', async () => {

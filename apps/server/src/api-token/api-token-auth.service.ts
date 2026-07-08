@@ -68,9 +68,15 @@ export class ApiTokenAuthService {
       throw new ExpiredApiKeyError();
     }
 
-    this.prisma.apiToken
-      .update({ where: { id: token.id }, data: { lastUsedAt: new Date() } })
-      .catch(() => undefined);
+    // Touch lastUsedAt at most once a minute: agent/MCP traffic authenticates
+    // dozens of times a minute per token, and a per-request UPDATE would double
+    // the table's write volume for a timestamp nobody reads at that granularity.
+    // The row is already in hand, so the staleness check costs nothing.
+    if (!token.lastUsedAt || Date.now() - token.lastUsedAt.getTime() > 60_000) {
+      this.prisma.apiToken
+        .update({ where: { id: token.id }, data: { lastUsedAt: new Date() } })
+        .catch(() => undefined);
+    }
 
     return token;
   }

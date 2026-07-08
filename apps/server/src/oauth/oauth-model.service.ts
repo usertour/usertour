@@ -206,49 +206,56 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
       ]);
     }
 
-    // Upsert the durable grant; rotating refresh overwrites the prior hash so an
-    // old refresh token no longer resolves (reuse detection).
-    await this.prisma.oAuthGrant.upsert({
-      where: { id: u.grantId },
-      create: {
-        id: u.grantId,
-        userId: u.id,
-        clientId: client.id,
-        projectId: u.projectId,
-        scopes,
-        allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
-        hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
-        refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
-      },
-      update: {
-        scopes,
-        allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
-        hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
-        refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
-        revokedAt: null,
-      },
-    });
-
-    // The access token IS an ApiToken row — validated by the existing guard.
+    // Rotate the grant's refresh hash AND issue the access-token row atomically.
+    // Unpaired, a failure between the two bricks the connection: the OLD refresh
+    // token no longer resolves (hash already rotated) and the NEW one was never
+    // delivered — the client's retry gets invalid_grant and the user must
+    // re-consent. One transaction keeps rotation-and-issuance all-or-nothing.
     const secret = accessTokenSecret(token.accessToken);
-    if (secret) {
-      await this.prisma.apiToken.create({
-        data: {
+    await this.prisma.$transaction(async (tx) => {
+      // Rotating refresh overwrites the prior hash so an old refresh token no
+      // longer resolves (reuse detection).
+      await tx.oAuthGrant.upsert({
+        where: { id: u.grantId },
+        create: {
+          id: u.grantId,
           userId: u.id,
-          name: `OAuth · ${client.name ?? client.id}`,
-          prefix: OAUTH_TOKEN_PREFIX,
-          hashedSecret: hashSecret(secret),
-          partialKey: secret.slice(-4),
+          clientId: client.id,
+          projectId: u.projectId,
           scopes,
           allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
-          clientId: client.id,
-          oauthGrantId: u.grantId,
-          isActive: true,
-          expiresAt: token.accessTokenExpiresAt ?? null,
-          projects: { create: [{ projectId: u.projectId }] },
+          hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
+          refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
+        },
+        update: {
+          scopes,
+          allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
+          hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
+          refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
+          revokedAt: null,
         },
       });
-    }
+
+      // The access token IS an ApiToken row — validated by the existing guard.
+      if (secret) {
+        await tx.apiToken.create({
+          data: {
+            userId: u.id,
+            name: `OAuth · ${client.name ?? client.id}`,
+            prefix: OAUTH_TOKEN_PREFIX,
+            hashedSecret: hashSecret(secret),
+            partialKey: secret.slice(-4),
+            scopes,
+            allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
+            clientId: client.id,
+            oauthGrantId: u.grantId,
+            isActive: true,
+            expiresAt: token.accessTokenExpiresAt ?? null,
+            projects: { create: [{ projectId: u.projectId }] },
+          },
+        });
+      }
+    });
 
     return { ...token, scope: scopes, client, user };
   }

@@ -112,12 +112,18 @@ export class ApiTokenService {
         input.environmentIds,
       );
     } else if (projectIds !== undefined) {
-      // The project set changed without a new environment list. The old allowlist
-      // holds the PREVIOUS project's environment ids (env ids never span projects),
-      // so leaving it would brick every env-scoped call under the new project
-      // (EnvironmentNotInTokenScopeError). Clear it → unrestricted within the new
-      // project, matching a freshly-created token that names no environments.
-      data.allowedEnvironmentIds = Prisma.DbNull;
+      // Project ids arrived without a new environment list. Clear the allowlist
+      // ONLY when the project set actually CHANGED: the old allowlist then holds
+      // the PREVIOUS project's environment ids (env ids never span projects), and
+      // leaving it would brick every env-scoped call under the new project.
+      // An unchanged set (clients naturally echo current projectIds on a rename)
+      // must NOT silently widen an environment-restricted token to all envs.
+      const current = await this.ownTokenProjectIds(id);
+      const changed =
+        projectIds.length !== current.length || projectIds.some((p) => !current.includes(p));
+      if (changed) {
+        data.allowedEnvironmentIds = Prisma.DbNull;
+      }
     }
 
     return this.prisma.apiToken.update({
