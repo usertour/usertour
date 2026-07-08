@@ -306,6 +306,35 @@ SubPageDetail.displayName = 'SubPageDetail';
 // Content List detail view
 // ============================================================================
 
+// ============================================================================
+// LoadErrorRetry — shared failure state for on-demand reads
+// ============================================================================
+
+interface LoadErrorRetryProps {
+  onRetry: () => void;
+  message?: string;
+}
+
+/**
+ * Shared load-failure state for the on-demand reads (content list, announcement
+ * feed / detail): an explicit "couldn't load" line plus a Retry button, so a
+ * timed-out fetch never renders as a misleading empty state.
+ */
+const LoadErrorRetry = memo(({ onRetry, message = "Couldn't load." }: LoadErrorRetryProps) => (
+  <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
+    <span>{message}</span>
+    <button
+      type="button"
+      className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
+      onClick={onRetry}
+    >
+      Retry
+    </button>
+  </div>
+));
+
+LoadErrorRetry.displayName = 'LoadErrorRetry';
+
 interface ContentListDetailProps {
   block: ResourceCenterContentListBlock;
 }
@@ -385,16 +414,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
       )}
 
       {!contentListLoading && contentListError && (
-        <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-          <span>Couldn't load.</span>
-          <button
-            type="button"
-            className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-            onClick={() => onContentListNavigate?.(block)}
-          >
-            Retry
-          </button>
-        </div>
+        <LoadErrorRetry onRetry={() => onContentListNavigate?.(block)} />
       )}
 
       {!contentListLoading && !contentListError && filteredItems.length === 0 && (
@@ -429,12 +449,6 @@ ContentListDetail.displayName = 'ContentListDetail';
 // ============================================================================
 
 /**
- * Format a date string into a human-readable label like "Tuesday, Apr 14, 2026".
- * The year is included so groupAnnouncementsByDate (which groups by this label)
- * can't merge same-weekday/month/day announcements from different years under one
- * separator.
- */
-/**
  * The announcement Read more button — brand-colored text in a pill that gains
  * the theme hover/active background. Shared by the feed rows and the popup
  * bubble so the two surfaces can't drift.
@@ -460,35 +474,22 @@ export const AnnouncementReadMoreButton = (props: AnnouncementReadMoreButtonProp
   );
 };
 
+/**
+ * Format a date string into a human-readable label like "Tuesday, Apr 14".
+ * The year is shown only for dates outside the current year, so recent
+ * announcements read light ("Friday, Jul 3") while an old one can't be
+ * mistaken for this year's date. Shared by the feed separators, the detail
+ * header, and the popup bubble.
+ */
 export const formatAnnouncementDate = (dateStr: string): string => {
   const date = new Date(dateStr);
+  const isCurrentYear = date.getFullYear() === new Date().getFullYear();
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
+    ...(isCurrentYear ? {} : { year: 'numeric' }),
   });
-};
-
-/**
- * Group announcements by date label and return groups in order.
- */
-const groupAnnouncementsByDate = (items: AnnouncementListItem[]) => {
-  const groups: { label: string; items: AnnouncementListItem[] }[] = [];
-  // null sentinel, not '': an item with an empty time (label '') still starts a
-  // group instead of pushing into groups[-1]. A null-scheduledAt row can sort
-  // first (server allows it and Postgres orders NULLS FIRST desc), and its time
-  // is '' — without this the first push would read undefined and crash the feed.
-  let currentLabel: string | null = null;
-  for (const item of items) {
-    const label = item.time ? formatAnnouncementDate(item.time) : '';
-    if (groups.length === 0 || label !== currentLabel) {
-      currentLabel = label;
-      groups.push({ label, items: [] });
-    }
-    groups[groups.length - 1].items.push(item);
-  }
-  return groups;
 };
 
 interface AnnouncementListDetailProps {
@@ -532,10 +533,10 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     [userAttributes, feedAttributes],
   );
 
-  // The SDK passes fresh inline callbacks on every render, and marking seen
-  // optimistically updates the store (to drop the badge), which re-renders the
-  // provider and churns those callback identities. Depending on the callbacks
-  // here would re-run this load on that churn — refetching the feed and
+  // These callbacks are public-API props — the widget must not assume stable
+  // identities (our own SDK passes stable arrow-properties today, but any
+  // consumer can pass fresh inline arrows every render). Depending on them
+  // here would re-run this load on identity churn — refetching the feed and
   // re-firing marks that race the still-in-flight ones. So read them from refs
   // and run the load exactly once per open.
   const onListAnnouncementsRef = useRef(onListAnnouncements);
@@ -663,8 +664,6 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     [actions, block.id],
   );
 
-  const dateGroups = useMemo(() => groupAnnouncementsByDate(announcements), [announcements]);
-
   return (
     <div className="flex flex-col p-4">
       {isLoading && (
@@ -672,16 +671,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
       )}
 
       {!isLoading && feedError && (
-        <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-          <span>Couldn't load announcements.</span>
-          <button
-            type="button"
-            className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-            onClick={retryFeed}
-          >
-            Retry
-          </button>
-        </div>
+        <LoadErrorRetry message="Couldn't load announcements." onRetry={retryFeed} />
       )}
 
       {!isLoading && !feedError && announcements.length === 0 && (
@@ -690,49 +680,51 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
 
       {!isLoading &&
         !feedError &&
-        dateGroups.map((group) => (
-          <div key={group.label}>
-            {/* Date separator */}
-            {group.label && (
-              <div className="flex items-center gap-3 my-3">
-                <div className="flex-1 h-px bg-sdk-foreground/15" />
+        announcements.map((item) => (
+          <div key={item.id} className="mb-4">
+            {/* Every announcement opens with its own captioned date separator
+                (no day grouping): the intro is free-form rich text, so a bold
+                title plus spacing isn't a reliable boundary between items — a
+                uniform separator is, and it keeps each item's date in view at
+                any scroll position. Same-day repetition reads as rhythm, not
+                noise. An item with no time (defensive: publish always stamps
+                scheduledAt) still gets a plain divider line. */}
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 h-px bg-sdk-foreground/15" />
+              {item.time && (
                 <span className="text-xs text-sdk-foreground/50 whitespace-nowrap">
-                  {group.label}
+                  {formatAnnouncementDate(item.time)}
                 </span>
-                <div className="flex-1 h-px bg-sdk-foreground/15" />
+              )}
+              <div className="flex-1 h-px bg-sdk-foreground/15" />
+            </div>
+
+            {/* Title */}
+            <div className="flex items-center gap-2">
+              {!item.seen && (
+                <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
+              )}
+              <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
+            </div>
+
+            {/* Intro content */}
+            <div className="text-sm text-sdk-foreground mt-1">
+              <ContentEditorSerialize
+                contents={item.content}
+                onClick={onContentClick}
+                userAttributes={mergedAttributes}
+              />
+            </div>
+
+            {/* Read more button */}
+            {item.moreEnabled && (
+              <div className="flex justify-end mt-2">
+                <AnnouncementReadMoreButton
+                  label={item.moreButtonText}
+                  onClick={() => handleReadMore(item)}
+                />
               </div>
             )}
-
-            {group.items.map((item) => (
-              <div key={item.id} className="mb-4">
-                {/* Title */}
-                <div className="flex items-center gap-2">
-                  {!item.seen && (
-                    <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-resource-center-badge-background" />
-                  )}
-                  <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
-                </div>
-
-                {/* Intro content */}
-                <div className="text-sm text-sdk-foreground mt-1">
-                  <ContentEditorSerialize
-                    contents={item.content}
-                    onClick={onContentClick}
-                    userAttributes={mergedAttributes}
-                  />
-                </div>
-
-                {/* Read more button */}
-                {item.moreEnabled && (
-                  <div className="flex justify-end mt-2">
-                    <AnnouncementReadMoreButton
-                      label={item.moreButtonText}
-                      onClick={() => handleReadMore(item)}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         ))}
     </div>
@@ -769,10 +761,11 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
     }
   }, [bodyScrollRef]);
 
-  // The SDK passes a fresh onGetAnnouncement identity every render, so depending
-  // on it would re-run this fetch (flashing back to 'Loading...' + re-issuing the
-  // socket request) on every widget re-render. Read it from a ref and fetch once
-  // per announcementId — same reason the list view refs its callbacks.
+  // onGetAnnouncement is a public-API prop with no stability guarantee (a
+  // consumer may pass a fresh inline arrow every render); depending on it would
+  // re-run this fetch (flashing back to 'Loading...' + re-issuing the socket
+  // request) on every widget re-render. Read it from a ref and fetch once per
+  // announcementId — same reason the list view refs its callbacks.
   const onGetAnnouncementRef = useRef(onGetAnnouncement);
   onGetAnnouncementRef.current = onGetAnnouncement;
 
@@ -807,18 +800,7 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   }
 
   if (!detail) {
-    return (
-      <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-        <span>Couldn't load.</span>
-        <button
-          type="button"
-          className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-          onClick={retryDetail}
-        >
-          Retry
-        </button>
-      </div>
-    );
+    return <LoadErrorRetry onRetry={retryDetail} />;
   }
 
   return (

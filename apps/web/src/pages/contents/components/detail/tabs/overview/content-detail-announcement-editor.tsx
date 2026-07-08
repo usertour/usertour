@@ -7,8 +7,9 @@ import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws } from '@usertour/hooks';
+import { useAws, useContentListQuery } from '@usertour/hooks';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
+import { ContentEditorSerialize } from '@usertour/widget';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import {
@@ -50,6 +51,7 @@ import {
   RiNotificationOffFill,
   RiPaletteFill,
 } from '@usertour/icons';
+import type { ElementType } from 'react';
 import {
   createContext,
   useCallback,
@@ -115,6 +117,69 @@ const useAnnouncementDraft = () => {
 };
 
 // ============================================================================
+// Icon option select — shared by the popup-style and distribution pickers
+// ============================================================================
+
+interface IconSelectOption {
+  value: string;
+  label: string;
+  description: string;
+  icon: ElementType;
+}
+
+export interface IconOptionSelectProps {
+  options: IconSelectOption[];
+  value: string;
+  onValueChange: (value: string) => void;
+  disabled?: boolean;
+}
+
+/**
+ * A Select whose trigger shows the selected option's icon + label and whose
+ * items render icon + bold label + muted description.
+ */
+const IconOptionSelect = (props: IconOptionSelectProps) => {
+  const { options, value, onValueChange, disabled } = props;
+  const selected = options.find((option) => option.value === value);
+  const SelectedIcon = selected?.icon;
+
+  return (
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <SelectTrigger className="justify-start flex h-8">
+        {selected && SelectedIcon ? (
+          <>
+            <SelectedIcon size={16} className="text-muted-foreground flex-none" />
+            <div className="grow text-left ml-2">
+              <SelectValue asChild>
+                <span>{selected.label}</span>
+              </SelectValue>
+            </div>
+          </>
+        ) : (
+          <SelectValue />
+        )}
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => {
+          const Icon = option.icon;
+          return (
+            <SelectItem key={option.value} value={option.value} className="cursor-pointer">
+              <div className="flex flex-col">
+                <div className="flex flex-row space-x-1 items-center">
+                  <Icon size={16} className="text-current" />
+                  <span className="text-xs font-bold">{option.label}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">{option.description}</div>
+              </div>
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+  );
+};
+
+// ============================================================================
 // Popup Settings (only when distribution is POPUP)
 // ============================================================================
 
@@ -153,47 +218,14 @@ const AnnouncementPopupSettings = (props: AnnouncementPopupSettingsProps) => {
         <span className="text-sm font-medium">
           {t('contents.overview.announcement.popup.style')}
         </span>
-        <Select
+        <IconOptionSelect
+          options={styleOptions}
           value={current.style}
-          onValueChange={(value: string) =>
+          onValueChange={(value) =>
             onChange({ ...current, style: value as AnnouncementPopupStyle })
           }
           disabled={disabled}
-        >
-          <SelectTrigger className="justify-start flex h-8">
-            {(() => {
-              const selected = styleOptions.find((option) => option.value === current.style);
-              if (!selected) return <SelectValue />;
-              const Icon = selected.icon;
-              return (
-                <>
-                  <Icon size={16} className="text-muted-foreground flex-none" />
-                  <div className="grow text-left ml-2">
-                    <SelectValue asChild>
-                      <span>{selected.label}</span>
-                    </SelectValue>
-                  </div>
-                </>
-              );
-            })()}
-          </SelectTrigger>
-          <SelectContent>
-            {styleOptions.map((option) => {
-              const Icon = option.icon;
-              return (
-                <SelectItem key={option.value} value={option.value} className="cursor-pointer">
-                  <div className="flex flex-col">
-                    <div className="flex flex-row space-x-1 items-center">
-                      <Icon size={16} className="text-current" />
-                      <span className="text-xs font-bold">{option.label}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">{option.description}</div>
-                  </div>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        />
       </div>
     </div>
   );
@@ -370,47 +402,12 @@ const AnnouncementSettingsColumn = () => {
                 {t('contents.overview.announcement.distribution.tooltip')}
               </QuestionTooltip>
             </div>
-            <Select
+            <IconOptionSelect
+              options={distributionOptions}
               value={data.distribution}
               onValueChange={handleDistributionChange}
               disabled={isViewOnly}
-            >
-              <SelectTrigger className="justify-start flex h-8">
-                {(() => {
-                  const selected = distributionOptions.find(
-                    (option) => option.value === data.distribution,
-                  );
-                  if (!selected) return <SelectValue />;
-                  const Icon = selected.icon;
-                  return (
-                    <>
-                      <Icon size={16} className="text-muted-foreground flex-none" />
-                      <div className="grow text-left ml-2">
-                        <SelectValue asChild>
-                          <span>{selected.label}</span>
-                        </SelectValue>
-                      </div>
-                    </>
-                  );
-                })()}
-              </SelectTrigger>
-              <SelectContent>
-                {distributionOptions.map((option) => {
-                  const Icon = option.icon;
-                  return (
-                    <SelectItem key={option.value} value={option.value} className="cursor-pointer">
-                      <div className="flex flex-col">
-                        <div className="flex flex-row space-x-1 items-center">
-                          <Icon size={16} className="text-current" />
-                          <span className="text-xs font-bold">{option.label}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">{option.description}</div>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           {/* Theme + popup presentation — only for POPUP: the theme styles the
@@ -473,11 +470,18 @@ const AnnouncementContentColumn = () => {
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
-  const { isViewOnly, project } = useAppContext();
+  const { isViewOnly, project, environment } = useAppContext();
   const { attributeList } = useAttributeList();
   const { upload } = useAws();
   const { themeList } = useThemeList();
   const getOembedInfo = useOembedInfo();
+
+  // Environment content list for the button-action pickers ("Start flow"
+  // lists the flows/checklists); without it the picker renders empty.
+  const { contents: contentList } = useContentListQuery({
+    query: { environmentId: environment?.id ?? '' },
+    options: { skip: !environment?.id },
+  });
 
   const { data, patchData } = useAnnouncementDraft();
 
@@ -600,17 +604,22 @@ const AnnouncementContentColumn = () => {
               ref={introEditorRef}
               className="border rounded-md p-3 min-h-[120px] usertour-widget-root"
             >
-              <ContentEditor
-                zIndex={10002}
-                customUploadRequest={upload}
-                initialValue={data.introContent}
-                onValueChange={handleIntroContentChange}
-                projectId={projectId}
-                attributes={attributeList}
-                enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
-                actionItems={ANNOUNCEMENT_ACTION_ITEMS}
-                getOembedInfo={getOembedInfo}
-              />
+              {isViewOnly ? (
+                <ContentEditorSerialize contents={data.introContent} />
+              ) : (
+                <ContentEditor
+                  zIndex={10002}
+                  customUploadRequest={upload}
+                  initialValue={data.introContent}
+                  onValueChange={handleIntroContentChange}
+                  projectId={projectId}
+                  attributes={attributeList}
+                  contentList={contentList}
+                  enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                  actionItems={ANNOUNCEMENT_ACTION_ITEMS}
+                  getOembedInfo={getOembedInfo}
+                />
+              )}
             </div>
           </div>
         </CardContent>
@@ -668,17 +677,22 @@ const AnnouncementContentColumn = () => {
                 ref={detailEditorRef}
                 className={cn('border rounded-md p-3 min-h-[120px] usertour-widget-root')}
               >
-                <ContentEditor
-                  zIndex={10003}
-                  customUploadRequest={upload}
-                  initialValue={data.detailContent}
-                  onValueChange={handleDetailContentChange}
-                  projectId={projectId}
-                  attributes={attributeList}
-                  enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
-                  actionItems={ANNOUNCEMENT_ACTION_ITEMS}
-                  getOembedInfo={getOembedInfo}
-                />
+                {isViewOnly ? (
+                  <ContentEditorSerialize contents={data.detailContent} />
+                ) : (
+                  <ContentEditor
+                    zIndex={10003}
+                    customUploadRequest={upload}
+                    initialValue={data.detailContent}
+                    onValueChange={handleDetailContentChange}
+                    projectId={projectId}
+                    attributes={attributeList}
+                    contentList={contentList}
+                    enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                    actionItems={ANNOUNCEMENT_ACTION_ITEMS}
+                    getOembedInfo={getOembedInfo}
+                  />
+                )}
               </div>
             </div>
           </CardContent>

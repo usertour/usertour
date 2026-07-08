@@ -286,6 +286,7 @@ export class EventTrackingService {
         event.id,
         eventData,
         trackerSystemReservedEventAttributes,
+        tx,
       );
       if (!filteredData) {
         return false;
@@ -396,6 +397,7 @@ export class EventTrackingService {
         event.id,
         eventData,
         extraAllowedAttributes,
+        tx,
       );
       if (!filteredData) {
         return false;
@@ -470,20 +472,30 @@ export class EventTrackingService {
    * Filter event data based on allowed attributes for the event
    * @param eventId - The ID of the event
    * @param data - The raw event data to filter
+   * @param client - Optional Prisma client or transaction client (defaults to this.prisma).
+   *   Callers inside a $transaction MUST pass their tx: querying through
+   *   this.prisma from within an open transaction needs a second pooled
+   *   connection while the transaction already holds one — N concurrent
+   *   transactions (e.g. a first feed open firing up to SCAN_LIMIT
+   *   ANNOUNCEMENT_SEEN events) can exhaust the pool and deadlock until
+   *   maxWait, dropping the whole batch of events.
    * @returns The filtered event data or false if no valid attributes found
    */
   private async filterEventDataByAttributes(
     eventId: string,
     data: Record<string, any>,
     extraAllowedAttributes: string[] = [],
+    client?: PrismaService | Tx,
   ): Promise<Record<string, any> | false> {
     // Early return if no data provided
     if (!data || Object.keys(data).length === 0) {
       return false;
     }
 
+    const prismaClient = client ?? this.prisma;
+
     // Fetch event attributes with optimized query
-    const attributes = await this.prisma.attributeOnEvent.findMany({
+    const attributes = await prismaClient.attributeOnEvent.findMany({
       where: { eventId },
       select: {
         attribute: {
@@ -831,7 +843,7 @@ export class EventTrackingService {
       clientContext,
     );
     // Filter event data
-    const events = await this.filterEventDataByAttributes(event.id, eventData);
+    const events = await this.filterEventDataByAttributes(event.id, eventData, [], tx);
     if (!events) {
       return false;
     }

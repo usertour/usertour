@@ -12,7 +12,7 @@ import type { ThemeTypesSetting } from '@usertour/types';
 // @usertour/types; these values live here because @usertour/types carries only
 // types and enums — instantiated constants belong in @usertour/constants.
 
-export const defaultSettings: ThemeTypesSetting = {
+export const defaultSettings = {
   font: {
     fontSize: 16,
     linkColor: 'Auto',
@@ -289,9 +289,9 @@ export const defaultSettings: ThemeTypesSetting = {
     bubbleWidth: 480,
     modalWidth: 600,
   },
-};
+} satisfies ThemeTypesSetting;
 
-export const standardDarkSettings: ThemeTypesSetting = {
+export const standardDarkSettings = {
   font: {
     fontSize: 16,
     linkColor: 'Auto',
@@ -568,4 +568,4 @@ export const standardDarkSettings: ThemeTypesSetting = {
     bubbleWidth: 480,
     modalWidth: 600,
   },
-};
+} satisfies ThemeTypesSetting;

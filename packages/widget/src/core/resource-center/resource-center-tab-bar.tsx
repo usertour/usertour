@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { LauncherIconSource } from '@usertour/types';
+import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { useResourceCenterContext } from './context';
 import type { ResourceCenterTab } from '@usertour/types';
@@ -41,9 +41,11 @@ TabBarIcon.displayName = 'TabBarIcon';
 // Tab bar styles
 // ============================================================================
 
+// No overflow-hidden: it would clip the unread count badge hanging off the
+// icon's corner; the label truncates via its own `truncate` class.
 const tabItemBase = cn(
   'flex flex-1 flex-col items-center justify-center',
-  'cursor-pointer overflow-hidden',
+  'cursor-pointer',
   'm-1 rounded-none',
   'transition-all duration-150 ease-in-out',
   'text-sm leading-tight',
@@ -55,7 +57,7 @@ const tabItemBase = cn(
 // ============================================================================
 
 export const ResourceCenterTabBar = memo(() => {
-  const { visibleTabs, nav, actions, showTabBar } = useResourceCenterContext();
+  const { visibleTabs, nav, actions, showTabBar, badgeCount } = useResourceCenterContext();
 
   if (!showTabBar) return null;
 
@@ -75,24 +77,61 @@ export const ResourceCenterTabBar = memo(() => {
         {/* All tabs render from their own data — the Home tab (first) is no
             special case beyond its fallback label, so the name/icon set in
             the builder show up here. */}
-        {visibleTabs.map((tab, index) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={cn(
-              tabItemBase,
-              nav.activeTabId === tab.id
-                ? 'text-sdk-brand-background'
-                : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
-            )}
-            onClick={() => actions.switchTab(tab.id)}
-          >
-            <TabBarIcon tab={tab} isActive={nav.activeTabId === tab.id} />
-            <span className="truncate max-w-full text-sm">
-              {tab.name || (index === 0 ? 'Home' : 'Untitled')}
-            </span>
-          </button>
-        ))}
+        {visibleTabs.map((tab, index) => {
+          // Unread count on the tab holding the announcement block: with the
+          // panel open, this is the only in-panel pointer to unread
+          // announcements — a single-block tab auto-expands, so the row badge
+          // never renders, and the launcher badge is hidden while expanded.
+          // Mirrors the launcher badge (same count, same theme colors), sized
+          // down for the tab bar. ACTIVE tab excluded: its own content already
+          // shows the state (the row badge on a multi-block tab, the feed
+          // itself when auto-expanded) — a tab badge there would duplicate the
+          // row badge on screen. The tab badge's job is only "somewhere you
+          // are NOT has unread".
+          const hasUnreadAnnouncements =
+            badgeCount > 0 &&
+            nav.activeTabId !== tab.id &&
+            tab.blocks.some((block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT);
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={cn(
+                tabItemBase,
+                nav.activeTabId === tab.id
+                  ? 'text-sdk-brand-background'
+                  : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
+              )}
+              onClick={() => actions.switchTab(tab.id)}
+            >
+              {/* inline-flex (not plain inline): an inline wrapper's box follows
+                  the line height, not the 20px icon, which would sink the badge
+                  to the icon's lower right. inline-flex shrink-wraps the icon so
+                  the badge anchors to its actual corner. */}
+              <span className="relative inline-flex">
+                <TabBarIcon tab={tab} isActive={nav.activeTabId === tab.id} />
+                {hasUnreadAnnouncements && (
+                  // Perch on the icon's top-right corner: pushed far enough out
+                  // (-top-2 / -right-2 with a 14px pill) that only a small
+                  // corner overlaps, instead of covering the glyph.
+                  <span
+                    className={cn(
+                      'absolute -right-2 -top-2',
+                      'flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1',
+                      'text-[9px] font-bold leading-none',
+                      'bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground',
+                    )}
+                  >
+                    {badgeCount}
+                  </span>
+                )}
+              </span>
+              <span className="truncate max-w-full text-sm">
+                {tab.name || (index === 0 ? 'Home' : 'Untitled')}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

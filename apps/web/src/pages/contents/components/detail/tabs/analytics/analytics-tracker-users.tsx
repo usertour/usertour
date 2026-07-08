@@ -192,47 +192,38 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         after = endCursor;
       }
 
-      const headers = isAnnouncement
-        ? [
-            t('contents.analytics.trackerUsers.csv.userId'),
-            t('contents.analytics.trackerUsers.csv.userName'),
-            t('contents.analytics.trackerUsers.csv.userEmail'),
-            t('contents.analytics.trackerUsers.csv.companyId'),
-            t('contents.analytics.trackerUsers.csv.companyName'),
-            t('contents.analytics.trackerUsers.announcement.csv.seenAtUtc'),
-          ]
-        : [
-            t('contents.analytics.trackerUsers.csv.userId'),
-            t('contents.analytics.trackerUsers.csv.userName'),
-            t('contents.analytics.trackerUsers.csv.userEmail'),
-            t('contents.analytics.trackerUsers.csv.companyId'),
-            t('contents.analytics.trackerUsers.csv.companyName'),
-            t('contents.analytics.trackerUsers.csv.firstTrackedUtc'),
-            t('contents.analytics.trackerUsers.csv.lastTrackedUtc'),
-            t('contents.analytics.trackerUsers.csv.events'),
-          ];
-
-      const rows = allUsers.map((user) =>
-        isAnnouncement
-          ? [
-              user.bizUser?.externalId || '',
-              (user.bizUser?.data?.name as string) || '',
-              (user.bizUser?.data?.email as string) || '',
-              user.bizCompany?.externalId || '',
-              (user.bizCompany?.data?.name as string) || '',
-              formatUTCDate(user.firstTrackedAt),
-            ]
+      // Both exports share the identity columns; only the trailing metric
+      // columns differ (an announcement is seen once per user, so it exports a
+      // single "Seen at" instead of first/last/count).
+      const headers = [
+        t('contents.analytics.trackerUsers.csv.userId'),
+        t('contents.analytics.trackerUsers.csv.userName'),
+        t('contents.analytics.trackerUsers.csv.userEmail'),
+        t('contents.analytics.trackerUsers.csv.companyId'),
+        t('contents.analytics.trackerUsers.csv.companyName'),
+        ...(isAnnouncement
+          ? [t('contents.analytics.trackerUsers.announcement.csv.seenAtUtc')]
           : [
-              user.bizUser?.externalId || '',
-              (user.bizUser?.data?.name as string) || '',
-              (user.bizUser?.data?.email as string) || '',
-              user.bizCompany?.externalId || '',
-              (user.bizCompany?.data?.name as string) || '',
+              t('contents.analytics.trackerUsers.csv.firstTrackedUtc'),
+              t('contents.analytics.trackerUsers.csv.lastTrackedUtc'),
+              t('contents.analytics.trackerUsers.csv.events'),
+            ]),
+      ];
+
+      const rows = allUsers.map((user) => [
+        user.bizUser?.externalId || '',
+        (user.bizUser?.data?.name as string) || '',
+        (user.bizUser?.data?.email as string) || '',
+        user.bizCompany?.externalId || '',
+        (user.bizCompany?.data?.name as string) || '',
+        ...(isAnnouncement
+          ? [formatUTCDate(user.firstTrackedAt)]
+          : [
               formatUTCDate(user.firstTrackedAt),
               formatUTCDate(user.lastTrackedAt),
               user.eventsCount ?? 0,
-            ],
-      );
+            ]),
+      ]);
 
       const csvContent = [
         headers.map(toCSVCell).join(','),
@@ -323,7 +314,11 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
             {isAnnouncement
               ? t('contents.analytics.trackerUsers.announcement.title')
               : t('contents.analytics.trackerUsers.title')}
-            <QuestionTooltip>{t('contents.analytics.trackerUsers.tooltip')}</QuestionTooltip>
+            <QuestionTooltip>
+              {isAnnouncement
+                ? t('contents.analytics.trackerUsers.announcement.tooltip')
+                : t('contents.analytics.trackerUsers.tooltip')}
+            </QuestionTooltip>
           </div>
           <Button
             variant="ghost"

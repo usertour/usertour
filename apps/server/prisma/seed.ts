@@ -2,7 +2,13 @@ import { PrismaClient } from '@prisma/client';
 import { migrateConditionIds, validateConditionIds } from './migration';
 import { backfillProjectDefaults } from './project-defaults';
 
-const prisma = new PrismaClient();
+// PrismaClient always connects through the datasource `url` (the pooled PgBouncer
+// endpoint); `directUrl` only applies to Prisma CLI commands. Seed is a short-lived
+// boot-time script, so connect directly to avoid failing when the pooler has no
+// free client slots during deploy overlap.
+const prisma = new PrismaClient(
+  process.env.DATABASE_DIRECT_URL ? { datasourceUrl: process.env.DATABASE_DIRECT_URL } : undefined,
+);
 
 async function main() {
   // Migrate condition IDs

@@ -63,5 +63,10 @@ export const ANNOUNCEMENT_SEEN_SOURCES: readonly AnnouncementSeenSource[] = [
  * Newest N published announcements considered for the feed / badge / seen scan.
  * Bounds the feed query, the targeting evaluation, and the mark-seen payload
  * size so they can't drift apart.
+ *
+ * Also the ceiling of the unread count: the widget's badge UIs (launcher
+ * badge, block-row badge, tab badge) render the raw number sized for at most
+ * two digits — raising this past 99 would silently overflow the fixed-size
+ * circles.
  */
 export const ANNOUNCEMENT_FEED_SCAN_LIMIT = 50;
