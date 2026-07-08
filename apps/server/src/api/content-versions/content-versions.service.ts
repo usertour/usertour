@@ -181,9 +181,11 @@ export class ApiContentVersionsService {
    * transaction). Only the provided fields are touched.
    */
   /**
-   * Fork a new draft version from the content's current edited version (the
-   * builder's "new version" action): the fork becomes the new editedVersion, the
-   * previous draft is frozen as a historical version.
+   * Ensure an EDITABLE draft version (the builder's semantics): while the
+   * content's edited version is an unpublished draft it is simply returned —
+   * editing continues there, no gratuitous fork. Only when the edited version is
+   * PUBLISHED (locked) does the domain fork it into a fresh draft, which becomes
+   * the new editedVersion; the published one is frozen as history.
    */
   async create(projectId: string, contentId: string, actor?: WriteActor): Promise<ContentVersion> {
     const content = await this.content.findContentWithRelations(contentId, projectId, {});

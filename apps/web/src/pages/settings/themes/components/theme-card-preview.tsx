@@ -104,7 +104,10 @@ export const ThemeCardPreview = memo((props: ThemeCardPreviewProps) => {
                 width={'280px'}
                 height={'auto'}
               >
-                <SharedPopper.PopperClose />
+                {/* Anchor to the content panel, not `fixed`: the card scales
+                    via a transform on ScaledPreviewContainer, so a fixed close
+                    button would pin to the thumbnail's corner. */}
+                <SharedPopper.PopperClose className="absolute" />
                 <ContentEditorSerialize contents={LIST_PREVIEW_CONTENT} />
               </SharedPopper.PopperStaticContent>
             </SharedPopper.Popper>

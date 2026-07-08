@@ -192,17 +192,18 @@ export const ContentDetailHeader = () => {
             ) : (
               statusText && <span className="text-sm text-muted-foreground">{statusText}</span>
             )}
-            {content.type !== ContentDataType.TRACKER && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => openBuilder(content, contentType)}
-                disabled={isViewOnly || isSaving}
-              >
-                <EnterIcon className="mr-2" />
-                {t('contents.detail.editInBuilder')}
-              </Button>
-            )}
+            {content.type !== ContentDataType.TRACKER &&
+              content.type !== ContentDataType.ANNOUNCEMENT && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => openBuilder(content, contentType)}
+                  disabled={isViewOnly || isSaving}
+                >
+                  <EnterIcon className="mr-2" />
+                  {t('contents.detail.editInBuilder')}
+                </Button>
+              )}
             <Button disabled={isPublishDisabled} onClick={() => setOpenPublish(true)}>
               <PlaneIcon className="mr-1" width={20} height={20} />
               {t('contents.detail.publish')}

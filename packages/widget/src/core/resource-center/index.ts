@@ -15,6 +15,14 @@ export { ResourceCenterStyleProvider } from './resource-center-style-provider';
 // Unified Panel (replaces ResourceCenter, ResourceCenterFrame, ResourceCenterStatic)
 export { ResourceCenterPanel } from './resource-center-panel';
 
+// Self-presenting popup announcement (renders inside the RC stage)
+export {
+  ResourceCenterAnnouncementPopup,
+  AnnouncementBubbleShell,
+  AnnouncementPopupBody,
+  ANNOUNCEMENT_BUBBLE_TAIL_SIZE,
+} from './resource-center-announcement-popup';
+
 // Frame Root (shared inner layout)
 export { ResourceCenterFrameRoot } from './resource-center-frame-root';
 
@@ -42,6 +50,8 @@ export {
   NavigableBlockRow,
   SubPageDetail,
   ContentListDetail,
+  AnnouncementListDetail,
+  AnnouncementDetailView,
   DetailView,
 } from './resource-center-body';
 

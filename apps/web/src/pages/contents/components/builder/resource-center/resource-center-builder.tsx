@@ -14,6 +14,7 @@ import { ResourceCenterBlockAction } from '@/pages/contents/components/builder/r
 import { ResourceCenterBlockSubPage } from '@/pages/contents/components/builder/resource-center/resource-center-block-sub-page';
 import { ResourceCenterBlockContentList } from '@/pages/contents/components/builder/resource-center/resource-center-block-content-list';
 import { ResourceCenterBlockLiveChat } from '@/pages/contents/components/builder/resource-center/resource-center-block-live-chat';
+import { ResourceCenterBlockAnnouncement } from '@/pages/contents/components/builder/resource-center/resource-center-block-announcement';
 import { ResourceCenterTabSettings } from '@/pages/contents/components/builder/resource-center/resource-center-tab-settings';
 import { ResourceCenterEmbed } from '@/pages/contents/components/builder/resource-center/components/resource-center-embed';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
@@ -83,6 +84,8 @@ const ResourceCenterBlockEditor = () => {
       return <ResourceCenterBlockContentList />;
     case ResourceCenterBlockType.LIVE_CHAT:
       return <ResourceCenterBlockLiveChat />;
+    case ResourceCenterBlockType.ANNOUNCEMENT:
+      return <ResourceCenterBlockAnnouncement />;
     default:
       return null;
   }

@@ -176,6 +176,10 @@ export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilit
   },
   [ContentDataType.LAUNCHER]: { ...NO_AUTO_START_CAPABILITIES },
   [ContentDataType.BANNER]: { ...NO_AUTO_START_CAPABILITIES },
+  // Announcements are a FEED, not a popup: their `when` rules act purely as an
+  // audience filter for feed inclusion (announcement.service filterByTargeting);
+  // none of the session-start knobs (frequency / wait / priority / …) apply.
+  [ContentDataType.ANNOUNCEMENT]: { ...NO_AUTO_START_CAPABILITIES },
   [ContentDataType.RESOURCE_CENTER]: {
     ...NO_AUTO_START_CAPABILITIES,
     priority: true,

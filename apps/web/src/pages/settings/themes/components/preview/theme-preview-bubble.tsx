@@ -68,7 +68,11 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
           showAvatar={showAvatar}
         >
           <PopperContent>
-            <PopperClose />
+            {/* Anchor to the content panel, not `fixed` — see theme-preview-popper.
+                Corner bubble placements (leftTop/rightTop/…) give the outer
+                wrapper no transform, so a `fixed` close button escaped to the
+                preview corner. */}
+            <PopperClose className="absolute" />
             {showTopProgress && (
               <PopperProgress
                 type={progressType}

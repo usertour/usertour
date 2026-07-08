@@ -105,6 +105,17 @@ export const CONTENT_ACTION_CAPABILITIES: Record<ContentDataType, ContentActionC
     actions: [],
     dismissVariant: null,
   },
+  [ContentDataType.ANNOUNCEMENT]: {
+    // Mirrors the announcement editor's action picker (content-detail-
+    // announcement-editor). Feed items are marked seen, not dismissed — no
+    // dismiss variant.
+    actions: [
+      ContentActionsItemType.FLOW_START,
+      ContentActionsItemType.PAGE_NAVIGATE,
+      ContentActionsItemType.JAVASCRIPT_EVALUATE,
+    ],
+    dismissVariant: null,
+  },
 };
 
 /** Per-step-kind capabilities. */

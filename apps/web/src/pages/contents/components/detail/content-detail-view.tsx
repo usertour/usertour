@@ -17,6 +17,7 @@ import { ContentDetailHeader } from './components/content-detail-header';
 import { ContentDetailNotFound } from './components/content-detail-not-found';
 import { ContentDetailSettings } from './tabs/overview/content-detail-settings';
 import { ContentDetailTrackerEditor } from './tabs/overview/content-detail-tracker-editor';
+import { ContentDetailAnnouncementEditor } from './tabs/overview/content-detail-announcement-editor';
 
 export interface ContentDetailViewProps {
   contentId: string;
@@ -104,14 +105,21 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
             <ContentDetailTrackerEditor />
           </div>
         )}
-        {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
+        {type === 'detail' && contentType === ContentTypeName.ANNOUNCEMENTS && (
           <div className="px-6 py-8 xl:px-8">
-            <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
-              <ContentDetailSettings />
-              <ContentDetailContent />
-            </div>
+            <ContentDetailAnnouncementEditor />
           </div>
         )}
+        {type === 'detail' &&
+          contentType !== ContentTypeName.TRACKERS &&
+          contentType !== ContentTypeName.ANNOUNCEMENTS && (
+            <div className="px-6 py-8 xl:px-8">
+              <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
+                <ContentDetailSettings />
+                <ContentDetailContent />
+              </div>
+            </div>
+          )}
         {type === 'versions' && <ContentDetailVersion />}
         {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
         {type === 'localization' && <ContentLocalizationList />}

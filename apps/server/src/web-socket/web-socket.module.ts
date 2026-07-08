@@ -25,6 +25,7 @@ import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
 import { SocketDataService } from './core/socket-data.service';
 import { DistributedLockService } from './core/distributed-lock.service';
+import { AnnouncementService } from './core/announcement.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
 @Module({
@@ -80,6 +81,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     SocketMessageQueueService,
     SocketDataService,
     DistributedLockService,
+    AnnouncementService,
     WebSocketV2MessageHandler,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService],

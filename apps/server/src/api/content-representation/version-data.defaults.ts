@@ -4,7 +4,7 @@ import {
   DEFAULT_CHECKLIST_DATA,
   DEFAULT_LAUNCHER_DATA,
   DEFAULT_RESOURCE_CENTER_DATA,
-} from '@usertour/types';
+} from '@usertour/constants';
 
 /**
  * The default `version.data` for a freshly created non-flow content. The builder

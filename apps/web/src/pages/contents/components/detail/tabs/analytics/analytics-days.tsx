@@ -59,6 +59,13 @@ const generateViewChartConfig = (contentType: ContentDataType, t: TFunction): Ch
       totalViews: { label: t('contents.analytics.chart.events'), color: COLOR_VIEWS_SOFT },
     };
   }
+  if (contentType === ContentDataType.ANNOUNCEMENT) {
+    // Seen once per user → total ≡ unique; a single Views series (not two
+    // identical lines). Matches the single Views stat card.
+    return {
+      uniqueViews: { label: t('contents.analytics.chart.views'), color: COLOR_VIEWS },
+    };
+  }
   if (contentType === ContentDataType.LAUNCHER) {
     return {
       uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
@@ -302,12 +309,17 @@ export const AnalyticsDays = () => {
     return null;
   }
 
+  // Types with no meaningful completion have completions === views, so a
+  // rate would always read 100%. Announcements are view-only like these, so
+  // exclude them too instead of showing a nonsensical 100% completion rate.
   const showRate =
     contentType !== ContentDataType.BANNER &&
     contentType !== ContentDataType.TRACKER &&
-    contentType !== ContentDataType.RESOURCE_CENTER;
+    contentType !== ContentDataType.RESOURCE_CENTER &&
+    contentType !== ContentDataType.ANNOUNCEMENT;
 
   const dateLabel = formatDateRange(dateRange, t);
+  const isAnnouncement = contentType === ContentDataType.ANNOUNCEMENT;
 
   const rateSummary =
     !showRate || !hasData ? null : avgUniqueRate === null ? (
@@ -338,6 +350,16 @@ export const AnalyticsDays = () => {
           <div className="space-y-1.5">
             <CardTitle>{t('contents.analytics.performance.title')}</CardTitle>
             {dateLabel && <CardDescription>{dateLabel}</CardDescription>}
+            {isAnnouncement && (
+              <div className="flex items-baseline gap-2 pt-1">
+                <span className="text-3xl font-bold tabular-nums">
+                  {analyticsData?.uniqueViews ?? 0}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {t('contents.analytics.views.announcement.views')}
+                </span>
+              </div>
+            )}
             {rateSummary && <div className="text-xs text-muted-foreground">{rateSummary}</div>}
           </div>
           {granularityOptions.length > 1 && (

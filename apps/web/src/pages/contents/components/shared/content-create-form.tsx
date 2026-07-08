@@ -21,12 +21,13 @@ import {
 } from '@usertour/ui';
 import { useCreateContentMutation } from '@usertour/hooks';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
+import { ContentDataType } from '@usertour/types';
 import {
-  ContentDataType,
+  DEFAULT_ANNOUNCEMENT_DATA,
   DEFAULT_BANNER_DATA,
   DEFAULT_CHECKLIST_DATA,
   DEFAULT_LAUNCHER_DATA,
-} from '@usertour/types';
+} from '@usertour/constants';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +45,7 @@ const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
   [ContentDataType.BANNER]: 'contents.types.banner',
   [ContentDataType.TRACKER]: 'contents.types.tracker',
   [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
+  [ContentDataType.ANNOUNCEMENT]: 'contents.types.announcement',
 };
 
 interface ContentCreateFormProps {
@@ -70,6 +72,7 @@ const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, () => unknown>>
   [ContentDataType.LAUNCHER]: () => ({ ...DEFAULT_LAUNCHER_DATA }),
   [ContentDataType.BANNER]: () => ({ ...DEFAULT_BANNER_DATA }),
   [ContentDataType.RESOURCE_CENTER]: createDefaultResourceCenterData,
+  [ContentDataType.ANNOUNCEMENT]: () => ({ ...DEFAULT_ANNOUNCEMENT_DATA }),
 };
 
 const defaultValues: Partial<FormValues> = {
@@ -125,6 +128,11 @@ export const ContentCreateForm = ({
     setIsLoading(true);
     try {
       const data = CONTENT_TYPE_INITIAL_DATA[contentType]?.();
+      // Seed the announcement title from the name so the new announcement has a
+      // headline immediately (the title gates publishing).
+      if (contentType === ContentDataType.ANNOUNCEMENT && data) {
+        (data as Record<string, unknown>).title = name;
+      }
       const content = await createContent({
         name,
         environmentId: environment?.id ?? '',

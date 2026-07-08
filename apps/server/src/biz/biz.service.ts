@@ -355,6 +355,13 @@ export class BizService {
       where: { bizUserId: { in: deleteIds } },
     });
 
+    // Delete announcement read-state. Its FK is ON DELETE RESTRICT, so without
+    // this the bizUser delete below hits P2003 and the whole transaction rolls
+    // back — any user who opened the announcement feed once becomes undeletable.
+    await tx.bizAnnouncementSeen.deleteMany({
+      where: { bizUserId: { in: deleteIds } },
+    });
+
     // Delete users
     return await tx.bizUser.deleteMany({
       where: { id: { in: deleteIds } },

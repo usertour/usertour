@@ -1831,6 +1831,7 @@ const translations = {
       banner: 'banner',
       tracker: 'event tracker',
       resourceCenter: 'resource center',
+      announcement: 'announcement',
     },
     create: {
       title: 'New {{type}}',
@@ -1885,6 +1886,13 @@ const translations = {
         link: 'Read more in our Resource Center guide',
         emptyTitle: 'No resource centers added',
         emptyDescription: 'You have not added any resource centers. Add one below.',
+      },
+      announcements: {
+        title: 'Announcements',
+        text: 'Share product updates, release notes, and news with your users through the Resource Center.',
+        link: 'Read more in our Resource Center guide',
+        emptyTitle: 'No announcements added',
+        emptyDescription: 'You have not added any announcements. Add one below.',
       },
     },
     detail: {
@@ -1973,8 +1981,12 @@ const translations = {
           events: 'Events',
           eventsTooltip: 'Total number of tracker events fired.',
         },
+        announcement: {
+          views: 'Views',
+        },
       },
       chart: {
+        views: 'Views',
         uniqueViews: 'Unique views',
         uniqueCompletions: 'Unique completions',
         totalViews: 'Total views',
@@ -2118,6 +2130,17 @@ const translations = {
           firstTrackedUtc: 'First tracked (UTC)',
           lastTrackedUtc: 'Last tracked at (UTC)',
           events: 'Events',
+        },
+        announcement: {
+          title: 'Users who viewed this announcement',
+          tooltip:
+            'Users who saw this announcement in the selected date range. "Seen at" is when they first viewed it.',
+          empty:
+            'Viewer data will appear here once the announcement is published and seen by users.',
+          seenAt: 'Seen at',
+          csv: {
+            seenAtUtc: 'Seen at (UTC)',
+          },
         },
       },
       tooltipMissing: {
@@ -2275,6 +2298,64 @@ const translations = {
         thenTrackThisEventTooltip:
           'Select the event name to track. You can reuse this event in other flows and checklists, and it will be sent to analytics providers connected in Settings Integrations.',
       },
+      announcement: {
+        onlyShowIf: 'Only show announcement if...',
+        onlyShowIfTooltip:
+          'Show the announcement only to users who match these conditions. Leave off to show it to everyone.',
+        time: 'Announcement time',
+        timeTooltip:
+          'Schedule when the announcement becomes visible. Leave empty to publish immediately.',
+        immediately: 'Immediately',
+        theme: 'Theme',
+        themeTooltip:
+          'The theme applied to the pop-up (modal or speech bubble) shown for this announcement.',
+        themePlaceholder: 'Select theme',
+        distribution: {
+          label: 'Notification style',
+          tooltip:
+            'How users are notified about this announcement. Silent adds it to the list quietly; Badge shows an unread indicator on the resource center; Pop-up actively presents it once as a modal or speech bubble.',
+          silent: {
+            label: 'Silent',
+            description: 'Appears in resource center without notification',
+          },
+          badge: {
+            label: 'Badge',
+            description: 'Shows an unread badge on the resource center',
+          },
+          popup: {
+            label: 'Pop-up',
+            description: 'Actively shown once as a modal or speech bubble',
+          },
+        },
+        popup: {
+          style: 'Pop-up style',
+          styleBubble: {
+            label: 'Speech bubble',
+            description: 'Appears next to the resource center launcher',
+          },
+          styleModal: {
+            label: 'Modal',
+            description: 'Centered overlay dialog',
+          },
+        },
+        content: 'Content',
+        title: 'Title',
+        titleTooltip:
+          'The announcement title displayed in the resource center list and detail page.',
+        titlePlaceholder: 'Enter announcement title',
+        titleRequired: 'Title is required.',
+        intro: 'Summary',
+        introTooltip: 'A brief summary shown in the announcement list within the resource center.',
+        readMore: 'Read more',
+        readMoreTooltip:
+          'Enable a detail page that users can navigate to from the announcement list.',
+        readMoreButtonLabel: 'Button label',
+        readMoreButtonLabelTooltip: 'The text displayed on the button that opens the detail page.',
+        readMoreButtonLabelPlaceholder: 'Read more',
+        detailContent: 'Details',
+        detailContentTooltip:
+          'The full content displayed when a user clicks "Read more" on the announcement.',
+      },
     },
     shared: {
       common: { cancel: 'Cancel', create: 'Create', submit: 'Submit' },
@@ -2306,6 +2387,13 @@ const translations = {
         noEventSelected: 'No event selected',
         triggerConditions: '{{count}} trigger conditions',
         noTriggerConditions: 'No trigger conditions',
+      },
+      announcementPreview: {
+        untitled: 'Untitled announcement',
+        silent: 'Silent',
+        badge: 'Badge',
+        popup: 'Pop-up',
+        distribution: '{{value}} notification',
       },
       publish: {
         title: 'Publish {{type}}',
@@ -2688,6 +2776,7 @@ const translations = {
       checklistLauncher: 'Checklist launcher',
       resourceCenter: 'Resource center',
       resourceCenterLauncher: 'Resource center launcher',
+      announcement: 'Announcement',
       launcherBeacons: 'Launcher beacons',
       launcherIcons: 'Launcher icons',
       launcherButtons: 'Launcher buttons',
@@ -2704,6 +2793,7 @@ const translations = {
       logo: 'Logo',
       uploadBackgroundImage: 'Upload background image',
       customIcon: 'Custom icon',
+      unreadBadge: 'Unread badge',
     },
     fields: {
       // Common color states (reused across many sections)
@@ -2803,6 +2893,10 @@ const translations = {
         largeWidth: 'Large width',
         maxHeight: 'Max height',
         transitionDuration: 'Transition duration',
+      },
+      announcement: {
+        bubbleWidth: 'Speech bubble width',
+        modalWidth: 'Modal width',
       },
       resourceCenterLauncher: {
         iconType: 'Icon type',
@@ -2921,6 +3015,7 @@ const translations = {
       nps: 'NPS',
       resourceCenter: 'Resource center',
       resourceCenterLauncher: 'Resource center launcher',
+      announcement: 'Announcement',
     },
   },
   contentBuilder: {
@@ -3499,6 +3594,10 @@ const translations = {
           description: 'Start content on demand',
         },
         liveChat: { label: 'Live chat', description: 'Connect to your live chat provider' },
+        announcement: {
+          label: 'Announcements',
+          description: 'Show a list of published announcements',
+        },
       },
       onlyShowBlock: 'Only show block if...',
       nameRequired: 'Name is required',
@@ -3508,6 +3607,9 @@ const translations = {
       richTextInfo: 'Edit rich text content by clicking on the content area in the preview.',
       subPageBlock: 'Sub-page block',
       subPageInfo: 'Sub-page content can be edited in the preview panel.',
+      announcementBlock: 'Announcement block',
+      announcementInfo:
+        'Announcements are managed on the Announcements page. This block shows the published announcement list.',
       actionBlock: 'Action block',
       whenClicked: 'When block is clicked',
       contentListBlock: 'List of flows/checklists',

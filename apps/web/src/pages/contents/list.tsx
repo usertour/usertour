@@ -21,6 +21,7 @@ const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
   [ContentDataType.BANNER]: 'contents.types.banner',
   [ContentDataType.TRACKER]: 'contents.types.tracker',
   [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
+  [ContentDataType.ANNOUNCEMENT]: 'contents.types.announcement',
 };
 
 // Content type configuration interface
@@ -186,6 +187,27 @@ const buildContentConfig = (t: TFunction): Record<string, ContentConfig> => {
       createForm: ({ open, onOpenChange, onSubmit }) => (
         <ContentCreateForm
           contentType={ContentDataType.RESOURCE_CENTER}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+    announcements: {
+      dataType: ContentDataType.ANNOUNCEMENT,
+      title: t('contents.list.announcements.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.announcements.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/resource-center"
+          linkText={t('contents.list.announcements.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.announcements.emptyTitle'),
+      emptyDescription: t('contents.list.announcements.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.ANNOUNCEMENT}
           open={open}
           onOpenChange={onOpenChange}
           onSubmit={onSubmit}

@@ -192,13 +192,14 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create a draft content version',
       capability: Capability.ContentUpdate,
       description:
-        "Fork the content's current edited version into a new draft (the new editable version); " +
-        'the previous draft is frozen as history. Use this to edit PUBLISHED/locked content: it ' +
-        'copies the steps and data, and each step keeps its `cvid` (only the primary `id` is ' +
-        'regenerated), so you can keep targeting steps by `cvid`/`key` without re-reading. ' +
-        'The response is the slim version envelope (id / number / themeId / timestamps) — it does ' +
-        'NOT inline the copied `steps`/`data`. The copy is complete; to inspect it, read the new ' +
-        'version with `get_content_version` and `expand`.',
+        'Ensure an editable draft version. If the current edited version is an unpublished draft ' +
+        'it is returned AS-IS (no new version); only when it is PUBLISHED (locked) is it forked ' +
+        'into a fresh draft, which becomes the new editable version while the published one stays ' +
+        'frozen as history. A fork copies the steps and data, and each step keeps its `cvid` ' +
+        '(only the primary `id` is regenerated), so you can keep targeting steps by `cvid`/`key` ' +
+        'without re-reading. The response is the slim version envelope (id / number / themeId / ' +
+        'timestamps) — it does NOT inline `steps`/`data`; read the version with ' +
+        '`get_content_version` and `expand` to inspect it.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) =>
         ctx.services.contentVersions.create(ctx.projectId, String(args.contentId), {

@@ -3,7 +3,6 @@ import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
 import {
-  BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   type BannerData,
   type ChecklistData,
   ContentActionsItemType,
@@ -18,6 +17,7 @@ import {
   type Step,
   StepContentType,
 } from '@usertour/types';
+import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT } from '@usertour/constants';
 
 /**
  * Strict "is this content usable?" validator for the v2 API/MCP.

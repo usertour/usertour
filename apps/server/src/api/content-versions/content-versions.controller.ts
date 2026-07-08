@@ -102,7 +102,8 @@ export class ApiContentVersionsController {
   @ApiOperation({
     summary: 'Create a content version',
     description:
-      "Fork the content's current edited version into a new draft. Returns the slim version " +
+      'Ensure an editable draft: returns the current edited version while it is an unpublished ' +
+      'draft; forks it only when it is published (locked). A fork returns the slim version ' +
       'envelope — the copied steps/data are not inlined; read the version with `expand` to ' +
       'inspect them.',
   })

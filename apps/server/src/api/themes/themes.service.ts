@@ -3,7 +3,8 @@ import { toArray } from '../shared/query';
 import { Prisma, type Theme as PrismaTheme } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { deepMergeThemeSettings, deriveThemeAutoColors } from '@usertour/helpers';
-import { type ThemeTypesSetting, defaultSettings } from '@usertour/types';
+import { type ThemeTypesSetting } from '@usertour/types';
+import { defaultSettings } from '@usertour/constants';
 import { PrismaService } from 'nestjs-prisma';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';

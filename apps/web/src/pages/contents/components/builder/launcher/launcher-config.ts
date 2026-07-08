@@ -1,4 +1,5 @@
-import { type LauncherData, DEFAULT_LAUNCHER_DATA } from '@usertour/types';
+import type { LauncherData } from '@usertour/types';
+import { DEFAULT_LAUNCHER_DATA } from '@usertour/constants';
 import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
 
 // Launcher has two per-type UI buffers — the in-flight `tooltip` and

@@ -1728,6 +1728,7 @@ const translations = {
       banner: '横幅',
       tracker: '事件追踪',
       resourceCenter: '资源中心',
+      announcement: '公告',
     },
     create: {
       title: '新建{{type}}',
@@ -1779,6 +1780,13 @@ const translations = {
         link: '在《资源中心》指南中了解更多',
         emptyTitle: '还没有资源中心',
         emptyDescription: '你还没有添加任何资源中心。在下方添加一个。',
+      },
+      announcements: {
+        title: '公告',
+        text: '通过资源中心向用户分享产品更新、发布说明和动态。',
+        link: '在《资源中心》指南中了解更多',
+        emptyTitle: '还没有公告',
+        emptyDescription: '你还没有添加任何公告。在下方添加一个。',
       },
     },
     detail: {
@@ -1858,8 +1866,12 @@ const translations = {
           events: '事件',
           eventsTooltip: '触发的追踪事件总数。',
         },
+        announcement: {
+          views: '浏览量',
+        },
       },
       chart: {
+        views: '浏览量',
         uniqueViews: '独立浏览量',
         uniqueCompletions: '独立完成数',
         totalViews: '总浏览量',
@@ -2001,6 +2013,15 @@ const translations = {
           firstTrackedUtc: '首次追踪（UTC）',
           lastTrackedUtc: '最近追踪时间（UTC）',
           events: '事件',
+        },
+        announcement: {
+          title: '查看过该公告的用户',
+          tooltip: '在所选日期范围内看过该公告的用户。“查看时间”是其首次查看的时间。',
+          empty: '公告发布并被用户查看后，浏览数据将显示在这里。',
+          seenAt: '查看时间',
+          csv: {
+            seenAtUtc: '查看时间（UTC）',
+          },
         },
       },
       tooltipMissing: {
@@ -2148,6 +2169,58 @@ const translations = {
         thenTrackThisEventTooltip:
           '选择要追踪的事件名称。你可以在其他流程和清单中复用此事件，它也会发送到在「设置-集成」中连接的分析服务商。',
       },
+      announcement: {
+        onlyShowIf: '仅在满足以下条件时显示公告……',
+        onlyShowIfTooltip: '仅向满足这些条件的用户显示该公告。不开启则对所有用户显示。',
+        time: '公告时间',
+        timeTooltip: '设置公告何时可见。留空则立即发布。',
+        immediately: '立即',
+        theme: '主题',
+        themeTooltip: '应用于该公告弹窗(模态框 / 气泡)的主题。',
+        themePlaceholder: '选择主题',
+        distribution: {
+          label: '通知方式',
+          tooltip:
+            '如何通知用户该公告。静默会安静地把它加入列表；角标会在资源中心上显示未读提示；弹出会以模态框或气泡的形式主动展示一次。',
+          silent: {
+            label: '静默',
+            description: '出现在资源中心中，不发出通知',
+          },
+          badge: {
+            label: '角标',
+            description: '在资源中心上显示未读角标',
+          },
+          popup: {
+            label: '弹出',
+            description: '以模态框或气泡的形式主动展示一次',
+          },
+        },
+        popup: {
+          style: '弹出样式',
+          styleBubble: {
+            label: '气泡',
+            description: '出现在资源中心启动器旁边',
+          },
+          styleModal: {
+            label: '模态框',
+            description: '居中的遮罩对话框',
+          },
+        },
+        content: '内容',
+        title: '标题',
+        titleTooltip: '在资源中心列表和详情页中显示的公告标题。',
+        titlePlaceholder: '输入公告标题',
+        titleRequired: '标题为必填项。',
+        intro: '摘要',
+        introTooltip: '在资源中心公告列表中显示的简要摘要。',
+        readMore: '阅读更多',
+        readMoreTooltip: '启用一个详情页，用户可从公告列表跳转过去。',
+        readMoreButtonLabel: '按钮文案',
+        readMoreButtonLabelTooltip: '打开详情页的按钮上显示的文字。',
+        readMoreButtonLabelPlaceholder: '阅读更多',
+        detailContent: '详情',
+        detailContentTooltip: '用户点击公告上的「阅读更多」后显示的完整内容。',
+      },
     },
     shared: {
       common: { cancel: '取消', create: '创建', submit: '提交' },
@@ -2178,6 +2251,13 @@ const translations = {
         noEventSelected: '未选择事件',
         triggerConditions: '{{count}} 个触发条件',
         noTriggerConditions: '无触发条件',
+      },
+      announcementPreview: {
+        untitled: '未命名公告',
+        silent: '静默',
+        badge: '角标',
+        popup: '弹出',
+        distribution: '{{value}}通知',
       },
       publish: {
         title: '发布{{type}}',
@@ -2533,6 +2613,7 @@ const translations = {
       checklistLauncher: '清单启动器',
       resourceCenter: '资源中心',
       resourceCenterLauncher: '资源中心启动器',
+      announcement: '公告',
       launcherBeacons: '启动器信标',
       launcherIcons: '启动器图标',
       launcherButtons: '启动器按钮',
@@ -2549,6 +2630,7 @@ const translations = {
       logo: 'Logo',
       uploadBackgroundImage: '上传背景图片',
       customIcon: '自定义图标',
+      unreadBadge: '未读角标',
     },
     fields: {
       common: {
@@ -2647,6 +2729,10 @@ const translations = {
         largeWidth: '大尺寸宽度',
         maxHeight: '最大高度',
         transitionDuration: '过渡时长',
+      },
+      announcement: {
+        bubbleWidth: '气泡宽度',
+        modalWidth: '模态框宽度',
       },
       resourceCenterLauncher: {
         iconType: '图标类型',
@@ -2765,6 +2851,7 @@ const translations = {
       nps: 'NPS',
       resourceCenter: '资源中心',
       resourceCenterLauncher: '资源中心启动器',
+      announcement: '公告',
     },
   },
   contentBuilder: {
@@ -3321,6 +3408,10 @@ const translations = {
         subPage: { label: '子页面', description: '拥有独立内容的单独页面' },
         contentList: { label: '流程/清单列表', description: '按需启动内容' },
         liveChat: { label: '在线客服', description: '接入你的在线客服服务商' },
+        announcement: {
+          label: '公告',
+          description: '展示已发布的公告列表',
+        },
       },
       onlyShowBlock: '仅在满足条件时显示该区块…',
       nameRequired: '名称不能为空',
@@ -3330,6 +3421,8 @@ const translations = {
       richTextInfo: '在预览区点击内容区域即可编辑富文本内容。',
       subPageBlock: '子页面区块',
       subPageInfo: '子页面内容可在预览面板中编辑。',
+      announcementBlock: '公告区块',
+      announcementInfo: '公告在「公告」页面中管理。此区块展示已发布的公告列表。',
       actionBlock: '操作区块',
       whenClicked: '点击区块时',
       contentListBlock: '流程/清单列表',

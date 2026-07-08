@@ -25,6 +25,7 @@ const isBlockValid = (block: ResourceCenterBlock): boolean => {
     case ResourceCenterBlockType.ACTION:
     case ResourceCenterBlockType.SUB_PAGE:
     case ResourceCenterBlockType.CONTENT_LIST:
+    case ResourceCenterBlockType.ANNOUNCEMENT:
       return !isRichTextEmpty(block.name);
     case ResourceCenterBlockType.LIVE_CHAT:
       if (isRichTextEmpty(block.name)) {

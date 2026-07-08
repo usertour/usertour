@@ -6,6 +6,7 @@ import {
   ClientContext,
   ContentDataType,
   ResourceCenterData,
+  AnnouncementData,
 } from '@usertour/types';
 import {
   isDisplayOnlyBlockType,
@@ -13,6 +14,7 @@ import {
   isNullish,
   serializeBlockName,
 } from '@usertour/helpers';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import {
   Step,
   BizEventWithEvent,
@@ -856,5 +858,40 @@ export const buildTrackerCompletedEventData = (
     [EventAttributes.EVENT_TRACKER_NAME]: content.name,
     [EventAttributes.EVENT_TRACKER_VERSION_ID]: version.id,
     [EventAttributes.EVENT_TRACKER_VERSION_NUMBER]: version.sequence,
+  };
+};
+
+// ============================================================================
+// Announcement Event Data Builders
+// ============================================================================
+
+/**
+ * Build event data for announcement seen events.
+ * Announcements do not use BizSession — event data is built directly
+ * from content and version records, similar to the tracker pattern.
+ * @param content - The announcement content record
+ * @param version - The announcement version record (with data containing AnnouncementData)
+ * @param source - Where the announcement was seen (e.g. 'resource_center')
+ * @returns Announcement seen event data
+ */
+export const buildAnnouncementSeenEventData = (
+  content: { id: string; name: string },
+  version: { id: string; sequence: number; data: unknown },
+  source: string,
+): Record<string, any> => {
+  const announcementData = version.data as AnnouncementData | undefined;
+
+  return {
+    [EventAttributes.ANNOUNCEMENT_ID]: content.id,
+    [EventAttributes.ANNOUNCEMENT_NAME]: content.name,
+    [EventAttributes.ANNOUNCEMENT_VERSION_ID]: version.id,
+    [EventAttributes.ANNOUNCEMENT_VERSION_NUMBER]: version.sequence,
+    // Same fallback the delivery side uses (session builder / AnnouncementService
+    // default to DEFAULT_ANNOUNCEMENT_DATA.distribution = badge): a
+    // partial-data announcement actually lights the badge, so analytics must
+    // not record it as silent.
+    [EventAttributes.ANNOUNCEMENT_LEVEL]:
+      announcementData?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution,
+    [EventAttributes.ANNOUNCEMENT_SOURCE]: source,
   };
 };

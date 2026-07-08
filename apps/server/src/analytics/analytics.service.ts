@@ -26,7 +26,7 @@ import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
-import { defaultEvents } from '@/common/initialization/initialization';
+import { defaultEvents } from '@usertour/constants';
 
 type AnalyticsConditions = {
   environmentId: string;
@@ -127,6 +127,10 @@ const EVENT_TYPE_MAPPING = {
     start: BizEvents.RESOURCE_CENTER_OPENED,
     complete: BizEvents.RESOURCE_CENTER_CLICKED,
   },
+  [ContentType.ANNOUNCEMENT]: {
+    start: BizEvents.ANNOUNCEMENT_SEEN,
+    complete: BizEvents.ANNOUNCEMENT_SEEN,
+  },
 };
 
 const EVENTS = [
@@ -145,6 +149,7 @@ const EVENTS = [
   BizEvents.RESOURCE_CENTER_CLOSED,
   BizEvents.RESOURCE_CENTER_CLICKED,
   BizEvents.RESOURCE_CENTER_DISMISSED,
+  BizEvents.ANNOUNCEMENT_SEEN,
 ];
 
 export interface ChecklistData {
@@ -258,7 +263,7 @@ export class AnalyticsService {
       return emptyAnalytics;
     }
 
-    if (content.type === ContentType.TRACKER) {
+    if (content.type === ContentType.TRACKER || content.type === ContentType.ANNOUNCEMENT) {
       return await this.queryTrackerContentAnalytics(
         environmentId,
         contentId,

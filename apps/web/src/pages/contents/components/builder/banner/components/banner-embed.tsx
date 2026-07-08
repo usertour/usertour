@@ -1,17 +1,12 @@
 import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
-import { BUILDER_Z } from '@usertour/constants';
+import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
 import { ContentEditor } from '@usertour/editor';
 import type { ContentEditorRoot } from '@usertour/types';
-import {
-  ContentEditorElementType,
-  ContentDataType,
-  BannerEmbedPlacement,
-  BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
-} from '@usertour/types';
+import { ContentEditorElementType, ContentDataType, BannerEmbedPlacement } from '@usertour/types';
 import { isEqual } from 'lodash';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';

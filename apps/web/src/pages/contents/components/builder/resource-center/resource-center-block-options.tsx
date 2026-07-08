@@ -3,6 +3,7 @@ import {
   RiArrowRightCircleLine,
   RiFileTextLine,
   RiListCheck3,
+  RiMegaphoneLine,
   RiMessage3Line,
   RiPagesLine,
   RiSeparator,
@@ -30,6 +31,8 @@ export const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
   [ResourceCenterBlockType.CONTENT_LIST]:
     'contentBuilder.resourceCenter.blockType.contentList.label',
   [ResourceCenterBlockType.LIVE_CHAT]: 'contentBuilder.resourceCenter.blockType.liveChat.label',
+  [ResourceCenterBlockType.ANNOUNCEMENT]:
+    'contentBuilder.resourceCenter.blockType.announcement.label',
 };
 
 export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
@@ -60,6 +63,13 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'contentBuilder.resourceCenter.blockType.contentList.label',
     description: 'contentBuilder.resourceCenter.blockType.contentList.description',
     icon: RiListCheck3,
+  },
+  {
+    key: ResourceCenterBlockType.ANNOUNCEMENT,
+    value: ResourceCenterBlockType.ANNOUNCEMENT,
+    label: 'contentBuilder.resourceCenter.blockType.announcement.label',
+    description: 'contentBuilder.resourceCenter.blockType.announcement.description',
+    icon: RiMegaphoneLine,
   },
   {
     key: ResourceCenterBlockType.LIVE_CHAT,

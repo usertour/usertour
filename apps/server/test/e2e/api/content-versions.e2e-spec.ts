@@ -923,31 +923,67 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
-  // POST .../content/:contentId/versions forks the content's edited version into a new draft.
+  // POST .../content/:contentId/versions ensures an EDITABLE draft: it reuses the
+  // current edited version while it is an unpublished draft, and forks a new one
+  // only when the edited version is published (locked) — the builder's exact
+  // semantics after the concurrent-autosave race fix in the domain.
   describe('create draft version (POST)', () => {
-    it('forks the edited version into a new draft (201, copies steps)', async () => {
+    it('reuses an unpublished draft; forks only once the edited version is published', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
-      const res = await api(
-        'post',
-        `/v2/projects/${projectId}/content/${contentId}/versions`,
-        token,
-      ).send({});
-      expect(res.status).toBe(201);
-      expect(res.body).toMatchObject({ object: 'contentVersion' });
-      expect(res.body.id).not.toBe(versionId); // a new version, not the source
+      // Isolated fixture — this test flips publish state and re-points the head.
+      const env = await buildEnvironment(prisma, { projectId });
+      const content = await buildContent(prisma, {
+        projectId,
+        environmentId: env.id,
+        type: 'flow',
+      });
+      const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+      await buildStep(prisma, {
+        versionId: version.id,
+        cvid: 'cv-1',
+        sequence: 0,
+        type: 'tooltip',
+      });
+      await buildStep(prisma, {
+        versionId: version.id,
+        cvid: 'cv-2',
+        sequence: 1,
+        type: 'tooltip',
+      });
+      const path = `/v2/projects/${projectId}/content/${content.id}/versions`;
+
+      // 1) The edited version is an unpublished draft → REUSED, not forked
+      //    (editing continues on the existing draft; no gratuitous version).
+      const reuse = await api('post', path, token).send({});
+      expect(reuse.status).toBe(201);
+      expect(reuse.body).toMatchObject({ object: 'contentVersion' });
+      expect(reuse.body.id).toBe(version.id);
+
+      // 2) Publish it (locking the draft) → POST now forks a fresh draft.
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId: env.id,
+          contentId: content.id,
+          published: true,
+          publishedVersionId: version.id,
+        },
+      });
+      const fork = await api('post', path, token).send({});
+      expect(fork.status).toBe(201);
+      expect(fork.body.id).not.toBe(version.id);
 
       // the fork carries the source version's steps (cv-1, cv-2)
       const read = await api(
         'get',
-        `/v2/projects/${projectId}/content/${contentId}/versions/${res.body.id}?expand=steps`,
+        `/v2/projects/${projectId}/content/${content.id}/versions/${fork.body.id}?expand=steps`,
         token,
       );
       expect(read.status).toBe(200);
       expect(read.body.steps.map((s: { cvid: string }) => s.cvid).sort()).toEqual(['cv-1', 'cv-2']);
 
-      // the new version becomes the content's edited (head) version
-      const content = await api('get', `/v2/projects/${projectId}/content/${contentId}`, token);
-      expect(content.body.editedVersionId).toBe(res.body.id);
+      // the fork becomes the content's edited (head) version
+      const detail = await api('get', `/v2/projects/${projectId}/content/${content.id}`, token);
+      expect(detail.body.editedVersionId).toBe(fork.body.id);
     });
 
     it('returns 404 forking an unknown content (E1004)', async () => {
