@@ -7,7 +7,7 @@ import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws } from '@usertour/hooks';
+import { useAws, useContentListQuery } from '@usertour/hooks';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
@@ -469,11 +469,18 @@ const AnnouncementContentColumn = () => {
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
-  const { isViewOnly, project } = useAppContext();
+  const { isViewOnly, project, environment } = useAppContext();
   const { attributeList } = useAttributeList();
   const { upload } = useAws();
   const { themeList } = useThemeList();
   const getOembedInfo = useOembedInfo();
+
+  // Environment content list for the button-action pickers ("Start flow"
+  // lists the flows/checklists); without it the picker renders empty.
+  const { contents: contentList } = useContentListQuery({
+    query: { environmentId: environment?.id ?? '' },
+    options: { skip: !environment?.id },
+  });
 
   const { data, patchData } = useAnnouncementDraft();
 
@@ -603,6 +610,7 @@ const AnnouncementContentColumn = () => {
                 onValueChange={handleIntroContentChange}
                 projectId={projectId}
                 attributes={attributeList}
+                contentList={contentList}
                 enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
                 actionItems={ANNOUNCEMENT_ACTION_ITEMS}
                 getOembedInfo={getOembedInfo}
@@ -671,6 +679,7 @@ const AnnouncementContentColumn = () => {
                   onValueChange={handleDetailContentChange}
                   projectId={projectId}
                   attributes={attributeList}
+                  contentList={contentList}
                   enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
                   actionItems={ANNOUNCEMENT_ACTION_ITEMS}
                   getOembedInfo={getOembedInfo}

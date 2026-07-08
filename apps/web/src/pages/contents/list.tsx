@@ -199,7 +199,7 @@ const buildContentConfig = (t: TFunction): Record<string, ContentConfig> => {
       description: (
         <ContentDescription
           text={t('contents.list.announcements.text')}
-          docUrl="https://docs.usertour.io/how-to-guides/resource-center"
+          docUrl="https://docs.usertour.io/how-to-guides/announcements"
           linkText={t('contents.list.announcements.link')}
         />
       ),
