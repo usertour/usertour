@@ -1518,7 +1518,7 @@ const translations = {
       announcements: {
         title: '公告',
         text: '通过资源中心向用户分享产品更新、发布说明和动态。',
-        link: '在《资源中心》指南中了解更多',
+        link: '在《公告》指南中了解更多',
         emptyTitle: '还没有公告',
         emptyDescription: '你还没有添加任何公告。在下方添加一个。',
       },
