@@ -1032,6 +1032,47 @@ export const builderSections: BuilderSection[] = [
         ],
         allowAuto: ALL_AUTO,
       },
+      {
+        type: 'sub-section',
+        label: 'themeBuilder.subSections.unreadBadge',
+        withSeparator: true,
+        fields: [
+          {
+            type: 'color',
+            path: 'resourceCenterUnreadBadge.backgroundColor',
+            label: 'themeBuilder.fields.common.background',
+          },
+          {
+            type: 'color',
+            path: 'resourceCenterUnreadBadge.textColor',
+            label: 'themeBuilder.fields.common.fontColor',
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'announcement',
+    label: 'themeBuilder.sections.announcement',
+    previewWidget: ThemeDetailPreviewType.ANNOUNCEMENT,
+    fields: [
+      {
+        type: 'number',
+        path: 'announcement.bubbleWidth',
+        label: 'themeBuilder.fields.announcement.bubbleWidth',
+        min: 200,
+        max: 600,
+        suffix: 'px',
+      },
+      {
+        type: 'number',
+        path: 'announcement.modalWidth',
+        label: 'themeBuilder.fields.announcement.modalWidth',
+        min: 300,
+        max: 1000,
+        suffix: 'px',
+      },
     ],
   },
 

@@ -33,6 +33,7 @@ export enum ThemeDetailPreviewType {
   NPS = 'nps',
   RESOURCE_CENTER = 'resource-center',
   RESOURCE_CENTER_LAUNCHER = 'resource-center-launcher',
+  ANNOUNCEMENT = 'announcement',
 }
 
 export type ThemeDetailSelectorType = {

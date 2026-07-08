@@ -63,7 +63,12 @@ export const ThemePreviewPopper = (props: ThemePreviewPopperProps) => {
           arrowColor={settings?.mainColor.background}
         >
           <PopperContent>
-            <PopperClose />
+            {/* Preview is not in an iframe, so PopperClose's default `fixed`
+                would resolve against whatever transformed ancestor happens to
+                be nearest (or the viewport) instead of the popper. Anchor it to
+                the content panel (position: relative) so it sits in the panel's
+                corner regardless of placement. */}
+            <PopperClose className="absolute" />
             {showTopProgress && (
               <PopperProgress
                 type={progressType}

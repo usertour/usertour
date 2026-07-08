@@ -34,6 +34,9 @@ export class AdminService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // Default events/attributes backfill for existing projects is a deploy-time
+    // data migration (prisma/seed.ts → project-defaults), not app runtime, so
+    // it isn't done here — a failure there mustn't take the server down.
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     if (isSelfHostedMode) {
       await this.ensureInstanceSetting();

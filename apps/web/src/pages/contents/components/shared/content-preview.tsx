@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEventList } from '@/hooks/use-event-list';
-import { EyeNoneIcon, EventTrackerIcon } from '@usertour/icons';
+import { EyeNoneIcon, EventTrackerIcon, AnnouncementIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
   BannerContainer,
@@ -37,11 +37,12 @@ import {
 } from '@usertour/widget';
 import { ScaledPreviewContainer } from '@usertour/ui';
 import {
+  AnnouncementData,
+  AnnouncementDistribution,
   AvatarType,
   BannerData,
   ChecklistData,
   ContentVersion,
-  DEFAULT_BANNER_DATA,
   LauncherData,
   LauncherDataType,
   ProgressBarPosition,
@@ -52,7 +53,7 @@ import {
   Theme,
 } from '@usertour/types';
 
-import { PREVIEW_BASIC } from '@usertour/constants';
+import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_BANNER_DATA, PREVIEW_BASIC } from '@usertour/constants';
 import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface EmptyContentPreviewProps {
@@ -129,7 +130,10 @@ const FlowPreview = ({
           notchColor={themeSetting?.mainColor?.background}
           showAvatar={showAvatar}
         >
-          {currentStep.setting.skippable && <PopperClose />}
+          {/* Preview isn't in an iframe, so PopperClose's default `fixed` would
+              anchor to the scaled preview container, not the popper. Anchor to
+              the content panel (see theme-preview components). */}
+          {currentStep.setting.skippable && <PopperClose className="absolute" />}
           {showTopProgress && (
             <PopperProgress
               type={progressType}
@@ -167,7 +171,8 @@ const FlowPreview = ({
         height={'auto'}
         arrowColor={themeSetting?.mainColor?.background}
       >
-        {currentStep.setting.skippable && <PopperClose />}
+        {/* absolute (not fixed) — same reason as the bubble branch above. */}
+        {currentStep.setting.skippable && <PopperClose className="absolute" />}
         {showTopProgress && (
           <PopperProgress
             type={progressType}
@@ -351,6 +356,33 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
   );
 };
 
+const AnnouncementPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
+  const { t } = useTranslation();
+  const data = (currentVersion.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
+  const title = data.title || t('contents.shared.announcementPreview.untitled');
+  const distribution = data.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution;
+  const distributionLabelKeys: Record<AnnouncementDistribution, string> = {
+    [AnnouncementDistribution.SILENT]: 'contents.shared.announcementPreview.silent',
+    [AnnouncementDistribution.BADGE]: 'contents.shared.announcementPreview.badge',
+    [AnnouncementDistribution.POPUP]: 'contents.shared.announcementPreview.popup',
+  };
+  const distributionLabel = t(distributionLabelKeys[distribution]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
+      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+        <AnnouncementIcon className="w-5 h-5 text-primary" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
+        <span className="text-sm font-medium text-foreground truncate max-w-full">{title}</span>
+        <span className="text-xs text-muted-foreground">
+          {t('contents.shared.announcementPreview.distribution', { value: distributionLabel })}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export {
   FlowPreview,
   LauncherPreview,
@@ -358,6 +390,7 @@ export {
   ResourceCenterPreview,
   BannerPreviewContent,
   TrackerPreview,
+  AnnouncementPreview,
   EmptyContentPreview,
   ScaledPreviewContainer,
 };

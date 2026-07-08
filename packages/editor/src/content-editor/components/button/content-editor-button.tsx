@@ -2,7 +2,8 @@
 
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { Button as WidgetButton, useButtonContext, resolveButtonVariant } from '@usertour/widget';
-import { RulesCondition, ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
+import type { RulesCondition, ButtonSemanticType } from '@usertour/types';
+import { DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/constants';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

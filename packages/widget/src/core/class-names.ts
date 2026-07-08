@@ -56,6 +56,14 @@ export const WidgetClass = {
   resourceCenterFrameExpanded: `${PREFIX}-resource-center-frame--expanded`,
   resourceCenterLauncher: `${PREFIX}-resource-center-launcher`,
 
+  // Indicator (unread badge)
+  indicator: `${PREFIX}-indicator`,
+
+  // Announcement popup (bubble / modal enter transitions)
+  announcementBubble: `${PREFIX}-announcement-bubble`,
+  announcementModal: `${PREFIX}-announcement-modal`,
+  announcementModalOverlay: `${PREFIX}-announcement-modal-overlay`,
+
   // Bubble avatar
   bubbleAvatar: `${PREFIX}-bubble__avatar`,
   bubbleAvatarMinimizable: `${PREFIX}-bubble__avatar--minimizable`,

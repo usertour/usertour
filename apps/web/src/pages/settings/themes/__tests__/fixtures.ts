@@ -1,4 +1,5 @@
-import { type ThemeTypesSetting, defaultSettings, standardDarkSettings } from '@usertour/types';
+import { defaultSettings, standardDarkSettings } from '@usertour/constants';
+import type { ThemeTypesSetting } from '@usertour/types';
 
 // Re-export the in-tree presets so tests can pin to whatever the codebase
 // considers canonical.

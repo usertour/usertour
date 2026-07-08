@@ -2,7 +2,12 @@ import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { evaluateAttributeCondition, isArray, isNullish } from '@usertour/helpers';
+import {
+  evaluateAttributeCondition,
+  isArray,
+  isNullish,
+  isConditionsActived,
+} from '@usertour/helpers';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { BizUser, Environment, Step, Attribute } from '@/common/types/schema';
@@ -37,6 +42,16 @@ type SegmentDataItem = {
   };
   type: 'user-attr';
   operators: 'and' | 'or';
+};
+
+/**
+ * The auto-start-rules slice of a version's `config` JSON that gates visibility
+ * ("Only show if..."). Shared by the announcement read paths so the targeting
+ * contract lives in one place instead of being re-declared per caller.
+ */
+export type AutoStartRulesConfig = {
+  enabledAutoStartRules?: boolean;
+  autoStartRules?: RulesCondition[];
 };
 
 /**
@@ -132,6 +147,26 @@ export class ConditionEvaluationService {
         };
       }),
     );
+  }
+
+  /**
+   * Decide whether a content's auto-start (targeting) rules make it visible to
+   * the user in `context`. Used to gate announcements server-side so a
+   * targeted announcement ("Only show if...") is not leaked to users who don't
+   * match. Mirrors how resource-center block / checklist visibility conditions
+   * are evaluated — same DB-backed user-attr / segment / time evaluation.
+   *
+   * Returns true when targeting is disabled or there are no conditions.
+   */
+  async isVisibleByAutoStartRules(
+    config: AutoStartRulesConfig | null | undefined,
+    context: ConditionEvaluationContext,
+  ): Promise<boolean> {
+    if (!config?.enabledAutoStartRules || !config.autoStartRules?.length) {
+      return true;
+    }
+    const evaluated = await this.evaluateRulesConditions(config.autoStartRules, context);
+    return isConditionsActived(evaluated);
   }
 
   /**

@@ -54,14 +54,9 @@ export class UsersResolver {
 
   @ResolveField('projects')
   async projects(@Parent() author: User) {
-    const userOnProjects = await this.prisma.user
+    return this.prisma.user
       .findUnique({ where: { id: author.id } })
       .projects({ include: { project: true } });
-    const activeProject = userOnProjects?.find((p) => p.actived)?.project;
-    if (activeProject) {
-      await this.authService.addInitializeProjectJob(activeProject.id);
-    }
-    return userOnProjects;
   }
 
   @ResolveField('isOAuthUser')

@@ -234,6 +234,13 @@ export const AnalyticsViews = () => {
   if (contentType === ContentDataType.TRACKER) {
     return <TrackerAnalyticsViews analyticsData={analyticsData} />;
   }
+  if (contentType === ContentDataType.ANNOUNCEMENT) {
+    // An announcement is seen once per user (ANNOUNCEMENT_SEEN is first-seen
+    // only), so its only metric is Views. A lone number in its own Overview
+    // card reads as an empty card, so it lives in the Performance card header
+    // (see AnalyticsDays) alongside the views trend instead.
+    return null;
+  }
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherAnalyticsViews analyticsData={analyticsData} />;
   }

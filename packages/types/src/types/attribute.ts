@@ -50,6 +50,18 @@ export enum AttributeDataType {
   RandomNumber = 7,
 }
 
+/**
+ * Shape of a default project attribute (seeded at project creation and by the
+ * deploy-time backfill). The instantiated lists live in @usertour/constants.
+ */
+export interface ProjectDefaultAttribute {
+  codeName: string;
+  displayName: string;
+  bizType: AttributeBizTypes;
+  dataType: AttributeDataType;
+  description?: string;
+}
+
 export interface SelectItemType {
   id: string;
   name: string;
@@ -110,6 +122,7 @@ export enum BizEvents {
   RESOURCE_CENTER_DISMISSED = 'resource_center_dismissed',
   EVENT_TRACKER_COMPLETED = 'event_tracker_completed',
   QUESTION_ANSWERED = 'question_answered',
+  ANNOUNCEMENT_SEEN = 'announcement_seen',
 }
 
 export enum EventAttributes {
@@ -182,6 +195,13 @@ export enum EventAttributes {
   EVENT_TRACKER_NAME = 'event_tracker_name',
   EVENT_TRACKER_VERSION_ID = 'event_tracker_version_id',
   EVENT_TRACKER_VERSION_NUMBER = 'event_tracker_version_number',
+  // Announcement attributes
+  ANNOUNCEMENT_ID = 'announcement_id',
+  ANNOUNCEMENT_NAME = 'announcement_name',
+  ANNOUNCEMENT_VERSION_ID = 'announcement_version_id',
+  ANNOUNCEMENT_VERSION_NUMBER = 'announcement_version_number',
+  ANNOUNCEMENT_LEVEL = 'announcement_level',
+  ANNOUNCEMENT_SOURCE = 'announcement_source',
   // Common attributes
   PAGE_URL = 'page_url',
   VIEWPORT_WIDTH = 'viewport_width',
@@ -195,31 +215,3 @@ export enum EventAttributes {
   QUESTION_TYPE = 'question_type',
   TEXT_ANSWER = 'text_answer',
 }
-
-/**
- * Tracker-specific metadata attributes injected by the system.
- */
-export const trackerSystemMetadataAttributes: EventAttributes[] = [
-  EventAttributes.EVENT_TRACKER_ID,
-  EventAttributes.EVENT_TRACKER_NAME,
-  EventAttributes.EVENT_TRACKER_VERSION_ID,
-  EventAttributes.EVENT_TRACKER_VERSION_NUMBER,
-];
-
-/**
- * Common client context attributes injected by the system.
- */
-export const systemClientContextAttributes: EventAttributes[] = [
-  EventAttributes.PAGE_URL,
-  EventAttributes.VIEWPORT_WIDTH,
-  EventAttributes.VIEWPORT_HEIGHT,
-];
-
-/**
- * Full reserved attribute set for tracker-reported events.
- * These are system-managed attributes and should not require per-event attribute binding.
- */
-export const trackerSystemReservedEventAttributes: EventAttributes[] = [
-  ...trackerSystemMetadataAttributes,
-  ...systemClientContextAttributes,
-];

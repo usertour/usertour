@@ -10,6 +10,7 @@ import {
   BannerIcon,
   EventTrackerIcon,
   ResourceCenterIcon,
+  AnnouncementIcon,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { Link, useLocation } from 'react-router-dom';
@@ -72,6 +73,13 @@ const navigations = [
     href: '/resource-centers',
     match: /^\/env\/[^/]+\/resource-centers(\/|$)/,
     icon: ResourceCenterIcon,
+  },
+  {
+    nameKey: 'contents.list.announcements.title',
+    id: 'announcements',
+    href: '/announcements',
+    match: /^\/env\/[^/]+\/announcements(\/|$)/,
+    icon: AnnouncementIcon,
   },
   {
     nameKey: 'users.detail.breadcrumb',

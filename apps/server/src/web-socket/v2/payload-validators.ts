@@ -6,9 +6,14 @@ import {
   IsNumber,
   IsArray,
   IsEnum,
+  IsIn,
   MaxLength,
+  ArrayMaxSize,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ClientMessageKind, ContentDataType, contentStartReason } from '@usertour/types';
+import { ANNOUNCEMENT_FEED_SCAN_LIMIT, ANNOUNCEMENT_SEEN_SOURCES } from '@usertour/constants';
 
 // ============================================================================
 // Maximum payload size constant
@@ -296,6 +301,41 @@ export class ListResourceCenterBlockContentPayload {
   blockId: string;
 }
 
+/**
+ * Get announcement payload validator. Required: a missing contentId would
+ * reach Prisma as undefined, which silently drops the filter and returns an
+ * arbitrary visible announcement.
+ */
+export class GetAnnouncementPayload {
+  @IsString()
+  @MaxLength(255)
+  contentId: string;
+}
+
+export class MarkAnnouncementsSeenItemPayload {
+  @IsString()
+  @MaxLength(255)
+  contentId: string;
+}
+
+/**
+ * Mark announcements seen payload validator. The item cap and the source
+ * whitelist are shared with the service via @usertour/constants — the feed never
+ * legitimately sends more than the scan limit, and the source must be a known
+ * seen surface.
+ */
+export class MarkAnnouncementsSeenPayload {
+  @IsArray()
+  @ArrayMaxSize(ANNOUNCEMENT_FEED_SCAN_LIMIT)
+  @ValidateNested({ each: true })
+  @Type(() => MarkAnnouncementsSeenItemPayload)
+  items: MarkAnnouncementsSeenItemPayload[];
+
+  @IsOptional()
+  @IsIn(ANNOUNCEMENT_SEEN_SOURCES)
+  source?: string;
+}
+
 // ============================================================================
 // Payload DTO Map
 // ============================================================================
@@ -325,5 +365,8 @@ export const payloadValidatorMap = new Map<ClientMessageKind, new () => object>(
   [ClientMessageKind.CLOSE_RESOURCE_CENTER, SessionOnlyPayload],
   [ClientMessageKind.CLICK_RESOURCE_CENTER, ClickResourceCenterPayload],
   [ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT, ListResourceCenterBlockContentPayload],
-  // BEGIN_BATCH, END_BATCH, END_ALL_CONTENT don't require payload validation
+  [ClientMessageKind.GET_ANNOUNCEMENT, GetAnnouncementPayload],
+  [ClientMessageKind.MARK_ANNOUNCEMENTS_SEEN, MarkAnnouncementsSeenPayload],
+  // BEGIN_BATCH, END_BATCH, END_ALL_CONTENT, LIST_ANNOUNCEMENTS don't require
+  // payload validation (no parameters)
 ]);

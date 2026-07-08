@@ -10,6 +10,7 @@ import {
   NPS_PREVIEW_CONTENT,
   TOOLTIP_PREVIEW_CONTENT,
 } from '../../../constants/preview-contents';
+import { ThemePreviewAnnouncement } from '../../preview/theme-preview-announcement';
 import { ThemePreviewBubble } from '../../preview/theme-preview-bubble';
 import { ThemePreviewChecklist } from '../../preview/theme-preview-checklist';
 import { ThemePreviewLauncher } from '../../preview/theme-preview-launcher';
@@ -108,6 +109,9 @@ export const PreviewPane = (props: PreviewPaneProps) => {
             expanded={widgetType === ThemeDetailPreviewType.RESOURCE_CENTER}
             settings={settings}
           />
+        )}
+        {widgetType === ThemeDetailPreviewType.ANNOUNCEMENT && (
+          <ThemePreviewAnnouncement settings={settings} />
         )}
       </BrowserFrame>
     </div>

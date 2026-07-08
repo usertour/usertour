@@ -1,5 +1,6 @@
 import {
   LinkDecoratorContext,
+  ResourceCenterAnnouncementPopup,
   ResourceCenterPanel,
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -33,6 +34,8 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     linkUrlDecorator,
     assets,
     contentListItems,
+    contentListLoading,
+    contentListError,
     liveChatActive,
     launcherHidden,
   } = store;
@@ -51,6 +54,8 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     linkUrlDecorator,
     assets,
     contentListItems,
+    contentListLoading,
+    contentListError,
     liveChatActive,
     launcherHidden,
   };
@@ -72,17 +77,29 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     linkUrlDecorator,
     assets,
     contentListItems,
+    contentListLoading,
+    contentListError,
     liveChatActive,
     launcherHidden,
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
 
+  // The popup announcement self-presents only while the launcher surface is
+  // actually visible and idle: not with the panel open (opening the feed marks
+  // everything seen anyway), not when the launcher is hidden (the bubble has
+  // nothing to anchor to), and not while a live chat provider owns the corner.
+  const popupAnnouncement =
+    !expanded && !launcherHidden && liveChatActive !== true
+      ? resourceCenterData.popupAnnouncement
+      : undefined;
+
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
       <ResourceCenterRoot
         data={resourceCenterData}
         themeSettings={themeSettings}
+        badgeCount={resourceCenter.getAnnouncementBadgeCount()}
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
         initialNav={initialNav}
@@ -95,9 +112,16 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onBlockClick={resourceCenter.handleBlockClick}
         showMadeWith={!removeBranding}
         contentListItems={contentListItems ?? []}
+        contentListLoading={contentListLoading === true}
+        contentListError={contentListError === true}
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}
         onLiveChatClick={resourceCenter.handleLiveChatClick}
+        onListAnnouncements={resourceCenter.listAnnouncements}
+        onGetAnnouncement={resourceCenter.getAnnouncement}
+        onMarkAnnouncementsSeen={resourceCenter.markAnnouncementsSeen}
+        popupAnnouncement={popupAnnouncement}
+        onPopupDismiss={resourceCenter.dismissPopupAnnouncement}
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>
@@ -108,6 +132,9 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
             <ResourceCenterTabBar />
             <ResourceCenterFooter />
           </ResourceCenterPanel>
+          {/* Lives in the RC stage (one stage per widget instance); its
+              shells are context-free primitives, so no nested stage. */}
+          <ResourceCenterAnnouncementPopup assets={assets} />
         </ResourceCenterStyleProvider>
       </ResourceCenterRoot>
     </LinkDecoratorContext.Provider>

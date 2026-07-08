@@ -1,7 +1,8 @@
 'use client';
 
 import { BUILDER_Z } from '@usertour/constants';
-import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, BannerEmbedPlacement } from '@usertour/types';
+import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT } from '@usertour/constants';
+import { BannerEmbedPlacement } from '@usertour/types';
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
 import { CompactSelect } from '@usertour/ui';

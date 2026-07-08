@@ -20,6 +20,10 @@ import {
   ClickResourceCenterDto,
   ListResourceCenterBlockContentDto,
   ResourceCenterBlockContentItem,
+  ListAnnouncementsResult,
+  GetAnnouncementDto,
+  AnnouncementDetail,
+  MarkAnnouncementsSeenDto,
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
@@ -66,9 +70,17 @@ export interface IUsertourSocket {
   openResourceCenter(params: OpenResourceCenterDto, options?: BatchOptions): Promise<boolean>;
   closeResourceCenter(params: CloseResourceCenterDto, options?: BatchOptions): Promise<boolean>;
   clickResourceCenter(params: ClickResourceCenterDto, options?: BatchOptions): Promise<boolean>;
+  // Read methods return null on failure (timeout / dropped socket / malformed
+  // response) so callers can tell "load failed" from "genuinely empty" and
+  // offer a retry instead of a misleading empty state.
   listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
-  ): Promise<ResourceCenterBlockContentItem[]>;
+  ): Promise<ResourceCenterBlockContentItem[] | null>;
+
+  // Announcement operations
+  listAnnouncements(): Promise<ListAnnouncementsResult | null>;
+  getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null>;
+  markAnnouncementsSeen(params: MarkAnnouncementsSeenDto): Promise<boolean>;
 
   // Context and reporting
   updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean>;
@@ -464,23 +476,63 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.sendClientMessage(ClientMessageKind.CLICK_RESOURCE_CENTER, params, options);
   }
 
+  /**
+   * Emit a read-style client message and validate the ack. Returns null on
+   * timeout / dropped socket / malformed response — never an empty value — so
+   * callers can tell "load failed" (render a retryable error) from "genuinely
+   * empty". EMIT_TIMEOUT bounds the ack so a mid-reconnect socket rejects
+   * instead of hanging the caller on 'Loading...' forever; sub-timeout
+   * disconnects are buffered by socket.io and flush on reconnect.
+   */
+  private async requestClientMessage<T>(
+    kind: ClientMessageKind,
+    payload: unknown,
+    isValid: (result: unknown) => boolean,
+  ): Promise<T | null> {
+    try {
+      const result = await this.socket?.emitWithAck(
+        WebSocketEvents.CLIENT_MESSAGE,
+        { kind, payload, requestId: uuidV4() },
+        this.EMIT_TIMEOUT,
+      );
+      if (isValid(result)) {
+        return result as T;
+      }
+      return null;
+    } catch (error) {
+      logger.error(`Failed to request ${kind}:`, error);
+      return null;
+    }
+  }
+
   async listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
-  ): Promise<ResourceCenterBlockContentItem[]> {
-    try {
-      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
-        payload: params,
-        requestId: uuidV4(),
-      });
-      if (Array.isArray(result)) {
-        return result as ResourceCenterBlockContentItem[];
-      }
-      return [];
-    } catch (error) {
-      logger.error('Failed to list resource center block content:', error);
-      return [];
-    }
+  ): Promise<ResourceCenterBlockContentItem[] | null> {
+    return await this.requestClientMessage(
+      ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
+      params,
+      (result) => Array.isArray(result),
+    );
+  }
+
+  async listAnnouncements(): Promise<ListAnnouncementsResult | null> {
+    return await this.requestClientMessage(
+      ClientMessageKind.LIST_ANNOUNCEMENTS,
+      {},
+      (result) => result != null && typeof result === 'object' && 'announcements' in result,
+    );
+  }
+
+  async getAnnouncement(params: GetAnnouncementDto): Promise<AnnouncementDetail | null> {
+    return await this.requestClientMessage(
+      ClientMessageKind.GET_ANNOUNCEMENT,
+      params,
+      (result) => result != null && typeof result === 'object' && 'id' in result,
+    );
+  }
+
+  async markAnnouncementsSeen(params: MarkAnnouncementsSeenDto): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.MARK_ANNOUNCEMENTS_SEEN, params);
   }
 
   // === Status Methods ===

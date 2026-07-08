@@ -150,6 +150,21 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.LIST_ANNOUNCEMENTS,
+      async (context, _payload) => await this.service.listAnnouncements(context),
+    );
+
+    register(
+      ClientMessageKind.GET_ANNOUNCEMENT,
+      async (context, payload) => await this.service.getAnnouncement(context, payload),
+    );
+
+    register(
+      ClientMessageKind.MARK_ANNOUNCEMENTS_SEEN,
+      async (context, payload) => await this.service.markAnnouncementsSeen(context, payload),
+    );
+
+    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );

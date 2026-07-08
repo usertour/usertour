@@ -1,4 +1,5 @@
-import { type BannerData, DEFAULT_BANNER_DATA } from '@usertour/types';
+import type { BannerData } from '@usertour/types';
+import { DEFAULT_BANNER_DATA } from '@usertour/constants';
 import { isUndefined } from 'lodash';
 import type { BuilderTypeConfig } from '@/pages/contents/components/builder/core/builder-type-config';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';

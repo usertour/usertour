@@ -3,7 +3,7 @@
 import { BUILDER_Z } from '@usertour/constants';
 import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
-import { useThemeList } from '@/hooks/use-theme-list';
+import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { Theme } from '@usertour/types';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,19 +12,17 @@ import { useBuilderStore, useProjectId } from '@/pages/contents/components/build
 
 export const SidebarTheme = () => {
   const { themeList } = useThemeList();
+  const defaultTheme = useDefaultTheme();
   const { t } = useTranslation();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const projectId = useProjectId();
 
   useEffect(() => {
-    if (currentVersion && !currentVersion.themeId && themeList) {
-      const defaultThemeId = themeList.find((item) => item.isDefault === true);
-      if (defaultThemeId) {
-        setCurrentVersion((pre) => (pre ? { ...pre, themeId: defaultThemeId.id } : pre));
-      }
+    if (currentVersion && !currentVersion.themeId && defaultTheme) {
+      setCurrentVersion((pre) => (pre ? { ...pre, themeId: defaultTheme.id } : pre));
     }
-  }, [currentVersion, themeList]);
+  }, [currentVersion, defaultTheme]);
 
   const handleThemeChange = (value: string) => {
     // Write themeId into the draft; the auto-save FSM persists it (themeId is

@@ -10,6 +10,10 @@ import {
   ResourceCenterNavigationState,
   ThemeTypesSetting,
   ResourceCenterBlockContentItem,
+  ListAnnouncementsResult,
+  AnnouncementDetail,
+  AnnouncementPopupStyle,
+  AnnouncementSeenSource,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
@@ -22,6 +26,10 @@ import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
+  getAnnouncementBadgeCount(): number {
+    return this.getStoreData()?.resourceCenterData?.announcementUnreadCount ?? 0;
+  }
+
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler()]);
   }
@@ -121,11 +129,22 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     block: ResourceCenterContentListBlock,
   ): Promise<ResourceCenterBlockContentItem[]> {
     const sessionId = this.getSessionId();
+    // Loading state so a retry (see below) gives feedback for up to the socket's
+    // emit timeout instead of looking inert.
+    this.updateStore({ contentListLoading: true, contentListError: false });
     try {
       const items = await this.socketService.listResourceCenterBlockContent({
         sessionId,
         blockId: block.id,
       });
+
+      // null = the fetch failed (timeout / dropped socket), distinct from an
+      // empty list. Flag the error so the view offers a retry rather than
+      // rendering "No items"; keep the previous items untouched.
+      if (items === null) {
+        this.updateStore({ contentListError: true, contentListLoading: false });
+        return [];
+      }
 
       // Enrich server response with per-item config (icon, navigate URL) from block data.
       // Server already filters items by onlyShowItemConditions, so we trust its list.
@@ -143,11 +162,15 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         };
       });
 
-      this.updateStore({ contentListItems: enrichedItems });
+      this.updateStore({
+        contentListItems: enrichedItems,
+        contentListError: false,
+        contentListLoading: false,
+      });
       return enrichedItems;
     } catch (error) {
       logger.error('Failed to fetch content list items:', error);
-      this.updateStore({ contentListItems: [] });
+      this.updateStore({ contentListError: true, contentListLoading: false });
       return [];
     }
   }
@@ -173,6 +196,120 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     } catch (error) {
       logger.error('Failed to start content from content list:', error);
     }
+  }
+
+  // ── Announcement operations ──────────────────────────────────────────
+
+  // Arrow properties (like handleLiveChatClick): stable identities that can be
+  // passed to the widget directly, instead of inline arrows re-created every
+  // render — which forced the widget to mirror them into refs to avoid
+  // re-running its load effects on every provider re-render.
+  listAnnouncements = async (): Promise<ListAnnouncementsResult | null> => {
+    try {
+      // null = load failed (the socket layer already maps timeout/malformed to
+      // null); the feed distinguishes it from an empty feed and offers a retry.
+      return await this.socketService.listAnnouncements();
+    } catch (error) {
+      logger.error('Failed to list announcements:', error);
+      return null;
+    }
+  };
+
+  getAnnouncement = async (contentId: string): Promise<AnnouncementDetail | null> => {
+    try {
+      return await this.socketService.getAnnouncement({ contentId });
+    } catch (error) {
+      logger.error('Failed to get announcement:', error);
+      return null;
+    }
+  };
+
+  markAnnouncementsSeen = async (
+    items: { contentId: string }[],
+    source?: AnnouncementSeenSource,
+  ): Promise<boolean> => {
+    if (items.length === 0) {
+      return true;
+    }
+
+    // The popup's presence mirrors unread state exactly: it retires when (and
+    // only when) its announcement is marked seen — by the feed including it in
+    // its batch, or by the popup's own dismiss. Panel open/close never touches
+    // it, so collapsing an un-read panel brings the bubble back.
+    const popup = this.getStoreData()?.resourceCenterData?.popupAnnouncement;
+    if (popup && items.some((item) => item.contentId === popup.id)) {
+      this.clearPopupAnnouncementLocally();
+    }
+
+    // Optimistically drop the launcher badge so collapsing back to the launcher
+    // reflects the just-opened feed without waiting for the next session rebuild.
+    // The server's announcementUnreadCount stays the source of truth and reconciles on the
+    // next build; this only avoids a stale badge for the rest of this session.
+    // The feed sends one batch covering exactly its unseen items, so decrementing
+    // by the batch size matches what the server will mark.
+    this.decrementAnnouncementUnreadCount(items.length);
+    try {
+      return await this.socketService.markAnnouncementsSeen({ items, source });
+    } catch (error) {
+      logger.error('Failed to mark announcements seen:', error);
+      // Accepted trade-off: the optimistic updates above are NOT rolled back
+      // and there is no retry. Sub-30s disconnects never land here (socket.io
+      // buffers the emit and flushes on reconnect); on a longer outage the
+      // server never records seen, so the popup/badge legitimately return on
+      // the next session build — the server stays the source of truth and the
+      // state self-heals. Rolling back would flash the popup back mid-session
+      // for a marginal gain; a retry queue is not worth the machinery.
+      return false;
+    }
+  };
+
+  /**
+   * Dismiss the self-presenting popup announcement by marking it seen — the
+   * mark path retires the local payload synchronously and the server stops
+   * delivering it on future session builds. Every popup interaction (close,
+   * backdrop, read more, content action) funnels through here.
+   */
+  dismissPopupAnnouncement = async (): Promise<void> => {
+    const popup = this.getStoreData()?.resourceCenterData?.popupAnnouncement;
+    if (!popup) {
+      return;
+    }
+
+    const source: AnnouncementSeenSource =
+      popup.popupConfig.style === AnnouncementPopupStyle.MODAL ? 'modal' : 'bubble';
+    await this.markAnnouncementsSeen([{ contentId: popup.id }], source);
+  };
+
+  /**
+   * Drop the popup payload from the local store. Called only from
+   * markAnnouncementsSeen when its batch covers the popup announcement, so the
+   * popup's presence always mirrors the announcement's unread state.
+   */
+  private clearPopupAnnouncementLocally(): void {
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    if (!resourceCenterData?.popupAnnouncement) {
+      return;
+    }
+    const { popupAnnouncement: _dismissed, ...remaining } = resourceCenterData;
+    this.updateStore({ resourceCenterData: remaining });
+  }
+
+  /**
+   * Decrement the global announcement unread count (clamped at zero), which
+   * drives the launcher badge.
+   */
+  private decrementAnnouncementUnreadCount(count: number): void {
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    const current = resourceCenterData?.announcementUnreadCount ?? 0;
+    if (!resourceCenterData || current <= 0) {
+      return;
+    }
+    this.updateStore({
+      resourceCenterData: {
+        ...resourceCenterData,
+        announcementUnreadCount: Math.max(0, current - count),
+      },
+    });
   }
 
   // ── Live chat provider lifecycle ─────────────────────────────────────

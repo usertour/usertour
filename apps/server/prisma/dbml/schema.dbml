@@ -422,6 +422,7 @@ Table BizUser {
   bizUsersOnSegment BizUserOnSegment [not null]
   bizEvent BizEvent [not null]
   bizSession BizSession [not null]
+  bizAnnouncementSeen BizAnnouncementSeen [not null]
 
   indexes {
     (environmentId, externalId) [unique]
@@ -584,6 +585,18 @@ Table BizEvent {
   bizCompanyId String
   contentId String
   versionId String
+}
+
+Table BizAnnouncementSeen {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  bizUser BizUser [not null]
+  bizUserId String [not null]
+  contentId String [not null]
+
+  indexes {
+    (bizUserId, contentId) [unique]
+  }
 }
 
 Table BizAnswer {
@@ -839,6 +852,8 @@ Ref: BizEvent.bizUserId > BizUser.id
 Ref: BizEvent.bizSessionId > BizSession.id
 
 Ref: BizEvent.bizCompanyId > BizCompany.id
+
+Ref: BizAnnouncementSeen.bizUserId > BizUser.id
 
 Ref: RefreshToken.userId > User.id
 

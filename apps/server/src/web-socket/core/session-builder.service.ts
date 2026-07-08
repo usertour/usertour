@@ -1,4 +1,3 @@
-import { AttributeBizType, Attribute } from '@/attributes/models/attribute.model';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -11,11 +10,13 @@ import {
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
+import type { AnnouncementData } from '@usertour/types';
+import { AnnouncementDistribution } from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
   extractThemeVariationsAttributeIds,
-  getAttributeValue,
   evaluateChecklistItemsWithContext,
   evaluateResourceCenterBlocksWithContext,
   extractLauncherAttrCodes,
@@ -36,6 +37,7 @@ import {
   BizSession,
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
+import { AnnouncementService, type VisibleAnnouncement } from './announcement.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
@@ -48,6 +50,7 @@ export class SessionBuilderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
+    private readonly announcementService: AnnouncementService,
     private readonly projectsService: ProjectsService,
     private readonly distributedLockService: DistributedLockService,
     private readonly cache: ProjectCacheService,
@@ -306,94 +309,6 @@ export class SessionBuilderService {
     }
   }
 
-  /**
-   * Query user attribute value based on attribute business type
-   * @param attr - Attribute definition
-   * @param environment - Environment context
-   * @param externalUserId - External user ID
-   * @param externalCompanyId - Optional company ID
-   * @returns User attribute value
-   */
-  async queryUserAttributeValue(
-    attr: Attribute,
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<any> {
-    const environmentId = environment.id;
-    // Drop projections so per-request memos hold consistent full entities
-    // across all callers in the scope.
-    const bizUser = await this.cache.memoize(
-      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
-      () =>
-        this.prisma.bizUser.findFirst({
-          where: {
-            environmentId,
-            externalId: String(externalUserId),
-          },
-        }),
-    );
-
-    if (!bizUser) {
-      return null;
-    }
-
-    if (attr.bizType === AttributeBizType.USER) {
-      if (bizUser?.data) {
-        return getAttributeValue(bizUser.data, attr.codeName);
-      }
-      return null;
-    }
-
-    if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
-      if (!externalCompanyId) {
-        return null;
-      }
-
-      const bizCompany = await this.cache.memoize(
-        this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
-        () =>
-          this.prisma.bizCompany.findFirst({
-            where: {
-              externalId: String(externalCompanyId),
-              environmentId,
-            },
-          }),
-      );
-
-      if (!bizCompany) {
-        return null;
-      }
-
-      const userOnCompany = await this.cache.memoize(
-        this.cache.memoKeys.bizUserOnCompany(bizUser.id, bizCompany.id),
-        () =>
-          this.prisma.bizUserOnCompany.findFirst({
-            where: {
-              bizUserId: bizUser.id,
-              bizCompanyId: bizCompany.id,
-            },
-          }),
-      );
-
-      if (!userOnCompany) {
-        return null;
-      }
-
-      if (attr.bizType === AttributeBizType.COMPANY) {
-        return getAttributeValue(bizCompany.data, attr.codeName);
-      }
-
-      if (attr.bizType === AttributeBizType.MEMBERSHIP) {
-        return getAttributeValue(userOnCompany.data, attr.codeName);
-      }
-
-      return null;
-    }
-
-    return null;
-  }
-
   // ============================================================================
   // Content Type Processing Methods
   // ============================================================================
@@ -511,8 +426,103 @@ export class SessionBuilderService {
     );
     session.attributes = attributes;
 
+    // Populate the announcement unread count and popup payload
+    await this.populateAnnouncements(
+      resourceCenterData,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
     session.version.resourceCenter = resourceCenterData;
     return session;
+  }
+
+  /**
+   * Populate the announcement presentation on the resource center data: the
+   * global announcementUnreadCount (BADGE- and POPUP-level announcements the
+   * user hasn't seen), and the newest unseen POPUP-level announcement as the
+   * self-presenting popup payload. Reads through the shared
+   * AnnouncementService.findVisibleAnnouncements — the same bounded query +
+   * targeting the feed uses — so neither the badge count nor the popup can
+   * include announcements the feed would hide.
+   */
+  private async populateAnnouncements(
+    resourceCenterData: ResourceCenterData,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+  ): Promise<void> {
+    // Announcement state is global; the block is only the navigation entry.
+    // Require a VISIBLE announcement block: block-level "Only show block if..."
+    // conditions set isVisible=false, and the orchestrator strips those blocks
+    // before shipping. Counting a hidden one would light the badge / self-pop a
+    // popup for a user whose shipped data.tabs no longer contains the block —
+    // Read more would land nowhere and the badge could never be cleared.
+    const hasAnnouncementBlock = (resourceCenterData.tabs ?? []).some((tab) =>
+      tab.blocks.some(
+        (block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT && block.isVisible !== false,
+      ),
+    );
+    if (!hasAnnouncementBlock) return;
+
+    const setUnread = (count: number) => {
+      resourceCenterData.announcementUnreadCount = count;
+    };
+
+    // Shared request-memoized lookup, so this hot session-build path reuses the
+    // bizUser row attribute resolution already fetched instead of re-querying.
+    const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
+    if (!bizUser) {
+      setUnread(0);
+      return;
+    }
+
+    // Newest N visible announcements — the same query + targeting the feed uses
+    // (AnnouncementService), so the badge count and the list can't disagree.
+    const visible = await this.announcementService.findVisibleAnnouncements(
+      environment,
+      bizUser,
+      externalCompanyId,
+    );
+
+    const distributionOf = (item: VisibleAnnouncement): AnnouncementDistribution => {
+      const data = item.publishedVersion.data as AnnouncementData | null;
+      return data?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution;
+    };
+
+    // BADGE and POPUP announcements both light the launcher badge (POPUP is the
+    // louder level, so it implies badge behavior); only SILENT is excluded.
+    const notifyingItems = visible.filter(
+      (item) => distributionOf(item) !== AnnouncementDistribution.SILENT,
+    );
+    if (notifyingItems.length === 0) {
+      setUnread(0);
+      return;
+    }
+
+    const notifyingContentIds = notifyingItems.map((item) => item.contentId);
+    const seenSet = await this.announcementService.getSeenAnnouncementIds(
+      bizUser.id,
+      notifyingContentIds,
+    );
+    setUnread(notifyingContentIds.filter((id) => !seenSet.has(id)).length);
+
+    // The newest unseen POPUP-level announcement self-presents once. `visible`
+    // is ordered newest-first, so the first match wins; older unseen popups
+    // stay badge-only until this one is acknowledged (no queueing).
+    const popupItem = notifyingItems.find(
+      (item) =>
+        distributionOf(item) === AnnouncementDistribution.POPUP && !seenSet.has(item.contentId),
+    );
+    if (popupItem) {
+      resourceCenterData.popupAnnouncement = await this.announcementService.buildPopupAnnouncement(
+        popupItem,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+    }
   }
 
   /**
@@ -826,13 +836,9 @@ export class SessionBuilderService {
   }
 
   /**
-   * Extract attribute data based on attribute IDs and codes
-   * @param attrIds - Array of attribute IDs to extract
-   * @param environment - Environment context
-   * @param externalUserId - External user ID
-   * @param externalCompanyId - Optional company ID
-   * @param attrCodes - Array of attribute codes to extract (optional)
-   * @returns Array of session attribute information
+   * Extract attribute data based on attribute IDs and codes. Delegates to
+   * ContentDataService so the session builder and the announcement feed resolve
+   * attributes through one implementation.
    */
   private async extractAttributes(
     attrIds: string[],
@@ -841,49 +847,12 @@ export class SessionBuilderService {
     externalCompanyId?: string,
     attrCodes: string[] = [],
   ): Promise<SessionAttribute[]> {
-    if (attrIds.length === 0 && attrCodes.length === 0) {
-      return [];
-    }
-
-    // Reuse the project-level Attribute cache from ContentDataService instead
-    // of issuing a per-session findMany. Cache contains [USER, COMPANY,
-    // MEMBERSHIP, EVENT] across all extracts; filter EVENT out so this
-    // method's contract (session attributes only) is preserved.
-    const allAttributes = await this.contentDataService.findAttributes(environment);
-    const relevantAttributes = allAttributes.filter((attr) => {
-      const isSessionBizType =
-        attr.bizType === AttributeBizType.USER ||
-        attr.bizType === AttributeBizType.COMPANY ||
-        attr.bizType === AttributeBizType.MEMBERSHIP;
-      if (!isSessionBizType) {
-        return false;
-      }
-      return (
-        attrIds.includes(attr.id) ||
-        (attrCodes.includes(attr.codeName) && attr.bizType === AttributeBizType.USER)
-      );
-    });
-
-    // Query attribute values and build result
-    const results: SessionAttribute[] = [];
-
-    for (const attr of relevantAttributes) {
-      const value = await this.queryUserAttributeValue(
-        attr,
-        environment,
-        externalUserId,
-        externalCompanyId,
-      );
-
-      results.push({
-        id: attr.id,
-        codeName: attr.codeName,
-        value,
-        bizType: attr.bizType,
-        dataType: attr.dataType,
-      });
-    }
-
-    return results;
+    return this.contentDataService.resolveSessionAttributes(
+      attrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
   }
 }
