@@ -1354,10 +1354,11 @@ describe('MCP endpoint (e2e)', () => {
       expect(env).toMatchObject({ object: 'environment', name: 'MCP env' });
     });
 
-    // update/delete_environment and duplicate_content take the env id as a plain
-    // arg (not the `environmentId` the dispatch wrapper scope-checks), so each
-    // handler must assert the token's allowlist itself — else an env-restricted
-    // token could rename/delete or duplicate into an environment outside its scope.
+    // update/delete_environment take the env id as a plain arg (not the
+    // `environmentId` the dispatch wrapper scope-checks), so each handler must
+    // assert the token's allowlist itself — else an env-restricted token could
+    // rename/delete an environment outside its scope. duplicate_content is
+    // project-level (no environment arg in v2), so it must NOT be gated.
     // envB lives only for this block (a 2nd env would otherwise break the
     // single-env auto-defaulting the other write-tool tests rely on).
     describe('environment allowlist enforcement (plain-id args)', () => {
@@ -1382,25 +1383,22 @@ describe('MCP endpoint (e2e)', () => {
         expect(result.content[0].text).toContain('E1029');
       });
 
-      it('duplicate_content rejects duplicating into an out-of-scope environment (E1029)', async () => {
+      it('duplicate_content works for an env-restricted token (project-level action)', async () => {
         const source = await buildContent(prisma, {
           projectId: projectA,
           environmentId: envA,
           type: 'flow',
         });
         await buildVersion(prisma, { contentId: source.id, sequence: 0 });
+        // Restricted to envA only — duplicate is project-level, so it must succeed;
+        // the allowlist bites at publish_content instead.
         const token = await mint(
           [Capability.ContentCreate, Capability.ContentRead],
           [projectA],
           [envA],
         );
-        const result = await callTool(
-          'duplicate_content',
-          { contentId: source.id, environmentId: envB },
-          token,
-        );
-        expect(result.isError).toBe(true);
-        expect(result.content[0].text).toContain('E1029');
+        const result = await callTool('duplicate_content', { contentId: source.id }, token);
+        expect(result.isError).not.toBe(true);
       });
     });
 

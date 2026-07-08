@@ -58,8 +58,8 @@ describe('API v2 /content (e2e)', () => {
 
     projectId = (await buildProject(prisma, { name: 'api-v2-content' })).id;
     environmentId = (await buildEnvironment(prisma, { projectId })).id;
-    // A second environment in the same project, to prove environment-scoped tokens
-    // can't duplicate content into (or out of) an environment they weren't granted.
+    // A second environment in the same project, for minting environment-restricted
+    // tokens (duplicate is project-level; publish is where the allowlist bites).
     otherEnvironmentId = (await buildEnvironment(prisma, { projectId })).id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
@@ -368,23 +368,11 @@ describe('API v2 /content (e2e)', () => {
     expect(res.body.name).toBe('Onboarding'); // source name
   });
 
-  // Duplicate carries its target environment in the body (or defaults to the
-  // source content's env), so the guard's path-param scope check never fires —
-  // the service must enforce the token's env allowlist on the EFFECTIVE target.
-  it('rejects duplicate INTO an out-of-scope environment (explicit target, 403 E1029)', async () => {
-    const token = await mint([Capability.ContentRead, Capability.ContentCreate], [environmentId]);
-    const res = await api(
-      'post',
-      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
-      token,
-    ).send({ environmentId: otherEnvironmentId });
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('E1029');
-  });
-
-  it('rejects duplicate that DEFAULTS to a source env outside scope (omitted target, 403 E1029)', async () => {
-    // flow is homed in `environmentId`; a token scoped only to `otherEnvironmentId`
-    // omitting the target would copy into `environmentId` — must be refused.
+  // Duplicate is a PROJECT-level action: the v1 "target environment" parameter is
+  // gone from the v2 contract (it only wrote the inert legacy homing column), so
+  // an environment-restricted token may duplicate any project content — the env
+  // allowlist bites at publish, the actually env-scoped act.
+  it('allows an env-restricted token to duplicate (project-level action)', async () => {
     const token = await mint(
       [Capability.ContentRead, Capability.ContentCreate],
       [otherEnvironmentId],
@@ -394,18 +382,8 @@ describe('API v2 /content (e2e)', () => {
       `/v2/projects/${projectId}/content/${flowId}/duplicate`,
       token,
     ).send({});
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('E1029');
-  });
-
-  it('allows duplicate into an IN-scope environment', async () => {
-    const token = await mint([Capability.ContentRead, Capability.ContentCreate], [environmentId]);
-    const res = await api(
-      'post',
-      `/v2/projects/${projectId}/content/${flowId}/duplicate`,
-      token,
-    ).send({ environmentId });
     expect(res.status).toBe(201);
+    expect(res.body.id).not.toBe(flowId);
   });
 
   it('returns 404 duplicating unknown content (E1004)', async () => {

@@ -111,12 +111,13 @@ export class UnpublishContentBodyDto extends createZodDto(unpublishContentBody) 
 export type UnpublishContentBody = z.infer<typeof unpublishContentBody>;
 
 /** Write body for POST content/:id/duplicate. */
+// No environmentId here on purpose: content is a PROJECT-level resource. The v1
+// "duplicate into an environment" parameter only ever set the copy's legacy
+// homing column, which nothing user-visible reads (see the domain service) — an
+// inert promise the v2 contract does not repeat. Publishing (the actually
+// env-scoped act) stays explicit on the publish endpoint.
 export const duplicateContentBody = z.object({
   name: z.string().optional().describe('Name for the copy (defaults to the source name).'),
-  environmentId: z
-    .string()
-    .optional()
-    .describe('Target environment (defaults to the source content’s environment).'),
 });
 export class DuplicateContentBodyDto extends createZodDto(duplicateContentBody) {}
 export type DuplicateContentBody = z.infer<typeof duplicateContentBody>;

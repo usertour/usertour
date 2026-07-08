@@ -235,25 +235,16 @@ export function buildWriteTools(): McpTool[] {
         "Duplicate a piece of content into a fresh content. Copies the source's current EDITED " +
         'DRAFT — which may DIFFER from what is published/live (if the source has an unpublished or ' +
         'diverged draft you get the draft, NOT production); the copy starts UNPUBLISHED and carries ' +
-        'no version history. Optionally set a `name` and a target `environmentId`. Returns the new content.',
+        'no version history. Optionally set a `name`. Content is project-level — use publish_content ' +
+        'to make the copy live in an environment. Returns the new content.',
       inputSchema: {
         contentId: z.string(),
         name: z.string().optional(),
-        environmentId: z.string().optional(),
       },
       handler: (args, ctx) =>
-        // Pass the token's env allowlist so the service enforces it on the effective
-        // target (explicit `environmentId`, or the source content's env when omitted) —
-        // this tool isn't `envScoped`, so the dispatch wrapper doesn't resolve it.
-        ctx.services.content.duplicate(
-          String(args.contentId),
-          ctx.projectId,
-          {
-            name: args.name as string | undefined,
-            environmentId: args.environmentId as string | undefined,
-          },
-          ctx.auth.allowedEnvironmentIds(ctx.token),
-        ),
+        ctx.services.content.duplicate(String(args.contentId), ctx.projectId, {
+          name: args.name as string | undefined,
+        }),
     },
     {
       name: 'publish_content',

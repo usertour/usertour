@@ -8,7 +8,6 @@ import type { RulesCondition, Step } from '@usertour/types';
 import {
   ContentNotFoundError,
   ContentNotPublishableError,
-  EnvironmentNotInTokenScopeError,
   ParamsError,
   ValidationError,
 } from '@/common/errors/errors';
@@ -164,45 +163,18 @@ export class ApiContentService {
 
   /**
    * Duplicate content into a fresh content (copies the edited version's steps /
-   * config / data), optionally into another environment. Binds the same domain
-   * method the builder uses. Returns the new content.
+   * config / data). A PROJECT-level action: the copy inherits the source's legacy
+   * homing column (inert — nothing user-visible reads it) and starts unpublished,
+   * so no environment parameter and no env-allowlist check apply here; publish is
+   * where environments (and their token scope) come into play.
    */
-  async duplicate(
-    id: string,
-    projectId: string,
-    body: DuplicateContentBody,
-    allowedEnvironmentIds: string[] | null = null,
-  ): Promise<Content> {
+  async duplicate(id: string, projectId: string, body: DuplicateContentBody): Promise<Content> {
     await this.requireContent(id, projectId);
-    if (body.environmentId) {
-      await this.requireEnvironment(body.environmentId, projectId);
-    }
-    // The copy is homed in the explicit target environment, or — when omitted —
-    // the SOURCE content's own environment. Enforce the token's environment
-    // allowlist on that EFFECTIVE target: the ApiTokenGuard can't (the env id is
-    // in the body, not a `:environmentId` path param), and the default-to-source
-    // path would otherwise let an env-restricted token create a new content in an
-    // environment it was never granted. `null` allowlist = unrestricted.
-    if (allowedEnvironmentIds) {
-      const targetEnvironmentId = body.environmentId ?? (await this.contentHomeEnvironmentId(id));
-      if (targetEnvironmentId && !allowedEnvironmentIds.includes(targetEnvironmentId)) {
-        throw new EnvironmentNotInTokenScopeError();
-      }
-    }
-    const created = await this.content.duplicateContent(id, body.name ?? '', body.environmentId);
+    const created = await this.content.duplicateContent(id, body.name ?? '');
     if (!created) {
       throw new ParamsError('Failed to duplicate content');
     }
     return this.get(created.id, projectId, {});
-  }
-
-  /** The environment a content is homed in — the default duplicate target when none is given. */
-  private async contentHomeEnvironmentId(id: string): Promise<string | null> {
-    const row = await this.prisma.content.findUnique({
-      where: { id },
-      select: { environmentId: true },
-    });
-    return row?.environmentId ?? null;
   }
 
   /** Assert an environment exists in the project (publish/unpublish target, duplicate target). */
