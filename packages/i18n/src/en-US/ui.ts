@@ -1890,7 +1890,7 @@ const translations = {
       announcements: {
         title: 'Announcements',
         text: 'Share product updates, release notes, and news with your users through the Resource Center.',
-        link: 'Read more in our Resource Center guide',
+        link: 'Read more in our Announcements guide',
         emptyTitle: 'No announcements added',
         emptyDescription: 'You have not added any announcements. Add one below.',
       },
