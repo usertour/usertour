@@ -14,6 +14,7 @@ import {
   isNullish,
   serializeBlockName,
 } from '@usertour/helpers';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import {
   Step,
   BizEventWithEvent,
@@ -885,7 +886,12 @@ export const buildAnnouncementSeenEventData = (
     [EventAttributes.ANNOUNCEMENT_NAME]: content.name,
     [EventAttributes.ANNOUNCEMENT_VERSION_ID]: version.id,
     [EventAttributes.ANNOUNCEMENT_VERSION_NUMBER]: version.sequence,
-    [EventAttributes.ANNOUNCEMENT_LEVEL]: announcementData?.distribution ?? 'silent',
+    // Same fallback the delivery side uses (session builder / AnnouncementService
+    // default to DEFAULT_ANNOUNCEMENT_DATA.distribution = badge): a
+    // partial-data announcement actually lights the badge, so analytics must
+    // not record it as silent.
+    [EventAttributes.ANNOUNCEMENT_LEVEL]:
+      announcementData?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution,
     [EventAttributes.ANNOUNCEMENT_SOURCE]: source,
   };
 };

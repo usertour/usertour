@@ -376,10 +376,15 @@ export class ContentService {
       // stable, non-null ordering key. Only fill when empty: publishing a
       // second environment — or an edit that forks and carries scheduledAt
       // forward — keeps the original first-publish time, and an author-set
-      // (future) time is left untouched.
-      if (content.type === ContentDataType.ANNOUNCEMENT && !version.scheduledAt) {
-        await tx.version.update({
-          where: { id: version.id },
+      // (future) time is left untouched. The emptiness check lives in the
+      // WHERE (not an `if` on the version snapshot read before this
+      // transaction): a concurrent saveVersionScheduledAt could set a future
+      // time after that read, and a snapshot-based stamp would silently
+      // overwrite it with `now` — publishing next week's announcement to
+      // everyone immediately.
+      if (content.type === ContentDataType.ANNOUNCEMENT) {
+        await tx.version.updateMany({
+          where: { id: version.id, scheduledAt: null },
           data: { scheduledAt: now },
         });
       }

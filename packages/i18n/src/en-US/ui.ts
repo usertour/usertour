@@ -1845,6 +1845,8 @@ const translations = {
         },
         announcement: {
           title: 'Users who viewed this announcement',
+          tooltip:
+            'Users who saw this announcement in the selected date range. "Seen at" is when they first viewed it.',
           empty:
             'Viewer data will appear here once the announcement is published and seen by users.',
           seenAt: 'Seen at',

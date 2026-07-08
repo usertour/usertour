@@ -1750,6 +1750,7 @@ const translations = {
         },
         announcement: {
           title: '查看过该公告的用户',
+          tooltip: '在所选日期范围内看过该公告的用户。“查看时间”是其首次查看的时间。',
           empty: '公告发布并被用户查看后，浏览数据将显示在这里。',
           seenAt: '查看时间',
           csv: {
