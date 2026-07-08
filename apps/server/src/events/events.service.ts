@@ -69,9 +69,23 @@ export class EventsService {
   }
 
   async update(data: UpdateEventInput) {
-    // codeName is immutable after creation (it keys event data / references) —
-    // never rewrite it, even if a caller passes one.
+    // codeName is immutable after creation (it keys event data / references).
+    // REFUSE a rename instead of silently ignoring it — the caller would believe
+    // the rename succeeded and start tracking under the new code, auto-creating a
+    // second event definition. Echoing the current value is allowed.
     const { id, displayName, description, attributeIds } = data;
+    const incomingCodeName = (data as { codeName?: string }).codeName;
+    if (incomingCodeName !== undefined) {
+      const existing = await this.prisma.event.findUnique({
+        where: { id },
+        select: { codeName: true },
+      });
+      if (existing && incomingCodeName !== existing.codeName) {
+        throw new ValidationError(
+          `codeName is immutable (it keys tracked event data) — cannot rename "${existing.codeName}" to "${incomingCodeName}". Create a new event instead.`,
+        );
+      }
+    }
 
     return await this.prisma.$transaction(async (tx) => {
       const updateEvent = await tx.event.update({

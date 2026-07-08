@@ -1,5 +1,3 @@
-import { InvalidCursorError } from '@/common/errors/errors';
-
 export interface PageParams {
   first?: number;
   last?: number;
@@ -93,16 +91,26 @@ export async function paginate<TNode, TOut>(
 
   const connection = await fetch({ first: limit, after: cursor });
   if (!connection.edges.length && cursor) {
-    throw new InvalidCursorError();
+    // A cursor page with zero rows: a server-issued `next` whose remaining rows
+    // were deleted in the meantime is indistinguishable from a stale/foreign
+    // cursor, so return the empty FINAL page (Stripe-style) instead of a 400 —
+    // a sync client following our own link must not crash. (v1 keeps its 400.)
+    return { results: [], next: null, previous: null };
   }
 
-  const previous = await resolvePreviousUrl(connection, {
-    requestUrl,
-    cursor,
-    limit,
-    query,
-    fetch,
-  });
+  // MCP callers page through sentinel `mcp://` request URLs and keep only `next`
+  // (toListPayload) — computing `previous` there burns 1-2 extra findMany+count
+  // round-trips per page for a value that is always discarded. REST keeps the
+  // full previous/next contract.
+  const previous = requestUrl.startsWith('mcp://')
+    ? null
+    : await resolvePreviousUrl(connection, {
+        requestUrl,
+        cursor,
+        limit,
+        query,
+        fetch,
+      });
   const results = await Promise.all(connection.edges.map((edge) => map(edge.node)));
   const next =
     connection.pageInfo.hasNextPage && connection.pageInfo.endCursor

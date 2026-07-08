@@ -151,9 +151,10 @@ export const annotateConditions = (
   };
 
   // The top-level list is itself an AND/OR group (the join is on the first item).
+  // Mirror the runtime: only an explicit 'and' is ALL — missing evaluates as OR.
   return {
     type: 'group',
-    match: stamped[0]?.operators === 'or' ? 'any' : 'all',
+    match: stamped[0]?.operators === 'and' ? 'all' : 'any',
     status: isConditionsActived(stamped) ? 'matched' : 'unmatched',
     conditions: stamped.map((s, i) => node(s, readable[i])),
   } as AnnotatedCondition;

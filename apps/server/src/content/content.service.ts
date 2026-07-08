@@ -29,13 +29,17 @@ import { ProjectCacheService } from '@/shared/project-cache.service';
  */
 export type WriteActor = { userId?: string | null; tokenId?: string | null };
 
-/** Either-or actor columns for a ContentPublishRecord. */
-const publishActorFields = (actor?: WriteActor) =>
-  actor?.tokenId
-    ? { actorTokenId: actor.tokenId }
-    : actor?.userId
-      ? { actorUserId: actor.userId }
-      : {};
+/**
+ * Actor columns for a ContentPublishRecord — store BOTH when both are known.
+ * OAuth access-token rows are short-lived and hard-deleted by the hourly expiry
+ * cleanup, so a token-only record would lose its attribution within the hour;
+ * with actorUserId alongside, the owner's name survives (the record just loses
+ * the token's pretty name, which is the designed degradation).
+ */
+const publishActorFields = (actor?: WriteActor) => ({
+  ...(actor?.tokenId ? { actorTokenId: actor.tokenId } : {}),
+  ...(actor?.userId ? { actorUserId: actor.userId } : {}),
+});
 
 @Injectable()
 export class ContentService {

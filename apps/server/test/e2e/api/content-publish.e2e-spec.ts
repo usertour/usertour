@@ -128,7 +128,7 @@ describe('API v2 content publish (e2e)', () => {
     expect(read.body.environments).toEqual([]);
   });
 
-  it('records publish history rows with the acting token (either-or actor)', async () => {
+  it('records publish history rows with BOTH the acting token and its owner', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     await api('post', publishPath(), token).send({ environmentId, versionId });
     await api('post', unpublishPath(), token).send({ environmentId });
@@ -142,9 +142,11 @@ describe('API v2 content publish (e2e)', () => {
     for (const record of records) {
       expect(record.versionId).toBe(versionId);
       expect(record.environmentId).toBe(environmentId);
-      // API write → the token IS the actor; the user column stays empty (either-or).
+      // Both actor columns: short-lived OAuth token rows are hard-deleted by the
+      // hourly expiry cleanup, so a token-only record would turn anonymous within
+      // the hour — actorUserId keeps the owner's name attributable forever.
       expect(record.actorTokenId).toBeTruthy();
-      expect(record.actorUserId).toBeNull();
+      expect(record.actorUserId).toBeTruthy();
       expect(record.versionSequence).toBeGreaterThanOrEqual(0);
     }
   });

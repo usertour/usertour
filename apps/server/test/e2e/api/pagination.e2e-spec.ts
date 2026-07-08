@@ -92,9 +92,14 @@ describe('API v2 cursor pagination (e2e)', () => {
     expect(new Set(ids).size).toBe(5);
   });
 
-  it('rejects an invalid cursor (E1007)', async () => {
+  it('returns the empty final page for an unknown/exhausted cursor (not a 400)', async () => {
+    // A server-issued `next` whose tail rows were deleted is indistinguishable
+    // from a garbage cursor — both get the empty final page so a sync client
+    // following our own link never crashes on "invalid cursor".
     const res = await get(path('limit=2&cursor=not-a-real-cursor'));
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('E1007');
+    expect(res.status).toBe(200);
+    expect(res.body.results).toEqual([]);
+    expect(res.body.next).toBeNull();
+    expect(res.body.previous).toBeNull();
   });
 });

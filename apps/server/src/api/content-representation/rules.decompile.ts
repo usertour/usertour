@@ -111,10 +111,13 @@ export function decompileConditions(
   ) as RepresentationCondition[];
 }
 
-/** The and/or of a flat list lives on its first node's `operators` (the runtime
- * reads `list[0].operators`); a missing/`and` value means AND. */
+/** The and/or of a flat list lives on its first node's `operators`. Mirror the
+ * RUNTIME exactly (isConditionsActived: `operators === 'and' ? all : any`) —
+ * only an explicit 'and' means AND; a missing/other value evaluates as OR, so it
+ * must decompile as OR too, or legacy lists (authored before the builder stamped
+ * `operators`) would be presented — and on a round-trip re-stamped — inverted. */
 const listJoiner = (raw: unknown): 'and' | 'or' =>
-  Array.isArray(raw) && (raw[0] as RuleNode | undefined)?.operators === 'or' ? 'or' : 'and';
+  Array.isArray(raw) && (raw[0] as RuleNode | undefined)?.operators === 'and' ? 'and' : 'or';
 
 /**
  * Decompile a top-level `when` list. The representation has no field for a flat

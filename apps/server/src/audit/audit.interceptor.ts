@@ -303,7 +303,7 @@ function resolveResourceId(params: Record<string, unknown> | undefined, result: 
 }
 
 /** before-snapshot for delete/update on a single resource; redaction is applied later in AuditService. */
-async function fetchBefore(
+export async function fetchBefore(
   resourceType: string,
   action: AuditAction,
   params: Record<string, unknown> | undefined,
@@ -329,13 +329,21 @@ async function fetchBefore(
     case 'session':
       return prisma.bizSession.findUnique({ where: { id: String(id) } });
     case 'user':
-      return environmentId
-        ? prisma.bizUser.findFirst({ where: { externalId: String(id), environmentId } })
-        : undefined;
+      // REST/MCP address users by EXTERNAL id (+ environment); the web-admin
+      // delete metas pass internal BizUser ids. Try external first, then fall
+      // back to the primary key so the irreversible web delete still captures
+      // its before snapshot instead of silently recording none.
+      return (
+        (environmentId
+          ? await prisma.bizUser.findFirst({ where: { externalId: String(id), environmentId } })
+          : null) ?? prisma.bizUser.findUnique({ where: { id: String(id) } })
+      );
     case 'company':
-      return environmentId
-        ? prisma.bizCompany.findFirst({ where: { externalId: String(id), environmentId } })
-        : undefined;
+      return (
+        (environmentId
+          ? await prisma.bizCompany.findFirst({ where: { externalId: String(id), environmentId } })
+          : null) ?? prisma.bizCompany.findUnique({ where: { id: String(id) } })
+      );
     case 'api_token':
       return prisma.apiToken.findUnique({ where: { id: String(id) } });
     case 'access_token':

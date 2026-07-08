@@ -152,23 +152,42 @@ describe('GraphQL attributes (e2e)', () => {
       expect(row).toMatchObject({ displayName: 'After', dataType: DATA_NUMBER });
     });
 
-    it('ignores codeName on update (immutable after creation)', async () => {
+    it('REFUSES a codeName rename (immutable after creation) — no silent strip', async () => {
       const original = uniqueCodeName('immutable');
       const created = gqlData(await createAttribute({ codeName: original })).createAttribute;
 
-      // A direct GraphQL mutation passes a changed codeName — the domain must
-      // drop it (codeName keys BizUser.data; renaming would orphan that data).
-      await graphql(app, {
+      // A silent strip would make the caller believe the rename succeeded and
+      // start sending data under the new code — auto-creating a second attribute
+      // and splitting the data. Refuse instead.
+      const res = await graphql(app, {
         token,
         query: `mutation ($data: UpdateAttributeInput!) {
           updateAttribute(data: $data) { id codeName }
         }`,
         variables: { data: { id: created.id, codeName: `${original}_renamed`, displayName: 'X' } },
       });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
 
       const row = await prisma.attribute.findUnique({ where: { id: created.id } });
-      expect(row?.codeName).toBe(original); // unchanged despite the request
-      expect(row?.displayName).toBe('X'); // other fields still update
+      expect(row?.codeName).toBe(original); // untouched
+      expect(row?.displayName).not.toBe('X'); // whole mutation refused, not partially applied
+    });
+
+    it('allows echoing the CURRENT codeName back (edit forms do)', async () => {
+      const original = uniqueCodeName('echo');
+      const created = gqlData(await createAttribute({ codeName: original })).createAttribute;
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: UpdateAttributeInput!) {
+          updateAttribute(data: $data) { id codeName displayName }
+        }`,
+        variables: { data: { id: created.id, codeName: original, displayName: 'Echoed' } },
+      });
+      expect(gqlData(res).updateAttribute).toMatchObject({
+        codeName: original,
+        displayName: 'Echoed',
+      });
     });
 
     it('errors updating an unknown attribute', async () => {

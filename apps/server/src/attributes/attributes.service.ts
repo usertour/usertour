@@ -31,12 +31,23 @@ export class AttributesService {
   }
 
   async update(data: UpdateAttributeInput) {
-    // codeName keys BizUser.data, so it is immutable after creation — strip any
-    // incoming value so no caller (a raw GraphQL mutation included) can rename it
-    // and orphan that data. v2 omits it and the builder disables the field; this
-    // hard-enforces the invariant at the one chokepoint.
+    // codeName keys BizUser.data, so it is immutable after creation. REFUSE a
+    // rename instead of silently stripping it — a caller who believes the rename
+    // succeeded starts sending data under the new code, auto-creating a second
+    // attribute and splitting the data. Echoing the current value back (the
+    // builder's edit form does) is allowed. v2 omits the field entirely.
     const { id, codeName, ...others } = data;
-    void codeName;
+    if (codeName !== undefined) {
+      const existing = await this.prisma.attribute.findUnique({
+        where: { id },
+        select: { codeName: true },
+      });
+      if (existing && codeName !== existing.codeName) {
+        throw new ValidationError(
+          `codeName is immutable (it keys stored user/company data) — cannot rename "${existing.codeName}" to "${codeName}". Create a new attribute instead.`,
+        );
+      }
+    }
     const updated = await this.prisma.attribute.update({
       where: { id },
       data: { ...others },

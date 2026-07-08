@@ -96,9 +96,8 @@ describe('GraphQL events (e2e)', () => {
   });
 
   describe('updateEvent', () => {
-    it('updates fields and persists them', async () => {
+    it('updates fields (echoing the immutable codeName) and persists them', async () => {
       const created = gqlData(await createEvent(codeName('upd'), 'Before')).createEvent;
-      const newCode = codeName('upd-new');
       const res = await graphql(app, {
         token,
         query: `mutation ($data: UpdateEventInput!) {
@@ -108,7 +107,7 @@ describe('GraphQL events (e2e)', () => {
           data: {
             id: created.id,
             displayName: 'After',
-            codeName: newCode,
+            codeName: created.codeName, // echo — edit forms send the current value
             description: 'updated',
             attributeIds: [],
           },
@@ -117,16 +116,39 @@ describe('GraphQL events (e2e)', () => {
       expect(gqlData(res).updateEvent).toMatchObject({
         id: created.id,
         displayName: 'After',
-        codeName: newCode,
+        codeName: created.codeName,
         description: 'updated',
       });
 
       const row = await prisma.event.findUnique({ where: { id: created.id } });
       expect(row).toMatchObject({
         displayName: 'After',
-        codeName: newCode,
+        codeName: created.codeName,
         description: 'updated',
       });
+    });
+
+    it('REFUSES a codeName rename (immutable — it keys tracked event data)', async () => {
+      const created = gqlData(await createEvent(codeName('ren'), 'Before')).createEvent;
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: UpdateEventInput!) {
+          updateEvent(data: $data) { id codeName }
+        }`,
+        variables: {
+          data: {
+            id: created.id,
+            displayName: 'After',
+            codeName: codeName('ren-new'),
+            attributeIds: [],
+          },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+
+      const row = await prisma.event.findUnique({ where: { id: created.id } });
+      expect(row?.codeName).toBe(created.codeName); // untouched
+      expect(row?.displayName).toBe('Before'); // refused wholesale, not partially applied
     });
 
     it('replaces the AttributeOnEvent links', async () => {

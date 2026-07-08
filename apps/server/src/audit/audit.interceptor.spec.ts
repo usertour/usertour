@@ -1,4 +1,9 @@
-import { buildWebAuditEntry, deriveAudit } from './audit.interceptor';
+import { Reflector } from '@nestjs/core';
+
+import { ContentResolver } from '@/content/content.resolver';
+
+import { AuditWeb } from './audit.decorator';
+import { buildWebAuditEntry, deriveAudit, fetchBefore } from './audit.interceptor';
 
 describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
   it('maps create/update/delete verbs directly', () => {
@@ -91,5 +96,52 @@ describe('buildWebAuditEntry capture override (bulk mutations)', () => {
       { projectId: 'p1', environmentId: null, operation: 'op', before: undefined },
     );
     expect(entry.after).toEqual({ id: 'x', name: 'after' });
+  });
+});
+
+describe('web publish audit meta reads the returned Content row', () => {
+  it('publishedContentVersion resourceId uses result.id (the mutation returns Content, not Version)', () => {
+    // Reading `result.contentId` here yields undefined → the required resourceId
+    // column write fails → the audit row for every web publish is silently lost.
+    const meta = new Reflector().get(AuditWeb, ContentResolver.prototype.publishedContentVersion);
+    expect(meta).toBeDefined();
+    const contentRow = { id: 'c1', editedVersionId: 'v9' }; // a Content row has no contentId
+    expect(meta.resourceId?.({}, contentRow)).toBe('c1');
+  });
+});
+
+describe('fetchBefore biz-entity id spaces (REST externalId vs web internal id)', () => {
+  const prisma = {
+    bizUser: {
+      findFirst: async ({ where }: { where: { externalId: string } }) =>
+        where.externalId === 'ext-jane' ? { id: 'bu1', externalId: 'ext-jane' } : null,
+      findUnique: async ({ where }: { where: { id: string } }) =>
+        where.id === 'bu-internal' ? { id: 'bu-internal', externalId: 'ext-jane' } : null,
+    },
+    bizCompany: {
+      findFirst: async ({ where }: { where: { externalId: string } }) =>
+        where.externalId === 'ext-acme' ? { id: 'bc1' } : null,
+      findUnique: async ({ where }: { where: { id: string } }) =>
+        where.id === 'bc-internal' ? { id: 'bc-internal' } : null,
+    },
+  } as never;
+
+  it('resolves a user by externalId (the REST/MCP path)', async () => {
+    const row = await fetchBefore('user', 'delete', { id: 'ext-jane' }, 'env1', prisma);
+    expect(row).toMatchObject({ id: 'bu1' });
+  });
+
+  it('falls back to the internal id (the web-admin delete path)', async () => {
+    const row = await fetchBefore('user', 'delete', { id: 'bu-internal' }, 'env1', prisma);
+    expect(row).toMatchObject({ id: 'bu-internal' });
+  });
+
+  it('company: external first, internal fallback', async () => {
+    expect(
+      await fetchBefore('company', 'delete', { id: 'ext-acme' }, 'env1', prisma),
+    ).toMatchObject({ id: 'bc1' });
+    expect(
+      await fetchBefore('company', 'delete', { id: 'bc-internal' }, 'env1', prisma),
+    ).toMatchObject({ id: 'bc-internal' });
   });
 });

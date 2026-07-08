@@ -16,8 +16,18 @@ export function parseOrderBy(orderBy?: string | string[], fallback: string[] = [
   if (fields.length === 0) {
     return [{ id: 'desc' }];
   }
-  return fields.map((field) => {
+  const orders: SortOrder[] = fields.map((field) => {
     const descending = field.startsWith('-');
     return { [descending ? field.slice(1) : field]: descending ? 'desc' : 'asc' };
   });
+  // Cursor pagination needs a UNIQUE total order: rows sharing a createdAt (bulk
+  // imports write hundreds in one transaction timestamp) otherwise reorder
+  // arbitrarily between queries, and pages skip/duplicate rows. Append an `id`
+  // tiebreak (same direction as the last key) unless the caller already sorts by id.
+  const names = fields.map((f) => (f.startsWith('-') ? f.slice(1) : f));
+  if (!names.includes('id')) {
+    const lastDirection = Object.values(orders[orders.length - 1])[0];
+    orders.push({ id: lastDirection });
+  }
+  return orders;
 }

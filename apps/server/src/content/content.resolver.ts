@@ -129,7 +129,10 @@ export class ContentResolver {
   @AuditWeb({
     action: 'update',
     resourceType: 'content',
-    resourceId: (_a, r) => (r as { contentId: string }).contentId,
+    // publishedContentVersion returns the CONTENT row (its id IS the content id) —
+    // reading `contentId` here yields undefined and the required-column write of
+    // the audit row fails silently, wiping web publishes from the audit trail.
+    resourceId: (_a, r) => (r as { id: string }).id,
     environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
   })
   async publishedContentVersion(

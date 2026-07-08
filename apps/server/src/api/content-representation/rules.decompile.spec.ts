@@ -233,4 +233,46 @@ describe('start / hide rules', () => {
     ).toBeUndefined();
     expect(decompileHideRules({ enabledHideRules: false }, IDENTITY_RESOLVERS)).toBeUndefined();
   });
+
+  it('a legacy list with NO operators decompiles as OR — mirroring the runtime', () => {
+    // isConditionsActived: `operators === 'and' ? all : any` — a missing value
+    // evaluates as ANY at runtime, so it must present as an any-group, not a bare
+    // (ALL-by-contract) when list. Presenting it as AND would also re-stamp
+    // operators:'and' on an echo write, silently flipping live behavior.
+    const config = {
+      enabledAutoStartRules: true,
+      autoStartRules: [
+        { type: 'segment', data: { segmentId: 's1', logic: 'is' } },
+        { type: 'segment', data: { segmentId: 's2', logic: 'is' } },
+      ],
+    };
+    expect(decompileStartRules(config, IDENTITY_RESOLVERS)).toEqual({
+      when: [
+        {
+          type: 'group',
+          match: 'any',
+          conditions: [
+            { type: 'segment', segment: 's1', in: true },
+            { type: 'segment', segment: 's2', in: true },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('an explicit and-stamped list still decompiles as a bare (ALL) when list', () => {
+    const config = {
+      enabledAutoStartRules: true,
+      autoStartRules: [
+        { type: 'segment', operators: 'and', data: { segmentId: 's1', logic: 'is' } },
+        { type: 'segment', operators: 'and', data: { segmentId: 's2', logic: 'is' } },
+      ],
+    };
+    expect(decompileStartRules(config, IDENTITY_RESOLVERS)).toEqual({
+      when: [
+        { type: 'segment', segment: 's1', in: true },
+        { type: 'segment', segment: 's2', in: true },
+      ],
+    });
+  });
 });
