@@ -232,6 +232,27 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(upd.body).toMatchObject({ name: 'Edited' });
   });
 
+  it('patches a legacy theme whose stored settings lack nested fields (grounded on defaults, no 500)', async () => {
+    const token = await mint([Capability.ThemeUpdate, Capability.ThemeRead]);
+    // A stored blob predating most nested fields (no buttons.*, no mainColor):
+    // deriveThemeAutoColors dereferences e.g. buttons.primary.border.color.color,
+    // so a merge NOT grounded on defaultSettings throws and the PATCH 500s.
+    const legacy = await buildTheme(prisma, {
+      projectId,
+      name: 'Legacy partial',
+      settings: { brandColor: { background: '#123456', color: '#ffffff' } } as never,
+    });
+    const res = await send('patch', `${basePath()}/${legacy.id}`, token).send({
+      settings: { font: { fontSize: 20 } },
+    });
+    expect(res.status).toBe(200);
+    // patch applied; stored value kept; missing nested fields filled from defaults
+    expect(res.body.settings.font.fontSize).toBe(20);
+    expect(res.body.settings.brandColor.background).toBe('#123456');
+    expect(res.body.settings.buttons.primary.backgroundColor).toBeTruthy();
+    expect(res.body.settings.brandColor.autoHover).toBeTruthy();
+  });
+
   it('updates theme settings (field-merged) and reads them back', async () => {
     const token = await mint([
       Capability.ThemeCreate,

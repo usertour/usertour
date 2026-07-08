@@ -139,12 +139,20 @@ export class ApiThemesService {
     if (theme.isSystem) {
       throw new ValidationError('Cannot modify a system theme.');
     }
+    // Ground the stored settings on the complete defaultSettings before patching —
+    // the same fill the builder does on load (theme-builder.tsx: deepmerge(defaultSettings,
+    // settings)) and create() does. A legacy theme whose stored JSON predates a nested
+    // field (e.g. buttons.primary.border) would otherwise reach deriveThemeAutoColors
+    // incomplete and 500 on its deep dereferences.
     const settingsUpdate =
       body.settings !== undefined
         ? {
             settings: deriveThemeAutoColors(
               deepMergeThemeSettings(
-                (theme.settings ?? defaultSettings) as ThemeTypesSetting,
+                deepMergeThemeSettings(
+                  defaultSettings,
+                  (theme.settings ?? {}) as Partial<ThemeTypesSetting>,
+                ),
                 this.parseSettingsPatch(body.settings),
               ),
             ) as unknown as JsonValue,
