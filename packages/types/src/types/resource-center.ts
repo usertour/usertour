@@ -1,3 +1,4 @@
+import type { PopupAnnouncement } from './announcement';
 import type { ContentEditorRoot } from './editor';
 import type { RulesCondition } from './config';
 import type { LauncherIconSource } from './launcher';
@@ -14,6 +15,7 @@ export enum ResourceCenterBlockType {
   SUB_PAGE = 'sub-page',
   CONTENT_LIST = 'content-list',
   LIVE_CHAT = 'live-chat',
+  ANNOUNCEMENT = 'announcement',
 }
 
 // ============================================================================
@@ -85,6 +87,15 @@ export interface ResourceCenterLiveChatBlock extends ResourceCenterBlockConditio
   customLiveChatCode: string;
 }
 
+export interface ResourceCenterAnnouncementBlock extends ResourceCenterBlockConditionFields {
+  id: string;
+  name: RichTextNode[];
+  type: ResourceCenterBlockType.ANNOUNCEMENT;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+}
+
 export interface ContentListItem {
   contentId: string;
   contentType: 'flow' | 'checklist';
@@ -122,12 +133,14 @@ export type ResourceCenterBlock =
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock
   | ResourceCenterContentListBlock
-  | ResourceCenterLiveChatBlock;
+  | ResourceCenterLiveChatBlock
+  | ResourceCenterAnnouncementBlock;
 
 /** Navigable block types — blocks that push a detail view when clicked. */
 export type ResourceCenterNavigableBlock =
   | ResourceCenterSubPageBlock
-  | ResourceCenterContentListBlock;
+  | ResourceCenterContentListBlock
+  | ResourceCenterAnnouncementBlock;
 
 // ============================================================================
 // Tab
@@ -150,13 +163,20 @@ export interface ResourceCenterData {
   buttonText: string;
   headerText: string;
   tabs: ResourceCenterTab[];
+  /**
+   * Number of unread announcements for this user (populated by server at
+   * session build time). Announcement state is global — the block is only a
+   * navigation entry — so this lives here, not on the block. Absent when the
+   * resource center has no announcement block.
+   */
+  announcementUnreadCount?: number;
+  /**
+   * The newest unseen POPUP-level announcement for this user (populated by
+   * server at session build time, like announcementUnreadCount). Absent when
+   * there is nothing to pop or the resource center has no announcement block.
+   */
+  popupAnnouncement?: PopupAnnouncement;
 }
-
-export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
-  buttonText: 'Help',
-  headerText: 'Resource Center',
-  tabs: [],
-};
 
 // ============================================================================
 // Navigation (used by widget)
@@ -164,20 +184,36 @@ export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
 
 /**
  * Derived page shape used by the widget to render a detail view. The `block`
- * is resolved from the latest `ResourceCenterData` on every render.
+ * is resolved from the latest `ResourceCenterData` on every render. The
+ * `announcement_detail` page additionally carries the id of the single
+ * announcement being viewed (not a block — the announcement content is fetched
+ * on demand from the server).
  */
 export type ResourceCenterPageEntry =
   | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
-  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock };
+  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock }
+  | { type: ResourceCenterBlockType.ANNOUNCEMENT; block: ResourceCenterAnnouncementBlock }
+  | {
+      type: 'announcement_detail';
+      block: ResourceCenterAnnouncementBlock;
+      announcementId: string;
+    };
 
 /**
  * Stored page reference. The stack keeps only an id + type so admin edits
- * (content, contentItems, visibility) propagate into the open detail view.
+ * (content, contentItems, visibility) propagate into the open detail view. The
+ * `announcement_detail` ref also stores `announcementId` — a detail-request
+ * parameter that does not resolve to a block, so it is safe to persist here.
  */
-export type ResourceCenterPageRef = {
-  type: ResourceCenterBlockType.SUB_PAGE | ResourceCenterBlockType.CONTENT_LIST;
-  blockId: string;
-};
+export type ResourceCenterPageRef =
+  | {
+      type:
+        | ResourceCenterBlockType.SUB_PAGE
+        | ResourceCenterBlockType.CONTENT_LIST
+        | ResourceCenterBlockType.ANNOUNCEMENT;
+      blockId: string;
+    }
+  | { type: 'announcement_detail'; blockId: string; announcementId: string };
 
 export interface ResourceCenterNavigationState {
   activeTabId: string;

@@ -102,6 +102,16 @@ export const createDefaultBlock = (type: ResourceCenterBlockType): ResourceCente
         onlyShowBlock: false,
         onlyShowBlockConditions: [],
       };
+    case ResourceCenterBlockType.ANNOUNCEMENT:
+      return {
+        id,
+        type: ResourceCenterBlockType.ANNOUNCEMENT,
+        name: [{ type: 'paragraph', children: [{ text: 'Announcements' }] }],
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: 'send-ins-fill',
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
+      };
     default:
       return null;
   }

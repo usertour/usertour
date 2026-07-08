@@ -1,5 +1,10 @@
 import { createContext, useContext } from 'react';
 import type {
+  AnnouncementDetail,
+  AnnouncementListItem,
+  ListAnnouncementsResult,
+  PopupAnnouncement,
+  ResourceCenterContentListBlock,
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
@@ -9,6 +14,23 @@ import type {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
+
+// ============================================================================
+// Announcement feed session cache
+// ============================================================================
+
+/**
+ * The feed's state for one browsing session (while the panel stays expanded):
+ * navigating into a detail page unmounts the list, and without this the Back
+ * button would remount it — refetching, re-running the seen side effects, and
+ * losing the scroll position. Cleared when the panel collapses, so the next
+ * open fetches fresh data again.
+ */
+export interface AnnouncementFeedCache {
+  announcements: AnnouncementListItem[];
+  attributes?: Record<string, any>;
+  scrollTop: number;
+}
 
 // ============================================================================
 // Content list display item (resolved from ResourceCenterBlockContentItem)
@@ -47,6 +69,8 @@ export interface ResourceCenterNavigationActions {
 export interface ResourceCenterContextValue {
   // Config
   data: ResourceCenterData;
+  /** Raw theme settings as passed in — the popup falls back to these when the announcement has no theme of its own. */
+  themeSettings: ThemeTypesSetting;
   themeSetting: ThemeTypesSetting;
   globalStyle: string;
 
@@ -87,6 +111,24 @@ export interface ResourceCenterContextValue {
 
   // Content list
   contentListItems: ContentListDisplayItem[];
+  contentListLoading?: boolean;
+  /** Content-list fetch failed — render a retry instead of "No items". */
+  contentListError?: boolean;
+  /** Re-runs the content-list fetch (used by the error-state retry button). */
+  onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
+
+  // Announcements
+  onListAnnouncements?: () => Promise<ListAnnouncementsResult | null>;
+  onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
+  onMarkAnnouncementsSeen?: (items: { contentId: string }[]) => Promise<boolean>;
+  /** The gated popup payload — when set, the popup renders (gating lives in the SDK). */
+  popupAnnouncement?: PopupAnnouncement;
+  /** Any popup interaction (close, backdrop, read more, content action) — marks seen and hides. */
+  onPopupDismiss?: () => void;
+  /** Mutable on purpose: reads/writes must not re-render the tree. */
+  announcementFeedCache: React.MutableRefObject<AnnouncementFeedCache | null>;
+  /** The body's scroll container — pages read/restore their scroll position through it. */
+  bodyScrollRef: React.RefObject<HTMLDivElement>;
 
   // Search
   searchQuery: string;
@@ -94,6 +136,8 @@ export interface ResourceCenterContextValue {
 
   showMadeWith: boolean;
 
+  // Launcher
+  badgeCount: number;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden: boolean;
 }

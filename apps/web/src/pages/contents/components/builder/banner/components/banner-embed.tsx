@@ -1,4 +1,4 @@
-import { BUILDER_Z } from '@usertour/constants';
+import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
@@ -9,7 +9,6 @@ import {
   ContentEditorElementType,
   ContentActionsItemType,
   BannerEmbedPlacement,
-  BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import type { ReactNode } from 'react';

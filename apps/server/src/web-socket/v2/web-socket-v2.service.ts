@@ -32,16 +32,27 @@ import {
   BizEvents,
   ClientCondition,
   CustomContentSession,
+  ListAnnouncementsResult,
+  GetAnnouncementDto,
+  AnnouncementDetail,
+  AnnouncementSeenSource,
+  MarkAnnouncementsSeenDto,
+  AnnouncementListItem,
+  AnnouncementData,
 } from '@usertour/types';
+import { ANNOUNCEMENT_SEEN_SOURCES } from '@usertour/constants';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { AnnouncementService } from '@/web-socket/core/announcement.service';
+import { ContentDataService } from '@/web-socket/core/content-data.service';
+import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
-import { assignClientContext } from '@/utils/event-v2';
+import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
 import { humanize } from '@usertour/helpers';
 
 @Injectable()
@@ -53,6 +64,8 @@ export class WebSocketV2Service {
     private bizService: BizService,
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
+    private readonly announcementService: AnnouncementService,
+    private readonly contentDataService: ContentDataService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
   ) {}
@@ -994,5 +1007,188 @@ export class WebSocketV2Service {
         `Failed to cancel all content sessions for content ${contentId}: ${(error as Error).message}`,
       );
     }
+  }
+
+  // ============================================================================
+  // Announcement Methods
+  // ============================================================================
+
+  /**
+   * List the announcements visible to the current user, newest first.
+   *
+   * The feed is a single server-capped page (AnnouncementService.SCAN_LIMIT) —
+   * the contract carries no pagination. Each candidate is gated by its "Only
+   * show if..." targeting rules (config.autoStartRules) using the same
+   * DB-backed evaluation as resource-center block visibility — a targeted
+   * announcement is never leaked to users who don't match.
+   */
+  async listAnnouncements(context: WebSocketContext): Promise<ListAnnouncementsResult> {
+    const { socketData } = context;
+
+    const bizUser = await this.findBizUser(socketData);
+    if (!bizUser) {
+      return { announcements: [] };
+    }
+
+    // Newest N candidates that pass the user's "Only show if..." targeting
+    // (findVisibleAnnouncements defaults to AnnouncementService.SCAN_LIMIT).
+    const visibleItems = await this.announcementService.findVisibleAnnouncements(
+      socketData.environment,
+      bizUser,
+      socketData.externalCompanyId,
+    );
+
+    // Seen status and the intro-content attributes are independent (different
+    // tables), so resolve them in parallel to save a round-trip on feed open.
+    // Attributes: the feed's intro content isn't part of the RC session, so the
+    // widget has no values for it otherwise.
+    const contentIds = visibleItems.map((item) => item.contentId);
+    const [seenSet, attributes] = await Promise.all([
+      this.announcementService.getSeenAnnouncementIds(bizUser.id, contentIds),
+      this.announcementService.resolveContentAttributes(
+        visibleItems.map(
+          (item) => (item.publishedVersion.data as AnnouncementData | null)?.introContent,
+        ),
+        socketData.environment,
+        socketData.externalUserId,
+        socketData.externalCompanyId,
+      ),
+    ]);
+
+    const announcements: AnnouncementListItem[] = visibleItems.map((item) => ({
+      ...this.announcementService.buildItemBase(item.content, item.publishedVersion),
+      seen: seenSet.has(item.contentId),
+    }));
+
+    return { announcements, attributes };
+  }
+
+  /**
+   * Get a single announcement with full detail content.
+   */
+  async getAnnouncement(
+    context: WebSocketContext,
+    params: GetAnnouncementDto,
+  ): Promise<AnnouncementDetail | null> {
+    const { socketData } = context;
+    const bizUser = await this.findBizUser(socketData);
+
+    // Same candidate query + "Only show if..." targeting gate the feed uses, so
+    // a direct by-id fetch can't expose an announcement the feed would hide.
+    const visible = await this.announcementService.findVisibleAnnouncementById(
+      params.contentId,
+      socketData.environment,
+      bizUser,
+      socketData.externalCompanyId,
+    );
+    if (!visible) {
+      return null;
+    }
+
+    const data = (visible.publishedVersion.data ?? {}) as unknown as AnnouncementData;
+
+    // Resolve the attributes referenced in the intro + detail content — the
+    // announcement isn't part of the RC session, so the widget can't otherwise
+    // interpolate them.
+    const attributes = await this.announcementService.resolveContentAttributes(
+      [data.introContent, data.detailContent],
+      socketData.environment,
+      socketData.externalUserId,
+      socketData.externalCompanyId,
+    );
+
+    return {
+      ...this.announcementService.buildItemBase(visible.content, visible.publishedVersion),
+      moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
+      attributes,
+    };
+  }
+
+  /**
+   * Mark the given announcements as seen — one batch per feed open. The seen
+   * state lands in the BizAnnouncementSeen read-state table; the idempotent
+   * insert (unique (bizUserId, contentId) key) makes concurrent marks — a feed
+   * refetch, a second tab — safe without locking, and only the ids that were
+   * newly inserted get an ANNOUNCEMENT_SEEN analytics event, so views are never
+   * double-counted.
+   */
+  async markAnnouncementsSeen(
+    context: WebSocketContext,
+    params: MarkAnnouncementsSeenDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+
+    try {
+      const { environment, externalUserId, clientContext, bizCompanyId } = socketData;
+
+      // The feed never returns more than SCAN_LIMIT rows, so a legit client
+      // never sends more; cap here so a hostile payload can't inflate the
+      // candidate query.
+      const contentIds = (params.items ?? [])
+        .slice(0, AnnouncementService.SCAN_LIMIT)
+        .map((item) => item.contentId);
+      if (contentIds.length === 0) {
+        return true;
+      }
+
+      const bizUser = await this.findBizUser(socketData);
+      if (!bizUser) {
+        return false;
+      }
+
+      // Returns first-seen announcements with their authoritative published
+      // versionId. Gated only by the candidate gate (a published announcement in
+      // this env) — NOT by mark-time targeting: a dismiss must persist even after
+      // the user's attributes drift out of the rule (see markAnnouncementsSeen).
+      const firstSeen = await this.announcementService.markAnnouncementsSeen(
+        environment,
+        bizUser,
+        contentIds,
+      );
+      if (firstSeen.length === 0) {
+        return true;
+      }
+
+      // The surface that marked them, recorded on the analytics event.
+      // Whitelisted rather than passed through, so a client can't invent
+      // arbitrary source values.
+      const source: AnnouncementSeenSource = ANNOUNCEMENT_SEEN_SOURCES.includes(
+        params.source as AnnouncementSeenSource,
+      )
+        ? (params.source as AnnouncementSeenSource)
+        : 'resource_center';
+
+      // Fire the analytics trail only for first-seen announcements, with the
+      // server-derived versionId (never the client's).
+      await Promise.all(
+        firstSeen.map(({ contentId, versionId }) =>
+          this.eventTrackingService.trackDirectContentEvent({
+            environment,
+            externalUserId,
+            clientContext,
+            contentId,
+            versionId,
+            eventCodeName: BizEvents.ANNOUNCEMENT_SEEN,
+            buildEventData: (content, version) =>
+              buildAnnouncementSeenEventData(content, version, source),
+            bizCompanyId,
+          }),
+        ),
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to mark announcements seen: ${(error as Error).message}`);
+      return false;
+    }
+  }
+
+  // ============================================================================
+  // Announcement Helper Methods
+  // ============================================================================
+
+  private async findBizUser(socketData: SocketData): Promise<BizUser | null> {
+    // Single shared, request-memoized lookup — so the feed's bizUser and the
+    // attribute-resolution one coalesce into one query per request.
+    return this.contentDataService.findBizUser(socketData.environment, socketData.externalUserId);
   }
 }

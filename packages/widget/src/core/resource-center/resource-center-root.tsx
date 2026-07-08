@@ -1,5 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  AnnouncementDetail,
+  ListAnnouncementsResult,
+  PopupAnnouncement,
+  ResourceCenterAnnouncementBlock,
   ResourceCenterContentListBlock,
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
@@ -14,6 +18,7 @@ import { ResourceCenterBlockType } from '@usertour/types';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import {
   ResourceCenterRootContext,
+  type AnnouncementFeedCache,
   type ContentListDisplayItem,
   type ResourceCenterNavigationActions,
 } from './context';
@@ -24,12 +29,15 @@ import { RESOURCE_CENTER_DEFAULTS } from './constants';
 // ============================================================================
 
 const isNavigableBlockType = (type: string): boolean =>
-  type === ResourceCenterBlockType.SUB_PAGE || type === ResourceCenterBlockType.CONTENT_LIST;
+  type === ResourceCenterBlockType.SUB_PAGE ||
+  type === ResourceCenterBlockType.CONTENT_LIST ||
+  type === ResourceCenterBlockType.ANNOUNCEMENT;
 
 interface ResourceCenterRootProps {
   children: React.ReactNode;
   themeSettings: ThemeTypesSetting;
   data: ResourceCenterData;
+  badgeCount?: number;
   animateFrame?: boolean;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => Promise<void>;
@@ -41,9 +49,18 @@ interface ResourceCenterRootProps {
   onBlockClick?: (blockId: string) => Promise<void>;
   showMadeWith?: boolean;
   contentListItems?: ContentListDisplayItem[];
+  contentListLoading?: boolean;
+  contentListError?: boolean;
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
+  onListAnnouncements?: () => Promise<ListAnnouncementsResult | null>;
+  onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
+  onMarkAnnouncementsSeen?: (items: { contentId: string }[]) => Promise<boolean>;
+  /** The gated popup payload (gating lives in the SDK — pass undefined to hide). */
+  popupAnnouncement?: PopupAnnouncement;
+  /** Any popup interaction (close, backdrop, read more, content action). */
+  onPopupDismiss?: () => void;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;
   /**
@@ -60,6 +77,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const {
     children,
     data,
+    badgeCount = 0,
     animateFrame = true,
     expanded = false,
     onExpandedChange,
@@ -71,9 +89,16 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onBlockClick,
     showMadeWith = true,
     contentListItems: contentListItemsProp = [],
+    contentListLoading = false,
+    contentListError = false,
     onContentListNavigate,
     onContentListItemClick,
     onLiveChatClick,
+    onListAnnouncements,
+    onGetAnnouncement,
+    onMarkAnnouncementsSeen,
+    popupAnnouncement,
+    onPopupDismiss,
     launcherHidden = false,
     initialNav,
     onNavChange,
@@ -83,6 +108,18 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const isOpen = expanded;
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef<number | null>(null);
+
+  // ── Announcement feed session cache ─────────────────────────────────
+  // Survives detail-page navigation (which unmounts the list) so Back
+  // restores the loaded feed and its scroll position; cleared on collapse so
+  // the next open fetches fresh data.
+  const announcementFeedCache = useRef<AnnouncementFeedCache | null>(null);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) {
+      announcementFeedCache.current = null;
+    }
+  }, [isOpen]);
 
   // ── Visible tabs ────────────────────────────────────────────────────
   // First tab is always kept (so the RC always has a landing tab, even if
@@ -179,8 +216,21 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     const ref = nav.pageStack[nav.pageStack.length - 1];
     const block = currentTab?.blocks.find((b) => b.id === ref.blockId);
     if (!block) return null;
+    // announcement_detail — carries the id of the single announcement being
+    // viewed alongside the (resolved) announcement block. Checked first so the
+    // discriminant narrows to the ref variant that has `announcementId`.
+    if (ref.type === 'announcement_detail') {
+      return {
+        type: 'announcement_detail',
+        block: block as ResourceCenterAnnouncementBlock,
+        announcementId: ref.announcementId,
+      };
+    }
     if (ref.type === ResourceCenterBlockType.SUB_PAGE) {
       return { type: ref.type, block: block as ResourceCenterSubPageBlock };
+    }
+    if (ref.type === ResourceCenterBlockType.ANNOUNCEMENT) {
+      return { type: ref.type, block: block as ResourceCenterAnnouncementBlock };
     }
     return { type: ref.type, block: block as ResourceCenterContentListBlock };
   }, [nav.pageStack, currentTab]);
@@ -276,8 +326,10 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const contextValue = useMemo(
     () => ({
       globalStyle,
+      themeSettings,
       themeSetting,
       data,
+      badgeCount,
       isOpen,
       isAnimating,
       animateFrame,
@@ -299,14 +351,26 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       searchQuery,
       setSearchQuery,
       contentListItems: contentListItemsProp,
+      contentListLoading,
+      contentListError,
+      onContentListNavigate,
       onContentListItemClick,
       onLiveChatClick,
+      onListAnnouncements,
+      onGetAnnouncement,
+      onMarkAnnouncementsSeen,
+      popupAnnouncement,
+      onPopupDismiss,
+      announcementFeedCache,
+      bodyScrollRef,
       launcherHidden,
     }),
     [
       globalStyle,
+      themeSettings,
       themeSetting,
       data,
+      badgeCount,
       isOpen,
       isAnimating,
       animateFrame,
@@ -328,8 +392,18 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       searchQuery,
       setSearchQuery,
       contentListItemsProp,
+      contentListLoading,
+      contentListError,
+      onContentListNavigate,
       onContentListItemClick,
       onLiveChatClick,
+      onListAnnouncements,
+      onGetAnnouncement,
+      onMarkAnnouncementsSeen,
+      popupAnnouncement,
+      onPopupDismiss,
+      announcementFeedCache,
+      bodyScrollRef,
       launcherHidden,
     ],
   );

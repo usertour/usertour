@@ -256,6 +256,28 @@ export async function buildVersion(
   return version;
 }
 
+/**
+ * Minimal publish for tests: flips Content.published / publishedVersionId and
+ * writes the ContentOnEnvironment row so a version reads as currently published
+ * (editability / fork tests). It does NOT stamp the timestamps the real
+ * publishedContentVersion sets (Content/ContentOnEnvironment.publishedAt, an
+ * announcement's first-publish scheduledAt), so don't use it to test anything
+ * that reads those (e.g. feed ordering).
+ */
+export async function publishVersion(
+  prisma: PrismaClient,
+  args: { environmentId: string; contentId: string; versionId: string },
+) {
+  const { environmentId, contentId, versionId } = args;
+  await prisma.content.update({
+    where: { id: contentId },
+    data: { published: true, publishedVersionId: versionId },
+  });
+  return prisma.contentOnEnvironment.create({
+    data: { environmentId, contentId, published: true, publishedVersionId: versionId },
+  });
+}
+
 export async function buildStep(
   prisma: PrismaClient,
   overrides: Partial<Prisma.StepUncheckedCreateInput> = {},

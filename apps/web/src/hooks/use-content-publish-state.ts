@@ -29,6 +29,13 @@ export const useContentPublishState = () => {
       return !version?.steps?.length;
     }
 
+    // Announcement needs a title — it's the headline shown in the list and
+    // detail; publishing an untitled announcement renders a blank row.
+    if (content?.type === ContentDataType.ANNOUNCEMENT) {
+      const announcementData = (version?.data ?? {}) as { title?: string };
+      return !announcementData.title?.trim();
+    }
+
     if (content?.type !== ContentDataType.TRACKER) {
       return false;
     }

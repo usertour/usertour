@@ -1,3 +1,4 @@
+import { DEFAULT_RESOURCE_CENTER_DATA } from '@usertour/constants';
 import type {
   ChecklistData,
   ContentConfigObject,
@@ -16,7 +17,6 @@ import type {
 import {
   ContentDataType,
   ContentEditorElementType,
-  DEFAULT_RESOURCE_CENTER_DATA,
   LauncherIconSource,
   ResourceCenterBlockType,
 } from '@usertour/types';

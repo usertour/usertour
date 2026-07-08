@@ -466,20 +466,21 @@ model Attribute {
 }
 
 model BizUser {
-  id                String             @id @default(cuid())
-  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime           @updatedAt @db.Timestamptz(6)
-  environment       Environment        @relation(fields: [environmentId], references: [id])
-  environmentId     String
-  externalId        String             @default("")
-  data              Json?              @db.JsonB
-  deleted           Boolean            @default(false)
-  bizUsersOnCompany BizUserOnCompany[]
-  bizCompany        BizCompany?        @relation(fields: [bizCompanyId], references: [id])
-  bizCompanyId      String?
-  bizUsersOnSegment BizUserOnSegment[]
-  bizEvent          BizEvent[]
-  bizSession        BizSession[]
+  id                  String                @id @default(cuid())
+  createdAt           DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime              @updatedAt @db.Timestamptz(6)
+  environment         Environment           @relation(fields: [environmentId], references: [id])
+  environmentId       String
+  externalId          String                @default("")
+  data                Json?                 @db.JsonB
+  deleted             Boolean               @default(false)
+  bizUsersOnCompany   BizUserOnCompany[]
+  bizCompany          BizCompany?           @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId        String?
+  bizUsersOnSegment   BizUserOnSegment[]
+  bizEvent            BizEvent[]
+  bizSession          BizSession[]
+  bizAnnouncementSeen BizAnnouncementSeen[]
 
   @@unique([environmentId, externalId])
   @@index([externalId])
@@ -643,6 +644,22 @@ model BizEvent {
   @@index([bizUserId])
   @@index([bizSessionId])
   @@index([bizCompanyId])
+  @@index([contentId])
+}
+
+// Read-state for announcements: one row per (user, announcement), created the
+// first time the user sees it in the feed. The unique key makes marking seen
+// idempotent (INSERT .. ON CONFLICT DO NOTHING), so no locking is needed and
+// the insert's RETURNING set is the "first seen" edge that drives the
+// ANNOUNCEMENT_SEEN analytics event. Insert-only — rows are never updated.
+model BizAnnouncementSeen {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  bizUser   BizUser  @relation(fields: [bizUserId], references: [id])
+  bizUserId String
+  contentId String
+
+  @@unique([bizUserId, contentId])
   @@index([contentId])
 }
 

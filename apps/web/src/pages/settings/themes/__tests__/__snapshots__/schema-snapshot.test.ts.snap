@@ -2,6 +2,8 @@
 
 exports[`ThemeTypesSetting schema snapshot dark fixture has stable leaf paths 1`] = `
 [
+  "announcement.bubbleWidth",
+  "announcement.modalWidth",
   "avatar.name",
   "avatar.size",
   "avatar.type",
@@ -168,6 +170,8 @@ exports[`ThemeTypesSetting schema snapshot dark fixture has stable leaf paths 1`
   "resourceCenterLauncherButton.iconType",
   "resourceCenterLauncherButton.imageHeight",
   "resourceCenterLauncherButton.textMode",
+  "resourceCenterUnreadBadge.backgroundColor",
+  "resourceCenterUnreadBadge.textColor",
   "survey.color",
   "tooltip.missingTargetBehavior",
   "tooltip.missingTargetTolerance",
@@ -179,6 +183,8 @@ exports[`ThemeTypesSetting schema snapshot dark fixture has stable leaf paths 1`
 
 exports[`ThemeTypesSetting schema snapshot defaults fixture has stable leaf paths 1`] = `
 [
+  "announcement.bubbleWidth",
+  "announcement.modalWidth",
   "avatar.name",
   "avatar.size",
   "avatar.type",
@@ -345,6 +351,8 @@ exports[`ThemeTypesSetting schema snapshot defaults fixture has stable leaf path
   "resourceCenterLauncherButton.iconType",
   "resourceCenterLauncherButton.imageHeight",
   "resourceCenterLauncherButton.textMode",
+  "resourceCenterUnreadBadge.backgroundColor",
+  "resourceCenterUnreadBadge.textColor",
   "survey.color",
   "tooltip.missingTargetBehavior",
   "tooltip.missingTargetTolerance",
@@ -356,6 +364,8 @@ exports[`ThemeTypesSetting schema snapshot defaults fixture has stable leaf path
 
 exports[`ThemeTypesSetting schema snapshot rich fixture (all optional fields populated) has stable leaf paths 1`] = `
 [
+  "announcement.bubbleWidth",
+  "announcement.modalWidth",
   "avatar.name",
   "avatar.size",
   "avatar.type",
@@ -528,6 +538,8 @@ exports[`ThemeTypesSetting schema snapshot rich fixture (all optional fields pop
   "resourceCenterLauncherButton.iconUrl",
   "resourceCenterLauncherButton.imageHeight",
   "resourceCenterLauncherButton.textMode",
+  "resourceCenterUnreadBadge.backgroundColor",
+  "resourceCenterUnreadBadge.textColor",
   "survey.color",
   "tooltip.missingTargetBehavior",
   "tooltip.missingTargetTolerance",
@@ -539,6 +551,8 @@ exports[`ThemeTypesSetting schema snapshot rich fixture (all optional fields pop
 
 exports[`ThemeTypesSetting schema snapshot union of all fixtures has stable leaf paths (authoritative schema) 1`] = `
 [
+  "announcement.bubbleWidth",
+  "announcement.modalWidth",
   "avatar.name",
   "avatar.size",
   "avatar.type",
@@ -711,6 +725,8 @@ exports[`ThemeTypesSetting schema snapshot union of all fixtures has stable leaf
   "resourceCenterLauncherButton.iconUrl",
   "resourceCenterLauncherButton.imageHeight",
   "resourceCenterLauncherButton.textMode",
+  "resourceCenterUnreadBadge.backgroundColor",
+  "resourceCenterUnreadBadge.textColor",
   "survey.color",
   "tooltip.missingTargetBehavior",
   "tooltip.missingTargetTolerance",

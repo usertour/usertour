@@ -10,6 +10,7 @@ import {
   ListSkeleton,
 } from '@usertour/ui';
 import {
+  AnnouncementIcon,
   BannerIcon,
   ChecklistIcon,
   EventTrackerIcon,
@@ -68,6 +69,7 @@ type EventCategory =
   | 'launcher'
   | 'banner'
   | 'resource_center'
+  | 'announcement'
   | 'event_tracker'
   | 'page'
   | 'custom';
@@ -79,6 +81,7 @@ function getEventCategory(event: BizEvent): EventCategory {
   if (data[EventAttributes.CHECKLIST_ID]) return 'checklist';
   if (data[EventAttributes.LAUNCHER_ID]) return 'launcher';
   if (data[EventAttributes.BANNER_ID]) return 'banner';
+  if (data[EventAttributes.ANNOUNCEMENT_ID]) return 'announcement';
   if (data[EventAttributes.RESOURCE_CENTER_ID]) return 'resource_center';
   if (data[EventAttributes.EVENT_TRACKER_ID]) return 'event_tracker';
   if (event.event?.codeName === BizEvents.PAGE_VIEWED) return 'page';
@@ -91,6 +94,7 @@ const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: str
   launcher: LauncherIcon,
   banner: BannerIcon,
   resource_center: ResourceCenterIcon,
+  announcement: AnnouncementIcon,
   event_tracker: EventTrackerIcon,
   page: GlobeIcon,
   custom: ActivityLogIcon,
@@ -139,6 +143,8 @@ function getEventDescriptor(
         primary: str(data[EventAttributes.RESOURCE_CENTER_NAME]),
         secondary: str(data[EventAttributes.RESOURCE_CENTER_BLOCK_NAME]),
       };
+    case 'announcement':
+      return { primary: str(data[EventAttributes.ANNOUNCEMENT_NAME]) };
     case 'event_tracker':
       return { primary: str(data[EventAttributes.EVENT_TRACKER_NAME]) };
     case 'page':

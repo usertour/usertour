@@ -1,8 +1,8 @@
+import { DEFAULT_CHECKLIST_DATA } from '@usertour/constants';
 import {
   type ChecklistData,
   type ChecklistItemType,
   type ContentEditorRoot,
-  DEFAULT_CHECKLIST_DATA,
 } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from 'lodash';

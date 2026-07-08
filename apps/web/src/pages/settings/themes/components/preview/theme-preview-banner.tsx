@@ -1,15 +1,11 @@
+import { DEFAULT_BANNER_DATA } from '@usertour/constants';
 import {
   BannerContainer,
   BannerPreview,
   BannerRoot,
   ContentEditorSerialize,
 } from '@usertour/widget';
-import {
-  DEFAULT_BANNER_DATA,
-  BannerEmbedPlacement,
-  type ContentEditorRoot,
-  ThemeTypesSetting,
-} from '@usertour/types';
+import { BannerEmbedPlacement, type ContentEditorRoot, ThemeTypesSetting } from '@usertour/types';
 
 interface ThemePreviewBannerProps {
   contents: ContentEditorRoot[];

@@ -14,7 +14,7 @@ import {
   VersionConflictError,
   VersionNotEditableError,
 } from '@/common/errors';
-import { ContentConfigObject } from '@usertour/types';
+import { ContentConfigObject, ContentDataType } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
@@ -118,8 +118,44 @@ export class ContentService {
           throw new ParamsError();
         }
 
-        const editedVersion = sourceVersion.content.editedVersion;
-        const contentId = editedVersion.contentId;
+        const contentId = sourceVersion.content.id;
+
+        // Serialize concurrent forks on this Content row. Two autosaves (data +
+        // config) editing a live version each fork independently; without this
+        // lock they race — both compute the same sequence and one INSERT hits
+        // @@unique([contentId, sequence]), so that save errors and its edit is
+        // lost. Mirrors assertVersionEditableLocked used by updateContentVersion.
+        await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${contentId} FOR UPDATE`;
+
+        // Re-read the edit version under the lock. If a concurrent fork already
+        // turned it into an unpublished draft, reuse it instead of forking
+        // again — the other autosave's write then lands on the same draft and
+        // both edits survive.
+        const content = await tx.content.findUnique({
+          where: { id: contentId },
+          include: { editedVersion: true, contentOnEnvironments: true },
+        });
+        const editedVersion = content?.editedVersion;
+        if (!editedVersion) {
+          throw new ParamsError();
+        }
+        const editedVersionPublished = content.contentOnEnvironments?.some(
+          (env) => env.published && env.publishedVersionId === editedVersion.id,
+        );
+        if (!editedVersionPublished) {
+          // A concurrent save already forked this into an unpublished draft.
+          // Honor the same contract the fork branch does — the returned draft
+          // carries THIS caller's config, with regenerated condition ids — by
+          // applying it here. A data save passes no config and must leave the
+          // draft's targeting untouched.
+          if (config) {
+            return await tx.version.update({
+              where: { id: editedVersion.id },
+              data: { config: duplicateConfig(config as ContentConfigObject) },
+            });
+          }
+          return editedVersion;
+        }
 
         // Prepare steps by removing database-specific fields
         const steps = sourceVersion.steps.map(
@@ -135,6 +171,11 @@ export class ContentService {
             config: newConfig,
             data: editedVersion.data,
             themeId: editedVersion.themeId,
+            // Carry the publish schedule across the fork. Announcement
+            // visibility is gated on publishedVersion.scheduledAt, so dropping
+            // it here would silently turn a future-scheduled announcement into
+            // an immediately-visible one once the forked draft is republished.
+            scheduledAt: editedVersion.scheduledAt,
             contentId,
             steps: { create: steps },
           } as any,
@@ -316,6 +357,7 @@ export class ContentService {
 
   async publishedContentVersion(versionId: string, environmentId: string) {
     const version = await this.getContentVersionById(versionId);
+    const now = new Date();
 
     const content = await this.prisma.$transaction(async (tx) => {
       // Update Content table
@@ -324,9 +366,28 @@ export class ContentService {
         data: {
           published: true,
           publishedVersionId: version.id,
-          publishedAt: new Date(),
+          publishedAt: now,
         },
       });
+
+      // The announcement feed orders and groups strictly by scheduledAt (the
+      // author-facing "Announcement time"). When it's left as "Immediately",
+      // stamp the first publish time so every published announcement has a
+      // stable, non-null ordering key. Only fill when empty: publishing a
+      // second environment — or an edit that forks and carries scheduledAt
+      // forward — keeps the original first-publish time, and an author-set
+      // (future) time is left untouched. The emptiness check lives in the
+      // WHERE (not an `if` on the version snapshot read before this
+      // transaction): a concurrent saveVersionScheduledAt could set a future
+      // time after that read, and a snapshot-based stamp would silently
+      // overwrite it with `now` — publishing next week's announcement to
+      // everyone immediately.
+      if (content.type === ContentDataType.ANNOUNCEMENT) {
+        await tx.version.updateMany({
+          where: { id: version.id, scheduledAt: null },
+          data: { scheduledAt: now },
+        });
+      }
 
       // Update or create ContentOnEnvironment
       await tx.contentOnEnvironment.upsert({
@@ -340,12 +401,12 @@ export class ContentService {
           environmentId: environmentId,
           contentId: content.id,
           published: true,
-          publishedAt: new Date(),
+          publishedAt: now,
           publishedVersionId: version.id,
         },
         update: {
           published: true,
-          publishedAt: new Date(),
+          publishedAt: now,
           publishedVersionId: version.id,
         },
       });

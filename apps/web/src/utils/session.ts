@@ -1,3 +1,4 @@
+import { flowReasonTitleMap } from '@usertour/constants';
 import {
   Attribute,
   BizEvent,
@@ -5,7 +6,6 @@ import {
   BizSession,
   ContentDataType,
   EventAttributes,
-  flowReasonTitleMap,
 } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 import { formatDistanceStrict } from 'date-fns';

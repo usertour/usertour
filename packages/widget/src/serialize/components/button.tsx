@@ -1,7 +1,8 @@
 // Button serialize component for SDK rendering
 
 import type { ContentEditorButtonElement } from '@usertour/types';
-import { ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
+import type { ButtonSemanticType } from '@usertour/types';
+import { DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/constants';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { isConditionsActived } from '@usertour/helpers';
 

@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useCanUseCustomCss } from '@/hooks/use-should-show-made-with';
 import { useListAttributesQuery } from '@usertour/hooks';
-import { StorageKeys } from '@usertour/constants';
+import { StorageKeys, defaultSettings } from '@usertour/constants';
 import { validateConditions } from '@usertour/business-components';
 import {
   AttributeBizTypes,
@@ -9,7 +9,6 @@ import {
   ThemeDetailPreviewType,
   type ThemeTypesSetting,
   type ThemeVariation,
-  defaultSettings,
 } from '@usertour/types';
 import { useCurrentUserId } from '@usertour/hooks';
 import { useToast, CompactPanel } from '@usertour/ui';

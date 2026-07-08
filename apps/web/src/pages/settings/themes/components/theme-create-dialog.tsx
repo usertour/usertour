@@ -15,7 +15,7 @@ import {
   useSettingsForm,
 } from '@usertour/ui';
 import { useCreateThemeMutation } from '@usertour/hooks';
-import { defaultSettings } from '@usertour/types';
+import { defaultSettings } from '@usertour/constants';
 import { z } from 'zod';
 
 interface ThemeCreateDialogProps {
