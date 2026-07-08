@@ -52,9 +52,20 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
   const { t } = useTranslation();
   const { environmentList } = useEnvironmentList();
 
-  // null restriction = every environment selected in the picker.
-  const initialEnvironmentIds = () =>
-    data.allowedEnvironmentIds ?? (environmentList ?? []).map((env) => env.id);
+  // null restriction = every environment selected in the picker. The stored ids
+  // are intersected with the LIVE environment list: deleting an environment
+  // leaves its id behind in UserOnProject.allowedEnvironmentIds (nothing cleans
+  // it up), and a dead id in the selection would make the count-based "all
+  // environments" detection — and the server's own live-env count validation —
+  // fail on every submit, permanently blocking role changes for this member.
+  const initialEnvironmentIds = () => {
+    const live = (environmentList ?? []).map((env) => env.id);
+    if (!data.allowedEnvironmentIds) {
+      return live;
+    }
+    const liveSet = new Set(live);
+    return data.allowedEnvironmentIds.filter((id) => liveSet.has(id));
+  };
 
   const state = useSettingsForm<FormValues>({
     schema,

@@ -70,7 +70,9 @@ describe('endpoint @RequirePermission ↔ capability map', () => {
         }
       }
     }
-    expect(decorated.length).toBe(mapped.size);
+    // Orphans first — the diff names the culprit; the count alone doesn't.
     expect(decorated.filter((key) => !mapped.has(key))).toEqual([]);
+    expect([...mapped].filter((key) => !decorated.includes(key))).toEqual([]);
+    expect(decorated.length).toBe(mapped.size);
   });
 });
