@@ -1969,6 +1969,8 @@ const translations = {
       saved: 'Saved',
       sourceChanged: 'Source changed',
       onlyUntranslated: 'Only untranslated',
+      previewButton: 'Preview',
+      previewTitle: '{{locale}} preview',
       cardMissing: '{{count}} untranslated',
       cardOutdated: '{{count}} outdated',
       allTranslated: 'All translated',

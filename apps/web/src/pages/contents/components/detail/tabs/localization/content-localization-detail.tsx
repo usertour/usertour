@@ -14,6 +14,8 @@ import {
   createLocalizedWorkingVersionData,
   extractContentsTranslationUnits,
   extractVersionDataTranslationUnits,
+  mergeLocalizedEditorContents,
+  mergeLocalizedVersionData,
 } from '@usertour/helpers';
 import { RiArrowLeftLine, RiArrowRightLine } from '@usertour/icons';
 import type {
@@ -37,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { LocalizedEditorContents } from './localized-fields';
+import { LocalizationPreviewDialog } from './localization-preview-dialog';
 import { LocalizationTransferActions } from './localization-transfer-actions';
 import { MachineTranslationButton, useUnitTranslateText } from './machine-translation-button';
 import {
@@ -279,6 +282,26 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     disabled,
   });
 
+  // Delivery-shape clone for the preview dialog: every translatable step gets
+  // the working translations merged in, untouched steps pass through.
+  const buildLocalizedVersion = useCallback(
+    (): ContentVersion => ({
+      ...version,
+      steps: (version.steps ?? []).map((step) =>
+        step.cvid && step.data
+          ? {
+              ...step,
+              data: mergeLocalizedEditorContents(
+                step.data as ContentEditorRoot[],
+                working[step.cvid],
+              ),
+            }
+          : step,
+      ),
+    }),
+    [version, working],
+  );
+
   const handleImportTranslations = useCallback(
     (translations: ReadonlyMap<string, string>) => {
       setWorking((previous) => {
@@ -317,6 +340,11 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
       translateText={translateText}
       actions={
         <>
+          <LocalizationPreviewDialog
+            contentType={content.type}
+            localizationName={localization.name}
+            buildLocalizedVersion={buildLocalizedVersion}
+          />
           <MachineTranslationButton
             versionId={version.id}
             localizationId={localization.id}
@@ -416,6 +444,15 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     disabled,
   });
 
+  // Delivery-shape clone for the preview dialog.
+  const buildLocalizedVersion = useCallback(
+    (): ContentVersion => ({
+      ...version,
+      data: mergeLocalizedVersionData(content.type, sourceData, workingData),
+    }),
+    [version, content.type, sourceData, workingData],
+  );
+
   const handleImportTranslations = useCallback(
     (translations: ReadonlyMap<string, string>) => {
       setWorkingData((previous: unknown) => {
@@ -491,6 +528,11 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
       translateText={translateText}
       actions={
         <>
+          <LocalizationPreviewDialog
+            contentType={content.type}
+            localizationName={localization.name}
+            buildLocalizedVersion={buildLocalizedVersion}
+          />
           <MachineTranslationButton
             versionId={version.id}
             localizationId={localization.id}

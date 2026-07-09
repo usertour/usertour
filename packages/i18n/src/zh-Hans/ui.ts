@@ -1869,6 +1869,8 @@ const translations = {
       saved: '已保存',
       sourceChanged: '原文已变更',
       onlyUntranslated: '仅看未翻译',
+      previewButton: '预览',
+      previewTitle: '{{locale}} 预览',
       cardMissing: '{{count}} 条未翻译',
       cardOutdated: '{{count}} 条原文已变更',
       allTranslated: '已全部翻译',
