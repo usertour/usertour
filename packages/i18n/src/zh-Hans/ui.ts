@@ -444,7 +444,7 @@ const translations = {
       defaultBadge: '默认',
       editMenuItem: '编辑本地化',
       deleteMenuItem: '删除本地化',
-      setDefaultMenuItem: '设为公司默认',
+      setDefaultMenuItem: '设为项目默认',
       setDefaultSuccess: '已设为默认本地化',
       deleteResource: '本地化',
       deleteSuccess: '本地化已删除',
@@ -474,7 +474,7 @@ const translations = {
     },
     themes: {
       defaultBadge: '默认',
-      setDefaultMenuItem: '设为公司默认',
+      setDefaultMenuItem: '设为项目默认',
       setDefaultSuccess: '已将该主题设为默认',
       duplicateMenuItem: '复制主题',
       deleteMenuItem: '删除主题',

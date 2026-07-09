@@ -54,6 +54,7 @@ export const SettingsLocalizationList = () => {
     },
     {
       header: '',
+      headerClassName: 'w-20',
       cell: (item) => <LocalizationRowActions localization={item} />,
     },
   ];

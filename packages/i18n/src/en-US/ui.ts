@@ -469,7 +469,7 @@ const translations = {
       defaultBadge: 'Default',
       editMenuItem: 'Edit localization',
       deleteMenuItem: 'Delete localization',
-      setDefaultMenuItem: 'Set as company default',
+      setDefaultMenuItem: 'Set as project default',
       setDefaultSuccess: 'The localization has been successfully set as default',
       deleteResource: 'localization',
       deleteSuccess: 'The localization has been successfully deleted',
@@ -499,7 +499,7 @@ const translations = {
     },
     themes: {
       defaultBadge: 'Default',
-      setDefaultMenuItem: 'Set as company default',
+      setDefaultMenuItem: 'Set as project default',
       setDefaultSuccess: 'The theme has been successfully set as default',
       duplicateMenuItem: 'Duplicate theme',
       deleteMenuItem: 'Delete theme',
