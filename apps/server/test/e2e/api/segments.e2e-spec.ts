@@ -33,10 +33,18 @@ describe('API v2 segments (e2e)', () => {
     createApiToken(input: $input){ token apiToken { id } }
   }`;
 
-  async function mint(scopes: Capability[]): Promise<string> {
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const res = await graphql(app, {
       query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds: [projectId] } },
+      variables: {
+        // Env-targeted scopes must NAME environments (server rule) — default to the suite env.
+        input: {
+          name: 'k',
+          scopes,
+          projectIds: [projectId],
+          environmentIds: environmentIds ?? [environmentId],
+        },
+      },
       token: ownerToken,
     });
     return gqlData(res).createApiToken.token;

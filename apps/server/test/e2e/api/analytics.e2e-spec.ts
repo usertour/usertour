@@ -31,9 +31,8 @@ describe('API v2 content analytics (e2e)', () => {
 
   async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const input: Record<string, unknown> = { name: 'k', scopes, projectIds: [projectId] };
-    if (environmentIds) {
-      input.environmentIds = environmentIds;
-    }
+    // Env-targeted scopes must NAME environments (server rule) — default to the suite env(s).
+    input.environmentIds = environmentIds ?? [environmentId, otherEnvironmentId];
     const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
   }
@@ -139,8 +138,11 @@ describe('API v2 content analytics (e2e)', () => {
     expect(missing.status).toBe(404);
     expect(missing.body.error.code).toBe('E1004');
 
+    // Env-targeted tokens always carry an allowlist now, so a foreign-project
+    // environment trips the scope check first — 403 E1029, which also avoids
+    // leaking whether the foreign environment exists.
     const foreignEnv = await api(`${base()}?environmentId=${foreignEnvironmentId}`, token);
-    expect(foreignEnv.status).toBe(404);
-    expect(foreignEnv.body.error.code).toBe('E1026');
+    expect(foreignEnv.status).toBe(403);
+    expect(foreignEnv.body.error.code).toBe('E1029');
   });
 });

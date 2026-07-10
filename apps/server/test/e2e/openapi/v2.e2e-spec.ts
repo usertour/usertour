@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { requiresEnvironmentScope } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
@@ -59,10 +60,21 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
   async function mint(
     scopes: Capability[],
     projectIds: string[],
+    environmentIds?: string[],
   ): Promise<{ token: string; apiToken: { id: string } }> {
+    // Env-targeted scopes must NAME environments (server rule) — default to the
+    // minting project's suite environment.
+    const envDefault = requiresEnvironmentScope(scopes)
+      ? projectIds.map((p) => (p === project2 ? env2 : envA))
+      : undefined;
+    const input: Record<string, unknown> = { name: 'k', scopes, projectIds };
+    const envs = environmentIds ?? envDefault;
+    if (envs) {
+      input.environmentIds = envs;
+    }
     const res = await graphql(app, {
       query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds } },
+      variables: { input },
       token: ownerToken,
     });
     return gqlData(res).createApiToken;
@@ -166,7 +178,8 @@ describe('OpenAPI v2 + API tokens (e2e)', () => {
         query: UPDATE,
         variables: {
           id: created.apiToken.id,
-          input: { name: 'renamed', scopes: [Capability.UserRead] },
+          // Switching onto an env-targeted scope must name environments (server rule).
+          input: { name: 'renamed', scopes: [Capability.UserRead], environmentIds: [envA] },
         },
         token: ownerToken,
       });

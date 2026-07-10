@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { requiresEnvironmentScope } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
@@ -60,8 +61,13 @@ describe('MCP endpoint (e2e)', () => {
     environmentIds?: string[],
   ): Promise<string> {
     const input: Record<string, unknown> = { name: 'mcp', scopes, projectIds };
+    // Env-targeted scopes must NAME environments (server rule) — default to envA;
+    // project-level-only mints stay listless so environment-management tests can
+    // act on environments created mid-test.
     if (environmentIds) {
       input.environmentIds = environmentIds;
+    } else if (requiresEnvironmentScope(scopes)) {
+      input.environmentIds = [envA];
     }
     const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;

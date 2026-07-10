@@ -15,3 +15,4 @@ export * from './conditions/';
 export * from './attribute';
 export * from './content-helper';
 export * from './plan-features';
+export * from './token-scopes';

@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import type { PrismaService } from 'nestjs-prisma';
 
+import { Capability } from '@usertour/types';
+
 import { ParamsError } from '@/common/errors';
 
 import { ApiTokenService } from './api-token.service';
@@ -40,7 +42,8 @@ const makeFakePrisma = (rows: Row[]) => {
         rows.filter((r) => matches(r, where)).map((r) => ({ ...r, projects: [] })),
       findFirst: async ({ where }: { where: Record<string, unknown> }) => {
         const r = rows.find((row) => matches(row, where));
-        return r ? { id: r.id } : null;
+        // requireOwnToken selects id + scopes + allowedEnvironmentIds; return the row.
+        return r ? { ...r } : null;
       },
       // ownTokenProjectIds: row + its project joins (default none).
       findUnique: async ({ where }: { where: { id: string } }) => {
@@ -55,6 +58,7 @@ const makeFakePrisma = (rows: Row[]) => {
         rows.splice(0, rows.length, ...keep);
         return { count };
       },
+      create: async ({ data }: { data: Record<string, unknown> }) => ({ id: 'new', ...data }),
       update: async ({ where, data }: { where: { id: string }; data: Partial<Row> }) => {
         const r = rows.find((row) => row.id === where.id);
         if (!r) throw new Error('not found');
@@ -172,5 +176,71 @@ describe('ApiTokenService — personal/OAuth separation', () => {
       allowedEnvironmentIds: unknown;
     };
     expect(res.allowedEnvironmentIds).toEqual(['e1']);
+  });
+});
+
+describe('ApiTokenService — env-targeted scopes must NAME environments (no "all")', () => {
+  it('create refuses env-targeted scopes without environmentIds', async () => {
+    const service = new ApiTokenService(makeFakePrisma([]));
+    await expect(
+      service.createToken('u1', {
+        name: 'agent key',
+        scopes: [Capability.UserRead],
+        projectIds: ['projA'],
+      } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('create allows project-level-only scopes without environmentIds (allowlist stays null)', async () => {
+    const service = new ApiTokenService(makeFakePrisma([]));
+    const res = (await service.createToken('u1', {
+      name: 'theme key',
+      scopes: [Capability.ThemeRead],
+      projectIds: ['projA'],
+    } as never)) as { token: { allowedEnvironmentIds?: unknown } };
+    expect(res.token.allowedEnvironmentIds ?? null).toBeNull();
+  });
+
+  it('update refuses environmentIds:null while the token holds env-targeted scopes', async () => {
+    const rows = [
+      personal({ scopes: [Capability.UserRead], allowedEnvironmentIds: ['env-a'] } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    await expect(
+      service.updateToken('u1', 'p1', { environmentIds: null } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('update clears the allowlist via explicit null on a project-level-only token', async () => {
+    const rows = [
+      personal({ scopes: [Capability.ThemeRead], allowedEnvironmentIds: ['env-a'] } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', { environmentIds: null } as never)) as {
+      allowedEnvironmentIds: unknown;
+    };
+    expect(res.allowedEnvironmentIds).toBe(Prisma.DbNull);
+  });
+
+  it('update refuses a project change that would drop an env-targeted token to "all"', async () => {
+    const rows = [
+      personal({
+        scopes: [Capability.UserRead],
+        allowedEnvironmentIds: ['env-a'],
+        projects: [{ projectId: 'projA' }],
+      } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    await expect(
+      service.updateToken('u1', 'p1', { projectIds: ['projB'] } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('update refuses ADDING an env-targeted scope to a token with no environment list', async () => {
+    const rows = [personal({ scopes: [Capability.ThemeRead] } as never)];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    await expect(
+      service.updateToken('u1', 'p1', { scopes: [Capability.UserRead] } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
   });
 });

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { requiresEnvironmentScope } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -32,6 +33,7 @@ export class ApiTokenService {
     const scopes = this.validateScopes(input.scopes);
     const projectIds = await this.validateProjects(userId, input.projectIds);
     const allowedEnvironmentIds = await this.validateEnvironments(projectIds, input.environmentIds);
+    this.assertEnvironmentScopeNamed(scopes, allowedEnvironmentIds ?? null);
 
     if (input.expiresAt && input.expiresAt.getTime() <= Date.now()) {
       throw new ParamsError('expiresAt must be in the future');
@@ -79,7 +81,7 @@ export class ApiTokenService {
    * own tokens. The secret is untouched — use {@link rotateToken} to replace it.
    */
   async updateToken(userId: string, id: string, input: UpdateApiTokenInput) {
-    await this.requireOwnToken(userId, id);
+    const existing = await this.requireOwnToken(userId, id);
 
     const data: {
       name?: string;
@@ -104,13 +106,21 @@ export class ApiTokenService {
         create: projectIds.map((projectId) => ({ projectId })),
       };
     }
-    if (input.environmentIds != null) {
-      // Validate against the token's projects — the new set if it's changing, else current.
+
+    // Environment allowlist: three-state input, resolved to an explicit action.
+    // undefined = untouched; null = clear ("not applicable" — only valid while
+    // the FINAL scopes are project-level); array = validate and set.
+    let environmentAction: 'set' | 'clear' | 'keep' = 'keep';
+    let validatedEnvironmentIds: string[] | undefined;
+    if (input.environmentIds !== undefined && input.environmentIds !== null) {
       const scopeProjects = projectIds ?? (await this.ownTokenProjectIds(id));
-      data.allowedEnvironmentIds = await this.validateEnvironments(
+      validatedEnvironmentIds = await this.validateEnvironments(
         scopeProjects,
         input.environmentIds,
       );
+      environmentAction = 'set';
+    } else if (input.environmentIds === null) {
+      environmentAction = 'clear';
     } else if (projectIds !== undefined) {
       // Project ids arrived without a new environment list. Clear the allowlist
       // ONLY when the project set actually CHANGED: the old allowlist then holds
@@ -122,8 +132,28 @@ export class ApiTokenService {
       const changed =
         projectIds.length !== current.length || projectIds.some((p) => !current.includes(p));
       if (changed) {
-        data.allowedEnvironmentIds = Prisma.DbNull;
+        environmentAction = 'clear';
       }
+    }
+
+    // Enforce the env-naming rule on the FINAL state (scopes and allowlist as
+    // they will be after this update) — so adding an env-targeted scope, lifting
+    // the list, or a project change all hit the same gate.
+    const finalScopes = data.scopes ?? (existing.scopes as string[]) ?? [];
+    const finalEnvironmentIds =
+      environmentAction === 'set'
+        ? (validatedEnvironmentIds ?? null)
+        : environmentAction === 'clear'
+          ? null
+          : Array.isArray(existing.allowedEnvironmentIds)
+            ? (existing.allowedEnvironmentIds as string[])
+            : null;
+    this.assertEnvironmentScopeNamed(finalScopes, finalEnvironmentIds);
+
+    if (environmentAction === 'set' && validatedEnvironmentIds !== undefined) {
+      data.allowedEnvironmentIds = validatedEnvironmentIds;
+    } else if (environmentAction === 'clear') {
+      data.allowedEnvironmentIds = Prisma.DbNull;
     }
 
     return this.prisma.apiToken.update({
@@ -174,13 +204,35 @@ export class ApiTokenService {
    * throw. `clientId: null` keeps update/rotate off OAuth tokens (their secret,
    * scopes, and lifecycle are owned by the OAuth grant, not this surface).
    */
-  private async requireOwnToken(userId: string, id: string): Promise<void> {
+  private async requireOwnToken(userId: string, id: string) {
     const existing = await this.prisma.apiToken.findFirst({
       where: { id, userId, clientId: null },
-      select: { id: true },
+      select: { id: true, scopes: true, allowedEnvironmentIds: true },
     });
     if (!existing) {
       throw new ParamsError('Token not found');
+    }
+    return existing;
+  }
+
+  /**
+   * Env-targeted scopes must NAME their environments — "all environments" is not
+   * grantable for capabilities that act on a specific environment (the web form
+   * and consent page enforce the same rule client-side; this is the SSOT). A
+   * credential holding only project-level scopes never consults its environment
+   * list, so null stays valid ("not applicable") there.
+   */
+  private assertEnvironmentScopeNamed(
+    scopes: string[],
+    environmentIds: string[] | null | undefined,
+  ): void {
+    if (
+      requiresEnvironmentScope(scopes) &&
+      (environmentIds == null || environmentIds.length === 0)
+    ) {
+      throw new ParamsError(
+        'environmentIds is required: the selected scopes act on specific environments (end-user data reads/writes, session/segment access, analytics, content publish). Name the environments this token may act on.',
+      );
     }
   }
 

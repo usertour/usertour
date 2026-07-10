@@ -40,9 +40,8 @@ describe('API v2 /content (e2e)', () => {
 
   async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const input: Record<string, unknown> = { name: 'k', scopes, projectIds: [projectId] };
-    if (environmentIds) {
-      input.environmentIds = environmentIds;
-    }
+    // Env-targeted scopes must NAME environments (server rule) — default to the suite env(s).
+    input.environmentIds = environmentIds ?? [environmentId, otherEnvironmentId];
     const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
   }

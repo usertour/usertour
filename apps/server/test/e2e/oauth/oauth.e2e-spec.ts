@@ -20,6 +20,7 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let ownerToken: string;
+  let envMain: string;
   let ownerUserId: string;
   let projectId: string;
   let clientId: string;
@@ -32,7 +33,7 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     projectId = (await buildProject(prisma, { name: 'oauth-e2e' })).id;
-    await buildEnvironment(prisma, { projectId });
+    envMain = (await buildEnvironment(prisma, { projectId })).id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
     ownerUserId = owner.user.id;
@@ -163,7 +164,8 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     const consent = await http()
       .post('/oauth/authorize/consent')
       .set('Authorization', `Bearer ${ownerToken}`)
-      .send({ transaction, projectId, approved: true })
+      // Full-role grant includes env-targeted scopes — environments must be named now.
+      .send({ transaction, projectId, approved: true, environmentIds: [envMain] })
       .expect(201);
     const redirect = new URL(consent.body.redirect);
     expect(redirect.searchParams.get('state')).toBe('st1');
@@ -260,7 +262,8 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     const consent = await http()
       .post('/oauth/authorize/consent')
       .set('Authorization', `Bearer ${ownerToken}`)
-      .send({ transaction, projectId, approved: true })
+      // Full-role grant includes env-targeted scopes — environments must be named now.
+      .send({ transaction, projectId, approved: true, environmentIds: [envMain] })
       .expect(201);
     const code = new URL(consent.body.redirect).searchParams.get('code') as string;
     const tok = await http()
@@ -389,7 +392,8 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     const consent = await http()
       .post('/oauth/authorize/consent')
       .set('Authorization', `Bearer ${ownerToken}`)
-      .send({ transaction, projectId, approved: true })
+      // Full-role grant includes env-targeted scopes — environments must be named now.
+      .send({ transaction, projectId, approved: true, environmentIds: [envMain] })
       .expect(201);
     const code = new URL(consent.body.redirect).searchParams.get('code') as string;
 

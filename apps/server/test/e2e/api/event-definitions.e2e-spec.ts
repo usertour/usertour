@@ -32,16 +32,25 @@ describe('API v2 /event-definitions (e2e)', () => {
   let ownerToken: string; // JWT for GraphQL token minting
   let ownerUserId: string;
   let projectId: string;
+  let environmentId: string;
   const codeName = 'evt_spike_flow_started';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
   }`;
 
-  async function mint(scopes: Capability[]): Promise<string> {
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const res = await graphql(app, {
       query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds: [projectId] } },
+      variables: {
+        // Env-targeted scopes must NAME environments (server rule) — default to the suite env.
+        input: {
+          name: 'k',
+          scopes,
+          projectIds: [projectId],
+          environmentIds: environmentIds ?? [environmentId],
+        },
+      },
       token: ownerToken,
     });
     return gqlData(res).createApiToken.token;
@@ -57,6 +66,7 @@ describe('API v2 /event-definitions (e2e)', () => {
     prisma = app.get(PrismaService);
 
     projectId = (await buildProject(prisma, { name: 'api-v2-events' })).id;
+    environmentId = (await buildEnvironment(prisma, { projectId })).id;
     await buildEnvironment(prisma, { projectId });
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;

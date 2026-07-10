@@ -43,9 +43,8 @@ describe('API v2 content publish (e2e)', () => {
 
   async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const input: Record<string, unknown> = { name: 'k', scopes, projectIds: [projectId] };
-    if (environmentIds) {
-      input.environmentIds = environmentIds;
-    }
+    // Env-targeted scopes must NAME environments (server rule) — default to the suite env(s).
+    input.environmentIds = environmentIds ?? [environmentId, otherEnvironmentId];
     const res = await graphql(app, { query: CREATE, variables: { input }, token: ownerToken });
     return gqlData(res).createApiToken.token;
   }
@@ -172,10 +171,11 @@ describe('API v2 content publish (e2e)', () => {
     );
   });
 
-  it('member env ceiling caps the token: a restricted ADMIN cannot escape via an unrestricted key', async () => {
-    // ADMIN member limited to `environmentId`; they mint a key WITHOUT env
-    // restriction — the membership ceiling must still cap it (E1029), else a
-    // restricted member escapes their environment scope by minting a key.
+  it('member env ceiling caps the token: a restricted ADMIN cannot escape via a broader key', async () => {
+    // ADMIN member limited to `environmentId`; they mint a key NAMING both envs
+    // (env-targeted scopes must name environments now) — the membership ceiling
+    // must still cap the key to the member's own envs (E1029), else a restricted
+    // member escapes their environment scope by minting a broader key.
     const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
     adminUserId = admin.user.id;
     await prisma.userOnProject.updateMany({
@@ -186,9 +186,10 @@ describe('API v2 content publish (e2e)', () => {
       query: CREATE,
       variables: {
         input: {
-          name: 'admin-unrestricted',
+          name: 'admin-broad',
           scopes: [Capability.ContentRead, Capability.ContentPublish],
           projectIds: [projectId],
+          environmentIds: [environmentId, otherEnvironmentId],
         },
       },
       token: admin.token,
@@ -248,14 +249,16 @@ describe('API v2 content publish (e2e)', () => {
     expect(res.body.error.code).toBe('E1017');
   });
 
-  it('rejects an environmentId not in the project (400 E1017)', async () => {
+  it('rejects an environmentId outside the token scope/project (403 E1029)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     const res = await api('post', publishPath(), token).send({
       environmentId: 'not-in-project',
       versionId,
     });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('E1017');
+    // The token's allowlist (mandatory for publish scope now) rejects the
+    // foreign env before the project-membership check — scope error, not E1017.
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1029');
   });
 
   it('rejects publishing an unusable (empty, themeless) flow (422 E1027)', async () => {

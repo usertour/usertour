@@ -57,7 +57,12 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     const minted = await graphql(app, {
       query: CREATE,
       variables: {
-        input: { name: 'k', scopes: [Capability.UserRead], projectIds: [fx.projectId] },
+        input: {
+          name: 'k',
+          scopes: [Capability.UserRead],
+          projectIds: [fx.projectId],
+          environmentIds: [fx.environmentId],
+        },
       },
       token: ownerToken,
     });
@@ -153,10 +158,18 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     expect(res.body.error.code).toBe('E1012');
   });
 
-  async function mint(scopes: Capability[]): Promise<string> {
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const minted = await graphql(app, {
       query: CREATE,
-      variables: { input: { name: 'kw', scopes, projectIds: [fx.projectId] } },
+      variables: {
+        // Env-targeted scopes must NAME environments (server rule) — default to the suite env.
+        input: {
+          name: 'kw',
+          scopes,
+          projectIds: [fx.projectId],
+          environmentIds: environmentIds ?? [fx.environmentId],
+        },
+      },
       token: ownerToken,
     });
     return gqlData(minted).createApiToken.token;

@@ -115,10 +115,15 @@ export class UpdateApiTokenInput {
   @IsString({ each: true })
   scopes?: string[];
 
+  /**
+   * Three-state: absent = untouched; explicit null = clear (only valid while the
+   * final scopes are project-level — env-targeted scopes must name environments);
+   * array = replace the allowlist.
+   */
   @Field(() => [String], { nullable: true })
   @IsOptional()
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
-  environmentIds?: string[];
+  environmentIds?: string[] | null;
 }

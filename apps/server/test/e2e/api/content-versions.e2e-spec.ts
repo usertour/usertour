@@ -29,15 +29,24 @@ describe('API v2 /content-versions (e2e)', () => {
   let writeVersionId: string;
   let configContentId: string;
   let configVersionId: string;
+  let environmentId: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
   }`;
 
-  async function mint(scopes: Capability[]): Promise<string> {
+  async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const res = await graphql(app, {
       query: CREATE,
-      variables: { input: { name: 'k', scopes, projectIds: [projectId] } },
+      variables: {
+        // Env-targeted scopes must NAME environments (server rule) — default to the suite env.
+        input: {
+          name: 'k',
+          scopes,
+          projectIds: [projectId],
+          environmentIds: environmentIds ?? [environmentId],
+        },
+      },
       token: ownerToken,
     });
     return gqlData(res).createApiToken.token;
@@ -53,7 +62,7 @@ describe('API v2 /content-versions (e2e)', () => {
     prisma = app.get(PrismaService);
 
     projectId = (await buildProject(prisma, { name: 'api-v2-versions' })).id;
-    const environmentId = (await buildEnvironment(prisma, { projectId })).id;
+    environmentId = (await buildEnvironment(prisma, { projectId })).id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
     ownerUserId = owner.user.id;
