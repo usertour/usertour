@@ -35,27 +35,34 @@ const dateMsg = {
     'Not a valid date — use YYYY-MM-DD (interpreted in `timezone`) or an ISO timestamp WITH timezone.',
 };
 
+// Reusable analytics date/timezone fields — the SAME refines the MCP analytics
+// tools use, so boundary validation (reject non-IANA zones and timezone-less
+// datetimes) can't drift between the REST and MCP surfaces.
+export const analyticsStartDate = z
+  .string()
+  .refine(isUnambiguousIsoDate, dateMsg)
+  .optional()
+  .describe('ISO date, inclusive. Default: 30 days ago.');
+export const analyticsEndDate = z
+  .string()
+  .refine(isUnambiguousIsoDate, dateMsg)
+  .optional()
+  .describe('ISO date, inclusive. Default: today.');
+export const analyticsTimezone = z
+  .string()
+  .refine(isValidTimeZone, {
+    message: 'Not a valid IANA timezone (e.g. "UTC", "America/New_York", "Asia/Tokyo").',
+  })
+  .optional()
+  .describe('IANA timezone used for the per-day bucketing. Default: UTC.');
+
 export const analyticsQuery = z.object({
   environmentId: z
     .string()
     .describe('Environment whose sessions to aggregate (content is project-level; pick the env).'),
-  startDate: z
-    .string()
-    .refine(isUnambiguousIsoDate, dateMsg)
-    .optional()
-    .describe('ISO date, inclusive. Default: 30 days ago.'),
-  endDate: z
-    .string()
-    .refine(isUnambiguousIsoDate, dateMsg)
-    .optional()
-    .describe('ISO date, inclusive. Default: today.'),
-  timezone: z
-    .string()
-    .refine(isValidTimeZone, {
-      message: 'Not a valid IANA timezone (e.g. "UTC", "America/New_York", "Asia/Tokyo").',
-    })
-    .optional()
-    .describe('IANA timezone used for the per-day bucketing. Default: UTC.'),
+  startDate: analyticsStartDate,
+  endDate: analyticsEndDate,
+  timezone: analyticsTimezone,
 });
 export class AnalyticsQueryDto extends createZodDto(analyticsQuery) {}
 export type AnalyticsQuery = z.infer<typeof analyticsQuery>;

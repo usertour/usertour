@@ -286,6 +286,78 @@ describe('MCP endpoint (e2e)', () => {
       expect(payload).not.toHaveProperty('tasks');
     });
 
+    it('get_content_analytics validates timezone/date at the boundary (clean tool error, no RangeError)', async () => {
+      const token = await mint([Capability.AnalyticsRead], [projectA]);
+      const content = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+      await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+
+      // Invalid IANA timezone — must be rejected at the schema (as REST does),
+      // not flow into AT TIME ZONE / date-fns-tz and throw an internal RangeError.
+      const badTz = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'get_content_analytics',
+              arguments: { contentId: content.id, environmentId: envA, timezone: 'Beijing' },
+            },
+          },
+          token,
+        ),
+      );
+      expect(badTz.result.isError).toBe(true);
+      expect(badTz.result.content[0].text).toMatch(/timezone/i);
+
+      // Timezone-less datetime — same rule as the REST filters.
+      const badDate = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'get_content_analytics',
+              arguments: {
+                contentId: content.id,
+                environmentId: envA,
+                startDate: '2026-07-10T00:00:00',
+              },
+            },
+          },
+          token,
+        ),
+      );
+      expect(badDate.result.isError).toBe(true);
+
+      // A valid IANA zone + date-only still works.
+      const ok = extractResult(
+        await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'get_content_analytics',
+              arguments: {
+                contentId: content.id,
+                environmentId: envA,
+                timezone: 'Asia/Tokyo',
+                startDate: '2026-07-01',
+              },
+            },
+          },
+          token,
+        ),
+      );
+      expect(ok.result.isError).toBeFalsy();
+    });
+
     it('list_users returns the seeded user in the text content', async () => {
       const token = await mint([Capability.UserRead], [projectA]);
       const res = await rpc(

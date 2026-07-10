@@ -1,4 +1,9 @@
 import { Capability, ContentDataType } from '@usertour/types';
+import {
+  analyticsEndDate,
+  analyticsStartDate,
+  analyticsTimezone,
+} from '@/api/analytics/analytics.schema';
 import { Environment } from '@prisma/client';
 import { z } from 'zod';
 
@@ -1009,12 +1014,9 @@ export function buildReadTools(): McpTool[] {
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,
-        startDate: z.string().optional().describe('ISO date, inclusive. Default: 30 days ago.'),
-        endDate: z.string().optional().describe('ISO date, inclusive. Default: today.'),
-        timezone: z
-          .string()
-          .optional()
-          .describe('IANA timezone for the per-day bucketing. Default: UTC.'),
+        startDate: analyticsStartDate,
+        endDate: analyticsEndDate,
+        timezone: analyticsTimezone,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
@@ -1042,12 +1044,9 @@ export function buildReadTools(): McpTool[] {
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,
-        startDate: z.string().optional().describe('ISO date, inclusive. Default: 30 days ago.'),
-        endDate: z.string().optional().describe('ISO date, inclusive. Default: today.'),
-        timezone: z
-          .string()
-          .optional()
-          .describe('IANA timezone for the per-day bucketing. Default: UTC.'),
+        startDate: analyticsStartDate,
+        endDate: analyticsEndDate,
+        timezone: analyticsTimezone,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
