@@ -309,6 +309,46 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('rejects editing a PUBLISHED (locked) version with a readable 409 E0049 — not a 500', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    // Isolated fixture: a published edited version (locked for edits).
+    const env = await buildEnvironment(prisma, { projectId });
+    const content = await buildContent(prisma, { projectId, environmentId: env.id, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    await prisma.contentOnEnvironment.create({
+      data: {
+        environmentId: env.id,
+        contentId: content.id,
+        published: true,
+        publishedVersionId: version.id,
+      },
+    });
+
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { when: [{ type: 'current_url', includes: ['/locked'] }] } });
+    // Domain VersionNotEditableError must surface as an actionable 409, not the
+    // 500 E0000 fallback — an agent needs to know to fork the draft, not retry.
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E0049');
+    expect(res.body.error.message).toContain('Create a new editable version');
+  });
+
+  it('maps a domain ParamsError to 400 E0003 (create version on a version-less content)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const env = await buildEnvironment(prisma, { projectId });
+    const bare = await buildContent(prisma, { projectId, environmentId: env.id, type: 'flow' });
+    const res = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${bare.id}/versions`,
+      token,
+    ).send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E0003');
+  });
+
   it('rejects a version write with an unknown themeId (404 E1021)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const res = await api(

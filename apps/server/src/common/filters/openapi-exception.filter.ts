@@ -8,9 +8,24 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { BaseError } from '@/common/errors/base';
 import { OpenAPIError, ValidationError } from '@/common/errors/errors';
 import { ExpiredApiKeyError, InvalidApiKeyError, MissingApiKeyError } from '@/common/errors';
 import { resolveOrigin } from '@/common/http/resolve-origin';
+
+/**
+ * Domain BaseErrors (thrown below the API layer, no HTTP status of their own)
+ * that map to a meaningful REST status. Without this they fall through to the
+ * 500 E0000 fallback — a client can't tell "fork the draft first" (recoverable,
+ * E0049) from a server crash, and ops sees false 500s. The MCP surface already
+ * translates these codes (mcp.service errorMessage); this is the REST twin.
+ * Unmapped BaseErrors stay 500 E0000 on purpose (unknown internals don't leak).
+ */
+const DOMAIN_ERROR_STATUS: Record<string, HttpStatus> = {
+  E0049: HttpStatus.CONFLICT, // VersionNotEditableError — create a new editable version
+  E0050: HttpStatus.CONFLICT, // VersionConflictError — concurrent modification
+  E0003: HttpStatus.BAD_REQUEST, // ParamsError — invalid request against domain state
+};
 
 @Catch()
 export class OpenAPIExceptionFilter implements ExceptionFilter {
@@ -53,6 +68,12 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
       status = exception.statusCode;
       errorCode = exception.code;
       message = this.getErrorMessage(exception, request);
+    }
+    // Domain BaseErrors with a known REST mapping (see DOMAIN_ERROR_STATUS).
+    else if (exception instanceof BaseError && DOMAIN_ERROR_STATUS[exception.code]) {
+      status = DOMAIN_ERROR_STATUS[exception.code];
+      errorCode = exception.code;
+      message = exception.getMessage((request.headers['accept-language'] as string) ?? 'en');
     }
     // Handle other errors
     else {
