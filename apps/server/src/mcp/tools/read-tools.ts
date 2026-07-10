@@ -98,6 +98,12 @@ export async function resolveEnvironment(
   args: Record<string, unknown>,
   ctx: McpToolContext,
 ): Promise<Environment> {
+  // Reuse the env runWithAudit already resolved for this call (env-scoped audited
+  // tools). The explicit `environmentId` is baked into the cached result, so an
+  // arg that disagreed would have failed there first — safe to short-circuit.
+  if (ctx.resolvedEnvironment) {
+    return ctx.resolvedEnvironment;
+  }
   const environmentId = asString(args.environmentId);
   if (environmentId) {
     // Explicit target: resolve it, then enforce the token's environment scope (read or

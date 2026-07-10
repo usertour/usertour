@@ -160,7 +160,13 @@ export class McpService {
     if (!meta) {
       return tool.handler(args, ctx);
     }
+    // Resolve the env ONCE for env-scoped audited tools and stash it on ctx, so
+    // the handler's own resolveEnvironment reuses it instead of resolving a
+    // second time (two lookups + scope checks, or two full env scans by default).
     const environment = meta.envScoped ? await resolveEnvironment(args, ctx) : undefined;
+    if (environment) {
+      ctx.resolvedEnvironment = environment;
+    }
     const before = meta.fetchBefore ? await meta.fetchBefore(args, ctx, environment) : undefined;
     const result = await tool.handler(args, ctx);
     this.audit.record(buildMcpAuditEntry(tool, ctx, args, result, before, environment));

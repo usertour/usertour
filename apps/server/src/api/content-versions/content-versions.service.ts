@@ -60,9 +60,27 @@ type VersionNode = {
   config?: unknown;
   data?: unknown;
   content?: { type?: string | null } | null;
+  // Present when the steps/questions expand was requested — the domain query
+  // includes them in the SAME fetch, so toVersion needn't re-load per node (N+1).
+  steps?: {
+    id: string;
+    cvid: string | null;
+    name: string | null;
+    type: string | null;
+    themeId?: string | null;
+    sequence: number;
+    data: unknown;
+    target?: unknown;
+    setting?: unknown;
+    trigger?: unknown;
+  }[];
   updatedAt: Date;
   createdAt: Date;
 };
+
+/** Whether the response needs the version's step rows (either expand pulls them). */
+const needsSteps = (expand: string[]): boolean =>
+  expand.includes('steps') || expand.includes('questions');
 
 /**
  * v2 content-versions handler. Depends on the domain {@link ContentService}; the
@@ -88,14 +106,18 @@ export class ApiContentVersionsService {
     // so the read-back doesn't re-run the two catalog queries.
     preloadedResolvers?: DecompileResolvers,
   ): Promise<ContentVersion> {
+    const expand = toArray(query.expand);
     const version = await this.content.getContentVersionWithRelations(id, projectId, {
       content: true,
+      // Fetch steps in the same query when the response needs them (steps or
+      // questions expand) instead of a second round-trip in toVersion.
+      ...(needsSteps(expand) ? { steps: true } : {}),
     });
     if (!version || (version as { contentId?: string }).contentId !== contentId) {
       throw new ContentNotFoundError();
     }
     const resolvers = preloadedResolvers ?? (await loadDecompileResolvers(this.prisma, projectId));
-    return this.toVersion(version, projectId, toArray(query.expand), resolvers);
+    return this.toVersion(version, projectId, expand, resolvers);
   }
 
   async list(
@@ -126,7 +148,8 @@ export class ApiContentVersionsService {
           projectId,
           contentId,
           params,
-          { content: true },
+          // Steps in the SAME query when expanded — avoids one findFirst per node.
+          { content: true, ...(needsSteps(expand) ? { steps: true } : {}) },
           orderBy,
         ),
       map: (node) => this.toVersion(node, projectId, expand, resolvers),
@@ -161,7 +184,9 @@ export class ApiContentVersionsService {
     if (!wantsQuestions && !wantsSteps) {
       return mapVersion(version, null, undefined, rules, data);
     }
-    const steps = await this.loadSteps(version.id, projectId);
+    // Steps were loaded in the list/get query (needsSteps === true here). Fall back
+    // to a lookup only if a caller passed a node without them (defensive).
+    const steps = version.steps ?? (await this.loadSteps(version.id, projectId));
     const questions = wantsQuestions ? mapQuestions(steps) : null;
     const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
     return mapVersion(version, questions, decompiled, rules, data);

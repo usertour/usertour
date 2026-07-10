@@ -10,6 +10,7 @@ import { ApiContentSessionsService } from '@/api/content-sessions/content-sessio
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
+import type { Environment } from '@prisma/client';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
@@ -51,6 +52,10 @@ export interface McpToolContext {
   /** Websocket runtime diagnosis — diagnose_content delegates the per-user gate
    * evaluation here so each gate's status is the runtime's own function. */
   contentDiagnosis: ContentDiagnosisService;
+  /** Environment resolved once by runWithAudit (env-scoped audited tools) and
+   * reused by the handler's resolveEnvironment — avoids resolving twice per call
+   * (2 lookups + 2 scope checks, or 2 full env scans on the default path). */
+  resolvedEnvironment?: Environment;
 }
 
 /**
