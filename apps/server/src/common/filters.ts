@@ -1,9 +1,22 @@
 import { z } from 'zod';
 
-// ISO 8601 datetime string, validated without relying on zod's moved .datetime() API.
-const isoDateTime = z
-  .string()
-  .refine((s) => !Number.isNaN(Date.parse(s)), 'Expected an ISO 8601 datetime');
+/**
+ * An UNAMBIGUOUS ISO 8601 instant: a date-only string (spec-parsed as UTC —
+ * deployment-independent) or a datetime WITH an explicit timezone (Z / ±hh:mm).
+ * A timezone-less datetime ("2026-07-10T00:00:00") is REJECTED: JS parses it in
+ * the SERVER's local zone, so the same request would filter a different range on
+ * a UTC cloud deployment vs a UTC+8 self-host — an incremental-sync client then
+ * silently skips or re-reads hours of records.
+ */
+const UNAMBIGUOUS_ISO = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2}))?$/;
+export const isUnambiguousIsoDate = (s: string): boolean =>
+  UNAMBIGUOUS_ISO.test(s) && !Number.isNaN(Date.parse(s));
+
+const ISO_MESSAGE =
+  'Expected an ISO 8601 date ("2026-07-10") or datetime WITH timezone ' +
+  '("2026-07-10T00:00:00Z" / "…+08:00") — a timezone-less datetime is ambiguous across deployments.';
+
+const isoDateTime = z.string().refine(isUnambiguousIsoDate, ISO_MESSAGE);
 
 /**
  * Reusable `createdAt` range query fields for v2 list endpoints. Flat params
@@ -13,10 +26,10 @@ const isoDateTime = z
 export const createdAtRangeFields = {
   createdAfter: isoDateTime
     .optional()
-    .describe('Only items created at or after this ISO 8601 time.'),
+    .describe('Only items created at or after this time — ISO date or datetime WITH timezone.'),
   createdBefore: isoDateTime
     .optional()
-    .describe('Only items created at or before this ISO 8601 time.'),
+    .describe('Only items created at or before this time — ISO date or datetime WITH timezone.'),
 };
 
 /**

@@ -144,6 +144,20 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     expect(res.body.error.code).toBe('E1025');
   });
 
+  it('rejects a timezone-less createdAfter datetime (400 E1017 — ambiguous across deployments)', async () => {
+    // "2026-07-10T00:00:00" parses in the SERVER local zone — the same request
+    // would filter a different range on a UTC cloud vs a UTC+8 self-host.
+    const bad = await api('get', `${v2path()}?createdAfter=2026-07-10T00:00:00`, v2Token);
+    expect(bad.status).toBe(400);
+    expect(bad.body.error.code).toBe('E1017');
+
+    // Unambiguous forms stay accepted: date-only and explicit-offset datetimes.
+    expect((await api('get', `${v2path()}?createdAfter=2026-07-10`, v2Token)).status).toBe(200);
+    expect(
+      (await api('get', `${v2path()}?createdAfter=2026-07-10T00:00:00%2B08:00`, v2Token)).status,
+    ).toBe(200);
+  });
+
   it('rejects insufficient scope (403 E1012)', async () => {
     const minted = await graphql(app, {
       query: CREATE,

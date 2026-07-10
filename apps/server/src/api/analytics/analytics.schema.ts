@@ -1,4 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
+
+import { isUnambiguousIsoDate } from '@/common/filters';
 import { z } from 'zod';
 
 import { ApiObjectType } from '../shared/object-type';
@@ -24,10 +26,14 @@ const isValidTimeZone = (tz: string): boolean => {
   }
 };
 
-// A date/timestamp string the range code can actually parse — an unparseable value
-// otherwise flows to `new Date(str)` in the domain query as `Invalid Date` → a 500.
-const isValidDate = (v: string): boolean => !Number.isNaN(Date.parse(v));
-const dateMsg = { message: 'Not a valid date — use YYYY-MM-DD or an ISO timestamp.' };
+// A calendar date (YYYY-MM-DD, interpreted in the `timezone` param) or an ISO
+// timestamp WITH timezone. Timezone-less datetimes are rejected — they'd parse in
+// the server's local zone and shift the range per deployment (shared rule with
+// the list filters' isUnambiguousIsoDate).
+const dateMsg = {
+  message:
+    'Not a valid date — use YYYY-MM-DD (interpreted in `timezone`) or an ISO timestamp WITH timezone.',
+};
 
 export const analyticsQuery = z.object({
   environmentId: z
@@ -35,12 +41,12 @@ export const analyticsQuery = z.object({
     .describe('Environment whose sessions to aggregate (content is project-level; pick the env).'),
   startDate: z
     .string()
-    .refine(isValidDate, dateMsg)
+    .refine(isUnambiguousIsoDate, dateMsg)
     .optional()
     .describe('ISO date, inclusive. Default: 30 days ago.'),
   endDate: z
     .string()
-    .refine(isValidDate, dateMsg)
+    .refine(isUnambiguousIsoDate, dateMsg)
     .optional()
     .describe('ISO date, inclusive. Default: today.'),
   timezone: z
