@@ -192,27 +192,26 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
       },
       select: { id: true },
     });
-    if (stale.length > 0) {
-      const ids = stale.map((g) => g.id);
-      await this.prisma.$transaction([
-        this.prisma.apiToken.updateMany({
-          where: { oauthGrantId: { in: ids } },
-          data: { isActive: false },
-        }),
-        this.prisma.oAuthGrant.updateMany({
-          where: { id: { in: ids } },
-          data: { revokedAt: new Date(), hashedRefreshToken: null },
-        }),
-      ]);
-    }
+    const staleIds = stale.map((g) => g.id);
 
-    // Rotate the grant's refresh hash AND issue the access-token row atomically.
-    // Unpaired, a failure between the two bricks the connection: the OLD refresh
-    // token no longer resolves (hash already rotated) and the NEW one was never
-    // delivered — the client's retry gets invalid_grant and the user must
-    // re-consent. One transaction keeps rotation-and-issuance all-or-nothing.
+    // Revoke the superseded grants AND rotate+issue the new one in ONE transaction.
+    // Any split bricks the connection on a mid-way failure: the old grant's refresh
+    // hash / tokens are already gone but the new grant + access token were never
+    // committed, so the client's retry gets invalid_grant and the user must
+    // re-consent. All-or-nothing keeps the working connection intact on failure.
     const secret = accessTokenSecret(token.accessToken);
     await this.prisma.$transaction(async (tx) => {
+      if (staleIds.length > 0) {
+        await tx.apiToken.updateMany({
+          where: { oauthGrantId: { in: staleIds } },
+          data: { isActive: false },
+        });
+        await tx.oAuthGrant.updateMany({
+          where: { id: { in: staleIds } },
+          data: { revokedAt: new Date(), hashedRefreshToken: null },
+        });
+      }
+
       // Rotating refresh overwrites the prior hash so an old refresh token no
       // longer resolves (reuse detection).
       await tx.oAuthGrant.upsert({

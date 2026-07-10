@@ -319,6 +319,58 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     }
   });
 
+  it('re-authorizing supersedes the prior grant atomically — old dead, new live', async () => {
+    // A fresh authorization for the same (user, client, project) revokes the prior
+    // grant AND issues the new one in ONE transaction, so a mid-way failure can\'t
+    // leave the user with neither. Own client to avoid disturbing the module grant.
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Re-authorize',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    try {
+      const first = await runFlow(cid);
+      const second = await runFlow(cid); // supersedes `first`
+
+      // New access token works…
+      const live = await http()
+        .post('/mcp')
+        .set('Authorization', `Bearer ${second.access_token}`)
+        .set('Accept', 'application/json, text/event-stream')
+        .send({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      expect(live.status).not.toBe(401);
+
+      // …the old access token is dead (its grant was revoked in the same tx)…
+      const dead = await http()
+        .post('/mcp')
+        .set('Authorization', `Bearer ${first.access_token}`)
+        .set('Accept', 'application/json, text/event-stream')
+        .send({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      expect(dead.status).toBe(401);
+
+      // …and the old refresh token no longer mints (its grant hash was cleared).
+      await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({ grant_type: 'refresh_token', refresh_token: first.refresh_token, client_id: cid })
+        .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+
+      // Exactly one live grant remains for the pair.
+      const active = await prisma.oAuthGrant.count({
+        where: { clientId: cid, revokedAt: null },
+      });
+      expect(active).toBe(1);
+    } finally {
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
   it('a confidential client MUST present its secret on refresh (RFC 6749 §6)', async () => {
     const reg = await http()
       .post('/oauth/register')
