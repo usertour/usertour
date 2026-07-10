@@ -569,16 +569,28 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
   const { invoke: createContentVersion } = useCreateContentVersionMutation();
   const { toast } = useToast();
 
+  const localization = localizationList?.find((item) => item.locale === locateCode);
+  const defaultLocalization = localizationList?.find((item) => item.isDefault);
+
   // Opening the translation editor on a published version forks a draft
   // first — the same behavior as "Edit in builder" — so translations always
   // land on the draft and ship through the normal publish flow. The fork
   // carries every translation row over (copyVersionLocalizations, keyed by
   // cvid) and the server reuses an existing draft, so re-entry can't stack
   // drafts. The editor stays unmounted until the refetched content points at
-  // the draft. View-only members can't fork (no write capability), so they
-  // read the published version's translations in place instead.
+  // the draft.
+  //
+  // Forking is a write, so its condition must match "the editor will actually
+  // mount": view-only members can't fork (no write capability) and read the
+  // published translations in place instead, and a dead-end URL (unknown
+  // locale, tracker) must not mint a draft as a side effect.
   const needsFork = Boolean(
-    !isViewOnly && content && version?.id && isVersionPublished(content, version.id),
+    !isViewOnly &&
+      content &&
+      content.type !== ContentDataType.TRACKER &&
+      localization &&
+      version?.id &&
+      isVersionPublished(content, version.id),
   );
   const forkingRef = useRef(false);
   useEffect(() => {
@@ -606,9 +618,6 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
   if (version?.id && !loading) {
     loadedVersionIdRef.current = version.id;
   }
-
-  const localization = localizationList?.find((item) => item.locale === locateCode);
-  const defaultLocalization = localizationList?.find((item) => item.isDefault);
 
   if (
     !content ||
