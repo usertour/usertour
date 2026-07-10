@@ -186,11 +186,27 @@ export interface LocalizedFieldRowProps {
   placeholder?: string;
   disabled: boolean;
   outdated?: boolean;
+  /**
+   * Reworking an outdated row is what its marker asks for — called on the
+   * first edit (typing or per-row AI translate) so the owner removes the
+   * row's path from the outdated set, which clears the dot, the section
+   * chip and the card count together.
+   */
+  onOutdatedResolved?: () => void;
   onValueChange: (value: string) => void;
 }
 
 export const LocalizedFieldRow = (props: LocalizedFieldRowProps) => {
-  const { label, source, value, placeholder, disabled, outdated, onValueChange } = props;
+  const {
+    label,
+    source,
+    value,
+    placeholder,
+    disabled,
+    outdated,
+    onOutdatedResolved,
+    onValueChange,
+  } = props;
   const { t } = useTranslation();
   const { showOnlyMissing, translateText } = useLocalizationView();
 
@@ -198,6 +214,13 @@ export const LocalizedFieldRow = (props: LocalizedFieldRowProps) => {
   if (showOnlyMissing && !missing) {
     return null;
   }
+
+  const handleValueChange = (nextValue: string) => {
+    if (outdated) {
+      onOutdatedResolved?.();
+    }
+    onValueChange(nextValue);
+  };
 
   return (
     <div className={FIELD_GRID}>
@@ -211,10 +234,12 @@ export const LocalizedFieldRow = (props: LocalizedFieldRowProps) => {
           placeholder={placeholder}
           disabled={disabled}
           className={cn(translateText && !disabled ? 'pr-14' : 'pr-8')}
-          onChange={(event) => onValueChange(event.target.value)}
+          onChange={(event) => handleValueChange(event.target.value)}
         />
         <div className="absolute inset-y-0 right-2.5 flex items-center gap-1.5">
-          {!disabled && <UnitTranslateButton sourceText={source} onTranslated={onValueChange} />}
+          {!disabled && (
+            <UnitTranslateButton sourceText={source} onTranslated={handleValueChange} />
+          )}
           {missing ? (
             <span
               title={t('contents.localization.statusUntranslated')}
@@ -263,13 +288,28 @@ interface LocalizedElementEditorProps {
   sourceElement: ContentEditorElement;
   workingElement: ContentEditorElement;
   label: string;
-  outdated: boolean;
+  /**
+   * Field-path suffixes (walker unit paths minus the `<element>:` prefix,
+   * e.g. 'text.0.0', 'button.text') whose source text drifted since the
+   * translation was saved — rows match against it to flag the exact line.
+   */
+  outdatedFields: ReadonlySet<string>;
+  /** Reports a reworked outdated field (same suffix space as outdatedFields). */
+  onFieldResolved: (fieldPath: string) => void;
   disabled: boolean;
   onElementChange: (element: ContentEditorElement) => void;
 }
 
 const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
-  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const {
+    sourceElement,
+    workingElement,
+    label,
+    outdatedFields,
+    onFieldResolved,
+    disabled,
+    onElementChange,
+  } = props;
   const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorTextElement;
   const working = workingElement as ContentEditorTextElement;
@@ -288,7 +328,7 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
   };
 
   return (
-    <LocalizedElementSection label={label} outdated={outdated}>
+    <LocalizedElementSection label={label} outdated={outdatedFields.size > 0}>
       {pairs.map((pair) => (
         <LocalizedFieldRow
           key={pair.path.join('.')}
@@ -296,6 +336,8 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
           value={pair.value}
           placeholder={pair.sourceText}
           disabled={disabled}
+          outdated={outdatedFields.has(`text.${pair.path.join('.')}`)}
+          onOutdatedResolved={() => onFieldResolved(`text.${pair.path.join('.')}`)}
           onValueChange={(text) => handleLeafChange(pair.path, text)}
         />
       ))}
@@ -304,7 +346,15 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
 };
 
 const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
-  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const {
+    sourceElement,
+    workingElement,
+    label,
+    outdatedFields,
+    onFieldResolved,
+    disabled,
+    onElementChange,
+  } = props;
   const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorButtonElement;
   const working = workingElement as ContentEditorButtonElement;
@@ -316,12 +366,14 @@ const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
     return null;
   }
   return (
-    <LocalizedElementSection label={label} outdated={outdated}>
+    <LocalizedElementSection label={label} outdated={outdatedFields.size > 0}>
       <LocalizedFieldRow
         source={sourceText}
         value={toText(working.data?.text)}
         placeholder={sourceText}
         disabled={disabled}
+        outdated={outdatedFields.has('button.text')}
+        onOutdatedResolved={() => onFieldResolved('button.text')}
         onValueChange={(text) => onElementChange({ ...working, data: { ...working.data, text } })}
       />
     </LocalizedElementSection>
@@ -357,7 +409,15 @@ const MediaActionButton = (props: MediaActionButtonProps) => {
 };
 
 const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
-  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const {
+    sourceElement,
+    workingElement,
+    label,
+    outdatedFields,
+    onFieldResolved,
+    disabled,
+    onElementChange,
+  } = props;
   const { t } = useTranslation();
   const { upload } = useAws();
   const { showOnlyMissing } = useLocalizationView();
@@ -372,6 +432,9 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
   }
 
   const handleImageUrlChange = (url: string) => {
+    if (outdatedFields.has('image.url')) {
+      onFieldResolved('image.url');
+    }
     onElementChange({ ...working, url });
   };
 
@@ -386,7 +449,7 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
   };
 
   return (
-    <LocalizedElementSection label={label} outdated={outdated}>
+    <LocalizedElementSection label={label} outdated={outdatedFields.size > 0}>
       <Popover>
         <div className={FIELD_GRID}>
           <div />
@@ -473,7 +536,15 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
 };
 
 const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
-  const { sourceElement, workingElement, label, outdated, disabled, onElementChange } = props;
+  const {
+    sourceElement,
+    workingElement,
+    label,
+    outdatedFields,
+    onFieldResolved,
+    disabled,
+    onElementChange,
+  } = props;
   const { t } = useTranslation();
   const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorEmebedElement;
@@ -489,6 +560,9 @@ const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
   // The widget renders embeds from parsedUrl/oembed, so a translated URL has
   // to be resolved the same way the builder does before it can ship.
   const handleApplyUrl = async (url: string) => {
+    if (outdatedFields.has('embed.url')) {
+      onFieldResolved('embed.url');
+    }
     if (url === '') {
       setDraftUrl('');
       onElementChange({ ...working, url: '', parsedUrl: undefined, oembed: undefined });
@@ -502,7 +576,7 @@ const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
     <div className={FIELD_GRID}>
       <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
         {label}
-        {outdated && <OutdatedChip />}
+        {outdatedFields.size > 0 && <OutdatedChip />}
       </div>
       <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">
         {source.url}
@@ -586,8 +660,16 @@ interface LocalizedQuestionFieldsProps extends LocalizedElementEditorProps {
 }
 
 const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
-  const { sourceElement, workingElement, fields, label, outdated, disabled, onElementChange } =
-    props;
+  const {
+    sourceElement,
+    workingElement,
+    fields,
+    label,
+    outdatedFields,
+    onFieldResolved,
+    disabled,
+    onElementChange,
+  } = props;
   const { t } = useTranslation();
   const { showOnlyMissing } = useLocalizationView();
   const sourceData = getElementData(sourceElement);
@@ -631,7 +713,7 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
   };
 
   return (
-    <LocalizedElementSection label={label} outdated={outdated}>
+    <LocalizedElementSection label={label} outdated={outdatedFields.size > 0}>
       {presentFields.map((field) => {
         const sourceText = toText(sourceData[field.key]);
         return (
@@ -642,6 +724,8 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
             value={toText(workingData[field.key])}
             placeholder={sourceText}
             disabled={disabled}
+            outdated={outdatedFields.has(`question.${field.key}`)}
+            onOutdatedResolved={() => onFieldResolved(`question.${field.key}`)}
             onValueChange={(value) =>
               onElementChange(withElementData(workingElement, { [field.key]: value }))
             }
@@ -658,6 +742,8 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
             value={toText(workingOptions[optionIndex]?.label)}
             placeholder={sourceText}
             disabled={disabled}
+            outdated={outdatedFields.has(`question.options.${optionIndex}.label`)}
+            onOutdatedResolved={() => onFieldResolved(`question.options.${optionIndex}.label`)}
             onValueChange={(value) => handleOptionLabelChange(optionIndex, value)}
           />
         );
@@ -682,13 +768,21 @@ const ELEMENT_LABEL_KEYS: Partial<Record<ContentEditorElementType, string>> = {
 interface LocalizedElementProps {
   sourceElement: ContentEditorElement;
   workingElement: ContentEditorElement | undefined;
-  outdated: boolean;
+  outdatedFields: ReadonlySet<string>;
+  onFieldResolved: (fieldPath: string) => void;
   disabled: boolean;
   onElementChange: (element: ContentEditorElement) => void;
 }
 
 const LocalizedElement = (props: LocalizedElementProps) => {
-  const { sourceElement, workingElement, outdated, disabled, onElementChange } = props;
+  const {
+    sourceElement,
+    workingElement,
+    outdatedFields,
+    onFieldResolved,
+    disabled,
+    onElementChange,
+  } = props;
   const { t } = useTranslation();
   const labelKey = ELEMENT_LABEL_KEYS[sourceElement.type];
   // A missing working counterpart means the working tree drifted from the
@@ -701,7 +795,8 @@ const LocalizedElement = (props: LocalizedElementProps) => {
     sourceElement,
     workingElement,
     label: t(labelKey),
-    outdated,
+    outdatedFields,
+    onFieldResolved,
     disabled,
     onElementChange,
   };
@@ -761,12 +856,32 @@ const updateElementAt = (
   );
 };
 
+/** The `outdatedUnitPaths` entries scoped to one element, minus its prefix. */
+const collectElementOutdatedFields = (
+  unitPaths: ReadonlySet<string> | undefined,
+  elementKey: string,
+): ReadonlySet<string> => {
+  const fields = new Set<string>();
+  if (!unitPaths) {
+    return fields;
+  }
+  const prefix = `${elementKey}:`;
+  for (const path of unitPaths) {
+    if (path.startsWith(prefix)) {
+      fields.add(path.slice(prefix.length));
+    }
+  }
+  return fields;
+};
+
 export interface LocalizedEditorContentsProps {
   sourceContents: ContentEditorRoot[];
   workingContents: ContentEditorRoot[];
-  outdatedElementPaths: Set<string> | undefined;
+  outdatedUnitPaths: Set<string> | undefined;
   /** Prepended to element paths for outdated lookups when the tree is embedded in version data. */
   outdatedPathPrefix?: string;
+  /** Removes a reworked unit path from the owner's outdated set. */
+  onOutdatedResolved?: (unitPath: string) => void;
   disabled: boolean;
   onContentsChange: (contents: ContentEditorRoot[]) => void;
 }
@@ -775,8 +890,9 @@ export const LocalizedEditorContents = (props: LocalizedEditorContentsProps) => 
   const {
     sourceContents,
     workingContents,
-    outdatedElementPaths,
+    outdatedUnitPaths,
     outdatedPathPrefix,
+    onOutdatedResolved,
     disabled,
     onContentsChange,
   } = props;
@@ -798,7 +914,8 @@ export const LocalizedEditorContents = (props: LocalizedEditorContentsProps) => 
                 key={elementPath}
                 sourceElement={item.element}
                 workingElement={workingElement}
-                outdated={outdatedElementPaths?.has(outdatedKey) ?? false}
+                outdatedFields={collectElementOutdatedFields(outdatedUnitPaths, outdatedKey)}
+                onFieldResolved={(fieldPath) => onOutdatedResolved?.(`${outdatedKey}:${fieldPath}`)}
                 disabled={disabled}
                 onElementChange={(nextElement) =>
                   onContentsChange(

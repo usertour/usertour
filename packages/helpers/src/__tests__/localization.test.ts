@@ -24,7 +24,7 @@ import {
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
-  collectOutdatedElementPaths,
+  collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
   countMissingTranslations,
   countMissingVersionDataTranslations,
@@ -283,15 +283,15 @@ describe('countMissingTranslations', () => {
   });
 });
 
-describe('collectOutdatedElementPaths', () => {
-  it('flags elements whose source text changed since the backup snapshot', () => {
+describe('collectOutdatedUnitPaths', () => {
+  it('flags the units whose source text changed since the backup snapshot', () => {
     const source = createSourceContents();
     const backup = deepClone(source);
-    expect(collectOutdatedElementPaths(source, backup).size).toBe(0);
+    expect(collectOutdatedUnitPaths(source, backup).size).toBe(0);
 
     getElement<ContentEditorButtonElement>(source, 1).data.text = 'Continue';
-    const outdated = collectOutdatedElementPaths(source, backup);
-    expect(outdated).toEqual(new Set([formatElementPath(0, 0, 1)]));
+    const outdated = collectOutdatedUnitPaths(source, backup);
+    expect(outdated).toEqual(new Set([`${formatElementPath(0, 0, 1)}:button.text`]));
   });
 });
 
@@ -382,7 +382,7 @@ describe('version-data localization (checklist)', () => {
 
     source.items[1].name = 'Create your first flow';
     const outdated = collectOutdatedVersionDataPaths(ContentDataType.CHECKLIST, source, backup);
-    expect(outdated).toEqual(new Set(['items.item-2']));
+    expect(outdated).toEqual(new Set(['items.item-2:name']));
   });
 });
 

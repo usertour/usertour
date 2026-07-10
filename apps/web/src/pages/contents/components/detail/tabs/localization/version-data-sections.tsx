@@ -34,6 +34,8 @@ export interface VersionDataSectionsProps<T> {
   /** Flat transfer units of the whole data object, for per-card counts. */
   units: LocalizationTranslationUnit[];
   outdatedPaths: Set<string>;
+  /** Removes a reworked unit path from the outdated set. */
+  onOutdatedResolved: (unitPath: string) => void;
   disabled: boolean;
   onDataChange: (data: T) => void;
 }
@@ -55,7 +57,15 @@ const checklistGeneralMatch = (path: string) =>
 const checklistTasksMatch = (path: string) => path.startsWith('items.');
 
 export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<ChecklistData>) => {
-  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
+  const {
+    sourceData,
+    workingData,
+    units,
+    outdatedPaths,
+    onOutdatedResolved,
+    disabled,
+    onDataChange,
+  } = props;
   const { t } = useTranslation();
   const items = Array.isArray(sourceData.items) ? sourceData.items : [];
 
@@ -83,13 +93,15 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
             placeholder={sourceData.buttonText}
             disabled={disabled}
             outdated={outdatedPaths.has('buttonText')}
+            onOutdatedResolved={() => onOutdatedResolved('buttonText')}
             onValueChange={(value) => onDataChange({ ...workingData, buttonText: value })}
           />
         )}
         <LocalizedEditorContents
           sourceContents={asContents(sourceData.content)}
           workingContents={asContents(workingData.content)}
-          outdatedElementPaths={outdatedPaths}
+          outdatedUnitPaths={outdatedPaths}
+          onOutdatedResolved={onOutdatedResolved}
           outdatedPathPrefix="content"
           disabled={disabled}
           onContentsChange={(contents) => onDataChange({ ...workingData, content: contents })}
@@ -105,7 +117,6 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
             const workingItem = (workingData.items ?? []).find(
               (candidate) => candidate.id === item.id,
             );
-            const outdated = outdatedPaths.has(`items.${item.id}`);
             return (
               <div key={item.id} className="flex flex-col gap-2">
                 <LocalizedFieldRow
@@ -114,7 +125,8 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
                   value={toText(workingItem?.name)}
                   placeholder={item.name}
                   disabled={disabled}
-                  outdated={outdated}
+                  outdated={outdatedPaths.has(`items.${item.id}:name`)}
+                  onOutdatedResolved={() => onOutdatedResolved(`items.${item.id}:name`)}
                   onValueChange={(value) => handleItemChange(item.id, { name: value })}
                 />
                 {toText(item.description) !== '' && (
@@ -124,7 +136,8 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
                     value={toText(workingItem?.description)}
                     placeholder={item.description}
                     disabled={disabled}
-                    outdated={outdated}
+                    outdated={outdatedPaths.has(`items.${item.id}:description`)}
+                    onOutdatedResolved={() => onOutdatedResolved(`items.${item.id}:description`)}
                     onValueChange={(value) => handleItemChange(item.id, { description: value })}
                   />
                 )}
@@ -142,7 +155,15 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
 // ---------------------------------------------------------------------------
 
 export const LauncherLocalizationSections = (props: VersionDataSectionsProps<LauncherData>) => {
-  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
+  const {
+    sourceData,
+    workingData,
+    units,
+    outdatedPaths,
+    onOutdatedResolved,
+    disabled,
+    onDataChange,
+  } = props;
   const { t } = useTranslation();
 
   return (
@@ -159,13 +180,15 @@ export const LauncherLocalizationSections = (props: VersionDataSectionsProps<Lau
           placeholder={sourceData.buttonText}
           disabled={disabled}
           outdated={outdatedPaths.has('buttonText')}
+          onOutdatedResolved={() => onOutdatedResolved('buttonText')}
           onValueChange={(value) => onDataChange({ ...workingData, buttonText: value })}
         />
       )}
       <LocalizedEditorContents
         sourceContents={asContents(sourceData.tooltip?.content)}
         workingContents={asContents(workingData.tooltip?.content)}
-        outdatedElementPaths={outdatedPaths}
+        outdatedUnitPaths={outdatedPaths}
+        onOutdatedResolved={onOutdatedResolved}
         outdatedPathPrefix="tooltip"
         disabled={disabled}
         onContentsChange={(contents) =>
@@ -184,7 +207,15 @@ export const LauncherLocalizationSections = (props: VersionDataSectionsProps<Lau
 // ---------------------------------------------------------------------------
 
 export const BannerLocalizationSections = (props: VersionDataSectionsProps<BannerData>) => {
-  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
+  const {
+    sourceData,
+    workingData,
+    units,
+    outdatedPaths,
+    onOutdatedResolved,
+    disabled,
+    onDataChange,
+  } = props;
   const { t } = useTranslation();
 
   return (
@@ -196,7 +227,8 @@ export const BannerLocalizationSections = (props: VersionDataSectionsProps<Banne
       <LocalizedEditorContents
         sourceContents={asContents(sourceData.contents)}
         workingContents={asContents(workingData.contents)}
-        outdatedElementPaths={outdatedPaths}
+        outdatedUnitPaths={outdatedPaths}
+        onOutdatedResolved={onOutdatedResolved}
         outdatedPathPrefix="contents"
         disabled={disabled}
         onContentsChange={(contents) => onDataChange({ ...workingData, contents })}
@@ -216,7 +248,15 @@ const announcementDetailMatch = (path: string) => path.startsWith('detailContent
 export const AnnouncementLocalizationSections = (
   props: VersionDataSectionsProps<AnnouncementData>,
 ) => {
-  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
+  const {
+    sourceData,
+    workingData,
+    units,
+    outdatedPaths,
+    onOutdatedResolved,
+    disabled,
+    onDataChange,
+  } = props;
   const { t } = useTranslation();
 
   return (
@@ -234,6 +274,7 @@ export const AnnouncementLocalizationSections = (
             placeholder={sourceData.title}
             disabled={disabled}
             outdated={outdatedPaths.has('title')}
+            onOutdatedResolved={() => onOutdatedResolved('title')}
             onValueChange={(value) => onDataChange({ ...workingData, title: value })}
           />
         )}
@@ -245,6 +286,7 @@ export const AnnouncementLocalizationSections = (
             placeholder={sourceData.readMoreLabel}
             disabled={disabled}
             outdated={outdatedPaths.has('readMoreLabel')}
+            onOutdatedResolved={() => onOutdatedResolved('readMoreLabel')}
             onValueChange={(value) => onDataChange({ ...workingData, readMoreLabel: value })}
           />
         )}
@@ -258,7 +300,8 @@ export const AnnouncementLocalizationSections = (
           <LocalizedEditorContents
             sourceContents={sourceData.introContent}
             workingContents={asContents(workingData.introContent)}
-            outdatedElementPaths={outdatedPaths}
+            outdatedUnitPaths={outdatedPaths}
+            onOutdatedResolved={onOutdatedResolved}
             outdatedPathPrefix="introContent"
             disabled={disabled}
             onContentsChange={(contents) =>
@@ -276,7 +319,8 @@ export const AnnouncementLocalizationSections = (
           <LocalizedEditorContents
             sourceContents={sourceData.detailContent}
             workingContents={asContents(workingData.detailContent)}
-            outdatedElementPaths={outdatedPaths}
+            outdatedUnitPaths={outdatedPaths}
+            onOutdatedResolved={onOutdatedResolved}
             outdatedPathPrefix="detailContent"
             disabled={disabled}
             onContentsChange={(contents) =>
@@ -295,19 +339,23 @@ export const AnnouncementLocalizationSections = (
 
 const resourceCenterGeneralMatch = (path: string) => path === 'buttonText' || path === 'headerText';
 const createResourceCenterTabMatch = (tabId: string) => {
-  // Unit paths carry a `:field` suffix; outdated element paths do not — the
-  // bare `tabs.<id>` form is the tab name's outdated marker.
-  const exact = `tabs.${tabId}`;
   const namePrefix = `tabs.${tabId}:`;
   const blocksPrefix = `tabs.${tabId}.`;
-  return (path: string) =>
-    path === exact || path.startsWith(namePrefix) || path.startsWith(blocksPrefix);
+  return (path: string) => path.startsWith(namePrefix) || path.startsWith(blocksPrefix);
 };
 
 export const ResourceCenterLocalizationSections = (
   props: VersionDataSectionsProps<ResourceCenterData>,
 ) => {
-  const { sourceData, workingData, units, outdatedPaths, disabled, onDataChange } = props;
+  const {
+    sourceData,
+    workingData,
+    units,
+    outdatedPaths,
+    onOutdatedResolved,
+    disabled,
+    onDataChange,
+  } = props;
   const { t } = useTranslation();
   const tabs = Array.isArray(sourceData.tabs) ? sourceData.tabs : [];
 
@@ -346,6 +394,7 @@ export const ResourceCenterLocalizationSections = (
             placeholder={sourceData.buttonText}
             disabled={disabled}
             outdated={outdatedPaths.has('buttonText')}
+            onOutdatedResolved={() => onOutdatedResolved('buttonText')}
             onValueChange={(value) => onDataChange({ ...workingData, buttonText: value })}
           />
         )}
@@ -357,6 +406,7 @@ export const ResourceCenterLocalizationSections = (
             placeholder={sourceData.headerText}
             disabled={disabled}
             outdated={outdatedPaths.has('headerText')}
+            onOutdatedResolved={() => onOutdatedResolved('headerText')}
             onValueChange={(value) => onDataChange({ ...workingData, headerText: value })}
           />
         )}
@@ -379,7 +429,8 @@ export const ResourceCenterLocalizationSections = (
                 value={toText(workingTab?.name)}
                 placeholder={tab.name}
                 disabled={disabled}
-                outdated={outdatedPaths.has(`tabs.${tab.id}`)}
+                outdated={outdatedPaths.has(`tabs.${tab.id}:name`)}
+                onOutdatedResolved={() => onOutdatedResolved(`tabs.${tab.id}:name`)}
                 onValueChange={(value) => updateTab(tab.id, (next) => ({ ...next, name: value }))}
               />
             )}
@@ -409,7 +460,10 @@ export const ResourceCenterLocalizationSections = (
                       value={pair.value}
                       placeholder={pair.sourceText}
                       disabled={disabled}
-                      outdated={outdatedPaths.has(blockPath)}
+                      outdated={outdatedPaths.has(`${blockPath}:name.${pair.path.join('.')}`)}
+                      onOutdatedResolved={() =>
+                        onOutdatedResolved(`${blockPath}:name.${pair.path.join('.')}`)
+                      }
                       onValueChange={(value) => {
                         updateBlock(tab.id, block.id, (next) => {
                           const nextName = deepClone(
@@ -425,7 +479,8 @@ export const ResourceCenterLocalizationSections = (
                     <LocalizedEditorContents
                       sourceContents={asContents(sourceContent)}
                       workingContents={asContents(workingContent)}
-                      outdatedElementPaths={outdatedPaths}
+                      outdatedUnitPaths={outdatedPaths}
+                      onOutdatedResolved={onOutdatedResolved}
                       outdatedPathPrefix={`${blockPath}.content`}
                       disabled={disabled}
                       onContentsChange={(contents) =>

@@ -337,10 +337,6 @@ export const formatElementPath = (
   return `${groupIndex}.${columnIndex}.${elementIndex}`;
 };
 
-export const getElementPath = (unitPath: string): string => {
-  return unitPath.split(':')[0];
-};
-
 type LocalizedTextFallback = 'source' | 'empty';
 
 const createApplyVisitor = (fallback: LocalizedTextFallback): TranslatableFieldVisitor => {
@@ -371,7 +367,7 @@ const createOutdatedVisitor = (outdated: Set<string>): TranslatableFieldVisitor 
       return;
     }
     if (visit.partnerText !== visit.sourceText) {
-      outdated.add(getElementPath(visit.path));
+      outdated.add(visit.path);
     }
   };
 };
@@ -434,11 +430,12 @@ export const countMissingTranslations = (
 };
 
 /**
- * Element paths whose source text drifted since the translation was saved
- * (`backup` is the source snapshot taken at save time). Callers should skip
- * rows that were never saved — an absent backup flags everything.
+ * Unit paths whose source text drifted since the translation was saved
+ * (`backup` is the source snapshot taken at save time), so the editor can
+ * flag the exact rows. Callers should skip rows that were never saved — an
+ * absent backup flags everything.
  */
-export const collectOutdatedElementPaths = (
+export const collectOutdatedUnitPaths = (
   source: ContentEditorRoot[] | undefined,
   backup: ContentEditorRoot[] | undefined,
 ): Set<string> => {
@@ -713,7 +710,7 @@ export const countMissingVersionDataTranslations = (
 
 /**
  * Version-data paths whose source text drifted since the translation was
- * saved. Same contract as collectOutdatedElementPaths — skip rows that were
+ * saved. Same contract as collectOutdatedUnitPaths — skip rows that were
  * never saved.
  */
 export const collectOutdatedVersionDataPaths = (

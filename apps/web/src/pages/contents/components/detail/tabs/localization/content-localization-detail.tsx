@@ -10,7 +10,7 @@ import { useCreateContentVersionMutation } from '@usertour/hooks';
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
-  collectOutdatedElementPaths,
+  collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
   createLocalizedWorkingContents,
   createLocalizedWorkingVersionData,
@@ -204,7 +204,10 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
   // Snapshot the outdated markers once per mount: every autosave rewrites
   // `backup` to the current source, so a live computation would clear all
   // markers on the first keystroke — before the translator reviewed them.
-  const [outdatedByStep] = useState<Map<string, Set<string>>>(() => {
+  // Reworking a row removes just its path (resolveStepOutdated below), so
+  // the row dot, section chip and card count retire together as the
+  // translator works through the list.
+  const [outdatedByStep, setOutdatedByStep] = useState<Map<string, Set<string>>>(() => {
     const backup = (contentLocalization?.backup ?? undefined) as LocalizedFlowContent | undefined;
     const map = new Map<string, Set<string>>();
     if (!backup) {
@@ -213,14 +216,25 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     for (const step of steps) {
       const stepBackup = backup[step.cvid];
       if (stepBackup) {
-        map.set(
-          step.cvid,
-          collectOutdatedElementPaths(step.data as ContentEditorRoot[], stepBackup),
-        );
+        map.set(step.cvid, collectOutdatedUnitPaths(step.data as ContentEditorRoot[], stepBackup));
       }
     }
     return map;
   });
+
+  const resolveStepOutdated = useCallback((cvid: string, unitPath: string) => {
+    setOutdatedByStep((previous) => {
+      const stepPaths = previous.get(cvid);
+      if (!stepPaths?.has(unitPath)) {
+        return previous;
+      }
+      const nextStepPaths = new Set(stepPaths);
+      nextStepPaths.delete(unitPath);
+      const next = new Map(previous);
+      next.set(cvid, nextStepPaths);
+      return next;
+    });
+  }, []);
 
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
@@ -370,7 +384,8 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
             <LocalizedEditorContents
               sourceContents={(step.data ?? []) as ContentEditorRoot[]}
               workingContents={working[step.cvid] ?? []}
-              outdatedElementPaths={outdatedByStep.get(step.cvid)}
+              outdatedUnitPaths={outdatedByStep.get(step.cvid)}
+              onOutdatedResolved={(unitPath) => resolveStepOutdated(step.cvid, unitPath)}
               disabled={disabled}
               onContentsChange={(contents) => handleStepContentsChange(step.cvid, contents)}
             />
@@ -403,13 +418,24 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   );
 
   // Same mount-time snapshot rationale as the flow editor.
-  const [outdatedPaths] = useState<Set<string>>(() => {
+  const [outdatedPaths, setOutdatedPaths] = useState<Set<string>>(() => {
     const backup = contentLocalization?.backup;
     if (!backup || Object.keys(backup).length === 0) {
       return new Set<string>();
     }
     return collectOutdatedVersionDataPaths(content.type, sourceData, backup);
   });
+
+  const resolveOutdated = useCallback((unitPath: string) => {
+    setOutdatedPaths((previous) => {
+      if (!previous.has(unitPath)) {
+        return previous;
+      }
+      const next = new Set(previous);
+      next.delete(unitPath);
+      return next;
+    });
+  }, []);
 
   const { saveState, scheduleSave } = useLocalizationAutosave({
     versionId: version.id,
@@ -465,7 +491,13 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   );
 
   const sections = (() => {
-    const sectionProps = { units, outdatedPaths, disabled, onDataChange: handleDataChange };
+    const sectionProps = {
+      units,
+      outdatedPaths,
+      onOutdatedResolved: resolveOutdated,
+      disabled,
+      onDataChange: handleDataChange,
+    };
     switch (content.type) {
       case ContentDataType.CHECKLIST:
         return (
