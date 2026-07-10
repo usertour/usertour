@@ -43,6 +43,7 @@
     "prepare": "pnpm run prisma:generate"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^5.0.16",
     "@ai-sdk/anthropic": "^4.0.8",
     "@ai-sdk/openai-compatible": "^3.0.5",
     "@apollo/server": "^4.13.0",
@@ -176,7 +177,8 @@
       "^src/(.*)$": "<rootDir>/src/$1",
       "^ai$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
       "^@ai-sdk/anthropic$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
-      "^@ai-sdk/openai-compatible$": "<rootDir>/test/mocks/ai-sdk.stub.ts"
+      "^@ai-sdk/openai-compatible$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
+      "^@ai-sdk/amazon-bedrock$": "<rootDir>/test/mocks/ai-sdk.stub.ts"
     },
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

@@ -6,7 +6,8 @@
     "^@/(.*)$": "<rootDir>/src/$1",
     "^ai$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
     "^@ai-sdk/anthropic$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
-    "^@ai-sdk/openai-compatible$": "<rootDir>/test/mocks/ai-sdk.stub.ts"
+    "^@ai-sdk/openai-compatible$": "<rootDir>/test/mocks/ai-sdk.stub.ts",
+    "^@ai-sdk/amazon-bedrock$": "<rootDir>/test/mocks/ai-sdk.stub.ts"
   },
   "testEnvironment": "node",
   "testTimeout": 30000,

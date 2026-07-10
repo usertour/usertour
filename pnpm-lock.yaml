@@ -217,6 +217,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^5.0.16
+        version: 5.0.16(zod@4.4.3)
       '@ai-sdk/anthropic':
         specifier: ^4.0.8
         version: 4.0.8(zod@4.4.3)
@@ -2022,6 +2025,18 @@ importers:
 
 packages:
 
+  '@ai-sdk/amazon-bedrock@5.0.16':
+    resolution: {integrity: sha512-o2Ec5if6FudxB7YSepuJjm7L3QsJHWtD/+smAnDZnh5UYKWOJMU3R/cY83BWUIDZCk2I+mZkaqyxijh+OMiMwg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/anthropic@4.0.11':
+    resolution: {integrity: sha512-Xe9anDf2f1/kfror2VuWPdHZ4MJgzI2+ctTGYofjiGUjiVkjtBvVBdYtPhfFFGaY9zpbDeDTA+huqfvf51BGuw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/anthropic@4.0.8':
     resolution: {integrity: sha512-ZqT9kLxS2Cbo/4juwtEGbYyP0jNQTnUUKy2nQ8Vn28xqNu50+TukO/oCEWCpm18YbQq7N+hr6ClJs/ATTFpBTg==}
     engines: {node: '>=22'}
@@ -2040,14 +2055,30 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/openai@4.0.11':
+    resolution: {integrity: sha512-2PLnVPBsdJusgquPVYgPWd3ox4lbUFkp7DVUSmM0lQ4VISQoNxdgo6TvFAHgwQn9wJ/ckVYVRLU7+BvHc7T8ww==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@5.0.5':
     resolution: {integrity: sha512-oI0t3dvCoqWNV1I8o1Rybi2DXDvHES5r/TrwtJW90tuFLVepgJlftPxrcjh8vaSvjqC2diTuA2vXyjKAyHJm4A==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/provider-utils@5.0.7':
+    resolution: {integrity: sha512-OSm5/5kdrHa11WIOo5LYgDKnxYWp5aB/wx5EXRHi0jpUGduMDeB6oht9U6p+UNNWIP3F/EqPpV8d7vdP/iRnqg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider@4.0.2':
     resolution: {integrity: sha512-pfPoy9J1B1xV7cqJ8MYHOsDYrMv5tR3+EMNfI249OhkD2uRakvav3Fo7XpD2luuN/YNCBY7KfEQc7vEV7KEtyw==}
+    engines: {node: '>=22'}
+
+  '@ai-sdk/provider@4.0.3':
+    resolution: {integrity: sha512-e0CpNWJUY7OxAFAnCZkw+ri9QOHWwTs1tXP42782KFGCU07qt8NiXCrCVowyCB5dP2r5/Uls+g2oPd8kOJn9dw==}
     engines: {node: '>=22'}
 
   '@alloc/quick-lru@5.2.0':
@@ -6481,12 +6512,20 @@ packages:
     resolution: {integrity: sha512-f7uPeBi7ehmLT4YF2u9j3qx6lSnurG1DLXOsTtJrIRNDF7VXio4BGHQ+SQteN/BrUVudbkuL4v7oOsRCzq4BqA==}
     engines: {node: '>=18.0.0'}
 
+  '@smithy/core@3.29.2':
+    resolution: {integrity: sha512-DXUk6yU0C1Q1tYvJh1VCtl8QOBcSoZpKwjTPkxT6A4MUQYHvgeKGByL8mrEdxnvhdf9nq5GyzmRb5n/vPgu3Lw==}
+    engines: {node: '>=18.0.0'}
+
   '@smithy/credential-provider-imds@4.2.11':
     resolution: {integrity: sha512-lBXrS6ku0kTj3xLmsJW0WwqWbGQ6ueooYyp/1L9lkyT0M02C+DWwYwc5aTyXFbRaK38ojALxNixg+LxKSHZc0g==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/eventstream-codec@4.2.11':
     resolution: {integrity: sha512-Sf39Ml0iVX+ba/bgMPxaXWAAFmHqYLTmbjAPfLPLY8CrYkRDEqZdUsKC1OwVMCdJXfAt0v4j49GIJ8DoSYAe6w==}
+    engines: {node: '>=18.0.0'}
+
+  '@smithy/eventstream-codec@4.4.7':
+    resolution: {integrity: sha512-YNodWVjMFOMAyjQgpHBBCz62DbYu4xwhpt+z5HRf7OZPwrfHgNDCyUZxaC0fy9/2TWcO+niOMHSl8aMgfbWZTQ==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/eventstream-serde-browser@4.2.11':
@@ -6617,6 +6656,10 @@ packages:
     resolution: {integrity: sha512-COuLsZILbbQsdrwKQpkkpyep7lCsByxwj7m0Mg5v66/ZTyenlfBc40/QFQ5chO0YN/PNEH1Bi3fGtfXPnYNeDw==}
     engines: {node: '>=18.0.0'}
 
+  '@smithy/types@4.16.0':
+    resolution: {integrity: sha512-aVUabzlBBmY0PfvVgLKQSOGFIL5/7R54JE3uD9a5Ay/jSED61SkuAcCYENNXJzYUvJ1NPrWO0P+rAXHCkbBUKw==}
+    engines: {node: '>=18.0.0'}
+
   '@smithy/url-parser@2.2.0':
     resolution: {integrity: sha512-hoA4zm61q1mNTpksiSWp2nEl1dt3j726HdRhiNgVJQMj7mLp7dprtF57mOB6JvEk/x9d2bsuL5hlqZbBuHQylQ==}
 
@@ -6686,6 +6729,10 @@ packages:
 
   '@smithy/util-utf8@4.2.2':
     resolution: {integrity: sha512-75MeYpjdWRe8M5E3AW0O4Cx3UadweS+cwdXjwYGBW5h/gxxnbeZ877sLPX/ZJA9GVTlL/qG0dXP29JWFCD1Ayw==}
+    engines: {node: '>=18.0.0'}
+
+  '@smithy/util-utf8@4.4.7':
+    resolution: {integrity: sha512-NskAyOBZcHO+fa1HwkwWuPbMUQE7NZ4IWBnAc71E4f9IdoQ65WLkdJ2ed/n4Q8vePSgZUN/CbyGZLBiI7dMI+w==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/util-waiter@4.2.11':
@@ -7756,6 +7803,9 @@ packages:
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
+
+  aws4fetch@1.0.20:
+    resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
 
   axios@1.7.7:
     resolution: {integrity: sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==}
@@ -14319,6 +14369,23 @@ packages:
 
 snapshots:
 
+  '@ai-sdk/amazon-bedrock@5.0.16(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/anthropic': 4.0.11(zod@4.4.3)
+      '@ai-sdk/openai': 4.0.11(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.7(zod@4.4.3)
+      '@smithy/eventstream-codec': 4.4.7
+      '@smithy/util-utf8': 4.4.7
+      aws4fetch: 1.0.20
+      zod: 4.4.3
+
+  '@ai-sdk/anthropic@4.0.11(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.7(zod@4.4.3)
+      zod: 4.4.3
+
   '@ai-sdk/anthropic@4.0.8(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 4.0.2
@@ -14338,6 +14405,12 @@ snapshots:
       '@ai-sdk/provider-utils': 5.0.5(zod@4.4.3)
       zod: 4.4.3
 
+  '@ai-sdk/openai@4.0.11(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.7(zod@4.4.3)
+      zod: 4.4.3
+
   '@ai-sdk/provider-utils@5.0.5(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 4.0.2
@@ -14346,7 +14419,19 @@ snapshots:
       eventsource-parser: 3.1.0
       zod: 4.4.3
 
+  '@ai-sdk/provider-utils@5.0.7(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.1.0
+      zod: 4.4.3
+
   '@ai-sdk/provider@4.0.2':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@4.0.3':
     dependencies:
       json-schema: 0.4.0
 
@@ -19867,6 +19952,11 @@ snapshots:
       '@smithy/uuid': 1.1.2
       tslib: 2.8.1
 
+  '@smithy/core@3.29.2':
+    dependencies:
+      '@smithy/types': 4.16.0
+      tslib: 2.8.1
+
   '@smithy/credential-provider-imds@4.2.11':
     dependencies:
       '@smithy/node-config-provider': 4.3.11
@@ -19880,6 +19970,11 @@ snapshots:
       '@aws-crypto/crc32': 5.2.0
       '@smithy/types': 4.13.0
       '@smithy/util-hex-encoding': 4.2.2
+      tslib: 2.8.1
+
+  '@smithy/eventstream-codec@4.4.7':
+    dependencies:
+      '@smithy/core': 3.29.2
       tslib: 2.8.1
 
   '@smithy/eventstream-serde-browser@4.2.11':
@@ -20083,6 +20178,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@smithy/types@4.16.0':
+    dependencies:
+      tslib: 2.8.1
+
   '@smithy/url-parser@2.2.0':
     dependencies:
       '@smithy/querystring-parser': 2.2.0
@@ -20184,6 +20283,11 @@ snapshots:
   '@smithy/util-utf8@4.2.2':
     dependencies:
       '@smithy/util-buffer-from': 4.2.2
+      tslib: 2.8.1
+
+  '@smithy/util-utf8@4.4.7':
+    dependencies:
+      '@smithy/core': 3.29.2
       tslib: 2.8.1
 
   '@smithy/util-waiter@4.2.11':
@@ -21409,6 +21513,8 @@ snapshots:
   available-typed-arrays@1.0.7:
     dependencies:
       possible-typed-array-names: 1.1.0
+
+  aws4fetch@1.0.20: {}
 
   axios@1.7.7(debug@4.4.3):
     dependencies:

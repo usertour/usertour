@@ -104,6 +104,9 @@ export interface Config {
     apiKey: string;
     model: string;
     baseUrl: string;
+    awsRegion: string;
+    awsAccessKeyId: string;
+    awsSecretAccessKey: string;
   };
   globalConfig: {
     isSelfHostedMode: boolean;

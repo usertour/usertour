@@ -7,6 +7,8 @@
  */
 export const createAnthropic = () => () => ({});
 
+export const createAmazonBedrock = () => () => ({});
+
 export const createOpenAICompatible = () => () => ({});
 
 export const jsonSchema = (schema: unknown) => schema;

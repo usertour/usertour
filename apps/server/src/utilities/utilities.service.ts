@@ -147,9 +147,11 @@ export class UtilitiesService {
       allowProjectLevelSubscriptionManagement,
       needsSystemAdminSetup,
       require2FA,
-      machineTranslationEnabled: Boolean(
-        this.configService.get<string>('machineTranslation.apiKey'),
-      ),
+      // The API key is the enable signal — except for bedrock, where picking
+      // the provider is: it can run keyless on the AWS credential chain.
+      machineTranslationEnabled:
+        Boolean(this.configService.get<string>('machineTranslation.apiKey')) ||
+        this.configService.get<string>('machineTranslation.provider') === 'bedrock',
       authProviders: this.getAuthProviders(),
     };
   }
