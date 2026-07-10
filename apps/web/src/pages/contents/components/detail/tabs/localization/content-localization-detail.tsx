@@ -110,18 +110,29 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
                   navigate(location.pathname.replace(`/${localization.locale}`, ''));
                 }}
               />
-              <h3 className="text-lg font-medium">{localization.name}</h3>
-              {contentLocalization?.enabled ? (
-                <Badge variant="success">{t('contents.localization.status.enabled')}</Badge>
-              ) : (
-                <Badge variant="destructive">{t('contents.localization.status.disabled')}</Badge>
-              )}
-              <span className="flex items-center gap-1 pl-2 text-sm text-muted-foreground">
-                {sourceLocaleName}
-                <RiArrowRightLine className="h-3.5 w-3.5" />
+              {/* Official locale display names run long ("Chinese (Simplified,
+                  People's Republic of China)") — every text segment truncates so
+                  the header stays one line at any name length. */}
+              <h3 className="min-w-0 truncate text-lg font-medium" title={localization.name}>
                 {localization.name}
+              </h3>
+              {contentLocalization?.enabled ? (
+                <Badge variant="success" className="flex-none">
+                  {t('contents.localization.status.enabled')}
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="flex-none">
+                  {t('contents.localization.status.disabled')}
+                </Badge>
+              )}
+              <span className="flex min-w-0 items-center gap-1 pl-2 text-sm text-muted-foreground">
+                <span className="max-w-[12rem] truncate">{sourceLocaleName}</span>
+                <RiArrowRightLine className="h-3.5 w-3.5 flex-none" />
+                <span className="max-w-[12rem] truncate" title={localization.name}>
+                  {localization.name}
+                </span>
               </span>
-              <div className="!ml-auto flex items-center gap-2">
+              <div className="!ml-auto flex flex-none items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {saveState === 'saving' && t('contents.localization.saving')}
                   {saveState === 'saved' && t('contents.localization.saved')}

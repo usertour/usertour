@@ -27,9 +27,12 @@ interface LocalizationCreateDialogProps {
 }
 
 const schema = z.object({
-  locale: z.string().max(20).min(2),
-  name: z.string().max(20).min(2),
-  code: z.string().max(20).min(2),
+  // BCP-47 tags can stack subtags; 35 is the spec's recommended buffer.
+  locale: z.string().max(35).min(2),
+  // Must fit the longest official locale display names the picker
+  // auto-fills (e.g. "Chinese (Simplified, People's Republic of China)").
+  name: z.string().max(64).min(2),
+  code: z.string().max(35).min(2),
 });
 
 type FormValues = z.infer<typeof schema>;

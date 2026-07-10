@@ -1904,7 +1904,8 @@ const translations = {
         updatedAt: 'Updated at',
         missingCount: '{{count}} missing',
         noResults: 'No results.',
-        noLocales: 'No languages yet. Add languages under Settings → Localization first.',
+        noLocales:
+          'No languages yet. Add languages under <settingsLink>Settings → Localization</settingsLink> first.',
       },
       toast: {
         applySuccess: 'The changes have been applied successfully.',

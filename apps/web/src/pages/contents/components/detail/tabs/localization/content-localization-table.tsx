@@ -30,7 +30,7 @@ import {
 import { cn } from '@usertour/tailwind';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 interface ContentLocalizationTableProps {
@@ -61,7 +61,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
   const { contentType, version } = props;
   const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, project } = useAppContext();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { contentLocalizationList, loading } = useContentLocalizations(version.id);
   const { localizationList, loading: localizationsLoading } = useLocalizationList();
@@ -193,7 +193,19 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
         ) : (
           <TableRow>
             <TableCell colSpan={3} className="h-24 text-center">
-              {t('contents.localization.taskTable.noLocales')}
+              <Trans
+                i18nKey="contents.localization.taskTable.noLocales"
+                // Not `link` — that's an HTML void tag, so the Trans parser
+                // treats it as self-closing and drops the label text out of it.
+                components={{
+                  settingsLink: (
+                    <Link
+                      to={`/project/${project?.id}/settings/localizations`}
+                      className="text-primary underline-offset-4 hover:underline"
+                    />
+                  ),
+                }}
+              />
             </TableCell>
           </TableRow>
         )}

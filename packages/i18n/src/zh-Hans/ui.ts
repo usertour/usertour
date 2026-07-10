@@ -1804,7 +1804,7 @@ const translations = {
         updatedAt: '更新时间',
         missingCount: '缺失 {{count}} 项',
         noResults: '暂无结果。',
-        noLocales: '还没有语言。请先在「设置 → 本地化」中添加语言。',
+        noLocales: '还没有语言。请先在<settingsLink>「设置 → 本地化」</settingsLink>中添加语言。',
       },
       toast: {
         applySuccess: '更改已成功应用。',
