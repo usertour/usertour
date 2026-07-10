@@ -639,11 +639,11 @@ export class EgressUrlNotAllowedError extends BaseError {
   };
 }
 
-export class MachineTranslationNotConfiguredError extends BaseError {
+export class AiNotConfiguredError extends BaseError {
   code = 'E0055';
   messageDict = {
-    en: 'Machine translation is not configured on this instance.',
-    'zh-CN': '当前实例未配置机器翻译。',
+    en: 'AI is not configured on this instance.',
+    'zh-CN': '当前实例未配置 AI 能力。',
   };
 }
 
@@ -736,7 +736,7 @@ const errorMap = {
   E0052: SsoRequiresActiveProviderError,
   E0053: SsoAccessDeniedError,
   E0054: EgressUrlNotAllowedError,
-  E0055: MachineTranslationNotConfiguredError,
+  E0055: AiNotConfiguredError,
   E0056: MachineTranslationRequiresPaidPlanError,
   E0057: MachineTranslationFailedError,
 };

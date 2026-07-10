@@ -99,7 +99,7 @@ export interface Config {
       survey: number;
     };
   };
-  machineTranslation: {
+  ai: {
     provider: string;
     apiKey: string;
     model: string;

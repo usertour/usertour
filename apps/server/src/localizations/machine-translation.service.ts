@@ -1,16 +1,13 @@
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PlanType } from '@usertour/types';
 import { generateObject, jsonSchema, type LanguageModel } from 'ai';
 import { PrismaService } from 'nestjs-prisma';
 
+import { AiService } from '@/ai/ai.service';
 import {
+  AiNotConfiguredError,
   MachineTranslationFailedError,
-  MachineTranslationNotConfiguredError,
   MachineTranslationRequiresPaidPlanError,
   ParamsError,
 } from '@/common/errors';
@@ -57,15 +54,15 @@ const SYSTEM_PROMPT = [
 @Injectable()
 export class MachineTranslationService {
   private readonly logger = new Logger(MachineTranslationService.name);
-  private model: LanguageModel | null = null;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
   ) {}
 
   isEnabled(): boolean {
-    return Boolean(this.configService.get<string>('machineTranslation.apiKey'));
+    return this.aiService.isConfigured();
   }
 
   async translateUnits(
@@ -73,7 +70,7 @@ export class MachineTranslationService {
   ): Promise<{ path: string; translatedText: string }[]> {
     const { versionId, localizationId, units } = input;
     if (!this.isEnabled()) {
-      throw new MachineTranslationNotConfiguredError();
+      throw new AiNotConfiguredError();
     }
     if (units.length === 0) {
       return [];
@@ -91,7 +88,7 @@ export class MachineTranslationService {
       throw new ParamsError();
     }
 
-    const model = this.getModel();
+    const model = this.aiService.getModel();
     const translated: { path: string; translatedText: string }[] = [];
     for (let offset = 0; offset < units.length; offset += UNITS_PER_REQUEST) {
       const chunk = units.slice(offset, offset + UNITS_PER_REQUEST);
@@ -135,78 +132,6 @@ export class MachineTranslationService {
     if (!subscription || subscription.planType === PlanType.HOBBY) {
       throw new MachineTranslationRequiresPaidPlanError();
     }
-  }
-
-  private getModel(): LanguageModel {
-    if (this.model) {
-      return this.model;
-    }
-    const provider = this.configService.get<string>('machineTranslation.provider');
-    const apiKey = this.configService.get<string>('machineTranslation.apiKey');
-    const modelId = this.configService.get<string>('machineTranslation.model');
-    const baseUrl = this.configService.get<string>('machineTranslation.baseUrl');
-
-    if (provider === 'openai-compatible') {
-      if (!baseUrl) {
-        throw new MachineTranslationNotConfiguredError();
-      }
-      const compatible = createOpenAICompatible({
-        name: 'machine-translation',
-        apiKey,
-        baseURL: baseUrl,
-      });
-      this.model = compatible(modelId);
-      return this.model;
-    }
-
-    if (provider === 'bedrock') {
-      const region = this.configService.get<string>('machineTranslation.awsRegion');
-      const awsAccessKeyId = this.configService.get<string>('machineTranslation.awsAccessKeyId');
-      const awsSecretAccessKey = this.configService.get<string>(
-        'machineTranslation.awsSecretAccessKey',
-      );
-      // Three auth shapes, most explicit wins: a Bedrock API key (Bearer,
-      // reuses TRANSLATION_LLM_API_KEY), an explicit SigV4 key pair, else the
-      // AWS default credential chain (env vars, profile, EC2/EKS instance
-      // role) so deployments on AWS run keyless.
-      let credentialSettings: Parameters<typeof createAmazonBedrock>[0];
-      if (apiKey) {
-        credentialSettings = { apiKey };
-      } else if (awsAccessKeyId && awsSecretAccessKey) {
-        credentialSettings = {
-          accessKeyId: awsAccessKeyId,
-          secretAccessKey: awsSecretAccessKey,
-        };
-      } else {
-        const chain = fromNodeProviderChain(region ? { clientConfig: { region } } : {});
-        credentialSettings = {
-          // The chain resolves extra fields (expiration) the provider's
-          // credential type doesn't accept — pick the three it does.
-          credentialProvider: async () => {
-            const credentials = await chain();
-            return {
-              accessKeyId: credentials.accessKeyId,
-              secretAccessKey: credentials.secretAccessKey,
-              sessionToken: credentials.sessionToken,
-            };
-          },
-        };
-      }
-      // Region falls back to the AWS_REGION environment variable when unset.
-      const bedrock = createAmazonBedrock({
-        ...(region ? { region } : {}),
-        ...credentialSettings,
-      });
-      this.model = bedrock(modelId);
-      return this.model;
-    }
-
-    const anthropic = createAnthropic({
-      apiKey,
-      ...(baseUrl ? { baseURL: baseUrl } : {}),
-    });
-    this.model = anthropic(modelId);
-    return this.model;
   }
 
   private async translateChunk(

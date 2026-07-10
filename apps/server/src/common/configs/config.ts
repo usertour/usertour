@@ -111,20 +111,20 @@ const config: Config = {
         : -1,
     },
   },
-  machineTranslation: {
+  ai: {
     // 'anthropic' (default), 'openai-compatible' (any OpenAI-shaped gateway)
     // or 'bedrock' (AWS). The feature is enabled by setting the API key —
     // except for bedrock, where selecting the provider is the signal: it can
     // authenticate keylessly through the AWS default credential chain.
-    provider: process.env.TRANSLATION_LLM_PROVIDER || 'anthropic',
-    apiKey: process.env.TRANSLATION_LLM_API_KEY || '',
-    model: process.env.TRANSLATION_LLM_MODEL || 'claude-opus-4-8',
-    baseUrl: process.env.TRANSLATION_LLM_BASE_URL || '',
+    provider: process.env.AI_PROVIDER || 'anthropic',
+    apiKey: process.env.AI_API_KEY || '',
+    model: process.env.AI_MODEL || 'claude-opus-4-8',
+    baseUrl: process.env.AI_BASE_URL || '',
     // bedrock only. Region falls back to AWS_REGION; credentials fall back
     // to the AWS default chain (env vars, profile, instance role).
-    awsRegion: process.env.TRANSLATION_LLM_AWS_REGION || '',
-    awsAccessKeyId: process.env.TRANSLATION_LLM_AWS_ACCESS_KEY_ID || '',
-    awsSecretAccessKey: process.env.TRANSLATION_LLM_AWS_SECRET_ACCESS_KEY || '',
+    awsRegion: process.env.AI_AWS_REGION || '',
+    awsAccessKeyId: process.env.AI_AWS_ACCESS_KEY_ID || '',
+    awsSecretAccessKey: process.env.AI_AWS_SECRET_ACCESS_KEY || '',
   },
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
