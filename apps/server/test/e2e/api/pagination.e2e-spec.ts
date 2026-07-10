@@ -92,6 +92,25 @@ describe('API v2 cursor pagination (e2e)', () => {
     expect(new Set(ids).size).toBe(5);
   });
 
+  it('following the previous URL returns the ACTUAL previous page (no off-by-one)', async () => {
+    // 5 rows, limit 2: page1=[0,1] page2=[2,3] page3=[4]. From page 3, the previous
+    // link must resolve to page 2 EXACTLY — a cursor off by one would drop row 2
+    // and re-show row 4.
+    const p1 = await get(path('limit=2'));
+    const p2 = await get(path(`limit=2&cursor=${cursorOf(p1.body.next)}`));
+    const p3 = await get(path(`limit=2&cursor=${cursorOf(p2.body.next)}`));
+    expect(p3.body.results).toHaveLength(1);
+    expect(p3.body.previous).not.toBeNull();
+
+    // Actually FOLLOW the previous link from page 3 (the old test only checked it
+    // was non-null — which is why the off-by-one slipped through).
+    const prevCursor = cursorOf(p3.body.previous);
+    const back = await get(path(`limit=2&cursor=${prevCursor}`));
+    const backIds = back.body.results.map((e: { id: string }) => e.id);
+    const p2Ids = p2.body.results.map((e: { id: string }) => e.id);
+    expect(backIds).toEqual(p2Ids); // page 2 exactly — not [row3, row4]
+  });
+
   it('returns the empty final page for an unknown/exhausted cursor (not a 400)', async () => {
     // A server-issued `next` whose tail rows were deleted is indistinguishable
     // from a garbage cursor — both get the empty final page so a sync client

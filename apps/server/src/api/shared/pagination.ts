@@ -61,21 +61,24 @@ async function resolvePreviousUrl<TNode>(
   if (!cursor) {
     return null;
   }
-  const previousPage = await fetch({ last: limit, before: connection.edges[0].cursor });
-  if (!previousPage.edges.length) {
+  // The previous page is the `limit` rows ENDING just before the current page's
+  // first row. Its `previous` link must be an `after` cursor that paginate()
+  // (first/after, exclusive) turns back into exactly that page — i.e. the cursor
+  // of the row BEFORE the previous page's first row. Fetch one extra row toward
+  // the start to get that predecessor in the same query.
+  const window = await fetch({ last: limit + 1, before: connection.edges[0].cursor });
+  if (!window.edges.length) {
     return null;
   }
   const firstPageUrl = buildUrl(requestUrl, { limit, ...query });
-  // A short previous page is the first page; a full one might still be — confirm
-  // by comparing its first cursor to the real first page's.
-  if (previousPage.edges.length < limit) {
+  // Fewer than limit+1 rows precede the current page → the previous page starts at
+  // the very first row, so `previous` is the (cursorless) first page.
+  if (window.edges.length <= limit) {
     return firstPageUrl;
   }
-  const firstPage = await fetch({ first: limit });
-  if (firstPage.edges[0]?.cursor === previousPage.edges[0].cursor) {
-    return firstPageUrl;
-  }
-  return buildUrl(requestUrl, { cursor: previousPage.edges[0].cursor, limit, ...query });
+  // window[0] is the predecessor of the previous page's first row; after it,
+  // paginate() returns exactly the previous `limit` rows.
+  return buildUrl(requestUrl, { cursor: window.edges[0].cursor, limit, ...query });
 }
 
 /**
