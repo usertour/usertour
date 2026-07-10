@@ -561,6 +561,7 @@ interface ContentLocalizationDetailProps {
 export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps) => {
   const { locateCode } = props;
   const { contentId } = useContentDetailUI();
+  const { isViewOnly } = useAppContext();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
   const { localizationList } = useLocalizationList();
@@ -574,11 +575,14 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
   // carries every translation row over (copyVersionLocalizations, keyed by
   // cvid) and the server reuses an existing draft, so re-entry can't stack
   // drafts. The editor stays unmounted until the refetched content points at
-  // the draft.
-  const published = Boolean(content && version?.id && isVersionPublished(content, version.id));
+  // the draft. View-only members can't fork (no write capability), so they
+  // read the published version's translations in place instead.
+  const needsFork = Boolean(
+    !isViewOnly && content && version?.id && isVersionPublished(content, version.id),
+  );
   const forkingRef = useRef(false);
   useEffect(() => {
-    if (!published || forkingRef.current || !content || !version?.id) {
+    if (!needsFork || forkingRef.current || !content || !version?.id) {
       return;
     }
     forkingRef.current = true;
@@ -590,7 +594,7 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
       .finally(() => {
         forkingRef.current = false;
       });
-  }, [published, content, version?.id, createContentVersion, refetchContent, toast]);
+  }, [needsFork, content, version?.id, createContentVersion, refetchContent, toast]);
 
   // First-load gating only — a background refetch flips `loading` while the
   // list stays populated, and unmounting the editor then would drop unsaved
@@ -610,7 +614,7 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
     !content ||
     !version?.id ||
     !localization ||
-    published ||
+    needsFork ||
     (loading && loadedVersionIdRef.current !== version.id)
   ) {
     return <></>;

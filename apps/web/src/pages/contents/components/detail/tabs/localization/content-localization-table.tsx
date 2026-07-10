@@ -9,6 +9,7 @@ import {
   TableRow,
   useToast,
 } from '@usertour/ui';
+import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentLocalizations } from '@/hooks/use-content-localizations';
@@ -60,6 +61,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
   const { contentType, version } = props;
   const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
+  const { isViewOnly } = useAppContext();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { contentLocalizationList, loading } = useContentLocalizations(version.id);
   const { localizationList, loading: localizationsLoading } = useLocalizationList();
@@ -177,6 +179,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
                 <TableCell>
                   <Switch
                     checked={row?.enabled ?? false}
+                    disabled={isViewOnly}
                     className="data-[state=unchecked]:bg-input"
                     onCheckedChange={(checked: boolean) => {
                       handleOnCheckedChange(checked, localization, row);
