@@ -85,5 +85,12 @@ export function buildMcpAuditEntry(
     resourceId: meta.resourceId(args, result),
     before,
     after: result,
+    // Credential display name captured AT WRITE TIME — short-lived OAuth token
+    // rows are hard-deleted by the expiry cleanup, so a read-time lookup goes
+    // blank within the hour; the stored name keeps the entry attributable.
+    metadata: {
+      credentialType: 'apiToken',
+      ...(ctx.token.name ? { tokenName: ctx.token.name } : {}),
+    },
   };
 }

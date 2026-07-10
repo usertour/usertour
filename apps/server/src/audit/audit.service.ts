@@ -117,6 +117,7 @@ export class AuditService {
       resourceId: string;
       before: Prisma.JsonValue;
       after: Prisma.JsonValue;
+      metadata?: Prisma.JsonValue;
     },
   >(
     rows: T[],
@@ -190,7 +191,11 @@ export class AuditService {
     return rows.map((r) => ({
       ...r,
       actorUserName: r.actorUserId ? (userName.get(r.actorUserId) ?? null) : null,
-      actorTokenName: r.actorTokenId ? (tokenName.get(r.actorTokenId) ?? null) : null,
+      // Live rows resolve by id; a pruned OAuth token row falls back to the
+      // name captured into metadata at write time.
+      actorTokenName: r.actorTokenId
+        ? (tokenName.get(r.actorTokenId) ?? metadataTokenName(r.metadata) ?? null)
+        : null,
       resourceName:
         pickResourceName(r.after) ??
         pickResourceName(r.before) ??
@@ -198,6 +203,12 @@ export class AuditService {
         null,
     }));
   }
+}
+
+/** The write-time credential name stored in an entry's metadata (survives token-row pruning). */
+function metadataTokenName(metadata: unknown): string | null {
+  const name = (metadata as { tokenName?: unknown } | null)?.tokenName;
+  return typeof name === 'string' && name ? name : null;
 }
 
 /** Pull a display name out of a before/after snapshot (config resources carry `name`/`title`). */

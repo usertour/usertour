@@ -506,6 +506,45 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     await prisma.oAuthClient.deleteMany({ where: { id: cid } });
   });
 
+  it('reports lastUsedAt from the grant column after its token rows are pruned', async () => {
+    // The durable rollup: an idle OAuth connection's short-lived token rows get
+    // deleted by the hourly expiry cleanup, which first rolls their max lastUsedAt
+    // onto the grant. listConnections must then read it from the grant column,
+    // not show the connection as "never used".
+    const client = await prisma.oAuthClient.create({
+      data: {
+        name: 'Rollup MCP',
+        redirectUris: [redirectUri],
+        clientType: 'public',
+        grantTypes: ['authorization_code', 'refresh_token'],
+      },
+    });
+    const used = new Date('2026-07-09T12:34:56Z');
+    await prisma.oAuthGrant.create({
+      data: {
+        userId: ownerUserId,
+        clientId: client.id,
+        projectId,
+        scopes: ['content:read'],
+        lastUsedAt: used, // rolled up; NO live apiToken rows for this grant
+      },
+    });
+
+    const conns = await http()
+      .post('/graphql')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ query: '{ oauthConnections { clientName lastUsedAt } }' })
+      .expect(200);
+    const conn = conns.body.data.oauthConnections.find(
+      (c: { clientName: string }) => c.clientName === 'Rollup MCP',
+    );
+    expect(conn).toBeDefined();
+    expect(new Date(conn.lastUsedAt).toISOString()).toBe(used.toISOString());
+
+    await prisma.oAuthGrant.deleteMany({ where: { clientId: client.id } });
+    await prisma.oAuthClient.deleteMany({ where: { id: client.id } });
+  });
+
   it('lists and revokes the connection over GraphQL', async () => {
     const list = await http()
       .post('/graphql')

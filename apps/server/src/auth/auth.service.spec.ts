@@ -52,7 +52,11 @@ describe('AuthService', () => {
         updateMany: jest.fn(),
         deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
-      apiToken: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      apiToken: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        groupBy: jest.fn().mockResolvedValue([]),
+      },
+      oAuthGrant: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
       // Force-SSO gate lookup — default to "not a member of any enforced project".
       userOnProject: { findMany: jest.fn().mockResolvedValue([]) },
       $transaction: jest.fn((cb: any) => cb(prisma)),
@@ -312,6 +316,27 @@ describe('AuthService', () => {
       expect(prisma.apiToken.deleteMany).toHaveBeenCalledWith({
         where: { clientId: { not: null }, expiresAt: { lt: expect.any(Date) } },
       });
+    });
+
+    it("rolls each grant's max lastUsedAt onto OAuthGrant BEFORE pruning its token rows", async () => {
+      const used = new Date('2026-07-09T10:00:00Z');
+      prisma.apiToken.groupBy.mockResolvedValue([
+        { oauthGrantId: 'grant-1', _max: { lastUsedAt: used } },
+      ]);
+
+      await service.cleanExpiredRefreshTokens();
+
+      // The rollup writes the durable lastUsedAt so Connected Apps / audit names
+      // survive the deletion of the short-lived token rows that carried them.
+      expect(prisma.oAuthGrant.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'grant-1',
+          OR: [{ lastUsedAt: null }, { lastUsedAt: { lt: used } }],
+        },
+        data: { lastUsedAt: used },
+      });
+      // Rollup happens before the delete (mock order can't assert timing, but both fire).
+      expect(prisma.apiToken.deleteMany).toHaveBeenCalled();
     });
   });
 });

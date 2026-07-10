@@ -381,7 +381,9 @@ export class OAuthService {
         scopes: (g.scopes as string[]) ?? [],
         environmentNames: allowed ? allowed.map((id) => envName.get(id) ?? id) : null,
         createdAt: g.createdAt,
-        lastUsedAt: lastUsed.get(g.id) ?? null,
+        // Live token rows win (freshest); the grant column is the durable rollup
+        // written by the expiry cleanup before it prunes those rows.
+        lastUsedAt: lastUsed.get(g.id) ?? g.lastUsedAt ?? null,
       };
     });
   }

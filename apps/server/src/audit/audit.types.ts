@@ -41,8 +41,8 @@ export interface AuditHttpRequest {
   route?: { path?: string };
   projectId?: string;
   environment?: { id?: string; projectId?: string };
-  apiToken?: { id?: string; userId?: string };
-  accessToken?: { id?: string };
+  apiToken?: { id?: string; userId?: string; name?: string };
+  accessToken?: { id?: string; name?: string };
 }
 
 /**

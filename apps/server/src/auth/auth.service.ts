@@ -150,6 +150,33 @@ export class AuthService implements OnModuleInit {
     // (personal `utp_` keys have no expiry and must stay). An expired row is already
     // unusable (getAccessToken checks expiresAt), and the grant + its live token are
     // untouched, so this is pure dead-weight removal.
+    //
+    // Before deleting, roll each grant's max(lastUsedAt) up onto OAuthGrant —
+    // the token rows are the only carrier of "last used", and pruning them
+    // silently reset Connected Apps' lastUsed to "never".
+    const expiring = await this.prisma.apiToken.groupBy({
+      by: ['oauthGrantId'],
+      where: {
+        clientId: { not: null },
+        expiresAt: { lt: now },
+        oauthGrantId: { not: null },
+        lastUsedAt: { not: null },
+      },
+      _max: { lastUsedAt: true },
+    });
+    await Promise.all(
+      expiring
+        .filter((e) => e.oauthGrantId && e._max.lastUsedAt)
+        .map((e) =>
+          this.prisma.oAuthGrant.updateMany({
+            where: {
+              id: e.oauthGrantId as string,
+              OR: [{ lastUsedAt: null }, { lastUsedAt: { lt: e._max.lastUsedAt as Date } }],
+            },
+            data: { lastUsedAt: e._max.lastUsedAt as Date },
+          }),
+        ),
+    );
     const { count: oauthCount } = await this.prisma.apiToken.deleteMany({
       where: { clientId: { not: null }, expiresAt: { lt: now } },
     });

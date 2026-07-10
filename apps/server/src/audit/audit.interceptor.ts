@@ -225,6 +225,10 @@ export function buildRestAuditEntry(
   result: unknown,
 ): AuditEntry {
   const credentialType = req.apiToken ? 'apiToken' : req.accessToken ? 'accessToken' : undefined;
+  // Capture the credential's display name AT WRITE TIME: short-lived OAuth token
+  // rows are hard-deleted by the expiry cleanup, so a read-time lookup goes blank
+  // within the hour — the stored name keeps the entry attributable forever.
+  const tokenName = req.apiToken?.name ?? req.accessToken?.name ?? undefined;
   return {
     source: 'api',
     projectId:
@@ -238,7 +242,7 @@ export function buildRestAuditEntry(
     resourceId: descriptor.resourceId,
     before,
     after: result,
-    metadata: credentialType ? { credentialType } : undefined,
+    metadata: credentialType ? { credentialType, ...(tokenName ? { tokenName } : {}) } : undefined,
   };
 }
 
