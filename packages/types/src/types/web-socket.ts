@@ -361,6 +361,13 @@ export type CustomContentSession = {
     project: {
       id: string;
       removeBranding: boolean;
+      /**
+       * The user's preferred locale (explicit locale_code attribute, else the
+       * SDK-reported browser locale) — drives the widget's built-in chrome
+       * translations. Independent of whether the content has a matching
+       * translation. Absent on payloads from older servers.
+       */
+      userLocale?: string;
     };
   };
   expandPending?: boolean;

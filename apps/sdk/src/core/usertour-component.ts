@@ -356,6 +356,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const themeData = UsertourTheme.createThemeData(themeSettings);
     const userAttributes = this.getUserAttributes();
     const removeBranding = this.isRemoveBranding();
+    const userLocale = this.getUserLocale();
     const linkUrlDecorator = this.getLinkUrlDecorator();
 
     // Calculate final zIndex using subclass implementation
@@ -363,6 +364,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
     return {
       removeBranding,
+      userLocale,
       ...themeData,
       userAttributes,
       openState: false,
@@ -539,6 +541,17 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected isRemoveBranding(): boolean {
     return this.session.isRemoveBranding();
+  }
+
+  /**
+   * The locale for the widget chrome: the server-resolved user preference,
+   * else the browser locale (older servers don't send userLocale).
+   */
+  protected getUserLocale(): string | undefined {
+    return (
+      this.session.getUserLocale() ??
+      (typeof navigator !== 'undefined' ? navigator.language : undefined)
+    );
   }
 
   // === Theme Management ===

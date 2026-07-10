@@ -1,6 +1,7 @@
 // Scale component for SDK widget
 
 import { forwardRef, memo, useCallback, useMemo } from 'react';
+import { useWidgetLocale } from '../locale/context';
 
 import { Button } from '../primitives';
 import {
@@ -55,6 +56,7 @@ export const Scale = memo(
       { lowRange, highRange, lowLabel, highLabel, onValueChange, isInteractive = true, ...props },
       ref,
     ) => {
+      const { messages } = useWidgetLocale();
       const scaleValues = useMemo(() => {
         const length = calculateScaleLength(lowRange, highRange);
         return Array.from({ length }, (_, i) => lowRange + i);
@@ -78,7 +80,7 @@ export const Scale = memo(
               gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))`,
             }}
             role="radiogroup"
-            aria-label="Scale options"
+            aria-label={messages.scaleOptions}
           >
             {scaleValues.map((value) => (
               <ScaleButton

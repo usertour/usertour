@@ -343,6 +343,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
           <LocalizationPreviewDialog
             contentType={content.type}
             localizationName={localization.name}
+            localeCode={localization.code}
             buildLocalizedVersion={buildLocalizedVersion}
           />
           <MachineTranslationButton
@@ -531,6 +532,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
           <LocalizationPreviewDialog
             contentType={content.type}
             localizationName={localization.name}
+            localeCode={localization.code}
             buildLocalizedVersion={buildLocalizedVersion}
           />
           <MachineTranslationButton

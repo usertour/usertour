@@ -36,6 +36,7 @@ import {
   checklistUnCompletedItemsCount,
 } from './utils/content';
 import { useSettingsStyles } from './hooks/use-settings-styles';
+import { useWidgetLocale } from '../locale/context';
 import { cn } from '@usertour/tailwind';
 
 interface ChecklistRootContextValue {
@@ -543,6 +544,7 @@ ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 const ChecklistDropdown = forwardRef<HTMLButtonElement, React.HTMLAttributes<HTMLButtonElement>>(
   (props, ref) => {
     const { handleExpandedChange } = useChecklistRootContext();
+    const { messages } = useWidgetLocale();
     const { className, ...restProps } = props;
 
     const buttonClassName = cn(
@@ -565,7 +567,7 @@ const ChecklistDropdown = forwardRef<HTMLButtonElement, React.HTMLAttributes<HTM
         ref={ref}
         className={buttonClassName}
         onClick={handleClick}
-        aria-label="Close checklist"
+        aria-label={messages.closeChecklist}
         {...restProps}
       >
         <DropDownIcon height={24} width={24} />
@@ -623,6 +625,7 @@ ChecklistItems.displayName = 'ChecklistItems';
 const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
     const { setShowDismissConfirm, onDismiss, clearItemAnimations } = useChecklistRootContext();
+    const { messages } = useWidgetLocale();
 
     const handleCancel = useCallback(() => {
       clearItemAnimations();
@@ -631,11 +634,11 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
 
     return (
       <div ref={ref} {...props} className="flex flex-col">
-        <div className="text-sdk-base font-sdk-bold">Dismiss checklist?</div>
+        <div className="text-sdk-base font-sdk-bold">{messages.dismissChecklistConfirm}</div>
         <div className="flex flex-row space-x-2 items-center justify-center my-4">
-          <Button onClick={onDismiss}>Yes, dismiss</Button>
+          <Button onClick={onDismiss}>{messages.dismissChecklistYes}</Button>
           <Button variant="secondary" onClick={handleCancel}>
-            Cancel
+            {messages.cancel}
           </Button>
         </div>
       </div>
@@ -652,6 +655,7 @@ interface ChecklistDismissProps extends React.HTMLAttributes<HTMLDivElement> {
 const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((props, ref) => {
   const { onAutoDismiss, ...restProps } = props;
   const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
+  const { messages } = useWidgetLocale();
   const [progressWidth, setProgressWidth] = useState(0);
 
   // Handle progress bar animation when autoDismissChecklist is enabled and all items are completed
@@ -698,9 +702,9 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
             variant="custom"
             className={textClassName}
             onClick={handleDismiss}
-            aria-label="Dismiss checklist"
+            aria-label={messages.dismissChecklist}
           >
-            Dismiss checklist
+            {messages.dismissChecklist}
           </Button>
         </div>
       )}
@@ -748,6 +752,7 @@ interface ChecklistItemProps {
 const ChecklistItem = (props: ChecklistItemProps) => {
   const { item, index, onClick, textDecoration = 'line-through' } = props;
   const { isOpen, data } = useChecklistRootContext();
+  const { messages } = useWidgetLocale();
   const [shouldShowAnimation, setShouldShowAnimation] = useState(false);
 
   const isCompleted = useMemo(() => {
@@ -790,7 +795,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
         cursorStyle,
       )}
       onClick={() => onClick(item, index)}
-      aria-label={`${item.isCompleted ? 'Uncomplete' : 'Complete'} task: ${item.name}`}
+      aria-label={`${item.isCompleted ? messages.uncompleteTask : messages.completeTask}: ${item.name}`}
     >
       <ChecklistChecked isChecked={isCompleted} isShowAnimation={shouldShowAnimation} />
       <div

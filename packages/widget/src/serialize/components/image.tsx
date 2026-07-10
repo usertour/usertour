@@ -7,6 +7,7 @@ import { DEFAULT_WIDTH, WIDTH_TYPES } from '../constants';
 import type { MarginStyleProps } from '../types';
 import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../utils';
 import { useLinkDecorator } from '../link-decorator-context';
+import { useWidgetLocale } from '../../locale/context';
 
 // Types
 interface ImageStyle extends MarginStyleProps {
@@ -42,13 +43,19 @@ export interface ImageSerializeProps {
 export const ImageSerialize = memo<ImageSerializeProps>((props) => {
   const { element, className } = props;
   const linkDecorator = useLinkDecorator();
+  const { messages } = useWidgetLocale();
 
   if (!element.url) {
     return null;
   }
 
   const image = (
-    <img src={element.url} style={transformsStyle(element)} className={className} alt="Content" />
+    <img
+      src={element.url}
+      style={transformsStyle(element)}
+      className={className}
+      alt={messages.image}
+    />
   );
 
   // Check if element has link with URL (already processed by replaceUserAttr)

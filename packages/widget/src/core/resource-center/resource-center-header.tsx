@@ -5,6 +5,7 @@ import { ResourceCenterBlockType } from '@usertour/types';
 import type { ResourceCenterContentListBlock } from '@usertour/types';
 import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
+import { useWidgetLocale } from '../../locale/context';
 import { serializeBlockName } from '@usertour/helpers';
 
 // ============================================================================
@@ -16,6 +17,7 @@ export const ResourceCenterCloseButton = forwardRef<
   HTMLAttributes<HTMLButtonElement>
 >((props, ref) => {
   const { handleExpandedChange } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
   const { className, ...restProps } = props;
 
   const buttonClassName = cn(
@@ -37,7 +39,7 @@ export const ResourceCenterCloseButton = forwardRef<
       ref={ref}
       className={buttonClassName}
       onClick={handleClick}
-      aria-label="Close resource center"
+      aria-label={messages.closeResourceCenter}
       {...restProps}
     >
       <DropDownIcon height={24} width={24} />
@@ -53,6 +55,7 @@ ResourceCenterCloseButton.displayName = 'ResourceCenterCloseButton';
 
 export const ResourceCenterBackButton = memo(() => {
   const { actions } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
 
   const handleClick = useCallback(() => {
     actions.pop();
@@ -69,7 +72,7 @@ export const ResourceCenterBackButton = memo(() => {
         'outline-none cursor-pointer',
       )}
       onClick={handleClick}
-      aria-label="Back"
+      aria-label={messages.back}
     >
       <ArrowLeftIcon height={24} width={24} />
     </Button>
@@ -95,6 +98,7 @@ export const ResourceCenterHeader = memo(() => {
     setSearchQuery,
     themeSetting,
   } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
 
   const isHeaderNone = themeSetting.resourceCenter?.headerBackground?.type === 'none';
 
@@ -174,7 +178,7 @@ export const ResourceCenterHeader = memo(() => {
               'text-sdk-brand-foreground placeholder:text-sdk-brand-foreground/50',
               'outline-none',
             )}
-            placeholder="Search"
+            placeholder={messages.search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

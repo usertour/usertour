@@ -19,7 +19,12 @@ import {
   DialogTrigger,
   ScaledPreviewContainer,
 } from '@usertour/ui';
-import { AnnouncementPopupBody, Popper, useSettingsStyles } from '@usertour/widget';
+import {
+  AnnouncementPopupBody,
+  Popper,
+  WidgetLocaleProvider,
+  useSettingsStyles,
+} from '@usertour/widget';
 import { ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -288,12 +293,14 @@ export interface LocalizationPreviewDialogProps {
   contentType: string;
   /** Which language is being previewed — shown in the dialog title. */
   localizationName: string;
+  /** Target locale code — the widget chrome in the preview follows it. */
+  localeCode: string;
   /** Clones the version with the working translations merged in (delivery shape). */
   buildLocalizedVersion: () => ContentVersion;
 }
 
 export const LocalizationPreviewDialog = (props: LocalizationPreviewDialogProps) => {
-  const { contentType, localizationName, buildLocalizedVersion } = props;
+  const { contentType, localizationName, localeCode, buildLocalizedVersion } = props;
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -311,10 +318,14 @@ export const LocalizationPreviewDialog = (props: LocalizationPreviewDialogProps)
             {t('contents.localization.previewTitle', { locale: localizationName })}
           </DialogTitle>
         </DialogHeader>
-        <LocalizationPreviewBody
-          contentType={contentType}
-          buildLocalizedVersion={buildLocalizedVersion}
-        />
+        {/* The widget chrome in the preview follows the previewed language,
+            mirroring what a user with that locale would see. */}
+        <WidgetLocaleProvider locale={localeCode}>
+          <LocalizationPreviewBody
+            contentType={contentType}
+            buildLocalizedVersion={buildLocalizedVersion}
+          />
+        </WidgetLocaleProvider>
       </DialogContent>
     </Dialog>
   );

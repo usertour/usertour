@@ -140,3 +140,19 @@ export {
 
 // Utils - Button utilities
 export { resolveButtonVariant, isValidButtonSemanticType } from './utils/button';
+
+// Locale - built-in chrome translations
+export {
+  WidgetLocaleProvider,
+  useWidgetLocale,
+  type WidgetLocaleProviderProps,
+  type WidgetLocaleValue,
+} from './locale/context';
+export {
+  WIDGET_MESSAGES,
+  DEFAULT_WIDGET_LOCALE,
+  getWidgetMessages,
+  resolveWidgetLocale,
+  resolveWidgetIntlLocale,
+  type WidgetMessages,
+} from './locale/messages';

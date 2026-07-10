@@ -6,6 +6,7 @@ import {
   BannerFrame,
   getBannerWrapperStyle,
   LinkDecoratorContext,
+  WidgetLocaleProvider,
 } from '@usertour/widget';
 import {
   BannerData,
@@ -35,6 +36,7 @@ type BannerWidgetStore = {
   assets?: AssetAttributes[];
   removeBranding: boolean;
   userAttributes?: UserTourTypes.Attributes;
+  userLocale?: string;
   bannerData?: BannerData;
   targetElement?: Element | null;
   linkUrlDecorator?: ((url: string) => string) | null;
@@ -230,24 +232,26 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   }
 
   return createPortal(
-    <LinkDecoratorContext.Provider value={store.linkUrlDecorator || null}>
-      <BannerRoot
-        themeSettings={themeSettings}
-        data={bannerData}
-        zIndex={zIndex}
-        assets={assets}
-        globalStyle={globalStyle}
-        onDismiss={banner.handleDismiss}
-      >
-        <BannerFrame>
-          <ContentEditorSerialize
-            contents={contents}
-            userAttributes={userAttributes}
-            onClick={banner.handleOnClick}
-          />
-        </BannerFrame>
-      </BannerRoot>
-    </LinkDecoratorContext.Provider>,
+    <WidgetLocaleProvider locale={store.userLocale}>
+      <LinkDecoratorContext.Provider value={store.linkUrlDecorator || null}>
+        <BannerRoot
+          themeSettings={themeSettings}
+          data={bannerData}
+          zIndex={zIndex}
+          assets={assets}
+          globalStyle={globalStyle}
+          onDismiss={banner.handleDismiss}
+        >
+          <BannerFrame>
+            <ContentEditorSerialize
+              contents={contents}
+              userAttributes={userAttributes}
+              onClick={banner.handleOnClick}
+            />
+          </BannerFrame>
+        </BannerRoot>
+      </LinkDecoratorContext.Provider>
+    </WidgetLocaleProvider>,
     mountEl,
   );
 };

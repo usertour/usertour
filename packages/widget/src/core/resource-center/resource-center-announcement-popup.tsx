@@ -12,6 +12,7 @@ import { ContentEditorSerialize } from '../../serialize/content-editor-serialize
 import { Button } from '../../primitives';
 import { WidgetClass } from '../class-names';
 import { PopperClose } from '../popper';
+import { useWidgetLocale } from '../../locale/context';
 import { computePositionStyle } from '../utils/position';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import { AnnouncementReadMoreButton, formatAnnouncementDate } from './resource-center-body';
@@ -97,6 +98,7 @@ export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
     variant = 'bubble',
   } = props;
   const isModal = variant === 'modal';
+  const { locale, messages } = useWidgetLocale();
 
   // The popup renders outside the RC session, so its referenced attributes
   // aren't in the session's userAttributes; the payload carries their resolved
@@ -141,7 +143,7 @@ export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
           </div>
           {popup.time && (
             <div className="text-xs text-sdk-foreground/50">
-              {formatAnnouncementDate(popup.time)}
+              {formatAnnouncementDate(popup.time, locale)}
             </div>
           )}
         </>
@@ -155,7 +157,7 @@ export const AnnouncementPopupBody = (props: AnnouncementPopupBodyProps) => {
         (isModal ? (
           <div className="flex justify-center pt-2">
             <Button variant="default" onClick={handleReadMore}>
-              {popup.moreButtonText || 'Read more'}
+              {popup.moreButtonText || messages.readMore}
             </Button>
           </div>
         ) : (

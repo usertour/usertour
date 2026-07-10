@@ -4,11 +4,8 @@ import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useCallback, useState } from 'react';
 
 import { Label, RadioGroup, RadioGroupItem } from '../primitives';
-import {
-  DEFAULT_OTHER_PLACEHOLDER,
-  OPTION_ITEM_BASE_CLASS,
-  OPTION_ITEM_EDITING_CLASS,
-} from './constants';
+import { useWidgetLocale } from '../locale/context';
+import { OPTION_ITEM_BASE_CLASS, OPTION_ITEM_EDITING_CLASS } from './constants';
 import { OptionItem } from './option-item';
 import { OtherOptionInput } from './other-option-input';
 import type { SelectionOption } from './types';
@@ -42,6 +39,7 @@ export const SingleSelection = memo(
       },
       ref,
     ) => {
+      const { messages } = useWidgetLocale();
       const [otherValue, setOtherValue] = useState<string>('');
       const [isEditing, setIsEditing] = useState<boolean>(false);
 
@@ -95,7 +93,7 @@ export const SingleSelection = memo(
                     />
                   ) : (
                     <Label className="grow cursor-pointer">
-                      {otherPlaceholder || DEFAULT_OTHER_PLACEHOLDER}
+                      {otherPlaceholder || messages.otherPlaceholder}
                     </Label>
                   )}
                 </div>

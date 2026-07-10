@@ -13,6 +13,7 @@ import {
 import type { AnnouncementData } from '@usertour/types';
 import { AnnouncementDistribution } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
+import { resolveUserLocaleCode } from '@usertour/helpers';
 import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
@@ -214,6 +215,14 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.projectsService.getConfig(environment);
+    // The user's preferred locale, shipped with every session payload so the
+    // widget can localize its built-in chrome. Preference only (locale_code
+    // attribute, else the SDK-reported browser locale) — deliberately not
+    // gated on the content having a matching translation. findBizUser is
+    // request-memoized, so this adds no query.
+    const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
+    const userLocale =
+      resolveUserLocaleCode(bizUser?.data, socketData.clientContext?.locale) ?? undefined;
     const themes = await this.contentDataService.findThemes({
       environment,
       externalUserId,
@@ -247,6 +256,7 @@ export class SessionBuilderService {
         project: {
           id: environment.projectId,
           removeBranding: config.removeBranding,
+          userLocale,
         },
       },
       draftMode: false,

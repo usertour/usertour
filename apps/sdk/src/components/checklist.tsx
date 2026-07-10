@@ -10,6 +10,7 @@ import {
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
+  WidgetLocaleProvider,
 } from '@usertour/widget';
 import {
   ChecklistData,
@@ -61,6 +62,7 @@ const useChecklistStore = (checklist: UsertourChecklist) => {
     assets,
     removeBranding,
     linkUrlDecorator,
+    userLocale,
   } = store;
 
   if (!checklistData || !openState) {
@@ -78,6 +80,7 @@ const useChecklistStore = (checklist: UsertourChecklist) => {
     assets,
     removeBranding,
     linkUrlDecorator,
+    userLocale,
   };
 };
 
@@ -161,6 +164,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     zIndex,
     expanded,
     removeBranding,
+    userLocale,
     linkUrlDecorator,
   } = store;
 
@@ -169,20 +173,22 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
   }
 
   return (
-    <ChecklistWidgetCore
-      data={checklistData}
-      themeSettings={themeSettings}
-      userAttributes={userAttributes}
-      assets={assets}
-      handleItemClick={checklist.handleItemClick}
-      handleOnClick={checklist.handleOnClick}
-      handleDismiss={checklist.handleDismiss}
-      handleExpandedChange={checklist.handleExpandedChange}
-      removeBranding={removeBranding}
-      zIndex={zIndex}
-      expanded={expanded}
-      handleAutoDismiss={checklist.handleAutoDismiss}
-      linkUrlDecorator={linkUrlDecorator}
-    />
+    <WidgetLocaleProvider locale={userLocale}>
+      <ChecklistWidgetCore
+        data={checklistData}
+        themeSettings={themeSettings}
+        userAttributes={userAttributes}
+        assets={assets}
+        handleItemClick={checklist.handleItemClick}
+        handleOnClick={checklist.handleOnClick}
+        handleDismiss={checklist.handleDismiss}
+        handleExpandedChange={checklist.handleExpandedChange}
+        removeBranding={removeBranding}
+        zIndex={zIndex}
+        expanded={expanded}
+        handleAutoDismiss={checklist.handleAutoDismiss}
+        linkUrlDecorator={linkUrlDecorator}
+      />
+    </WidgetLocaleProvider>
   );
 };

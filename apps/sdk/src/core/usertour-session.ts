@@ -94,6 +94,15 @@ export class UsertourSession {
     return this.session.content.project.removeBranding;
   }
 
+  /**
+   * The user's preferred locale resolved by the server (locale_code
+   * attribute, else the reported browser locale). Absent on payloads from
+   * older servers.
+   */
+  getUserLocale(): string | undefined {
+    return this.session.content.project.userLocale;
+  }
+
   // === Steps ===
   /**
    * Gets the steps array from session
