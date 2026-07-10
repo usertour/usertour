@@ -4,7 +4,9 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentLocalizations } from '@/hooks/use-content-localizations';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useLocalizationList } from '@/hooks/use-localization-list';
-import { isVersionPublished } from '@/utils/content';
+import { isVersionPublished, resolveEditableVersionId } from '@/utils/content';
+import { getErrorMessage } from '@usertour/helpers';
+import { useCreateContentVersionMutation } from '@usertour/hooks';
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
@@ -33,8 +35,8 @@ import type {
   VersionOnLocalization,
 } from '@usertour/types';
 import { ContentDataType } from '@usertour/types';
-import { Badge, Checkbox, InlineAlert, TooltipProvider } from '@usertour/ui';
-import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { Badge, Checkbox, TooltipProvider, useToast } from '@usertour/ui';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -57,15 +59,14 @@ import {
 } from './version-data-sections';
 
 // ---------------------------------------------------------------------------
-// Shared editor chrome — locale heading, enabled badge, save indicator,
-// published lock notice and the source/target column header.
+// Shared editor chrome — locale heading, enabled badge, save indicator and
+// the language pair.
 // ---------------------------------------------------------------------------
 
 interface LocalizationEditorShellProps {
   localization: Localization;
   contentLocalization: VersionOnLocalization | undefined;
   saveState: LocalizationSaveState;
-  locked: boolean;
   sourceLocaleName: string;
   /** Untranslated units across the whole content, shown next to the filter. */
   missingCount: number;
@@ -81,7 +82,6 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
     localization,
     contentLocalization,
     saveState,
-    locked,
     sourceLocaleName,
     missingCount,
     translateText,
@@ -129,9 +129,6 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
                 {actions}
               </div>
             </div>
-            {locked && (
-              <InlineAlert variant="info" message={t('contents.localization.publishedLock')} />
-            )}
             <div className="flex flex-col gap-4">
               <label
                 htmlFor="show-only-missing"
@@ -180,8 +177,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
   const { isViewOnly } = useAppContext();
   const sourceLocaleName = useSourceLocaleName(defaultLocalization);
 
-  const locked = isVersionPublished(content, version.id);
-  const disabled = locked || isViewOnly;
+  const disabled = isViewOnly;
 
   const steps = useMemo(
     () =>
@@ -334,7 +330,6 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
       localization={localization}
       contentLocalization={contentLocalization}
       saveState={saveState}
-      locked={locked}
       sourceLocaleName={sourceLocaleName}
       missingCount={missingCount}
       translateText={translateText}
@@ -396,8 +391,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   const { isViewOnly } = useAppContext();
   const sourceLocaleName = useSourceLocaleName(defaultLocalization);
 
-  const locked = isVersionPublished(content, version.id);
-  const disabled = locked || isViewOnly;
+  const disabled = isViewOnly;
   const sourceData = version.data ?? {};
 
   const [workingData, setWorkingData] = useState<unknown>(() =>
@@ -523,7 +517,6 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
       localization={localization}
       contentLocalization={contentLocalization}
       saveState={saveState}
-      locked={locked}
       sourceLocaleName={sourceLocaleName}
       missingCount={missingCount}
       translateText={translateText}
@@ -568,10 +561,36 @@ interface ContentLocalizationDetailProps {
 export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps) => {
   const { locateCode } = props;
   const { contentId } = useContentDetailUI();
-  const { content } = useContentDetail(contentId);
+  const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { version } = useContentVersion(content?.editedVersionId);
   const { localizationList } = useLocalizationList();
   const { contentLocalizationList, loading } = useContentLocalizations(version?.id);
+  const { invoke: createContentVersion } = useCreateContentVersionMutation();
+  const { toast } = useToast();
+
+  // Opening the translation editor on a published version forks a draft
+  // first — the same behavior as "Edit in builder" — so translations always
+  // land on the draft and ship through the normal publish flow. The fork
+  // carries every translation row over (copyVersionLocalizations, keyed by
+  // cvid) and the server reuses an existing draft, so re-entry can't stack
+  // drafts. The editor stays unmounted until the refetched content points at
+  // the draft.
+  const published = Boolean(content && version?.id && isVersionPublished(content, version.id));
+  const forkingRef = useRef(false);
+  useEffect(() => {
+    if (!published || forkingRef.current || !content || !version?.id) {
+      return;
+    }
+    forkingRef.current = true;
+    resolveEditableVersionId(content, version.id, createContentVersion)
+      .then(() => refetchContent())
+      .catch((error) => {
+        toast({ variant: 'destructive', title: getErrorMessage(error) });
+      })
+      .finally(() => {
+        forkingRef.current = false;
+      });
+  }, [published, content, version?.id, createContentVersion, refetchContent, toast]);
 
   // First-load gating only — a background refetch flips `loading` while the
   // list stays populated, and unmounting the editor then would drop unsaved
@@ -591,6 +610,7 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
     !content ||
     !version?.id ||
     !localization ||
+    published ||
     (loading && loadedVersionIdRef.current !== version.id)
   ) {
     return <></>;

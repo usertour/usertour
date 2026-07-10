@@ -1976,8 +1976,6 @@ const translations = {
       allTranslated: 'All translated',
       translateUnit: 'AI translate this text',
       statusUntranslated: 'Untranslated',
-      publishedLock:
-        'This version is live and read-only. Edit the flow to create a new draft before changing translations.',
     },
     overview: {
       previewCard: { edit: 'Edit', lastEdited: 'Last edited {{date}}' },

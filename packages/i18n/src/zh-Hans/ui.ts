@@ -1876,7 +1876,6 @@ const translations = {
       allTranslated: '已全部翻译',
       translateUnit: 'AI 翻译此条',
       statusUntranslated: '未翻译',
-      publishedLock: '该版本已发布，当前为只读。请先在构建器中编辑内容生成新草稿，再修改翻译。',
     },
     overview: {
       previewCard: { edit: '编辑', lastEdited: '最后编辑于 {{date}}' },

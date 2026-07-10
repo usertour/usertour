@@ -9,9 +9,15 @@ import {
   TableRow,
   useToast,
 } from '@usertour/ui';
+import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
+import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentLocalizations } from '@/hooks/use-content-localizations';
 import { useLocalizationList } from '@/hooks/use-localization-list';
-import { useUpsertVersionLocalizationMutation } from '@usertour/hooks';
+import { resolveEditableVersionId } from '@/utils/content';
+import {
+  useCreateContentVersionMutation,
+  useUpsertVersionLocalizationMutation,
+} from '@usertour/hooks';
 import { countMissingTranslations, countMissingVersionDataTranslations } from '@usertour/helpers';
 import {
   ContentDataType,
@@ -53,9 +59,12 @@ const countVersionMissing = (
 export const ContentLocalizationTable = (props: ContentLocalizationTableProps) => {
   const { contentType, version } = props;
   const { t } = useTranslation();
+  const { contentId } = useContentDetailUI();
+  const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { contentLocalizationList, loading } = useContentLocalizations(version.id);
   const { localizationList, loading: localizationsLoading } = useLocalizationList();
   const { invoke: upsertVersionLocalization } = useUpsertVersionLocalizationMutation();
+  const { invoke: createContentVersion } = useCreateContentVersionMutation();
   const { toast } = useToast();
   const location = useLocation();
 
@@ -93,14 +102,29 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
     localization: Localization,
     row: VersionOnLocalization | undefined,
   ) => {
+    if (!content) {
+      return;
+    }
     try {
+      // Toggling on a published version forks a draft first (same behavior as
+      // "Edit in builder"); the fork copies every translation row, so writing
+      // the pre-fork row payload onto the draft only changes `enabled`. The
+      // refetch repoints the page at the draft.
+      const editableVersionId = await resolveEditableVersionId(
+        content,
+        version.id,
+        createContentVersion,
+      );
       const success = await upsertVersionLocalization({
         localizationId: localization.id,
-        versionId: version.id,
+        versionId: editableVersionId,
         localized: row?.localized ?? {},
         backup: row?.backup ?? {},
         enabled,
       });
+      if (editableVersionId !== version.id) {
+        await refetchContent();
+      }
       if (success) {
         toast({
           variant: 'success',
