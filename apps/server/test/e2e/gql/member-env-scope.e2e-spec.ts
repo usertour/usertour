@@ -3,7 +3,14 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { gqlData, graphql } from '../auth';
 import { createTestApp } from '../create-test-app';
-import { buildContent, buildEnvironment, buildProject, buildVersion } from '../factories';
+import {
+  buildBizUser,
+  buildContent,
+  buildEnvironment,
+  buildProject,
+  buildSegment,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 /**
@@ -111,6 +118,48 @@ describe('member environment scope (gql e2e)', () => {
       },
     });
     expect(gqlData(allowed).queryBizUser.totalCount).toBe(0);
+  });
+
+  it("refuses adding an OUT-OF-SCOPE environment's user to a segment (E0055)", async () => {
+    // Segment membership is env-scoped (the bizUser belongs to an environment).
+    // The membership mutation carries only internal ids, so the guard resolves the
+    // env from the bizUser — an env-restricted member must not touch a blocked-env
+    // user's segment membership.
+    const segment = await buildSegment(prisma, {
+      projectId,
+      environmentId: allowedEnvId,
+      dataType: 3, // MANUAL
+    });
+    const blockedUser = await buildBizUser(prisma, { environmentId: blockedEnvId });
+    const res = await graphql(app, {
+      token: adminToken,
+      query: `mutation ($data: CreateBizUserOnSegment!) {
+        createBizUserOnSegment(data: $data) { success }
+      }`,
+      variables: {
+        data: { userOnSegment: [{ segmentId: segment.id, bizUserId: blockedUser.id, data: {} }] },
+      },
+    });
+    expect(res.body.errors?.[0]?.extensions?.code).toBe('E0055');
+  });
+
+  it("allows adding an IN-SCOPE environment's user to a segment", async () => {
+    const segment = await buildSegment(prisma, {
+      projectId,
+      environmentId: allowedEnvId,
+      dataType: 3, // MANUAL
+    });
+    const allowedUser = await buildBizUser(prisma, { environmentId: allowedEnvId });
+    const res = await graphql(app, {
+      token: adminToken,
+      query: `mutation ($data: CreateBizUserOnSegment!) {
+        createBizUserOnSegment(data: $data) { success }
+      }`,
+      variables: {
+        data: { userOnSegment: [{ segmentId: segment.id, bizUserId: allowedUser.id, data: {} }] },
+      },
+    });
+    expect(gqlData(res).createBizUserOnSegment?.success).toBe(true);
   });
 
   it('changeTeamMemberRole sets and clears the environment restriction', async () => {

@@ -192,6 +192,41 @@ export class PermissionGuard implements CanActivate {
         );
       }
     }
+    // Segment DEFINITIONS are project-level (updateSegment/deleteSegment carry only
+    // a segmentId — no env dimension), but segment MEMBERSHIP is environment-scoped:
+    // a BizUser/BizCompany belongs to a specific environment. The membership writes
+    // (createBizUserOnSegment / deleteBizUserOnSegment + company equivalents) carry
+    // only the internal biz ids, so resolve their environments here — else an
+    // env-restricted member could add/remove a user from another environment,
+    // escaping their ceiling. (The v2 REST/MCP path resolves the env explicitly.)
+    if (scope === ScopeKind.Segment) {
+      const bizUserIds: string[] = [
+        ...((args.data?.userOnSegment as { bizUserId?: string }[] | undefined)?.map(
+          (u) => u.bizUserId,
+        ) ?? []),
+        ...((args.data?.bizUserIds as string[] | undefined) ?? []),
+      ].filter((id): id is string => typeof id === 'string' && id !== '');
+      const bizCompanyIds: string[] = [
+        ...((args.data?.companyOnSegment as { bizCompanyId?: string }[] | undefined)?.map(
+          (c) => c.bizCompanyId,
+        ) ?? []),
+        ...((args.data?.bizCompanyIds as string[] | undefined) ?? []),
+      ].filter((id): id is string => typeof id === 'string' && id !== '');
+      if (bizUserIds.length) {
+        const users = await this.prisma.bizUser.findMany({
+          where: { id: { in: bizUserIds } },
+          select: { environmentId: true },
+        });
+        explicit.push(...users.map((u) => u.environmentId));
+      }
+      if (bizCompanyIds.length) {
+        const companies = await this.prisma.bizCompany.findMany({
+          where: { id: { in: bizCompanyIds } },
+          select: { environmentId: true },
+        });
+        explicit.push(...companies.map((c) => c.environmentId));
+      }
+    }
     return [...new Set(explicit.filter((v): v is string => typeof v === 'string' && v !== ''))];
   }
 }
