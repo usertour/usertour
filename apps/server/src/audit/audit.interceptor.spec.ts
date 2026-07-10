@@ -1,9 +1,15 @@
 import { Reflector } from '@nestjs/core';
 
 import { ContentResolver } from '@/content/content.resolver';
+import { ApiTokenResolver } from '@/api-token/api-token.resolver';
 
 import { AuditWeb } from './audit.decorator';
-import { buildWebAuditEntry, deriveAudit, fetchBefore } from './audit.interceptor';
+import {
+  buildWebAuditEntry,
+  deriveAudit,
+  fetchBefore,
+  normalizeProjectIds,
+} from './audit.interceptor';
 
 describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
   it('maps create/update/delete verbs directly', () => {
@@ -143,5 +149,30 @@ describe('fetchBefore biz-entity id spaces (REST externalId vs web internal id)'
     expect(
       await fetchBefore('company', 'delete', { id: 'bc-internal' }, 'env1', prisma),
     ).toMatchObject({ id: 'bc-internal' });
+  });
+});
+
+describe('normalizeProjectIds — multi-project audit attribution', () => {
+  it('keeps every id from an array (a key scoped to several projects logs into each)', () => {
+    expect(normalizeProjectIds(['pA', 'pB'])).toEqual(['pA', 'pB']);
+  });
+
+  it('wraps a single id and drops empties/nullish', () => {
+    expect(normalizeProjectIds('pA')).toEqual(['pA']);
+    expect(normalizeProjectIds(null)).toEqual([]);
+    expect(normalizeProjectIds(undefined)).toEqual([]);
+    expect(normalizeProjectIds(['pA', '', 'pB'])).toEqual(['pA', 'pB']);
+  });
+});
+
+describe('createApiToken audit meta attributes to ALL scoped projects', () => {
+  it('resolveProjectId returns the full projectIds array (not just the first)', async () => {
+    const meta = new Reflector().get(AuditWeb, ApiTokenResolver.prototype.createApiToken);
+    expect(meta).toBeDefined();
+    const projects = await meta.resolveProjectId?.(
+      { input: { projectIds: ['pA', 'pB'] } },
+      {} as never,
+    );
+    expect(projects).toEqual(['pA', 'pB']);
   });
 });

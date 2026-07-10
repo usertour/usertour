@@ -118,16 +118,20 @@ export class AuditInterceptor implements NestInterceptor {
     const gqlCtx = GqlExecutionContext.create(context);
     const req = gqlCtx.getContext()?.req as AuditGqlRequest | undefined;
     const args = (gqlCtx.getArgs() ?? {}) as Record<string, unknown>;
-    let projectId = req?.auditProjectId;
-    if (!projectId && meta.resolveProjectId) {
-      // Account-level mutation: attribute the entry to the resource's own project.
+    // A resource may belong to MULTIPLE projects (a personal API key scoped to
+    // several) — the entry must land in EACH project's audit log, since the log
+    // is project-scoped and every owner has a stake in "a credential that can
+    // write to my project was rotated/deleted". Most paths resolve a single id.
+    let projectIds: string[] = req?.auditProjectId ? [req.auditProjectId] : [];
+    if (projectIds.length === 0 && meta.resolveProjectId) {
+      // Account-level mutation: attribute the entry to the resource's own project(s).
       try {
-        projectId = (await meta.resolveProjectId(args, this.prisma)) ?? undefined;
+        projectIds = normalizeProjectIds(await meta.resolveProjectId(args, this.prisma));
       } catch (error) {
         this.logger.error('Audit(web): resolveProjectId failed', error as Error);
       }
     }
-    if (!projectId) {
+    if (projectIds.length === 0) {
       // Audited web mutations must also be @RequirePermission-guarded (the guard
       // resolves + stashes projectId). Surface the wiring bug; don't crash.
       this.logger.error(
@@ -167,14 +171,16 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((result) => {
-        this.audit.record(
-          buildWebAuditEntry(req, args, result, meta, {
-            projectId,
-            environmentId,
-            operation,
-            before,
-          }),
-        );
+        for (const projectId of projectIds) {
+          this.audit.record(
+            buildWebAuditEntry(req, args, result, meta, {
+              projectId,
+              environmentId,
+              operation,
+              before,
+            }),
+          );
+        }
       }),
     );
   }
@@ -258,6 +264,13 @@ const RESOURCE_BY_PREFIX: Record<string, string> = {
   session: 'session',
   environment: 'environment',
 };
+
+/** A resolveProjectId result (single / array / absent) normalized to a clean id list. */
+export function normalizeProjectIds(resolved: string | string[] | null | undefined): string[] {
+  return (Array.isArray(resolved) ? resolved : resolved ? [resolved] : []).filter(
+    (id): id is string => !!id,
+  );
+}
 
 /** Derive {resourceType, action} from `resource:verb` + HTTP method (for the ambiguous `manage`). */
 export function deriveAudit(

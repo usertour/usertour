@@ -17,19 +17,20 @@ type ApiTokenRow = Awaited<ReturnType<ApiTokenService['listTokens']>>[number];
 
 /**
  * Personal keys are ACCOUNT-level (no `@RequirePermission` project context), but the
- * audit log is project-scoped — attribute each entry to the key's own project so
- * "who minted / rotated / revoked which key" shows up where its project's admins look.
+ * audit log is project-scoped — a key may be scoped to SEVERAL projects, so
+ * attribute the entry to EVERY one, so "who minted / rotated / revoked which key"
+ * shows up wherever an affected project's admins look (not one arbitrary project).
  */
 const tokenProjectId = async (
   args: Record<string, unknown>,
   prisma: PrismaService,
-): Promise<string | undefined> =>
+): Promise<string[]> =>
   (
-    await prisma.apiTokenOnProject.findFirst({
+    await prisma.apiTokenOnProject.findMany({
       where: { apiTokenId: String(args.id) },
       select: { projectId: true },
     })
-  )?.projectId ?? undefined;
+  ).map((r) => r.projectId);
 
 /**
  * Self-service management of the caller's own API tokens. Authentication is
@@ -54,7 +55,7 @@ export class ApiTokenResolver {
     resourceId: (_args, result) =>
       String((result as { apiToken?: { id?: string } })?.apiToken?.id ?? ''),
     resolveProjectId: async (args) =>
-      (args.input as { projectIds?: string[] } | undefined)?.projectIds?.[0],
+      (args.input as { projectIds?: string[] } | undefined)?.projectIds ?? [],
   })
   async createApiToken(
     @UserEntity() user: User,

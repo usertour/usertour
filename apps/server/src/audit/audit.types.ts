@@ -88,7 +88,7 @@ export interface WebAuditMeta {
   resolveProjectId?: (
     args: Record<string, unknown>,
     prisma: PrismaService,
-  ) => Promise<string | null | undefined>;
+  ) => Promise<string | string[] | null | undefined>;
   /**
    * Override for the `after` snapshot. For BULK mutations (array args) the result
    * is just a count — the audit-worthy facts (which ids, how many) live in the
