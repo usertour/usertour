@@ -849,7 +849,14 @@ describe('GraphQL content (e2e)', () => {
       });
       expect(refused.body.errors?.[0]?.extensions?.code).toBe('E1028');
 
-      await prisma.contentOnEnvironment.deleteMany({ where: { contentId: content.id } });
+      // Unpublish (COE row kept with published=false — the delete guard only blocks
+      // on published=true). deleteContent must still DROP the leftover COE rows, or
+      // findPublishedVersionId re-resolves a versionId for the deleted content when
+      // the env cache repopulates and SDK users are served a deleted experience.
+      await prisma.contentOnEnvironment.updateMany({
+        where: { contentId: content.id },
+        data: { published: false }, // COE row kept; publishedVersionId is non-null
+      });
 
       const res = await graphql(app, {
         token,
@@ -860,6 +867,11 @@ describe('GraphQL content (e2e)', () => {
 
       const row = await prisma.content.findUnique({ where: { id: content.id } });
       expect(row?.deleted).toBe(true);
+      // The invariant this test exists to lock: soft-delete drops per-env rows.
+      const coes = await prisma.contentOnEnvironment.findMany({
+        where: { contentId: content.id },
+      });
+      expect(coes).toEqual([]);
     });
 
     it('errors deleting an unknown content', async () => {

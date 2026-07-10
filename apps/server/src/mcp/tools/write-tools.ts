@@ -780,11 +780,14 @@ export function buildWriteTools(): McpTool[] {
         id: z.string().describe('The environment id.'),
         ...updateEnvironmentBody.shape,
       },
-      handler: (args, ctx) => {
+      handler: async (args, ctx) => {
         // The target env is a plain `id` arg, not an `environmentId` the dispatch
         // wrapper would scope-check — assert the token's allowlist on it here, or a
-        // restricted token could rename an environment outside its scope. Pure
-        // allowlist check (no lookup) so a non-existent env still 404s from the service.
+        // restricted token could rename an environment outside its scope. Check
+        // EXISTENCE FIRST so a dead id reports "not found" (E1026), not "outside
+        // your scope" (E1029) — a token that manages this project may learn which
+        // of its envs exist (same order as the REST controller).
+        await ctx.services.environments.requireEnvironmentExists(String(args.id), ctx.projectId);
         ctx.auth.assertEnvironmentInScope(ctx.token, { id: String(args.id) });
         return ctx.services.environments.update(
           String(args.id),
@@ -803,8 +806,10 @@ export function buildWriteTools(): McpTool[] {
       description: 'Delete an environment. The primary / last environment cannot be deleted.',
       inputSchema: { id: z.string().describe('The environment id.') },
       handler: async (args, ctx) => {
-        // Assert the token's env allowlist on the target — a plain `id` arg isn't
-        // scope-checked by the dispatch wrapper (see update_environment).
+        // Existence-then-scope (see update_environment): a plain `id` arg isn't
+        // scope-checked by the dispatch wrapper, and a dead id must 404 (E1026)
+        // rather than mask as a scope error (E1029).
+        await ctx.services.environments.requireEnvironmentExists(String(args.id), ctx.projectId);
         ctx.auth.assertEnvironmentInScope(ctx.token, { id: String(args.id) });
         await ctx.services.environments.delete(String(args.id), ctx.projectId);
         return { success: true };

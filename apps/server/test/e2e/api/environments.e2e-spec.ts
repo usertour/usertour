@@ -149,6 +149,17 @@ describe('API v2 /environments (e2e)', () => {
   // themselves. A token scoped to one environment must not read, rename, or
   // DELETE another, even with the right capability.
   describe('environment allowlist enforcement (handler asserts on :id)', () => {
+    it('404s a NON-existent id even for an env-restricted token (E1026, not masked as E1029)', async () => {
+      // Existence is checked before the allowlist: a token that manages this
+      // project may learn which of its envs exist, so a dead id must 404 (E1026),
+      // not report "outside your scope" (E1029) — which would misdirect the client
+      // and never let a delete-until-404 loop terminate.
+      const token = await mint([Capability.EnvironmentManage], [primaryEnvId]);
+      const res = await send('delete', `${base()}/does-not-exist`, token).send();
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('E1026');
+    });
+
     it('rejects DELETE of an out-of-scope environment (403 E1029)', async () => {
       const token = await mint([Capability.EnvironmentManage], [primaryEnvId]);
       const res = await send('delete', `${base()}/${otherEnvId}`, token).send();

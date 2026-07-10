@@ -75,7 +75,7 @@ export class ApiEnvironmentsController {
     @Param('projectId') projectId: string,
     @Req() req: { apiToken: AuthedApiToken },
   ) {
-    this.requireEnvironmentInScope(req, id);
+    await this.requireEnvironmentInScope(req, projectId, id);
     return this.service.get(id, projectId, this.scope(req));
   }
 
@@ -104,7 +104,7 @@ export class ApiEnvironmentsController {
     @Body() body: UpdateEnvironmentBodyDto,
     @Req() req: { apiToken: AuthedApiToken },
   ) {
-    this.requireEnvironmentInScope(req, id);
+    await this.requireEnvironmentInScope(req, projectId, id);
     return this.service.update(id, projectId, body);
   }
 
@@ -124,21 +124,24 @@ export class ApiEnvironmentsController {
     @Param('projectId') projectId: string,
     @Req() req: { apiToken: AuthedApiToken },
   ) {
-    this.requireEnvironmentInScope(req, id);
+    await this.requireEnvironmentInScope(req, projectId, id);
     await this.service.delete(id, projectId);
   }
 
   /**
    * The environments item routes use `:id` (not `:environmentId`), so the guard's
-   * path-param scope check never fires — enforce the token's env allowlist here.
-   * A pure allowlist check (no DB lookup), so a NON-existent env still 404s from the
-   * service (E1026) rather than being masked as a scope error; an out-of-scope env
-   * is refused up front (E1029).
+   * path-param scope check never fires — enforce it here. Check EXISTENCE FIRST:
+   * a non-existent id 404s (E1026) rather than masking as a scope error, because a
+   * token that manages this project may legitimately learn which of its envs exist
+   * (unlike env-DATA reads, where E1029-first avoids leaking foreign-env existence).
+   * An env that exists but is outside the token's allowlist is then refused (E1029).
    */
-  private requireEnvironmentInScope(
+  private async requireEnvironmentInScope(
     req: { apiToken: AuthedApiToken },
+    projectId: string,
     environmentId: string,
-  ): void {
+  ): Promise<void> {
+    await this.service.requireEnvironmentExists(environmentId, projectId);
     this.auth.assertEnvironmentInScope(req.apiToken, { id: environmentId });
   }
 

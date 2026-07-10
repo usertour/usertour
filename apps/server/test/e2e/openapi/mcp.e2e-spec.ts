@@ -1389,6 +1389,15 @@ describe('MCP endpoint (e2e)', () => {
         expect(result.content[0].text).toContain('E1029');
       });
 
+      it('delete_environment 404s a NON-existent id even for a restricted token (E1026, not E1029)', async () => {
+        // Existence before scope (matches the REST controller): a dead id reports
+        // "not found", not "outside your scope".
+        const token = await mint([Capability.EnvironmentManage], [projectA], [envA]);
+        const result = await callTool('delete_environment', { id: 'does-not-exist' }, token);
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('E1026');
+      });
+
       it('duplicate_content works for an env-restricted token (project-level action)', async () => {
         const source = await buildContent(prisma, {
           projectId: projectA,

@@ -66,6 +66,22 @@ export class ApiEnvironmentsService {
     });
   }
 
+  /**
+   * Assert an environment exists in the project (not soft-deleted), or 404 E1026.
+   * Used to check existence BEFORE the token's env-scope check on the item routes,
+   * so a non-existent id 404s (E1026) instead of masking as a scope error — a token
+   * that manages this project may legitimately learn which of its envs exist.
+   */
+  async requireEnvironmentExists(id: string, projectId: string): Promise<void> {
+    const env = await this.prisma.environment.findFirst({
+      where: { id, projectId, deleted: false },
+      select: { id: true },
+    });
+    if (!env) {
+      throw new EnvironmentNotFoundError();
+    }
+  }
+
   async get(
     id: string,
     projectId: string,
