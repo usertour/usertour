@@ -23,7 +23,7 @@ import {
   SCOPE_PRESETS,
   ScopesGrid,
   presetOf,
-  requiresEnvironmentScope,
+  environmentSelectionMissing,
 } from '@/components/token-scopes';
 import { useAppContext } from '@/contexts/app-context';
 
@@ -38,7 +38,7 @@ export const tokenFormSchema = z
     scopes: z.array(z.string()).min(1),
   })
   .superRefine((val, ctx) => {
-    if (requiresEnvironmentScope(val.scopes) && val.environmentIds.length === 0) {
+    if (environmentSelectionMissing(val.scopes, val.environmentIds)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['environmentIds'],

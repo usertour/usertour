@@ -35,3 +35,15 @@ export const ENV_TARGETED_CAPABILITIES: ReadonlySet<string> = new Set<string>([
 /** Whether the given scopes act on specific environments (→ an environment selection is required). */
 export const requiresEnvironmentScope = (scopes: string[]): boolean =>
   scopes.some((s) => ENV_TARGETED_CAPABILITIES.has(s));
+
+/**
+ * Whether a credential's scope + environment selection is INVALID because the
+ * scopes are env-targeted but no environment was named. The single predicate the
+ * personal-key form, the consent page, and both server write gates share, so
+ * "env-targeted needs a named environment" can't drift between the surfaces
+ * (`null`/`undefined`/`[]` all count as "none selected").
+ */
+export const environmentSelectionMissing = (
+  scopes: string[],
+  environmentIds: string[] | null | undefined,
+): boolean => requiresEnvironmentScope(scopes) && !environmentIds?.length;

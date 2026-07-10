@@ -16,7 +16,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   READ_ONLY_CAPABILITIES,
   ScopesGrid,
-  requiresEnvironmentScope,
+  environmentSelectionMissing,
 } from '@/components/token-scopes';
 import { AuthCard } from '@/pages/authentication/components/auth-card';
 
@@ -101,7 +101,7 @@ export const OAuthConsent = () => {
   }, [projectId, info]);
 
   const isReadOnly = scopes.length > 0 && scopes.every((s) => READ_ONLY_CAPABILITIES.includes(s));
-  const envRequired = requiresEnvironmentScope(scopes) && environmentIds.length === 0;
+  const envRequired = environmentSelectionMissing(scopes, environmentIds);
 
   const submit = useCallback(
     async (approved: boolean) => {

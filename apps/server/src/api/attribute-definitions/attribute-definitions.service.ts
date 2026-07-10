@@ -54,7 +54,9 @@ export class ApiAttributeDefinitionsService {
     }
 
     const bizType = scope ? mapScopeToBizType(scope as ApiObjectType) : undefined;
-    const sortOrders = parseOrderBy(toArray(orderBy) || ['displayName']);
+    // parseOrderBy already normalizes single-or-array and applies the fallback
+    // when orderBy is absent — no need to pre-toArray + `||` the default.
+    const sortOrders = parseOrderBy(orderBy, ['displayName']);
 
     return paginate({
       requestUrl,

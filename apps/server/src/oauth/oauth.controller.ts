@@ -18,7 +18,7 @@ import { Capability, Role } from '@usertour/types';
 import { Request, Response } from 'express';
 import { PrismaService } from 'nestjs-prisma';
 
-import { requiresEnvironmentScope } from '@usertour/helpers';
+import { environmentSelectionMissing } from '@usertour/helpers';
 
 import { resolveOrigin } from '@/common/http/resolve-origin';
 
@@ -176,7 +176,7 @@ export class OAuthController {
     // Environment scope: every chosen env must belong to the selected project.
     // Env-targeted scopes must NAME environments (same SSOT rule as personal
     // keys — the consent page enforces it client-side, this is the server gate).
-    if (requiresEnvironmentScope(granted) && !body.environmentIds?.length) {
+    if (environmentSelectionMissing(granted, body.environmentIds)) {
       throw new OAuth2Server.InvalidRequestError(
         'Select the environments this connection may act on — the granted scopes act on specific environments.',
       );

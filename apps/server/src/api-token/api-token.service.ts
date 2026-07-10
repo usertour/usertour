@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { requiresEnvironmentScope } from '@usertour/helpers';
+import { environmentSelectionMissing } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -226,10 +226,7 @@ export class ApiTokenService {
     scopes: string[],
     environmentIds: string[] | null | undefined,
   ): void {
-    if (
-      requiresEnvironmentScope(scopes) &&
-      (environmentIds == null || environmentIds.length === 0)
-    ) {
+    if (environmentSelectionMissing(scopes, environmentIds)) {
       throw new ParamsError(
         'environmentIds is required: the selected scopes act on specific environments (end-user data reads/writes, session/segment access, analytics, content publish). Name the environments this token may act on.',
       );

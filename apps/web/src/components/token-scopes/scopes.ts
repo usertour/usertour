@@ -125,7 +125,7 @@ export const setLevel = (
 // The env-targeted capability list is a SERVER-enforced rule now — it lives in
 // @usertour/helpers (token-scopes.ts) as the single source of truth; this module
 // re-exports it for the form/consent client-side early feedback.
-export { requiresEnvironmentScope } from '@usertour/helpers';
+export { environmentSelectionMissing, requiresEnvironmentScope } from '@usertour/helpers';
 
 /** All read-level capabilities across every resource (for a "read-only" quick toggle). */
 export const READ_ONLY_CAPABILITIES: string[] = SCOPE_RESOURCES.flatMap((r) => r.read);

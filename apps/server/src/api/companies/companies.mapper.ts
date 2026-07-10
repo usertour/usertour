@@ -1,4 +1,5 @@
 import { ApiObjectType } from '../shared/object-type';
+import { mapMembership, mapUserRef } from '../shared/biz-refs';
 import { Company, CompanyExpand } from './companies.schema';
 
 /**
@@ -8,22 +9,14 @@ import { Company, CompanyExpand } from './companies.schema';
 export function mapCompany(bizCompany: any, expand?: CompanyExpand[]): Company {
   const memberships =
     expand?.includes('memberships') || expand?.includes('memberships.user')
-      ? bizCompany.bizUsersOnCompany?.map((membership: any) => ({
-          id: membership.id,
-          object: ApiObjectType.COMPANY_MEMBERSHIP,
-          attributes: membership.data || {},
-          createdAt: membership.createdAt.toISOString(),
-          companyId: membership.bizCompanyId,
-          userId: membership.bizUserId,
-          user: expand?.includes('memberships.user')
-            ? {
-                id: membership.bizUser.externalId,
-                object: ApiObjectType.USER,
-                attributes: membership.bizUser.data || {},
-                createdAt: membership.bizUser.createdAt.toISOString(),
-              }
-            : undefined,
-        }))
+      ? bizCompany.bizUsersOnCompany?.map((membership: any) =>
+          mapMembership(
+            membership,
+            expand?.includes('memberships.user')
+              ? { user: mapUserRef(membership.bizUser) }
+              : undefined,
+          ),
+        )
       : null;
 
   return {
@@ -32,12 +25,7 @@ export function mapCompany(bizCompany: any, expand?: CompanyExpand[]): Company {
     attributes: bizCompany.data || {},
     createdAt: bizCompany.createdAt.toISOString(),
     users: expand?.includes('users')
-      ? bizCompany.bizUsersOnCompany?.map((membership: any) => ({
-          id: membership.bizUser.externalId,
-          object: ApiObjectType.USER,
-          attributes: membership.bizUser.data || {},
-          createdAt: membership.bizUser.createdAt.toISOString(),
-        }))
+      ? bizCompany.bizUsersOnCompany?.map((membership: any) => mapUserRef(membership.bizUser))
       : null,
     memberships,
   };
