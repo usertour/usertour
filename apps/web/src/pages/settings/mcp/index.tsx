@@ -29,6 +29,13 @@ import { CopyableInput } from '../installation/components/copyable-input';
 
 const SERVER_NAME = 'Usertour';
 
+/**
+ * Unicode-safe base64. Raw btoa() throws InvalidCharacterError on any character
+ * outside Latin-1, so a self-hosted MCP URL with an internationalized domain or
+ * non-ASCII path would crash the whole page render — encode the UTF-8 bytes.
+ */
+const toBase64 = (value: string) => btoa(String.fromCharCode(...new TextEncoder().encode(value)));
+
 /** Numbered manual step line (mirrors the connector guides users already know). */
 const Step = ({ n, children }: { n: number; children: ReactNode }) => (
   <div className="flex gap-2.5 text-sm leading-6">
@@ -91,7 +98,7 @@ export const SettingsMcpPage = () => {
 
   const cursorDeeplink = `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(
     SERVER_NAME.toLowerCase(),
-  )}&config=${btoa(JSON.stringify({ url: serverUrl }))}`;
+  )}&config=${toBase64(JSON.stringify({ url: serverUrl }))}`;
   const claudeCodeCommand = `claude mcp add --transport http usertour ${serverUrl}`;
   // The plugin's bundled .mcp.json defaults to the cloud endpoint; only a
   // custom/self-hosted instance needs the env override before launch.
