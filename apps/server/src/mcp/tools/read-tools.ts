@@ -184,10 +184,11 @@ export const environmentIdSchema = z
 /**
  * Build the read-only MCP tool registry. Each tool is a thin binding over a v2
  * `src/api` service (the same contract the v2 REST endpoints expose) — content /
- * attribute / event are project-scoped; users are environment-scoped. Each
- * handler re-asserts its capability via `ctx.auth.authorize` (defense in depth;
- * registration is already scope-gated in McpService) and returns a plain
- * JSON-serializable payload. `inputSchema` is a zod raw shape the SDK validates.
+ * attribute / event are project-scoped; users are environment-scoped. Capability
+ * enforcement is the McpService dispatch wrapper's job (it runs authorize before
+ * every handler; registration is scope-gated too) — handlers do NOT repeat it,
+ * same policy as write-tools. Handlers return a plain JSON-serializable payload.
+ * `inputSchema` is a zod raw shape the SDK validates.
  */
 export function buildReadTools(): McpTool[] {
   const tools: McpTool[] = [
@@ -201,8 +202,7 @@ export function buildReadTools(): McpTool[] {
         'targets, wiring goto_step by key, the markdown subset, frequency, and what each ' +
         'content type needs to be publishable.',
       inputSchema: {},
-      async handler(_args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+      async handler(_args, _ctx) {
         return { guide: AUTHORING_GUIDE };
       },
     },
@@ -222,8 +222,7 @@ export function buildReadTools(): McpTool[] {
           .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
           .describe('Content kind whose write-body schema to return.'),
       },
-      async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+      async handler(args, _ctx) {
         const type = String(args.type);
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails. `reused: 'ref'`
@@ -288,7 +287,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.content.list('mcp://content', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
@@ -325,7 +323,6 @@ export function buildReadTools(): McpTool[] {
           .describe('Related objects to inline: editedVersion, publishedVersion.'),
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id) || asString(args.contentId);
         if (!id) {
           throw new Error('`id` (or `contentId`) is required.');
@@ -376,7 +373,6 @@ export function buildReadTools(): McpTool[] {
         environmentId: environmentIdSchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const contentId = asString(args.contentId);
         if (!contentId) {
           throw new Error('`contentId` is required.');
@@ -529,7 +525,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.attributeDefinitions.list(
           'mcp://attribute-definitions',
           ctx.projectId,
@@ -560,7 +555,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.eventDefinitions.list(
           'mcp://event-definitions',
           ctx.projectId,
@@ -603,7 +597,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const environment = await resolveEnvironment(args, ctx);
         const result = await ctx.services.users.list('mcp://users', environment, {
           limit: asLimit(args.limit),
@@ -641,7 +634,6 @@ export function buildReadTools(): McpTool[] {
         environmentId: environmentIdSchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
@@ -667,7 +659,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.themes.list('mcp://themes', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
@@ -697,7 +688,6 @@ export function buildReadTools(): McpTool[] {
           .describe('Related data to inline: settings (actual style values), variations.'),
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
@@ -718,8 +708,7 @@ export function buildReadTools(): McpTool[] {
         'generic object, so fetch the shape here before theming. Settings is field-merged onto ' +
         'the current settings; "Auto" hover/active colors are derived server-side.',
       inputSchema: {},
-      async handler(_args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
+      async handler(_args, _ctx) {
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails.
         // (No `reused: 'ref'` here — the generated settings leaves are distinct
@@ -747,7 +736,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const contentId = asString(args.contentId);
         if (!contentId) {
           throw new Error('`contentId` is required.');
@@ -782,7 +770,6 @@ export function buildReadTools(): McpTool[] {
           .describe('Related data to inline: steps, data, questions.'),
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const contentId = asString(args.contentId);
         const id = asString(args.id);
         if (!contentId || !id) {
@@ -808,7 +795,6 @@ export function buildReadTools(): McpTool[] {
         id: z.string().describe('The content version id.'),
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const contentId = asString(args.contentId);
         const id = asString(args.id);
         if (!contentId || !id) {
@@ -839,7 +825,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const environment = await resolveEnvironment(args, ctx);
         const result = await ctx.services.companies.list('mcp://companies', environment, {
           limit: asLimit(args.limit),
@@ -870,7 +855,6 @@ export function buildReadTools(): McpTool[] {
           .describe('Related objects to inline: users, memberships, memberships.user.'),
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
@@ -900,7 +884,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.segments.list('mcp://segments', ctx.projectId, {
           limit: asLimit(args.limit),
           cursor: asString(args.cursor),
@@ -919,7 +902,6 @@ export function buildReadTools(): McpTool[] {
       description: 'Get a segment by id (condition segments inline their conditions).',
       inputSchema: { id: z.string().describe('The segment id.') },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
@@ -961,7 +943,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const environment = await resolveEnvironment(args, ctx);
         const result = await ctx.services.sessions.list('mcp://sessions', environment, {
           limit: asLimit(args.limit),
@@ -994,7 +975,6 @@ export function buildReadTools(): McpTool[] {
           .describe('Related objects to inline: answers, content, company, user, version.'),
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
@@ -1025,7 +1005,6 @@ export function buildReadTools(): McpTool[] {
         timezone: analyticsTimezone,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const environment = await resolveEnvironment(args, ctx);
         return ctx.services.analytics.contentAnalytics(String(args.contentId), ctx.projectId, {
           environmentId: environment.id,
@@ -1055,7 +1034,6 @@ export function buildReadTools(): McpTool[] {
         timezone: analyticsTimezone,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const environment = await resolveEnvironment(args, ctx);
         return ctx.services.analytics.questionAnalytics(String(args.contentId), ctx.projectId, {
           environmentId: environment.id,
@@ -1081,7 +1059,6 @@ export function buildReadTools(): McpTool[] {
         orderBy: orderBySchema,
       },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.environments.list(
           'mcp://environments',
           ctx.projectId,
@@ -1104,7 +1081,6 @@ export function buildReadTools(): McpTool[] {
       description: 'Get a single environment by id.',
       inputSchema: { id: z.string().describe('The environment id.') },
       async handler(args, ctx) {
-        await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
