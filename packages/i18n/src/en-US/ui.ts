@@ -4069,6 +4069,12 @@ const translations = {
       question: {
         incomplete: 'One or more actions are incomplete — open the question to fix them',
       },
+      image: {
+        emptyUrl: 'Upload an image — this block has no image yet',
+      },
+      embed: {
+        emptyUrl: 'Add an embed URL — this block has no URL yet',
+      },
       trigger: {
         emptyConditions: 'Please add at least 1 condition',
         emptyActions: 'Please add at least 1 action',

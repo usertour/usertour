@@ -19,6 +19,11 @@ import {
 } from '../../constants';
 import { useImageUpload } from '../../hooks';
 import { LinkControls, LoadingSpinner, MarginControls, WidthControls } from '../../shared';
+import {
+  EditorErrorTooltip,
+  EditorErrorTooltipContent,
+  EditorErrorTooltipTrigger,
+} from '../../shared/editor-error-tooltip';
 import type { DimensionType, MarginPosition, MarginStyleProps } from '../../types';
 import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../../utils';
 import { ImageActionButtons } from './image-action-buttons';
@@ -175,9 +180,25 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
     return <LoadingSpinner size={DEFAULT_IMAGE_SIZE} />;
   }
 
-  // Render upload area when no image URL
+  // Render upload area when no image URL. An empty url is "missing required
+  // data" — the save gate (hasMissingRequiredData) blocks the whole step on it,
+  // so flag the offending block LIVE (same as button/question incompleteness),
+  // otherwise the save fails with nothing pointing at this upload area.
   if (!element.url) {
-    return <ImageUploadArea isLoading={isLoading} onUpload={upload} />;
+    return (
+      <EditorErrorTooltip open>
+        <EditorErrorTooltipTrigger>
+          {/* Wrapper div gives Radix Slot a real ref target — ImageUploadArea
+              (memo) doesn't forward one. `w-fit` keeps the anchor tight. */}
+          <div className="w-fit">
+            <ImageUploadArea isLoading={isLoading} onUpload={upload} />
+          </div>
+        </EditorErrorTooltipTrigger>
+        <EditorErrorTooltipContent style={{ zIndex: zIndex }}>
+          {t('actions.errors.image.emptyUrl')}
+        </EditorErrorTooltipContent>
+      </EditorErrorTooltip>
+    );
   }
 
   // Render image with popover

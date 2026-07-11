@@ -248,8 +248,10 @@ const FlowBuilderDetailFooter = () => {
     }
     if (currentStep.type !== StepContentType.HIDDEN && hasMissingRequiredData(currentStep.data)) {
       // Surface why the save didn't go through instead of a silent dead button.
-      // setIsShowError reddens the blocks that read it (button / question); image
-      // and embed editors don't, so the toast is what tells the user in those cases.
+      // Each content block self-flags its own incompleteness live (button /
+      // question via their own error tooltip; image / embed redden on an empty
+      // url), so the offending block is already highlighted; this toast is the
+      // step-level summary.
       setIsShowError(true);
       toast({
         variant: 'destructive',

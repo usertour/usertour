@@ -3868,6 +3868,12 @@ const translations = {
       question: {
         incomplete: '存在未填写完整的动作 — 打开问题修复',
       },
+      image: {
+        emptyUrl: '请上传图片 — 该块还没有图片',
+      },
+      embed: {
+        emptyUrl: '请填写嵌入地址 — 该块还没有 URL',
+      },
       trigger: {
         emptyConditions: '请至少添加 1 个条件',
         emptyActions: '请至少添加 1 个动作',
