@@ -70,7 +70,6 @@ export class ApiThemesService {
       requestUrl,
       cursor,
       limit,
-      query: { ...(expand.length ? { expand } : {}) },
       fetch: (params) =>
         findManyCursorConnection<PrismaTheme, Prisma.ThemeWhereUniqueInput>(
           (args) => this.prisma.theme.findMany({ where, orderBy, ...args }),

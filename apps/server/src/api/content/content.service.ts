@@ -219,7 +219,6 @@ export class ApiContentService {
       requestUrl,
       cursor,
       limit,
-      query: { ...(type ? { type } : {}), ...(expand.length ? { expand } : {}) },
       fetch: (params) =>
         this.content.listContentWithRelations(
           projectId,

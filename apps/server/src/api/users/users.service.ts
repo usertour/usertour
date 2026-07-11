@@ -48,7 +48,6 @@ export class ApiUsersService {
       requestUrl,
       cursor,
       limit,
-      query: { ...(expand.length ? { expand } : {}) },
       fetch: (params) =>
         this.biz.listBizUsersWithRelations(
           environment.id,

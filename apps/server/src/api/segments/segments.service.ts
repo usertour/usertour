@@ -71,7 +71,6 @@ export class ApiSegmentsService {
       requestUrl,
       cursor,
       limit,
-      query: { ...(bizTypeFilter ? { bizType: bizTypeFilter } : {}) },
       fetch: (params) =>
         findManyCursorConnection<PrismaSegment, Prisma.SegmentWhereUniqueInput>(
           (args) => this.prisma.segment.findMany({ where, orderBy, ...args }),

@@ -142,7 +142,6 @@ export class ApiContentVersionsService {
       requestUrl,
       cursor,
       limit,
-      query: expand.length ? { expand } : undefined,
       fetch: (params) =>
         this.content.listContentVersionsWithRelations(
           projectId,

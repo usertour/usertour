@@ -72,11 +72,6 @@ export class ApiContentSessionsService {
       requestUrl,
       cursor,
       limit,
-      query: {
-        ...(contentId ? { contentId } : {}),
-        ...(userId ? { userId } : {}),
-        ...(expand.length ? { expand } : {}),
-      },
       fetch: (params) =>
         this.analytics.listContentSessionsWithRelations(
           environment.id,

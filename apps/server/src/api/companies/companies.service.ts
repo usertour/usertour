@@ -65,7 +65,6 @@ export class ApiCompaniesService {
       requestUrl,
       cursor,
       limit,
-      query: { ...(expand.length ? { expand } : {}), ...(segmentId ? { segmentId } : {}) },
       fetch: (params) =>
         this.biz.listBizCompanies(
           environment.id,
