@@ -11,6 +11,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import {
   ContentPublishedDeleteError,
+  EnvironmentProjectMismatchError,
   ParamsError,
   UnknownError,
   VersionConflictError,
@@ -445,8 +446,44 @@ export class ContentService {
     );
   }
 
+  /**
+   * Publish/unpublish take a client-supplied environmentId, but the caller is
+   * only authorized against the CONTENT's project (PermissionGuard's Content
+   * scope derives the project from the version/content, never from the env).
+   * Without this guard a member of project A could publish their content into
+   * project B's environment — the SDK runtime serves published content purely
+   * by ContentOnEnvironment.environmentId, so that is cross-tenant content
+   * injection. The v2 REST/MCP wrapper checks this too; enforcing it in the
+   * domain method is the single point every caller (web GraphQL included)
+   * funnels through.
+   */
+  private async requireEnvironmentInContentProject(
+    environmentId: string,
+    contentId: string,
+  ): Promise<void> {
+    const [content, environment] = await Promise.all([
+      this.prisma.content.findUnique({
+        where: { id: contentId },
+        select: { projectId: true },
+      }),
+      this.prisma.environment.findUnique({
+        where: { id: environmentId },
+        select: { projectId: true, deleted: true },
+      }),
+    ]);
+    if (
+      !content ||
+      !environment ||
+      environment.deleted ||
+      environment.projectId !== content.projectId
+    ) {
+      throw new EnvironmentProjectMismatchError();
+    }
+  }
+
   async publishedContentVersion(versionId: string, environmentId: string, actor?: WriteActor) {
     const version = await this.getContentVersionById(versionId);
+    await this.requireEnvironmentInContentProject(environmentId, version.contentId);
     const now = new Date();
 
     const content = await this.prisma.$transaction(async (tx) => {
@@ -526,6 +563,7 @@ export class ContentService {
   }
 
   async unpublishedContentVersion(contentId: string, environmentId: string, actor?: WriteActor) {
+    await this.requireEnvironmentInContentProject(environmentId, contentId);
     const result = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
