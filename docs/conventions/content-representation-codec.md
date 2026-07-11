@@ -11,8 +11,7 @@ Full design + locked decisions: `docs/architecture/content-representation.md`.
 
 1. **Concept = `representation`** — not "authoring". It serves **both read and
    write**, so a write-leaning word is wrong. "Representation" is the REST term
-   (the body a client GETs / PUTs, vs internal storage) and matches peer projects
-   (teable `Vo`, Outline `presenter`).
+   (the body a client GETs / PUTs, vs internal storage).
 
 2. **The subsystem is a codec** between internal ↔ representation, with one
    matched verb pair used everywhere:

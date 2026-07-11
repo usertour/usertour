@@ -74,7 +74,7 @@ interface SsoProvisionContext {
   defaultRole: string;
   allowedDomains: string[];
 }
-const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
+const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — the common industry TTL for reset links
 
 /** Invite.allowedEnvironmentIds (JsonB) -> the membership restriction to copy on accept. */
 const inviteEnvScope = (invite: { allowedEnvironmentIds?: unknown }): string[] | null =>
