@@ -1,6 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
+import { TeamService } from '@/team/team.service';
+
 import { gqlData, graphql } from '../auth';
 import { createTestApp } from '../create-test-app';
 import {
@@ -9,6 +11,8 @@ import {
   buildEnvironment,
   buildProject,
   buildSegment,
+  buildSubscription,
+  buildUser,
   buildVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
@@ -204,5 +208,64 @@ describe('member environment scope (gql e2e)', () => {
       variables: { data: { versionId, environmentId: blockedEnvId } },
     });
     expect(gqlData(res).publishedContentVersion?.id).toBeTruthy();
+  });
+
+  it('deleting an environment strips it from member allowlists (empty stays [], fail-closed)', async () => {
+    const doomed = await buildEnvironment(prisma, { projectId });
+    // admin: restriction survives minus the dead id; solo: restriction empties out.
+    await prisma.userOnProject.updateMany({
+      where: { userId: adminUserId, projectId },
+      data: { allowedEnvironmentIds: [allowedEnvId, doomed.id] },
+    });
+    const solo = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+    await prisma.userOnProject.updateMany({
+      where: { userId: solo.user.id, projectId },
+      data: { allowedEnvironmentIds: [doomed.id] },
+    });
+
+    const res = await graphql(app, {
+      token: ownerToken,
+      query: 'mutation ($data: DeleteEnvironmentInput!) { deleteEnvironments(data: $data) { id } }',
+      variables: { data: { id: doomed.id } },
+    });
+    expect(gqlData(res).deleteEnvironments?.id).toBe(doomed.id);
+
+    const adminRow = await prisma.userOnProject.findFirst({
+      where: { userId: adminUserId, projectId },
+    });
+    expect(adminRow?.allowedEnvironmentIds).toEqual([allowedEnvId]);
+    // The emptied restriction must NOT widen to null (all environments).
+    const soloRow = await prisma.userOnProject.findFirst({
+      where: { userId: solo.user.id, projectId },
+    });
+    expect(soloRow?.allowedEnvironmentIds).toEqual([]);
+
+    await prisma.userOnProject.deleteMany({ where: { userId: solo.user.id } });
+    await prisma.user.deleteMany({ where: { id: solo.user.id } });
+  });
+
+  it('invite accept filters environments deleted since the invite was created', async () => {
+    // assignUserToProject is the single funnel every accept path (register,
+    // SSO x2, logged-in) pushes the invite's env restriction through.
+    const team = app.get(TeamService);
+    await buildSubscription(prisma, { projectId }); // BUSINESS: unlimited seats
+    const doomed = await buildEnvironment(prisma, { projectId });
+    await prisma.environment.update({ where: { id: doomed.id }, data: { deleted: true } });
+
+    const invitee = await buildUser(prisma);
+    const row = await prisma.$transaction((tx) =>
+      team.assignUserToProject(tx, invitee.id, projectId, 'ADMIN', [doomed.id, allowedEnvId]),
+    );
+    expect(row.allowedEnvironmentIds).toEqual([allowedEnvId]);
+
+    // All envs dead → the restriction stays [] (fail-closed), never null.
+    const invitee2 = await buildUser(prisma);
+    const row2 = await prisma.$transaction((tx) =>
+      team.assignUserToProject(tx, invitee2.id, projectId, 'ADMIN', [doomed.id]),
+    );
+    expect(row2.allowedEnvironmentIds).toEqual([]);
+
+    await prisma.userOnProject.deleteMany({ where: { userId: { in: [invitee.id, invitee2.id] } } });
+    await prisma.user.deleteMany({ where: { id: { in: [invitee.id, invitee2.id] } } });
   });
 });

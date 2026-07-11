@@ -360,13 +360,27 @@ export class TeamService {
       }
       throw error;
     }
+    // The invite's environment restriction was validated at CREATION, and invites
+    // live for days — an environment deleted in between must not ride into the
+    // new membership as a dead id. Filter to the project's live environments; a
+    // restriction that empties out stays [] (member can act on nothing,
+    // fail-closed) rather than silently widening to all environments.
+    let liveAllowed = allowedEnvironmentIds ?? null;
+    if (liveAllowed?.length) {
+      const live = await tx.environment.findMany({
+        where: { id: { in: liveAllowed }, projectId, deleted: false },
+        select: { id: true },
+      });
+      const liveIds = new Set(live.map((e) => e.id));
+      liveAllowed = liveAllowed.filter((id) => liveIds.has(id));
+    }
     return await tx.userOnProject.create({
       data: {
         userId,
         projectId,
         role: role as Role,
         actived: true,
-        allowedEnvironmentIds: allowedEnvironmentIds ?? undefined,
+        allowedEnvironmentIds: liveAllowed ?? undefined,
       },
     });
   }

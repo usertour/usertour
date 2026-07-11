@@ -141,6 +141,28 @@ export class EnvironmentsService {
         });
       }
 
+      // Members restricted to this environment (UserOnProject.allowedEnvironmentIds)
+      // must not keep the dead id: their web session filters the live env list by
+      // this allowlist, so a stale id silently shrinks what they can act on. Remove
+      // it here; a restriction that empties out stays [] (member can act on nothing
+      // until re-granted — fail-closed, never silently widened to all environments).
+      // Pending invites are handled at accept time (assignUserToProject re-filters).
+      const memberships = await tx.userOnProject.findMany({
+        where: { projectId: environment.projectId },
+        select: { id: true, allowedEnvironmentIds: true },
+      });
+      for (const membership of memberships) {
+        const allowed = Array.isArray(membership.allowedEnvironmentIds)
+          ? (membership.allowedEnvironmentIds as string[])
+          : null;
+        if (allowed?.includes(id)) {
+          await tx.userOnProject.update({
+            where: { id: membership.id },
+            data: { allowedEnvironmentIds: allowed.filter((envId) => envId !== id) },
+          });
+        }
+      }
+
       // Update environment to mark as deleted
       return await tx.environment.update({
         where: { id },
