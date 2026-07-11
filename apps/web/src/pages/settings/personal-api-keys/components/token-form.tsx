@@ -15,6 +15,7 @@ import {
   SelectTrigger,
 } from '@usertour/ui';
 import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import type { Capability, Project } from '@usertour/types';
 import { useRef, useEffect } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -76,6 +77,17 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
   const selectedProjectId = useWatch({ control, name: 'projectIds' })?.[0] ?? '';
   const { environmentList } = useGetUserEnvironmentsQuery(selectedProjectId || undefined);
 
+  // Bound the scope picker by the caller's ROLE on the selected project — a key
+  // can't be minted with more power than that role grants (the server enforces
+  // this at use time via role ∩ scope, so unbounded scopes just create silently
+  // dead write access). Mirrors the OAuth consent grid. `capabilities` is the
+  // server-computed set the whole Settings gate already relies on; undefined
+  // (no project chosen, or projects still loading) leaves the grid unrestricted.
+  const selectedProject = projects.find((p) => (p as { id?: string }).id === selectedProjectId) as
+    | (Project & { capabilities?: Capability[] })
+    | undefined;
+  const availableScopes = selectedProject?.capabilities;
+
   // A single-environment project is unambiguous — pre-check its only environment once
   // the list loads (safe-first "none pre-selected" only protects when there is a choice).
   // Keyed on the loaded list, not the selection, so un-checking isn't fought.
@@ -84,6 +96,19 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
       setValue('environmentIds', [environmentList[0].id], { shouldValidate: true });
     }
   }, [environmentList, getValues, setValue]);
+
+  // Switching to a project where the role grants less must DROP now-out-of-scope
+  // selections — the grid only disables them, so they'd otherwise linger in the
+  // value and submit. Skip while capabilities are unresolved (empty/undefined) so
+  // an edit's legitimate scopes aren't wiped before `projects` loads.
+  useEffect(() => {
+    if (!availableScopes?.length) return;
+    const current = getValues('scopes');
+    const filtered = current.filter((s) => availableScopes.includes(s as Capability));
+    if (filtered.length !== current.length) {
+      setValue('scopes', filtered, { shouldValidate: true });
+    }
+  }, [availableScopes, getValues, setValue]);
 
   return (
     <div className="space-y-4">
@@ -178,8 +203,13 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
         render={({ field }) => {
           // The env requirement is a CROSS-field rule whose error lives on `environmentIds`;
           // changing scopes alone wouldn't re-validate it, so re-trigger on each change.
+          // Bound every scope change to the role's capabilities so a preset (which
+          // replaces the whole set) can't grant more than the grid allows.
           const setScopes = (next: string[]) => {
-            field.onChange(next);
+            const bounded = availableScopes
+              ? next.filter((s) => availableScopes.includes(s as Capability))
+              : next;
+            field.onChange(bounded);
             void trigger('environmentIds');
           };
           // Preset picker: shows the matching preset when the current selection IS
@@ -216,7 +246,7 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              <ScopesGrid value={field.value} onChange={setScopes} />
+              <ScopesGrid value={field.value} onChange={setScopes} available={availableScopes} />
               <FormMessage />
             </FormItem>
           );
