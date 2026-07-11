@@ -3,12 +3,9 @@
 import { RiCheckFill } from '@usertour/icons';
 import { memo, useCallback, useEffect, useRef } from 'react';
 
+import { useWidgetLocale } from '../locale/context';
 import { Button } from '../primitives';
-import {
-  DEFAULT_OTHER_PLACEHOLDER,
-  OTHER_INPUT_CLASS,
-  OTHER_SUBMIT_BUTTON_CLASS,
-} from './constants';
+import { OTHER_INPUT_CLASS, OTHER_SUBMIT_BUTTON_CLASS } from './constants';
 
 export interface OtherOptionInputProps {
   placeholder?: string;
@@ -35,6 +32,7 @@ export const OtherOptionInput = memo(
     showSubmitButton = false,
   }: OtherOptionInputProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const { messages } = useWidgetLocale();
 
     // Focus input when entering edit mode
     useEffect(() => {
@@ -63,7 +61,7 @@ export const OtherOptionInput = memo(
       [onEditingChange],
     );
 
-    const displayPlaceholder = placeholder || DEFAULT_OTHER_PLACEHOLDER;
+    const displayPlaceholder = placeholder || messages.otherPlaceholder;
 
     if (isEditing) {
       return (

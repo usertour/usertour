@@ -15,7 +15,13 @@ import {
   VersionNotEditableError,
 } from '@/common/errors';
 import { ContentConfigObject, ContentDataType } from '@usertour/types';
-import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
+import {
+  duplicateConfig,
+  duplicateData,
+  duplicateStep,
+  remapFlowTranslationIdentifiers,
+  remapVersionDataTranslationIdentifiers,
+} from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
@@ -576,6 +582,38 @@ export class ContentService {
             steps: { create: [...steps] },
           },
         });
+
+        // Translations copy over like fork/restore do, but duplicating
+        // regenerates question cvids and checklist item ids (the copy must
+        // not share analytics identities), so localized/backup get the new
+        // identifiers written in by position first.
+        const remapTranslationPayload = (payload: unknown): unknown => {
+          if (duplicateContent.type === ContentDataType.FLOW) {
+            return remapFlowTranslationIdentifiers(steps, payload);
+          }
+          return remapVersionDataTranslationIdentifiers(
+            duplicateContent.type,
+            processedData,
+            payload,
+          );
+        };
+        const versionLocalizations = await tx.versionOnLocalization.findMany({
+          where: { versionId: editedVersion.id },
+        });
+        if (versionLocalizations.length > 0) {
+          await tx.versionOnLocalization.createMany({
+            data: versionLocalizations.map((versionLocalization) => ({
+              versionId: version.id,
+              localizationId: versionLocalization.localizationId,
+              enabled: versionLocalization.enabled,
+              localized: remapTranslationPayload(
+                versionLocalization.localized,
+              ) as Prisma.InputJsonValue,
+              backup: remapTranslationPayload(versionLocalization.backup) as Prisma.InputJsonValue,
+            })),
+          });
+        }
+
         await tx.content.update({
           where: { id: content.id },
           data: { editedVersionId: version.id },

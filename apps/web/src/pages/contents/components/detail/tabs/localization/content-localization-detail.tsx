@@ -6,8 +6,9 @@ import { useContentVersion } from '@/hooks/use-content-version';
 import { useLocalizationList } from '@/hooks/use-localization-list';
 import { isVersionPublished, resolveEditableVersionId } from '@/utils/content';
 import { getErrorMessage } from '@usertour/helpers';
-import { useCreateContentVersionMutation } from '@usertour/hooks';
+import { useCreateContentVersionMutation, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
 import {
+  type LocalizedEmbedResolutions,
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
   buildLocalizedFlowSavePayload,
@@ -179,6 +180,40 @@ const useSourceLocaleName = (defaultLocalization: Localization | undefined): str
   return defaultLocalization?.name ?? t('contents.localization.sourceLabel');
 };
 
+// CSV import can swap embed URLs, and the widget renders embeds from
+// parsedUrl/oembed rather than the raw url — so every imported embed URL is
+// resolved the same way the per-row load button does. URLs that fail to
+// resolve still import: the stale source resolution is dropped by the
+// applier, and the embed renders empty until resolved from its row.
+const useImportedEmbedResolutions = () => {
+  const { invoke: queryOembedInfo } = useQueryOembedInfoLazyQuery();
+  return useCallback(
+    async (translations: ReadonlyMap<string, string>): Promise<LocalizedEmbedResolutions> => {
+      const urls = new Set<string>();
+      translations.forEach((value, unitPath) => {
+        const url = value.trim();
+        if (unitPath.endsWith(':embed.url') && url !== '') {
+          urls.add(url);
+        }
+      });
+      const entries = await Promise.all(
+        [...urls].map(async (url) => {
+          try {
+            const oembed = await queryOembedInfo(url);
+            return [url, { parsedUrl: url, oembed: oembed ?? undefined }] as const;
+          } catch (_) {
+            return undefined;
+          }
+        }),
+      );
+      return new Map(
+        entries.filter((entry): entry is NonNullable<typeof entry> => entry !== undefined),
+      );
+    },
+    [queryOembedInfo],
+  );
+};
+
 // ---------------------------------------------------------------------------
 // Flow editor — one card per step, translations keyed by step cvid.
 // ---------------------------------------------------------------------------
@@ -341,8 +376,10 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     [version, working],
   );
 
+  const resolveImportedEmbeds = useImportedEmbedResolutions();
   const handleImportTranslations = useCallback(
-    (translations: ReadonlyMap<string, string>) => {
+    async (translations: ReadonlyMap<string, string>) => {
+      const embedResolutions = await resolveImportedEmbeds(translations);
       setWorking((previous) => {
         const next: LocalizedFlowContent = { ...previous };
         for (const step of steps) {
@@ -358,6 +395,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
               step.data as ContentEditorRoot[],
               previous[step.cvid],
               stepTranslations,
+              embedResolutions,
             );
           }
         }
@@ -365,7 +403,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
         return next;
       });
     },
-    [steps, scheduleSave, storedLocalized],
+    [steps, scheduleSave, storedLocalized, resolveImportedEmbeds],
   );
 
   return (
@@ -506,20 +544,23 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     [version, content.type, sourceData, workingData],
   );
 
+  const resolveImportedEmbeds = useImportedEmbedResolutions();
   const handleImportTranslations = useCallback(
-    (translations: ReadonlyMap<string, string>) => {
+    async (translations: ReadonlyMap<string, string>) => {
+      const embedResolutions = await resolveImportedEmbeds(translations);
       setWorkingData((previous: unknown) => {
         const next = applyVersionDataTranslationUnits(
           content.type,
           sourceData,
           previous,
           translations,
+          embedResolutions,
         );
         scheduleSave(buildLocalizedVersionDataSavePayload(content.type, next, storedLocalizedData));
         return next;
       });
     },
-    [content.type, sourceData, scheduleSave, storedLocalizedData],
+    [content.type, sourceData, scheduleSave, storedLocalizedData, resolveImportedEmbeds],
   );
 
   const sections = (() => {

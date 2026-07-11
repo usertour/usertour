@@ -46,6 +46,14 @@ interface TranslatableFieldVisit {
   optional: boolean;
   /** Writes into the walked tree (used by the clone-producing walks). */
   assign: (value: string) => void;
+  /**
+   * EMBED url fields only: installs freshly resolved embed data alongside an
+   * assigned URL — the widget renders embeds from parsedUrl/oembed, not the
+   * raw url.
+   */
+  applyEmbedResolution?: (
+    resolution: Pick<ContentEditorEmebedElement, 'parsedUrl' | 'oembed'>,
+  ) => void;
 }
 
 type TranslatableFieldVisitor = (visit: TranslatableFieldVisit) => void;
@@ -175,8 +183,24 @@ const walkElementFields = (
       const embedElement = element;
       const partnerEmbed = partnerElement as ContentEditorEmebedElement | undefined;
       const sourceUrl = toText(embedElement.url);
-      visitField('embed.url', sourceUrl, partnerEmbed?.url, true, (value) => {
-        embedElement.url = value;
+      visitor({
+        path: `${elementPath}:embed.url`,
+        sourceText: sourceUrl,
+        partnerText: toPartnerText(partnerEmbed?.url),
+        optional: true,
+        assign: (value) => {
+          if (value !== embedElement.url) {
+            // Resolution data belongs to the URL it was fetched for — a
+            // stale oembed surviving a swap would render the wrong media.
+            embedElement.parsedUrl = undefined;
+            embedElement.oembed = undefined;
+          }
+          embedElement.url = value;
+        },
+        applyEmbedResolution: (resolution) => {
+          embedElement.parsedUrl = resolution.parsedUrl;
+          embedElement.oembed = resolution.oembed;
+        },
       });
       // A donated embed URL must travel with the partner's resolved embed data,
       // otherwise the iframe would still point at the source-language media.
@@ -760,17 +784,30 @@ const createTranslationUnitCollector = (
   };
 };
 
+/** Freshly resolved embed data keyed by the translated URL it was fetched for. */
+export type LocalizedEmbedResolutions = ReadonlyMap<
+  string,
+  Pick<ContentEditorEmebedElement, 'parsedUrl' | 'oembed'>
+>;
+
 /**
  * Imported cells only ever add or replace a translation: empty cells keep
- * the existing value, unknown paths are ignored.
+ * the existing value, unknown paths are ignored. An imported embed URL drops
+ * the previous URL's resolution data and installs the caller-provided one —
+ * without it the embed renders empty until resolved from its editor row.
  */
 const createTranslationApplier = (
   translations: ReadonlyMap<string, string>,
+  embedResolutions?: LocalizedEmbedResolutions,
 ): TranslatableFieldVisitor => {
   return (visit) => {
     const value = translations.get(visit.path);
     if (typeof value === 'string' && value.trim() !== '') {
       visit.assign(value);
+      const resolution = embedResolutions?.get(value.trim());
+      if (resolution && visit.applyEmbedResolution) {
+        visit.applyEmbedResolution(resolution);
+      }
     }
   };
 };
@@ -798,9 +835,14 @@ export const applyContentsTranslationUnits = (
   source: ContentEditorRoot[] | undefined,
   localized: ContentEditorRoot[] | undefined,
   translations: ReadonlyMap<string, string>,
+  embedResolutions?: LocalizedEmbedResolutions,
 ): ContentEditorRoot[] => {
   const working = applyLocalizedText(source, localized, 'empty');
-  walkTranslatableFields(working, undefined, createTranslationApplier(translations));
+  walkTranslatableFields(
+    working,
+    undefined,
+    createTranslationApplier(translations, embedResolutions),
+  );
   return working;
 };
 
@@ -809,9 +851,15 @@ export const applyVersionDataTranslationUnits = <T>(
   source: T,
   localized: unknown,
   translations: ReadonlyMap<string, string>,
+  embedResolutions?: LocalizedEmbedResolutions,
 ): T => {
   const working = createLocalizedWorkingVersionData(contentType, source, localized);
-  walkVersionDataFields(contentType, working, undefined, createTranslationApplier(translations));
+  walkVersionDataFields(
+    contentType,
+    working,
+    undefined,
+    createTranslationApplier(translations, embedResolutions),
+  );
   return working;
 };
 
@@ -1193,6 +1241,142 @@ export const buildLocalizedVersionDataSavePayload = <T>(
       break;
   }
   return payload;
+};
+
+// ---------------------------------------------------------------------------
+// Duplicate support — duplicating a content regenerates question cvids and
+// checklist item ids on the source (the copy must not share analytics
+// identities with the original), which would orphan a copied translation:
+// the walkers pair questions by cvid and items by id. The translation is a
+// structural clone of the pre-duplicate source and the duplicate is a
+// shape-preserving map of it, so the regenerated identifiers are written
+// into the translation by position. Levels whose arity already drifted are
+// left untouched — they were unreadable before the duplicate too.
+// ---------------------------------------------------------------------------
+
+/** Returns a fresh tree with the duplicate's question cvids; inputs are not mutated. */
+export const remapContentsTranslationIdentifiers = (
+  duplicated: ContentEditorRoot[] | undefined,
+  localized: ContentEditorRoot[] | undefined,
+): ContentEditorRoot[] | undefined => {
+  if (!isArray(duplicated) || !isArray(localized)) {
+    return localized;
+  }
+  const result = deepClone(localized);
+  const resultGroups = alignChildren(result, duplicated.length);
+  if (!resultGroups) {
+    return result;
+  }
+  duplicated.forEach((group, groupIndex) => {
+    if (!isArray(group?.children)) {
+      return;
+    }
+    const resultColumns = alignChildren(resultGroups[groupIndex]?.children, group.children.length);
+    if (!resultColumns) {
+      return;
+    }
+    group.children.forEach((column, columnIndex) => {
+      if (!isArray(column?.children)) {
+        return;
+      }
+      const resultItems = alignChildren(
+        resultColumns[columnIndex]?.children,
+        column.children.length,
+      );
+      if (!resultItems) {
+        return;
+      }
+      column.children.forEach((item, elementIndex) => {
+        const element = item?.element;
+        const resultElement = resultItems[elementIndex]?.element;
+        if (!element || !resultElement || element.type !== resultElement.type) {
+          return;
+        }
+        if (isQuestionElement(element)) {
+          const questionData = (resultElement as ContentEditorQuestionElement).data;
+          const duplicatedCvid = (element as ContentEditorQuestionElement).data?.cvid;
+          if (questionData && duplicatedCvid) {
+            questionData.cvid = duplicatedCvid;
+          }
+        }
+      });
+    });
+  });
+  return result;
+};
+
+/** Same remap over a whole flow translation map, keyed by the duplicate's steps. */
+export const remapFlowTranslationIdentifiers = (
+  duplicatedSteps: { cvid?: string | null; data?: unknown }[],
+  localized: unknown,
+): unknown => {
+  if (!localized || typeof localized !== 'object') {
+    return localized;
+  }
+  const result = deepClone(localized) as LocalizedFlowContent;
+  for (const step of duplicatedSteps) {
+    if (!step.cvid || !result[step.cvid]) {
+      continue;
+    }
+    const remapped = remapContentsTranslationIdentifiers(
+      isArray(step.data) ? (step.data as ContentEditorRoot[]) : undefined,
+      result[step.cvid],
+    );
+    if (remapped) {
+      result[step.cvid] = remapped;
+    }
+  }
+  return result;
+};
+
+/** Version-data remap: checklist item ids by position, question cvids in embedded trees. */
+export const remapVersionDataTranslationIdentifiers = (
+  contentType: string,
+  duplicatedData: unknown,
+  localized: unknown,
+): unknown => {
+  if (!localized || typeof localized !== 'object' || !duplicatedData) {
+    return localized;
+  }
+  if (contentType === ContentDataType.CHECKLIST) {
+    const duplicated = duplicatedData as ChecklistData;
+    const result = deepClone(localized) as ChecklistData;
+    const remappedContent = remapContentsTranslationIdentifiers(
+      isArray(duplicated.content) ? duplicated.content : undefined,
+      isArray(result.content) ? result.content : undefined,
+    );
+    if (remappedContent) {
+      result.content = remappedContent;
+    }
+    if (isArray(duplicated.items) && isArray(result.items)) {
+      const items = alignChildren(result.items, duplicated.items.length);
+      if (items) {
+        duplicated.items.forEach((item, index) => {
+          if (item?.id && items[index]) {
+            items[index].id = item.id;
+          }
+        });
+      }
+    }
+    return result;
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    const duplicated = duplicatedData as LauncherData;
+    const result = deepClone(localized) as LauncherData;
+    if (result.tooltip && typeof result.tooltip === 'object') {
+      const remappedContent = remapContentsTranslationIdentifiers(
+        isArray(duplicated.tooltip?.content) ? duplicated.tooltip.content : undefined,
+        isArray(result.tooltip.content) ? result.tooltip.content : undefined,
+      );
+      if (remappedContent) {
+        result.tooltip.content = remappedContent;
+      }
+    }
+    return result;
+  }
+  // The other types are duplicated verbatim (tab/block ids survive), so
+  // their translations copy over unchanged.
+  return localized;
 };
 
 // ---------------------------------------------------------------------------

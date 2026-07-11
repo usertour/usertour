@@ -18,7 +18,8 @@ export interface LocalizationTransferActionsProps {
   importDisabled: boolean;
   /** Current units — source texts plus whatever is already translated. */
   buildUnits: () => LocalizationTranslationUnit[];
-  onImport: (translations: ReadonlyMap<string, string>) => void;
+  /** May be async — imported embed URLs resolve their oembed data first. */
+  onImport: (translations: ReadonlyMap<string, string>) => void | Promise<void>;
 }
 
 export const LocalizationTransferActions = (props: LocalizationTransferActionsProps) => {
@@ -73,7 +74,7 @@ export const LocalizationTransferActions = (props: LocalizationTransferActionsPr
       return;
     }
 
-    onImport(translations);
+    await onImport(translations);
     toast({
       variant: 'success',
       title: t('contents.localization.toast.importSuccess', { count: translations.size }),
