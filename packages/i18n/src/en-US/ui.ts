@@ -1918,7 +1918,7 @@ const translations = {
         translateEmpty: 'Everything is already translated.',
         translateSuccess: 'Machine-translated {{count}} texts. Review them before publishing.',
         translatePartial:
-          'Machine-translated {{count}} texts before the provider failed — {{remaining}} left. Click again to continue.',
+          'Machine-translated {{count}} texts — {{remaining}} still untranslated. Click again to continue.',
         translateFailure: 'Machine translation failed. Please try again.',
       },
       exportButton: 'Export CSV',

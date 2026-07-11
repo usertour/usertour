@@ -1815,8 +1815,7 @@ const translations = {
         importSuccess: '已导入 {{count}} 条翻译。',
         translateEmpty: '所有文案均已翻译。',
         translateSuccess: '已机器翻译 {{count}} 条文案，发布前请检查。',
-        translatePartial:
-          '已机器翻译 {{count}} 条后翻译服务出错，剩余 {{remaining}} 条；再点一次继续。',
+        translatePartial: '已机器翻译 {{count}} 条，剩余 {{remaining}} 条未翻译；再点一次继续。',
         translateFailure: '机器翻译失败，请重试。',
       },
       exportButton: '导出 CSV',

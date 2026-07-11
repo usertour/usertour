@@ -110,6 +110,10 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
 
     let applied = 0;
     let failure: unknown = null;
+    // Paths this run applied. The final application's re-render may not have
+    // flushed by the time the toast math below runs, so the live recount is
+    // corrected by set difference instead of being trusted alone.
+    const appliedPaths = new Set<string>();
     setProgress({ done: 0, total: untranslated.length });
     try {
       for (
@@ -150,6 +154,9 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
         if (applicable.size > 0) {
           onApply(applicable);
           applied += applicable.size;
+          for (const path of applicable.keys()) {
+            appliedPaths.add(path);
+          }
         }
         setProgress({
           done: Math.min(offset + batch.length, untranslated.length),
@@ -169,15 +176,18 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
       });
       return;
     }
-    if (failure) {
+    // Whether a re-click has work left is independent of whether a mutation
+    // threw: a completed run may have skipped units the model returned empty,
+    // and an aborted run may still have covered everything. Recounted live so
+    // the number is exactly what clicking again would send — units the
+    // translator filled mid-run are done work, not remaining work.
+    const remaining = buildUnitsRef
+      .current()
+      .filter((unit) => isUntranslatedTextUnit(unit) && !appliedPaths.has(unit.path)).length;
+    if (remaining > 0) {
       toast({
         variant: 'success',
-        title: t('contents.localization.toast.translatePartial', {
-          count: applied,
-          // Live recount: units the translator filled mid-run are done work,
-          // not remaining work.
-          remaining: buildUnitsRef.current().filter(isUntranslatedTextUnit).length,
-        }),
+        title: t('contents.localization.toast.translatePartial', { count: applied, remaining }),
       });
       return;
     }
