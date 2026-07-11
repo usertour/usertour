@@ -481,7 +481,7 @@ export class ContentOrchestratorService {
 
     // Pass contentType to filter at database level, reducing query data
     const contentVersions = await this.contentDataService.findCustomContentVersions(
-      { environment, externalUserId, externalCompanyId, clientContext },
+      { environment, externalUserId, externalCompanyId },
       [contentType],
       versionId,
     );

@@ -482,7 +482,7 @@ const translations = {
       createButton: 'Create localization',
       description: 'Define the languages your content can be translated into.',
       descriptionContinuation:
-        "Each user sees the language matching their <code>locale_code</code> attribute — or their browser language when it isn't set.",
+        'Each user sees the language matching their <code>locale_code</code> attribute; without it they see the language the content is authored in.',
       empty: 'No localizations yet.',
       form: {
         localeLabel: 'Locale',
@@ -493,7 +493,7 @@ const translations = {
         namePlaceholder: 'Enter display name',
         codeLabel: 'Code',
         codeTooltip:
-          "Matched against each user's locale_code attribute — or their browser language when the attribute isn't set. An exact match wins; otherwise the primary language matches, so a user with fr-CA gets a localization coded fr.",
+          "Matched against each user's locale_code attribute. An exact match wins; otherwise the primary language matches, so a user with fr-CA gets a localization coded fr.",
         codePlaceholder: 'Enter code',
       },
     },

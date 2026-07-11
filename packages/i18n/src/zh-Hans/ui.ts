@@ -457,7 +457,7 @@ const translations = {
       createButton: '创建本地化',
       description: '定义内容可以翻译成的语言。',
       descriptionContinuation:
-        '用户会看到与其 <code>locale_code</code> 属性匹配的语言；未设置该属性时按浏览器语言匹配。',
+        '用户会看到与其 <code>locale_code</code> 属性匹配的语言；未设置该属性时显示内容的原始撰写语言。',
       empty: '暂无本地化。',
       form: {
         localeLabel: '语言区域',
@@ -468,7 +468,7 @@ const translations = {
         namePlaceholder: '请输入显示名',
         codeLabel: '代码',
         codeTooltip:
-          '与用户的 locale_code 属性匹配；未设置该属性时回退到浏览器语言。优先精确匹配，否则按主语言匹配——locale_code 为 fr-CA 的用户会命中代码为 fr 的本地化。',
+          '与用户的 locale_code 属性匹配。优先精确匹配，否则按主语言匹配——locale_code 为 fr-CA 的用户会命中代码为 fr 的本地化。',
         codePlaceholder: '请输入代码',
       },
     },

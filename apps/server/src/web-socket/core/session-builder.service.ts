@@ -215,14 +215,18 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.projectsService.getConfig(environment);
-    // The user's preferred locale, shipped with every session payload so the
-    // widget can localize its built-in chrome. Preference only (locale_code
-    // attribute, else the SDK-reported browser locale) — deliberately not
-    // gated on the content having a matching translation. findBizUser is
-    // request-memoized, so this adds no query.
+    // The locale for the widget's built-in chrome, shipped with every session
+    // payload: the explicit locale_code attribute, else the project's default
+    // localization — the language the content is authored in — so the chrome
+    // always matches the content language actually delivered. Never
+    // auto-detected from the browser. Deliberately not gated on the content
+    // having a matching translation. findBizUser is request-memoized, so
+    // this adds no query.
     const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
     const userLocale =
-      resolveUserLocaleCode(bizUser?.data, socketData.clientContext?.locale) ?? undefined;
+      resolveUserLocaleCode(bizUser?.data) ??
+      (await this.findDefaultLocalizationCode(environment.projectId)) ??
+      undefined;
     const themes = await this.contentDataService.findThemes({
       environment,
       externalUserId,
@@ -291,6 +295,23 @@ export class SessionBuilderService {
       return await this.processTrackerSession(session, customContentVersion, socketData);
     }
     return session;
+  }
+
+  /**
+   * The project's default localization code — the language its content is
+   * authored in. Memoized per request scope: changing the default is a rare
+   * admin action and takes effect on the next request.
+   */
+  private async findDefaultLocalizationCode(projectId: string): Promise<string | null> {
+    const localization = await this.cache.memoize(
+      this.cache.memoKeys.defaultLocalization(projectId),
+      () =>
+        this.prisma.localization.findFirst({
+          where: { projectId, isDefault: true },
+          select: { code: true },
+        }),
+    );
+    return localization?.code ?? null;
   }
 
   /**
@@ -442,7 +463,6 @@ export class SessionBuilderService {
       environment,
       externalUserId,
       externalCompanyId,
-      clientContext?.locale,
     );
 
     session.version.resourceCenter = resourceCenterData;
@@ -463,7 +483,6 @@ export class SessionBuilderService {
     environment: Environment,
     externalUserId: string,
     externalCompanyId: string,
-    clientLocale?: string,
   ): Promise<void> {
     // Announcement state is global; the block is only the navigation entry.
     // Require a VISIBLE announcement block: block-level "Only show block if..."
@@ -496,7 +515,6 @@ export class SessionBuilderService {
       environment,
       bizUser,
       externalCompanyId,
-      clientLocale,
     );
 
     const distributionOf = (item: VisibleAnnouncement): AnnouncementDistribution => {

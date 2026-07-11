@@ -299,8 +299,5 @@ export const getClientContext = () => {
     pageUrl: applyUrlFilter(location?.href ?? ''),
     viewportWidth: window?.innerWidth ?? 0,
     viewportHeight: window?.innerHeight ?? 0,
-    // Locale fallback for localized content when the user has no explicit
-    // locale_code attribute.
-    locale: typeof navigator !== 'undefined' ? navigator.language : undefined,
   };
 };

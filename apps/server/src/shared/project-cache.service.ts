@@ -94,6 +94,8 @@ export class ProjectCacheService {
     bizUserOnCompanyWithBizCompany: (bizUserId: string, envId: string, externalCompanyId: string) =>
       `bizUserOnCompanyWithBizCompany:${bizUserId}:${envId}:${externalCompanyId}`,
     projectConfig: (projectId: string) => `projectConfig:${projectId}`,
+    /** The project's default Localization row (the authored-in language). */
+    defaultLocalization: (projectId: string) => `defaultLocalization:${projectId}`,
     /**
      * Snapshot of the Redis-backed SocketData for a connected client.
      * Unlike the other memo keys this entry IS mutated mid-scope (session

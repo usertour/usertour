@@ -823,20 +823,17 @@ export interface LocaleTranslationCandidate {
 
 /**
  * The locale a user should be served in: their explicit locale_code
- * attribute when set, else the client-reported fallback (the SDK sends
- * navigator.language), else null — meaning the authored source.
+ * attribute when set, else null — meaning the authored source. The locale
+ * is never auto-detected (e.g. from the browser): content annotates the
+ * customer's app, so the right language is the one the app renders in,
+ * which only the customer knows — and delivery must stay a pure function
+ * of the user data they control.
  */
-export const resolveUserLocaleCode = (
-  userAttributes: unknown,
-  fallbackLocale?: string | null,
-): string | null => {
+export const resolveUserLocaleCode = (userAttributes: unknown): string | null => {
   const attributes = userAttributes as Record<string, unknown> | null | undefined;
   const explicit = attributes?.[UserAttributes.LOCALE_CODE];
   if (typeof explicit === 'string' && explicit.trim() !== '') {
     return explicit;
-  }
-  if (typeof fallbackLocale === 'string' && fallbackLocale.trim() !== '') {
-    return fallbackLocale;
   }
   return null;
 };

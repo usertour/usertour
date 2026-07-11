@@ -521,19 +521,14 @@ describe('matchTranslationByLocale', () => {
 });
 
 describe('resolveUserLocaleCode', () => {
-  it('prefers the explicit locale_code attribute over the client fallback', () => {
-    expect(resolveUserLocaleCode({ locale_code: 'fr' }, 'en-US')).toBe('fr');
+  it('returns the explicit locale_code attribute', () => {
+    expect(resolveUserLocaleCode({ locale_code: 'fr' })).toBe('fr');
   });
 
-  it('falls back to the client locale when the attribute is absent or empty', () => {
-    expect(resolveUserLocaleCode({}, 'en-US')).toBe('en-US');
-    expect(resolveUserLocaleCode({ locale_code: '  ' }, 'en-US')).toBe('en-US');
-    expect(resolveUserLocaleCode(null, 'en-US')).toBe('en-US');
-  });
-
-  it('returns null when neither source is set', () => {
-    expect(resolveUserLocaleCode({}, undefined)).toBeNull();
-    expect(resolveUserLocaleCode(null, '')).toBeNull();
+  it('returns null when the attribute is absent or empty — the locale is never guessed', () => {
+    expect(resolveUserLocaleCode({})).toBeNull();
+    expect(resolveUserLocaleCode({ locale_code: '  ' })).toBeNull();
+    expect(resolveUserLocaleCode(null)).toBeNull();
   });
 });
 

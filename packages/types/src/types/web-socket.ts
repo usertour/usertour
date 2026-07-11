@@ -362,10 +362,11 @@ export type CustomContentSession = {
       id: string;
       removeBranding: boolean;
       /**
-       * The user's preferred locale (explicit locale_code attribute, else the
-       * SDK-reported browser locale) — drives the widget's built-in chrome
-       * translations. Independent of whether the content has a matching
-       * translation. Absent on payloads from older servers.
+       * The locale for the widget's built-in chrome translations: the
+       * explicit locale_code attribute, else the project's default
+       * localization (the language the content is authored in). Never
+       * auto-detected from the browser. Independent of whether the content
+       * has a matching translation. Absent on payloads from older servers.
        */
       userLocale?: string;
     };

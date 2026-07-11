@@ -82,11 +82,6 @@ export interface ClientContext {
   pageUrl: string;
   viewportWidth: number;
   viewportHeight: number;
-  /**
-   * The browser's navigator.language — the locale fallback when the user has
-   * no explicit locale_code attribute. Absent on older SDKs.
-   */
-  locale?: string;
 }
 
 /**

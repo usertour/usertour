@@ -544,14 +544,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * The locale for the widget chrome: the server-resolved user preference,
-   * else the browser locale (older servers don't send userLocale).
+   * The locale for the widget chrome: the server-resolved locale stamped on
+   * the session (explicit locale_code attribute, else the project's default
+   * localization). Never auto-detected from the browser — absent (older
+   * servers) means the chrome falls back to English.
    */
   protected getUserLocale(): string | undefined {
-    return (
-      this.session.getUserLocale() ??
-      (typeof navigator !== 'undefined' ? navigator.language : undefined)
-    );
+    return this.session.getUserLocale();
   }
 
   // === Theme Management ===

@@ -792,12 +792,12 @@ export const assignClientContext = (
 };
 
 /**
- * The locale being delivered to the user right now: their locale — explicit
- * locale_code attribute, else the SDK-reported browser locale — matched
- * against the version's enabled translations, using the same rules as the
- * delivery pipeline (exact code, then primary language subtag). Null when
- * the user has no locale or nothing matches — the user sees the authored
- * source then, and the event simply omits the attribute.
+ * The locale being delivered to the user right now: their explicit
+ * locale_code attribute matched against the version's enabled translations,
+ * using the same rules as the delivery pipeline (exact code, then primary
+ * language subtag). Null when the user has no locale or nothing matches —
+ * the user sees the authored source then, and the event simply omits the
+ * attribute.
  *
  * Resolved at event time rather than frozen per session: delivery re-resolves
  * the locale on every session (re)emission, so a mid-session locale switch
@@ -807,12 +807,11 @@ export const assignClientContext = (
 export const resolveDeliveredLocaleCode = (
   bizUserData: unknown,
   translations: { localization: { code: string } }[] | null | undefined,
-  fallbackLocale?: string | null,
 ): string | null => {
   if (!translations || translations.length === 0) {
     return null;
   }
-  const localeCode = resolveUserLocaleCode(bizUserData, fallbackLocale);
+  const localeCode = resolveUserLocaleCode(bizUserData);
   if (!localeCode) {
     return null;
   }
@@ -827,9 +826,8 @@ export const assignDeliveredLocale = (
   data: Record<string, unknown>,
   bizUserData: unknown,
   translations: { localization: { code: string } }[] | null | undefined,
-  fallbackLocale?: string | null,
 ): Record<string, unknown> => {
-  const deliveredLocaleCode = resolveDeliveredLocaleCode(bizUserData, translations, fallbackLocale);
+  const deliveredLocaleCode = resolveDeliveredLocaleCode(bizUserData, translations);
   if (!deliveredLocaleCode) {
     return data;
   }

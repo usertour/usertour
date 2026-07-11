@@ -140,7 +140,6 @@ export class AnnouncementService {
     environment: Environment,
     bizUser: BizUser,
     externalCompanyId: string,
-    clientLocale?: string,
     limit: number = AnnouncementService.SCAN_LIMIT,
   ): Promise<VisibleAnnouncement[]> {
     const candidates = await this.prisma.contentOnEnvironment.findMany({
@@ -174,7 +173,7 @@ export class AnnouncementService {
     return visible.filter(hasPublishedVersion).map((item) => ({
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser, clientLocale),
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
     }));
   }
 
@@ -190,7 +189,6 @@ export class AnnouncementService {
     environment: Environment,
     bizUser: BizUser | null,
     externalCompanyId: string,
-    clientLocale?: string,
   ): Promise<VisibleAnnouncement | null> {
     // Fail fast on a missing id: `contentId: undefined` in a Prisma where is
     // silently dropped, which would turn this by-id lookup into "first
@@ -241,18 +239,18 @@ export class AnnouncementService {
     return {
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser, clientLocale),
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
     };
   }
 
   /**
    * Substitute the user's locale translation into the announcement's version
    * data — same rules as the session delivery pipeline (explicit locale_code
-   * attribute, else the SDK-reported browser locale; exact code match first,
-   * then primary language subtag). Every announcement read path (feed, by-id
-   * detail, popup) flows through the two find methods above, so localizing
-   * here covers all surfaces, including the attribute extraction that runs
-   * on the returned content.
+   * attribute, never auto-detected; exact code match first, then primary
+   * language subtag). Every announcement read path (feed, by-id detail,
+   * popup) flows through the two find methods above, so localizing here
+   * covers all surfaces, including the attribute extraction that runs on
+   * the returned content.
    */
   private localizePublishedVersion(
     publishedVersion: {
@@ -263,13 +261,12 @@ export class AnnouncementService {
       versionOnLocalization: { localized: unknown; localization: { code: string } }[];
     },
     bizUser: BizUser | null,
-    clientLocale?: string,
   ): VisibleAnnouncement['publishedVersion'] {
     const { versionOnLocalization, ...version } = publishedVersion;
     if (versionOnLocalization.length === 0 || !version.data) {
       return version;
     }
-    const localeCode = resolveUserLocaleCode(bizUser?.data, clientLocale);
+    const localeCode = resolveUserLocaleCode(bizUser?.data);
     if (!localeCode) {
       return version;
     }
