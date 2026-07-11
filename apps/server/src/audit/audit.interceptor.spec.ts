@@ -9,6 +9,7 @@ import {
   deriveAudit,
   fetchBefore,
   normalizeProjectIds,
+  resolveResourceId,
   resolveWebAuditProjectIds,
 } from './audit.interceptor';
 
@@ -153,6 +154,27 @@ describe('fetchBefore biz-entity id spaces (REST externalId vs web internal id)'
   });
 });
 
+describe('resolveResourceId — create attributes to the created resource, not a path id', () => {
+  it('a create prefers result.id over params.id (POST /:id/duplicate names the COPY, not the source)', () => {
+    // params.id is the SOURCE content; the created copy's id is in the result.
+    expect(resolveResourceId({ id: 'SRC' }, { id: 'NEW' }, 'create')).toBe('NEW');
+  });
+
+  it('a plain create (no path id) still uses result.id', () => {
+    expect(resolveResourceId({}, { id: 'NEW' }, 'create')).toBe('NEW');
+  });
+
+  it('update/delete keep the path id (the action targets the resource in the path)', () => {
+    expect(resolveResourceId({ id: 'X' }, { id: 'Y' }, 'update')).toBe('X');
+    expect(resolveResourceId({ contentId: 'C' }, { id: 'Y' }, 'delete')).toBe('C');
+  });
+
+  it('falls back to result.id when a create has no usable result id, then empty string', () => {
+    expect(resolveResourceId({ id: 'SRC' }, {}, 'create')).toBe('SRC'); // no result.id → path
+    expect(resolveResourceId({}, undefined, 'create')).toBe('');
+  });
+});
+
 describe('normalizeProjectIds — multi-project audit attribution', () => {
   it('keeps every id from an array (a key scoped to several projects logs into each)', () => {
     expect(normalizeProjectIds(['pA', 'pB'])).toEqual(['pA', 'pB']);
@@ -163,6 +185,13 @@ describe('normalizeProjectIds — multi-project audit attribution', () => {
     expect(normalizeProjectIds(null)).toEqual([]);
     expect(normalizeProjectIds(undefined)).toEqual([]);
     expect(normalizeProjectIds(['pA', '', 'pB'])).toEqual(['pA', 'pB']);
+  });
+
+  it('dedupes repeated ids so one write logs one audit row per project', () => {
+    // createApiToken's resolver hands back the RAW input array; a repeated id
+    // would otherwise write the same audit entry twice for a single creation.
+    expect(normalizeProjectIds(['pA', 'pA'])).toEqual(['pA']);
+    expect(normalizeProjectIds(['pA', 'pB', 'pA'])).toEqual(['pA', 'pB']);
   });
 });
 

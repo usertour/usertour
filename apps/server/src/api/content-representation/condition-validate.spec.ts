@@ -65,6 +65,21 @@ describe('collectRuleIssues', () => {
       expect(issues[0]?.message).toMatch(/missing a required value/);
     });
 
+    // text-input uses the same value-presence rule — numeric 0 must not trip it.
+    it('treats a numeric 0 text-input value as present, not missing', () => {
+      const element = { type: 'manual', customSelector: '.el' };
+      const ok = collectRuleIssues(
+        [{ type: 'text-input', data: { elementData: element, logic: 'is', value: 0 } }],
+        ctx,
+      );
+      expect(ok).toHaveLength(0);
+      const blank = collectRuleIssues(
+        [{ type: 'text-input', data: { elementData: element, logic: 'is', value: '' } }],
+        ctx,
+      );
+      expect(blank.some((i) => /value/.test(i.message))).toBe(true);
+    });
+
     it('recurses into nested groups', () => {
       const issues = collectRuleIssues(
         [

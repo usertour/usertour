@@ -57,7 +57,7 @@ export class AuditInterceptor implements NestInterceptor {
     let resourceType: string;
     let action: AuditAction;
     let resourceId: (r: AuditHttpRequest, result: unknown) => string = (r, result) =>
-      resolveResourceId(r.params, result);
+      resolveResourceId(r.params, result, action);
     if (capability) {
       const derived = deriveAudit(String(capability), req.method);
       if (!derived) {
@@ -156,7 +156,7 @@ export class AuditInterceptor implements NestInterceptor {
         try {
           const id = meta.resourceId
             ? meta.resourceId(args, undefined)
-            : resolveResourceId(args, undefined);
+            : resolveResourceId(args, undefined, meta.action);
           beforeId = id || undefined;
         } catch {
           beforeId = undefined;
@@ -209,7 +209,9 @@ export function buildWebAuditEntry(
     action: meta.action,
     operation: ctx.operation,
     resourceType: meta.resourceType,
-    resourceId: meta.resourceId ? meta.resourceId(args, result) : resolveResourceId(args, result),
+    resourceId: meta.resourceId
+      ? meta.resourceId(args, result)
+      : resolveResourceId(args, result, meta.action),
     before: ctx.before,
     after: meta.capture ? meta.capture(args, result) : result,
     metadata: {
@@ -272,9 +274,16 @@ const RESOURCE_BY_PREFIX: Record<string, string> = {
 
 /** A resolveProjectId result (single / array / absent) normalized to a clean id list. */
 export function normalizeProjectIds(resolved: string | string[] | null | undefined): string[] {
-  return (Array.isArray(resolved) ? resolved : resolved ? [resolved] : []).filter(
-    (id): id is string => !!id,
-  );
+  // Dedupe: a resolver may hand back the raw input array (createApiToken's
+  // projectIds), and the interceptor writes ONE audit row per id — a repeated id
+  // would log the same event twice for a single write.
+  return [
+    ...new Set(
+      (Array.isArray(resolved) ? resolved : resolved ? [resolved] : []).filter(
+        (id): id is string => !!id,
+      ),
+    ),
+  ];
 }
 
 /**
@@ -344,14 +353,21 @@ export function deriveAudit(
   return { resourceType, action };
 }
 
-function resolveResourceId(params: Record<string, unknown> | undefined, result: unknown): string {
-  return String(
-    params?.id ??
-      params?.contentId ??
-      params?.externalId ??
-      (result as { id?: unknown } | undefined)?.id ??
-      '',
-  );
+export function resolveResourceId(
+  params: Record<string, unknown> | undefined,
+  result: unknown,
+  action?: AuditAction,
+): string {
+  const resultId = (result as { id?: unknown } | undefined)?.id;
+  // A `create` names the NEWLY-created resource, which lives in the result — not
+  // in a path param. The only create route carrying a path id is
+  // POST /:id/duplicate, where params.id is the SOURCE; attributing the copy's
+  // create event to the source would be wrong. update/delete keep params first
+  // (the action targets the resource named in the path).
+  if (action === 'create' && resultId != null) {
+    return String(resultId);
+  }
+  return String(params?.id ?? params?.contentId ?? params?.externalId ?? resultId ?? '');
 }
 
 /** before-snapshot for delete/update on a single resource; redaction is applied later in AuditService. */

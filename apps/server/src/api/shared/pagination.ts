@@ -44,19 +44,14 @@ export function buildUrl(endpointUrl: string, params: Record<string, unknown>): 
   const existingQuery = qIndex === -1 ? '' : endpointUrl.slice(qIndex + 1);
   const search = new URLSearchParams(existingQuery);
   search.delete('cursor');
+  // Callers only ever set scalar cursor/limit (array filters ride through on the
+  // original query string, preserved by URLSearchParams above) — so a scalar
+  // set() is all that's needed here.
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) {
       continue;
     }
-    if (Array.isArray(value)) {
-      search.delete(key);
-      search.delete(`${key}[]`);
-      for (const item of value) {
-        search.append(`${key}[]`, String(item));
-      }
-    } else {
-      search.set(key, String(value));
-    }
+    search.set(key, String(value));
   }
   const qs = search.toString();
   return qs ? `${baseUrl}?${qs}` : baseUrl;

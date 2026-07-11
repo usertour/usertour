@@ -10,6 +10,7 @@ import {
   type Segment,
   type TimeConditionData,
 } from '@usertour/types';
+import { isEmptyString, isNullish } from '../type-utils';
 import { VALUELESS_OPERATORS, operatorsFor } from './operator-mappings';
 
 // Single source of truth for condition validation, shared by the builder UI and
@@ -120,8 +121,7 @@ const isOperatorValidForType = (logic: string, dataType: number | undefined): bo
  * publish/dry-run gate, hard-refuse publishing an otherwise valid condition.
  * Missing = nullish or a blank/whitespace string; everything else is present.
  */
-const isValueMissing = (value: unknown): boolean =>
-  value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+const isValueMissing = (value: unknown): boolean => isNullish(value) || isEmptyString(value);
 
 // ---------- Per-type validators ----------
 
@@ -195,7 +195,7 @@ export function validateTextInput(data: TextInputShape | undefined): ValidationE
     return { key: 'conditions.errors.element.selectElement' };
   }
   const logic = data?.logic ?? '';
-  if (!['any', 'empty'].includes(logic) && !data?.value) {
+  if (!['any', 'empty'].includes(logic) && isValueMissing(data?.value)) {
     return { key: 'conditions.errors.userAttr.enterValue' };
   }
   return undefined;
@@ -219,11 +219,12 @@ export function validateTime(data: TimeConditionData | undefined): ValidationErr
   return { key: 'conditions.errors.time.enterStart' };
 }
 
-// Treat null and undefined the same — backend payloads / imported JSON can
-// land with explicit nulls, and the runtime evaluator coerces null counts
-// to 0 (`data.count ?? 0`), turning AT_LEAST 0 into a match-all condition.
-// v1 getEventError did the same `=== undefined || === null` check.
-const isMissing = (v: unknown): boolean => v === undefined || v === null;
+// Event count/window fields are numeric, so nullish (not blank-string) is the
+// missing test — the shared `isNullish`. Treating null and undefined the same
+// matters because backend payloads / imported JSON can land with explicit nulls,
+// and the runtime evaluator coerces null counts to 0 (`data.count ?? 0`),
+// turning AT_LEAST 0 into a match-all condition. (v1 getEventError did the same.)
+const isMissing = isNullish;
 
 export function validateEvent(
   data: EventShape | undefined,

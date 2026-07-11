@@ -1,6 +1,7 @@
 // Main editable image component
 
 /* eslint-disable @next/next/no-img-element */
+import { isEmptyString } from '@usertour/helpers';
 import { Popover, PopoverContent, PopoverTrigger, useToast } from '@usertour/ui';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -180,13 +181,15 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
     return <LoadingSpinner size={DEFAULT_IMAGE_SIZE} />;
   }
 
-  // Render upload area when no image URL. An empty url is "missing required
-  // data" — the save gate (hasMissingRequiredData) blocks the whole step on it,
-  // so flag the offending block LIVE (same as button/question incompleteness),
-  // otherwise the save fails with nothing pointing at this upload area.
+  // Render the upload area whenever there's no usable image URL. An empty url is
+  // "missing required data" — the save gate (hasMissingRequiredData) blocks the
+  // whole step on it, so flag the offending block LIVE (same as button/question
+  // incompleteness), otherwise the save fails with nothing pointing at this
+  // upload area. The error is gated on `isEmptyString` to match the save gate
+  // and the sibling embed editor exactly (one predicate for one rule).
   if (!element.url) {
     return (
-      <EditorErrorTooltip open>
+      <EditorErrorTooltip open={isEmptyString(element.url)}>
         <EditorErrorTooltipTrigger>
           {/* Wrapper div gives Radix Slot a real ref target — ImageUploadArea
               (memo) doesn't forward one. `w-fit` keeps the anchor tight. */}
