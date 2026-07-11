@@ -22,6 +22,7 @@ import { AuditService } from '@/audit/audit.service';
 import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
 
 import { McpServices, McpTool, McpToolContext } from './mcp.types';
+import { SERVER_INSTRUCTIONS } from './server-instructions';
 import { buildMcpAuditEntry } from './tools/audit-meta';
 import { buildReadTools, resolveEnvironment } from './tools/read-tools';
 import { buildWriteTools } from './tools/write-tools';
@@ -100,7 +101,13 @@ export class McpService {
    * (e.g. a multi-project token).
    */
   createServer(token: AuthedApiToken): McpServer {
-    const server = new McpServer(SERVER_INFO, { capabilities: { tools: {} } });
+    // `instructions` rides the initialize result: the agent gets the routing map
+    // (which tool for which intent; read get_authoring_guide before authoring)
+    // before its first tool call — see server-instructions.ts.
+    const server = new McpServer(SERVER_INFO, {
+      capabilities: { tools: {} },
+      instructions: SERVER_INSTRUCTIONS,
+    });
     const scopes = this.auth.scopes(token);
 
     for (const tool of this.tools) {

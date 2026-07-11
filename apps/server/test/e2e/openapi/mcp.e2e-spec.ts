@@ -183,6 +183,13 @@ describe('MCP endpoint (e2e)', () => {
       const pkg = require('../../../package.json') as { version: string };
       expect(result.result.serverInfo).toEqual({ name: 'usertour', version: pkg.version });
       expect(result.result.capabilities.tools).toBeDefined();
+      // The routing map rides the handshake so an agent knows what to read/call
+      // BEFORE its first tool call. Pin the load-bearing routes, not the prose.
+      const instructions = result.result.instructions as string;
+      expect(instructions).toContain('get_authoring_guide');
+      expect(instructions).toContain('diagnose_content');
+      expect(instructions).toContain('get_content_schema');
+      expect(instructions).toContain('nextCursor');
     });
   });
 
