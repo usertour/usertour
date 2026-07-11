@@ -166,34 +166,31 @@ describe('member environment scope (gql e2e)', () => {
     expect(gqlData(res).createBizUserOnSegment?.success).toBe(true);
   });
 
-  it('changeTeamMemberRole sets and clears the environment restriction', async () => {
+  it('changeTeamMemberRole no longer accepts an environment restriction (write gate closed)', async () => {
+    // The member environment allowlist has NO write path until the member-
+    // permission (RBAC) design lands — the enforcement above stays dormant
+    // machinery, seeded here via prisma only. The mutation must reject the
+    // old field outright rather than silently ignore it.
     const CHANGE =
       'mutation ($data: ChangeTeamMemberRoleInput!) { changeTeamMemberRole(data: $data) }';
-    // set
-    let res = await graphql(app, {
+    const rejected = await graphql(app, {
       token: ownerToken,
       query: CHANGE,
       variables: {
         data: { projectId, userId: adminUserId, role: 'ADMIN', environmentIds: [blockedEnvId] },
       },
     });
-    expect(gqlData(res).changeTeamMemberRole).toBe(true);
-    let row = await prisma.userOnProject.findFirst({ where: { userId: adminUserId, projectId } });
-    expect(row?.allowedEnvironmentIds).toEqual([blockedEnvId]);
-    // clear (null = all environments)
-    res = await graphql(app, {
+    expect(rejected.body.errors?.length).toBeGreaterThan(0); // unknown input field
+
+    // A plain role change still works and leaves the seeded restriction alone.
+    const ok = await graphql(app, {
       token: ownerToken,
       query: CHANGE,
-      variables: { data: { projectId, userId: adminUserId, role: 'ADMIN', environmentIds: null } },
+      variables: { data: { projectId, userId: adminUserId, role: 'ADMIN' } },
     });
-    expect(gqlData(res).changeTeamMemberRole).toBe(true);
-    row = await prisma.userOnProject.findFirst({ where: { userId: adminUserId, projectId } });
-    expect(row?.allowedEnvironmentIds).toBeNull();
-    // restore the fixture restriction for any later assertions
-    await prisma.userOnProject.updateMany({
-      where: { userId: adminUserId, projectId },
-      data: { allowedEnvironmentIds: [allowedEnvId] },
-    });
+    expect(gqlData(ok).changeTeamMemberRole).toBe(true);
+    const row = await prisma.userOnProject.findFirst({ where: { userId: adminUserId, projectId } });
+    expect(row?.allowedEnvironmentIds).toEqual([allowedEnvId]);
   });
 
   it('OWNER is exempt even with a restriction row present', async () => {

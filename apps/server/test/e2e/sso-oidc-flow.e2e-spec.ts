@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { SsoOidcService } from '@/sso/sso-oidc.service';
 import { ACCESS_TOKEN_COOKIE, SSO_TX_COOKIE } from '@/utils/cookie';
 import {
+  buildEnvironment,
   buildInvite,
   buildMembership,
   buildProject,
@@ -210,11 +211,16 @@ describe('SSO OIDC login flow (e2e)', () => {
     it('JIT-provisions a brand-new invited user with the invite role (consumes the invite)', async () => {
       const email = EMAILS.jitInvited;
       jitEmails.push(email);
+      // Dormant machinery: no API writes Invite.allowedEnvironmentIds today
+      // (held back until the member-permission design lands), but rows carrying
+      // it must still ride the accept funnel correctly — a LIVE environment id
+      // is copied onto the membership, never widened to all environments.
+      const scopedEnv = await buildEnvironment(prisma, { projectId });
       const invite = await buildInvite(prisma, {
         projectId,
         email,
         role: 'VIEWER' as never, // differs from the project default (ADMIN)
-        allowedEnvironmentIds: ['env-jit-scoped'], // env-restricted invite
+        allowedEnvironmentIds: [scopedEnv.id], // env-restricted invite
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
       userIds.push(invite.userId);
@@ -231,7 +237,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       expect(membership?.role).toBe('VIEWER'); // invite role wins over the default
       // The invite's environment restriction must carry onto the membership —
       // an env-scoped invite accepted via SSO must NOT grant all environments.
-      expect(membership?.allowedEnvironmentIds).toEqual(['env-jit-scoped']);
+      expect(membership?.allowedEnvironmentIds).toEqual([scopedEnv.id]);
       const inviteRow = await prisma.invite.findUnique({ where: { id: invite.id } });
       expect(inviteRow?.deleted).toBe(true);
     });
@@ -334,11 +340,14 @@ describe('SSO OIDC login flow (e2e)', () => {
     it('consumes a pending invite for an existing non-member (joins + links)', async () => {
       const invited = await buildUser(prisma, { email: EMAILS.invited });
       userIds.push(invited.id);
+      // Dormant machinery (see the JIT-invite test): rows carrying an env
+      // restriction must ride the accept funnel with a LIVE environment id.
+      const scopedEnv = await buildEnvironment(prisma, { projectId });
       const invite = await buildInvite(prisma, {
         projectId,
         email: EMAILS.invited,
         role: 'ADMIN' as never,
-        allowedEnvironmentIds: ['env-invited-scoped'], // env-restricted invite
+        allowedEnvironmentIds: [scopedEnv.id], // env-restricted invite
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
       userIds.push(invite.userId); // the invite's creator
@@ -354,7 +363,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       });
       expect(membership?.role).toBe('ADMIN');
       // …and with the invite's environment restriction (existing-user SSO path).
-      expect(membership?.allowedEnvironmentIds).toEqual(['env-invited-scoped']);
+      expect(membership?.allowedEnvironmentIds).toEqual([scopedEnv.id]);
       expect(await prisma.user.findMany({ where: { email: EMAILS.invited } })).toHaveLength(1);
 
       // Invite consumed (soft-deleted) and the SSO identity linked.

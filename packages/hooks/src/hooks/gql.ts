@@ -282,7 +282,6 @@ export const useQueryTeamMemberListQuery = (
       role: item.role,
       logo: item.user.logo,
       twoFactorEnabled: item.user.twoFactorEnabled === true,
-      allowedEnvironmentIds: item.allowedEnvironmentIds ?? null,
       isInvite: false,
       createdAt: item.createdAt,
     })) ?? [];
@@ -306,7 +305,6 @@ export const useQueryInviteListQuery = (
       name: item.name,
       email: item.email,
       role: item.role,
-      allowedEnvironmentIds: item.allowedEnvironmentIds ?? null,
       isInvite: true,
       createdAt: item.createdAt,
     })) ?? [];
@@ -319,15 +317,9 @@ export const useInviteTeamMemberMutation = () => {
     refetchQueries: ['getInvites'],
   });
   const invoke = useCallback(
-    async (
-      projectId: string,
-      name: string,
-      email: string,
-      role: string,
-      environmentIds?: string[],
-    ): Promise<boolean> => {
+    async (projectId: string, name: string, email: string, role: string): Promise<boolean> => {
       const response = await inviteTeamMember({
-        variables: { projectId, name, email, role, environmentIds },
+        variables: { projectId, name, email, role },
       });
       return !!response.data?.inviteTeamMember;
     },
@@ -375,13 +367,8 @@ export const useChangeTeamMemberRoleMutation = () => {
     refetchQueries: ['getTeamMembers'],
   });
   const invoke = useCallback(
-    async (
-      projectId: string,
-      userId: string,
-      role: string,
-      environmentIds?: string[] | null,
-    ): Promise<boolean> => {
-      const response = await mutation({ variables: { projectId, userId, role, environmentIds } });
+    async (projectId: string, userId: string, role: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, userId, role } });
       return !!response.data?.changeTeamMemberRole;
     },
     [mutation],

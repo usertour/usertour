@@ -27,12 +27,9 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  FacetedMultiSelect,
-  FormDescription,
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
-import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { useInviteTeamMemberMutation } from '@usertour/hooks';
 import { TeamMemberRole } from '@usertour/types';
 import { z } from 'zod';
@@ -54,7 +51,6 @@ const schema = z.object({
   name: z.string().max(20).min(1),
   email: z.string().email(),
   role: z.string(),
-  environmentIds: z.array(z.string()).min(1, 'Select at least one environment'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -63,7 +59,6 @@ const defaultValues: FormValues = {
   name: '',
   email: '',
   role: TeamMemberRole.ADMIN,
-  environmentIds: [],
 };
 
 export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
@@ -73,17 +68,12 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { canUseMore: canInviteMembers } = useTeamMemberLimit();
-  const { environmentList } = useEnvironmentList();
 
   const state = useSettingsForm<FormValues>({
     schema,
     defaultValues,
-    submit: async ({ name, email, role, environmentIds }) => {
-      // Full selection = unrestricted (stored null) so environments added later
-      // are included automatically; a subset is stored as an explicit allowlist.
-      const restriction =
-        environmentIds.length === (environmentList?.length ?? 0) ? undefined : environmentIds;
-      const success = await invoke(project?.id as string, name, email, role, restriction);
+    submit: async ({ name, email, role }) => {
+      const success = await invoke(project?.id as string, name, email, role);
       if (!success) {
         throw new Error(t('settings.team.invite.failure'));
       }
@@ -94,15 +84,10 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
 
   useEffect(() => {
     if (open) {
-      // Default = every environment selected (inviting is a trust act); the
-      // inviter unchecks e.g. Production to restrict.
-      state.form.reset({
-        ...defaultValues,
-        environmentIds: (environmentList ?? []).map((env) => env.id),
-      });
+      state.form.reset(defaultValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, environmentList]);
+  }, [open]);
 
   if (!canInviteMembers) {
     return (
@@ -223,32 +208,6 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
               </FormItem>
             );
           }}
-        />
-        <FormField
-          control={state.form.control}
-          name="environmentIds"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('settings.team.invite.environmentsLabel')}</FormLabel>
-              <FormControl>
-                {/* Block wrapper: the select is an inline-flex button and would
-                    otherwise share a line with the (inline) form label. */}
-                <div>
-                  <FacetedMultiSelect
-                    label={t('settings.team.invite.environmentsSelect')}
-                    options={(environmentList ?? []).map((env) => ({
-                      label: env.name,
-                      value: env.id,
-                    }))}
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                </div>
-              </FormControl>
-              <FormDescription>{t('settings.team.invite.environmentsHelp')}</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
         />
       </div>
     </SettingsDialogForm>

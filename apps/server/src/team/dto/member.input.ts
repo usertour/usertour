@@ -25,10 +25,6 @@ export class InviteTeamMemberInput {
   @Field(() => String, { nullable: false })
   @IsNotEmpty()
   projectId: string;
-
-  /** Environments the member may act on. Omitted/null = all environments. */
-  @Field(() => [String], { nullable: true })
-  environmentIds?: string[];
 }
 
 @InputType()
@@ -55,10 +51,6 @@ export class ChangeTeamMemberRoleInput {
   @Field(() => Role, { nullable: false })
   @IsNotEmpty()
   role: Role;
-
-  /** Omitted = keep current restriction; null = all environments; array = set. */
-  @Field(() => [String], { nullable: true })
-  environmentIds?: string[] | null;
 }
 
 @InputType()
