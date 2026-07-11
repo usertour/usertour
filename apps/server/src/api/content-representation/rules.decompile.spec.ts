@@ -59,6 +59,40 @@ describe('decompileCondition', () => {
     ).toEqual({ type: 'event_attribute', attribute: 'plan', op: 'is', value: 'x' });
   });
 
+  // A stored `logic` of an Object.prototype key (persistable via the untyped web
+  // GraphQL write path) must NOT resolve to the inherited native function — that
+  // leaks a function into `op`, which JSON.stringify then drops, returning a
+  // condition with no `op` that no client can read back or repair.
+  it('a prototype-key attr op passes through as a plain string, not a native function', () => {
+    const out = decompileCondition(
+      { type: 'user-attr', data: { attrId: 'a1', logic: 'constructor', value: 'x' } },
+      resolvers,
+    ) as { op: unknown };
+    expect(typeof out.op).toBe('string'); // the fix: a string, never a function
+    // Survives a JSON round-trip (a function-valued op would VANISH here — the
+    // real-world symptom: get_content returns a condition with no `op`).
+    expect(JSON.parse(JSON.stringify(out))).toHaveProperty('op');
+  });
+
+  it('a prototype-key state logic falls back to its default, not a native function', () => {
+    // `content` maps logic → state via CONTENT_STATE; a prototype key must fall
+    // to the default 'seen', never the inherited native function.
+    const out = decompileCondition(
+      { type: 'content', data: { contentId: 'c1', logic: 'constructor' } },
+      IDENTITY_RESOLVERS,
+    ) as { state: unknown };
+    expect(out.state).toBe('seen');
+  });
+
+  it('a prototype-key event count logic falls back to at_least, not a function', () => {
+    const out = decompileCondition(
+      { type: 'event', data: { eventId: 'e1', countLogic: 'constructor', count: 2 } },
+      resolvers,
+    ) as { count?: { op: unknown } };
+    expect(typeof out.count?.op).toBe('string');
+    expect(out.count?.op).toBe('at_least');
+  });
+
   it('task-is-clicked resolves to the parameterless task_clicked', () => {
     expect(decompileCondition({ type: 'task-is-clicked', data: {} }, resolvers)).toEqual({
       type: 'task_clicked',

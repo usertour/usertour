@@ -1,8 +1,12 @@
 import { collectRuleIssues } from './condition-validate';
 
-// a1 = String user attribute (dataType 2); c1 = an existing content.
+// a1 = String user attribute (dataType 2); n1 = Number (dataType 1);
+// c1 = an existing content.
 const ctx = {
-  attributes: [{ id: 'a1', dataType: 2, bizType: 1 }],
+  attributes: [
+    { id: 'a1', dataType: 2, bizType: 1 },
+    { id: 'n1', dataType: 1, bizType: 1 },
+  ],
   segments: [{ id: 's1' }],
   contents: [{ id: 'c1' }],
   events: [{ id: 'e1' }],
@@ -32,6 +36,33 @@ describe('collectRuleIssues', () => {
         ctx,
       );
       expect(issues[0]?.message).toMatch(/not valid/);
+    });
+
+    // A numeric 0 (persistable via the untyped web GraphQL write path even though
+    // value is typed string) is a REAL value, not "missing" — a bare `!value`
+    // falsy check would flag it and hard-refuse publishing a valid condition.
+    it('treats a numeric 0 value as present, not missing (>= 0)', () => {
+      const issues = collectRuleIssues(
+        [{ type: 'user-attr', data: { attrId: 'n1', logic: 'isGreaterThanOrEqualTo', value: 0 } }],
+        ctx,
+      );
+      expect(issues).toHaveLength(0);
+    });
+
+    it('treats numeric 0 bounds as present in a between condition (0..5)', () => {
+      const issues = collectRuleIssues(
+        [{ type: 'user-attr', data: { attrId: 'n1', logic: 'between', value: 0, value2: 5 } }],
+        ctx,
+      );
+      expect(issues).toHaveLength(0);
+    });
+
+    it('still flags a genuinely empty value (blank string)', () => {
+      const issues = collectRuleIssues(
+        [{ type: 'user-attr', data: { attrId: 'a1', logic: 'is', value: '' } }],
+        ctx,
+      );
+      expect(issues[0]?.message).toMatch(/missing a required value/);
     });
 
     it('recurses into nested groups', () => {

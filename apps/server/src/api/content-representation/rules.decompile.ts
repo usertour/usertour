@@ -92,10 +92,21 @@ const SCOPE: Record<string, string> = {
   byAnyUserInCurrentCompany: 'any_user_in_company',
 };
 
-const mapStringOp = (logic: unknown): StringOp =>
-  (typeof logic === 'string' && STRING_OP[logic]) || 'is';
+/**
+ * Own-property lookup on a plain operator map. Stored `logic`/`scope` values are
+ * untrusted (the untyped web GraphQL write path persists arbitrary JSON), so a
+ * bare `MAP[key]` for a key like 'constructor'/'toString' returns the inherited
+ * Object.prototype member — a truthy FUNCTION that then defeats the `?? fallback`
+ * / `? :` guards below and leaks into the decompiled `op`, which JSON.stringify
+ * silently drops (leaving a condition with no `op` that no client can repair).
+ * Returns undefined for any non-own key.
+ */
+const own = <T>(map: Record<string, T>, key: unknown): T | undefined =>
+  typeof key === 'string' && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : undefined;
+
+const mapStringOp = (logic: unknown): StringOp => own(STRING_OP, logic) || 'is';
 const mapAttrOp = (logic: unknown): string =>
-  (typeof logic === 'string' && (ATTR_OP[logic] ?? logic)) || 'is';
+  own(ATTR_OP, logic) || (typeof logic === 'string' && logic) || 'is';
 
 // ── Conditions ───────────────────────────────────────────────────────────────
 
@@ -182,14 +193,14 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
       return {
         type: 'element',
         ...(target ? { target } : {}),
-        state: (ELEMENT_STATE[d.logic] ?? 'present') as never,
+        state: (own(ELEMENT_STATE, d.logic) ?? 'present') as never,
       };
     }
     case 'content':
       return {
         type: 'content_state',
         content: d.contentId ?? '',
-        state: (CONTENT_STATE[d.logic] ?? 'seen') as never,
+        state: (own(CONTENT_STATE, d.logic) ?? 'seen') as never,
       };
     case 'event':
       return {
@@ -197,7 +208,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
         event: r.eventCode(d.eventId ?? ''),
         ...mapCount(d),
         ...mapWithin(d),
-        ...(SCOPE[d.scope] ? { scope: SCOPE[d.scope] as never } : {}),
+        ...(own(SCOPE, d.scope) ? { scope: own(SCOPE, d.scope) as never } : {}),
         ...(Array.isArray(d.whereConditions) && d.whereConditions.length
           ? { where: decompileWhen(d.whereConditions, r) as unknown as EventWhereCondition[] }
           : {}),
@@ -230,7 +241,7 @@ function mapCount(
   }
   return {
     count: {
-      op: (COUNT_OP[d.countLogic] ?? 'at_least') as never,
+      op: (own(COUNT_OP, d.countLogic) ?? 'at_least') as never,
       n: typeof d.count === 'number' ? d.count : 0,
       ...(typeof d.count2 === 'number' ? { n2: d.count2 } : {}),
     },
@@ -245,7 +256,7 @@ function mapWithin(
   }
   return {
     within: {
-      op: (TIME_OP[d.timeLogic] ?? 'any_time') as never,
+      op: (own(TIME_OP, d.timeLogic) ?? 'any_time') as never,
       ...(typeof d.windowValue === 'number' ? { value: d.windowValue } : {}),
       ...(typeof d.windowValue2 === 'number' ? { value2: d.windowValue2 } : {}),
       ...(typeof d.timeUnit === 'string' ? { unit: d.timeUnit as never } : {}),

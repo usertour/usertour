@@ -32,9 +32,17 @@ export interface PaginateOptions<TNode, TOut> {
  * (MCP's sentinel `mcp://` URLs carry none, and toListPayload keeps only the
  * cursor anyway).
  */
-function buildUrl(endpointUrl: string, params: Record<string, unknown>): string {
-  const [baseUrl, existingQuery] = endpointUrl.split('?');
-  const search = new URLSearchParams(existingQuery || '');
+export function buildUrl(endpointUrl: string, params: Record<string, unknown>): string {
+  // Split on the FIRST '?' only. `split('?')` + 2-var destructuring would drop
+  // everything after a SECOND literal '?' — legal inside a query-param value per
+  // RFC 3986 and passed through verbatim by Express `req.originalUrl` (e.g.
+  // `?name=ready?&limit=50`) — silently corrupting the filter AND dropping every
+  // later param from the generated next/previous link, so a client following it
+  // pages a different result set (rows skipped/duplicated during a sync).
+  const qIndex = endpointUrl.indexOf('?');
+  const baseUrl = qIndex === -1 ? endpointUrl : endpointUrl.slice(0, qIndex);
+  const existingQuery = qIndex === -1 ? '' : endpointUrl.slice(qIndex + 1);
+  const search = new URLSearchParams(existingQuery);
   search.delete('cursor');
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) {

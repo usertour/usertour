@@ -111,6 +111,18 @@ const cleanList = (values: string[] | undefined): string[] =>
 const isOperatorValidForType = (logic: string, dataType: number | undefined): boolean =>
   operatorsFor(dataType).some((o) => o.value === logic);
 
+/**
+ * Whether a condition value counts as "not filled in". A plain `!value` falsy
+ * check is wrong here: the number 0 (or the string "0") is a REAL value, but
+ * `!0` is true — so a stored numeric 0 (which the untyped web GraphQL write
+ * path or a data import can persist even though the value is typed `string`)
+ * would be flagged as missing and, since this validator now backs the server
+ * publish/dry-run gate, hard-refuse publishing an otherwise valid condition.
+ * Missing = nullish or a blank/whitespace string; everything else is present.
+ */
+const isValueMissing = (value: unknown): boolean =>
+  value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+
 // ---------- Per-type validators ----------
 
 export function validateUserAttr(
@@ -126,7 +138,8 @@ export function validateUserAttr(
   }
   if (VALUELESS_OPERATORS.has(data.logic)) return undefined;
   if (data.logic === 'between') {
-    if (!data.value || !data.value2) return { key: 'conditions.errors.userAttr.enterValue' };
+    if (isValueMissing(data.value) || isValueMissing(data.value2))
+      return { key: 'conditions.errors.userAttr.enterValue' };
     return undefined;
   }
   if (attribute.dataType === AttributeDataType.List) {
@@ -135,7 +148,7 @@ export function validateUserAttr(
     }
     return undefined;
   }
-  if (!data.value) return { key: 'conditions.errors.userAttr.enterValue' };
+  if (isValueMissing(data.value)) return { key: 'conditions.errors.userAttr.enterValue' };
   return undefined;
 }
 
@@ -258,10 +271,11 @@ export function validateEventAttr(
   }
   if (VALUELESS_OPERATORS.has(data.logic)) return undefined;
   if (data.logic === 'between') {
-    if (!data.value || !data.value2) return { key: 'conditions.errors.userAttr.enterValue' };
+    if (isValueMissing(data.value) || isValueMissing(data.value2))
+      return { key: 'conditions.errors.userAttr.enterValue' };
     return undefined;
   }
-  if (!data.value && (!data.listValues || data.listValues.length === 0)) {
+  if (isValueMissing(data.value) && (!data.listValues || data.listValues.length === 0)) {
     return { key: 'conditions.errors.userAttr.enterValue' };
   }
   return undefined;
