@@ -6,7 +6,6 @@ export { DataTableToolbar } from './data-table-toolbar';
 export { DataTablePagination } from './data-table-pagination';
 export { DataTableViewOptions } from './data-table-view-options';
 export { DataTableColumnHeader } from './data-table-column-header';
-export { DataTableFacetedFilter } from './data-table-faceted-filter';
 
 // Utilities
 export {
@@ -23,7 +22,6 @@ export type {
   DataTablePaginationProps,
   DataTableViewOptionsProps,
   DataTableColumnHeaderProps,
-  DataTableFacetedFilterProps,
   DynamicColumnConfig,
 } from './types';
 export { TableStyles } from './types';
