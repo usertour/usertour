@@ -99,29 +99,25 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
     [locales, rowByLocalizationId, contentType, version],
   );
 
-  const handleOnCheckedChange = async (
-    enabled: boolean,
-    localization: Localization,
-    row: VersionOnLocalization | undefined,
-  ) => {
+  const handleOnCheckedChange = async (enabled: boolean, localization: Localization) => {
     if (!content) {
       return;
     }
     try {
       // Toggling on a published version forks a draft first (same behavior as
-      // "Edit in builder"); the fork copies every translation row, so writing
-      // the pre-fork row payload onto the draft only changes `enabled`. The
-      // refetch repoints the page at the draft.
+      // "Edit in builder"); the fork copies every translation row. The refetch
+      // repoints the page at the draft.
       const editableVersionId = await resolveEditableVersionId(
         content,
         version.id,
         createContentVersion,
       );
+      // State-only write: omitting localized/backup keeps the stored
+      // translation untouched — echoing this tab's cached copy back would
+      // overwrite whatever a translator saved since the tab loaded.
       const success = await upsertVersionLocalization({
         localizationId: localization.id,
         versionId: editableVersionId,
-        localized: row?.localized ?? {},
-        backup: row?.backup ?? {},
         enabled,
       });
       if (editableVersionId !== version.id) {
@@ -182,7 +178,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
                     disabled={isViewOnly}
                     className="data-[state=unchecked]:bg-input"
                     onCheckedChange={(checked: boolean) => {
-                      handleOnCheckedChange(checked, localization, row);
+                      handleOnCheckedChange(checked, localization);
                     }}
                   />
                 </TableCell>

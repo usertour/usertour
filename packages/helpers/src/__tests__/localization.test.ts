@@ -9,6 +9,7 @@ import type {
   ContentEditorNPSElement,
   ContentEditorRoot,
   ContentEditorTextElement,
+  LocalizedFlowContent,
   ResourceCenterData,
 } from '@usertour/types';
 import {
@@ -24,6 +25,9 @@ import {
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
+  buildLocalizedContentsSavePayload,
+  buildLocalizedFlowSavePayload,
+  buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
   countMissingTranslations,
@@ -599,5 +603,164 @@ describe('translation exchange (extract/apply units)', () => {
     expect(applied.items[0].name).toBe('Invitez votre équipe');
     // Untouched fields stay untranslated in the working clone.
     expect(applied.items[1].name).toBe('');
+  });
+});
+
+describe('save payloads (a session may only overwrite what it was able to read)', () => {
+  it('keeps stored translations for a column the source outgrew, and revives them on revert', () => {
+    const source = createSourceContents();
+    const stored = createLocalizedWorkingContents(source, undefined);
+    getElement<ContentEditorButtonElement>(stored, 1).data.text = 'Suivant';
+
+    // The author adds one element to the column — the stored column no longer aligns.
+    const grown = deepClone(source);
+    grown[0].children[0].children.push({ element: createButtonElement(), children: null });
+    const working = createLocalizedWorkingContents(grown, stored);
+    expect(getElement<ContentEditorButtonElement>(working, 1).data.text).toBe('');
+
+    // The untouched working copy must not erase the stored column on save.
+    const payload = buildLocalizedContentsSavePayload(working, stored);
+    expect(payload[0].children[0].children).toHaveLength(6);
+    expect(getElement<ContentEditorButtonElement>(payload, 1).data.text).toBe('Suivant');
+
+    // Reverting the source realigns the preserved column through the normal merge.
+    const merged = mergeLocalizedEditorContents(source, payload);
+    expect(getElement<ContentEditorButtonElement>(merged, 1).data.text).toBe('Suivant');
+  });
+
+  it('hands the fragment over once the translator retranslates inside it', () => {
+    const source = createSourceContents();
+    const stored = createLocalizedWorkingContents(source, undefined);
+    getElement<ContentEditorButtonElement>(stored, 1).data.text = 'Suivant';
+
+    const grown = deepClone(source);
+    grown[0].children[0].children.push({ element: createButtonElement(), children: null });
+    const working = createLocalizedWorkingContents(grown, stored);
+    getElement<ContentEditorButtonElement>(working, 1).data.text = 'Weiter';
+
+    const payload = buildLocalizedContentsSavePayload(working, stored);
+    expect(payload[0].children[0].children).toHaveLength(7);
+    expect(getElement<ContentEditorButtonElement>(payload, 1).data.text).toBe('Weiter');
+  });
+
+  it('does not resurrect a translation the translator cleared on an aligned field', () => {
+    const source = createSourceContents();
+    const stored = createLocalizedWorkingContents(source, undefined);
+    getElement<ContentEditorButtonElement>(stored, 1).data.text = 'Suivant';
+
+    const working = createLocalizedWorkingContents(source, stored);
+    getElement<ContentEditorButtonElement>(working, 1).data.text = '';
+
+    const payload = buildLocalizedContentsSavePayload(working, stored);
+    expect(getElement<ContentEditorButtonElement>(payload, 1).data.text).toBe('');
+  });
+
+  it('keeps map entries for steps the version no longer has', () => {
+    const source = createSourceContents();
+    const goneStep = createLocalizedWorkingContents(source, undefined);
+    getElement<ContentEditorButtonElement>(goneStep, 1).data.text = 'Suivant';
+    const stored: LocalizedFlowContent = { 'step-gone': goneStep };
+    const working: LocalizedFlowContent = {
+      'step-live': createLocalizedWorkingContents(source, undefined),
+    };
+
+    const payload = buildLocalizedFlowSavePayload(working, stored);
+    expect(payload['step-gone']).toEqual(goneStep);
+    expect(payload['step-live']).toBeDefined();
+  });
+
+  it('preserves choice option labels across option-arity drift', () => {
+    const source = createSourceContents();
+    const stored = createLocalizedWorkingContents(source, undefined);
+    const storedChoice = getElement<ContentEditorMultipleChoiceElement>(stored, 3);
+    storedChoice.data.options[0].label = 'Rouge';
+    storedChoice.data.options[1].label = 'Bleu';
+
+    const grown = deepClone(source);
+    getElement<ContentEditorMultipleChoiceElement>(grown, 3).data.options.push({
+      label: 'Green',
+      value: 'green',
+      checked: false,
+    });
+    const working = createLocalizedWorkingContents(grown, stored);
+    const workingChoice = getElement<ContentEditorMultipleChoiceElement>(working, 3);
+    expect(workingChoice.data.options.map((option) => option.label)).toEqual(['', '', '']);
+
+    const payload = buildLocalizedContentsSavePayload(working, stored);
+    const payloadChoice = getElement<ContentEditorMultipleChoiceElement>(payload, 3);
+    expect(payloadChoice.data.options.map((option) => option.label)).toEqual(['Rouge', 'Bleu']);
+
+    const merged = mergeLocalizedEditorContents(source, payload);
+    expect(getElement<ContentEditorMultipleChoiceElement>(merged, 3).data.options[0].label).toBe(
+      'Rouge',
+    );
+  });
+
+  it('preserves slate subtrees across node-arity drift', () => {
+    const source = createSourceContents();
+    const stored = createLocalizedWorkingContents(source, undefined);
+    getElement<ContentEditorTextElement>(stored, 0).data[0].children[1].text = 'monde';
+
+    const grown = deepClone(source);
+    getElement<ContentEditorTextElement>(grown, 0).data[0].children.push({ text: '!' });
+    const working = createLocalizedWorkingContents(grown, stored);
+    expect(getElement<ContentEditorTextElement>(working, 0).data[0].children[1].text).toBe('');
+
+    const payload = buildLocalizedContentsSavePayload(working, stored);
+    expect(getElement<ContentEditorTextElement>(payload, 0).data[0].children).toHaveLength(2);
+
+    const merged = mergeLocalizedEditorContents(source, payload);
+    expect(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1].text).toBe('monde');
+  });
+
+  it('checklist: removed items survive the save and revive by id', () => {
+    const source = createChecklistData();
+    const stored = createLocalizedWorkingVersionData(ContentDataType.CHECKLIST, source, undefined);
+    stored.items[0].name = 'Invitez votre équipe';
+
+    const shrunk = deepClone(source);
+    shrunk.items = shrunk.items.filter((item) => item.id !== 'item-1');
+    const working = createLocalizedWorkingVersionData(ContentDataType.CHECKLIST, shrunk, stored);
+
+    const payload = buildLocalizedVersionDataSavePayload(
+      ContentDataType.CHECKLIST,
+      working,
+      stored,
+    );
+    expect(
+      payload.items.some((item) => item.id === 'item-1' && item.name === 'Invitez votre équipe'),
+    ).toBe(true);
+
+    const merged = mergeLocalizedVersionData(ContentDataType.CHECKLIST, source, payload);
+    expect(merged.items.find((item) => item.id === 'item-1')?.name).toBe('Invitez votre équipe');
+  });
+
+  it('resource center: a removed block rejoins its tab and revives by id', () => {
+    const source = createResourceCenterData();
+    const stored = createLocalizedWorkingVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      source,
+      undefined,
+    );
+    (stored.tabs[0].blocks[1].name as { text: string }[])[0].text = 'Guides FR';
+
+    const shrunk = deepClone(source);
+    shrunk.tabs[0].blocks = shrunk.tabs[0].blocks.filter((block) => block.id !== 'block-2');
+    const working = createLocalizedWorkingVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      shrunk,
+      stored,
+    );
+
+    const payload = buildLocalizedVersionDataSavePayload(
+      ContentDataType.RESOURCE_CENTER,
+      working,
+      stored,
+    );
+    expect(payload.tabs[0].blocks.some((block) => block.id === 'block-2')).toBe(true);
+
+    const merged = mergeLocalizedVersionData(ContentDataType.RESOURCE_CENTER, source, payload);
+    const revived = merged.tabs[0].blocks.find((block) => block.id === 'block-2');
+    expect((revived?.name as { text: string }[])[0].text).toBe('Guides FR');
   });
 });

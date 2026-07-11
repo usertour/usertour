@@ -1514,10 +1514,10 @@ input VersionUpdateInput {
 }
 
 input VersionUpdateLocalizationInput {
-  backup: JSON!
+  backup: JSON
   enabled: Boolean!
   localizationId: String!
-  localized: JSON!
+  localized: JSON
   versionId: String!
 }
 

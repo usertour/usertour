@@ -730,10 +730,19 @@ export class ContentService {
     if (!(await this.contentVersionIsEditable(versionId))) {
       throw new ParamsError();
     }
+    // localized/backup are optional: undefined is skipped by the update
+    // clause, so a state-only write (the enable toggle) can never clobber
+    // a translation saved from elsewhere.
     return await this.prisma.versionOnLocalization.upsert({
       where: { versionId_localizationId: { versionId, localizationId } },
-      create: { versionId, localizationId, localized, backup, enabled },
-      update: { localized, backup, enabled },
+      create: {
+        versionId,
+        localizationId,
+        localized: localized ?? {},
+        backup: backup ?? {},
+        enabled,
+      },
+      update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
     });
   }
 

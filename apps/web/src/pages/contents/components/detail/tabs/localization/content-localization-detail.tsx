@@ -10,6 +10,8 @@ import { useCreateContentVersionMutation } from '@usertour/hooks';
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
+  buildLocalizedFlowSavePayload,
+  buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
   createLocalizedWorkingContents,
@@ -198,15 +200,23 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     [version.steps],
   );
 
+  // The stored row as loaded at mount — the graft base for every save: a
+  // save may only overwrite what this session could read, so fragments the
+  // working copy couldn't align (drifted subtrees, removed steps) ride along
+  // on each payload instead of being erased (buildLocalizedFlowSavePayload).
+  const [storedLocalized] = useState(
+    () => (contentLocalization?.localized ?? undefined) as LocalizedFlowContent | undefined,
+  );
+  const [storedBackup] = useState(
+    () => (contentLocalization?.backup ?? undefined) as LocalizedFlowContent | undefined,
+  );
+
   const [working, setWorking] = useState<LocalizedFlowContent>(() => {
-    const localized = (contentLocalization?.localized ?? undefined) as
-      | LocalizedFlowContent
-      | undefined;
     const initial: LocalizedFlowContent = {};
     for (const step of steps) {
       initial[step.cvid] = createLocalizedWorkingContents(
         step.data as ContentEditorRoot[],
-        localized?.[step.cvid],
+        storedLocalized?.[step.cvid],
       );
     }
     return initial;
@@ -219,13 +229,12 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
   // the row dot, section chip and card count retire together as the
   // translator works through the list.
   const [outdatedByStep, setOutdatedByStep] = useState<Map<string, Set<string>>>(() => {
-    const backup = (contentLocalization?.backup ?? undefined) as LocalizedFlowContent | undefined;
     const map = new Map<string, Set<string>>();
-    if (!backup) {
+    if (!storedBackup) {
       return map;
     }
     for (const step of steps) {
-      const stepBackup = backup[step.cvid];
+      const stepBackup = storedBackup[step.cvid];
       if (stepBackup) {
         map.set(step.cvid, collectOutdatedUnitPaths(step.data as ContentEditorRoot[], stepBackup));
       }
@@ -253,18 +262,27 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     versionId: version.id,
     localizationId: localization.id,
     enabled: contentLocalization?.enabled ?? false,
-    buildBackup: () => Object.fromEntries(stepsRef.current.map((step) => [step.cvid, step.data])),
+    buildBackup: () => {
+      const current = Object.fromEntries(stepsRef.current.map((step) => [step.cvid, step.data]));
+      if (!storedBackup) {
+        return current;
+      }
+      // Steps the payload preserves but the version no longer has keep their
+      // old source snapshot, so drift detection still works if they revive.
+      const preserved = Object.entries(storedBackup).filter(([cvid]) => !(cvid in current));
+      return { ...Object.fromEntries(preserved), ...current };
+    },
   });
 
   const handleStepContentsChange = useCallback(
     (cvid: string, nextContents: ContentEditorRoot[]) => {
       setWorking((previous) => {
         const next = { ...previous, [cvid]: nextContents };
-        scheduleSave(next);
+        scheduleSave(buildLocalizedFlowSavePayload(next, storedLocalized));
         return next;
       });
     },
-    [scheduleSave],
+    [scheduleSave, storedLocalized],
   );
 
   // Export/import addresses flow units as `steps/<cvid>/<unit path>`.
@@ -343,11 +361,11 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
             );
           }
         }
-        scheduleSave(next);
+        scheduleSave(buildLocalizedFlowSavePayload(next, storedLocalized));
         return next;
       });
     },
-    [steps, scheduleSave],
+    [steps, scheduleSave, storedLocalized],
   );
 
   return (
@@ -420,12 +438,15 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   const disabled = isViewOnly;
   const sourceData = version.data ?? {};
 
+  // Same graft base as the flow editor: fragments of the stored row this
+  // session couldn't read must survive every save (see
+  // buildLocalizedVersionDataSavePayload).
+  const [storedLocalizedData] = useState<unknown>(
+    () => contentLocalization?.localized ?? undefined,
+  );
+
   const [workingData, setWorkingData] = useState<unknown>(() =>
-    createLocalizedWorkingVersionData(
-      content.type,
-      sourceData,
-      contentLocalization?.localized ?? undefined,
-    ),
+    createLocalizedWorkingVersionData(content.type, sourceData, storedLocalizedData),
   );
 
   // Same mount-time snapshot rationale as the flow editor.
@@ -458,9 +479,9 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   const handleDataChange = useCallback(
     (data: unknown) => {
       setWorkingData(data);
-      scheduleSave(data);
+      scheduleSave(buildLocalizedVersionDataSavePayload(content.type, data, storedLocalizedData));
     },
-    [scheduleSave],
+    [scheduleSave, content.type, storedLocalizedData],
   );
 
   const units = useMemo(
@@ -494,11 +515,11 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
           previous,
           translations,
         );
-        scheduleSave(next);
+        scheduleSave(buildLocalizedVersionDataSavePayload(content.type, next, storedLocalizedData));
         return next;
       });
     },
-    [content.type, sourceData, scheduleSave],
+    [content.type, sourceData, scheduleSave, storedLocalizedData],
   );
 
   const sections = (() => {

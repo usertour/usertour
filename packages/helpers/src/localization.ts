@@ -9,7 +9,9 @@ import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorQuestionElement,
   ContentEditorRoot,
+  ContentEditorRootColumn,
   LauncherData,
+  LocalizedFlowContent,
   ResourceCenterData,
 } from '@usertour/types';
 import { ContentDataType, ContentEditorElementType, UserAttributes } from '@usertour/types';
@@ -811,6 +813,386 @@ export const applyVersionDataTranslationUnits = <T>(
   const working = createLocalizedWorkingVersionData(contentType, source, localized);
   walkVersionDataFields(contentType, working, undefined, createTranslationApplier(translations));
   return working;
+};
+
+// ---------------------------------------------------------------------------
+// Save payloads — a session may only overwrite what it was able to read.
+//
+// The working copy inherits only translations that positionally align with
+// the current source; anything else in the stored row (subtrees the source
+// structure outgrew, steps/items/tabs/blocks that were removed) is invisible
+// in the editor. A wholesale save built from the working copy alone would
+// silently erase all of it on the first unrelated keystroke. The builders
+// below start from the working copy and graft back every stored fragment the
+// session could not read — unless the translator retranslated inside that
+// fragment (any non-empty field), in which case the new translation takes
+// over wholesale. Preserved fragments stay misaligned, so readers (which
+// align defensively) never deliver them; they simply revive if the source
+// structure is restored.
+// ---------------------------------------------------------------------------
+
+const createTranslationProbe = (): {
+  state: { found: boolean };
+  visitor: TranslatableFieldVisitor;
+} => {
+  const state = { found: false };
+  const visitor: TranslatableFieldVisitor = (visit) => {
+    if (visit.sourceText !== '') {
+      state.found = true;
+    }
+  };
+  return { state, visitor };
+};
+
+const elementHasTranslations = (element: ContentEditorElement): boolean => {
+  const probe = createTranslationProbe();
+  walkElementFields(element, undefined, '', probe.visitor);
+  return probe.state.found;
+};
+
+const columnHasTranslations = (column: ContentEditorRootColumn): boolean => {
+  if (!isArray(column?.children)) {
+    return false;
+  }
+  return column.children.some((item) => item?.element && elementHasTranslations(item.element));
+};
+
+const groupHasTranslations = (group: ContentEditorRoot): boolean => {
+  if (!isArray(group?.children)) {
+    return false;
+  }
+  return group.children.some((column) => columnHasTranslations(column));
+};
+
+const contentsHaveTranslations = (contents: ContentEditorRoot[]): boolean => {
+  return contents.some((group) => groupHasTranslations(group));
+};
+
+const slateNodesHaveTranslations = (nodes: SlateNode[]): boolean => {
+  const probe = createTranslationProbe();
+  walkSlateNodes(nodes, undefined, '', probe.visitor);
+  return probe.state.found;
+};
+
+/** Grafts stored slate subtrees the arity drift made unreadable; returns the array to keep. */
+const graftSlateNodes = (working: SlateNode[], stored: SlateNode[] | undefined): SlateNode[] => {
+  if (!isArray(stored)) {
+    return working;
+  }
+  if (stored.length !== working.length) {
+    return slateNodesHaveTranslations(working) ? working : deepClone(stored);
+  }
+  working.forEach((node, index) => {
+    if (!node || typeof node !== 'object' || !isArray(node.children)) {
+      return;
+    }
+    const storedNode = stored[index];
+    const storedChildren =
+      storedNode && storedNode.type === node.type && isArray(storedNode.children)
+        ? (storedNode.children as SlateNode[])
+        : undefined;
+    node.children = graftSlateNodes(node.children as SlateNode[], storedChildren);
+  });
+  return working;
+};
+
+const graftElementTranslations = (
+  element: ContentEditorElement,
+  storedElement: ContentEditorElement,
+): void => {
+  if (element.type === ContentEditorElementType.TEXT) {
+    const workingData = (element as { data?: unknown }).data;
+    const storedData = (storedElement as { data?: unknown }).data;
+    if (isArray(workingData)) {
+      (element as { data: unknown }).data = graftSlateNodes(
+        workingData as SlateNode[],
+        isArray(storedData) ? (storedData as SlateNode[]) : undefined,
+      );
+    }
+    return;
+  }
+  if (element.type === ContentEditorElementType.MULTIPLE_CHOICE) {
+    const data = (element as ContentEditorMultipleChoiceElement).data;
+    const storedData = (storedElement as ContentEditorMultipleChoiceElement).data;
+    const options = isArray(data?.options) ? data.options : undefined;
+    const storedOptions = storedData?.options;
+    if (!options || !isArray(storedOptions) || storedOptions.length === options.length) {
+      return;
+    }
+    const optionsHaveTranslations = options.some((option) => toText(option?.label) !== '');
+    if (!optionsHaveTranslations) {
+      data.options = deepClone(storedOptions);
+    }
+  }
+};
+
+/** Mutates `working` (a payload-owned clone) in place; returns the tree to keep. */
+const graftContentsTranslations = (
+  working: ContentEditorRoot[],
+  stored: ContentEditorRoot[] | undefined,
+): ContentEditorRoot[] => {
+  if (!isArray(stored) || stored.length === 0) {
+    return working;
+  }
+  const storedGroups = alignChildren(stored, working.length);
+  if (!storedGroups) {
+    return contentsHaveTranslations(working) ? working : deepClone(stored);
+  }
+  working.forEach((group, groupIndex) => {
+    if (!isArray(group?.children)) {
+      return;
+    }
+    const storedGroup = storedGroups[groupIndex];
+    const storedColumns = alignChildren(storedGroup?.children, group.children.length);
+    if (!storedColumns) {
+      if (isArray(storedGroup?.children) && !groupHasTranslations(group)) {
+        group.children = deepClone(storedGroup.children);
+      }
+      return;
+    }
+    group.children.forEach((column, columnIndex) => {
+      if (!isArray(column?.children)) {
+        return;
+      }
+      const storedColumn = storedColumns[columnIndex];
+      const storedItems = alignChildren(storedColumn?.children, column.children.length);
+      if (!storedItems) {
+        if (isArray(storedColumn?.children) && !columnHasTranslations(column)) {
+          column.children = deepClone(storedColumn.children);
+        }
+        return;
+      }
+      column.children.forEach((item, elementIndex) => {
+        const element = item?.element;
+        const storedElement = storedItems[elementIndex]?.element;
+        if (!element || !storedElement) {
+          return;
+        }
+        let aligned = storedElement.type === element.type;
+        if (aligned && isQuestionElement(element)) {
+          aligned =
+            (element as ContentEditorQuestionElement).data?.cvid ===
+            (storedElement as ContentEditorQuestionElement).data?.cvid;
+        }
+        if (!aligned) {
+          if (!elementHasTranslations(element)) {
+            item.element = deepClone(storedElement);
+          }
+          return;
+        }
+        graftElementTranslations(element, storedElement);
+      });
+    });
+  });
+  return working;
+};
+
+/**
+ * Save payload for one editor tree: the working copy plus every stored
+ * fragment the session could not read grafted back (see section comment).
+ * Returns a fresh tree; neither input is mutated.
+ */
+export const buildLocalizedContentsSavePayload = (
+  working: ContentEditorRoot[] | undefined,
+  stored: ContentEditorRoot[] | undefined,
+): ContentEditorRoot[] => {
+  return graftContentsTranslations(deepClone(working ?? []), stored);
+};
+
+/**
+ * Save payload for a flow translation map. Steps no longer on the version
+ * (removed, or stripped of data) keep their stored entry verbatim, so a
+ * restore or undo in the builder revives their translations.
+ */
+export const buildLocalizedFlowSavePayload = (
+  working: LocalizedFlowContent,
+  stored: LocalizedFlowContent | undefined,
+): LocalizedFlowContent => {
+  const payload: LocalizedFlowContent = {};
+  if (stored) {
+    for (const [cvid, contents] of Object.entries(stored)) {
+      if (!(cvid in working)) {
+        payload[cvid] = deepClone(contents);
+      }
+    }
+  }
+  for (const [cvid, contents] of Object.entries(working)) {
+    payload[cvid] = graftContentsTranslations(deepClone(contents), stored?.[cvid]);
+  }
+  return payload;
+};
+
+const graftEmbeddedContents = (
+  container: Record<string, unknown>,
+  key: string,
+  storedContents: unknown,
+): void => {
+  const workingContents = container[key];
+  if (isArray(workingContents)) {
+    container[key] = graftContentsTranslations(
+      workingContents as ContentEditorRoot[],
+      isArray(storedContents) ? (storedContents as ContentEditorRoot[]) : undefined,
+    );
+    return;
+  }
+  if (isArray(storedContents)) {
+    // The source dropped this tree entirely — nothing was readable here, so
+    // the stored translations survive for a potential revival.
+    container[key] = deepClone(storedContents);
+  }
+};
+
+const graftChecklistTranslations = (working: ChecklistData, stored: ChecklistData): void => {
+  graftEmbeddedContents(working as unknown as Record<string, unknown>, 'content', stored.content);
+  if (!isArray(working.items) || !isArray(stored.items)) {
+    return;
+  }
+  const knownItemIds = new Set(working.items.map((item) => item?.id).filter(Boolean));
+  for (const storedItem of stored.items) {
+    if (storedItem?.id && !knownItemIds.has(storedItem.id)) {
+      working.items.push(deepClone(storedItem));
+    }
+  }
+};
+
+const graftLauncherTranslations = (working: LauncherData, stored: LauncherData): void => {
+  if (working.tooltip && typeof working.tooltip === 'object') {
+    graftEmbeddedContents(
+      working.tooltip as unknown as Record<string, unknown>,
+      'content',
+      stored.tooltip?.content,
+    );
+  }
+};
+
+const graftAnnouncementTranslations = (
+  working: AnnouncementData,
+  stored: AnnouncementData,
+): void => {
+  const container = working as unknown as Record<string, unknown>;
+  graftEmbeddedContents(container, 'introContent', stored.introContent);
+  graftEmbeddedContents(container, 'detailContent', stored.detailContent);
+};
+
+const graftResourceCenterTranslations = (
+  working: ResourceCenterData,
+  stored: ResourceCenterData,
+): void => {
+  if (!isArray(working.tabs) || !isArray(stored.tabs)) {
+    return;
+  }
+  const workingTabs = working.tabs;
+  const storedTabs = stored.tabs;
+  const workingTabIds = new Set(workingTabs.map((tab) => tab?.id).filter(Boolean));
+  const workingBlockIds = new Set(
+    workingTabs
+      .flatMap((tab) => (isArray(tab?.blocks) ? tab.blocks : []))
+      .map((block) => block?.id)
+      .filter(Boolean),
+  );
+  const storedBlocksById = new Map(
+    storedTabs
+      .flatMap((tab) => (isArray(tab?.blocks) ? tab.blocks : []))
+      .filter((block) => block?.id)
+      .map((block) => [block.id, block]),
+  );
+
+  for (const tab of workingTabs) {
+    if (!isArray(tab?.blocks)) {
+      continue;
+    }
+    for (const block of tab.blocks) {
+      if (!block?.id) {
+        continue;
+      }
+      const storedBlock = storedBlocksById.get(block.id);
+      if (!storedBlock) {
+        continue;
+      }
+      if (isArray(block.name)) {
+        block.name = graftSlateNodes(
+          block.name as SlateNode[],
+          isArray(storedBlock.name) ? (storedBlock.name as SlateNode[]) : undefined,
+        ) as typeof block.name;
+      }
+      graftEmbeddedContents(
+        block as unknown as Record<string, unknown>,
+        'content',
+        (storedBlock as { content?: unknown }).content,
+      );
+    }
+  }
+
+  // Tabs the source no longer has survive wholesale (their blocks included);
+  // removed blocks whose tab survives go back into that tab.
+  for (const storedTab of storedTabs) {
+    if (!storedTab?.id) {
+      continue;
+    }
+    if (!workingTabIds.has(storedTab.id)) {
+      workingTabs.push(deepClone(storedTab));
+      continue;
+    }
+    if (!isArray(storedTab.blocks)) {
+      continue;
+    }
+    const targetTab = workingTabs.find((tab) => tab?.id === storedTab.id);
+    if (!targetTab || !isArray(targetTab.blocks)) {
+      continue;
+    }
+    for (const storedBlock of storedTab.blocks) {
+      if (storedBlock?.id && !workingBlockIds.has(storedBlock.id)) {
+        targetTab.blocks.push(deepClone(storedBlock));
+      }
+    }
+  }
+};
+
+/**
+ * Save payload for a version-data translation: the working copy plus every
+ * stored fragment the session could not read (drifted embedded trees,
+ * removed id-keyed items/tabs/blocks) grafted back. Returns a fresh object;
+ * neither input is mutated.
+ */
+export const buildLocalizedVersionDataSavePayload = <T>(
+  contentType: string,
+  working: T,
+  stored: unknown,
+): T => {
+  const payload = deepClone(working);
+  if (!payload || typeof payload !== 'object' || !stored || typeof stored !== 'object') {
+    return payload;
+  }
+  switch (contentType) {
+    case ContentDataType.CHECKLIST:
+      graftChecklistTranslations(payload as unknown as ChecklistData, stored as ChecklistData);
+      break;
+    case ContentDataType.LAUNCHER:
+      graftLauncherTranslations(payload as unknown as LauncherData, stored as LauncherData);
+      break;
+    case ContentDataType.BANNER:
+      graftEmbeddedContents(
+        payload as unknown as Record<string, unknown>,
+        'contents',
+        (stored as BannerData).contents,
+      );
+      break;
+    case ContentDataType.ANNOUNCEMENT:
+      graftAnnouncementTranslations(
+        payload as unknown as AnnouncementData,
+        stored as AnnouncementData,
+      );
+      break;
+    case ContentDataType.RESOURCE_CENTER:
+      graftResourceCenterTranslations(
+        payload as unknown as ResourceCenterData,
+        stored as ResourceCenterData,
+      );
+      break;
+    default:
+      break;
+  }
+  return payload;
 };
 
 // ---------------------------------------------------------------------------
