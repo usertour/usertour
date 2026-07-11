@@ -103,8 +103,18 @@ export class AuditInterceptor implements NestInterceptor {
 
   /**
    * Web-admin GraphQL writes. Selective: only mutations carrying `@AuditWeb` are
-   * recorded (source='web', actor = logged-in user). projectId is reused from the
-   * PermissionGuard (it ran first and stashed `req.auditProjectId`).
+   * recorded (source='web', actor = logged-in user).
+   *
+   * Project attribution has two sources, and their PRECEDENCE matters. An
+   * account-level mutation (createApiToken / rotate / delete — no
+   * `@RequirePermission`) carries its own `resolveProjectId`, and that is
+   * authoritative: it knows the credential's real project set. The
+   * PermissionGuard stash (`req.auditProjectId`) is a fallback for the common
+   * resource mutation that has no resolver. It must NOT win over a resolver,
+   * because `req` is shared across every field of one GraphQL document: a
+   * guarded field (e.g. updateContent on project P1) executed before an
+   * unguarded createApiToken(projectIds:[P2]) in the SAME document would
+   * otherwise bleed P1 onto the token entry, hiding it from P2's owners.
    */
   private async interceptWeb(
     context: ExecutionContext,
@@ -118,24 +128,19 @@ export class AuditInterceptor implements NestInterceptor {
     const gqlCtx = GqlExecutionContext.create(context);
     const req = gqlCtx.getContext()?.req as AuditGqlRequest | undefined;
     const args = (gqlCtx.getArgs() ?? {}) as Record<string, unknown>;
-    // A resource may belong to MULTIPLE projects (a personal API key scoped to
-    // several) — the entry must land in EACH project's audit log, since the log
-    // is project-scoped and every owner has a stake in "a credential that can
-    // write to my project was rotated/deleted". Most paths resolve a single id.
-    let projectIds: string[] = req?.auditProjectId ? [req.auditProjectId] : [];
-    if (projectIds.length === 0 && meta.resolveProjectId) {
-      // Account-level mutation: attribute the entry to the resource's own project(s).
-      try {
-        projectIds = normalizeProjectIds(await meta.resolveProjectId(args, this.prisma));
-      } catch (error) {
-        this.logger.error('Audit(web): resolveProjectId failed', error as Error);
-      }
-    }
+    const projectIds = await resolveWebAuditProjectIds(
+      meta,
+      args,
+      req?.auditProjectId,
+      this.prisma,
+      (error) => this.logger.error('Audit(web): resolveProjectId failed', error),
+    );
     if (projectIds.length === 0) {
-      // Audited web mutations must also be @RequirePermission-guarded (the guard
-      // resolves + stashes projectId). Surface the wiring bug; don't crash.
+      // Audited web mutations must be either @RequirePermission-guarded (guard
+      // stashes projectId) or carry a resolveProjectId. Surface the wiring bug;
+      // don't crash.
       this.logger.error(
-        `Audit(web): no projectId for ${meta.resourceType}:${meta.action} — missing @RequirePermission?`,
+        `Audit(web): no projectId for ${meta.resourceType}:${meta.action} — missing @RequirePermission / resolveProjectId?`,
       );
       return next.handle();
     }
@@ -270,6 +275,36 @@ export function normalizeProjectIds(resolved: string | string[] | null | undefin
   return (Array.isArray(resolved) ? resolved : resolved ? [resolved] : []).filter(
     (id): id is string => !!id,
   );
+}
+
+/**
+ * The project(s) a `@AuditWeb` entry is attributed to. Precedence matters:
+ * `meta.resolveProjectId` (account-level mutations — API keys / OAuth grants)
+ * is AUTHORITATIVE and wins over the PermissionGuard's `stashedProjectId`,
+ * because `req.auditProjectId` is shared across every field of one GraphQL
+ * document — an earlier guarded field (updateContent on P1) must not bleed its
+ * project onto an unguarded createApiToken(projectIds:[P2]) in the same
+ * document. The stash is only the source for resource mutations that carry no
+ * resolver (they ran their own guard for THIS field).
+ */
+export async function resolveWebAuditProjectIds(
+  meta: Pick<WebAuditMeta, 'resolveProjectId'>,
+  args: Record<string, unknown>,
+  stashedProjectId: string | undefined,
+  prisma: PrismaService,
+  onError?: (error: Error) => void,
+): Promise<string[]> {
+  if (meta.resolveProjectId) {
+    try {
+      const resolved = normalizeProjectIds(await meta.resolveProjectId(args, prisma));
+      if (resolved.length > 0) {
+        return resolved;
+      }
+    } catch (error) {
+      onError?.(error as Error);
+    }
+  }
+  return stashedProjectId ? [stashedProjectId] : [];
 }
 
 /** Derive {resourceType, action} from `resource:verb` + HTTP method (for the ambiguous `manage`). */

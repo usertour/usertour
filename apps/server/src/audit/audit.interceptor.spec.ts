@@ -9,6 +9,7 @@ import {
   deriveAudit,
   fetchBefore,
   normalizeProjectIds,
+  resolveWebAuditProjectIds,
 } from './audit.interceptor';
 
 describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
@@ -174,5 +175,46 @@ describe('createApiToken audit meta attributes to ALL scoped projects', () => {
       {} as never,
     );
     expect(projects).toEqual(['pA', 'pB']);
+  });
+});
+
+describe('resolveWebAuditProjectIds — resolver wins over the guard stash', () => {
+  const prisma = {} as never;
+
+  it("uses the resolver's project(s) and IGNORES a stash from an earlier field", async () => {
+    // The exact bug: a guarded updateContent(P1) ran earlier in the same
+    // document and stashed req.auditProjectId = P1; createApiToken is account-
+    // level (projectIds:[P2]). The entry must land in P2, not P1.
+    const meta = { resolveProjectId: async () => ['P2'] };
+    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma)).toEqual(['P2']);
+  });
+
+  it('keeps every project of a multi-project resolver', async () => {
+    const meta = { resolveProjectId: async () => ['P2', 'P3'] };
+    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma)).toEqual(['P2', 'P3']);
+  });
+
+  it('falls back to the stash for a resource mutation with no resolver', async () => {
+    expect(await resolveWebAuditProjectIds({}, {}, 'P1', prisma)).toEqual(['P1']);
+  });
+
+  it('falls back to the stash when the resolver yields nothing (e.g. row already gone)', async () => {
+    const meta = { resolveProjectId: async () => undefined };
+    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma)).toEqual(['P1']);
+  });
+
+  it('reports the resolver error and falls back to the stash instead of crashing', async () => {
+    const onError = jest.fn();
+    const meta = {
+      resolveProjectId: async () => {
+        throw new Error('boom');
+      },
+    };
+    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma, onError)).toEqual(['P1']);
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns [] when neither source resolves (the wiring-bug case)', async () => {
+    expect(await resolveWebAuditProjectIds({}, {}, undefined, prisma)).toEqual([]);
   });
 });

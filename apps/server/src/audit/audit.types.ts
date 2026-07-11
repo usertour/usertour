@@ -81,9 +81,10 @@ export interface WebAuditMeta {
   environmentId?: (args: Record<string, unknown>) => string | undefined | null;
   /**
    * ACCOUNT-level mutations (no `@RequirePermission` project context — personal
-   * API keys, connected-app grants): resolve the project to attribute the entry
-   * to, e.g. the key's own project. Used only when the permission guard didn't
-   * stash `auditProjectId`.
+   * API keys, connected-app grants): resolve the project(s) to attribute the
+   * entry to, e.g. the key's own project set. When present this is
+   * AUTHORITATIVE — it wins over any `req.auditProjectId` a guarded field of the
+   * same GraphQL document may have stashed (the stash is shared across fields).
    */
   resolveProjectId?: (
     args: Record<string, unknown>,
