@@ -219,7 +219,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(expanded.body).toHaveProperty('variations');
   });
 
-  it('updates theme metadata (name / isDefault)', async () => {
+  it('updates theme metadata (name / isDefault) — the default flag actually MOVES', async () => {
     const token = await mint([
       Capability.ThemeCreate,
       Capability.ThemeUpdate,
@@ -230,6 +230,32 @@ describe('API v2 themes + version themeId (e2e)', () => {
     const upd = await send('patch', `${basePath()}/${id}`, token).send({ name: 'Edited' });
     expect(upd.status).toBe(200);
     expect(upd.body).toMatchObject({ name: 'Edited' });
+
+    // isDefault used to be silently destructured away by the domain update —
+    // 200 with the flag unchanged. It must move the project default now.
+    const flip = await send('patch', `${basePath()}/${id}`, token).send({ isDefault: true });
+    expect(flip.status).toBe(200);
+    expect(flip.body.isDefault).toBe(true);
+    const defaults = await prisma.theme.findMany({ where: { projectId, isDefault: true } });
+    expect(defaults.map((t) => t.id)).toEqual([id]); // exactly one default, the new one
+
+    // Unsetting the default is refused — a project keeps a default theme; the
+    // way to change it is defaulting ANOTHER theme.
+    const unset = await send('patch', `${basePath()}/${id}`, token).send({ isDefault: false });
+    expect(unset.status).toBe(400);
+
+    // isDefault:false on a NON-default theme is a harmless no-op.
+    const noop = await send('patch', `${basePath()}/${themeId}`, token).send({ isDefault: false });
+    expect(noop.status).toBe(200);
+    expect(noop.body.isDefault).toBe(false);
+
+    // restore the suite fixture as the project default
+    const restore = await send('patch', `${basePath()}/${defaultThemeId}`, token).send({
+      isDefault: true,
+    });
+    expect(restore.status).toBe(200);
+    const after = await prisma.theme.findFirst({ where: { id } });
+    expect(after?.isDefault).toBe(false);
   });
 
   it('patches a legacy theme whose stored settings lack nested fields (grounded on defaults, no 500)', async () => {

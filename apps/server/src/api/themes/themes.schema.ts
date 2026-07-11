@@ -90,7 +90,14 @@ export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
 
 export const updateThemeBody = z.object({
   name: z.string().min(1).optional(),
-  isDefault: z.boolean().optional(),
+  isDefault: z
+    .boolean()
+    .optional()
+    .describe(
+      'Set `true` to make this the project default theme (the previous default is ' +
+        'cleared). `false` on the current default is rejected — default another ' +
+        'theme instead; a project always keeps a default.',
+    ),
   settings: settingsField,
 });
 export class UpdateThemeBodyDto extends createZodDto(updateThemeBody) {}

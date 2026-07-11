@@ -159,12 +159,27 @@ export class ApiThemesService {
             ) as unknown as JsonValue,
           }
         : {};
-    const updated = await this.themes.updateTheme({
-      id,
+    // The domain updateTheme deliberately drops isDefault (the builder moves the
+    // default via its dedicated setDefaultTheme action), so passing it through
+    // would be a silent no-op. Route the flag to the same domain primitive here.
+    // Unsetting is refused: a project must keep a default theme (create_content
+    // falls back to it) — the way to change it is defaulting ANOTHER theme.
+    if (body.isDefault === false && theme.isDefault) {
+      throw new ValidationError(
+        'Cannot unset the default theme — set another theme as the default instead.',
+      );
+    }
+    const metadataUpdate = {
       ...(body.name !== undefined ? { name: body.name } : {}),
-      ...(body.isDefault !== undefined ? { isDefault: body.isDefault } : {}),
       ...settingsUpdate,
-    });
+    };
+    let updated =
+      Object.keys(metadataUpdate).length > 0
+        ? await this.themes.updateTheme({ id, ...metadataUpdate })
+        : theme;
+    if (body.isDefault === true && !theme.isDefault) {
+      updated = await this.themes.setDefaultTheme(id);
+    }
     const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     return mapTheme(updated, FULL, resolvers);
   }
