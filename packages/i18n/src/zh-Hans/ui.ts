@@ -461,8 +461,7 @@ const translations = {
       empty: '暂无本地化。',
       form: {
         localeLabel: '语言区域',
-        localeTooltip:
-          '从列表选择会自动填充下方的名称和代码；列表里没有的语言，也可以手动输入任意 BCP-47 代码。',
+        localeTooltip: '从列表选择会自动填充下方的名称和代码；两者随后仍可修改。',
         nameLabel: '名称',
         nameTooltip: '仅在管理后台显示的名称，终端用户不会看到。',
         namePlaceholder: '请输入显示名',

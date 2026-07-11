@@ -116,7 +116,7 @@ type Attribute {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
-  description: String
+  description: String!
   displayName: String!
   id: ID!
   predefined: Boolean!
@@ -458,7 +458,7 @@ input ContentVersionInput {
 
 input CopyThemeInput {
   id: String!
-  name: String
+  name: String!
 }
 
 input CreatSegment {

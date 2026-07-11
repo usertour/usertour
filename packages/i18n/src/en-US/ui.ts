@@ -487,7 +487,7 @@ const translations = {
       form: {
         localeLabel: 'Locale',
         localeTooltip:
-          'Picking a locale fills in the name and code below. Need one that is not listed? Enter any BCP-47 code by hand.',
+          'Picking a locale fills in the name and code below. Both stay editable afterwards.',
         nameLabel: 'Name',
         nameTooltip: 'Display name used across the dashboard. End users never see it.',
         namePlaceholder: 'Enter display name',

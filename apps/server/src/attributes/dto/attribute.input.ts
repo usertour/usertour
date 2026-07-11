@@ -4,9 +4,14 @@ import { Attribute } from '../models/attribute.model';
 @InputType()
 export class CreateAttributeInput extends OmitType(
   Attribute,
-  ['id', 'createdAt', 'updatedAt', 'predefined'],
+  ['id', 'createdAt', 'updatedAt', 'predefined', 'description'],
   InputType,
-) {}
+) {
+  // The model declares description non-null (the column defaults to ''),
+  // but creation may omit it and take the default.
+  @Field(() => String, { nullable: true })
+  description?: string;
+}
 
 @InputType()
 export class UpdateAttributeInput extends PartialType(
