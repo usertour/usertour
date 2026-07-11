@@ -1,12 +1,13 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useSubscription } from '@/hooks/use-subscription';
+import { MACHINE_TRANSLATION_UNITS_PER_BATCH } from '@usertour/constants';
 import { getErrorMessage } from '@usertour/helpers';
 import type { LocalizationTranslationUnit } from '@usertour/helpers';
 import { useTranslateLocalizationUnitsMutation } from '@usertour/hooks';
 import { RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
 import { PlanType } from '@usertour/types';
 import { Button, Tooltip, TooltipContent, TooltipTrigger, useToast } from '@usertour/ui';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface MachineTranslationButtonProps {
@@ -65,10 +66,20 @@ export const useUnitTranslateText = (
   }, [configured, lockedByPlan, disabled, translateUnits, versionId, localizationId]);
 };
 
+/** Optional units are media URLs — not text, never sent to the LLM. */
+const isUntranslatedTextUnit = (unit: LocalizationTranslationUnit): boolean => {
+  return !unit.optional && unit.sourceText.trim() !== '' && unit.translatedText.trim() === '';
+};
+
 /**
- * One-click machine translation of every untranslated unit. Hidden when the
- * instance has no translation key configured; on cloud it ships with paid
- * plans — free-plan projects see the button locked with an upgrade hint.
+ * One-click machine translation of every untranslated unit, one
+ * MACHINE_TRANSLATION_UNITS_PER_BATCH batch (= one LLM request) at a time.
+ * Each batch lands in the working state as it returns, so a mid-run failure
+ * keeps everything already translated — and because only untranslated units
+ * are ever sent, clicking again naturally resumes from where it stopped.
+ * Hidden when the instance has no AI provider configured; on cloud it ships
+ * with paid plans — free-plan projects see the button locked with an
+ * upgrade hint.
  */
 export const MachineTranslationButton = (props: MachineTranslationButtonProps) => {
   const { versionId, localizationId, disabled, buildUnits, onApply } = props;
@@ -76,51 +87,104 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
   const { toast } = useToast();
   const { configured, lockedByPlan } = useMachineTranslationGate();
   const { invoke: translateUnits } = useTranslateLocalizationUnitsMutation();
-  const [translating, setTranslating] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+
+  // The run holds no editor lock, so the working state moves under it as the
+  // translator keeps editing. Reading units through a render-refreshed ref
+  // (not the click-time closure) is what lets user edits win (see below).
+  const buildUnitsRef = useRef(buildUnits);
+  buildUnitsRef.current = buildUnits;
 
   if (!configured) {
     return null;
   }
 
+  const translating = progress !== null;
+
   const handleTranslate = async () => {
-    // Optional units are media URLs — not text, never sent to the LLM.
-    const untranslated = buildUnits().filter(
-      (unit) =>
-        !unit.optional && unit.sourceText.trim() !== '' && unit.translatedText.trim() === '',
-    );
+    const untranslated = buildUnitsRef.current().filter(isUntranslatedTextUnit);
     if (untranslated.length === 0) {
       toast({ variant: 'success', title: t('contents.localization.toast.translateEmpty') });
       return;
     }
-    setTranslating(true);
+
+    let applied = 0;
+    let stopped = false;
+    let failure: unknown = null;
+    setProgress({ done: 0, total: untranslated.length });
     try {
-      const translated = await translateUnits({
-        versionId,
-        localizationId,
-        units: untranslated.map((unit) => ({ path: unit.path, sourceText: unit.sourceText })),
-      });
-      const translations = new Map(
-        translated.map((unit) => [unit.path, unit.translatedText] as const),
-      );
-      if (translations.size === 0) {
-        toast({
-          variant: 'destructive',
-          title: t('contents.localization.toast.translateFailure'),
+      for (
+        let offset = 0;
+        offset < untranslated.length;
+        offset += MACHINE_TRANSLATION_UNITS_PER_BATCH
+      ) {
+        const batch = untranslated.slice(offset, offset + MACHINE_TRANSLATION_UNITS_PER_BATCH);
+        let translated: { path: string; translatedText: string }[];
+        try {
+          translated = await translateUnits({
+            versionId,
+            localizationId,
+            units: batch.map((unit) => ({ path: unit.path, sourceText: unit.sourceText })),
+          });
+        } catch (error) {
+          failure = error;
+          stopped = true;
+          break;
+        }
+        // Fill blanks only: rows the translator filled while this batch was
+        // in flight are no longer untranslated — their text wins over the
+        // machine result.
+        const stillUntranslated = new Set(
+          buildUnitsRef
+            .current()
+            .filter(isUntranslatedTextUnit)
+            .map((unit) => unit.path),
+        );
+        const applicable = new Map(
+          translated
+            .filter((unit) => stillUntranslated.has(unit.path))
+            .map((unit) => [unit.path, unit.translatedText] as const),
+        );
+        if (applicable.size > 0) {
+          onApply(applicable);
+          applied += applicable.size;
+        }
+        setProgress({
+          done: Math.min(offset + batch.length, untranslated.length),
+          total: untranslated.length,
         });
-        return;
+        if (translated.length < batch.length) {
+          // Shortfall means the server salvaged a partial run — the provider
+          // is degraded, so stop instead of burning more failing calls.
+          stopped = true;
+          break;
+        }
       }
-      onApply(translations);
+    } finally {
+      setProgress(null);
+    }
+
+    if (!stopped) {
       toast({
         variant: 'success',
-        title: t('contents.localization.toast.translateSuccess', {
-          count: translations.size,
+        title: t('contents.localization.toast.translateSuccess', { count: applied }),
+      });
+      return;
+    }
+    if (applied > 0) {
+      toast({
+        variant: 'success',
+        title: t('contents.localization.toast.translatePartial', {
+          count: applied,
+          remaining: untranslated.length - applied,
         }),
       });
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    } finally {
-      setTranslating(false);
+      return;
     }
+    toast({
+      variant: 'destructive',
+      title: failure ? getErrorMessage(failure) : t('contents.localization.toast.translateFailure'),
+    });
   };
 
   const button = (
@@ -136,7 +200,12 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
       ) : (
         <RiSparkling2Line className="mr-1 h-4 w-4" />
       )}
-      {t('contents.localization.autoTranslateButton')}
+      {progress
+        ? t('contents.localization.autoTranslateProgress', {
+            done: progress.done,
+            total: progress.total,
+          })
+        : t('contents.localization.autoTranslateButton')}
     </Button>
   );
 

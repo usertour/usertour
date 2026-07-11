@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { MACHINE_TRANSLATION_UNITS_PER_BATCH } from '@usertour/constants';
 import { PlanType } from '@usertour/types';
 import { generateObject, jsonSchema, type LanguageModel } from 'ai';
 import { PrismaService } from 'nestjs-prisma';
@@ -14,9 +15,10 @@ import {
 
 import type { TranslateLocalizationUnitsInput } from './dto/localization.input';
 
-/** One LLM request translates at most this many units. */
-const UNITS_PER_REQUEST = 40;
-/** Hard cap per mutation — the editor sends a whole version's untranslated units. */
+/**
+ * Hard cap per mutation, defensive only: the editor batches by
+ * MACHINE_TRANSLATION_UNITS_PER_BATCH and never approaches it.
+ */
 const MAX_UNITS_PER_CALL = 1000;
 const REQUEST_TIMEOUT_MS = 60_000;
 
@@ -90,14 +92,25 @@ export class MachineTranslationService {
 
     const model = this.aiService.getModel();
     const translated: { path: string; translatedText: string }[] = [];
-    for (let offset = 0; offset < units.length; offset += UNITS_PER_REQUEST) {
-      const chunk = units.slice(offset, offset + UNITS_PER_REQUEST);
-      const texts = await this.translateChunk(
-        model,
-        chunk.map((unit) => unit.sourceText),
-        localization.name,
-        localization.code,
-      );
+    for (let offset = 0; offset < units.length; offset += MACHINE_TRANSLATION_UNITS_PER_BATCH) {
+      const chunk = units.slice(offset, offset + MACHINE_TRANSLATION_UNITS_PER_BATCH);
+      let texts: Map<number, string>;
+      try {
+        texts = await this.translateChunk(
+          model,
+          chunk.map((unit) => unit.sourceText),
+          localization.name,
+          localization.code,
+        );
+      } catch (error) {
+        // Finished chunks are already paid for — return them instead of
+        // discarding. The caller sees fewer results than it sent units and
+        // resumes from what's still untranslated.
+        if (translated.length === 0) {
+          throw error;
+        }
+        break;
+      }
       chunk.forEach((unit, index) => {
         const text = texts.get(index);
         if (typeof text === 'string' && text.trim() !== '') {

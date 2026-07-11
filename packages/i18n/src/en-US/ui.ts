@@ -1917,11 +1917,14 @@ const translations = {
         importSuccess: 'Imported {{count}} translations.',
         translateEmpty: 'Everything is already translated.',
         translateSuccess: 'Machine-translated {{count}} texts. Review them before publishing.',
+        translatePartial:
+          'Machine-translated {{count}} texts before the provider failed — {{remaining}} left. Click again to continue.',
         translateFailure: 'Machine translation failed. Please try again.',
       },
       exportButton: 'Export CSV',
       importButton: 'Import CSV',
       autoTranslateButton: 'AI translate',
+      autoTranslateProgress: 'Translating {{done}}/{{total}}…',
       upgradeHint: 'Machine translation is available on paid plans.',
       element: {
         image: 'Image',

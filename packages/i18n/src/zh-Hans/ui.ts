@@ -1815,11 +1815,14 @@ const translations = {
         importSuccess: '已导入 {{count}} 条翻译。',
         translateEmpty: '所有文案均已翻译。',
         translateSuccess: '已机器翻译 {{count}} 条文案，发布前请检查。',
+        translatePartial:
+          '已机器翻译 {{count}} 条后翻译服务出错，剩余 {{remaining}} 条；再点一次继续。',
         translateFailure: '机器翻译失败，请重试。',
       },
       exportButton: '导出 CSV',
       importButton: '导入 CSV',
       autoTranslateButton: 'AI 翻译',
+      autoTranslateProgress: '翻译中 {{done}}/{{total}}…',
       upgradeHint: '机器翻译为付费套餐功能，升级后可用。',
       element: {
         image: '图片',
