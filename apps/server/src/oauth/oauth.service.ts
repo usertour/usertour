@@ -2,11 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import OAuth2Server from '@node-oauth/oauth2-server';
 import { cuid } from '@usertour/helpers';
+import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import { OAuthModelService } from './oauth-model.service';
 import { generateOpaqueSecret, hashSecret, tokenFingerprint } from './oauth.crypto';
 import { isAllowedRedirectUri } from './redirect-allowlist';
+
+// OAuth scopes ARE our Capability strings (mirrors oauth-metadata's scopes_supported).
+const SUPPORTED_SCOPES: ReadonlySet<string> = new Set<string>(Object.values(Capability));
 
 const ACCESS_TOKEN_LIFETIME = 60 * 60; // 1h
 const REFRESH_TOKEN_LIFETIME = 30 * 24 * 60 * 60; // 30d
@@ -98,9 +102,17 @@ export class OAuthService {
       throw new BadRequestException('PKCE with code_challenge_method=S256 is required');
     }
 
+    // Keep only scope tokens we recognize. Generic clients commonly default to
+    // OIDC scopes (`openid profile email`) we never issue; rejecting them would
+    // dead-end the connection, and keeping them would poison the consent
+    // intersection (requested ∩ role = ∅ → nothing grantable, approve disabled
+    // forever). RFC 6749 §3.3 lets the AS ignore part of the requested scope —
+    // if nothing recognizable remains, proceed as if no scope was requested:
+    // the consent page offers the user's full role and the user stays the gate
+    // on what is actually granted (the token response reports the real scope).
     const scope = String(query.scope ?? '')
       .split(/\s+/)
-      .filter(Boolean);
+      .filter((s) => SUPPORTED_SCOPES.has(s));
 
     return {
       kind: 'oauth_authorize',

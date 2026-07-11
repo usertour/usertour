@@ -12,6 +12,7 @@ const translations = {
       environmentsHelp: '此连接可作用的环境。',
       environmentsSelect: '选择环境',
       selectEnvironment: '所选权限需要至少选择一个环境。',
+      noGrantableScopes: '你在该项目的角色无法授予此应用请求的任何权限。',
       allow: '允许',
       deny: '拒绝',
       errorTitle: '授权出错',

@@ -230,6 +230,9 @@ export const OAuthConsent = () => {
           </div>
         </div>
         <ScopesGrid value={scopes} onChange={setScopes} available={grantable} />
+        {selectedProject && grantable.length === 0 && (
+          <p className="text-xs text-destructive">{t('oauth.consent.noGrantableScopes')}</p>
+        )}
       </div>
     </AuthCard>
   );

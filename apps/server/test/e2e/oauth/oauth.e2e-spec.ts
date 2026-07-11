@@ -470,6 +470,104 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     await prisma.oAuthClient.deleteMany({ where: { id: cid } });
   });
 
+  it('ignores unrecognized scope tokens (RFC 6749 §3.3) instead of dead-ending consent', async () => {
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'OIDC-Default MCP',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+
+    // A generic client's OIDC default (`openid profile email`) names no scope we
+    // issue. Before the fix this reached consent with requested ∩ role = ∅ —
+    // nothing grantable, approve permanently disabled. Now the unknown tokens
+    // are dropped at authorize time and the flow behaves like "no scope
+    // requested": full role offered, user consents.
+    const v1 = randomBytes(40).toString('base64url');
+    const ch1 = createHash('sha256').update(v1).digest('base64url');
+    const auth1 = await http()
+      .get('/oauth/authorize')
+      .query({
+        response_type: 'code',
+        client_id: cid,
+        redirect_uri: redirectUri,
+        scope: 'openid profile email',
+        code_challenge: ch1,
+        code_challenge_method: 'S256',
+      })
+      .expect(302);
+    const tx1 = new URL(auth1.headers.location).searchParams.get('transaction') as string;
+
+    const info = await http()
+      .get('/oauth/consent-info')
+      .query({ transaction: tx1 })
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+    expect(info.body.requestedScopes).toEqual([]); // unknowns filtered out
+
+    const consent1 = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction: tx1, projectId, approved: true, environmentIds: [envMain] })
+      .expect(201);
+    const code1 = new URL(consent1.body.redirect).searchParams.get('code') as string;
+    const tok1 = await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code: code1,
+        redirect_uri: redirectUri,
+        client_id: cid,
+        code_verifier: v1,
+      })
+      .expect(200);
+    expect(tok1.body.scope.split(' ').length).toBeGreaterThan(1); // full role
+    expect(tok1.body.scope).not.toContain('openid');
+
+    // Mixed request: the known capability survives, the OIDC noise is dropped —
+    // the grant stays EXACTLY what was recognized (no widening to full role).
+    const v2 = randomBytes(40).toString('base64url');
+    const ch2 = createHash('sha256').update(v2).digest('base64url');
+    const auth2 = await http()
+      .get('/oauth/authorize')
+      .query({
+        response_type: 'code',
+        client_id: cid,
+        redirect_uri: redirectUri,
+        scope: 'openid content:read',
+        code_challenge: ch2,
+        code_challenge_method: 'S256',
+      })
+      .expect(302);
+    const tx2 = new URL(auth2.headers.location).searchParams.get('transaction') as string;
+    const consent2 = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction: tx2, projectId, approved: true })
+      .expect(201);
+    const code2 = new URL(consent2.body.redirect).searchParams.get('code') as string;
+    const tok2 = await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code: code2,
+        redirect_uri: redirectUri,
+        client_id: cid,
+        code_verifier: v2,
+      })
+      .expect(200);
+    expect(tok2.body.scope).toBe('content:read');
+
+    await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+    await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+    await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+  });
+
   it('consent with environmentIds → the issued OAuth token + grant are env-scoped', async () => {
     const env = await buildEnvironment(prisma, { projectId });
     const reg = await http()

@@ -12,6 +12,8 @@ const translations = {
       environmentsHelp: 'Which environments this connection can act on.',
       environmentsSelect: 'Select environments',
       selectEnvironment: 'Select at least one environment for the selected permissions.',
+      noGrantableScopes:
+        'Your role on this project cannot grant any of the permissions this app requested.',
       allow: 'Allow',
       deny: 'Deny',
       errorTitle: 'Authorization error',
