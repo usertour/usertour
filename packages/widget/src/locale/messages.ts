@@ -508,21 +508,23 @@ const DICTIONARY_KEYS_BY_LOWERCASE = new Map(
 
 /**
  * Reduce a user locale (BCP-47, any casing, possibly garbage) to a dictionary
- * key: alias → exact match → alias/exact on the primary subtag → English.
+ * key, RFC 4647 lookup style: try the full tag, then truncate subtags from
+ * the right ('zh-Hant-TW' → 'zh-Hant' → 'zh'), so an explicit script subtag
+ * wins before the primary-language fallback. English when nothing matches.
  */
 export const resolveWidgetLocale = (locale: string | undefined): string => {
   if (!locale) {
     return DEFAULT_WIDGET_LOCALE;
   }
-  const lower = locale.trim().toLowerCase();
-  const aliased = LOCALE_ALIASES[lower] ?? DICTIONARY_KEYS_BY_LOWERCASE.get(lower);
-  if (aliased) {
-    return aliased;
+  const subtags = locale.trim().toLowerCase().split('-');
+  for (let end = subtags.length; end >= 1; end--) {
+    const candidate = subtags.slice(0, end).join('-');
+    const match = LOCALE_ALIASES[candidate] ?? DICTIONARY_KEYS_BY_LOWERCASE.get(candidate);
+    if (match) {
+      return match;
+    }
   }
-  const primary = lower.split('-')[0];
-  return (
-    LOCALE_ALIASES[primary] ?? DICTIONARY_KEYS_BY_LOWERCASE.get(primary) ?? DEFAULT_WIDGET_LOCALE
-  );
+  return DEFAULT_WIDGET_LOCALE;
 };
 
 export const getWidgetMessages = (locale: string | undefined): WidgetMessages => {
