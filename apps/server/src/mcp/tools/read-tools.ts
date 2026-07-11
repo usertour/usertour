@@ -338,7 +338,6 @@ export function buildReadTools(): McpTool[] {
       name: 'diagnose_content',
       title: "Diagnose why content isn't showing",
       capability: Capability.ContentRead,
-      annotations: READ_ONLY,
       description:
         'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
         'checklist (published / identified / start_rules / frequency / single_session / hidden / ' +
@@ -1099,5 +1098,8 @@ export function buildReadTools(): McpTool[] {
       },
     },
   ];
-  return tools.map((tool) => ({ ...tool, annotations: READ_ONLY }));
+  // Default every read tool to READ_ONLY, but RESPECT a tool that sets its own
+  // annotations (an unconditional override would silently discard them — the
+  // field would look settable while being dead).
+  return tools.map((tool) => ({ ...tool, annotations: tool.annotations ?? READ_ONLY }));
 }

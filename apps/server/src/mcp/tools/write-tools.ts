@@ -13,7 +13,11 @@ import {
   upsertMembershipBody,
   type UpsertMembershipBody,
 } from '@/api/companies/companies.schema';
-import type { CreateContentBody } from '@/api/content/content.schema';
+import {
+  type CreateContentBody,
+  createContentBody,
+  updateContentBody,
+} from '@/api/content/content.schema';
 import {
   representationHideRules,
   representationStartRules,
@@ -81,19 +85,15 @@ export function buildWriteTools(): McpTool[] {
         'resource-center) in the project, with a draft version themed by `themeId`. A survey is a ' +
         'flow with question blocks — there is no separate survey type. Returns the created content ' +
         '(use `update_content_version` to add steps; use `list_themes` to pick a themeId).',
+      // Spread the REST create body (single source of truth — a new field there
+      // shows up here automatically); override only themeId's description with
+      // MCP-specific guidance (point at list_themes, not the REST endpoint).
       inputSchema: {
-        type: z
-          .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
-          .describe('Content kind.'),
-        name: z.string().optional(),
-        buildUrl: z.string().optional(),
-        themeId: z
-          .string()
-          .optional()
-          .describe(
-            'Theme for the initial draft version. Required for every type except `tracker` ' +
-              '(no UI). Use `list_themes`; pick the one with isDefault if unsure.',
-          ),
+        ...createContentBody.shape,
+        themeId: createContentBody.shape.themeId.describe(
+          'Theme for the initial draft version. Required for every type except `tracker` ' +
+            '(no UI). Use `list_themes`; pick the one with isDefault if unsure.',
+        ),
       },
       handler: (args, ctx) =>
         ctx.services.content.create(ctx.projectId, args as unknown as CreateContentBody),
@@ -106,8 +106,7 @@ export function buildWriteTools(): McpTool[] {
       description: "Update a content's metadata (name / buildUrl).",
       inputSchema: {
         contentId: z.string(),
-        name: z.string().optional(),
-        buildUrl: z.string().optional(),
+        ...updateContentBody.shape,
       },
       handler: (args, ctx) =>
         ctx.services.content.update(

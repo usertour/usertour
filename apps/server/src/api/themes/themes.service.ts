@@ -126,8 +126,10 @@ export class ApiThemesService {
       settings: settings as unknown as JsonValue,
       variations: [] as unknown as JsonValue,
     });
-    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
-    return mapTheme(created, FULL, resolvers);
+    // A freshly created theme always has variations: [], so the decompile
+    // resolvers (whose only job is variation-condition id<->code mapping) are
+    // never consumed — skip the two catalog queries, same as list()/get().
+    return mapTheme(created, FULL, buildDecompileResolversFrom([], []));
   }
 
   /**

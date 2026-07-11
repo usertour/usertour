@@ -16,7 +16,10 @@ export const listContentQuery = z.object({
   type: z
     .string()
     .optional()
-    .describe('Filter by content type: flow, checklist, launcher, banner, survey.'),
+    .describe(
+      'Filter by content type: flow, checklist, launcher, banner, tracker, resource-center. ' +
+        '(A survey is a flow with question blocks — there is no separate survey type.)',
+    ),
   published: z
     .stringbool()
     .optional()
