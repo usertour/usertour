@@ -1036,18 +1036,6 @@ const graftContentsTranslations = (
 };
 
 /**
- * Save payload for one editor tree: the working copy plus every stored
- * fragment the session could not read grafted back (see section comment).
- * Returns a fresh tree; neither input is mutated.
- */
-export const buildLocalizedContentsSavePayload = (
-  working: ContentEditorRoot[] | undefined,
-  stored: ContentEditorRoot[] | undefined,
-): ContentEditorRoot[] => {
-  return graftContentsTranslations(deepClone(working ?? []), stored);
-};
-
-/**
  * Save payload for a flow translation map. Steps no longer on the version
  * (removed, or stripped of data) keep their stored entry verbatim, so a
  * restore or undo in the builder revives their translations.

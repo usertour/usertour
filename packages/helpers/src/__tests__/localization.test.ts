@@ -25,7 +25,6 @@ import {
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
-  buildLocalizedContentsSavePayload,
   buildLocalizedFlowSavePayload,
   buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
@@ -609,6 +608,14 @@ describe('translation exchange (extract/apply units)', () => {
   });
 });
 
+// The editor's real save entry — the per-tree grafts are exercised through it.
+const buildContentsSavePayload = (
+  working: ContentEditorRoot[],
+  stored: ContentEditorRoot[],
+): ContentEditorRoot[] => {
+  return buildLocalizedFlowSavePayload({ 'step-1': working }, { 'step-1': stored })['step-1'];
+};
+
 describe('save payloads (a session may only overwrite what it was able to read)', () => {
   it('keeps stored translations for a column the source outgrew, and revives them on revert', () => {
     const source = createSourceContents();
@@ -622,7 +629,7 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     expect(getElement<ContentEditorButtonElement>(working, 1).data.text).toBe('');
 
     // The untouched working copy must not erase the stored column on save.
-    const payload = buildLocalizedContentsSavePayload(working, stored);
+    const payload = buildContentsSavePayload(working, stored);
     expect(payload[0].children[0].children).toHaveLength(6);
     expect(getElement<ContentEditorButtonElement>(payload, 1).data.text).toBe('Suivant');
 
@@ -641,7 +648,7 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     const working = createLocalizedWorkingContents(grown, stored);
     getElement<ContentEditorButtonElement>(working, 1).data.text = 'Weiter';
 
-    const payload = buildLocalizedContentsSavePayload(working, stored);
+    const payload = buildContentsSavePayload(working, stored);
     expect(payload[0].children[0].children).toHaveLength(7);
     expect(getElement<ContentEditorButtonElement>(payload, 1).data.text).toBe('Weiter');
   });
@@ -654,7 +661,7 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     const working = createLocalizedWorkingContents(source, stored);
     getElement<ContentEditorButtonElement>(working, 1).data.text = '';
 
-    const payload = buildLocalizedContentsSavePayload(working, stored);
+    const payload = buildContentsSavePayload(working, stored);
     expect(getElement<ContentEditorButtonElement>(payload, 1).data.text).toBe('');
   });
 
@@ -689,7 +696,7 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     const workingChoice = getElement<ContentEditorMultipleChoiceElement>(working, 3);
     expect(workingChoice.data.options.map((option) => option.label)).toEqual(['', '', '']);
 
-    const payload = buildLocalizedContentsSavePayload(working, stored);
+    const payload = buildContentsSavePayload(working, stored);
     const payloadChoice = getElement<ContentEditorMultipleChoiceElement>(payload, 3);
     expect(payloadChoice.data.options.map((option) => option.label)).toEqual(['Rouge', 'Bleu']);
 
@@ -709,7 +716,7 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     const working = createLocalizedWorkingContents(grown, stored);
     expect(getElement<ContentEditorTextElement>(working, 0).data[0].children[1].text).toBe('');
 
-    const payload = buildLocalizedContentsSavePayload(working, stored);
+    const payload = buildContentsSavePayload(working, stored);
     expect(getElement<ContentEditorTextElement>(payload, 0).data[0].children).toHaveLength(2);
 
     const merged = mergeLocalizedEditorContents(source, payload);

@@ -14,10 +14,13 @@ const escapeCsvCell = (cell: string): string => {
 /**
  * Spreadsheets evaluate cells starting with these as formulas even when the
  * cell is RFC 4180-quoted, so exports prefix them with Excel's own
- * treat-as-text marker (a leading apostrophe, hidden by Excel). The
- * apostrophe itself is in the set to keep the transform invertible:
- * parseCsv strips exactly one marker back off, so the round-trip stays
- * lossless — including for text that genuinely starts with an apostrophe.
+ * treat-as-text marker (a leading apostrophe) and imports strip exactly one
+ * marker back off. That defines the import contract: a leading apostrophe
+ * followed by one of these characters IS the marker — a hand-authored cell
+ * meaning it literally must double the apostrophe (which is exactly what a
+ * re-imported export contains, keeping our own round-trip lossless). The
+ * strip only matters for files that skip a spreadsheet: Excel consumes the
+ * marker itself on save and Google Sheets on import.
  */
 const FORMULA_TRIGGERS = /^[=+\-@\t\r']/;
 

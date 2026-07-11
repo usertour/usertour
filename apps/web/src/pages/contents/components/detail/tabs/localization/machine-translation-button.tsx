@@ -109,7 +109,6 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
     }
 
     let applied = 0;
-    let stopped = false;
     let failure: unknown = null;
     setProgress({ done: 0, total: untranslated.length });
     try {
@@ -127,8 +126,11 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
             units: batch.map((unit) => ({ path: unit.path, sourceText: unit.sourceText })),
           });
         } catch (error) {
+          // Provider failures always surface as a thrown mutation — a batch
+          // that RETURNS may still be shorter than what was sent (the model
+          // legitimately skips units it returns empty text for), which is no
+          // reason to stop; those units simply stay untranslated.
           failure = error;
-          stopped = true;
           break;
         }
         // Fill blanks only: rows the translator filled while this batch was
@@ -153,37 +155,35 @@ export const MachineTranslationButton = (props: MachineTranslationButtonProps) =
           done: Math.min(offset + batch.length, untranslated.length),
           total: untranslated.length,
         });
-        if (translated.length < batch.length) {
-          // Shortfall means the server salvaged a partial run — the provider
-          // is degraded, so stop instead of burning more failing calls.
-          stopped = true;
-          break;
-        }
       }
     } finally {
       setProgress(null);
     }
 
-    if (!stopped) {
+    if (applied === 0) {
       toast({
-        variant: 'success',
-        title: t('contents.localization.toast.translateSuccess', { count: applied }),
+        variant: 'destructive',
+        title: failure
+          ? getErrorMessage(failure)
+          : t('contents.localization.toast.translateFailure'),
       });
       return;
     }
-    if (applied > 0) {
+    if (failure) {
       toast({
         variant: 'success',
         title: t('contents.localization.toast.translatePartial', {
           count: applied,
-          remaining: untranslated.length - applied,
+          // Live recount: units the translator filled mid-run are done work,
+          // not remaining work.
+          remaining: buildUnitsRef.current().filter(isUntranslatedTextUnit).length,
         }),
       });
       return;
     }
     toast({
-      variant: 'destructive',
-      title: failure ? getErrorMessage(failure) : t('contents.localization.toast.translateFailure'),
+      variant: 'success',
+      title: t('contents.localization.toast.translateSuccess', { count: applied }),
     });
   };
 
