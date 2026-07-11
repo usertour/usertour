@@ -14,12 +14,14 @@ const LOCALIZATION_DOCS_HREF =
 
 const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
+  const { isViewOnly } = useAppContext();
   const [open, setOpen] = useState(false);
   return (
     <>
       <NewItemButton
         onClick={() => setOpen(true)}
         className="flex-none"
+        disabled={isViewOnly}
         label={t('settings.localizations.newButton')}
       />
       <LocalizationCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
