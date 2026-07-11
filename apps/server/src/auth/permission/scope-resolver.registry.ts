@@ -34,8 +34,21 @@ export enum ScopeKind {
   Sso = 'sso',
 }
 
-/** A resolver returns the owning projectId for the request, or null if unresolvable. */
-export type ScopeResolver = (args: Record<string, any>) => Promise<string | null>;
+/**
+ * What a resolver derives from the request: the owning project, plus any
+ * environment(s) the request implicitly ACTS ON that were resolved as a
+ * byproduct of the same row lookup (integration/mapping/session). The guard's
+ * membership environment-ceiling check consumes `environmentIds` directly, so
+ * the env is never re-queried — and a new arg shape added to a resolver can't
+ * silently skip the ceiling.
+ */
+export interface ScopeResolution {
+  projectId: string;
+  environmentIds?: string[];
+}
+
+/** A resolver returns the request's scope resolution, or null if unresolvable. */
+export type ScopeResolver = (args: Record<string, any>) => Promise<ScopeResolution | null>;
 
 /**
  * Lookups the resolvers need, kept minimal and explicit so resolvers stay
@@ -52,8 +65,10 @@ export interface ScopeServices {
   getVersionProjectId: (versionId: string) => Promise<string | null>;
   /** projectId the content owning a step belongs to (via version → content). */
   getStepProjectId: (stepId: string) => Promise<string | null>;
-  /** projectId a session belongs to (via its content). */
-  getSessionProjectId: (sessionId: string) => Promise<string | null>;
+  /** project (via content) + environment a session belongs to, in ONE lookup. */
+  getSessionScope: (
+    sessionId: string,
+  ) => Promise<{ projectId: string | null; environmentId: string | null } | null>;
   /** environmentId an integration belongs to. */
   getIntegrationEnvironmentId: (integrationId: string) => Promise<string | null>;
   /** environmentId an integration object mapping belongs to (via its integration). */
@@ -67,12 +82,16 @@ const argEnvironmentId = (args: Record<string, any>): string | undefined =>
   args.environmentId || args.data?.environmentId || args.query?.environmentId || args.data?.id;
 
 /** Verify any client-supplied projectId matches the derived one (cross-project-IDOR guard). */
-const crossCheck = (args: Record<string, any>, projectId: string): string => {
+const crossCheck = (
+  args: Record<string, any>,
+  projectId: string,
+  environmentIds?: string[],
+): ScopeResolution => {
   const claimed = argProjectId(args);
   if (claimed && claimed !== projectId) {
     throw new NoPermissionError();
   }
-  return projectId;
+  return { projectId, ...(environmentIds?.length ? { environmentIds } : {}) };
 };
 
 /**
@@ -90,7 +109,8 @@ const projectLevelEntity =
       const projectId = await services.getEntityProjectId(model, id);
       return projectId ? crossCheck(args, projectId) : null;
     }
-    return argProjectId(args) ?? null;
+    const explicit = argProjectId(args);
+    return explicit ? { projectId: explicit } : null;
   };
 
 const fromEnvironment =
@@ -155,8 +175,12 @@ const fromSession =
     if (!sessionId) {
       return null;
     }
-    const projectId = await services.getSessionProjectId(sessionId);
-    return projectId ? crossCheck(args, projectId) : null;
+    const scope = await services.getSessionScope(sessionId);
+    if (!scope?.projectId) {
+      return null;
+    }
+    // The session's own environment rides along for the membership env ceiling.
+    return crossCheck(args, scope.projectId, scope.environmentId ? [scope.environmentId] : []);
   };
 
 const fromSegment =
@@ -190,13 +214,17 @@ const fromIntegration =
       return null;
     }
     const projectId = await services.getEnvironmentProjectId(environmentId);
-    return projectId ? crossCheck(args, projectId) : null;
+    // The integration/mapping's environment rides along for the env ceiling.
+    return projectId ? crossCheck(args, projectId, [environmentId]) : null;
   };
 
 export const createScopeResolvers = (
   services: ScopeServices,
 ): Record<ScopeKind, ScopeResolver> => ({
-  [ScopeKind.Project]: async (args) => argProjectId(args) ?? null,
+  [ScopeKind.Project]: async (args) => {
+    const projectId = argProjectId(args);
+    return projectId ? { projectId } : null;
+  },
   [ScopeKind.Environment]: fromEnvironment(services),
   [ScopeKind.Content]: fromContent(services),
   [ScopeKind.Attribute]: projectLevelEntity('attribute', services),

@@ -11,6 +11,7 @@ import {
   buildEnvironment,
   buildProject,
   buildSegment,
+  buildSession,
   buildSubscription,
   buildUser,
   buildVersion,
@@ -205,6 +206,46 @@ describe('member environment scope (gql e2e)', () => {
       variables: { data: { versionId, environmentId: blockedEnvId } },
     });
     expect(gqlData(res).publishedContentVersion?.id).toBeTruthy();
+  });
+
+  it('refuses session mutations on an OUT-OF-SCOPE session (env rides the scope resolver)', async () => {
+    // endSession carries only a sessionId — the guard learns the environment
+    // from the SAME row lookup that resolves the project (ScopeResolution
+    // .environmentIds), not a separate query. Pin both directions.
+    const seedSession = async (environmentId: string, state = 0) => {
+      const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+      const bizUser = await buildBizUser(prisma, { environmentId });
+      return buildSession(prisma, {
+        contentId: content.id,
+        versionId: version.id,
+        bizUserId: bizUser.id,
+        environmentId,
+        projectId,
+        state,
+      });
+    };
+    const END = 'mutation ($sessionId: String!) { endSession(sessionId: $sessionId) }';
+
+    const blockedSession = await seedSession(blockedEnvId);
+    const denied = await graphql(app, {
+      token: adminToken,
+      query: END,
+      variables: { sessionId: blockedSession.id },
+    });
+    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0055');
+
+    // In-scope: the guard lets the call THROUGH (no E0055). The session is
+    // seeded already-ended (state 1) so the domain declines with a plain
+    // `false` — no event plumbing needed; the subject here is the guard.
+    const allowedSession = await seedSession(allowedEnvId, 1);
+    const ok = await graphql(app, {
+      token: adminToken,
+      query: END,
+      variables: { sessionId: allowedSession.id },
+    });
+    expect(ok.body.errors).toBeUndefined();
+    expect(gqlData(ok).endSession).toBe(false);
   });
 
   it('deleting an environment strips it from member allowlists (empty stays [], fail-closed)', async () => {

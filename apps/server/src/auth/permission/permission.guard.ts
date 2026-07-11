@@ -69,13 +69,17 @@ export class PermissionGuard implements CanActivate {
             select: { version: { select: { content: { select: { projectId: true } } } } },
           })
         )?.version?.content?.projectId ?? null,
-      getSessionProjectId: async (sessionId) =>
-        (
-          await this.prisma.bizSession.findUnique({
-            where: { id: sessionId },
-            select: { content: { select: { projectId: true } } },
-          })
-        )?.content?.projectId ?? null,
+      getSessionScope: async (sessionId) => {
+        // ONE lookup yields both the owning project (via content) and the
+        // session's environment (for the membership env ceiling).
+        const session = await this.prisma.bizSession.findUnique({
+          where: { id: sessionId },
+          select: { environmentId: true, content: { select: { projectId: true } } },
+        });
+        return session
+          ? { projectId: session.content?.projectId ?? null, environmentId: session.environmentId }
+          : null;
+      },
       getIntegrationEnvironmentId: async (integrationId) =>
         (
           await this.prisma.integration.findUnique({
@@ -109,10 +113,11 @@ export class PermissionGuard implements CanActivate {
     }
 
     const resolver = this.resolvers[required.scope];
-    const projectId = resolver ? await resolver(args) : null;
-    if (!projectId) {
+    const resolution = resolver ? await resolver(args) : null;
+    if (!resolution) {
       throw new NoPermissionError();
     }
+    const { projectId } = resolution;
     // Stash for the AuditInterceptor (runs after guards) so web-admin audit
     // doesn't re-resolve the project — see audit.interceptor `interceptWeb`.
     (req as { auditProjectId?: string }).auditProjectId = projectId;
@@ -130,7 +135,12 @@ export class PermissionGuard implements CanActivate {
         ? (userProject.allowedEnvironmentIds as string[])
         : null;
       if (allowed) {
-        const targets = await this.resolveTargetEnvironmentIds(required.scope, args);
+        const targets = [
+          // Environments the scope resolver derived while resolving the project
+          // (integration/mapping/session rows) — same lookup, no re-query.
+          ...(resolution.environmentIds ?? []),
+          ...(await this.resolveTargetEnvironmentIds(required.scope, args)),
+        ];
         if (targets.some((envId) => !allowed.includes(envId))) {
           throw new MemberEnvironmentNotAllowedError();
         }
@@ -141,11 +151,13 @@ export class PermissionGuard implements CanActivate {
   }
 
   /**
-   * The environment(s) a request ACTS ON, for the membership env check. Explicit
-   * environment arguments cover env-scoped endpoints and env-as-parameter writes
-   * (publish/unpublish `data.environmentId`);
-   * integration / mapping / session endpoints carry their environment implicitly
-   * and are resolved through the row. Project-level scopes yield nothing.
+   * The environment(s) a request ACTS ON, for the membership env check — the
+   * shapes that are NOT a byproduct of scope resolution: explicit environment
+   * arguments (env-scoped endpoints, publish/unpublish `data.environmentId`)
+   * and segment-membership biz rows. Integration / mapping / session
+   * environments arrive via {@link ScopeResolution.environmentIds} instead
+   * (the resolver already had the row in hand). Project-level scopes yield
+   * nothing.
    */
   private async resolveTargetEnvironmentIds(
     scope: ScopeKind,
@@ -155,42 +167,6 @@ export class PermissionGuard implements CanActivate {
     // Environment-scoped endpoints address the environment row itself as `data.id`.
     if (scope === ScopeKind.Environment) {
       explicit.push(args.data?.id);
-    }
-    if (scope === ScopeKind.Integration) {
-      const integrationId = args.integrationId || args.data?.integrationId;
-      const mappingId = args.id || args.data?.id;
-      if (integrationId) {
-        explicit.push(
-          (
-            await this.prisma.integration.findUnique({
-              where: { id: integrationId },
-              select: { environmentId: true },
-            })
-          )?.environmentId,
-        );
-      } else if (mappingId) {
-        explicit.push(
-          (
-            await this.prisma.integrationObjectMapping.findUnique({
-              where: { id: mappingId },
-              select: { integration: { select: { environmentId: true } } },
-            })
-          )?.integration?.environmentId,
-        );
-      }
-    }
-    if (scope === ScopeKind.Session) {
-      const sessionId = args.sessionId || args.query?.sessionId || args.data?.sessionId;
-      if (sessionId) {
-        explicit.push(
-          (
-            await this.prisma.bizSession.findUnique({
-              where: { id: sessionId },
-              select: { environmentId: true },
-            })
-          )?.environmentId,
-        );
-      }
     }
     // Segment DEFINITIONS are project-level (updateSegment/deleteSegment carry only
     // a segmentId — no env dimension), but segment MEMBERSHIP is environment-scoped:
