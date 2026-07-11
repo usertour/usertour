@@ -1,4 +1,4 @@
-import { isUnambiguousIsoDate, nameContains } from './filters';
+import { createdAtWhere, isUnambiguousIsoDate, nameContains } from './filters';
 
 describe('nameContains', () => {
   it('builds a case-insensitive substring filter from a term', () => {
@@ -36,5 +36,29 @@ describe('isUnambiguousIsoDate — deployment-independent instants only', () => 
     expect(isUnambiguousIsoDate('07/10/2026')).toBe(false);
     expect(isUnambiguousIsoDate('not-a-date')).toBe(false);
     expect(isUnambiguousIsoDate('2026-13-40')).toBe(false); // regex-shaped but unparseable
+  });
+});
+
+describe('createdAtWhere — day-inclusion semantics of the range bounds', () => {
+  it('returns {} when neither bound is set', () => {
+    expect(createdAtWhere()).toEqual({});
+  });
+
+  it("a date-only createdAfter starts at that day's FIRST instant (UTC)", () => {
+    const { createdAt } = createdAtWhere('2026-07-01', undefined);
+    expect(createdAt?.gte?.toISOString()).toBe('2026-07-01T00:00:00.000Z');
+  });
+
+  it('a date-only createdBefore includes the ENTIRE named day (documented inclusive)', () => {
+    // lte at midnight would silently drop every record created ON the day —
+    // the exact trap the v2 analytics endDate normalization already avoids.
+    const { createdAt } = createdAtWhere(undefined, '2026-07-10');
+    expect(createdAt?.lte?.toISOString()).toBe('2026-07-10T23:59:59.999Z');
+  });
+
+  it('explicit timestamps pass through untouched on both bounds', () => {
+    const { createdAt } = createdAtWhere('2026-07-01T06:30:00Z', '2026-07-10T18:00:00+08:00');
+    expect(createdAt?.gte?.toISOString()).toBe('2026-07-01T06:30:00.000Z');
+    expect(createdAt?.lte?.toISOString()).toBe('2026-07-10T10:00:00.000Z');
   });
 });

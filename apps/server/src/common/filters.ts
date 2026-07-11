@@ -26,10 +26,16 @@ const isoDateTime = z.string().refine(isUnambiguousIsoDate, ISO_MESSAGE);
 export const createdAtRangeFields = {
   createdAfter: isoDateTime
     .optional()
-    .describe('Only items created at or after this time — ISO date or datetime WITH timezone.'),
+    .describe(
+      'Only items created at or after this time — ISO date or datetime WITH timezone. ' +
+        "A date-only value starts at that day's first instant (UTC).",
+    ),
   createdBefore: isoDateTime
     .optional()
-    .describe('Only items created at or before this time — ISO date or datetime WITH timezone.'),
+    .describe(
+      'Only items created at or before this time — ISO date or datetime WITH timezone. ' +
+        'A date-only value includes the ENTIRE day (up to its last instant, UTC).',
+    ),
 };
 
 /**
@@ -70,7 +76,20 @@ export function createdAtWhere(
   return {
     createdAt: {
       ...(after ? { gte: new Date(after) } : {}),
-      ...(before ? { lte: new Date(before) } : {}),
+      ...(before ? { lte: upperBound(before) } : {}),
     },
   };
+}
+
+/**
+ * The documented-INCLUSIVE upper bound. A date-only value parses to that day's
+ * MIDNIGHT UTC — `lte` at midnight would silently exclude the whole named day
+ * (an "until 2026-07-10" sync would drop every record created ON the 10th).
+ * Normalize it to the day's last instant, the same convention the v2 analytics
+ * range applies to its date-only `endDate`. Timestamps pass through untouched.
+ */
+function upperBound(before: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(before)
+    ? new Date(`${before}T23:59:59.999Z`)
+    : new Date(before);
 }
