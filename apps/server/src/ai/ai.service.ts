@@ -21,17 +21,24 @@ export class AiService {
   constructor(private readonly configService: ConfigService) {}
 
   /**
-   * Whether the instance has a usable AI provider. The API key is the signal
-   * — except for bedrock, where selecting the provider is: it can
-   * authenticate keylessly through the AWS default credential chain. Single
-   * source for the capability: the globalConfig flag (button rendering) and
-   * the feature gates both read it, so the two can't disagree.
+   * Whether the instance has a usable AI provider, judged by the same
+   * requirement getModel enforces per provider: anthropic (the default)
+   * needs an API key, openai-compatible needs a base URL (gateways may be
+   * keyless), and selecting bedrock is enough — it can authenticate
+   * keylessly through the AWS default credential chain. Single source for
+   * the capability: the globalConfig flag (button rendering) and the
+   * feature gates both read it, so the buttons never advertise a provider
+   * getModel would reject.
    */
   isConfigured(): boolean {
-    return (
-      Boolean(this.configService.get<string>('ai.apiKey')) ||
-      this.configService.get<string>('ai.provider') === 'bedrock'
-    );
+    const provider = this.configService.get<string>('ai.provider');
+    if (provider === 'openai-compatible') {
+      return Boolean(this.configService.get<string>('ai.baseUrl'));
+    }
+    if (provider === 'bedrock') {
+      return true;
+    }
+    return Boolean(this.configService.get<string>('ai.apiKey'));
   }
 
   getModel(): LanguageModel {

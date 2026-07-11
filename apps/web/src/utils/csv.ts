@@ -11,11 +11,31 @@ const escapeCsvCell = (cell: string): string => {
   return cell;
 };
 
+/**
+ * Spreadsheets evaluate cells starting with these as formulas even when the
+ * cell is RFC 4180-quoted, so exports prefix them with Excel's own
+ * treat-as-text marker (a leading apostrophe, hidden by Excel). The
+ * apostrophe itself is in the set to keep the transform invertible:
+ * parseCsv strips exactly one marker back off, so the round-trip stays
+ * lossless — including for text that genuinely starts with an apostrophe.
+ */
+const FORMULA_TRIGGERS = /^[=+\-@\t\r']/;
+
+const neutralizeFormula = (cell: string): string => {
+  return FORMULA_TRIGGERS.test(cell) ? `'${cell}` : cell;
+};
+
+const restoreNeutralizedFormula = (cell: string): string => {
+  return cell.startsWith("'") && FORMULA_TRIGGERS.test(cell.slice(1)) ? cell.slice(1) : cell;
+};
+
 const UTF8_BOM = '﻿';
 
 /** Serialize rows; prefixed with a BOM so Excel detects UTF-8. */
 export const serializeCsv = (rows: readonly (readonly string[])[]): string => {
-  return `${UTF8_BOM}${rows.map((row) => row.map(escapeCsvCell).join(',')).join('\r\n')}`;
+  return `${UTF8_BOM}${rows
+    .map((row) => row.map((cell) => escapeCsvCell(neutralizeFormula(cell))).join(','))
+    .join('\r\n')}`;
 };
 
 export const parseCsv = (text: string): string[][] => {
@@ -45,7 +65,7 @@ export const parseCsv = (text: string): string[][] => {
       continue;
     }
     if (char === ',') {
-      row.push(cell);
+      row.push(restoreNeutralizedFormula(cell));
       cell = '';
       continue;
     }
@@ -53,7 +73,7 @@ export const parseCsv = (text: string): string[][] => {
       if (char === '\r' && input[index + 1] === '\n') {
         index++;
       }
-      row.push(cell);
+      row.push(restoreNeutralizedFormula(cell));
       rows.push(row);
       row = [];
       cell = '';
@@ -62,7 +82,7 @@ export const parseCsv = (text: string): string[][] => {
     cell += char;
   }
   if (cell !== '' || row.length > 0) {
-    row.push(cell);
+    row.push(restoreNeutralizedFormula(cell));
     rows.push(row);
   }
   return rows;
