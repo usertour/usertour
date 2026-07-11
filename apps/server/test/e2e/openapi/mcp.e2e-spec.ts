@@ -1470,6 +1470,24 @@ describe('MCP endpoint (e2e)', () => {
         expect(result.content[0].text).toContain('E1026');
       });
 
+      it('get_environment enforces the allowlist (in-scope ok, out-of-scope E1029, dead id E1026)', async () => {
+        // The READ item tool is env-addressed like the writes — the REST item route
+        // refuses out-of-scope ids, and the MCP binding of the same service must
+        // agree (list_environments stays discovery-open, flagged via inTokenScope).
+        const token = await mint([Capability.EnvironmentRead], [projectA], [envA]);
+
+        const ok = await callTool('get_environment', { id: envA }, token);
+        expect(ok.isError).toBeFalsy();
+
+        const denied = await callTool('get_environment', { id: envB }, token);
+        expect(denied.isError).toBe(true);
+        expect(denied.content[0].text).toContain('E1029');
+
+        const dead = await callTool('get_environment', { id: 'does-not-exist' }, token);
+        expect(dead.isError).toBe(true);
+        expect(dead.content[0].text).toContain('E1026');
+      });
+
       it('duplicate_content works for an env-restricted token (project-level action)', async () => {
         const source = await buildContent(prisma, {
           projectId: projectA,
@@ -1561,6 +1579,52 @@ describe('MCP endpoint (e2e)', () => {
       // expand settings → the actual stored values
       const full = await call(3, 'get_theme', { id: created.id, expand: ['settings'] });
       expect(full.settings.brandColor.background).toBe('#0f172b');
+    });
+
+    it('list_themes paginates — every theme reachable, truncation signalled via nextCursor', async () => {
+      // The tool used to hardcode limit:100 and drop `next`: themes 101+ were
+      // silently unreachable, so an agent "verified" a theme didn't exist.
+      const token = await mint([Capability.ThemeRead], [projectA]);
+      const call = async (id: number, args: Record<string, unknown>) =>
+        parseToolContent(
+          extractResult(
+            await rpc(
+              {
+                jsonrpc: '2.0',
+                id,
+                method: 'tools/call',
+                params: { name: 'list_themes', arguments: args },
+              },
+              token,
+            ),
+          ),
+        );
+      await buildTheme(prisma, { projectId: projectA, name: 'mcp-page-a' });
+      await buildTheme(prisma, { projectId: projectA, name: 'mcp-page-b' });
+
+      const first = await call(1, { limit: 2 });
+      expect(first.items).toHaveLength(2);
+      expect(first.nextCursor).toBeTruthy();
+
+      const seen = new Set<string>(first.items.map((t: { id: string }) => t.id));
+      let cursor = first.nextCursor as string | null;
+      let page = 2;
+      while (cursor) {
+        const next = await call(page, { limit: 2, cursor });
+        for (const t of next.items as { id: string }[]) {
+          seen.add(t.id);
+        }
+        cursor = next.nextCursor;
+        page += 1;
+        expect(page).toBeLessThan(30); // runaway guard
+      }
+      const all = await prisma.theme.findMany({
+        where: { projectId: projectA, deleted: false },
+        select: { id: true },
+      });
+      for (const t of all) {
+        expect(seen.has(t.id)).toBe(true);
+      }
     });
 
     it('create_theme rejects an invalid settings patch via MCP (server validates the permissive arg)', async () => {

@@ -658,17 +658,23 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ThemeRead,
       description:
         "List the project's themes (id, name, isDefault) — the theme ids accepted by a version's " +
-        '`themeId`. Optionally filter by `name`. Bounded per-project set; returns `{ items }`.',
+        '`themeId`. Optionally filter by `name`. Returns `{ items, nextCursor }` — page until ' +
+        '`nextCursor` is null before concluding a theme does not exist.',
       inputSchema: {
         ...nameSearchField,
+        limit: limitSchema,
+        cursor: cursorSchema,
+        orderBy: orderBySchema,
       },
       async handler(args, ctx) {
         await ctx.auth.authorize(ctx.token, ctx.projectId, this.capability);
         const result = await ctx.services.themes.list('mcp://themes', ctx.projectId, {
-          limit: 100,
+          limit: asLimit(args.limit),
+          cursor: asString(args.cursor),
+          orderBy: asOrderBy(args.orderBy),
           name: asString(args.name),
         });
-        return { items: result.results };
+        return toListPayload(result);
       },
     },
 
@@ -1103,6 +1109,12 @@ export function buildReadTools(): McpTool[] {
         if (!id) {
           throw new Error('`id` is required.');
         }
+        // Env-ADDRESSED read: enforce the token's environment allowlist, same as
+        // the REST item route and the env write tools (list_environments stays
+        // discovery-open by design, flagged via `inTokenScope`). Existence first,
+        // so a dead id reports "not found" (E1026), not "outside your scope".
+        await ctx.services.environments.requireEnvironmentExists(id, ctx.projectId);
+        ctx.auth.assertEnvironmentInScope(ctx.token, { id });
         return ctx.services.environments.get(
           id,
           ctx.projectId,
