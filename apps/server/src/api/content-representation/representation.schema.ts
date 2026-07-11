@@ -66,7 +66,8 @@ export const representationPlacement = z
               '(the tooltip picks a spot and flips to avoid the viewport edge — best when you ' +
               "can't see the element). Setting side (or align) pins that direction: the tooltip " +
               'renders exactly there and no longer auto-flips, so only pin when the element is ' +
-              'not near a screen edge.',
+              'not near a screen edge. When READING a step back, check `alignType` first: under ' +
+              '`auto` the side/align you see are just the auto starting position, not a pin.',
           ),
         align: z
           .enum(['start', 'center', 'end'])
@@ -85,7 +86,9 @@ export const representationPlacement = z
             'Position mode. `auto` auto-positions and flips to avoid the viewport edge (ignoring ' +
               'side/align); `fixed` pins to side/align without flipping. Usually omit it: providing ' +
               'side/align implies `fixed`, and omitting them implies `auto`. Set it only to override ' +
-              'that (e.g. `auto` while still passing a side/align you want ignored).',
+              'that (e.g. `auto` while still passing a side/align you want ignored). Read-backs ' +
+              'always carry concrete side/align even in `auto` mode (the auto starting position, ' +
+              'bottom/center) — `alignType` is what governs, and `auto` still flips at runtime.',
           ),
         // A tooltip may dim the page (backdrop) and block clicks on its target.
         backdrop: z.boolean().optional(),
