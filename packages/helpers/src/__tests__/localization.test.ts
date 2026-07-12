@@ -9,6 +9,7 @@ import type {
   ContentEditorNPSElement,
   ContentEditorRoot,
   ContentEditorTextElement,
+  ContentListItem,
   LocalizedFlowContent,
   ResourceCenterData,
 } from '@usertour/types';
@@ -885,5 +886,124 @@ describe('duplicate identifier remapping', () => {
     expect(merged.items.find((item) => item.id === 'item-1-copy')?.name).toBe(
       'Invitez votre équipe',
     );
+  });
+});
+
+describe('resource center content-list item labels', () => {
+  const createListData = (): ResourceCenterData => ({
+    buttonText: 'Help',
+    headerText: 'How can we help?',
+    tabs: [
+      {
+        id: 'tab-1',
+        name: 'Home',
+        iconSource: LauncherIconSource.NONE,
+        iconType: '',
+        blocks: [
+          {
+            id: 'block-list',
+            name: [{ text: 'Guides' }],
+            type: ResourceCenterBlockType.CONTENT_LIST,
+            onlyShowBlock: false,
+            onlyShowBlockConditions: [],
+            iconSource: LauncherIconSource.NONE,
+            iconType: '',
+            flowIconSource: LauncherIconSource.NONE,
+            flowIconType: '',
+            checklistIconSource: LauncherIconSource.NONE,
+            checklistIconType: '',
+            showSearchField: false,
+            contentItems: [
+              {
+                contentId: 'flow-1',
+                contentType: 'flow',
+                label: 'Getting started',
+                onlyShowItem: false,
+                onlyShowItemConditions: [],
+              },
+              {
+                contentId: 'flow-2',
+                contentType: 'flow',
+                onlyShowItem: false,
+                onlyShowItemConditions: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  const LABEL_PATH = 'tabs.tab-1.blocks.block-list.contentItems.flow-1:label';
+
+  it('exposes labeled entries as units and skips label-less ones', () => {
+    const source = createListData();
+    const units = extractVersionDataTranslationUnits(
+      ContentDataType.RESOURCE_CENTER,
+      source,
+      undefined,
+    );
+    const labelUnit = units.find((unit) => unit.path === LABEL_PATH);
+    expect(labelUnit?.sourceText).toBe('Getting started');
+    expect(units.some((unit) => unit.path.includes('flow-2'))).toBe(false);
+  });
+
+  it('merges a translated label by contentId, surviving reordering', () => {
+    const source = createListData();
+    const working = createLocalizedWorkingVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      source,
+      undefined,
+    );
+    const workingItems = (working.tabs[0].blocks[0] as { contentItems: ContentListItem[] })
+      .contentItems;
+    expect(workingItems[0].label).toBe('');
+    workingItems[0].label = 'Premiers pas';
+
+    const reordered = deepClone(source);
+    (reordered.tabs[0].blocks[0] as { contentItems: ContentListItem[] }).contentItems.reverse();
+
+    const merged = mergeLocalizedVersionData(ContentDataType.RESOURCE_CENTER, reordered, working);
+    const mergedItems = (merged.tabs[0].blocks[0] as { contentItems: ContentListItem[] })
+      .contentItems;
+    expect(mergedItems.find((item) => item.contentId === 'flow-1')?.label).toBe('Premiers pas');
+    expect(mergedItems.find((item) => item.contentId === 'flow-2')?.label).toBeUndefined();
+  });
+
+  it("keeps a removed entry's label in the save payload and revives it", () => {
+    const source = createListData();
+    const stored = createLocalizedWorkingVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      source,
+      undefined,
+    );
+    (stored.tabs[0].blocks[0] as { contentItems: ContentListItem[] }).contentItems[0].label =
+      'Premiers pas';
+
+    const shrunk = deepClone(source);
+    const shrunkBlock = shrunk.tabs[0].blocks[0] as { contentItems: ContentListItem[] };
+    shrunkBlock.contentItems = shrunkBlock.contentItems.filter(
+      (item) => item.contentId !== 'flow-1',
+    );
+    const working = createLocalizedWorkingVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      shrunk,
+      stored,
+    );
+
+    const payload = buildLocalizedVersionDataSavePayload(
+      ContentDataType.RESOURCE_CENTER,
+      working,
+      stored,
+    );
+    const payloadItems = (payload.tabs[0].blocks[0] as { contentItems: ContentListItem[] })
+      .contentItems;
+    expect(payloadItems.some((item) => item.contentId === 'flow-1')).toBe(true);
+
+    const merged = mergeLocalizedVersionData(ContentDataType.RESOURCE_CENTER, source, payload);
+    const revived = (
+      merged.tabs[0].blocks[0] as { contentItems: ContentListItem[] }
+    ).contentItems.find((item) => item.contentId === 'flow-1');
+    expect(revived?.label).toBe('Premiers pas');
   });
 });

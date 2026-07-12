@@ -1953,6 +1953,7 @@ const translations = {
         taskName: 'Task name',
         taskDescription: 'Task description',
         blockLabel: 'Block label',
+        listItemLabel: 'List item name',
       },
       section: {
         general: 'General',
@@ -3384,6 +3385,10 @@ const translations = {
       untitledChecklist: 'Untitled checklist',
       removeAllContent: 'Remove all flows/checklists',
       showSearchField: 'Show search field',
+      itemLabel: 'Display name',
+      itemLabelTooltip:
+        "Shown in the list instead of the content's name, and translatable in the localization editor — the content's own name never translates.",
+      itemLabelPlaceholder: "Defaults to the content's name",
       customItemIcon: 'Custom icon for this item',
       customItemIconTooltip:
         'Use a different icon just for this item. Pick "Default" to fall back to the block\'s icon.',

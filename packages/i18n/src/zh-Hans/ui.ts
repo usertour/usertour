@@ -1850,6 +1850,7 @@ const translations = {
         taskName: '任务名称',
         taskDescription: '任务描述',
         blockLabel: '区块标签',
+        listItemLabel: '列表项名称',
       },
       section: {
         general: '通用',
@@ -3220,6 +3221,10 @@ const translations = {
       untitledChecklist: '未命名清单',
       removeAllContent: '移除全部流程/清单',
       showSearchField: '显示搜索框',
+      itemLabel: '显示名称',
+      itemLabelTooltip:
+        '在列表中代替内容名称显示，并可在本地化编辑器中翻译——内容自身的名称不参与翻译。',
+      itemLabelPlaceholder: '默认使用内容名称',
       customItemIcon: '该项的自定义图标',
       customItemIconTooltip: '给这一项单独换个图标。选「默认」就沿用区块的图标。',
       navigateUrl: '点击时跳转到 URL',

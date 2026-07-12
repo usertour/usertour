@@ -640,7 +640,46 @@ const walkResourceCenterFields = (
       const blockContent = (block as { content?: unknown }).content;
       const partnerBlockContent = (partnerBlock as { content?: unknown } | undefined)?.content;
       walkEmbeddedContents(`${blockPath}.content`, blockContent, partnerBlockContent, visitor);
+      walkContentListItemLabels(blockPath, block, partnerBlock, visitor);
     }
+  }
+};
+
+type ContentListItemLike = { contentId?: string; label?: string };
+
+/**
+ * Content-list entries can carry a display-name override (the referenced
+ * content's admin name itself never localizes); items donate by contentId
+ * so reordering the list can never misalign a translation.
+ */
+const walkContentListItemLabels = (
+  blockPath: string,
+  block: unknown,
+  partnerBlock: unknown,
+  visitor: TranslatableFieldVisitor,
+): void => {
+  const contentItems = (block as { contentItems?: unknown }).contentItems;
+  if (!isArray(contentItems)) {
+    return;
+  }
+  const partnerRaw = (partnerBlock as { contentItems?: unknown } | undefined)?.contentItems;
+  const partnerItems = isArray(partnerRaw) ? (partnerRaw as ContentListItemLike[]) : [];
+  for (const contentItem of contentItems as ContentListItemLike[]) {
+    if (!contentItem?.contentId) {
+      continue;
+    }
+    const partnerItem = partnerItems.find(
+      (candidate) => candidate?.contentId === contentItem.contentId,
+    );
+    visitTextField(
+      visitor,
+      `${blockPath}.contentItems.${contentItem.contentId}:label`,
+      contentItem.label,
+      partnerItem?.label,
+      (value) => {
+        contentItem.label = value;
+      },
+    );
   }
 };
 
@@ -1110,6 +1149,23 @@ const graftAnnouncementTranslations = (
   graftEmbeddedContents(container, 'detailContent', stored.detailContent);
 };
 
+/** List entries the source no longer has keep their stored label for a revival. */
+const graftContentListItemLabels = (block: unknown, storedBlock: unknown): void => {
+  const workingItems = (block as { contentItems?: unknown }).contentItems;
+  const storedRaw = (storedBlock as { contentItems?: unknown }).contentItems;
+  if (!isArray(workingItems) || !isArray(storedRaw)) {
+    return;
+  }
+  const knownIds = new Set(
+    (workingItems as ContentListItemLike[]).map((item) => item?.contentId).filter(Boolean),
+  );
+  for (const storedItem of storedRaw as ContentListItemLike[]) {
+    if (storedItem?.contentId && !knownIds.has(storedItem.contentId)) {
+      (workingItems as ContentListItemLike[]).push(deepClone(storedItem));
+    }
+  }
+};
+
 const graftResourceCenterTranslations = (
   working: ResourceCenterData,
   stored: ResourceCenterData,
@@ -1156,6 +1212,7 @@ const graftResourceCenterTranslations = (
         'content',
         (storedBlock as { content?: unknown }).content,
       );
+      graftContentListItemLabels(block, storedBlock);
     }
   }
 

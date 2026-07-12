@@ -6,6 +6,7 @@ import type {
   ChecklistData,
   ChecklistItemType,
   ContentEditorRoot,
+  ContentListItem,
   LauncherData,
   ResourceCenterBlock,
   ResourceCenterData,
@@ -46,6 +47,11 @@ const hasTranslatableTree = (contents: unknown): contents is ContentEditorRoot[]
 
 const asContents = (contents: unknown): ContentEditorRoot[] => {
   return Array.isArray(contents) ? (contents as ContentEditorRoot[]) : [];
+};
+
+const asContentItems = (block: unknown): ContentListItem[] => {
+  const contentItems = (block as { contentItems?: unknown } | undefined)?.contentItems;
+  return Array.isArray(contentItems) ? (contentItems as ContentListItem[]) : [];
 };
 
 // ---------------------------------------------------------------------------
@@ -447,7 +453,17 @@ export const ResourceCenterLocalizationSections = (
               const namePairs = sourceName ? collectSlateLeafPairs(sourceName, workingName) : [];
               const sourceContent = (block as { content?: unknown }).content;
               const workingContent = (workingBlock as { content?: unknown } | undefined)?.content;
-              if (namePairs.length === 0 && !hasTranslatableTree(sourceContent)) {
+              // Content-list entries with a display-name override; the
+              // referenced content's admin name itself never localizes.
+              const labeledItems = asContentItems(block).filter(
+                (contentItem) => toText(contentItem.label) !== '',
+              );
+              const workingItems = asContentItems(workingBlock);
+              if (
+                namePairs.length === 0 &&
+                !hasTranslatableTree(sourceContent) &&
+                labeledItems.length === 0
+              ) {
                 return null;
               }
               return (
@@ -475,6 +491,34 @@ export const ResourceCenterLocalizationSections = (
                       }}
                     />
                   ))}
+                  {labeledItems.map((contentItem) => {
+                    const labelPath = `${blockPath}.contentItems.${contentItem.contentId}:label`;
+                    const workingItem = workingItems.find(
+                      (candidate) => candidate.contentId === contentItem.contentId,
+                    );
+                    return (
+                      <LocalizedFieldRow
+                        key={contentItem.contentId}
+                        label={t('contents.localization.field.listItemLabel')}
+                        source={toText(contentItem.label)}
+                        value={toText(workingItem?.label)}
+                        placeholder={toText(contentItem.label)}
+                        disabled={disabled}
+                        outdated={outdatedPaths.has(labelPath)}
+                        onOutdatedResolved={() => onOutdatedResolved(labelPath)}
+                        onValueChange={(value) =>
+                          updateBlock(tab.id, block.id, (next) => {
+                            const nextItems = asContentItems(next).map((candidate) =>
+                              candidate.contentId === contentItem.contentId
+                                ? { ...candidate, label: value }
+                                : candidate,
+                            );
+                            return { ...next, contentItems: nextItems } as ResourceCenterBlock;
+                          })
+                        }
+                      />
+                    );
+                  })}
                   {Array.isArray(sourceContent) && (
                     <LocalizedEditorContents
                       sourceContents={asContents(sourceContent)}

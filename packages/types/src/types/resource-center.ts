@@ -99,6 +99,13 @@ export interface ResourceCenterAnnouncementBlock extends ResourceCenterBlockCond
 export interface ContentListItem {
   contentId: string;
   contentType: 'flow' | 'checklist';
+  /**
+   * Optional display name for this list entry; empty falls back to the
+   * content's admin name. Lives in the resource center's own version data,
+   * which makes it part of the resource center's translatable surface — the
+   * admin name itself never localizes.
+   */
+  label?: string;
   iconSource?: LauncherIconSource;
   iconType?: string;
   iconUrl?: string;
