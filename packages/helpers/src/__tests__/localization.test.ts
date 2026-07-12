@@ -291,14 +291,29 @@ describe('countMissingTranslations', () => {
 });
 
 describe('collectOutdatedUnitPaths', () => {
-  it('flags the units whose source text changed since the backup snapshot', () => {
+  it('flags drifted units only when they hold a translation', () => {
     const source = createSourceContents();
     const backup = deepClone(source);
-    expect(collectOutdatedUnitPaths(source, backup).size).toBe(0);
+    const localized = createLocalizedWorkingContents(source, undefined);
+    getElement<ContentEditorButtonElement>(localized, 1).data.text = 'Suivant';
+    expect(collectOutdatedUnitPaths(source, backup, localized).size).toBe(0);
 
     getElement<ContentEditorButtonElement>(source, 1).data.text = 'Continue';
-    const outdated = collectOutdatedUnitPaths(source, backup);
+    const outdated = collectOutdatedUnitPaths(source, backup, localized);
     expect(outdated).toEqual(new Set([`${formatElementPath(0, 0, 1)}:button.text`]));
+  });
+
+  it('never flags untranslated units — drift warnings are for existing translations', () => {
+    const source = createSourceContents();
+    const backup = deepClone(source);
+    // The whole tree drifted relative to backup, but nothing is translated:
+    // every field stays plain "missing", not outdated.
+    getElement<ContentEditorButtonElement>(source, 1).data.text = 'Continue';
+    expect(collectOutdatedUnitPaths(source, backup, undefined).size).toBe(0);
+    expect(
+      collectOutdatedUnitPaths(source, backup, createLocalizedWorkingContents(source, undefined))
+        .size,
+    ).toBe(0);
   });
 });
 
@@ -385,11 +400,28 @@ describe('version-data localization (checklist)', () => {
   it('flags outdated paths against the backup snapshot', () => {
     const source = createChecklistData();
     const backup = deepClone(source);
-    expect(collectOutdatedVersionDataPaths(ContentDataType.CHECKLIST, source, backup).size).toBe(0);
+    const localized = createLocalizedWorkingVersionData(
+      ContentDataType.CHECKLIST,
+      source,
+      undefined,
+    );
+    localized.items[1].name = 'Cree ton premier flow';
+    expect(
+      collectOutdatedVersionDataPaths(ContentDataType.CHECKLIST, source, backup, localized).size,
+    ).toBe(0);
 
     source.items[1].name = 'Create your first flow';
-    const outdated = collectOutdatedVersionDataPaths(ContentDataType.CHECKLIST, source, backup);
+    const outdated = collectOutdatedVersionDataPaths(
+      ContentDataType.CHECKLIST,
+      source,
+      backup,
+      localized,
+    );
     expect(outdated).toEqual(new Set(['items.item-2:name']));
+    // The drifted-but-untranslated item stays plain missing.
+    expect(
+      collectOutdatedVersionDataPaths(ContentDataType.CHECKLIST, source, backup, undefined).size,
+    ).toBe(0);
   });
 });
 

@@ -271,7 +271,14 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     for (const step of steps) {
       const stepBackup = storedBackup[step.cvid];
       if (stepBackup) {
-        map.set(step.cvid, collectOutdatedUnitPaths(step.data as ContentEditorRoot[], stepBackup));
+        map.set(
+          step.cvid,
+          collectOutdatedUnitPaths(
+            step.data as ContentEditorRoot[],
+            stepBackup,
+            storedLocalized?.[step.cvid],
+          ),
+        );
       }
     }
     return map;
@@ -493,7 +500,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     if (!backup || Object.keys(backup).length === 0) {
       return new Set<string>();
     }
-    return collectOutdatedVersionDataPaths(content.type, sourceData, backup);
+    return collectOutdatedVersionDataPaths(content.type, sourceData, backup, storedLocalizedData);
   });
 
   const resolveOutdated = useCallback((unitPath: string) => {

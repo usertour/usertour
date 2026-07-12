@@ -387,9 +387,21 @@ const createMissingCountVisitor = (count: { missing: number }): TranslatableFiel
   };
 };
 
-const createOutdatedVisitor = (outdated: Set<string>): TranslatableFieldVisitor => {
+/** Collects the paths whose aligned translation is non-empty. */
+const createTranslatedPathCollector = (translated: Set<string>): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.sourceText === '') {
+    if (visit.partnerText !== undefined && visit.partnerText !== '') {
+      translated.add(visit.path);
+    }
+  };
+};
+
+const createOutdatedVisitor = (
+  outdated: Set<string>,
+  translated: ReadonlySet<string>,
+): TranslatableFieldVisitor => {
+  return (visit) => {
+    if (visit.sourceText === '' || !translated.has(visit.path)) {
       return;
     }
     if (visit.partnerText !== visit.sourceText) {
@@ -457,16 +469,21 @@ export const countMissingTranslations = (
 
 /**
  * Unit paths whose source text drifted since the translation was saved
- * (`backup` is the source snapshot taken at save time), so the editor can
- * flag the exact rows. Callers should skip rows that were never saved — an
- * absent backup flags everything.
+ * (`backup` is the source snapshot taken at save time) AND that hold a
+ * translation. A drift warning asks the translator to re-review an existing
+ * translation — untranslated fields (e.g. added since the last save) stay
+ * plain "missing" instead of doubling as outdated. Callers should skip rows
+ * that were never saved — an absent backup flags every translated field.
  */
 export const collectOutdatedUnitPaths = (
   source: ContentEditorRoot[] | undefined,
   backup: ContentEditorRoot[] | undefined,
+  localized: ContentEditorRoot[] | undefined,
 ): Set<string> => {
+  const translated = new Set<string>();
+  walkTranslatableFields(source ?? [], localized, createTranslatedPathCollector(translated));
   const outdated = new Set<string>();
-  walkTranslatableFields(source ?? [], backup, createOutdatedVisitor(outdated));
+  walkTranslatableFields(source ?? [], backup, createOutdatedVisitor(outdated, translated));
   return outdated;
 };
 
@@ -775,16 +792,19 @@ export const countMissingVersionDataTranslations = (
 
 /**
  * Version-data paths whose source text drifted since the translation was
- * saved. Same contract as collectOutdatedUnitPaths — skip rows that were
- * never saved.
+ * saved. Same contract as collectOutdatedUnitPaths — drift only flags
+ * translated fields, and callers skip rows that were never saved.
  */
 export const collectOutdatedVersionDataPaths = (
   contentType: string,
   source: unknown,
   backup: unknown,
+  localized: unknown,
 ): Set<string> => {
+  const translated = new Set<string>();
+  walkVersionDataFields(contentType, source, localized, createTranslatedPathCollector(translated));
   const outdated = new Set<string>();
-  walkVersionDataFields(contentType, source, backup, createOutdatedVisitor(outdated));
+  walkVersionDataFields(contentType, source, backup, createOutdatedVisitor(outdated, translated));
   return outdated;
 };
 
