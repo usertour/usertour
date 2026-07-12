@@ -253,6 +253,7 @@ export class SessionBuilderService {
     const session: CustomContentSession = {
       id: sessionId,
       type: contentType,
+      userLocale,
       content: {
         id: customContentVersion.contentId,
         name: customContentVersion.content.name,
@@ -260,7 +261,6 @@ export class SessionBuilderService {
         project: {
           id: environment.projectId,
           removeBranding: config.removeBranding,
-          userLocale,
         },
       },
       draftMode: false,

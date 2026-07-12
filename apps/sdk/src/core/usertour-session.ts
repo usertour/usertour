@@ -96,11 +96,11 @@ export class UsertourSession {
 
   /**
    * The user's preferred locale resolved by the server (locale_code
-   * attribute, else the reported browser locale). Absent on payloads from
-   * older servers.
+   * attribute, else the project's default localization; never auto-detected
+   * from the browser). Absent on payloads from older servers.
    */
   getUserLocale(): string | undefined {
-    return this.session.content.project.userLocale;
+    return this.session.userLocale;
   }
 
   // === Steps ===
