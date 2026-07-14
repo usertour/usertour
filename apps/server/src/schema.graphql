@@ -1504,6 +1504,7 @@ type VersionOnLocalization {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+  version: Version
   versionId: String!
 }
 

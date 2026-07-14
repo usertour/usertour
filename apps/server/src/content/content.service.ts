@@ -771,16 +771,28 @@ export class ContentService {
     // localized/backup are optional: undefined is skipped by the update
     // clause, so a state-only write (the enable toggle) can never clobber
     // a translation saved from elsewhere.
-    return await this.prisma.versionOnLocalization.upsert({
-      where: { versionId_localizationId: { versionId, localizationId } },
-      create: {
-        versionId,
-        localizationId,
-        localized: localized ?? {},
-        backup: backup ?? {},
-        enabled,
-      },
-      update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
+    return await this.prisma.$transaction(async (tx) => {
+      const row = await tx.versionOnLocalization.upsert({
+        where: { versionId_localizationId: { versionId, localizationId } },
+        create: {
+          versionId,
+          localizationId,
+          localized: localized ?? {},
+          backup: backup ?? {},
+          enabled,
+        },
+        update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
+      });
+      // Translations belong to the draft, so saving one counts as saving the
+      // draft: touch the version's updatedAt and hand the version back — the
+      // client's normalized cache then moves the header's "Autosaved"
+      // timestamp without a refetch. Only editable drafts reach this point
+      // (gate above), so no delivered version is ever touched.
+      const version = await tx.version.update({
+        where: { id: versionId },
+        data: { updatedAt: new Date() },
+      });
+      return { ...row, version };
     });
   }
 
