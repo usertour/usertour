@@ -4,8 +4,7 @@ import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentLocalizations } from '@/hooks/use-content-localizations';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useLocalizationList } from '@/hooks/use-localization-list';
-import { isVersionPublished, resolveEditableVersionId } from '@/utils/content';
-import { getErrorMessage } from '@usertour/helpers';
+import { resolveEditableVersionId } from '@/utils/content';
 import { useCreateContentVersionMutation, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
 import {
   type LocalizedEmbedResolutions,
@@ -38,8 +37,8 @@ import type {
   VersionOnLocalization,
 } from '@usertour/types';
 import { ContentDataType } from '@usertour/types';
-import { Badge, Checkbox, TooltipProvider, useToast } from '@usertour/ui';
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Badge, Checkbox, TooltipProvider } from '@usertour/ui';
+import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -173,6 +172,8 @@ interface LocalizationMainProps {
   localization: Localization;
   defaultLocalization: Localization | undefined;
   contentLocalization: VersionOnLocalization | undefined;
+  /** Save target, resolved at flush time — see useLocalizationSaveTarget. */
+  resolveTargetVersionId: () => Promise<string>;
 }
 
 const useSourceLocaleName = (defaultLocalization: Localization | undefined): string => {
@@ -221,7 +222,14 @@ const useImportedEmbedResolutions = () => {
 type TranslatableStep = Step & { cvid: string };
 
 const FlowLocalizationMain = (props: LocalizationMainProps) => {
-  const { content, version, localization, defaultLocalization, contentLocalization } = props;
+  const {
+    content,
+    version,
+    localization,
+    defaultLocalization,
+    contentLocalization,
+    resolveTargetVersionId,
+  } = props;
   const { isViewOnly } = useAppContext();
   const sourceLocaleName = useSourceLocaleName(defaultLocalization);
 
@@ -301,7 +309,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
   const { saveState, scheduleSave } = useLocalizationAutosave({
-    versionId: version.id,
+    resolveTargetVersionId,
     localizationId: localization.id,
     enabled: contentLocalization?.enabled ?? false,
     buildBackup: () => {
@@ -476,7 +484,14 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
 // ---------------------------------------------------------------------------
 
 const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
-  const { content, version, localization, defaultLocalization, contentLocalization } = props;
+  const {
+    content,
+    version,
+    localization,
+    defaultLocalization,
+    contentLocalization,
+    resolveTargetVersionId,
+  } = props;
   const { isViewOnly } = useAppContext();
   const sourceLocaleName = useSourceLocaleName(defaultLocalization);
 
@@ -515,7 +530,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   }, []);
 
   const { saveState, scheduleSave } = useLocalizationAutosave({
-    versionId: version.id,
+    resolveTargetVersionId,
     localizationId: localization.id,
     enabled: contentLocalization?.enabled ?? false,
     buildBackup: () => version.data ?? {},
@@ -666,6 +681,60 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
 // Route entry
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolves the version a translation write lands on, forking lazily: the
+ * editor mounts on the content's edited version even when that version is
+ * published, and only the first actual write forks a draft
+ * (resolveEditableVersionId → createContentVersion, translation rows cloned
+ * by copyVersionLocalizations) — the same write-time model as the detail
+ * page's config saves and the localization table's enable toggle. Merely
+ * viewing translations never mints a draft, and neither does publishing
+ * from this page.
+ *
+ * Resolution re-checks the latest content on every flush: a publish that
+ * happens mid-session (the publish button lives on this very page) turns
+ * the bound version published, so the next write forks from it — and forks
+ * again from that draft if it too gets published. The fork result is cached
+ * to skip the round trip on later flushes; concurrent flushes may both call
+ * createContentVersion, which the server serializes into one draft (row
+ * lock + draft reuse).
+ *
+ * A fork repoints content.editedVersionId, but the mounted editor
+ * deliberately does NOT follow (see the version pin below) — the draft is a
+ * verbatim clone (steps keyed by cvid, identical data), so the working
+ * copy, unit paths and outdated snapshot all stay valid. refetchContent
+ * runs in the background so the rest of the app repoints at the draft.
+ */
+const useLocalizationSaveTarget = (
+  content: Content | null | undefined,
+  versionId: string | undefined,
+  refetchContent: () => Promise<unknown>,
+): (() => Promise<string>) => {
+  const { invoke: createContentVersion } = useCreateContentVersionMutation();
+  const contentRef = useRef(content);
+  contentRef.current = content;
+  // Keyed by the pinned version so a content switch can't reuse a stale fork.
+  const forkedRef = useRef<{ base: string; forked: string } | null>(null);
+
+  return useCallback(async (): Promise<string> => {
+    const currentContent = contentRef.current;
+    if (!versionId || !currentContent) {
+      throw new Error('Missing version or content');
+    }
+    const bound = forkedRef.current?.base === versionId ? forkedRef.current.forked : versionId;
+    const editableVersionId = await resolveEditableVersionId(
+      currentContent,
+      bound,
+      createContentVersion,
+    );
+    if (editableVersionId !== bound) {
+      forkedRef.current = { base: versionId, forked: editableVersionId };
+      void refetchContent();
+    }
+    return editableVersionId;
+  }, [versionId, createContentVersion, refetchContent]);
+};
+
 interface ContentLocalizationDetailProps {
   locateCode: string;
 }
@@ -673,52 +742,28 @@ interface ContentLocalizationDetailProps {
 export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps) => {
   const { locateCode } = props;
   const { contentId } = useContentDetailUI();
-  const { isViewOnly } = useAppContext();
   const { content, refetch: refetchContent } = useContentDetail(contentId);
-  const { version } = useContentVersion(content?.editedVersionId);
+
+  // Pin the version the editor opened on. A save-triggered fork (see
+  // useLocalizationSaveTarget) repoints content.editedVersionId at the new
+  // draft, and following it would remount the editor mid-edit — dropping the
+  // working copy and the mount-time outdated snapshot, and blanking the page
+  // for a frame. The draft is a verbatim clone of the pinned version, so
+  // rendering source texts from the pin while saving to the draft stays
+  // consistent. Navigating to another content re-pins.
+  const pinRef = useRef<{ contentId: string; versionId: string } | null>(null);
+  if (content?.editedVersionId && pinRef.current?.contentId !== content.id) {
+    pinRef.current = { contentId: content.id, versionId: content.editedVersionId };
+  }
+  const pinnedVersionId = pinRef.current?.versionId;
+
+  const { version } = useContentVersion(pinnedVersionId);
   const { localizationList } = useLocalizationList();
   const { contentLocalizationList, loading } = useContentLocalizations(version?.id);
-  const { invoke: createContentVersion } = useCreateContentVersionMutation();
-  const { toast } = useToast();
+  const resolveTargetVersionId = useLocalizationSaveTarget(content, version?.id, refetchContent);
 
   const localization = localizationList?.find((item) => item.locale === locateCode);
   const defaultLocalization = localizationList?.find((item) => item.isDefault);
-
-  // Opening the translation editor on a published version forks a draft
-  // first — the same behavior as "Edit in builder" — so translations always
-  // land on the draft and ship through the normal publish flow. The fork
-  // carries every translation row over (copyVersionLocalizations, keyed by
-  // cvid) and the server reuses an existing draft, so re-entry can't stack
-  // drafts. The editor stays unmounted until the refetched content points at
-  // the draft.
-  //
-  // Forking is a write, so its condition must match "the editor will actually
-  // mount": view-only members can't fork (no write capability) and read the
-  // published translations in place instead, and a dead-end URL (unknown
-  // locale, tracker) must not mint a draft as a side effect.
-  const needsFork = Boolean(
-    !isViewOnly &&
-      content &&
-      content.type !== ContentDataType.TRACKER &&
-      localization &&
-      version?.id &&
-      isVersionPublished(content, version.id),
-  );
-  const forkingRef = useRef(false);
-  useEffect(() => {
-    if (!needsFork || forkingRef.current || !content || !version?.id) {
-      return;
-    }
-    forkingRef.current = true;
-    resolveEditableVersionId(content, version.id, createContentVersion)
-      .then(() => refetchContent())
-      .catch((error) => {
-        toast({ variant: 'destructive', title: getErrorMessage(error) });
-      })
-      .finally(() => {
-        forkingRef.current = false;
-      });
-  }, [needsFork, content, version?.id, createContentVersion, refetchContent, toast]);
 
   // First-load gating only — a background refetch flips `loading` while the
   // list stays populated, and unmounting the editor then would drop unsaved
@@ -735,7 +780,6 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
     !content ||
     !version?.id ||
     !localization ||
-    needsFork ||
     (loading && loadedVersionIdRef.current !== version.id)
   ) {
     return <></>;
@@ -759,6 +803,7 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
       localization={localization}
       defaultLocalization={defaultLocalization}
       contentLocalization={contentLocalization}
+      resolveTargetVersionId={resolveTargetVersionId}
     />
   );
 };

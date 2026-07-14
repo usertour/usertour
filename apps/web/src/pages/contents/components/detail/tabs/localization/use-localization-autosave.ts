@@ -6,7 +6,12 @@ import { useTranslation } from 'react-i18next';
 export type LocalizationSaveState = 'idle' | 'saving' | 'saved';
 
 export interface LocalizationAutosaveOptions {
-  versionId: string;
+  /**
+   * The version this flush writes to — resolved at flush time (not captured
+   * at mount) so a publish that happened after mount forks a draft before
+   * the write lands (see useLocalizationSaveTarget).
+   */
+  resolveTargetVersionId: () => Promise<string>;
   localizationId: string;
   enabled: boolean;
   /**
@@ -23,7 +28,7 @@ export interface LocalizationAutosaveOptions {
  * navigating away can't drop an edit.
  */
 export const useLocalizationAutosave = (options: LocalizationAutosaveOptions) => {
-  const { versionId, localizationId, enabled, buildBackup } = options;
+  const { resolveTargetVersionId, localizationId, enabled, buildBackup } = options;
   const { t } = useTranslation();
   const { toast } = useToast();
   const { invoke: upsertVersionLocalization } = useUpsertVersionLocalizationMutation();
@@ -44,6 +49,7 @@ export const useLocalizationAutosave = (options: LocalizationAutosaveOptions) =>
     pendingRef.current = null;
     setSaveState('saving');
     try {
+      const versionId = await resolveTargetVersionId();
       await upsertVersionLocalization({
         versionId,
         localizationId,
@@ -59,7 +65,7 @@ export const useLocalizationAutosave = (options: LocalizationAutosaveOptions) =>
         title: t('contents.localization.toast.saveFailure'),
       });
     }
-  }, [versionId, localizationId, upsertVersionLocalization, toast, t]);
+  }, [resolveTargetVersionId, localizationId, upsertVersionLocalization, toast, t]);
 
   const flushSaveRef = useRef(flushSave);
   flushSaveRef.current = flushSave;
