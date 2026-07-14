@@ -49,8 +49,11 @@ export class Attribute extends BaseModel {
   @Field(() => String)
   codeName: string;
 
+  // Non-optional on purpose: the Prisma column defaults to '', so a stored
+  // attribute always has a description. CreateAttributeInput overrides this
+  // field back to optional — creation may omit it and take the default.
   @Field(() => String)
-  description?: string;
+  description: string;
 
   @Field(() => Int)
   dataType: number;

@@ -19,12 +19,22 @@ import {
   ContentConfigObject,
   ChecklistData,
   ContentDataType,
+  ContentEditorRoot,
+  LocalizedFlowContent,
   ResourceCenterData,
   RulesCondition,
   SessionAttribute,
   ThemeVariation,
 } from '@usertour/types';
-import { buildConfig, isArray } from '@usertour/helpers';
+import {
+  buildConfig,
+  isArray,
+  isVersionDataLocalizable,
+  matchTranslationByLocale,
+  mergeLocalizedEditorContents,
+  mergeLocalizedVersionData,
+  resolveUserLocaleCode,
+} from '@usertour/helpers';
 import { getAttributeValue, getPublishedVersionId } from '@/utils/content-utils';
 import { CustomContentVersion, ContentSessionCollection } from '@/common/types/content';
 import {
@@ -612,6 +622,13 @@ export class ContentDataService {
         include: {
           content: { select: { id: true, type: true } },
           steps: { orderBy: { sequence: 'asc' } },
+          // Enabled translations ship with the version (published rows are as
+          // immutable as the version itself) so per-user locale substitution
+          // never needs another read.
+          versionOnLocalization: {
+            where: { enabled: true },
+            select: { localized: true, localization: { select: { code: true } } },
+          },
         },
       });
 
@@ -697,6 +714,10 @@ export class ContentDataService {
           include: {
             content: { select: { id: true, type: true } },
             steps: { orderBy: { sequence: 'asc' } },
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localized: true, localization: { select: { code: true } } },
+            },
           },
         });
         return new Map(fresh.map((version) => [this.cache.keys.versionFull(version.id), version]));
@@ -1062,10 +1083,15 @@ export class ContentDataService {
       externalCompanyId: context.externalCompanyId,
     };
 
+    const localizedVersion = this.localizeVersionForUser(version, context.bizUser);
+
     const [config, data, steps] = await Promise.all([
       this.processConfig(version, evaluationContext),
-      this.evaluateVersionData(version, evaluationContext),
-      this.conditionEvaluationService.evaluateStepTriggers(version.steps, evaluationContext),
+      this.evaluateVersionData(localizedVersion, evaluationContext),
+      this.conditionEvaluationService.evaluateStepTriggers(
+        localizedVersion.steps,
+        evaluationContext,
+      ),
     ]);
 
     return {
@@ -1076,6 +1102,64 @@ export class ContentDataService {
       content: version.content,
       session,
     };
+  }
+
+  /**
+   * Substitute translated content for the user's locale: step trees for
+   * flows, `version.data` for the other localizable types (checklist /
+   * launcher / banner / resource center — announcements go through
+   * AnnouncementService, which localizes the same way).
+   *
+   * The user's locale — their explicit `locale_code` attribute, never
+   * auto-detected — is matched against the version's enabled translations,
+   * exact locale first, then primary language subtag (`fr-CA` falls back
+   * to `fr`). No match delivers the authored source; the merge itself also
+   * falls back per text field, so a partial translation can never blank
+   * content.
+   */
+  private localizeVersionForUser(
+    version: VersionWithStepsAndContent,
+    bizUser: BizUser,
+  ): VersionWithStepsAndContent {
+    const translations = version.versionOnLocalization;
+    if (!translations || translations.length === 0) {
+      return version;
+    }
+    const localeCode = resolveUserLocaleCode(bizUser.data);
+    if (!localeCode) {
+      return version;
+    }
+    const matched = matchTranslationByLocale(translations, localeCode);
+    if (!matched?.localized) {
+      return version;
+    }
+
+    if (version.content.type === ContentDataType.FLOW) {
+      const localized = matched.localized as LocalizedFlowContent;
+      const steps = version.steps.map((step) => {
+        const localizedStepContent = localized[step.cvid];
+        if (!localizedStepContent || !step.data) {
+          return step;
+        }
+        const mergedData = mergeLocalizedEditorContents(
+          step.data as unknown as ContentEditorRoot[],
+          localizedStepContent,
+        );
+        return { ...step, data: mergedData as unknown as Prisma.JsonValue };
+      });
+      return { ...version, steps };
+    }
+
+    if (isVersionDataLocalizable(version.content.type) && version.data) {
+      const mergedData = mergeLocalizedVersionData(
+        version.content.type,
+        version.data,
+        matched.localized,
+      );
+      return { ...version, data: mergedData };
+    }
+
+    return version;
   }
 
   /**

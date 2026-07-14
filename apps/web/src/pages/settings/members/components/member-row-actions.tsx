@@ -30,7 +30,7 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
     ? [
         {
           key: 'cancelInvite',
-          icon: <Delete2Icon className="w-6" width={16} height={16} />,
+          icon: <Delete2Icon className="w-4 h-4 mr-2" />,
           label: t('settings.team.cancelInviteMenuItem'),
           destructive: true,
           onSelect: () => setCancelInviteOpen(true),
@@ -39,21 +39,21 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
     : [
         {
           key: 'changeRole',
-          icon: <EditIcon className="w-6" width={16} height={16} />,
+          icon: <EditIcon className="w-4 h-4 mr-2" />,
           label: t('settings.team.changeRoleMenuItem'),
           disabled: isOwner,
           onSelect: () => setChangeRoleOpen(true),
         },
         {
           key: 'transferOwner',
-          icon: <ArrowLeftRightIcon className="w-6" width={16} height={16} />,
+          icon: <ArrowLeftRightIcon className="w-4 h-4 mr-2" />,
           label: t('settings.team.transferOwnerMenuItem'),
           disabled: isOwner,
           onSelect: () => setTransferOwnerOpen(true),
         },
         {
           key: 'remove',
-          icon: <Delete2Icon className="w-6" width={16} height={16} />,
+          icon: <Delete2Icon className="w-4 h-4 mr-2" />,
           label: t('settings.team.removeMenuItem'),
           destructive: true,
           disabled: isOwner,

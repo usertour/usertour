@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Input,
   Label,
   QuestionTooltip,
   ScrollArea,
@@ -123,6 +124,22 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
     <CardContent className="grow overflow-hidden p-0">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
+          {/* Display name override — also this entry's translatable surface:
+              the referenced content's admin name never localizes. */}
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-1">
+              <Label>{t('contentBuilder.resourceCenter.itemLabel')}</Label>
+              <QuestionTooltip>
+                <p>{t('contentBuilder.resourceCenter.itemLabelTooltip')}</p>
+              </QuestionTooltip>
+            </div>
+            <Input
+              value={item.label ?? ''}
+              placeholder={t('contentBuilder.resourceCenter.itemLabelPlaceholder')}
+              onChange={(event) => updateItem({ label: event.target.value })}
+            />
+          </div>
+
           {/* Custom icon for this item */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">

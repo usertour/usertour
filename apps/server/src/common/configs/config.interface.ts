@@ -99,6 +99,15 @@ export interface Config {
       survey: number;
     };
   };
+  ai: {
+    provider: string;
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+    awsRegion: string;
+    awsAccessKeyId: string;
+    awsSecretAccessKey: string;
+  };
   globalConfig: {
     isSelfHostedMode: boolean;
     allowPrivateNetworkEgress: boolean;

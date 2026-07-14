@@ -13,6 +13,7 @@ import {
 import type { AnnouncementData } from '@usertour/types';
 import { AnnouncementDistribution } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
+import { resolveUserLocaleCode } from '@usertour/helpers';
 import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
@@ -214,6 +215,18 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.projectsService.getConfig(environment);
+    // The locale for the widget's built-in chrome, shipped with every session
+    // payload: the explicit locale_code attribute, else the project's default
+    // localization — the language the content is authored in — so the chrome
+    // always matches the content language actually delivered. Never
+    // auto-detected from the browser. Deliberately not gated on the content
+    // having a matching translation. findBizUser is request-memoized, so
+    // this adds no query.
+    const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
+    const userLocale =
+      resolveUserLocaleCode(bizUser?.data) ??
+      (await this.findDefaultLocalizationCode(environment.projectId)) ??
+      undefined;
     const themes = await this.contentDataService.findThemes({
       environment,
       externalUserId,
@@ -240,6 +253,7 @@ export class SessionBuilderService {
     const session: CustomContentSession = {
       id: sessionId,
       type: contentType,
+      userLocale,
       content: {
         id: customContentVersion.contentId,
         name: customContentVersion.content.name,
@@ -281,6 +295,23 @@ export class SessionBuilderService {
       return await this.processTrackerSession(session, customContentVersion, socketData);
     }
     return session;
+  }
+
+  /**
+   * The project's default localization code — the language its content is
+   * authored in. Memoized per request scope: changing the default is a rare
+   * admin action and takes effect on the next request.
+   */
+  private async findDefaultLocalizationCode(projectId: string): Promise<string | null> {
+    const localization = await this.cache.memoize(
+      this.cache.memoKeys.defaultLocalization(projectId),
+      () =>
+        this.prisma.localization.findFirst({
+          where: { projectId, isDefault: true },
+          select: { code: true },
+        }),
+    );
+    return localization?.code ?? null;
   }
 
   /**

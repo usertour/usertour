@@ -4,13 +4,8 @@ import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useCallback, useState } from 'react';
 
 import { Button, Checkbox, Label } from '../primitives';
-import {
-  DEFAULT_BUTTON_TEXT,
-  DEFAULT_OPTION_PREFIX,
-  DEFAULT_OTHER_PLACEHOLDER,
-  OPTION_ITEM_BASE_CLASS,
-  OPTION_ITEM_EDITING_CLASS,
-} from './constants';
+import { useWidgetLocale } from '../locale/context';
+import { OPTION_ITEM_BASE_CLASS, OPTION_ITEM_EDITING_CLASS } from './constants';
 import { OptionItem } from './option-item';
 import { OtherOptionInput } from './other-option-input';
 import type { SelectionOption } from './types';
@@ -51,6 +46,7 @@ export const MultipleSelection = memo(
       },
       ref,
     ) => {
+      const { messages } = useWidgetLocale();
       const [otherValue, setOtherValue] = useState<string>('');
       const [isEditing, setIsEditing] = useState<boolean>(false);
       const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -144,7 +140,7 @@ export const MultipleSelection = memo(
                     onCheckedChange={() => handleOptionClick(option.value, index)}
                   />
                   <Label htmlFor={`c1${index}`} className="grow cursor-pointer">
-                    {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
+                    {option.label || option.value || `${messages.optionPrefix} ${index + 1}`}
                   </Label>
                 </OptionItem>
               ))}
@@ -169,7 +165,7 @@ export const MultipleSelection = memo(
                     />
                   ) : (
                     <Label className="grow cursor-pointer">
-                      {otherPlaceholder || DEFAULT_OTHER_PLACEHOLDER}
+                      {otherPlaceholder || messages.otherPlaceholder}
                     </Label>
                   )}
                 </div>
@@ -179,7 +175,7 @@ export const MultipleSelection = memo(
                   disabled={isInteractive ? !isValidSelection() || loading : false}
                   onClick={isInteractive ? handleSubmit : undefined}
                 >
-                  {buttonText || DEFAULT_BUTTON_TEXT}
+                  {buttonText || messages.submit}
                 </Button>
               </div>
             </div>

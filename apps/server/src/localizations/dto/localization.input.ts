@@ -22,3 +22,24 @@ export class DeleteLocalizationInput extends PickType(Localization, ['id'], Inpu
 
 @ArgsType()
 export class QueryLocalizationInput extends PickType(Localization, ['projectId'], ArgsType) {}
+
+@InputType()
+export class TranslationUnitInput {
+  @Field(() => String)
+  path: string;
+
+  @Field(() => String)
+  sourceText: string;
+}
+
+@InputType()
+export class TranslateLocalizationUnitsInput {
+  @Field(() => String)
+  versionId: string;
+
+  @Field(() => String)
+  localizationId: string;
+
+  @Field(() => [TranslationUnitInput])
+  units: TranslationUnitInput[];
+}

@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { StarIcon } from '@radix-ui/react-icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { useUpdateEnvironmentMutation } from '@usertour/hooks';
-import { Delete2Icon, EditIcon } from '@usertour/icons';
+import { Delete2Icon, EditIcon, RiStarLine } from '@usertour/icons';
 import { Environment } from '@usertour/types';
 import { ResourceRowActions, useToast } from '@usertour/ui';
 import { EnvironmentDeleteDialog } from './environment-delete-dialog';
@@ -53,7 +52,7 @@ export const EnvironmentRowActions = (props: EnvironmentRowActionsProps) => {
         items={[
           {
             key: 'rename',
-            icon: <EditIcon className="w-6" width={12} height={12} />,
+            icon: <EditIcon className="w-4 h-4 mr-2" />,
             label: t('settings.environments.renameMenuItem'),
             onSelect: () => setEditOpen(true),
           },
@@ -61,7 +60,7 @@ export const EnvironmentRowActions = (props: EnvironmentRowActionsProps) => {
             ? [
                 {
                   key: 'setPrimary',
-                  icon: <StarIcon className="w-4 h-4 mr-2" />,
+                  icon: <RiStarLine className="w-4 h-4 mr-2" />,
                   label: t('settings.environments.setPrimaryMenuItem'),
                   onSelect: handleSetPrimary,
                   disabled: isViewOnly || isSettingPrimary,

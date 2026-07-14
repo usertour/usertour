@@ -20,6 +20,7 @@ export const globalConfig = gql`
       allowProjectLevelSubscriptionManagement
       needsSystemAdminSetup
       require2FA
+      machineTranslationEnabled
       authProviders
     }
   }

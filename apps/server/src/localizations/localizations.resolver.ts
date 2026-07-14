@@ -8,15 +8,21 @@ import {
   CreateLocalizationInput,
   DeleteLocalizationInput,
   QueryLocalizationInput,
+  TranslateLocalizationUnitsInput,
   UpdateLocalizationInput,
 } from './dto/localization.input';
 import { LocalizationsService } from './localizations.service';
+import { MachineTranslationService } from './machine-translation.service';
 import { Localization } from './models/localization.model';
+import { TranslatedUnit } from './models/translated-unit.model';
 
 @Resolver(() => Localization)
 @UseGuards(PermissionGuard)
 export class LocalizationsResolver {
-  constructor(private service: LocalizationsService) {}
+  constructor(
+    private service: LocalizationsService,
+    private machineTranslationService: MachineTranslationService,
+  ) {}
 
   @Mutation(() => Localization)
   @RequirePermission({ capability: Capability.LocalizationCreate, scope: ScopeKind.Localization })
@@ -46,5 +52,14 @@ export class LocalizationsResolver {
   @RequirePermission({ capability: Capability.LocalizationRead, scope: ScopeKind.Localization })
   async listLocalizations(@Args() { projectId }: QueryLocalizationInput) {
     return await this.service.findMany(projectId);
+  }
+
+  // Content scope: translating is a content-editing action, gated the same
+  // way as saving the translation (the scope resolver also verifies the
+  // referenced localizationId belongs to the same project).
+  @Mutation(() => [TranslatedUnit])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  async translateLocalizationUnits(@Args('data') data: TranslateLocalizationUnitsInput) {
+    return await this.machineTranslationService.translateUnits(data);
   }
 }

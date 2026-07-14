@@ -34,13 +34,13 @@ export const EventRowActions = (props: EventRowActionsProps) => {
         items={[
           {
             key: 'edit',
-            icon: <EditIcon className="w-6" width={12} height={12} />,
+            icon: <EditIcon className="w-4 h-4 mr-2" />,
             label: t('settings.events.editMenuItem'),
             onSelect: () => setEditOpen(true),
           },
           {
             key: 'delete',
-            icon: <Delete2Icon className="w-6" width={16} height={16} />,
+            icon: <Delete2Icon className="w-4 h-4 mr-2" />,
             label: t('settings.events.deleteMenuItem'),
             destructive: true,
             separatorBefore: true,

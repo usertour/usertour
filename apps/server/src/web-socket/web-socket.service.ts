@@ -1235,6 +1235,9 @@ export class WebSocketService {
     if (!event) {
       return false;
     }
+    // No delivered-locale attribute here: the legacy v1 delivery paths never
+    // apply localized content, so stamping one would record a language the
+    // user was not actually served.
     const events = await this.getFilterdEventData(event.id, eventData);
     if (!events) {
       return false;

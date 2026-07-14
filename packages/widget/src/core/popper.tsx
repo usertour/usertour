@@ -14,6 +14,7 @@ import { WidgetClass } from './class-names';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
 import { POPPER_NAME, PopperProvider, usePopperContext } from './popper-context';
+import { useWidgetLocale } from '../locale/context';
 
 const OPPOSITE_SIDE: Record<Side, Side> = {
   top: 'bottom',
@@ -405,6 +406,7 @@ interface PopoverCloseProps {
 const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
   (props: PopoverCloseProps, forwardedRef) => {
     const { onClick, className } = props;
+    const { messages } = useWidgetLocale();
     const handleOnClick = () => {
       if (onClick) {
         onClick();
@@ -425,7 +427,7 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
         type="button"
         variant="custom"
         className={buttonClassName}
-        aria-label="Close"
+        aria-label={messages.close}
         onClick={handleOnClick}
         ref={forwardedRef}
       >

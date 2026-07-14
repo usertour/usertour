@@ -22,7 +22,9 @@ export class User extends BaseModel {
   @Field(() => String, { nullable: true })
   avatarUrl?: string;
 
-  @Field(() => [UserOnProject])
+  // Not every user read resolves project memberships — explicitly nullable
+  // so the contract can't drift with toolchain nullability inference.
+  @Field(() => [UserOnProject], { nullable: true })
   projects?: [UserOnProject];
 
   @HideField()

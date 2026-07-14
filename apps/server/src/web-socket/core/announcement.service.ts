@@ -1,4 +1,9 @@
-import { cuid } from '@usertour/helpers';
+import {
+  cuid,
+  matchTranslationByLocale,
+  mergeLocalizedVersionData,
+  resolveUserLocaleCode,
+} from '@usertour/helpers';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -142,7 +147,17 @@ export class AnnouncementService {
       include: {
         content: { select: { id: true, name: true } },
         publishedVersion: {
-          select: { id: true, data: true, config: true, scheduledAt: true, themeId: true },
+          select: {
+            id: true,
+            data: true,
+            config: true,
+            scheduledAt: true,
+            themeId: true,
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localized: true, localization: { select: { code: true } } },
+            },
+          },
         },
       },
       orderBy: { publishedVersion: { scheduledAt: 'desc' } },
@@ -158,7 +173,7 @@ export class AnnouncementService {
     return visible.filter(hasPublishedVersion).map((item) => ({
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: item.publishedVersion,
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
     }));
   }
 
@@ -187,7 +202,17 @@ export class AnnouncementService {
       include: {
         content: { select: { id: true, name: true } },
         publishedVersion: {
-          select: { id: true, data: true, config: true, scheduledAt: true, themeId: true },
+          select: {
+            id: true,
+            data: true,
+            config: true,
+            scheduledAt: true,
+            themeId: true,
+            versionOnLocalization: {
+              where: { enabled: true },
+              select: { localized: true, localization: { select: { code: true } } },
+            },
+          },
         },
       },
     });
@@ -214,7 +239,48 @@ export class AnnouncementService {
     return {
       contentId: item.contentId,
       content: item.content,
-      publishedVersion: item.publishedVersion,
+      publishedVersion: this.localizePublishedVersion(item.publishedVersion, bizUser),
+    };
+  }
+
+  /**
+   * Substitute the user's locale translation into the announcement's version
+   * data — same rules as the session delivery pipeline (explicit locale_code
+   * attribute, never auto-detected; exact code match first, then primary
+   * language subtag). Every announcement read path (feed, by-id detail,
+   * popup) flows through the two find methods above, so localizing here
+   * covers all surfaces, including the attribute extraction that runs on
+   * the returned content.
+   */
+  private localizePublishedVersion(
+    publishedVersion: {
+      id: string;
+      data: unknown;
+      scheduledAt: Date | null;
+      themeId: string | null;
+      versionOnLocalization: { localized: unknown; localization: { code: string } }[];
+    },
+    bizUser: BizUser | null,
+  ): VisibleAnnouncement['publishedVersion'] {
+    const { versionOnLocalization, ...version } = publishedVersion;
+    if (versionOnLocalization.length === 0 || !version.data) {
+      return version;
+    }
+    const localeCode = resolveUserLocaleCode(bizUser?.data);
+    if (!localeCode) {
+      return version;
+    }
+    const matched = matchTranslationByLocale(versionOnLocalization, localeCode);
+    if (!matched?.localized) {
+      return version;
+    }
+    return {
+      ...version,
+      data: mergeLocalizedVersionData(
+        ContentDataType.ANNOUNCEMENT,
+        version.data,
+        matched.localized,
+      ),
     };
   }
 

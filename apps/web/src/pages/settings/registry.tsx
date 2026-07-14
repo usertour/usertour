@@ -12,6 +12,7 @@ import {
   RiShieldKeyholeLine,
   RiTeamLine,
   RiTerminalBoxLine,
+  RiTranslate2,
 } from '@usertour/icons';
 import { Capability, type GlobalConfig } from '@usertour/types';
 
@@ -83,8 +84,8 @@ export interface SettingsSection {
   /**
    * Section is reachable by direct URL (`/settings/:key`) but is
    * intentionally not surfaced in the sidebar. Mirrors the historical
-   * setup where localizations and integrations had dispatcher + capability
-   * entries but no sidebar item.
+   * setup where integrations had dispatcher + capability entries but no
+   * sidebar item.
    */
   hideFromSidebar?: boolean;
   component: LazyExoticComponent<ComponentType>;
@@ -170,11 +171,10 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     key: 'localizations',
     title: 'Localization',
-    icon: <RiPaletteLine className={ICON_CLASS} />,
+    icon: <RiTranslate2 className={ICON_CLASS} />,
     capability: Capability.LocalizationRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
-    hideFromSidebar: true,
     component: lazy(() =>
       import('./localizations').then((module) => ({ default: module.SettingsLocalizationList })),
     ),

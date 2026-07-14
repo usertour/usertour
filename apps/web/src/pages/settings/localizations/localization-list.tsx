@@ -9,17 +9,18 @@ import { format } from 'date-fns';
 import { LocalizationCreateDialog } from './components/localization-create-dialog';
 import { LocalizationRowActions } from './components/localization-row-actions';
 
-const LOCALIZATION_DOCS_HREF =
-  'https://docs.usertour.io/building-experiences/creating-your-first-flow/';
+const LOCALIZATION_DOCS_HREF = 'https://docs.usertour.io/how-to-guides/localization';
 
 const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
+  const { isViewOnly } = useAppContext();
   const [open, setOpen] = useState(false);
   return (
     <>
       <NewItemButton
         onClick={() => setOpen(true)}
         className="flex-none"
+        disabled={isViewOnly}
         label={t('settings.localizations.newButton')}
       />
       <LocalizationCreateDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
@@ -54,6 +55,7 @@ export const SettingsLocalizationList = () => {
     },
     {
       header: '',
+      headerClassName: 'w-20',
       cell: (item) => <LocalizationRowActions localization={item} />,
     },
   ];

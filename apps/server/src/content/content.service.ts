@@ -15,7 +15,13 @@ import {
   VersionNotEditableError,
 } from '@/common/errors';
 import { ContentConfigObject, ContentDataType } from '@usertour/types';
-import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
+import {
+  duplicateConfig,
+  duplicateData,
+  duplicateStep,
+  remapFlowTranslationIdentifiers,
+  remapVersionDataTranslationIdentifiers,
+} from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
@@ -181,6 +187,8 @@ export class ContentService {
           } as any,
         });
 
+        await this.copyVersionLocalizations(tx, sourceVersion.id, version.id);
+
         // Update content to point to the new edited version
         await tx.content.update({
           where: { id: contentId },
@@ -193,44 +201,6 @@ export class ContentService {
       if (error instanceof ParamsError) {
         throw error;
       }
-      throw new UnknownError();
-    }
-  }
-
-  async updateStepsSequence(versionId: string, stepIds: string[]) {
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      return;
-    }
-    const steps = await this.prisma.step.findMany({
-      where: { id: { in: stepIds }, versionId },
-    });
-    if (steps.length !== stepIds.length) {
-      throw new ParamsError();
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        //up sequence
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        //update or create step
-        for (let index = 0; index < steps.length; index++) {
-          const step = steps[index];
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { ...step, sequence: index },
-            });
-          }
-        }
-      });
-    } catch (_) {
       throw new UnknownError();
     }
   }
@@ -574,6 +544,38 @@ export class ContentService {
             steps: { create: [...steps] },
           },
         });
+
+        // Translations copy over like fork/restore do, but duplicating
+        // regenerates question cvids and checklist item ids (the copy must
+        // not share analytics identities), so localized/backup get the new
+        // identifiers written in by position first.
+        const remapTranslationPayload = (payload: unknown): unknown => {
+          if (duplicateContent.type === ContentDataType.FLOW) {
+            return remapFlowTranslationIdentifiers(steps, payload);
+          }
+          return remapVersionDataTranslationIdentifiers(
+            duplicateContent.type,
+            processedData,
+            payload,
+          );
+        };
+        const versionLocalizations = await tx.versionOnLocalization.findMany({
+          where: { versionId: editedVersion.id },
+        });
+        if (versionLocalizations.length > 0) {
+          await tx.versionOnLocalization.createMany({
+            data: versionLocalizations.map((versionLocalization) => ({
+              versionId: version.id,
+              localizationId: versionLocalization.localizationId,
+              enabled: versionLocalization.enabled,
+              localized: remapTranslationPayload(
+                versionLocalization.localized,
+              ) as Prisma.InputJsonValue,
+              backup: remapTranslationPayload(versionLocalization.backup) as Prisma.InputJsonValue,
+            })),
+          });
+        }
+
         await tx.content.update({
           where: { id: content.id },
           data: { editedVersionId: version.id },
@@ -616,6 +618,7 @@ export class ContentService {
             steps: { create: [...oldSteps] },
           } as any,
         });
+        await this.copyVersionLocalizations(tx, restoreVersion.id, version.id);
         await tx.content.update({
           where: { id: contentId },
           data: { editedVersionId: version.id },
@@ -712,56 +715,72 @@ export class ContentService {
     }
   }
 
-  async findManyVersionLocations(versionId: string) {
-    const version = await this.prisma.version.findUnique({
-      where: { id: versionId },
-      include: { content: true },
-    });
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: version.content.environmentId },
-    });
-
-    const localizations = await this.prisma.localization.findMany({
-      where: { projectId: environment.projectId },
-    });
-
-    for (let index = 0; index < localizations.length; index++) {
-      const localization = localizations[index];
-      const relation = await this.prisma.versionOnLocalization.findFirst({
-        where: { versionId, localizationId: localization.id },
-      });
-      if (!relation) {
-        await this.prisma.versionOnLocalization.create({
-          data: {
-            versionId,
-            localizationId: localization.id,
-            localized: {},
-            backup: {},
-          },
-        });
-      }
-    }
-
+  async listVersionLocalizations(versionId: string) {
+    // Pure read: locales without a row are simply untranslated — the web
+    // client renders them from listLocalizations and the row appears on the
+    // first upsert.
     return await this.prisma.versionOnLocalization.findMany({
       where: { versionId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
-  async upsertVersionLocationData(input: VersionUpdateLocalizationInput) {
+  async upsertVersionLocalization(input: VersionUpdateLocalizationInput) {
     const { versionId, localizationId, localized, backup, enabled } = input;
     if (!(await this.contentVersionIsEditable(versionId))) {
       throw new ParamsError();
     }
-    const relation = await this.prisma.versionOnLocalization.findFirst({
-      where: { versionId, localizationId },
+    // localized/backup are optional: undefined is skipped by the update
+    // clause, so a state-only write (the enable toggle) can never clobber
+    // a translation saved from elsewhere.
+    return await this.prisma.$transaction(async (tx) => {
+      const row = await tx.versionOnLocalization.upsert({
+        where: { versionId_localizationId: { versionId, localizationId } },
+        create: {
+          versionId,
+          localizationId,
+          localized: localized ?? {},
+          backup: backup ?? {},
+          enabled,
+        },
+        update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
+      });
+      // Translations belong to the draft, so saving one counts as saving the
+      // draft: touch the version's updatedAt and hand the version back — the
+      // client's normalized cache then moves the header's "Autosaved"
+      // timestamp without a refetch. Only editable drafts reach this point
+      // (gate above), so no delivered version is ever touched.
+      const version = await tx.version.update({
+        where: { id: versionId },
+        data: { updatedAt: new Date() },
+      });
+      return { ...row, version };
     });
-    if (!relation) {
-      throw new ParamsError();
+  }
+
+  /**
+   * Translations are keyed by step cvid, which step copies carry verbatim, so
+   * a forked or restored version can reuse the source version's rows as-is.
+   */
+  private async copyVersionLocalizations(
+    tx: Prisma.TransactionClient,
+    fromVersionId: string,
+    toVersionId: string,
+  ) {
+    const versionLocalizations = await tx.versionOnLocalization.findMany({
+      where: { versionId: fromVersionId },
+    });
+    if (versionLocalizations.length === 0) {
+      return;
     }
-    return await this.prisma.versionOnLocalization.update({
-      where: { id: relation.id },
-      data: { localized, backup, enabled },
+    await tx.versionOnLocalization.createMany({
+      data: versionLocalizations.map((versionLocalization) => ({
+        versionId: toVersionId,
+        localizationId: versionLocalization.localizationId,
+        enabled: versionLocalization.enabled,
+        localized: versionLocalization.localized as Prisma.InputJsonValue,
+        backup: versionLocalization.backup as Prisma.InputJsonValue,
+      })),
     });
   }
 
