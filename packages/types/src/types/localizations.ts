@@ -45,4 +45,9 @@ export type VersionOnLocalization = {
   backup: LocalizedFlowContent | LocalizedVersionData | null;
   updatedAt: string;
   createdAt: string;
+  /**
+   * The owning version, present on upsert responses only: the save touches
+   * the version's updatedAt so "Autosaved" reflects translation work.
+   */
+  version?: { id: string; updatedAt: string } | null;
 };

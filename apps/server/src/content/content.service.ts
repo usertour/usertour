@@ -205,44 +205,6 @@ export class ContentService {
     }
   }
 
-  async updateStepsSequence(versionId: string, stepIds: string[]) {
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      return;
-    }
-    const steps = await this.prisma.step.findMany({
-      where: { id: { in: stepIds }, versionId },
-    });
-    if (steps.length !== stepIds.length) {
-      throw new ParamsError();
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        //up sequence
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        //update or create step
-        for (let index = 0; index < steps.length; index++) {
-          const step = steps[index];
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { ...step, sequence: index },
-            });
-          }
-        }
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
   async getContentVersionById(versionId: string) {
     return await this.prisma.version.findUnique({
       where: { id: versionId },
@@ -771,16 +733,28 @@ export class ContentService {
     // localized/backup are optional: undefined is skipped by the update
     // clause, so a state-only write (the enable toggle) can never clobber
     // a translation saved from elsewhere.
-    return await this.prisma.versionOnLocalization.upsert({
-      where: { versionId_localizationId: { versionId, localizationId } },
-      create: {
-        versionId,
-        localizationId,
-        localized: localized ?? {},
-        backup: backup ?? {},
-        enabled,
-      },
-      update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
+    return await this.prisma.$transaction(async (tx) => {
+      const row = await tx.versionOnLocalization.upsert({
+        where: { versionId_localizationId: { versionId, localizationId } },
+        create: {
+          versionId,
+          localizationId,
+          localized: localized ?? {},
+          backup: backup ?? {},
+          enabled,
+        },
+        update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
+      });
+      // Translations belong to the draft, so saving one counts as saving the
+      // draft: touch the version's updatedAt and hand the version back — the
+      // client's normalized cache then moves the header's "Autosaved"
+      // timestamp without a refetch. Only editable drafts reach this point
+      // (gate above), so no delivered version is ever touched.
+      const version = await tx.version.update({
+        where: { id: versionId },
+        data: { updatedAt: new Date() },
+      });
+      return { ...row, version };
     });
   }
 

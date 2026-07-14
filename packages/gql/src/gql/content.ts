@@ -398,6 +398,12 @@ export const upsertVersionLocalization = gql`
       enabled
       localized
       backup
+      # The save touches the owning draft's updatedAt; selecting it lets the
+      # normalized cache move the header's "Autosaved" without a refetch.
+      version {
+        id
+        updatedAt
+      }
     }
   }
 `;

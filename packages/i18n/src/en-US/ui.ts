@@ -1971,7 +1971,6 @@ const translations = {
       status: { disabled: 'Disabled', enabled: 'Enabled' },
       sourceLabel: 'Source',
       saving: 'Saving…',
-      saved: 'Saved',
       sourceChanged: 'Source changed',
       onlyUntranslated: 'Only untranslated',
       previewButton: 'Preview',

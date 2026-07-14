@@ -3,7 +3,10 @@ import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export type LocalizationSaveState = 'idle' | 'saving' | 'saved';
+// No 'saved' state on purpose: a resting "Saved" label is permanent noise.
+// The editor surfaces only the in-flight moment; failures toast, and the
+// unmount flush keeps navigation from dropping an edit.
+export type LocalizationSaveState = 'idle' | 'saving';
 
 export interface LocalizationAutosaveOptions {
   /**
@@ -57,7 +60,7 @@ export const useLocalizationAutosave = (options: LocalizationAutosaveOptions) =>
         backup: buildBackupRef.current(),
         enabled: enabledRef.current,
       });
-      setSaveState('saved');
+      setSaveState('idle');
     } catch (_) {
       setSaveState('idle');
       toast({
