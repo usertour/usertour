@@ -12,6 +12,7 @@ import {
   PopperProgress,
   useSettingsStyles,
   useStepWidth,
+  WidgetLocaleProvider,
 } from '@usertour/widget';
 import {
   Align,
@@ -88,6 +89,7 @@ const useTourStore = (tour: UsertourTour) => {
     currentStepIndex,
     totalSteps,
     linkUrlDecorator,
+    userLocale,
   } = store;
 
   if (!currentStep || !openState) {
@@ -107,6 +109,7 @@ const useTourStore = (tour: UsertourTour) => {
     currentStepIndex: currentStepIndex || 0,
     totalSteps: totalSteps || 0,
     linkUrlDecorator,
+    userLocale,
   };
 };
 
@@ -428,8 +431,10 @@ export const TourWidget = (props: { tour: UsertourTour }) => {
   }
 
   return (
-    <LinkDecoratorContext.Provider value={storeData.linkUrlDecorator || null}>
-      {content}
-    </LinkDecoratorContext.Provider>
+    <WidgetLocaleProvider locale={storeData.userLocale}>
+      <LinkDecoratorContext.Provider value={storeData.linkUrlDecorator || null}>
+        {content}
+      </LinkDecoratorContext.Provider>
+    </WidgetLocaleProvider>
   );
 };

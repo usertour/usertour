@@ -34,13 +34,13 @@ export const AttributeRowActions = (props: AttributeRowActionsProps) => {
         items={[
           {
             key: 'edit',
-            icon: <EditIcon className="w-6" width={12} height={12} />,
+            icon: <EditIcon className="w-4 h-4 mr-2" />,
             label: t('settings.attributes.editMenuItem'),
             onSelect: () => setEditOpen(true),
           },
           {
             key: 'delete',
-            icon: <Delete2Icon className="w-6" width={16} height={16} />,
+            icon: <Delete2Icon className="w-4 h-4 mr-2" />,
             label: t('settings.attributes.deleteMenuItem'),
             destructive: true,
             separatorBefore: true,

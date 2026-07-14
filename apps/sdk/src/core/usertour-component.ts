@@ -214,7 +214,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Refreshes the store data for the component
+   * Refreshes the store data from the current session. Everything except
+   * openState is rebuilt: buildStoreData always reports openState: false,
+   * and writing that over an open component would close it. Exclusion
+   * rather than a field pick, so base fields added later (userLocale,
+   * removeBranding, ...) refresh on session updates instead of silently
+   * going stale — a mid-session locale_code change must move the widget's
+   * built-in strings along with the content.
    */
   async refreshStoreData(): Promise<void> {
     const newStore = await this.buildStoreData();
@@ -222,22 +228,8 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     if (!newStore || !existingStore) {
       return;
     }
-
-    // Extract common properties
-    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-    const baseData = {
-      userAttributes,
-      assets,
-      globalStyle,
-      themeSettings,
-    };
-    const customData = await this.getCustomStoreData({ baseData });
-
-    // Update store with common and specific data
-    this.updateStore({
-      ...baseData,
-      ...customData,
-    });
+    const { openState, ...refreshedData } = newStore;
+    this.updateStore(refreshedData as Partial<TStore>);
   }
 
   /**
@@ -356,6 +348,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const themeData = UsertourTheme.createThemeData(themeSettings);
     const userAttributes = this.getUserAttributes();
     const removeBranding = this.isRemoveBranding();
+    const userLocale = this.getUserLocale();
     const linkUrlDecorator = this.getLinkUrlDecorator();
 
     // Calculate final zIndex using subclass implementation
@@ -363,6 +356,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
     return {
       removeBranding,
+      userLocale,
       ...themeData,
       userAttributes,
       openState: false,
@@ -539,6 +533,16 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected isRemoveBranding(): boolean {
     return this.session.isRemoveBranding();
+  }
+
+  /**
+   * The locale for the widget chrome: the server-resolved locale stamped on
+   * the session (explicit locale_code attribute, else the project's default
+   * localization). Never auto-detected from the browser — absent (older
+   * servers) means the chrome falls back to English.
+   */
+  protected getUserLocale(): string | undefined {
+    return this.session.getUserLocale();
   }
 
   // === Theme Management ===

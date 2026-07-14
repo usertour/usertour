@@ -2,11 +2,11 @@ import { type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   createContent,
   duplicateContent,
-  findManyVersionLocations,
   getContent,
   getContentVersion,
   listContentPublishRecords,
   listContentVersions,
+  listVersionLocalizations,
   publishedContentVersion,
   queryContent,
   restoreContentVersion,
@@ -65,17 +65,22 @@ export const useGetContentVersionQuery = (
   return { version, loading, refetch, error };
 };
 
-export const useFindManyVersionLocationsQuery = (
+export const useListVersionLocalizationsQuery = (
   versionId: string | undefined,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, refetch, error } = useQuery(findManyVersionLocations, {
+  const { data, previousData, loading, refetch, error } = useQuery(listVersionLocalizations, {
     variables: { versionId },
     skip: !versionId,
     ...options,
   });
 
-  const contentLocalizationList: VersionOnLocalization[] = data?.findManyVersionLocations ?? [];
+  // Fall back to the previous version's rows while a version switch loads —
+  // same pattern as useGetContentVersionQuery above. Editing a published
+  // version forks a draft whose rows are verbatim clones, and rendering an
+  // empty list during the swap reads as every locale flipping to disabled.
+  const contentLocalizationList: VersionOnLocalization[] =
+    (data ?? previousData)?.listVersionLocalizations ?? [];
 
   return { contentLocalizationList, loading, refetch, error };
 };

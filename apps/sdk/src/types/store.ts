@@ -19,6 +19,8 @@ export interface BaseStore {
   assets: AssetAttributes[] | undefined;
   userAttributes?: UserTourTypes.Attributes;
   removeBranding: boolean;
+  /** Drives the widget chrome translations; falls back to the browser locale. */
+  userLocale?: string;
   themeSettings: ThemeTypesSetting;
   linkUrlDecorator?: ((url: string) => string) | null;
 }

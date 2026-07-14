@@ -14,7 +14,9 @@ export class BizModel extends BaseModel {
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonObject;
 
-  @Field(() => GraphQLJSON)
+  // Populated only on membership-detail reads — explicitly nullable so the
+  // contract can't drift with toolchain nullability inference.
+  @Field(() => GraphQLJSON, { nullable: true })
   membership?: JsonObject;
 }
 

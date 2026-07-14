@@ -8,11 +8,11 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '../primitives/command';
 import { locates } from '@usertour/constants';
 import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover';
 import type { PopoverProps } from '../primitives/popover';
-import { ScrollArea } from '../primitives/scroll-area';
 import { cn } from '@usertour/tailwind';
 
 export type LocateItem = (typeof locates)[0];
@@ -55,7 +55,10 @@ export const LocateSelect = (props: LocateSelectProps) => {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} {...rest}>
+    // modal: the picker lives inside modal dialogs, whose scroll lock
+    // swallows wheel events on portaled popover content — a modal popover
+    // takes the lock over and lets its own list scroll.
+    <Popover open={open} onOpenChange={setOpen} modal {...rest}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -63,24 +66,28 @@ export const LocateSelect = (props: LocateSelectProps) => {
           aria-expanded={open}
           className="w-full justify-between "
         >
-          {selectedItem ? selectedItem.language.name : triggerPlaceholder}
+          {selectedItem ? selectedItem.name : triggerPlaceholder}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align={'start'} className={cn('p-0', popperContentClass)}>
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandEmpty>{emptyMessage}</CommandEmpty>
-          <CommandGroup heading={groupHeading}>
-            <ScrollArea className="h-72">
+          {/* CommandList owns scrolling and cmdk's keyboard navigation — a
+              nested ScrollArea here breaks wheel scrolling inside the popover. */}
+          <CommandList>
+            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandGroup heading={groupHeading}>
               {locates.map((item) => (
                 <CommandItem
                   key={item.locale}
+                  value={`${item.name} ${item.locale}`}
                   onSelect={() => {
                     handleOnSelected(item);
                   }}
                 >
-                  {item.language.name}({item.country.name})
+                  {item.name}
+                  <span className="ml-2 text-muted-foreground">{item.locale}</span>
                   <CheckIcon
                     className={cn(
                       'ml-auto h-4 w-4',
@@ -89,8 +96,8 @@ export const LocateSelect = (props: LocateSelectProps) => {
                   />
                 </CommandItem>
               ))}
-            </ScrollArea>
-          </CommandGroup>
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

@@ -20,6 +20,7 @@ import { useComposedRefs } from '@usertour/react-compose-refs';
 
 import { Button } from '../primitives';
 import { useSettingsStyles } from './hooks/use-settings-styles';
+import { useWidgetLocale } from '../locale/context';
 import { cn } from '@usertour/tailwind';
 import { WidgetAnimation } from './class-names';
 
@@ -180,13 +181,14 @@ interface BannerDismissButtonProps {
 
 const BannerDismissButton = memo((props: BannerDismissButtonProps) => {
   const { onClick, className } = props;
+  const { messages } = useWidgetLocale();
   return (
     <Button
       variant="custom"
       type="button"
       className={cn(BANNER_DISMISS_BUTTON_CLASS, className)}
       onClick={onClick}
-      aria-label="Dismiss banner"
+      aria-label={messages.dismissBanner}
     >
       <RiCloseLargeFill className="size-4" />
     </Button>

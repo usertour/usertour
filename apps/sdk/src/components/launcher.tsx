@@ -7,6 +7,7 @@ import {
   LauncherPopper,
   LauncherPopperContentPotal,
   LauncherRoot,
+  WidgetLocaleProvider,
 } from '@usertour/widget';
 import {
   ContentEditorClickableElement,
@@ -155,6 +156,7 @@ const useLauncherStore = (launcher: UsertourLauncher) => {
     removeBranding,
     triggerRef,
     linkUrlDecorator,
+    userLocale,
   } = store;
 
   if (!launcherData || !openState || !triggerRef) {
@@ -172,6 +174,7 @@ const useLauncherStore = (launcher: UsertourLauncher) => {
     removeBranding,
     triggerRef,
     linkUrlDecorator,
+    userLocale,
   };
 };
 
@@ -296,6 +299,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
     removeBranding,
     triggerRef,
     linkUrlDecorator,
+    userLocale,
     assets,
   } = store;
 
@@ -304,19 +308,21 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
   }
 
   return (
-    <LauncherWidgetCore
-      data={launcherData}
-      handleActivate={launcher.handleActivate}
-      handleActions={(actions) => launcher.handleActions(actions)}
-      themeSettings={themeSettings}
-      zIndex={zIndex}
-      handleOnClick={launcher.handleOnClick}
-      userAttributes={userAttributes}
-      onTooltipClose={launcher.onTooltipClose}
-      el={triggerRef}
-      removeBranding={removeBranding}
-      linkUrlDecorator={linkUrlDecorator}
-      assets={assets}
-    />
+    <WidgetLocaleProvider locale={userLocale}>
+      <LauncherWidgetCore
+        data={launcherData}
+        handleActivate={launcher.handleActivate}
+        handleActions={(actions) => launcher.handleActions(actions)}
+        themeSettings={themeSettings}
+        zIndex={zIndex}
+        handleOnClick={launcher.handleOnClick}
+        userAttributes={userAttributes}
+        onTooltipClose={launcher.onTooltipClose}
+        el={triggerRef}
+        removeBranding={removeBranding}
+        linkUrlDecorator={linkUrlDecorator}
+        assets={assets}
+      />
+    </WidgetLocaleProvider>
   );
 };

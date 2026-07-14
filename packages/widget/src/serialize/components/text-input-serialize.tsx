@@ -5,6 +5,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { Button, Input, Textarea } from '../../primitives';
+import { useWidgetLocale } from '../../locale/context';
 
 // Constants
 const DEFAULT_PLACEHOLDER = 'Enter text...';
@@ -33,6 +34,7 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
   inputType,
   inputClassName,
 }: TextInputSerializeProps<T>) {
+  const { messages } = useWidgetLocale();
   const [value, setValue] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -44,10 +46,10 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
 
   const defaultValues = useMemo(
     () => ({
-      placeholder: element.data.placeholder || DEFAULT_PLACEHOLDER,
-      buttonText: element.data.buttonText || DEFAULT_BUTTON_TEXT,
+      placeholder: element.data.placeholder || messages.enterText,
+      buttonText: element.data.buttonText || messages.submit,
     }),
-    [element.data.placeholder, element.data.buttonText],
+    [element.data.placeholder, element.data.buttonText, messages],
   );
 
   const handleValueChange = useCallback(
@@ -78,7 +80,7 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
         placeholder={defaultValues.placeholder}
         value={value}
         onChange={handleValueChange}
-        aria-label="Text input field"
+        aria-label={messages.textInput}
         {...inputProps}
       />
       <div className="flex justify-end w-full">
@@ -86,7 +88,7 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
           className={inputType === 'input' ? 'flex-none' : undefined}
           onClick={handleSubmit}
           disabled={isDisabled}
-          aria-label={`Submit ${defaultValues.buttonText}`}
+          aria-label={defaultValues.buttonText}
         >
           {defaultValues.buttonText}
         </Button>

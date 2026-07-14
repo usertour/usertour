@@ -2,6 +2,7 @@
 
 import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
+import { useWidgetLocale } from '../locale/context';
 
 import { QUESTION_LABELS_CONTAINER_CLASS, STAR_SVG_PATH } from './constants';
 
@@ -79,6 +80,7 @@ export const StarRating = memo(
       },
       ref,
     ) => {
+      const { messages } = useWidgetLocale();
       const stars = useMemo(
         () =>
           Array.from({ length: scaleLength }, (_, i) => ({
@@ -108,7 +110,7 @@ export const StarRating = memo(
             style={{ gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))` }}
             onMouseLeave={onStarLeave}
             role="radiogroup"
-            aria-label="Star rating"
+            aria-label={messages.starRating}
           >
             {stars.map(({ index, value, isHighlighted }) => (
               <StarButton

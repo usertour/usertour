@@ -47,7 +47,7 @@ importers:
         version: 7.3.0(@swc/core@1.7.42)(postcss@8.4.47)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))(typescript@5.3.3)
       turbo:
         specifier: latest
-        version: 2.10.2
+        version: 2.10.4
 
   apps/sdk:
     dependencies:
@@ -217,6 +217,15 @@ importers:
 
   apps/server:
     dependencies:
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^5.0.16
+        version: 5.0.16(zod@4.4.3)
+      '@ai-sdk/anthropic':
+        specifier: ^4.0.8
+        version: 4.0.8(zod@4.4.3)
+      '@ai-sdk/openai-compatible':
+        specifier: ^3.0.5
+        version: 3.0.5(zod@4.4.3)
       '@apollo/server':
         specifier: ^4.13.0
         version: 4.13.0(encoding@0.1.13)(graphql@16.6.0)
@@ -358,6 +367,9 @@ importers:
       '@usertour/types':
         specifier: workspace:^
         version: link:../../packages/types
+      ai:
+        specifier: ^7.0.16
+        version: 7.0.16(zod@4.4.3)
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -1995,6 +2007,12 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.3.3)
     devDependencies:
+      '@jest/types':
+        specifier: ^29.6.3
+        version: 29.6.3
+      '@types/jest':
+        specifier: 29.4.0
+        version: 29.4.0
       '@types/react':
         specifier: ^18.0.37
         version: 18.2.15
@@ -2019,12 +2037,18 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.3.4
         version: 0.3.5(eslint@8.57.1)
+      jest:
+        specifier: 29.5.0
+        version: 29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
       react:
         specifier: ^18.2.0
         version: 18.2.0
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
+      ts-jest:
+        specifier: 29.0.5
+        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
@@ -2033,6 +2057,62 @@ importers:
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
 packages:
+
+  '@ai-sdk/amazon-bedrock@5.0.16':
+    resolution: {integrity: sha512-o2Ec5if6FudxB7YSepuJjm7L3QsJHWtD/+smAnDZnh5UYKWOJMU3R/cY83BWUIDZCk2I+mZkaqyxijh+OMiMwg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/anthropic@4.0.11':
+    resolution: {integrity: sha512-Xe9anDf2f1/kfror2VuWPdHZ4MJgzI2+ctTGYofjiGUjiVkjtBvVBdYtPhfFFGaY9zpbDeDTA+huqfvf51BGuw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/anthropic@4.0.8':
+    resolution: {integrity: sha512-ZqT9kLxS2Cbo/4juwtEGbYyP0jNQTnUUKy2nQ8Vn28xqNu50+TukO/oCEWCpm18YbQq7N+hr6ClJs/ATTFpBTg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/gateway@4.0.12':
+    resolution: {integrity: sha512-Y7Fy8xJwPz7ZC0DhSQG3HIVk+drup42hrIj6yqKlib3CxwiR0F7nYyUI8+kPrEtbZEoyKoRstvT4/o0HEyFBHA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/openai-compatible@3.0.5':
+    resolution: {integrity: sha512-4UtDxT6Ga7U225o5fBEgtCFZHba4/iTDXRqMrU62yEfTrFks4o+F4jt0D3OWmUasR9LPFzLy0KnEITxFDtc89g==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/openai@4.0.11':
+    resolution: {integrity: sha512-2PLnVPBsdJusgquPVYgPWd3ox4lbUFkp7DVUSmM0lQ4VISQoNxdgo6TvFAHgwQn9wJ/ckVYVRLU7+BvHc7T8ww==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@5.0.5':
+    resolution: {integrity: sha512-oI0t3dvCoqWNV1I8o1Rybi2DXDvHES5r/TrwtJW90tuFLVepgJlftPxrcjh8vaSvjqC2diTuA2vXyjKAyHJm4A==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@5.0.7':
+    resolution: {integrity: sha512-OSm5/5kdrHa11WIOo5LYgDKnxYWp5aB/wx5EXRHi0jpUGduMDeB6oht9U6p+UNNWIP3F/EqPpV8d7vdP/iRnqg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider@4.0.2':
+    resolution: {integrity: sha512-pfPoy9J1B1xV7cqJ8MYHOsDYrMv5tR3+EMNfI249OhkD2uRakvav3Fo7XpD2luuN/YNCBY7KfEQc7vEV7KEtyw==}
+    engines: {node: '>=22'}
+
+  '@ai-sdk/provider@4.0.3':
+    resolution: {integrity: sha512-e0CpNWJUY7OxAFAnCZkw+ri9QOHWwTs1tXP42782KFGCU07qt8NiXCrCVowyCB5dP2r5/Uls+g2oPd8kOJn9dw==}
+    engines: {node: '>=22'}
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -6494,12 +6574,20 @@ packages:
     resolution: {integrity: sha512-f7uPeBi7ehmLT4YF2u9j3qx6lSnurG1DLXOsTtJrIRNDF7VXio4BGHQ+SQteN/BrUVudbkuL4v7oOsRCzq4BqA==}
     engines: {node: '>=18.0.0'}
 
+  '@smithy/core@3.29.2':
+    resolution: {integrity: sha512-DXUk6yU0C1Q1tYvJh1VCtl8QOBcSoZpKwjTPkxT6A4MUQYHvgeKGByL8mrEdxnvhdf9nq5GyzmRb5n/vPgu3Lw==}
+    engines: {node: '>=18.0.0'}
+
   '@smithy/credential-provider-imds@4.2.11':
     resolution: {integrity: sha512-lBXrS6ku0kTj3xLmsJW0WwqWbGQ6ueooYyp/1L9lkyT0M02C+DWwYwc5aTyXFbRaK38ojALxNixg+LxKSHZc0g==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/eventstream-codec@4.2.11':
     resolution: {integrity: sha512-Sf39Ml0iVX+ba/bgMPxaXWAAFmHqYLTmbjAPfLPLY8CrYkRDEqZdUsKC1OwVMCdJXfAt0v4j49GIJ8DoSYAe6w==}
+    engines: {node: '>=18.0.0'}
+
+  '@smithy/eventstream-codec@4.4.7':
+    resolution: {integrity: sha512-YNodWVjMFOMAyjQgpHBBCz62DbYu4xwhpt+z5HRf7OZPwrfHgNDCyUZxaC0fy9/2TWcO+niOMHSl8aMgfbWZTQ==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/eventstream-serde-browser@4.2.11':
@@ -6630,6 +6718,10 @@ packages:
     resolution: {integrity: sha512-COuLsZILbbQsdrwKQpkkpyep7lCsByxwj7m0Mg5v66/ZTyenlfBc40/QFQ5chO0YN/PNEH1Bi3fGtfXPnYNeDw==}
     engines: {node: '>=18.0.0'}
 
+  '@smithy/types@4.16.0':
+    resolution: {integrity: sha512-aVUabzlBBmY0PfvVgLKQSOGFIL5/7R54JE3uD9a5Ay/jSED61SkuAcCYENNXJzYUvJ1NPrWO0P+rAXHCkbBUKw==}
+    engines: {node: '>=18.0.0'}
+
   '@smithy/url-parser@2.2.0':
     resolution: {integrity: sha512-hoA4zm61q1mNTpksiSWp2nEl1dt3j726HdRhiNgVJQMj7mLp7dprtF57mOB6JvEk/x9d2bsuL5hlqZbBuHQylQ==}
 
@@ -6701,6 +6793,10 @@ packages:
     resolution: {integrity: sha512-75MeYpjdWRe8M5E3AW0O4Cx3UadweS+cwdXjwYGBW5h/gxxnbeZ877sLPX/ZJA9GVTlL/qG0dXP29JWFCD1Ayw==}
     engines: {node: '>=18.0.0'}
 
+  '@smithy/util-utf8@4.4.7':
+    resolution: {integrity: sha512-NskAyOBZcHO+fa1HwkwWuPbMUQE7NZ4IWBnAc71E4f9IdoQ65WLkdJ2ed/n4Q8vePSgZUN/CbyGZLBiI7dMI+w==}
+    engines: {node: '>=18.0.0'}
+
   '@smithy/util-waiter@4.2.11':
     resolution: {integrity: sha512-x7Rh2azQPs3XxbvCzcttRErKKvLnbZfqRf/gOjw2pb+ZscX88e5UkRPCB67bVnsFHxayvMvmePfKTqsRb+is1A==}
     engines: {node: '>=18.0.0'}
@@ -6723,6 +6819,9 @@ packages:
     engines: {node: '>=10.0.0'}
     peerDependencies:
       socket.io-adapter: ^2.5.4
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
@@ -6895,33 +6994,33 @@ packages:
     resolution: {integrity: sha512-qaGV9ltJP0EO25YfFUPhxRVK0evXFIAGicsVXuRim4Ed9cjPxYhNnNJ49SFmbeLgtxpslIkX317IgpfcHPVj/A==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
-  '@turbo/darwin-64@2.10.2':
-    resolution: {integrity: sha512-wBM3ObqOWnKUDmg7QfUFDkDHPFUAJmrYlYqmEM8jMPAPA/I6wRJIbWimeQUqhOiQ8xPKhzyWM+xaiUP0wz8FEQ==}
+  '@turbo/darwin-64@2.10.4':
+    resolution: {integrity: sha512-m1MUEI4MJ69r5CwfMYxmHi0H0rrgiYCBOp0tgBZ9x/YVvOb5uu/lRIDyDwdtH054R2yWeQaIigUGu6aCX9f8cA==}
     cpu: [x64]
     os: [darwin]
 
-  '@turbo/darwin-arm64@2.10.2':
-    resolution: {integrity: sha512-/Cq0joWnuMjDPfhjbFP4sv+C/7gkQ415zlaO4XUzD5EZxbtrKgXKvuuydMvogG8GeUnN1aDltW71RlmEfpjbyw==}
+  '@turbo/darwin-arm64@2.10.4':
+    resolution: {integrity: sha512-VQ1Yxs5zkPT+2z7t1P4mvn6JmcKLkOCAsPuK9XbOvuVj0DlTlETfIXNisX0771v/vTWHOQqiwoGi+TtAUq8efw==}
     cpu: [arm64]
     os: [darwin]
 
-  '@turbo/linux-64@2.10.2':
-    resolution: {integrity: sha512-mMsf5IIhiKuceEXNstd25IbadjBXZ0amxzFOqliEzJX6HyeeHdBQPVSY583PWqYDyqM/FB8d5ZjkthfBSeuH3Q==}
+  '@turbo/linux-64@2.10.4':
+    resolution: {integrity: sha512-IzV1QovmwX7mfGnVinmE++2IB8tbeo38weltiuH5zNqwCTBjLs/DytyRKx+bmnhHdXIq9SheR8p0Nip/LBUPHg==}
     cpu: [x64]
     os: [linux]
 
-  '@turbo/linux-arm64@2.10.2':
-    resolution: {integrity: sha512-Wcng1i2kaKmXutmwxT9MUoYZvdaIekXAdlGr4+0TpgbhGLw7nDuEcRBFrxb5BbRoX1d1q8SpdRxLc45TvDZIdQ==}
+  '@turbo/linux-arm64@2.10.4':
+    resolution: {integrity: sha512-rfujSQkP5aYiRn0PgTM7F00WkJCP/bKDVZbOx3WmrZwa/vHA0bplhCl328kpX7VI9HH2vI90ISGwuSVgJgoqTw==}
     cpu: [arm64]
     os: [linux]
 
-  '@turbo/windows-64@2.10.2':
-    resolution: {integrity: sha512-SsNhM7Ho7EpAdwtrJKBOic9Hso23vu6Dp0gAfLOvUFjPzurr/sGQlXZEvr6z89ne4RDOypTwz5CBDrixpMKtXw==}
+  '@turbo/windows-64@2.10.4':
+    resolution: {integrity: sha512-NnspP7Wd5fa3Wwnqv9bKfhegqZzuHBgbPxdZU/idTLQcazx/vgKu95JlCx2YHY0hdvKCnPcARrDwM+KEUmaO7A==}
     cpu: [x64]
     os: [win32]
 
-  '@turbo/windows-arm64@2.10.2':
-    resolution: {integrity: sha512-Gf+S7ICAdimT/n02bOuVWKvhHnct/HYjZg3oBNIz5hZ9ZyWHbQim9J3P5Qip8WpX0ksxF7eaBVziJCuLnjhqDg==}
+  '@turbo/windows-arm64@2.10.4':
+    resolution: {integrity: sha512-Iv02YgOpaEShc2OkG7mgCJ2pEw1RUKiKbs0h8W5wAf4jZ5vpmraTEjuGTgHRuOORQnC1GN3KHo5WB+hu1abRMA==}
     cpu: [arm64]
     os: [win32]
 
@@ -7431,6 +7530,10 @@ packages:
   '@usertour/license@0.0.3':
     resolution: {integrity: sha512-pYCEc7+9EUYcjQBMWmBBt0mTrVLDKgTSiYQGFTNfxaN/vrbPqCvhmS9k2Bba2MtZDhMDRuGH5Rf7iqM0Krh3Cg==}
 
+  '@vercel/oidc@3.2.0':
+    resolution: {integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==}
+    engines: {node: '>= 20'}
+
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
     engines: {node: '>=14.6.0'}
@@ -7502,6 +7605,9 @@ packages:
 
   '@webassemblyjs/wast-printer@1.12.1':
     resolution: {integrity: sha512-+X4WAlOisVWQMikjbcvY2e0rwPsKQ9F688lksZhBcPycBBuii3O7m8FACbDMWDojpAqvjIncrG8J0XHKyQfVeA==}
+
+  '@workflow/serde@4.1.0':
+    resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
 
   '@wry/caches@1.0.1':
     resolution: {integrity: sha512-bXuaUNLVVkD20wcGBWRyo7j9N3TxePEWFZj2Y+r9OoUzfqmavM84+mFykRicNsBqatba5JLay1t48wxaXaWnlA==}
@@ -7592,6 +7698,12 @@ packages:
   aggregate-error@3.1.0:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
+
+  ai@7.0.16:
+    resolution: {integrity: sha512-OuA+uz6ZUVId+SVeB5bThi25Ofee/FmLvffAA368tlgqYCe2qAhqZUpfHL0dd9QC/iPiszdvCQYENJavSo/0gw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
@@ -7777,6 +7889,9 @@ packages:
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
+
+  aws4fetch@1.0.20:
+    resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
 
   axios@1.7.7:
     resolution: {integrity: sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==}
@@ -9540,12 +9655,12 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
@@ -10442,6 +10557,9 @@ packages:
 
   json-schema-typed@8.0.2:
     resolution: {integrity: sha512-fQhoXdcvc3V28x7C7BMs4P5+kNlgUURe2jmUT1T//oBRMDrqy1QPelJimwZGo7Hg9VPV3EQV5Bnq4hbFy2vetA==}
+
+  json-schema@0.4.0:
+    resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
 
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
@@ -13797,8 +13915,8 @@ packages:
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
-  turbo@2.10.2:
-    resolution: {integrity: sha512-wTExrNrRjB8qzIcg+ZLm0A3GFNLDsWNwdS/RBXB0FPrBDyzk3i96Yx+TxWZC7a0k1SIreFB8ciUbxjmEqTH8IQ==}
+  turbo@2.10.4:
+    resolution: {integrity: sha512-GQpduILaKjoaGljw097ScsSyKTtZSY7cZ3bJktzfTkPMyCf3ShKLuXK2IaOEN2Plziml+ArR7WJ1m+V4VbnaKQ==}
     hasBin: true
 
   type-check@0.4.0:
@@ -14018,7 +14136,7 @@ packages:
 
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
     hasBin: true
 
   uuid@8.3.2:
@@ -14508,6 +14626,72 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@ai-sdk/amazon-bedrock@5.0.16(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/anthropic': 4.0.11(zod@4.4.3)
+      '@ai-sdk/openai': 4.0.11(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.7(zod@4.4.3)
+      '@smithy/eventstream-codec': 4.4.7
+      '@smithy/util-utf8': 4.4.7
+      aws4fetch: 1.0.20
+      zod: 4.4.3
+
+  '@ai-sdk/anthropic@4.0.11(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.7(zod@4.4.3)
+      zod: 4.4.3
+
+  '@ai-sdk/anthropic@4.0.8(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.2
+      '@ai-sdk/provider-utils': 5.0.5(zod@4.4.3)
+      zod: 4.4.3
+
+  '@ai-sdk/gateway@4.0.12(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.2
+      '@ai-sdk/provider-utils': 5.0.5(zod@4.4.3)
+      '@vercel/oidc': 3.2.0
+      zod: 4.4.3
+
+  '@ai-sdk/openai-compatible@3.0.5(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.2
+      '@ai-sdk/provider-utils': 5.0.5(zod@4.4.3)
+      zod: 4.4.3
+
+  '@ai-sdk/openai@4.0.11(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.7(zod@4.4.3)
+      zod: 4.4.3
+
+  '@ai-sdk/provider-utils@5.0.5(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.2
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.1.0
+      zod: 4.4.3
+
+  '@ai-sdk/provider-utils@5.0.7(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.1.0
+      zod: 4.4.3
+
+  '@ai-sdk/provider@4.0.2':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@4.0.3':
+    dependencies:
+      json-schema: 0.4.0
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -20066,6 +20250,11 @@ snapshots:
       '@smithy/uuid': 1.1.2
       tslib: 2.8.1
 
+  '@smithy/core@3.29.2':
+    dependencies:
+      '@smithy/types': 4.16.0
+      tslib: 2.8.1
+
   '@smithy/credential-provider-imds@4.2.11':
     dependencies:
       '@smithy/node-config-provider': 4.3.11
@@ -20079,6 +20268,11 @@ snapshots:
       '@aws-crypto/crc32': 5.2.0
       '@smithy/types': 4.13.0
       '@smithy/util-hex-encoding': 4.2.2
+      tslib: 2.8.1
+
+  '@smithy/eventstream-codec@4.4.7':
+    dependencies:
+      '@smithy/core': 3.29.2
       tslib: 2.8.1
 
   '@smithy/eventstream-serde-browser@4.2.11':
@@ -20282,6 +20476,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@smithy/types@4.16.0':
+    dependencies:
+      tslib: 2.8.1
+
   '@smithy/url-parser@2.2.0':
     dependencies:
       '@smithy/querystring-parser': 2.2.0
@@ -20385,6 +20583,11 @@ snapshots:
       '@smithy/util-buffer-from': 4.2.2
       tslib: 2.8.1
 
+  '@smithy/util-utf8@4.4.7':
+    dependencies:
+      '@smithy/core': 3.29.2
+      tslib: 2.8.1
+
   '@smithy/util-waiter@4.2.11':
     dependencies:
       '@smithy/abort-controller': 4.2.11
@@ -20416,6 +20619,8 @@ snapshots:
       uid2: 1.0.0
     transitivePeerDependencies:
       - supports-color
+
+  '@standard-schema/spec@1.1.0': {}
 
   '@standard-schema/utils@0.3.0': {}
 
@@ -20569,22 +20774,22 @@ snapshots:
       '@tufjs/canonical-json': 1.0.0
       minimatch: 9.0.5
 
-  '@turbo/darwin-64@2.10.2':
+  '@turbo/darwin-64@2.10.4':
     optional: true
 
-  '@turbo/darwin-arm64@2.10.2':
+  '@turbo/darwin-arm64@2.10.4':
     optional: true
 
-  '@turbo/linux-64@2.10.2':
+  '@turbo/linux-64@2.10.4':
     optional: true
 
-  '@turbo/linux-arm64@2.10.2':
+  '@turbo/linux-arm64@2.10.4':
     optional: true
 
-  '@turbo/windows-64@2.10.2':
+  '@turbo/windows-64@2.10.4':
     optional: true
 
-  '@turbo/windows-arm64@2.10.2':
+  '@turbo/windows-arm64@2.10.4':
     optional: true
 
   '@types/aria-query@4.2.2': {}
@@ -21213,6 +21418,8 @@ snapshots:
     dependencies:
       jsonwebtoken: 9.0.2
 
+  '@vercel/oidc@3.2.0': {}
+
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:
       vite: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
@@ -21344,6 +21551,8 @@ snapshots:
       '@webassemblyjs/ast': 1.12.1
       '@xtuc/long': 4.2.2
 
+  '@workflow/serde@4.1.0': {}
+
   '@wry/caches@1.0.1':
     dependencies:
       tslib: 2.8.1
@@ -21420,6 +21629,13 @@ snapshots:
     dependencies:
       clean-stack: 2.2.0
       indent-string: 4.0.0
+
+  ai@7.0.16(zod@4.4.3):
+    dependencies:
+      '@ai-sdk/gateway': 4.0.12(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.2
+      '@ai-sdk/provider-utils': 5.0.5(zod@4.4.3)
+      zod: 4.4.3
 
   ajv-formats@2.1.1(ajv@8.12.0):
     optionalDependencies:
@@ -21620,6 +21836,8 @@ snapshots:
   available-typed-arrays@1.0.7:
     dependencies:
       possible-typed-array-names: 1.1.0
+
+  aws4fetch@1.0.20: {}
 
   axios@1.7.7(debug@4.4.3):
     dependencies:
@@ -25201,6 +25419,8 @@ snapshots:
   json-schema-traverse@1.0.0: {}
 
   json-schema-typed@8.0.2: {}
+
+  json-schema@0.4.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
@@ -29102,14 +29322,14 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  turbo@2.10.2:
+  turbo@2.10.4:
     optionalDependencies:
-      '@turbo/darwin-64': 2.10.2
-      '@turbo/darwin-arm64': 2.10.2
-      '@turbo/linux-64': 2.10.2
-      '@turbo/linux-arm64': 2.10.2
-      '@turbo/windows-64': 2.10.2
-      '@turbo/windows-arm64': 2.10.2
+      '@turbo/darwin-64': 2.10.4
+      '@turbo/darwin-arm64': 2.10.4
+      '@turbo/linux-64': 2.10.4
+      '@turbo/linux-arm64': 2.10.4
+      '@turbo/windows-64': 2.10.4
+      '@turbo/windows-arm64': 2.10.4
 
   type-check@0.4.0:
     dependencies:

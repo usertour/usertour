@@ -30,6 +30,7 @@ import { RiArrowRightSLine } from '@usertour/icons';
 import { Button } from '../../primitives';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext, type ContentListDisplayItem } from './context';
+import { useWidgetLocale } from '../../locale/context';
 import { serializeBlockName } from '@usertour/helpers';
 import { IconsList } from '../launcher';
 import { ResourceCenterCloseButton } from './resource-center-header';
@@ -146,6 +147,7 @@ interface ResourceCenterActionBlockViewProps {
 export const ResourceCenterActionBlockView = memo(
   ({ block, onActionBlockClick }: ResourceCenterActionBlockViewProps) => {
     const { userAttributes } = useResourceCenterContext();
+    const { messages } = useWidgetLocale();
     const handleClick = async () => {
       onActionBlockClick?.(block.id);
     };
@@ -165,7 +167,7 @@ export const ResourceCenterActionBlockView = memo(
           className="relative"
         />
         <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">
-          {serializeBlockName(block.name, userAttributes) || 'Untitled action'}
+          {serializeBlockName(block.name, userAttributes) || messages.untitledAction}
         </span>
       </button>
     );
@@ -186,6 +188,7 @@ interface ResourceCenterLiveChatBlockViewProps {
 export const ResourceCenterLiveChatBlockView = memo(
   ({ block, onLiveChatClick }: ResourceCenterLiveChatBlockViewProps) => {
     const { userAttributes } = useResourceCenterContext();
+    const { messages } = useWidgetLocale();
     const handleClick = () => {
       onLiveChatClick?.(block);
     };
@@ -199,7 +202,7 @@ export const ResourceCenterLiveChatBlockView = memo(
       >
         <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
         <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">
-          {serializeBlockName(block.name, userAttributes) || 'Live chat'}
+          {serializeBlockName(block.name, userAttributes) || messages.liveChat}
         </span>
         <BlockIcon
           iconSource={block.iconSource}
@@ -227,6 +230,7 @@ interface NavigableBlockRowProps {
 
 export const NavigableBlockRow = memo(({ block, onNavigate, badge }: NavigableBlockRowProps) => {
   const { userAttributes, onBlockClick } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
   const handleClick = () => {
     onBlockClick?.(block.id);
     onNavigate({ type: block.type, blockId: block.id });
@@ -234,9 +238,9 @@ export const NavigableBlockRow = memo(({ block, onNavigate, badge }: NavigableBl
 
   const nameText = serializeBlockName(block.name, userAttributes);
   const fallbackLabels: Partial<Record<ResourceCenterBlockType, string>> = {
-    [ResourceCenterBlockType.SUB_PAGE]: 'Untitled sub-page',
-    [ResourceCenterBlockType.CONTENT_LIST]: 'Content list',
-    [ResourceCenterBlockType.ANNOUNCEMENT]: 'Announcements',
+    [ResourceCenterBlockType.SUB_PAGE]: messages.untitledSubPage,
+    [ResourceCenterBlockType.CONTENT_LIST]: messages.contentList,
+    [ResourceCenterBlockType.ANNOUNCEMENT]: messages.announcements,
   };
   const label = nameText || fallbackLabels[block.type] || block.type;
 
@@ -320,18 +324,21 @@ interface LoadErrorRetryProps {
  * feed / detail): an explicit "couldn't load" line plus a Retry button, so a
  * timed-out fetch never renders as a misleading empty state.
  */
-const LoadErrorRetry = memo(({ onRetry, message = "Couldn't load." }: LoadErrorRetryProps) => (
-  <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
-    <span>{message}</span>
-    <button
-      type="button"
-      className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
-      onClick={onRetry}
-    >
-      Retry
-    </button>
-  </div>
-));
+const LoadErrorRetry = memo(({ onRetry, message }: LoadErrorRetryProps) => {
+  const { messages } = useWidgetLocale();
+  return (
+    <div className="py-4 flex flex-col items-center gap-2 text-sm text-sdk-foreground/50">
+      <span>{message ?? messages.loadFailed}</span>
+      <button
+        type="button"
+        className="text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover cursor-pointer"
+        onClick={onRetry}
+      >
+        {messages.retry}
+      </button>
+    </div>
+  );
+});
 
 LoadErrorRetry.displayName = 'LoadErrorRetry';
 
@@ -400,6 +407,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
     onContentListItemClick,
     searchQuery,
   } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
 
   const filteredItems = useMemo(() => {
     if (!block.showSearchField || !searchQuery.trim()) return contentListItems;
@@ -410,7 +418,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
   return (
     <div className="flex flex-col gap-3">
       {contentListLoading && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">{messages.loading}</div>
       )}
 
       {!contentListLoading && contentListError && (
@@ -419,7 +427,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
 
       {!contentListLoading && !contentListError && filteredItems.length === 0 && (
         <div className="py-4 text-center text-sm text-sdk-foreground/50">
-          {searchQuery.trim() ? 'No results found' : 'No items'}
+          {searchQuery.trim() ? messages.noResults : messages.noItems}
         </div>
       )}
 
@@ -460,13 +468,14 @@ export interface AnnouncementReadMoreButtonProps {
 
 export const AnnouncementReadMoreButton = (props: AnnouncementReadMoreButtonProps) => {
   const { label, onClick } = props;
+  const { messages } = useWidgetLocale();
   return (
     <Button
       variant="custom"
       className="inline-flex items-center gap-1 text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover active:bg-sdk-active cursor-pointer"
       onClick={onClick}
     >
-      {label || 'Read more'}
+      {label || messages.readMore}
       <span className="text-xs" aria-hidden="true">
         →
       </span>
@@ -481,15 +490,21 @@ export const AnnouncementReadMoreButton = (props: AnnouncementReadMoreButtonProp
  * mistaken for this year's date. Shared by the feed separators, the detail
  * header, and the popup bubble.
  */
-export const formatAnnouncementDate = (dateStr: string): string => {
+export const formatAnnouncementDate = (dateStr: string, locale?: string): string => {
   const date = new Date(dateStr);
   const isCurrentYear = date.getFullYear() === new Date().getFullYear();
-  return date.toLocaleDateString('en-US', {
+  const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
     ...(isCurrentYear ? {} : { year: 'numeric' }),
-  });
+  };
+  try {
+    return date.toLocaleDateString(locale ?? 'en-US', options);
+  } catch {
+    // locale comes from a user attribute — a malformed code must not crash rendering.
+    return date.toLocaleDateString('en-US', options);
+  }
 };
 
 interface AnnouncementListDetailProps {
@@ -507,6 +522,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     announcementFeedCache,
     bodyScrollRef,
   } = useResourceCenterContext();
+  const { locale, messages } = useWidgetLocale();
   // Navigating into a detail page unmounts this list; the session cache (see
   // AnnouncementFeedCache) lets Back restore the already-loaded feed instead
   // of refetching and re-running the seen side effects.
@@ -667,15 +683,17 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   return (
     <div className="flex flex-col p-4">
       {isLoading && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">{messages.loading}</div>
       )}
 
       {!isLoading && feedError && (
-        <LoadErrorRetry message="Couldn't load announcements." onRetry={retryFeed} />
+        <LoadErrorRetry message={messages.loadAnnouncementsFailed} onRetry={retryFeed} />
       )}
 
       {!isLoading && !feedError && announcements.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">No announcements yet</div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">
+          {messages.noAnnouncements}
+        </div>
       )}
 
       {!isLoading &&
@@ -693,7 +711,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
               <div className="flex-1 h-px bg-sdk-foreground/15" />
               {item.time && (
                 <span className="text-xs text-sdk-foreground/50 whitespace-nowrap">
-                  {formatAnnouncementDate(item.time)}
+                  {formatAnnouncementDate(item.time, locale)}
                 </span>
               )}
               <div className="flex-1 h-px bg-sdk-foreground/15" />
@@ -744,6 +762,7 @@ interface AnnouncementDetailViewProps {
 export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDetailViewProps) => {
   const { onGetAnnouncement, onContentClick, userAttributes, bodyScrollRef } =
     useResourceCenterContext();
+  const { locale, messages } = useWidgetLocale();
   const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Re-runs the fetch on retry. getAnnouncement returns null on failure; since
@@ -796,7 +815,9 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   );
 
   if (isLoading) {
-    return <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>;
+    return (
+      <div className="py-4 text-center text-sm text-sdk-foreground/50">{messages.loading}</div>
+    );
   }
 
   if (!detail) {
@@ -809,7 +830,7 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
         <h3 className="text-base font-bold text-sdk-foreground">{detail.title}</h3>
         {detail.time && (
           <div className="text-xs text-sdk-foreground/50 mt-1">
-            {formatAnnouncementDate(detail.time)}
+            {formatAnnouncementDate(detail.time, locale)}
           </div>
         )}
       </div>
@@ -912,6 +933,7 @@ function getHeaderBackgroundStyle(
 
 export const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) => {
   const { showBackButton, nav, data, themeSetting, bodyScrollRef } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
   const isHomePage = !showBackButton && nav.activeTabId === (data.tabs[0]?.id ?? '');
 
   const headerBackgroundStyle = useMemo(
@@ -967,7 +989,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
               {logoUrl && (
                 <img
                   src={logoUrl}
-                  alt="Logo"
+                  alt={messages.logo}
                   className="h-7 w-7 object-cover rounded-full opacity-80"
                 />
               )}

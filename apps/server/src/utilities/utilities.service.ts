@@ -10,6 +10,7 @@ import { createPresignedUrlInput } from './dto/createPresignedUrl.input';
 import { PrismaService } from 'nestjs-prisma';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import { LicenseService } from '@/license/license.service';
+import { AiService } from '@/ai/ai.service';
 
 @Injectable()
 export class UtilitiesService {
@@ -18,6 +19,7 @@ export class UtilitiesService {
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
     private readonly licenseService: LicenseService,
+    private readonly aiService: AiService,
   ) {}
 
   async createPresignedUrl(_: string, data: createPresignedUrlInput) {
@@ -149,6 +151,7 @@ export class UtilitiesService {
       allowProjectLevelSubscriptionManagement,
       needsSystemAdminSetup,
       require2FA,
+      machineTranslationEnabled: this.aiService.isConfigured(),
       authProviders: this.getAuthProviders(),
     };
   }

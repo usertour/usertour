@@ -3,6 +3,7 @@ export * from './constants/colors';
 export * from './constants/zindex';
 export * from './constants/storage';
 export * from './constants/locate';
+export * from './constants/localization';
 export * from './constants/cookie';
 export * from './constants/billing';
 export * from './constants/sdk';

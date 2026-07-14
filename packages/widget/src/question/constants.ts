@@ -36,7 +36,6 @@ export const STAR_SVG_PATH =
 
 export const DEFAULT_BUTTON_TEXT = 'Submit';
 export const DEFAULT_OPTION_PREFIX = 'Option';
-export const DEFAULT_OTHER_PLACEHOLDER = 'Other...';
 
 // Shared CSS classes for selection components
 export const OPTION_ITEM_BASE_CLASS =

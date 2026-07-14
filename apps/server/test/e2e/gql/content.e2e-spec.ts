@@ -30,18 +30,20 @@ import { buildAuthorizedUser, teardownProject } from './_support';
  *  - getContent: nullable — soft-deleted (`deleted=true`) content resolves to
  *    null rather than erroring.
  *  - "editable" gate (addContentStep[s] / updateContentStep / updateContentVersion
- *    / updateVersionLocationData): the target version must be the content's
+ *    / upsertVersionLocalization): the target version must be the content's
  *    `editedVersionId` AND must not be the currently-published version. Publishing
  *    the edited version therefore makes it non-editable.
  *  - createContentVersion / restoreContentVersion: clone the source/edited
- *    version into a NEW version (sequence + 1) and re-point editedVersionId.
+ *    version into a NEW version (sequence + 1), carry its VersionOnLocalization
+ *    rows along, and re-point editedVersionId.
  *  - publishedContentVersion: upserts a ContentOnEnvironment row + flips
  *    Content.published; unpublishedContentVersion deletes that row + clears it.
  *  - deleteContent: soft-delete (`deleted=true`) and drops ContentOnEnvironment.
  *  - duplicateContent: deep-copies content + edited version + steps into a new
  *    Content row.
- *  - updateVersionLocationData: only *updates* a pre-existing VersionOnLocalization
- *    row (findManyVersionLocations is what creates them, one per project locale).
+ *  - upsertVersionLocalization: creates the VersionOnLocalization row on first
+ *    save, updates it in place afterwards; listVersionLocalizations is a pure
+ *    read (locales without a row are simply untranslated).
  *  - queryContent / listContentVersions: relay-style cursor pagination.
  */
 describe('GraphQL content (e2e)', () => {
@@ -323,6 +325,48 @@ describe('GraphQL content (e2e)', () => {
 
       const clonedSteps = await prisma.step.findMany({ where: { versionId: newVersion.id } });
       expect(clonedSteps).toHaveLength(1);
+    });
+
+    it('carries VersionOnLocalization rows to the forked version', async () => {
+      const { content, version } = await seedContent();
+      await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip' });
+      const loc = await buildLocalization(prisma, { projectId });
+      await prisma.versionOnLocalization.create({
+        data: {
+          versionId: version.id,
+          localizationId: loc.id,
+          enabled: true,
+          localized: { 'step-cvid': [] },
+          backup: { 'step-cvid': [] },
+        },
+      });
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: ContentVersionInput!) {
+          createContentVersion(data: $data) { id }
+        }`,
+        variables: { data: { versionId: version.id, config: sampleConfig } },
+      });
+      const newVersion = gqlData(res).createContentVersion;
+
+      const carried = await prisma.versionOnLocalization.findMany({
+        where: { versionId: newVersion.id },
+      });
+      expect(carried).toHaveLength(1);
+      expect(carried[0]).toMatchObject({ localizationId: loc.id, enabled: true });
+      expect(carried[0].localized).toEqual({ 'step-cvid': [] });
+
+      // The source version keeps its own rows untouched.
+      const sourceRows = await prisma.versionOnLocalization.findMany({
+        where: { versionId: version.id },
+      });
+      expect(sourceRows).toHaveLength(1);
     });
 
     // Editing a published content's targeting must ship the *new* condition ids
@@ -607,6 +651,42 @@ describe('GraphQL content (e2e)', () => {
       expect(contentRow?.editedVersionId).toBe(restored.id);
     });
 
+    it('carries the restored version localizations to the new draft', async () => {
+      const { content, version: v0 } = await seedContent();
+      const loc = await buildLocalization(prisma, { projectId });
+      await prisma.versionOnLocalization.create({
+        data: {
+          versionId: v0.id,
+          localizationId: loc.id,
+          enabled: true,
+          localized: { 'step-cvid': [] },
+          backup: {},
+        },
+      });
+      const v1 = await prisma.version.create({
+        data: { contentId: content.id, sequence: 1, config: sampleConfig },
+      });
+      await prisma.content.update({
+        where: { id: content.id },
+        data: { editedVersionId: v1.id },
+      });
+
+      const res = await graphql(app, {
+        token,
+        query: `mutation ($data: VersionIdInput!) {
+          restoreContentVersion(data: $data) { id }
+        }`,
+        variables: { data: { versionId: v0.id } },
+      });
+      const restored = gqlData(res).restoreContentVersion;
+
+      const carried = await prisma.versionOnLocalization.findMany({
+        where: { versionId: restored.id },
+      });
+      expect(carried).toHaveLength(1);
+      expect(carried[0]).toMatchObject({ localizationId: loc.id, enabled: true });
+    });
+
     it('errors restoring an unknown version', async () => {
       const res = await graphql(app, {
         token,
@@ -780,96 +860,98 @@ describe('GraphQL content (e2e)', () => {
     });
   });
 
-  // ── findManyVersionLocations ─────────────────────────────────────
+  // ── listVersionLocalizations ─────────────────────────────────────
 
-  describe('findManyVersionLocations', () => {
-    it('returns (and back-fills) a VersionOnLocalization row per project locale', async () => {
+  describe('listVersionLocalizations', () => {
+    it('returns only existing rows without materializing locales that lack one', async () => {
       const { version } = await seedContent();
-      const loc = await buildLocalization(prisma, { projectId });
+      const translated = await buildLocalization(prisma, { projectId });
+      const untranslated = await buildLocalization(prisma, { projectId });
+      await prisma.versionOnLocalization.create({
+        data: { versionId: version.id, localizationId: translated.id, localized: {}, backup: {} },
+      });
 
       const res = await graphql(app, {
         token,
         query: `query ($versionId: String!) {
-          findManyVersionLocations(versionId: $versionId) {
+          listVersionLocalizations(versionId: $versionId) {
             id versionId localizationId enabled
           }
         }`,
         variables: { versionId: version.id },
       });
-      const rows = gqlData(res).findManyVersionLocations;
-      const found = rows.find((r: { localizationId: string }) => r.localizationId === loc.id);
-      expect(found).toMatchObject({ versionId: version.id, localizationId: loc.id });
+      const rows = gqlData(res).listVersionLocalizations;
+      expect(rows.map((row: { localizationId: string }) => row.localizationId)).toEqual([
+        translated.id,
+      ]);
 
-      // It actually created the join row.
-      const dbRow = await prisma.versionOnLocalization.findFirst({
-        where: { versionId: version.id, localizationId: loc.id },
+      // The read must not create rows as a side effect.
+      const materialized = await prisma.versionOnLocalization.findFirst({
+        where: { versionId: version.id, localizationId: untranslated.id },
       });
-      expect(dbRow).not.toBeNull();
+      expect(materialized).toBeNull();
     });
   });
 
-  // ── updateVersionLocationData ────────────────────────────────────
+  // ── upsertVersionLocalization ────────────────────────────────────
 
-  describe('updateVersionLocationData', () => {
-    it('updates a pre-existing VersionOnLocalization row', async () => {
+  describe('upsertVersionLocalization', () => {
+    const upsertMutation = `mutation ($data: VersionUpdateLocalizationInput!) {
+      upsertVersionLocalization(data: $data) {
+        id versionId localizationId enabled localized backup
+      }
+    }`;
+
+    it('creates the row on first save and updates it in place afterwards', async () => {
       const { version } = await seedContent();
       const loc = await buildLocalization(prisma, { projectId });
-      // The mutation only *updates* an existing relation — seed it first.
-      const relation = await prisma.versionOnLocalization.create({
-        data: { versionId: version.id, localizationId: loc.id, localized: {}, backup: {} },
-      });
 
-      const res = await graphql(app, {
+      const createRes = await graphql(app, {
         token,
-        query: `mutation ($data: VersionUpdateLocalizationInput!) {
-          updateVersionLocationData(data: $data) {
-            id versionId localizationId enabled localized backup
-          }
-        }`,
+        query: upsertMutation,
         variables: {
           data: {
             versionId: version.id,
             localizationId: loc.id,
-            enabled: true,
+            enabled: false,
             localized: { greeting: 'hola' },
             backup: { greeting: 'hello' },
           },
         },
       });
-      const updated = gqlData(res).updateVersionLocationData;
-      expect(updated).toMatchObject({
-        id: relation.id,
+      const created = gqlData(createRes).upsertVersionLocalization;
+      expect(created).toMatchObject({
         versionId: version.id,
         localizationId: loc.id,
-        enabled: true,
+        enabled: false,
       });
-      expect(updated.localized).toEqual({ greeting: 'hola' });
+      expect(created.localized).toEqual({ greeting: 'hola' });
 
-      const row = await prisma.versionOnLocalization.findUnique({ where: { id: relation.id } });
-      expect(row).toMatchObject({ enabled: true });
-      expect(row?.localized).toEqual({ greeting: 'hola' });
-      expect(row?.backup).toEqual({ greeting: 'hello' });
-    });
-
-    it('errors when no VersionOnLocalization relation exists', async () => {
-      const { version } = await seedContent();
-      const loc = await buildLocalization(prisma, { projectId });
-      const res = await graphql(app, {
+      const updateRes = await graphql(app, {
         token,
-        query: `mutation ($data: VersionUpdateLocalizationInput!) {
-          updateVersionLocationData(data: $data) { id }
-        }`,
+        query: upsertMutation,
         variables: {
           data: {
             versionId: version.id,
             localizationId: loc.id,
             enabled: true,
-            localized: {},
-            backup: {},
+            localized: { greeting: 'bonjour' },
+            backup: { greeting: 'hello' },
           },
         },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      const updated = gqlData(updateRes).upsertVersionLocalization;
+      // Same row updated in place, not a second one created.
+      expect(updated.id).toBe(created.id);
+      expect(updated.enabled).toBe(true);
+      expect(updated.localized).toEqual({ greeting: 'bonjour' });
+
+      const rows = await prisma.versionOnLocalization.findMany({
+        where: { versionId: version.id, localizationId: loc.id },
+      });
+      expect(rows).toHaveLength(1);
+      expect(rows[0].localized).toEqual({ greeting: 'bonjour' });
+      expect(rows[0].backup).toEqual({ greeting: 'hello' });
     });
   });
 

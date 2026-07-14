@@ -40,7 +40,15 @@ export type ContentWithContentOnEnvironments = Content & {
   contentOnEnvironments: ContentOnEnvironment[];
 };
 export type VersionWithSteps = Version & { steps: Step[] };
-export type VersionWithStepsAndContent = VersionWithSteps & { content: Content };
+/** Enabled per-locale translation slice co-cached with a delivered version. */
+export type VersionDeliveredLocalization = {
+  localized: Prisma.JsonValue;
+  localization: { code: string };
+};
+export type VersionWithStepsAndContent = VersionWithSteps & {
+  content: Content;
+  versionOnLocalization?: VersionDeliveredLocalization[];
+};
 export type BizSessionWithBizUserAndVersion = BizSession & {
   bizUser: BizUser;
   version: VersionWithSteps;

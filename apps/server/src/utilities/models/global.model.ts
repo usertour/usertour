@@ -27,6 +27,9 @@ export class GlobalConfig {
   @Field(() => Boolean)
   require2FA: boolean;
 
+  @Field(() => Boolean)
+  machineTranslationEnabled: boolean;
+
   @Field(() => [String])
   authProviders: string[];
 }

@@ -363,6 +363,14 @@ export type CustomContentSession = {
   type: ContentDataType;
   draftMode: boolean;
   attributes: SessionAttribute[];
+  /**
+   * The locale for the widget's built-in chrome translations, resolved per
+   * user: the explicit locale_code attribute, else the project's default
+   * localization (the language the content is authored in). Never
+   * auto-detected from the browser. Independent of whether the content
+   * has a matching translation. Absent on payloads from older servers.
+   */
+  userLocale?: string;
   content: Pick<Content, 'id' | 'name' | 'type'> & {
     project: {
       id: string;

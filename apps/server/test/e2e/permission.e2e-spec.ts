@@ -185,7 +185,7 @@ describe('Permission authorization (HTTP e2e)', () => {
       await prisma.bizCompany.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizUser.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.step.deleteMany({ where: { versionId: seed.versionId } });
-      // findManyVersionLocations (allow direction) materializes these rows.
+      // upsertVersionLocalization (allow direction) materializes these rows.
       await prisma.versionOnLocalization.deleteMany({ where: { versionId: seed.versionId } });
       await prisma.contentOnEnvironment.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.version.deleteMany({ where: { contentId: seed.contentId } });
@@ -234,7 +234,7 @@ describe('Permission authorization (HTTP e2e)', () => {
     );
 
   it('covers every role-gated endpoint', () => {
-    expect(ENDPOINTS).toHaveLength(90);
+    expect(ENDPOINTS).toHaveLength(91);
   });
 
   for (const ep of ENDPOINTS) {

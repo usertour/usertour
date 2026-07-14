@@ -28,9 +28,12 @@ interface LocalizationEditDialogProps {
 }
 
 const schema = z.object({
-  locale: z.string().max(20).min(2),
-  name: z.string().max(20).min(2),
-  code: z.string().max(20).min(2),
+  // BCP-47 tags can stack subtags; 35 is the spec's recommended buffer.
+  locale: z.string().max(35).min(2),
+  // Must fit the longest official locale display names the picker
+  // auto-fills (e.g. "Chinese (Simplified, People's Republic of China)").
+  name: z.string().max(64).min(2),
+  code: z.string().max(35).min(2),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -74,7 +77,7 @@ export const LocalizationEditDialog = (props: LocalizationEditDialogProps) => {
       state={state}
       submitLabel={t('settings.localizations.saveButton')}
       cancelLabel={t('settings.common.cancel')}
-      contentClassName="max-w-2xl"
+      contentClassName="max-w-xl"
     >
       <div className="flex flex-col space-y-2">
         <FormField
@@ -89,14 +92,14 @@ export const LocalizationEditDialog = (props: LocalizationEditDialogProps) => {
                 </QuestionTooltip>
               </FormLabel>
               <LocateSelect
-                popperContentClass="w-[450px]"
+                popperContentClass="w-[var(--radix-popover-trigger-width)]"
                 defaultValue={state.form.getValues('locale')}
                 triggerPlaceholder={t('common.locale.triggerPlaceholder')}
                 searchPlaceholder={t('common.locale.searchPlaceholder')}
                 emptyMessage={t('common.locale.empty')}
                 groupHeading={t('common.locale.groupHeading')}
                 onSelect={(item: LocateItem) => {
-                  state.form.setValue('name', `${item.language.name} (${item.country.code})`);
+                  state.form.setValue('name', item.name);
                   state.form.setValue('code', item.locale);
                   state.form.setValue('locale', item.locale);
                 }}

@@ -21,7 +21,7 @@ import { buildAuthorizedUser, teardownProject } from './_support';
 /**
  * Membership environment scope (UserOnProject.allowedEnvironmentIds) on the web
  * GraphQL surface: a restricted member may only act on their environments —
- * publish targeting an out-of-scope environment is refused (E0055), in-scope
+ * publish targeting an out-of-scope environment is refused (E0058), in-scope
  * succeeds, and OWNER is exempt by design.
  */
 describe('member environment scope (gql e2e)', () => {
@@ -78,14 +78,14 @@ describe('member environment scope (gql e2e)', () => {
     await app?.close();
   });
 
-  it('refuses publish to an environment outside the membership scope (E0055)', async () => {
+  it('refuses publish to an environment outside the membership scope (E0058)', async () => {
     const versionId = await seedPublishableVersion();
     const res = await graphql(app, {
       token: adminToken,
       query: PUBLISH,
       variables: { data: { versionId, environmentId: blockedEnvId } },
     });
-    expect(res.body.errors?.[0]?.extensions?.code).toBe('E0055');
+    expect(res.body.errors?.[0]?.extensions?.code).toBe('E0058');
   });
 
   it('allows publish within the membership scope', async () => {
@@ -98,7 +98,7 @@ describe('member environment scope (gql e2e)', () => {
     expect(gqlData(res).publishedContentVersion?.id).toBeTruthy();
   });
 
-  it('refuses environment-scoped reads outside the membership scope (E0055)', async () => {
+  it('refuses environment-scoped reads outside the membership scope (E0058)', async () => {
     const USERS = `query ($query: BizQuery!, $orderBy: BizOrder!, $first: Int) {
       queryBizUser(query: $query, orderBy: $orderBy, first: $first) { totalCount }
     }`;
@@ -111,7 +111,7 @@ describe('member environment scope (gql e2e)', () => {
         first: 10,
       },
     });
-    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0055');
+    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0058');
 
     const allowed = await graphql(app, {
       token: adminToken,
@@ -125,7 +125,7 @@ describe('member environment scope (gql e2e)', () => {
     expect(gqlData(allowed).queryBizUser.totalCount).toBe(0);
   });
 
-  it("refuses adding an OUT-OF-SCOPE environment's user to a segment (E0055)", async () => {
+  it("refuses adding an OUT-OF-SCOPE environment's user to a segment (E0058)", async () => {
     // Segment membership is env-scoped (the bizUser belongs to an environment).
     // The membership mutation carries only internal ids, so the guard resolves the
     // env from the bizUser — an env-restricted member must not touch a blocked-env
@@ -145,7 +145,7 @@ describe('member environment scope (gql e2e)', () => {
         data: { userOnSegment: [{ segmentId: segment.id, bizUserId: blockedUser.id, data: {} }] },
       },
     });
-    expect(res.body.errors?.[0]?.extensions?.code).toBe('E0055');
+    expect(res.body.errors?.[0]?.extensions?.code).toBe('E0058');
   });
 
   it("allows adding an IN-SCOPE environment's user to a segment", async () => {
@@ -233,9 +233,9 @@ describe('member environment scope (gql e2e)', () => {
       query: END,
       variables: { sessionId: blockedSession.id },
     });
-    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0055');
+    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0058');
 
-    // In-scope: the guard lets the call THROUGH (no E0055). The session is
+    // In-scope: the guard lets the call THROUGH (no E0058). The session is
     // seeded already-ended (state 1) so the domain declines with a plain
     // `false` — no event plumbing needed; the subject here is the guard.
     const allowedSession = await seedSession(allowedEnvId, 1);
