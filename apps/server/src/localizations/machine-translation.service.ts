@@ -51,6 +51,7 @@ const SYSTEM_PROMPT = [
   '- Keep translations concise and natural for UI copy; match the tone and approximate length of the source.',
   '- Do not translate URLs, email addresses or code.',
   '- Return a translation for every item, keyed by its id.',
+  "- Return exactly one entry per item; never split an item's translation across multiple entries.",
 ].join('\n');
 
 @Injectable()
@@ -166,9 +167,30 @@ export class MachineTranslationService {
         prompt: JSON.stringify(payload),
         abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
-      return new Map(
-        result.object.translations.map((translation) => [translation.id, translation.text]),
-      );
+      // Models occasionally split one item's translation across several
+      // entries sharing the same id. A plain Map would keep only the last
+      // fragment, and joining is no better — observed splits are sometimes
+      // missing their tail. Drop such ids instead: the unit stays
+      // untranslated and the editor's retry channel picks it up.
+      const texts = new Map<number, string>();
+      const splitIds = new Set<number>();
+      for (const translation of result.object.translations) {
+        if (texts.has(translation.id)) {
+          splitIds.add(translation.id);
+        } else {
+          texts.set(translation.id, translation.text);
+        }
+      }
+      for (const id of splitIds) {
+        texts.delete(id);
+      }
+      if (splitIds.size > 0) {
+        this.logger.warn({
+          message: 'Machine translation split an item across entries; dropped for retry',
+          splitCount: splitIds.size,
+        });
+      }
+      return texts;
     } catch (error) {
       this.logger.error({ message: 'Machine translation request failed', error: `${error}` });
       throw new MachineTranslationFailedError();
