@@ -214,7 +214,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Refreshes the store data for the component
+   * Refreshes the store data from the current session. Everything except
+   * openState is rebuilt: buildStoreData always reports openState: false,
+   * and writing that over an open component would close it. Exclusion
+   * rather than a field pick, so base fields added later (userLocale,
+   * removeBranding, ...) refresh on session updates instead of silently
+   * going stale — a mid-session locale_code change must move the widget's
+   * built-in strings along with the content.
    */
   async refreshStoreData(): Promise<void> {
     const newStore = await this.buildStoreData();
@@ -222,22 +228,8 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     if (!newStore || !existingStore) {
       return;
     }
-
-    // Extract common properties
-    const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-    const baseData = {
-      userAttributes,
-      assets,
-      globalStyle,
-      themeSettings,
-    };
-    const customData = await this.getCustomStoreData({ baseData });
-
-    // Update store with common and specific data
-    this.updateStore({
-      ...baseData,
-      ...customData,
-    });
+    const { openState, ...refreshedData } = newStore;
+    this.updateStore(refreshedData as Partial<TStore>);
   }
 
   /**
