@@ -54,10 +54,17 @@ export class AiService {
       if (!baseUrl) {
         throw new AiNotConfiguredError();
       }
+      // Send real JSON-schema response_format instead of the default
+      // prompt-mode fallback: without it, OpenAI-family models reject
+      // json_object requests whose messages lack the literal word "JSON",
+      // and reasoning models leak thinking text into the object — both
+      // observed as blanket generateObject failures through OpenRouter and
+      // Bedrock Mantle. Requires the gateway to support structured outputs.
       const compatible = createOpenAICompatible({
         name: 'usertour-ai',
         apiKey,
         baseURL: baseUrl,
+        supportsStructuredOutputs: true,
       });
       this.model = compatible(modelId);
       return this.model;
