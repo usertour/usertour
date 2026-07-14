@@ -67,13 +67,18 @@ export const useListVersionLocalizationsQuery = (
   versionId: string | undefined,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, refetch, error } = useQuery(listVersionLocalizations, {
+  const { data, previousData, loading, refetch, error } = useQuery(listVersionLocalizations, {
     variables: { versionId },
     skip: !versionId,
     ...options,
   });
 
-  const contentLocalizationList: VersionOnLocalization[] = data?.listVersionLocalizations ?? [];
+  // Fall back to the previous version's rows while a version switch loads —
+  // same pattern as useGetContentVersionQuery above. Editing a published
+  // version forks a draft whose rows are verbatim clones, and rendering an
+  // empty list during the swap reads as every locale flipping to disabled.
+  const contentLocalizationList: VersionOnLocalization[] =
+    (data ?? previousData)?.listVersionLocalizations ?? [];
 
   return { contentLocalizationList, loading, refetch, error };
 };
