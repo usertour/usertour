@@ -9,8 +9,7 @@ import { format } from 'date-fns';
 import { LocalizationCreateDialog } from './components/localization-create-dialog';
 import { LocalizationRowActions } from './components/localization-row-actions';
 
-const LOCALIZATION_DOCS_HREF =
-  'https://docs.usertour.io/building-experiences/creating-your-first-flow/';
+const LOCALIZATION_DOCS_HREF = 'https://docs.usertour.io/how-to-guides/localization';
 
 const NewLocalizationButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
