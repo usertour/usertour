@@ -3,6 +3,7 @@
 import { memo, useMemo } from 'react';
 
 import { Button } from '../primitives';
+import { useWidgetLocale } from '../locale/context';
 import {
   NPS_DEFAULT_HIGH_LABEL,
   NPS_DEFAULT_LOW_LABEL,
@@ -62,11 +63,14 @@ export interface NPSLabelsProps {
  * NPS Labels component for SDK widget
  * Displays low and high range labels
  */
-export const NPSLabels = memo(({ lowLabel, highLabel }: NPSLabelsProps) => (
-  <div className={QUESTION_LABELS_CONTAINER_CLASS}>
-    <p>{lowLabel || NPS_DEFAULT_LOW_LABEL}</p>
-    <p>{highLabel || NPS_DEFAULT_HIGH_LABEL}</p>
-  </div>
-));
+export const NPSLabels = memo(({ lowLabel, highLabel }: NPSLabelsProps) => {
+  const { messages } = useWidgetLocale();
+  return (
+    <div className={QUESTION_LABELS_CONTAINER_CLASS}>
+      <p>{lowLabel || messages.npsLowLabel}</p>
+      <p>{highLabel || messages.npsHighLabel}</p>
+    </div>
+  );
+});
 
 NPSLabels.displayName = 'NPSLabels';

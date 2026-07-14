@@ -44,9 +44,12 @@ export class VersionUpdateLocalizationInput {
   @Field(() => Boolean)
   enabled: boolean;
 
-  @Field(() => GraphQLJSON)
-  localized: JsonValue;
+  // Optional so state-only writes (the enable toggle) don't have to echo a
+  // payload back — resending a possibly stale copy is how translations get
+  // clobbered. Omitted fields keep their stored value.
+  @Field(() => GraphQLJSON, { nullable: true })
+  localized?: JsonValue;
 
-  @Field(() => GraphQLJSON)
-  backup: JsonValue;
+  @Field(() => GraphQLJSON, { nullable: true })
+  backup?: JsonValue;
 }

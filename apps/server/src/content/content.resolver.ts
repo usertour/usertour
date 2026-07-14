@@ -128,25 +128,15 @@ export class ContentResolver {
 
   @Query(() => [VersionOnLocalization])
   @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
-  async findManyVersionLocations(@Args() { versionId }: VersionIdArgs) {
-    return await this.contentService.findManyVersionLocations(versionId);
+  async listVersionLocalizations(@Args() { versionId }: VersionIdArgs) {
+    return await this.contentService.listVersionLocalizations(versionId);
   }
 
   @Mutation(() => VersionOnLocalization)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async updateVersionLocationData(@Args('data') input: VersionUpdateLocalizationInput) {
-    return await this.contentService.upsertVersionLocationData(input);
+  async upsertVersionLocalization(@Args('data') input: VersionUpdateLocalizationInput) {
+    return await this.contentService.upsertVersionLocalization(input);
   }
-
-  // @Mutation(() => Common)
-  // async updateStepsSequence(
-  //   @UserEntity() user: User,
-  //   @Args("versionId") versionId: string,
-  //   @Args("data") stepIds: [string]
-  // ) {
-  //   await this.contentService.updateStepsSequence(user.id, versionId, stepIds);
-  //   return { success: true };
-  // }
 
   @Query(() => ContentConnection)
   @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })

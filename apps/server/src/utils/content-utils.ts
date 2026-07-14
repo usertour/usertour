@@ -2071,8 +2071,8 @@ const hasSessionStepChanges = (oldSteps: SessionStep[], newSteps: SessionStep[])
     return true;
   }
 
-  // Use id-based lookup to find corresponding steps, similar to hasChecklistItemChanges
-  // This avoids issues with array comparison by using isEqual on individual steps
+  // Use id-based lookup to find corresponding steps — this avoids issues
+  // with array comparison by using isEqual on individual steps
   return oldSteps.some((oldStep) => {
     const newStep = newSteps.find((step) => step.id === oldStep.id);
 
@@ -2083,28 +2083,6 @@ const hasSessionStepChanges = (oldSteps: SessionStep[], newSteps: SessionStep[])
 
     // Compare entire step objects using isEqual
     return !isEqual(oldStep, newStep);
-  });
-};
-
-/**
- * Check if checklist items have changes
- * @param oldItems - The old items
- * @param newItems - The new items
- * @returns True if there are differences
- */
-const hasChecklistItemChanges = (oldItems: ChecklistItemType[], newItems: ChecklistItemType[]) => {
-  if (oldItems.length !== newItems.length) {
-    return true;
-  }
-
-  return oldItems.some((item) => {
-    const newItem = newItems.find((newItem) => newItem.id === item.id);
-    // If item not found in newItems, it's a change
-    if (!newItem) {
-      return true;
-    }
-    // Compare entire item object
-    return !isEqual(item, newItem);
   });
 };
 
@@ -2156,9 +2134,11 @@ export const hasContentSessionChanges = (
     return true;
   }
 
-  if (
-    hasChecklistItemChanges(oldVersion.checklist?.items || [], newVersion.checklist?.items || [])
-  ) {
+  // Whole-object compare, matching banner/resourceCenter below: localization
+  // makes buttonText and the content tree vary per user locale, and an
+  // items-only compare would judge a locale switch "not changed" and skip
+  // the re-emission.
+  if (!isEqual(oldVersion.checklist, newVersion.checklist)) {
     return true;
   }
 

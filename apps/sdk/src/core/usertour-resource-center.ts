@@ -148,12 +148,15 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
       // Enrich server response with per-item config (icon, navigate URL) from block data.
       // Server already filters items by onlyShowItemConditions, so we trust its list.
+      // The label overrides the server-supplied admin name; the block comes from
+      // the localized session payload, so a translated label arrives translated.
       const configMap = new Map(block.contentItems.map((ci) => [ci.contentId, ci]));
       const enrichedItems: ResourceCenterBlockContentItem[] = items.map((item) => {
         const config = configMap.get(item.contentId);
         if (!config) return item;
         return {
           ...item,
+          ...(config.label && { name: config.label }),
           ...(config.iconSource && { iconSource: config.iconSource }),
           ...(config.iconType && { iconType: config.iconType }),
           ...(config.iconUrl && { iconUrl: config.iconUrl }),

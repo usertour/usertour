@@ -205,7 +205,7 @@ type BizModel {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -277,7 +277,7 @@ type BizUser {
   environmentId: String!
   externalId: String!
   id: ID!
-  membership: JSON!
+  membership: JSON
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -341,7 +341,7 @@ input ChangeTeamMemberRoleInput {
 }
 
 type Common {
-  count: Int!
+  count: Int
   success: Boolean!
 }
 
@@ -480,7 +480,7 @@ input CreateAttributeInput {
   bizType: Int!
   codeName: String!
   dataType: Int!
-  description: String!
+  description: String
   displayName: String!
   projectId: String!
 }
@@ -626,6 +626,7 @@ type GlobalConfig {
   apiUrl: String
   authProviders: [String!]!
   isSelfHostedMode: Boolean!
+  machineTranslationEnabled: Boolean!
   needsSystemAdminSetup: Boolean!
   require2FA: Boolean!
   ssoCallbackUrl: String
@@ -870,6 +871,7 @@ type Mutation {
   signup(data: SignupInput!): Auth!
   startTwoFactorSetup: TwoFactorSetupPayload!
   startTwoFactorSetupWithChallenge(challengeToken: String!): TwoFactorSetupPayload!
+  translateLocalizationUnits(data: TranslateLocalizationUnitsInput!): [TranslatedUnit!]!
   unpublishedContentVersion(data: ContentIdInput!): Common!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
   updateContent(data: ContentUpdateInput!): Content!
@@ -893,8 +895,8 @@ type Mutation {
   updateUser(data: UpdateUserInput!): User!
   updateUserDisabled(disabled: Boolean!, userId: String!): User!
   updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
-  updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
+  upsertVersionLocalization(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   verifyTwoFactor(data: VerifyTwoFactorInput!): Auth!
 }
 
@@ -968,7 +970,6 @@ type Query {
   adminProjects(page: Int, pageSize: Int, query: String, usesInstanceLicense: String): AdminProjectList!
   adminSettings: AdminSettingsInfo!
   adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
-  findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getContent(contentId: String!): Content
   getContentVersion(versionId: String!): Version!
@@ -1003,6 +1004,7 @@ type Query {
   listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listThemes(projectId: String!): [Theme!]!
+  listVersionLocalizations(versionId: String!): [VersionOnLocalization!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
   queryBizCompanyEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
@@ -1290,6 +1292,22 @@ type TrackerUserEdge {
   node: TrackerUser!
 }
 
+input TranslateLocalizationUnitsInput {
+  localizationId: String!
+  units: [TranslationUnitInput!]!
+  versionId: String!
+}
+
+type TranslatedUnit {
+  path: String!
+  translatedText: String!
+}
+
+input TranslationUnitInput {
+  path: String!
+  sourceText: String!
+}
+
 type TwoFactorEnableResult {
   auth: Auth
   recoveryCodes: [String!]!
@@ -1404,7 +1422,7 @@ type User {
   isOAuthUser: Boolean
   isSystemAdmin: Boolean!
   name: String
-  projects: [UserOnProject!]!
+  projects: [UserOnProject!]
   twoFactorAvailable: Boolean
   twoFactorEnabled: Boolean!
 
@@ -1496,10 +1514,10 @@ input VersionUpdateInput {
 }
 
 input VersionUpdateLocalizationInput {
-  backup: JSON!
+  backup: JSON
   enabled: Boolean!
   localizationId: String!
-  localized: JSON!
+  localized: JSON
   versionId: String!
 }
 

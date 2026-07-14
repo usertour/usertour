@@ -356,6 +356,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const themeData = UsertourTheme.createThemeData(themeSettings);
     const userAttributes = this.getUserAttributes();
     const removeBranding = this.isRemoveBranding();
+    const userLocale = this.getUserLocale();
     const linkUrlDecorator = this.getLinkUrlDecorator();
 
     // Calculate final zIndex using subclass implementation
@@ -363,6 +364,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
     return {
       removeBranding,
+      userLocale,
       ...themeData,
       userAttributes,
       openState: false,
@@ -539,6 +541,16 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected isRemoveBranding(): boolean {
     return this.session.isRemoveBranding();
+  }
+
+  /**
+   * The locale for the widget chrome: the server-resolved locale stamped on
+   * the session (explicit locale_code attribute, else the project's default
+   * localization). Never auto-detected from the browser — absent (older
+   * servers) means the chrome falls back to English.
+   */
+  protected getUserLocale(): string | undefined {
+    return this.session.getUserLocale();
   }
 
   // === Theme Management ===

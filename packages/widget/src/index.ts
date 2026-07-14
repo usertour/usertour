@@ -88,7 +88,6 @@ export {
   STAR_SVG_PATH,
   DEFAULT_BUTTON_TEXT,
   DEFAULT_OPTION_PREFIX,
-  DEFAULT_OTHER_PLACEHOLDER,
   OPTION_ITEM_BASE_CLASS,
   OPTION_ITEM_EDITING_CLASS,
   OTHER_INPUT_CLASS,
@@ -140,3 +139,19 @@ export {
 
 // Utils - Button utilities
 export { resolveButtonVariant, isValidButtonSemanticType } from './utils/button';
+
+// Locale - built-in chrome translations
+export {
+  WidgetLocaleProvider,
+  useWidgetLocale,
+  type WidgetLocaleProviderProps,
+  type WidgetLocaleValue,
+} from './locale/context';
+export {
+  WIDGET_MESSAGES,
+  DEFAULT_WIDGET_LOCALE,
+  getWidgetMessages,
+  resolveWidgetLocale,
+  resolveWidgetIntlLocale,
+  type WidgetMessages,
+} from './locale/messages';

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { StarFilledIcon } from '@radix-ui/react-icons';
-import { Delete2Icon, EditIcon } from '@usertour/icons';
+import { Delete2Icon, EditIcon, RiStarLine } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { useSetDefaultLocalizationMutation } from '@usertour/hooks';
 import { Localization } from '@usertour/types';
@@ -43,13 +42,13 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
         items={[
           {
             key: 'edit',
-            icon: <EditIcon className="w-6" width={12} height={12} />,
+            icon: <EditIcon className="w-4 h-4 mr-2" />,
             label: t('settings.localizations.editMenuItem'),
             onSelect: () => setEditOpen(true),
           },
           {
             key: 'default',
-            icon: <StarFilledIcon className="mr-1" width={15} height={15} />,
+            icon: <RiStarLine className="w-4 h-4 mr-2" />,
             label: t('settings.localizations.setDefaultMenuItem'),
             onSelect: handleSetDefault,
             disabled: localization.isDefault,
@@ -57,7 +56,7 @@ export const LocalizationRowActions = (props: LocalizationRowActionsProps) => {
           },
           {
             key: 'delete',
-            icon: <Delete2Icon className="w-6" width={16} height={16} />,
+            icon: <Delete2Icon className="w-4 h-4 mr-2" />,
             label: t('settings.localizations.deleteMenuItem'),
             destructive: true,
             disabled: localization.isDefault,

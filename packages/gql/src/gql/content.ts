@@ -372,9 +372,9 @@ export const listContentVersions = gql`
   }
 `;
 
-export const findManyVersionLocations = gql`
-  query findManyVersionLocations($versionId: String!) {
-    findManyVersionLocations(versionId: $versionId) {
+export const listVersionLocalizations = gql`
+  query listVersionLocalizations($versionId: String!) {
+    listVersionLocalizations(versionId: $versionId) {
       id
       createdAt
       updatedAt
@@ -387,14 +387,17 @@ export const findManyVersionLocations = gql`
   }
 `;
 
-export const updateVersionLocationData = gql`
-  mutation updateVersionLocationData($data: VersionUpdateLocalizationInput!) {
-    updateVersionLocationData(data: $data) {
+export const upsertVersionLocalization = gql`
+  mutation upsertVersionLocalization($data: VersionUpdateLocalizationInput!) {
+    upsertVersionLocalization(data: $data) {
       id
+      createdAt
+      updatedAt
+      versionId
+      localizationId
       enabled
       localized
       backup
-      updatedAt
     }
   }
 `;

@@ -9,6 +9,7 @@ import {
   ResourceCenterBlocks,
   ResourceCenterTabBar,
   ResourceCenterFooter,
+  WidgetLocaleProvider,
 } from '@usertour/widget';
 import { useSyncExternalStore } from 'react';
 import { UsertourResourceCenter } from '@/core/usertour-resource-center';
@@ -38,6 +39,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     contentListError,
     liveChatActive,
     launcherHidden,
+    userLocale,
   } = store;
 
   if (!resourceCenterData || !openState) return null;
@@ -58,6 +60,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     contentListError,
     liveChatActive,
     launcherHidden,
+    userLocale,
   };
 };
 
@@ -81,6 +84,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     contentListError,
     liveChatActive,
     launcherHidden,
+    userLocale,
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
@@ -95,48 +99,50 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
       : undefined;
 
   return (
-    <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
-      <ResourceCenterRoot
-        data={resourceCenterData}
-        themeSettings={themeSettings}
-        badgeCount={resourceCenter.getAnnouncementBadgeCount()}
-        expanded={expanded}
-        onExpandedChange={resourceCenter.expand}
-        initialNav={initialNav}
-        onNavChange={resourceCenter.persistNavState}
-        zIndex={zIndex}
-        hidden={liveChatActive === true}
-        launcherHidden={launcherHidden === true}
-        userAttributes={userAttributes}
-        onContentClick={resourceCenter.handleOnClick}
-        onBlockClick={resourceCenter.handleBlockClick}
-        showMadeWith={!removeBranding}
-        contentListItems={contentListItems ?? []}
-        contentListLoading={contentListLoading === true}
-        contentListError={contentListError === true}
-        onContentListNavigate={resourceCenter.handleContentListNavigate}
-        onContentListItemClick={resourceCenter.handleContentListItemClick}
-        onLiveChatClick={resourceCenter.handleLiveChatClick}
-        onListAnnouncements={resourceCenter.listAnnouncements}
-        onGetAnnouncement={resourceCenter.getAnnouncement}
-        onMarkAnnouncementsSeen={resourceCenter.markAnnouncementsSeen}
-        popupAnnouncement={popupAnnouncement}
-        onPopupDismiss={resourceCenter.dismissPopupAnnouncement}
-      >
-        <ResourceCenterStyleProvider>
-          <ResourceCenterPanel mode="iframe" assets={assets}>
-            <ResourceCenterHeader />
-            <ResourceCenterBody>
-              <ResourceCenterBlocks />
-            </ResourceCenterBody>
-            <ResourceCenterTabBar />
-            <ResourceCenterFooter />
-          </ResourceCenterPanel>
-          {/* Lives in the RC stage (one stage per widget instance); its
+    <WidgetLocaleProvider locale={userLocale}>
+      <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
+        <ResourceCenterRoot
+          data={resourceCenterData}
+          themeSettings={themeSettings}
+          badgeCount={resourceCenter.getAnnouncementBadgeCount()}
+          expanded={expanded}
+          onExpandedChange={resourceCenter.expand}
+          initialNav={initialNav}
+          onNavChange={resourceCenter.persistNavState}
+          zIndex={zIndex}
+          hidden={liveChatActive === true}
+          launcherHidden={launcherHidden === true}
+          userAttributes={userAttributes}
+          onContentClick={resourceCenter.handleOnClick}
+          onBlockClick={resourceCenter.handleBlockClick}
+          showMadeWith={!removeBranding}
+          contentListItems={contentListItems ?? []}
+          contentListLoading={contentListLoading === true}
+          contentListError={contentListError === true}
+          onContentListNavigate={resourceCenter.handleContentListNavigate}
+          onContentListItemClick={resourceCenter.handleContentListItemClick}
+          onLiveChatClick={resourceCenter.handleLiveChatClick}
+          onListAnnouncements={resourceCenter.listAnnouncements}
+          onGetAnnouncement={resourceCenter.getAnnouncement}
+          onMarkAnnouncementsSeen={resourceCenter.markAnnouncementsSeen}
+          popupAnnouncement={popupAnnouncement}
+          onPopupDismiss={resourceCenter.dismissPopupAnnouncement}
+        >
+          <ResourceCenterStyleProvider>
+            <ResourceCenterPanel mode="iframe" assets={assets}>
+              <ResourceCenterHeader />
+              <ResourceCenterBody>
+                <ResourceCenterBlocks />
+              </ResourceCenterBody>
+              <ResourceCenterTabBar />
+              <ResourceCenterFooter />
+            </ResourceCenterPanel>
+            {/* Lives in the RC stage (one stage per widget instance); its
               shells are context-free primitives, so no nested stage. */}
-          <ResourceCenterAnnouncementPopup assets={assets} />
-        </ResourceCenterStyleProvider>
-      </ResourceCenterRoot>
-    </LinkDecoratorContext.Provider>
+            <ResourceCenterAnnouncementPopup assets={assets} />
+          </ResourceCenterStyleProvider>
+        </ResourceCenterRoot>
+      </LinkDecoratorContext.Provider>
+    </WidgetLocaleProvider>
   );
 };

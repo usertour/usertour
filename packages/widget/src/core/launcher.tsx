@@ -25,6 +25,7 @@ import {
 } from './popper';
 import { useLauncherPopperContentProps } from './hooks/use-launcher-popper-content-props';
 import { useSettingsStyles } from './hooks/use-settings-styles';
+import { useWidgetLocale } from '../locale/context';
 import { hiddenStyle } from './utils/content';
 import { WidgetClass } from './class-names';
 
@@ -168,10 +169,11 @@ const IconPreview = ({
   iconUrl: string;
   size: number;
 }) => {
+  const { messages } = useWidgetLocale();
   return (
     <img
       src={iconUrl}
-      alt="Custom icon"
+      alt={messages.customIcon}
       width={size}
       height={size}
       style={{ objectFit: 'contain' }}

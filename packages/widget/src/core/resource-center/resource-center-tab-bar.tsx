@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { useResourceCenterContext } from './context';
+import { useWidgetLocale } from '../../locale/context';
 import type { ResourceCenterTab } from '@usertour/types';
 import { IconsList } from '../launcher';
 
@@ -58,6 +59,7 @@ const tabItemBase = cn(
 
 export const ResourceCenterTabBar = memo(() => {
   const { visibleTabs, nav, actions, showTabBar, badgeCount } = useResourceCenterContext();
+  const { messages } = useWidgetLocale();
 
   if (!showTabBar) return null;
 
@@ -127,7 +129,7 @@ export const ResourceCenterTabBar = memo(() => {
                 )}
               </span>
               <span className="truncate max-w-full text-sm">
-                {tab.name || (index === 0 ? 'Home' : 'Untitled')}
+                {tab.name || (index === 0 ? messages.home : messages.untitled)}
               </span>
             </button>
           );

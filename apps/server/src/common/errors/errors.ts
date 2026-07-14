@@ -639,6 +639,30 @@ export class EgressUrlNotAllowedError extends BaseError {
   };
 }
 
+export class AiNotConfiguredError extends BaseError {
+  code = 'E0055';
+  messageDict = {
+    en: 'AI is not configured on this instance.',
+    'zh-CN': '当前实例未配置 AI 能力。',
+  };
+}
+
+export class MachineTranslationRequiresPaidPlanError extends BaseError {
+  code = 'E0056';
+  messageDict = {
+    en: 'Machine translation is available on paid plans. Please upgrade to use it.',
+    'zh-CN': '机器翻译为付费套餐功能，请升级后使用。',
+  };
+}
+
+export class MachineTranslationFailedError extends BaseError {
+  code = 'E0057';
+  messageDict = {
+    en: 'Machine translation failed. Please try again.',
+    'zh-CN': '机器翻译失败，请重试。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -712,6 +736,9 @@ const errorMap = {
   E0052: SsoRequiresActiveProviderError,
   E0053: SsoAccessDeniedError,
   E0054: EgressUrlNotAllowedError,
+  E0055: AiNotConfiguredError,
+  E0056: MachineTranslationRequiresPaidPlanError,
+  E0057: MachineTranslationFailedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

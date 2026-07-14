@@ -372,7 +372,9 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                     >
                       <div className="flex items-center gap-2 p-2">
                         <ContentItemIcon item={item} block={currentBlock} />
-                        <span className="truncate text-sm">{info?.name || item.contentId}</span>
+                        <span className="truncate text-sm">
+                          {item.label || info?.name || item.contentId}
+                        </span>
                       </div>
                       <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
                         <TooltipProvider>
@@ -594,6 +596,7 @@ export const ResourceCenterBlockContentList = () => {
     const allContents = [...flowContents, ...checklistContents];
     const content = allContents.find((c) => c.id === item.contentId);
     return (
+      item.label ||
       content?.name ||
       (item.contentType === 'flow'
         ? t('contentBuilder.resourceCenter.untitledFlow')
