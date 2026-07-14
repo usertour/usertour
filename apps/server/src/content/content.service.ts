@@ -205,44 +205,6 @@ export class ContentService {
     }
   }
 
-  async updateStepsSequence(versionId: string, stepIds: string[]) {
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      return;
-    }
-    const steps = await this.prisma.step.findMany({
-      where: { id: { in: stepIds }, versionId },
-    });
-    if (steps.length !== stepIds.length) {
-      throw new ParamsError();
-    }
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        //up sequence
-        for (const step of steps) {
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { sequence: step.sequence + 10000 },
-            });
-          }
-        }
-        //update or create step
-        for (let index = 0; index < steps.length; index++) {
-          const step = steps[index];
-          if (step.id) {
-            await tx.step.update({
-              where: { id: step.id },
-              data: { ...step, sequence: index },
-            });
-          }
-        }
-      });
-    } catch (_) {
-      throw new UnknownError();
-    }
-  }
-
   async getContentVersionById(versionId: string) {
     return await this.prisma.version.findUnique({
       where: { id: versionId },
