@@ -105,6 +105,10 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
       <TooltipProvider>
         <div className="flex justify-center space-x-8 px-6 py-8 xl:px-8">
           <div className="mx-auto flex max-w-screen-xl grow flex-col space-y-6">
+            {/* Identity row: locale name, delivery status and the language
+                pair. Actions live on the toolbar row below, so long locale
+                names get the full width; every text segment still truncates
+                ("Chinese (Simplified, People's Republic of China)" is real). */}
             <div className="flex flex-row items-center space-x-2">
               <RiArrowLeftLine
                 className="h-4 w-4 flex-none cursor-pointer"
@@ -112,9 +116,6 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
                   navigate(location.pathname.replace(`/${localization.locale}`, ''));
                 }}
               />
-              {/* Official locale display names run long ("Chinese (Simplified,
-                  People's Republic of China)") — every text segment truncates so
-                  the header stays one line at any name length. */}
               <h3 className="min-w-0 truncate text-lg font-medium" title={localization.name}>
                 {localization.name}
               </h3>
@@ -134,29 +135,32 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
                   {localization.name}
                 </span>
               </span>
-              <div className="!ml-auto flex flex-none items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {saveState === 'saving' && t('contents.localization.saving')}
-                  {saveState === 'saved' && t('contents.localization.saved')}
-                </span>
-                {actions}
-              </div>
             </div>
             <div className="flex flex-col gap-4">
-              <label
-                htmlFor="show-only-missing"
-                className="flex w-fit cursor-pointer items-center gap-2 px-4 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <Checkbox
-                  id="show-only-missing"
-                  checked={showOnlyMissing}
-                  onCheckedChange={(checked) => setShowOnlyMissing(checked === true)}
-                  // The default hairline vanishes against the page's gray shell.
-                  className="border-muted-foreground/40 bg-background"
-                />
-                {t('contents.localization.onlyUntranslated')}
-                <span className="-ml-1">({missingCount})</span>
-              </label>
+              {/* Toolbar row: the view filter anchors the left, the save
+                  indicator and actions the right. */}
+              <div className="flex flex-row items-center">
+                <label
+                  htmlFor="show-only-missing"
+                  className="flex w-fit cursor-pointer items-center gap-2 px-4 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <Checkbox
+                    id="show-only-missing"
+                    checked={showOnlyMissing}
+                    onCheckedChange={(checked) => setShowOnlyMissing(checked === true)}
+                    // The default hairline vanishes against the page's gray shell.
+                    className="border-muted-foreground/40 bg-background"
+                  />
+                  {t('contents.localization.onlyUntranslated')}
+                  <span className="-ml-1">({missingCount})</span>
+                </label>
+                <div className="ml-auto flex flex-none items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {saveState === 'saving' && t('contents.localization.saving')}
+                  </span>
+                  {actions}
+                </div>
+              </div>
               {children}
             </div>
           </div>

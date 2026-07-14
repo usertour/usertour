@@ -1868,7 +1868,6 @@ const translations = {
       status: { disabled: '已禁用', enabled: '已启用' },
       sourceLabel: '原文',
       saving: '保存中…',
-      saved: '已保存',
       sourceChanged: '原文已变更',
       onlyUntranslated: '仅看未翻译',
       previewButton: '预览',
