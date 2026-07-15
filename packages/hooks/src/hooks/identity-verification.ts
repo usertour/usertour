@@ -123,6 +123,7 @@ export interface IdentityTokenDiagnosis {
     | 'expired'
     | 'not_yet_valid'
     | 'invalid_signature'
+    | 'wrong_algorithm'
     | 'malformed'
     | 'missing_subject'
     | 'no_active_secret';

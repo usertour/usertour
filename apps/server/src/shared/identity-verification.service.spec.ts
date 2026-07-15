@@ -361,6 +361,103 @@ describe('IdentityVerificationService', () => {
       expect(diagnosis.subject).toBe('12345');
       expect(diagnosis.companyId).toBe('678');
     });
+
+    it('reports wrong_algorithm for a structurally valid token signed with a non-HS256 algorithm', async () => {
+      const hs384Token = tokenSigner.sign(
+        { sub: 'user-123' },
+        { secret: plainSecret, algorithm: 'HS384' },
+      );
+      const diagnosis = await service.diagnoseIdentityToken('env-1', hs384Token);
+      expect(diagnosis.status).toBe('wrong_algorithm');
+    });
+
+    it('shows the epoch expiry timestamp for an exp: 0 token', async () => {
+      const epochExpired = tokenSigner.sign(
+        { sub: 'user-123', exp: 0 },
+        { secret: plainSecret, algorithm: 'HS256' },
+      );
+      const diagnosis = await service.diagnoseIdentityToken('env-1', epochExpired);
+      expect(diagnosis.status).toBe('expired');
+      expect(diagnosis.expiresAt).toEqual(new Date(0));
+    });
+  });
+
+  describe('coverage counters and rotation observability', () => {
+    const flushAsyncSideEffects = async () => {
+      await new Promise((resolve) => setImmediate(resolve));
+    };
+
+    it('records verdicts as {subject}:{verdict} hash fields with the retention TTL', async () => {
+      await service.verifyUserIdentity(
+        'env-1',
+        'user-123',
+        mintToken(plainSecret, { sub: 'user-123' }),
+      );
+      const [key, field, increment] = redisPipelineMock.hincrby.mock.calls[0];
+      expect(key).toMatch(/^env:env-1:identity-verification:stats:\d{4}-\d{2}-\d{2}$/);
+      expect(field).toBe('user:valid');
+      expect(increment).toBe(1);
+      const [expireKey, ttl] = redisPipelineMock.expire.mock.calls[0];
+      expect(expireKey).toBe(key);
+      expect(ttl).toBe(30 * 24 * 60 * 60);
+    });
+
+    it('aggregates daily buckets across the 7-day window per subject and verdict', async () => {
+      redisPipelineMock.exec.mockResolvedValueOnce([
+        [null, { 'user:valid': '3', 'company:missing': '1' }],
+        [null, { 'user:valid': '2', 'user:invalid': '4' }],
+        [null, {}],
+        [null, { 'user:anonymous': '5' }],
+        [null, {}],
+        [null, {}],
+        [null, { 'company:valid': '7' }],
+      ]);
+      const stats = await service.getVerificationStats('env-1');
+      expect(redisPipelineMock.hgetall).toHaveBeenCalledTimes(7);
+      expect(stats).toEqual([
+        { subject: 'user', valid: 5, invalid: 4, missing: 0, anonymous: 5 },
+        { subject: 'company', valid: 7, invalid: 0, missing: 1, anonymous: 0 },
+      ]);
+    });
+
+    it('touches lastUsedAt through the Redis NX throttle on a valid verification', async () => {
+      redisClientMock.set.mockResolvedValueOnce('OK');
+      await service.verifyUserIdentity(
+        'env-1',
+        'user-123',
+        mintToken(plainSecret, { sub: 'user-123' }),
+      );
+      await flushAsyncSideEffects();
+      expect(redisClientMock.set).toHaveBeenCalledWith(
+        `signing-secret:${activeSecret.id}:last-used-touched`,
+        '1',
+        'EX',
+        60,
+        'NX',
+      );
+      expect(prismaMock.environmentSigningSecret.update).toHaveBeenCalledWith({
+        where: { id: activeSecret.id },
+        data: { lastUsedAt: expect.any(Date) },
+      });
+    });
+
+    it('skips the lastUsedAt write when the NX throttle is already held', async () => {
+      redisClientMock.set.mockResolvedValueOnce(null);
+      await service.verifyUserIdentity(
+        'env-1',
+        'user-123',
+        mintToken(plainSecret, { sub: 'user-123' }),
+      );
+      await flushAsyncSideEffects();
+      expect(prismaMock.environmentSigningSecret.update).not.toHaveBeenCalled();
+    });
+
+    it('does not count coverage or touch lastUsedAt from the validator tool', async () => {
+      await service.diagnoseIdentityToken('env-1', mintToken(plainSecret, { sub: 'user-123' }));
+      await flushAsyncSideEffects();
+      expect(redisPipelineMock.hincrby).not.toHaveBeenCalled();
+      expect(redisClientMock.set).not.toHaveBeenCalled();
+    });
   });
 
   describe('verifyConnectionIdentity', () => {

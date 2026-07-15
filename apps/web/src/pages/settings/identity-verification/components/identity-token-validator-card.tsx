@@ -16,6 +16,7 @@ const STATUS_BADGE_VARIANT: Record<
   expired: 'destructive',
   not_yet_valid: 'destructive',
   invalid_signature: 'destructive',
+  wrong_algorithm: 'destructive',
   malformed: 'destructive',
   missing_subject: 'destructive',
   // Not the token's fault — the environment has nothing to verify against.

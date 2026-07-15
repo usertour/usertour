@@ -92,8 +92,11 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       return await app.identifyAnonymous(attributes);
     },
 
-    updateUser: async (attributes: UserTourTypes.Attributes) => {
-      return await app.updateUser(attributes);
+    updateUser: async (
+      attributes: UserTourTypes.Attributes,
+      opts?: UserTourTypes.IdentifyOptions,
+    ) => {
+      return await app.updateUser(attributes, opts);
     },
 
     group: async (

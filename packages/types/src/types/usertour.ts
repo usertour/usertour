@@ -7,7 +7,9 @@ export interface Usertour {
 
   identify: (userId: string, attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
 
-  identifyAnonymous: (attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
+  // No identity-token option: anonymous ids are minted client-side by the
+  // SDK, so a backend can never sign one — the server exempts them by format.
+  identifyAnonymous: (attributes?: Attributes) => Promise<void>;
 
   updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<void>;
 

@@ -650,11 +650,26 @@ export class UsertourSocket implements IUsertourSocket {
     }
 
     // Update current auth info - the callback will use this on reconnection
-    if (this.authCredentials) {
-      this.authCredentials = {
-        ...this.authCredentials,
-        ...authInfo,
-      };
+    if (!this.authCredentials) {
+      return;
+    }
+    const identityTokenChanged =
+      authInfo.identityToken !== undefined &&
+      authInfo.identityToken !== this.authCredentials.identityToken;
+    this.authCredentials = {
+      ...this.authCredentials,
+      ...authInfo,
+    };
+
+    // A refreshed identity token must be able to revive a dead socket:
+    // Socket.IO stops auto-reconnecting once a handshake is rejected by the
+    // server's auth middleware (e.g. the previous token expired), so merely
+    // storing the new token would strand the SDK offline until a full page
+    // reload. Restart the connect attempt with the updated credentials.
+    if (identityTokenChanged && !this.socket.isConnected()) {
+      logger.info('Identity token changed while disconnected, reconnecting socket...');
+      this.cancelConnecting();
+      this.ensureConnecting();
     }
   }
 }

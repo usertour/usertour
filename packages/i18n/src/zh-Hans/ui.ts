@@ -867,11 +867,12 @@ const translations = {
         dialogLoading: '加载中…',
         copiedToast: '密钥已复制到剪贴板',
         fetchFailure: '获取密钥失败,请重试。',
+        loadFailure: '加载签名密钥失败,请刷新页面重试。',
       },
       enforcement: {
         title: '强制身份验证',
         description:
-          '开启后,没有有效身份令牌的 identify() 和 group() 调用会被拒绝。匿名用户不受影响。',
+          '开启后,没有有效身份令牌的 identify() 和 group() 调用会被拒绝。匿名用户仍可免令牌 identify,但无法调用 group()。',
         needsSecret: '请先生成签名密钥,再强制身份验证。',
         enableConfirmTitle: '强制身份验证?',
         enableConfirmDescription:
@@ -894,6 +895,7 @@ const translations = {
           expired: '已过期',
           not_yet_valid: '尚未生效(nbf 在未来)',
           invalid_signature: '签名无效',
+          wrong_algorithm: '签名算法错误 —— 必须使用 HS256',
           malformed: '不是有效的 JWT',
           missing_subject: '缺少 sub 声明',
           no_active_secret: '该环境没有可用于校验的有效签名密钥',

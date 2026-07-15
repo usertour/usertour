@@ -28,7 +28,7 @@ The identity proof is a **JWT, HS256**, signed with the environment's existing `
 - **`exp` is optional but enforced when present** — customers choose their replay-window posture; omitting it reproduces 0008's non-expiring behavior.
 - The algorithm is pinned server-side (`algorithms: ['HS256']`) — no `alg` negotiation, no confusion attacks.
 - Unknown claims are ignored (forward compatibility for verified attributes later).
-- **Claim comparison is string-coerced** (`String(claim) === expected`): customer JWT libraries commonly emit numeric ids as JSON numbers while the SDK sends strings; a strict `===` would reject every numeric-id customer.
+- **Claim comparison is string-coerced** (`String(claim) === expected`): customer JWT libraries commonly emit numeric ids as JSON numbers while the SDK sends strings; a strict `===` would reject every numeric-id customer. Coercion only rescues integers within JS number precision — 64-bit snowflake ids lose digits at JSON.parse before comparison can see them, so the documentation requires `sub`/`companyId` to be signed as JSON strings.
 - **exp/nbf are checked with a 30s clock tolerance**, and an expired or not-yet-active verdict counts as that secret's use (the signature already verified) — it is never classified as a bad signature.
 - **Tokens above 4096 chars are rejected before any decode/decrypt work** — the handshake path is unauthenticated, so the work an arbitrary token can cause is bounded on both the handshake and message paths.
 

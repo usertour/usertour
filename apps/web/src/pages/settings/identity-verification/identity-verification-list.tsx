@@ -14,10 +14,11 @@ export const SettingsIdentityVerification = () => {
   const { t } = useTranslation();
   const environmentId = environment?.id;
 
-  const { signingSecrets, loading } = useListSigningSecretsQuery(
-    environmentId,
-    SHARED_CACHE_QUERY_OPTIONS,
-  );
+  const {
+    signingSecrets,
+    loading,
+    error: secretsError,
+  } = useListSigningSecretsQuery(environmentId, SHARED_CACHE_QUERY_OPTIONS);
   const { stats, loading: statsLoading } = useGetIdentityVerificationStatsQuery(
     environmentId,
     SHARED_CACHE_QUERY_OPTIONS,
@@ -55,8 +56,18 @@ export const SettingsIdentityVerification = () => {
             </p>
           </div>
           <Separator />
-          {environmentId && !secretsInitialLoading && (
-            <SigningSecretCard environmentId={environmentId} signingSecrets={activeSecrets} />
+          {/* A failed list query must not render as the empty state — its
+              Generate button would silently start a rotation (or hit the
+              two-active cap) against secrets that do exist. */}
+          {environmentId && secretsError && !signingSecrets ? (
+            <p className="text-sm text-destructive">
+              {t('settings.identityVerification.secrets.loadFailure')}
+            </p>
+          ) : (
+            environmentId &&
+            !secretsInitialLoading && (
+              <SigningSecretCard environmentId={environmentId} signingSecrets={activeSecrets} />
+            )
           )}
         </div>
       </SettingsCard>
@@ -76,8 +87,10 @@ export const SettingsIdentityVerification = () => {
         />
       </SettingsCard>
 
-      {/* Enforcement */}
-      {environmentId && (
+      {/* Enforcement. Hidden while the secrets list failed with no cached
+          data — hasActiveSecret would be a lie and the "generate a secret
+          first" disabled state would contradict the error message above. */}
+      {environmentId && !(secretsError && !signingSecrets) && (
         <SettingsCard>
           <IdentityVerificationEnforcementCard
             environmentId={environmentId}

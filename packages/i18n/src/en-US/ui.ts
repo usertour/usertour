@@ -906,11 +906,12 @@ const translations = {
         dialogLoading: 'Loading...',
         copiedToast: 'Secret copied to clipboard',
         fetchFailure: 'Failed to load the secret. Please try again.',
+        loadFailure: 'Failed to load signing secrets. Refresh the page to try again.',
       },
       enforcement: {
         title: 'Require identity verification',
         description:
-          'When enabled, identify() and group() calls without a valid identity token are rejected. Anonymous users are exempt.',
+          'When enabled, identify() and group() calls without a valid identity token are rejected. Anonymous users can still identify without a token, but cannot call group().',
         needsSecret: 'Generate a signing secret before requiring identity verification.',
         enableConfirmTitle: 'Require identity verification?',
         enableConfirmDescription:
@@ -934,6 +935,7 @@ const translations = {
           expired: 'Expired',
           not_yet_valid: 'Not yet valid (nbf in the future)',
           invalid_signature: 'Invalid signature',
+          wrong_algorithm: 'Wrong algorithm — sign with HS256',
           malformed: 'Not a valid JWT',
           missing_subject: 'Missing sub claim',
           no_active_secret: 'No active signing secret to verify against',

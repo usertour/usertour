@@ -53,6 +53,7 @@ export interface IdentityTokenDiagnosis {
     | 'expired'
     | 'not_yet_valid'
     | 'invalid_signature'
+    | 'wrong_algorithm'
     | 'malformed'
     | 'missing_subject'
     | 'no_active_secret';
@@ -69,6 +70,7 @@ type TokenCheck =
   | { status: 'valid'; payload: IdentityTokenPayload }
   | { status: 'expired' | 'not_yet_valid'; payload: IdentityTokenPayload | null }
   | { status: 'invalid_signature' }
+  | { status: 'wrong_algorithm' }
   | { status: 'malformed' }
   | { status: 'no_active_secret' };
 
@@ -407,6 +409,12 @@ export class IdentityVerificationService {
           this.logger.warn(`Identity token ${status} in environment ${environmentId}`);
           return { status, payload: decoded };
         }
+        if (error instanceof JsonWebTokenError && error.message === 'invalid algorithm') {
+          // Structurally fine but signed with a non-HS256 algorithm (several
+          // JWT libraries default to RS256) — point the customer at the
+          // algorithm, not the token format.
+          return { status: 'wrong_algorithm' };
+        }
         if (error instanceof JsonWebTokenError && error.message !== 'invalid signature') {
           return { status: 'malformed' };
         }
@@ -437,7 +445,7 @@ export class IdentityVerificationService {
     return {
       subject: payload.sub != null ? String(payload.sub) : undefined,
       companyId: payload.companyId != null ? String(payload.companyId) : undefined,
-      expiresAt: payload.exp ? new Date(payload.exp * 1000) : undefined,
+      expiresAt: payload.exp != null ? new Date(payload.exp * 1000) : undefined,
     };
   }
 

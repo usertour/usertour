@@ -64,6 +64,26 @@ interface AppStartOptions {
   token: string;
 }
 
+/**
+ * Signature-blind peek at a JWT's payload claims (base64url decode only).
+ * Used solely for developer warnings — the server stays the source of truth
+ * for verification.
+ */
+const decodeTokenClaims = (token: string): Record<string, unknown> | null => {
+  try {
+    const segments = token.split('.');
+    if (segments.length !== 3) {
+      return null;
+    }
+    const base64 = segments[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const parsed = JSON.parse(atob(padded));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 export class UsertourCore extends Evented {
   // === Public Properties ===
   socketService: UsertourSocket;
@@ -201,6 +221,18 @@ export class UsertourCore extends Evented {
     // switch clears it via reset() above.
     if (opts?.token) {
       this.identityToken = opts.token;
+      // A grouped session needs a token whose companyId claim still matches,
+      // or the next reconnect handshake is rejected under enforcement. Warn
+      // only when the claim is actually absent (signature-blind peek), so
+      // hosts refreshing a proper combined token get no noise.
+      if (this.externalCompanyId) {
+        const claims = decodeTokenClaims(opts.token);
+        if (claims && claims.companyId == null) {
+          logger.warn(
+            'identify() received an identity token without a companyId claim while a company is set; the next reconnect will be rejected under enforcement',
+          );
+        }
+      }
     }
 
     // Hand the auth credentials to the socket layer; the connection lifecycle
@@ -262,10 +294,21 @@ export class UsertourCore extends Evented {
   /**
    * Updates user attributes
    * @param attributes - New user attributes to update
+   * @param opts - Optional identify settings (identity token refresh)
    */
-  async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
+  async updateUser(
+    attributes: UserTourTypes.Attributes,
+    opts?: UserTourTypes.IdentifyOptions,
+  ): Promise<void> {
     // Ensure the SDK has been initialized before calling updateUser
     const externalUserId = this.ensureIdentify();
+
+    // Store a fresh token BEFORE the change-detection early return, so a
+    // token-refresh call with unchanged attributes still reaches the
+    // reconnect auth (same rule as updateGroup).
+    if (opts?.token) {
+      this.applyIdentityToken(opts.token);
+    }
 
     // Check if attributes have actually changed to avoid unnecessary API calls
     if (!this.attributeManager.userAttrsChanged(attributes)) {
@@ -325,7 +368,7 @@ export class UsertourCore extends Evented {
     // A token passed here supersedes the identify() one — it must carry a
     // companyId claim matching this group() call.
     if (opts?.token) {
-      this.identityToken = opts.token;
+      this.applyIdentityToken(opts.token);
     }
 
     const result = await this.socketService.upsertCompany(
@@ -342,8 +385,19 @@ export class UsertourCore extends Evented {
       // Roll back the optimistic identity state: a server-rejected membership
       // claim left in place would ride every reconnect handshake (rejected
       // companyId + non-matching token) and kill the whole connection.
-      this.externalCompanyId = previousCompanyId;
-      this.identityToken = previousIdentityToken;
+      // Compare-and-restore so a concurrent call's successful update is
+      // never clobbered by this rollback.
+      if (this.externalCompanyId === externalCompanyId) {
+        this.externalCompanyId = previousCompanyId;
+      }
+      if (opts?.token) {
+        this.rollbackIdentityToken(opts.token, previousIdentityToken);
+      }
+      // Push the restored state to the socket credentials unconditionally:
+      // a concurrent message may have synced the optimistic companyId into
+      // the reconnect auth while this upsert was in flight, and the tokenless
+      // failure path has no other sync. Idempotent and cheap.
+      this.syncSocketCredentials();
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
@@ -370,9 +424,9 @@ export class UsertourCore extends Evented {
     // Store a fresh token BEFORE the change-detection early return: hosts
     // refreshing short-lived tokens call updateGroup with unchanged
     // attributes, and the new token must still reach the reconnect auth.
+    const previousIdentityToken = this.identityToken;
     if (opts?.token) {
-      this.identityToken = opts.token;
-      this.syncSocketCredentials();
+      this.applyIdentityToken(opts.token);
     }
 
     // Check if attributes have actually changed to avoid unnecessary API calls
@@ -396,6 +450,11 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result) {
+      // Same rollback rule as group(): a rejected claim must not stay on the
+      // reconnect auth (compare-and-restore, concurrency-safe).
+      if (opts?.token) {
+        this.rollbackIdentityToken(opts.token, previousIdentityToken);
+      }
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
@@ -1625,6 +1684,29 @@ export class UsertourCore extends Evented {
   }
 
   // === Socket Credentials Synchronization ===
+  /**
+   * Single write path for identity-token updates once a session exists:
+   * stores the token and pushes it into the socket's reconnect credentials
+   * immediately. The socket layer restarts a dead connection when the token
+   * changes, so a refreshed token can recover from a rejected handshake.
+   */
+  private applyIdentityToken(token: string): void {
+    this.identityToken = token;
+    this.syncSocketCredentials();
+  }
+
+  /**
+   * Compare-and-restore rollback for a failed optimistic token update: only
+   * undo when the current token is still the one this call installed, so a
+   * concurrent call's successful update is never clobbered.
+   */
+  private rollbackIdentityToken(installedToken: string, previousToken: string | undefined): void {
+    if (this.identityToken === installedToken) {
+      this.identityToken = previousToken;
+      this.syncSocketCredentials();
+    }
+  }
+
   /**
    * Synchronizes socket credentials
    */

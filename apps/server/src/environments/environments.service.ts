@@ -34,6 +34,15 @@ const SIGNING_SECRET_TX_OPTIONS = {
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
 };
 
+/**
+ * Serialization failures (P2034) are transient by design — Postgres asks the
+ * loser to retry. Re-running the transaction re-executes the invariant
+ * checks against the winner's committed state, so a legitimate conflict
+ * (e.g. the second of two concurrent creates hitting the cap) surfaces as
+ * the proper domain error instead of a raw Prisma error.
+ */
+const SERIALIZATION_FAILURE_RETRIES = 2;
+
 @Injectable()
 export class EnvironmentsService {
   constructor(
@@ -248,12 +257,28 @@ export class EnvironmentsService {
   // User.twoFactorSecret): HMAC verification needs the original value, so
   // hashing is impossible by construction — encryption bounds a DB-only leak.
 
+  private async runSigningSecretTransaction<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.prisma.$transaction(operation, SIGNING_SECRET_TX_OPTIONS);
+      } catch (error) {
+        const isSerializationFailure =
+          error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
+        if (!isSerializationFailure || attempt >= SERIALIZATION_FAILURE_RETRIES) {
+          throw error;
+        }
+      }
+    }
+  }
+
   async createSigningSecret(environmentId: string) {
     // `utv_` (identity Verification) joins the `ut?_` credential prefix
     // family from the API token work; `uts_` is already reserved there for
     // service accounts.
     const secret = `${SIGNING_SECRET_PREFIX}${randomBytes(32).toString('base64url')}`;
-    const created = await this.prisma.$transaction(async (tx) => {
+    const created = await this.runSigningSecretTransaction(async (tx) => {
       const activeCount = await tx.environmentSigningSecret.count({
         where: { environmentId, revokedAt: null },
       });
@@ -266,7 +291,7 @@ export class EnvironmentsService {
           secret: this.encryptionService.encrypt(secret),
         },
       });
-    }, SIGNING_SECRET_TX_OPTIONS);
+    });
     return { ...created, secret };
   }
 
@@ -295,7 +320,7 @@ export class EnvironmentsService {
   }
 
   async revokeSigningSecret(environmentId: string, id: string) {
-    return await this.prisma.$transaction(async (tx) => {
+    return await this.runSigningSecretTransaction(async (tx) => {
       const signingSecret = await tx.environmentSigningSecret.findUnique({
         where: { id, environmentId },
       });
@@ -320,11 +345,11 @@ export class EnvironmentsService {
         where: { id },
         data: { revokedAt: new Date() },
       });
-    }, SIGNING_SECRET_TX_OPTIONS);
+    });
   }
 
   async setRequireIdentityVerification(environmentId: string, required: boolean) {
-    return await this.prisma.$transaction(async (tx) => {
+    return await this.runSigningSecretTransaction(async (tx) => {
       const environment = await tx.environment.findUnique({ where: { id: environmentId } });
       if (!environment) {
         throw new ParamsError();
@@ -345,7 +370,7 @@ export class EnvironmentsService {
         where: { id: environmentId },
         data: { requireIdentityVerification: required },
       });
-    }, SIGNING_SECRET_TX_OPTIONS);
+    });
   }
 
   async getIdentityVerificationStats(environmentId: string): Promise<VerificationStats[]> {
