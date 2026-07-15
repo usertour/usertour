@@ -94,9 +94,7 @@ input AnalyticsOrder {
   field: AnalyticsOrderField!
 }
 
-"""
-Properties by which content connections can be ordered.
-"""
+"""Properties by which content connections can be ordered."""
 enum AnalyticsOrderField {
   createdAt
   id
@@ -115,9 +113,7 @@ type Attribute {
   bizType: Int!
   codeName: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   dataType: Int!
   description: String!
@@ -126,38 +122,28 @@ type Attribute {
   predefined: Boolean!
   projectId: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type AttributeOnEvent {
   attributeId: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   eventId: String!
   id: ID!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type Auth {
-  """
-  JWT access token
-  """
+  """JWT access token"""
   accessToken: JWT
   projectId: String
 
-  """
-  JWT refresh token
-  """
+  """JWT refresh token"""
   refreshToken: JWT
   requiresTwoFactor: Boolean!
   requiresTwoFactorSetup: Boolean!
@@ -184,18 +170,14 @@ type BizEvent {
   bizUser: BizModel
   bizUserId: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   event: Events
   eventId: String!
   id: ID!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -217,9 +199,7 @@ input BizEventQuery {
 }
 
 type BizModel {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   environmentId: String!
@@ -227,9 +207,7 @@ type BizModel {
   id: ID!
   membership: JSON
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -243,9 +221,7 @@ input BizOrder {
   field: BizOrderField!
 }
 
-"""
-Properties by which content connections can be ordered.
-"""
+"""Properties by which content connections can be ordered."""
 enum BizOrderField {
   createdAt
   id
@@ -269,18 +245,14 @@ type BizSession {
   content: Content
   contentId: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   id: ID!
   progress: Int!
   state: Int!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   version: Version
 }
@@ -299,9 +271,7 @@ type BizSessionEdge {
 type BizUser {
   bizUsersOnCompany: [BizUserOnCompanyModel!]
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   environmentId: String!
@@ -309,9 +279,7 @@ type BizUser {
   id: ID!
   membership: JSON
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -331,16 +299,12 @@ type BizUserOnCompanyModel {
   bizCompanyId: String!
   bizUserId: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   id: ID!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -392,9 +356,7 @@ type Content {
   config: JSON
   contentOnEnvironments: [ContentOnEnvironment!]
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   deleted: Boolean!
   editedVersion: Version
@@ -410,9 +372,7 @@ type Content {
   steps: [Step!]
   type: String
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -452,9 +412,7 @@ input ContentInput {
 type ContentOnEnvironment {
   contentId: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   environment: Environment!
   environmentId: String!
@@ -464,9 +422,7 @@ type ContentOnEnvironment {
   publishedVersion: Version!
   publishedVersionId: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -475,9 +431,7 @@ input ContentOrder {
   field: ContentOrderField!
 }
 
-"""
-Properties by which content connections can be ordered.
-"""
+"""Properties by which content connections can be ordered."""
 enum ContentOrderField {
   createdAt
   id
@@ -636,9 +590,7 @@ input DeleteThemeInput {
 }
 
 type Environment {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   isPrimary: Boolean!
@@ -647,9 +599,7 @@ type Environment {
   requireIdentityVerification: Boolean!
   token: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -664,9 +614,7 @@ type Events {
   attributeIds: [String!]!
   codeName: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   deleted: Boolean
   description: String
@@ -676,9 +624,7 @@ type Events {
   predefined: Boolean!
   projectId: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -692,6 +638,13 @@ type GlobalConfig {
   needsSystemAdminSetup: Boolean!
   require2FA: Boolean!
   ssoCallbackUrl: String
+}
+
+type IdentityTokenDiagnosisModel {
+  companyId: String
+  expiresAt: DateTime
+  status: String!
+  subject: String
 }
 
 type IdentityVerificationStats {
@@ -745,9 +698,7 @@ type Integration {
   accessToken: String!
   config: JSON
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   enabled: Boolean!
   environmentId: String!
@@ -756,18 +707,14 @@ type Integration {
   key: String!
   provider: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type IntegrationOAuth {
   accessToken: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   expiresAt: DateTime!
@@ -777,16 +724,12 @@ type IntegrationOAuth {
   refreshToken: String!
   scope: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type IntegrationObjectMapping {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   destinationObjectType: String!
   enabled: Boolean!
@@ -798,18 +741,14 @@ type IntegrationObjectMapping {
   settings: JSON
   sourceObjectType: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type Invite {
   code: String
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   email: String
   expired: Boolean!
@@ -821,9 +760,7 @@ type Invite {
   requireSso: Boolean!
   role: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   user: User
   userId: String
@@ -867,9 +804,7 @@ type LicensePayload {
 type Localization {
   code: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   isDefault: Boolean!
@@ -877,9 +812,7 @@ type Localization {
   name: String!
   projectId: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -972,29 +905,15 @@ type Mutation {
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
   updateInstanceAuthenticationSettings(allowUserRegistration: Boolean!): InstanceSetting!
-  updateInstanceGeneralSettings(
-    allowProjectLevelSubscriptionManagement: Boolean
-    contactEmail: String
-    name: String
-  ): InstanceSetting!
+  updateInstanceGeneralSettings(allowProjectLevelSubscriptionManagement: Boolean, contactEmail: String, name: String): InstanceSetting!
   updateInstanceLicense(license: String!): InstanceSetting!
   updateInstanceRequire2FA(value: Boolean!): InstanceSetting!
-  updateIntegration(
-    environmentId: String!
-    input: UpdateIntegrationInput!
-    provider: String!
-  ): Integration!
-  updateIntegrationObjectMapping(
-    id: String!
-    input: UpdateIntegrationObjectMappingInput!
-  ): IntegrationObjectMapping!
+  updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
+  updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProject(logoUrl: String, name: String, projectId: String!): Project!
   updateProjectLicense(license: String!, projectId: String!): Project!
-  updateProjectSsoSettings(
-    input: UpdateProjectSsoSettingsInput!
-    projectId: String!
-  ): ProjectSsoSettingsModel!
+  updateProjectSsoSettings(input: UpdateProjectSsoSettingsInput!, projectId: String!): ProjectSsoSettingsModel!
   updateProjectUsesInstanceLicense(enabled: Boolean!, projectId: String!): Boolean!
   updateSegment(data: UpdateSegment!): Segment!
   updateSsoProvider(id: String!, input: UpdateSsoProviderInput!): SsoProviderModel!
@@ -1002,10 +921,7 @@ type Mutation {
   updateUser(data: UpdateUserInput!): User!
   updateUserDisabled(disabled: Boolean!, userId: String!): User!
   updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
-  upsertIntegrationObjectMapping(
-    input: CreateIntegrationObjectMappingInput!
-    integrationId: String!
-  ): IntegrationObjectMapping!
+  upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
   upsertVersionLocalization(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   verifyTwoFactor(data: VerifyTwoFactorInput!): Auth!
 }
@@ -1032,9 +948,7 @@ type PageInfo {
 }
 
 type Project {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   customerId: String
   environments: [Environment!]
@@ -1044,9 +958,7 @@ type Project {
   name: String!
   subscriptionId: String
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -1081,12 +993,7 @@ type PublicSsoProviderModel {
 type Query {
   adminInstanceSettings: InstanceSetting!
   adminProjectMembers(projectId: String!): [AdminProjectMember!]!
-  adminProjects(
-    page: Int
-    pageSize: Int
-    query: String
-    usesInstanceLicense: String
-  ): AdminProjectList!
+  adminProjects(page: Int, pageSize: Int, query: String, usesInstanceLicense: String): AdminProjectList!
   adminSettings: AdminSettingsInfo!
   adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
@@ -1117,144 +1024,42 @@ type Query {
   listAccessTokens(environmentId: String!): [AccessToken!]!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
-  listContentVersions(
-    after: String
-    before: String
-    contentId: String!
-    first: Int
-    last: Int
-    skip: Int
-  ): VersionConnection!
+  listContentVersions(after: String, before: String, contentId: String!, first: Int, last: Int, skip: Int): VersionConnection!
   listEvents(projectId: String!): [Events!]!
   listIntegrations(environmentId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
   listProjectSsoProviders(projectId: String!): [SsoProviderModel!]!
   listSegment(environmentId: String): [Segment!]!
-  listSessionsDetail(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: AnalyticsOrder!
-    query: AnalyticsQuery!
-    skip: Int
-  ): BizSessionConnection!
+  listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   listSigningSecrets(environmentId: String!): [EnvironmentSigningSecret!]!
   listThemes(projectId: String!): [Theme!]!
   listVersionLocalizations(versionId: String!): [VersionOnLocalization!]!
   me: User!
-  queryBizCompany(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: BizOrder!
-    query: BizQuery!
-    skip: Int
-  ): BizConnection!
-  queryBizCompanyEvents(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: BizOrder!
-    query: BizEventQuery!
-    skip: Int
-  ): BizEventConnection!
-  queryBizSession(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: AnalyticsOrder!
-    query: AnalyticsQuery!
-    skip: Int
-  ): BizSessionConnection!
-  queryBizUser(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: BizOrder!
-    query: BizQuery!
-    skip: Int
-  ): BizUserConnection!
-  queryBizUserEvents(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: BizOrder!
-    query: BizEventQuery!
-    skip: Int
-  ): BizEventConnection!
-  queryContent(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: ContentOrder
-    query: ContentQuery
-    skip: Int
-  ): ContentConnection!
-  queryContentAnalytics(
-    contentId: String!
-    endDate: String!
-    environmentId: String!
-    startDate: String!
-    timezone: String!
-  ): Analytics!
-  queryContentQuestionAnalytics(
-    contentId: String!
-    endDate: String!
-    environmentId: String!
-    startDate: String!
-    timezone: String!
-  ): JSON!
+  queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
+  queryBizCompanyEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
+  queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
+  queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizUserConnection!
+  queryBizUserEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
+  queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
+  queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
+  queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession
-  querySessionsByExternalId(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: AnalyticsOrder!
-    query: SessionQuery!
-    skip: Int
-  ): BizSessionConnection!
-  queryTooltipTargetMissingSessions(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: AnalyticsOrder!
-    query: TooltipTargetMissingQuery!
-    skip: Int
-  ): TooltipTargetMissingResponse!
-  queryTrackerUsers(
-    after: String
-    before: String
-    first: Int
-    last: Int
-    orderBy: AnalyticsOrder!
-    query: AnalyticsQuery!
-    skip: Int
-  ): TrackerUserConnection!
+  querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
+  queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
+  queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
   userEnvironments(projectId: String!): [Environment!]!
+  validateIdentityToken(environmentId: String!, token: String!): IdentityTokenDiagnosisModel!
   verifyInstallation(environmentId: String!): InstallationStatus!
 }
 
 type Register {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   email: String!
   id: ID!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -1276,9 +1081,7 @@ input ResetPasswordInput {
   email: String!
 }
 
-"""
-User role
-"""
+"""User role"""
 enum Role {
   ADMIN
   OWNER
@@ -1316,9 +1119,7 @@ type Segment {
   bizType: SegmentBizType!
   columns: JSON
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   dataType: SegmentDataType!
@@ -1327,9 +1128,7 @@ type Segment {
   name: String
   projectId: String
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -1370,9 +1169,7 @@ type SsoProviderModel {
   authorizationUrl: String
   clientId: String!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   issuer: String!
@@ -1382,16 +1179,12 @@ type SsoProviderModel {
   tokenUrl: String
   type: SsoProviderType!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   userInfoUrl: String
 }
 
-"""
-SSO identity provider protocol
-"""
+"""SSO identity provider protocol"""
 enum SsoProviderType {
   OIDC
   SAML
@@ -1400,9 +1193,7 @@ enum SsoProviderType {
 type Step {
   contentId: String
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   cvid: String!
   data: JSON
@@ -1416,9 +1207,7 @@ type Step {
   trigger: JSON
   type: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   versionId: String!
 }
@@ -1454,9 +1243,7 @@ type Storage {
 type SubscriptionModel {
   cancelAt: String
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   interval: String!
@@ -1468,16 +1255,12 @@ type SubscriptionModel {
   status: String!
   subscriptionId: String!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type SubscriptionPlanModel {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   interval: String!
@@ -1486,16 +1269,12 @@ type SubscriptionPlanModel {
   planType: String!
   sessionCountQuota: Int!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
 type Theme {
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   isDefault: Boolean!
@@ -1504,9 +1283,7 @@ type Theme {
   projectId: String!
   settings: JSON!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   variations: JSON
 }
@@ -1667,9 +1444,7 @@ input UpdateUserInput {
 type User {
   avatarUrl: String
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   disabled: Boolean!
   email: String!
@@ -1681,9 +1456,7 @@ type User {
   twoFactorAvailable: Boolean
   twoFactorEnabled: Boolean!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -1691,17 +1464,13 @@ type UserOnProject {
   actived: Boolean!
   capabilities: [String!]!
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
   project: Project!
   role: Role!
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   user: User
 }
@@ -1716,9 +1485,7 @@ type Version {
   config: JSON
   contentId: String
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   data: JSON
   id: ID!
@@ -1727,9 +1494,7 @@ type Version {
   steps: [Step!]
   themeId: String
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
 }
 
@@ -1760,18 +1525,14 @@ input VersionInput {
 type VersionOnLocalization {
   backup: JSON
 
-  """
-  Identifies the date and time when the object was created.
-  """
+  """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   enabled: Boolean!
   id: ID!
   localizationId: String!
   localized: JSON
 
-  """
-  Identifies the date and time when the object was last updated.
-  """
+  """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   version: Version
   versionId: String!
