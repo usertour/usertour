@@ -103,11 +103,19 @@ interface AttributeChange {
 type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
 
 export type IdentifyOptions = {
-  signature?: string;
+  /**
+   * Identity token: a JWT minted by your backend, HS256-signed with the
+   * environment's signing secret — { sub: userId, companyId?, exp? }.
+   */
+  token?: string;
 };
 
 export interface GroupOptions {
-  signature?: string;
+  /**
+   * Identity token carrying a companyId claim matching this group() call.
+   * Supersedes the token supplied to identify().
+   */
+  token?: string;
   membership?: Attributes;
 }
 

@@ -95,7 +95,7 @@ export interface IUsertourSocket {
   // setAuth establishes/updates credentials and triggers a background connect
   // when needed; outgoing messages buffer through Socket.IO until the connect
   // resolves, with `EMIT_TIMEOUT` covering the no-connect-ever case.
-  setAuth(externalUserId: string, token: string): void;
+  setAuth(externalUserId: string, token: string, identityToken?: string): void;
   disconnect(): void;
   isConnected(): boolean;
   isInBatch(): boolean;
@@ -169,7 +169,7 @@ export class UsertourSocket implements IUsertourSocket {
    *  - Different credentials: cancels any in-flight connect, disconnects the
    *    current socket, then starts a fresh connect with the new credentials.
    */
-  setAuth(externalUserId: string, token: string): void {
+  setAuth(externalUserId: string, token: string, identityToken?: string): void {
     if (this.requiresReconnect(externalUserId, token)) {
       logger.info('Auth credentials changed, reconnecting socket...');
       this.resetBatchState();
@@ -177,7 +177,12 @@ export class UsertourSocket implements IUsertourSocket {
       this.socket.disconnect();
     }
 
-    this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
+    this.authCredentials = {
+      externalUserId,
+      token,
+      identityToken,
+      clientContext: getClientContext(),
+    };
 
     this.ensureConnecting();
   }

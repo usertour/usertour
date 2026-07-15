@@ -31,6 +31,7 @@ describe('ConditionEvaluationService', () => {
       token: 'test-token',
       deleted: false,
       isPrimary: false,
+      requireIdentityVerification: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },

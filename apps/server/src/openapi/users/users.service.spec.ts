@@ -18,6 +18,7 @@ describe('OpenAPIUsersService', () => {
     name: 'Test Environment',
     token: 'test-token',
     isPrimary: false,
+    requireIdentityVerification: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

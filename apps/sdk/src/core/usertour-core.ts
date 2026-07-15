@@ -93,6 +93,9 @@ export class UsertourCore extends Evented {
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
+  // Identity token (customer-backend-signed JWT, ADR 0009) supplied by the
+  // host app. Kept alongside the ids so reconnect handshakes re-present it.
+  private identityToken: string | undefined;
 
   // === Private Properties ===
   private baseZIndex = WidgetZIndex.BASE;
@@ -157,8 +160,13 @@ export class UsertourCore extends Evented {
    * Identifies a user with the given ID and attributes
    * @param userId - External user ID
    * @param attributes - Optional user attributes
+   * @param opts - Optional identify settings (identity token)
    */
-  async identify(userId: string, attributes?: UserTourTypes.Attributes): Promise<void> {
+  async identify(
+    userId: string,
+    attributes?: UserTourTypes.Attributes,
+    opts?: UserTourTypes.IdentifyOptions,
+  ): Promise<void> {
     // Ensure the SDK has been initialized before calling identify
     this.ensureInit();
 
@@ -187,12 +195,13 @@ export class UsertourCore extends Evented {
     // optimistically would cause a retry-with-same-attrs after a failed
     // upsert to be skipped.
     this.externalUserId = externalUserId;
+    this.identityToken = opts?.token;
 
     // Hand the auth credentials to the socket layer; the connection lifecycle
     // is owned there. setAuth is synchronous: it triggers a background
     // connect when needed, and any failure surfaces through the EMIT_TIMEOUT
     // applied to the upsert below.
-    this.socketService.setAuth(externalUserId, this.startOptions.token);
+    this.socketService.setAuth(externalUserId, this.startOptions.token, this.identityToken);
 
     const result = await this.socketService.upsertUser(
       {
@@ -297,6 +306,11 @@ export class UsertourCore extends Evented {
     // reason as identify(): preserves change-detection retry semantics in
     // updateGroup.
     this.externalCompanyId = externalCompanyId;
+    // A token passed here supersedes the identify() one — it must carry a
+    // companyId claim matching this group() call.
+    if (opts?.token) {
+      this.identityToken = opts.token;
+    }
 
     const result = await this.socketService.upsertCompany(
       {
@@ -304,6 +318,7 @@ export class UsertourCore extends Evented {
         externalCompanyId,
         attributes,
         membership: opts?.membership,
+        token: this.identityToken,
       },
       { batch: true },
     );
@@ -340,6 +355,10 @@ export class UsertourCore extends Evented {
       return; // No changes detected, skip the update
     }
 
+    if (opts?.token) {
+      this.identityToken = opts.token;
+    }
+
     // First call API with new attributes
     const result = await this.socketService.upsertCompany(
       {
@@ -347,6 +366,7 @@ export class UsertourCore extends Evented {
         externalCompanyId,
         attributes,
         membership: opts?.membership,
+        token: this.identityToken,
       },
       { batch: true },
     );
@@ -1599,6 +1619,7 @@ export class UsertourCore extends Evented {
       clientContext,
       externalCompanyId,
       externalUserId,
+      identityToken: this.identityToken,
       token,
       flowSessionId,
       checklistSessionId,
@@ -1615,6 +1636,7 @@ export class UsertourCore extends Evented {
   private cleanupUserData() {
     this.externalUserId = undefined;
     this.externalCompanyId = undefined;
+    this.identityToken = undefined;
     // Cleanup all attributes using the attribute manager
     this.attributeManager.cleanup();
   }

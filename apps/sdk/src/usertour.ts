@@ -80,8 +80,12 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       });
     },
 
-    identify: async (userId: string, attributes?: UserTourTypes.Attributes) => {
-      return await app.identify(userId, attributes);
+    identify: async (
+      userId: string,
+      attributes?: UserTourTypes.Attributes,
+      opts?: UserTourTypes.IdentifyOptions,
+    ) => {
+      return await app.identify(userId, attributes, opts);
     },
 
     identifyAnonymous: async (attributes?: UserTourTypes.Attributes) => {
