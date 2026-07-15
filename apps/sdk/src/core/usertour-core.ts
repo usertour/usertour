@@ -195,7 +195,13 @@ export class UsertourCore extends Evented {
     // optimistically would cause a retry-with-same-attrs after a failed
     // upsert to be skipped.
     this.externalUserId = externalUserId;
-    this.identityToken = opts?.token;
+    // Only overwrite when a token is supplied (same semantics as group()):
+    // a tokenless re-identify of the same user — e.g. an attributes refresh —
+    // must not wipe the proof the reconnect handshake depends on. A user
+    // switch clears it via reset() above.
+    if (opts?.token) {
+      this.identityToken = opts.token;
+    }
 
     // Hand the auth credentials to the socket layer; the connection lifecycle
     // is owned there. setAuth is synchronous: it triggers a background
@@ -238,6 +244,14 @@ export class UsertourCore extends Evented {
     let userId = '';
     if (storageData?.userId) {
       userId = storageData.userId;
+      // Anonymous ids minted before the `anon-` prefix existed are bare
+      // UUIDs. Upgrade them deterministically (same UUID, prefixed) so the
+      // server can keep its anonymous exemption strict — relaxing it to bare
+      // UUIDs would exempt real users whose ids happen to be UUIDs.
+      if (!userId.startsWith('anon-')) {
+        userId = `anon-${userId}`;
+        storage.setLocalStorage(key, { userId });
+      }
     } else {
       userId = `anon-${uuidV4()}`;
       storage.setLocalStorage(key, { userId });
@@ -305,6 +319,8 @@ export class UsertourCore extends Evented {
     // racing this method's ack. Attributes stay below the await for the same
     // reason as identify(): preserves change-detection retry semantics in
     // updateGroup.
+    const previousCompanyId = this.externalCompanyId;
+    const previousIdentityToken = this.identityToken;
     this.externalCompanyId = externalCompanyId;
     // A token passed here supersedes the identify() one — it must carry a
     // companyId claim matching this group() call.
@@ -323,6 +339,11 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result) {
+      // Roll back the optimistic identity state: a server-rejected membership
+      // claim left in place would ride every reconnect handshake (rejected
+      // companyId + non-matching token) and kill the whole connection.
+      this.externalCompanyId = previousCompanyId;
+      this.identityToken = previousIdentityToken;
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
@@ -346,6 +367,14 @@ export class UsertourCore extends Evented {
     const externalUserId = this.ensureIdentify();
     const externalCompanyId = this.ensureGroup();
 
+    // Store a fresh token BEFORE the change-detection early return: hosts
+    // refreshing short-lived tokens call updateGroup with unchanged
+    // attributes, and the new token must still reach the reconnect auth.
+    if (opts?.token) {
+      this.identityToken = opts.token;
+      this.syncSocketCredentials();
+    }
+
     // Check if attributes have actually changed to avoid unnecessary API calls
     const hasCompanyChanged = attributes && this.attributeManager.companyAttrsChanged(attributes);
     const hasMembershipChanged =
@@ -353,10 +382,6 @@ export class UsertourCore extends Evented {
 
     if (!hasCompanyChanged && !hasMembershipChanged) {
       return; // No changes detected, skip the update
-    }
-
-    if (opts?.token) {
-      this.identityToken = opts.token;
     }
 
     // First call API with new attributes

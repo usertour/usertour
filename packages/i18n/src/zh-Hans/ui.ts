@@ -866,6 +866,7 @@ const translations = {
           '请把密钥复制到您的后端配置中。像密码一样保管它 —— 切勿暴露在前端代码里。',
         dialogLoading: '加载中…',
         copiedToast: '密钥已复制到剪贴板',
+        fetchFailure: '获取密钥失败,请重试。',
       },
       enforcement: {
         title: '强制身份验证',
@@ -884,15 +885,18 @@ const translations = {
         description: '粘贴您后端生成的身份令牌,检查它能否通过本环境签名密钥的验证。',
         placeholder: 'eyJhbGciOiJIUzI1NiIs...',
         checkButton: '校验',
+        checkFailure: '校验请求失败,请重试。',
         subject: '用户',
         company: '公司',
         expiresAt: '过期时间',
         status: {
           valid: '有效',
           expired: '已过期',
+          not_yet_valid: '尚未生效(nbf 在未来)',
           invalid_signature: '签名无效',
           malformed: '不是有效的 JWT',
           missing_subject: '缺少 sub 声明',
+          no_active_secret: '该环境没有可用于校验的有效签名密钥',
         },
       },
       coverage: {

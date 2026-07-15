@@ -61,6 +61,11 @@ const SecretEntry = (props: SecretEntryProps) => {
     const secret = await fetchSigningSecret(environmentId, signingSecret.id);
     if (secret) {
       copy(secret, t('settings.identityVerification.secrets.copiedToast'));
+    } else {
+      toast({
+        variant: 'destructive',
+        title: t('settings.identityVerification.secrets.fetchFailure'),
+      });
     }
   };
 
@@ -69,6 +74,14 @@ const SecretEntry = (props: SecretEntryProps) => {
     const secret = await fetchSigningSecret(environmentId, signingSecret.id);
     if (secret) {
       setFullSecret(secret);
+    } else {
+      // Don't leave an open dialog with an empty code block (e.g. the secret
+      // was revoked in another tab, or the request failed).
+      setRevealOpen(false);
+      toast({
+        variant: 'destructive',
+        title: t('settings.identityVerification.secrets.fetchFailure'),
+      });
     }
   };
 

@@ -36,7 +36,7 @@ Signatures are computed on the **customer's backend** and delivered to their fro
 
 ### 3. Anonymous users
 
-`identifyAnonymous` generates `anon-${uuidv4()}` client-side with no server round-trip, so it can never be signed. The enforced-mode invariant:
+`identifyAnonymous` generates `anon-${uuidv4()}` client-side with no server round-trip, so it can never be signed. Anonymous ids minted before the prefix existed were bare UUIDs persisted in localStorage; the SDK migrates them deterministically (`anon-` + the same UUID) rather than the server relaxing its pattern — accepting bare UUIDs server-side would silently exempt real users whose ids happen to be UUIDs, punching a hole in enforcement. The CDN-distributed runtime rolls the migration out automatically. The enforced-mode invariant:
 
 - An **unsigned** identify is accepted only when `externalUserId` matches the anonymous format (`anon-` prefix + UUID v4). Any other id requires a valid signature — a real user id cannot be smuggled through the anonymous channel.
 - **Anonymous users cannot `group()`**: they can hold no membership proof, and an anonymous visitor having a company affiliation is semantically incoherent anyway.

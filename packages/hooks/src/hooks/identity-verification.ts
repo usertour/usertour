@@ -50,6 +50,10 @@ export const useListSigningSecretsQuery = (
 
 export const useCreateSigningSecretMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateSigningSecret, {
+    // The response carries the full plaintext secret; keep it out of the
+    // normalized cache (same rationale as useGetSigningSecretLazyQuery).
+    // The masked list updates via the refetch, not the cache write.
+    fetchPolicy: 'no-cache',
     refetchQueries: ['ListSigningSecrets'],
   });
   // Returns the full secret so the caller can show it in the reveal dialog.
@@ -114,7 +118,14 @@ export const useSetRequireIdentityVerificationMutation = () => {
 };
 
 export interface IdentityTokenDiagnosis {
-  status: 'valid' | 'expired' | 'invalid_signature' | 'malformed' | 'missing_subject';
+  status:
+    | 'valid'
+    | 'expired'
+    | 'not_yet_valid'
+    | 'invalid_signature'
+    | 'malformed'
+    | 'missing_subject'
+    | 'no_active_secret';
   subject?: string | null;
   companyId?: string | null;
   expiresAt?: string | null;

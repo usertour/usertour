@@ -24,6 +24,10 @@ export const SettingsIdentityVerification = () => {
   );
 
   const activeSecrets = signingSecrets ?? [];
+  // SHARED_CACHE convention: cache-and-network refetches flip `loading` while
+  // data is still present; a bare !loading gate would unmount the stateful
+  // SigningSecretCard mid-create and destroy the one-time reveal dialog.
+  const secretsInitialLoading = loading && !signingSecrets;
 
   return (
     <SettingsCardStack>
@@ -51,7 +55,7 @@ export const SettingsIdentityVerification = () => {
             </p>
           </div>
           <Separator />
-          {environmentId && !loading && (
+          {environmentId && !secretsInitialLoading && (
             <SigningSecretCard environmentId={environmentId} signingSecrets={activeSecrets} />
           )}
         </div>
@@ -66,7 +70,10 @@ export const SettingsIdentityVerification = () => {
 
       {/* Coverage */}
       <SettingsCard>
-        <IdentityVerificationCoverageCard stats={stats} loading={statsLoading || !environment} />
+        <IdentityVerificationCoverageCard
+          stats={stats}
+          loading={(statsLoading && !stats) || !environment}
+        />
       </SettingsCard>
 
       {/* Enforcement */}

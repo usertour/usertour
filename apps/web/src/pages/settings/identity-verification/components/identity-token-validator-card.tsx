@@ -1,24 +1,31 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { Badge, Button, Input } from '@usertour/ui';
+import { Badge, Button, Input, useToast } from '@usertour/ui';
 import { type IdentityTokenDiagnosis, useValidateIdentityTokenLazyQuery } from '@usertour/hooks';
 
 export interface IdentityTokenValidatorCardProps {
   environmentId: string;
 }
 
-const STATUS_BADGE_VARIANT: Record<IdentityTokenDiagnosis['status'], 'success' | 'destructive'> = {
+const STATUS_BADGE_VARIANT: Record<
+  IdentityTokenDiagnosis['status'],
+  'success' | 'destructive' | 'secondary'
+> = {
   valid: 'success',
   expired: 'destructive',
+  not_yet_valid: 'destructive',
   invalid_signature: 'destructive',
   malformed: 'destructive',
   missing_subject: 'destructive',
+  // Not the token's fault — the environment has nothing to verify against.
+  no_active_secret: 'secondary',
 };
 
 export const IdentityTokenValidatorCard = (props: IdentityTokenValidatorCardProps) => {
   const { environmentId } = props;
   const { t } = useTranslation();
+  const { toast } = useToast();
   const { invoke: validateToken, loading } = useValidateIdentityTokenLazyQuery();
   const [token, setToken] = useState('');
   const [diagnosis, setDiagnosis] = useState<IdentityTokenDiagnosis | null>(null);
@@ -26,6 +33,14 @@ export const IdentityTokenValidatorCard = (props: IdentityTokenValidatorCardProp
   const handleCheck = async () => {
     const result = await validateToken(environmentId, token.trim());
     setDiagnosis(result);
+    // errorPolicy 'all' resolves failed queries with null data instead of
+    // throwing — a silent no-op here would leave the button looking dead.
+    if (!result) {
+      toast({
+        variant: 'destructive',
+        title: t('settings.identityVerification.validator.checkFailure'),
+      });
+    }
   };
 
   return (

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService, NotBeforeError, TokenExpiredError } from '@nestjs/jwt';
 import { Environment, EnvironmentSigningSecret } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { EncryptionService } from './encryption.service';
@@ -35,20 +35,42 @@ export type SignatureVerdict =
   /** Unsigned, but the user id is an SDK-generated anonymous id (exempt). */
   | 'anonymous';
 
-/** Claims we read from a verified identity token. Extra claims are ignored. */
+/**
+ * Claims we read from a verified identity token. Extra claims are ignored.
+ * `sub`/`companyId` are typed unknown because customer JWT libraries may emit
+ * them as JSON numbers — comparison always goes through claimMatches.
+ */
 export interface IdentityTokenPayload {
-  sub?: string;
-  companyId?: string;
+  sub?: unknown;
+  companyId?: unknown;
   exp?: number;
 }
 
 /** Console validator result (settings page "Validate token" tool). */
 export interface IdentityTokenDiagnosis {
-  status: 'valid' | 'expired' | 'invalid_signature' | 'malformed' | 'missing_subject';
+  status:
+    | 'valid'
+    | 'expired'
+    | 'not_yet_valid'
+    | 'invalid_signature'
+    | 'malformed'
+    | 'missing_subject'
+    | 'no_active_secret';
   subject?: string;
   companyId?: string;
   expiresAt?: Date;
 }
+
+/**
+ * Single-token verification outcome shared by the runtime and validator
+ * paths, so both always classify a token identically.
+ */
+type TokenCheck =
+  | { status: 'valid'; payload: IdentityTokenPayload }
+  | { status: 'expired' | 'not_yet_valid'; payload: IdentityTokenPayload | null }
+  | { status: 'invalid_signature' }
+  | { status: 'malformed' }
+  | { status: 'no_active_secret' };
 
 /**
  * Prefix for environment signing secrets, part of the `ut?_` credential
@@ -63,9 +85,30 @@ export const SIGNING_SECRET_PREFIX = 'utv_';
  * SDK-generated anonymous ids: `anon-` + UUID v4 (see identifyAnonymous in
  * apps/sdk). Only ids in exactly this shape may skip the identity token —
  * anything else unsigned is treated as an unproven identity claim.
+ *
+ * Deliberately NOT relaxed to bare UUIDs (the pre-2025-11 anonymous format):
+ * customers whose real user ids are UUIDs would have those users silently
+ * exempted, punching a hole in enforcement. Legacy anonymous ids are instead
+ * migrated in the SDK (identifyAnonymous deterministically upgrades a stored
+ * bare UUID to `anon-<uuid>`), which the CDN-distributed runtime rolls out
+ * automatically.
  */
 const ANONYMOUS_USER_ID_PATTERN =
   /^anon-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Upper bound on an identity token accepted for verification. Mirrors the
+ * UpsertCompanyPayload @MaxLength — the handshake path is unauthenticated
+ * (the environment token is public), so oversized tokens must be rejected
+ * before any decode/decrypt work.
+ */
+const MAX_IDENTITY_TOKEN_LENGTH = 4096;
+
+/**
+ * Clock-skew tolerance for exp/nbf checks. Customer backends signing tokens
+ * a second or two ahead of our clock must not be classified as invalid.
+ */
+const CLOCK_TOLERANCE_SECONDS = 30;
 
 /** A secret's lastUsedAt is persisted at most once per this window. */
 const LAST_USED_WRITE_INTERVAL_SECONDS = 60;
@@ -83,6 +126,14 @@ export interface VerificationStats {
 
 export const isAnonymousExternalUserId = (externalUserId: string): boolean => {
   return ANONYMOUS_USER_ID_PATTERN.test(externalUserId);
+};
+
+/**
+ * Claim comparison with string coercion: customer JWT libraries commonly emit
+ * numeric ids as JSON numbers, while the SDK always sends string ids.
+ */
+const claimMatches = (claim: unknown, expected: string): boolean => {
+  return claim != null && String(claim) === expected;
 };
 
 @Injectable()
@@ -109,8 +160,11 @@ export class IdentityVerificationService {
     if (!token) {
       verdict = isAnonymousExternalUserId(externalUserId) ? 'anonymous' : 'missing';
     } else {
-      const payload = await this.verifyAgainstActiveSecrets(environmentId, token);
-      verdict = payload?.sub === externalUserId ? 'valid' : 'invalid';
+      const check = await this.checkToken(environmentId, token, { touchLastUsed: true });
+      verdict =
+        check.status === 'valid' && claimMatches(check.payload.sub, externalUserId)
+          ? 'valid'
+          : 'invalid';
     }
     this.recordVerdict(environmentId, 'user', verdict);
     return verdict;
@@ -131,9 +185,11 @@ export class IdentityVerificationService {
     if (!token) {
       verdict = 'missing';
     } else {
-      const payload = await this.verifyAgainstActiveSecrets(environmentId, token);
+      const check = await this.checkToken(environmentId, token, { touchLastUsed: true });
       verdict =
-        payload?.sub === externalUserId && payload?.companyId === externalCompanyId
+        check.status === 'valid' &&
+        claimMatches(check.payload.sub, externalUserId) &&
+        claimMatches(check.payload.companyId, externalCompanyId)
           ? 'valid'
           : 'invalid';
     }
@@ -158,8 +214,9 @@ export class IdentityVerificationService {
    * Connection-level gate for the socket handshake: the claimed user identity
    * must be proven, and when a company id is claimed its membership must be
    * too — an unproven company claim would leak company-targeted content to
-   * non-members. Logs the rejection reason; callers only branch on the
-   * boolean.
+   * non-members. The token is verified once; both verdicts derive from the
+   * same payload and both are counted. Logs the rejection reason; callers
+   * only branch on the boolean.
    */
   async verifyConnectionIdentity(
     environment: Pick<Environment, 'id' | 'requireIdentityVerification'>,
@@ -167,31 +224,51 @@ export class IdentityVerificationService {
     externalCompanyId: string | undefined,
     identityToken: string | undefined,
   ): Promise<boolean> {
-    const userVerdict = await this.verifyUserIdentity(
-      environment.id,
-      externalUserId,
-      identityToken,
-    );
+    let userVerdict: SignatureVerdict;
+    let companyVerdict: SignatureVerdict | undefined;
+    let checkStatus: TokenCheck['status'] | undefined;
+
+    if (!identityToken) {
+      userVerdict = isAnonymousExternalUserId(externalUserId) ? 'anonymous' : 'missing';
+      companyVerdict = externalCompanyId ? 'missing' : undefined;
+    } else {
+      const check = await this.checkToken(environment.id, identityToken, { touchLastUsed: true });
+      checkStatus = check.status;
+      const payload = check.status === 'valid' ? check.payload : null;
+      const userProven = payload !== null && claimMatches(payload.sub, externalUserId);
+      userVerdict = userProven ? 'valid' : 'invalid';
+      if (externalCompanyId) {
+        companyVerdict =
+          userProven && claimMatches(payload.companyId, externalCompanyId) ? 'valid' : 'invalid';
+      }
+    }
+
+    this.recordVerdict(environment.id, 'user', userVerdict);
+    if (companyVerdict) {
+      this.recordVerdict(environment.id, 'company', companyVerdict);
+    }
+
     if (!this.isAcceptable(userVerdict, environment.requireIdentityVerification)) {
       this.logger.warn(
-        `[WS] Rejecting connection for user ${externalUserId} in environment ${environment.id}: identity token verdict=${userVerdict}`,
+        `[WS] Rejecting connection for user ${externalUserId} in environment ${environment.id}: identity token verdict=${userVerdict}${checkStatus ? ` (${checkStatus})` : ''}`,
       );
       return false;
     }
-    if (externalCompanyId) {
-      return await this.verifyGroupClaim(
-        environment,
-        externalUserId,
-        externalCompanyId,
-        identityToken,
+    if (
+      companyVerdict &&
+      !this.isAcceptable(companyVerdict, environment.requireIdentityVerification)
+    ) {
+      this.logger.warn(
+        `[WS] Rejecting connection for user ${externalUserId} in environment ${environment.id}: company claim verdict=${companyVerdict} for company ${externalCompanyId}`,
       );
+      return false;
     }
     return true;
   }
 
   /**
    * Message-level gate for group(): the token's companyId claim must match
-   * the claimed company. Also reused for the handshake's company claim.
+   * the claimed company.
    */
   async verifyGroupClaim(
     environment: Pick<Environment, 'id' | 'requireIdentityVerification'>,
@@ -215,51 +292,28 @@ export class IdentityVerificationService {
   }
 
   /**
-   * Detailed single-token check for the console's validator tool. Unlike the
-   * verify paths this reports WHY a token fails, and does not touch the
-   * coverage counters.
+   * Detailed single-token check for the console's validator tool. Shares the
+   * exact classification path with runtime verification, reports WHY a token
+   * fails, and neither counts coverage nor touches lastUsedAt.
    */
   async diagnoseIdentityToken(
     environmentId: string,
     token: string,
   ): Promise<IdentityTokenDiagnosis> {
-    const activeSecrets = await this.activeSecrets(environmentId);
-
-    for (const signingSecret of activeSecrets) {
-      const secretValue = this.encryptionService.decrypt(signingSecret.secret);
-      if (!secretValue) {
-        continue;
-      }
-      try {
-        const payload = this.jwtService.verify<IdentityTokenPayload>(token, {
-          secret: secretValue,
-          algorithms: ['HS256'],
-        });
-        return {
-          status: payload.sub ? 'valid' : 'missing_subject',
-          subject: payload.sub,
-          companyId: payload.companyId,
-          expiresAt: payload.exp ? new Date(payload.exp * 1000) : undefined,
-        };
-      } catch (error) {
-        if (error instanceof TokenExpiredError) {
-          // Expiry is checked only after the signature verifies, so this
-          // secret signed the token — no need to try the other one.
-          const payload = this.decodePayload(token);
-          return {
-            status: 'expired',
-            subject: payload?.sub,
-            companyId: payload?.companyId,
-            expiresAt: payload?.exp ? new Date(payload.exp * 1000) : undefined,
-          };
+    const check = await this.checkToken(environmentId, token, { touchLastUsed: false });
+    switch (check.status) {
+      case 'valid': {
+        if (check.payload.sub == null) {
+          return { status: 'missing_subject', ...this.decodedClaims(check.payload) };
         }
-        if (error instanceof JsonWebTokenError && error.message !== 'invalid signature') {
-          return { status: 'malformed' };
-        }
-        // invalid signature — try the next active secret
+        return { status: 'valid', ...this.decodedClaims(check.payload) };
       }
+      case 'expired':
+      case 'not_yet_valid':
+        return { status: check.status, ...this.decodedClaims(check.payload) };
+      default:
+        return { status: check.status };
     }
-    return { status: 'invalid_signature' };
   }
 
   /**
@@ -294,18 +348,39 @@ export class IdentityVerificationService {
   }
 
   /**
-   * Verify the token's HS256 signature against each active secret and return
-   * its claims, or null when no active secret verifies it. Secrets are
-   * AES-256-GCM encrypted at rest; the signing key is the decrypted `utv_...`
-   * string exactly as the customer holds it.
+   * Classify one token against the environment's active secrets. The single
+   * source of truth for both runtime verification and the console validator —
+   * they must never disagree.
    */
-  private async verifyAgainstActiveSecrets(
+  private async checkToken(
     environmentId: string,
     token: string,
-  ): Promise<IdentityTokenPayload | null> {
+    options: { touchLastUsed: boolean },
+  ): Promise<TokenCheck> {
+    // The handshake path is unauthenticated; bound the work an arbitrary
+    // token can cause before any decode/decrypt happens.
+    if (token.length > MAX_IDENTITY_TOKEN_LENGTH) {
+      this.logger.warn(
+        `Oversized identity token (${token.length} chars) in environment ${environmentId}`,
+      );
+      return { status: 'malformed' };
+    }
+
+    // Structural check first, so garbage input classifies as malformed even
+    // when the environment has no active secret to verify against.
+    const decoded = this.decodePayload(token);
+    if (decoded === null) {
+      return { status: 'malformed' };
+    }
+
     const activeSecrets = await this.activeSecrets(environmentId);
+    if (activeSecrets.length === 0) {
+      return { status: 'no_active_secret' };
+    }
 
     for (const signingSecret of activeSecrets) {
+      // Secrets are AES-256-GCM encrypted at rest; the signing key is the
+      // decrypted `utv_...` string exactly as the customer holds it.
       const secretValue = this.encryptionService.decrypt(signingSecret.secret);
       if (!secretValue) {
         this.logger.error(`Failed to decrypt signing secret ${signingSecret.id}; skipping`);
@@ -315,21 +390,30 @@ export class IdentityVerificationService {
         const payload = this.jwtService.verify<IdentityTokenPayload>(token, {
           secret: secretValue,
           algorithms: ['HS256'],
+          clockTolerance: CLOCK_TOLERANCE_SECONDS,
         });
-        this.touchLastUsed(signingSecret);
-        return payload;
-      } catch (error) {
-        if (error instanceof TokenExpiredError) {
-          // Expiry is checked only after the signature verifies: the customer
-          // is signing with this secret, so record the use and stop trying.
+        if (options.touchLastUsed) {
           this.touchLastUsed(signingSecret);
-          this.logger.warn(`Expired identity token in environment ${environmentId}`);
-          return null;
         }
-        // Bad signature or malformed token — try the next active secret.
+        return { status: 'valid', payload };
+      } catch (error) {
+        // exp/nbf are checked only after the signature verifies: the customer
+        // is signing with this secret, so record the use and stop trying.
+        if (error instanceof TokenExpiredError || error instanceof NotBeforeError) {
+          if (options.touchLastUsed) {
+            this.touchLastUsed(signingSecret);
+          }
+          const status = error instanceof TokenExpiredError ? 'expired' : 'not_yet_valid';
+          this.logger.warn(`Identity token ${status} in environment ${environmentId}`);
+          return { status, payload: decoded };
+        }
+        if (error instanceof JsonWebTokenError && error.message !== 'invalid signature') {
+          return { status: 'malformed' };
+        }
+        // Bad signature — try the next active secret.
       }
     }
-    return null;
+    return { status: 'invalid_signature' };
   }
 
   private async activeSecrets(environmentId: string): Promise<EnvironmentSigningSecret[]> {
@@ -342,6 +426,19 @@ export class IdentityVerificationService {
   private decodePayload(token: string): IdentityTokenPayload | null {
     const decoded = this.jwtService.decode(token);
     return decoded && typeof decoded === 'object' ? (decoded as IdentityTokenPayload) : null;
+  }
+
+  private decodedClaims(
+    payload: IdentityTokenPayload | null,
+  ): Omit<IdentityTokenDiagnosis, 'status'> {
+    if (!payload) {
+      return {};
+    }
+    return {
+      subject: payload.sub != null ? String(payload.sub) : undefined,
+      companyId: payload.companyId != null ? String(payload.companyId) : undefined,
+      expiresAt: payload.exp ? new Date(payload.exp * 1000) : undefined,
+    };
   }
 
   /**

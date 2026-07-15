@@ -116,6 +116,39 @@ describe('IdentityVerificationService', () => {
       expect(verdict).toBe('valid');
     });
 
+    it('returns valid when the sub claim is a JSON number matching a numeric user id', async () => {
+      const verdict = await service.verifyUserIdentity(
+        'env-1',
+        '12345',
+        mintToken(plainSecret, { sub: 12345 }),
+      );
+      expect(verdict).toBe('valid');
+    });
+
+    it('returns invalid for a token whose nbf lies beyond the clock tolerance', async () => {
+      const notActiveYet = tokenSigner.sign(
+        { sub: 'user-123' },
+        { secret: plainSecret, algorithm: 'HS256', notBefore: '10m' },
+      );
+      const verdict = await service.verifyUserIdentity('env-1', 'user-123', notActiveYet);
+      expect(verdict).toBe('invalid');
+    });
+
+    it('tolerates small nbf clock skew within the tolerance window', async () => {
+      const slightlyAhead = tokenSigner.sign(
+        { sub: 'user-123' },
+        { secret: plainSecret, algorithm: 'HS256', notBefore: 10 },
+      );
+      const verdict = await service.verifyUserIdentity('env-1', 'user-123', slightlyAhead);
+      expect(verdict).toBe('valid');
+    });
+
+    it('rejects an oversized token before any verification work', async () => {
+      const verdict = await service.verifyUserIdentity('env-1', 'user-123', 'a'.repeat(5000));
+      expect(verdict).toBe('invalid');
+      expect(prismaMock.environmentSigningSecret.findMany).not.toHaveBeenCalled();
+    });
+
     it('returns invalid for an expired token', async () => {
       const verdict = await service.verifyUserIdentity(
         'env-1',
@@ -292,6 +325,41 @@ describe('IdentityVerificationService', () => {
         mintToken(plainSecret, { companyId: 'company-9' }),
       );
       expect(diagnosis.status).toBe('missing_subject');
+    });
+
+    it('reports not_yet_valid for an nbf token beyond the tolerance, with decoded claims', async () => {
+      const notActiveYet = tokenSigner.sign(
+        { sub: 'user-123' },
+        { secret: plainSecret, algorithm: 'HS256', notBefore: '10m' },
+      );
+      const diagnosis = await service.diagnoseIdentityToken('env-1', notActiveYet);
+      expect(diagnosis.status).toBe('not_yet_valid');
+      expect(diagnosis.subject).toBe('user-123');
+    });
+
+    it('reports no_active_secret for a well-formed token when the environment has no secret', async () => {
+      prismaMock.environmentSigningSecret.findMany.mockResolvedValue([]);
+      const diagnosis = await service.diagnoseIdentityToken(
+        'env-1',
+        mintToken(plainSecret, { sub: 'user-123' }),
+      );
+      expect(diagnosis.status).toBe('no_active_secret');
+    });
+
+    it('still reports malformed for garbage input when the environment has no secret', async () => {
+      prismaMock.environmentSigningSecret.findMany.mockResolvedValue([]);
+      const diagnosis = await service.diagnoseIdentityToken('env-1', 'hello');
+      expect(diagnosis.status).toBe('malformed');
+    });
+
+    it('reports numeric claims as strings on a valid token', async () => {
+      const diagnosis = await service.diagnoseIdentityToken(
+        'env-1',
+        mintToken(plainSecret, { sub: 12345, companyId: 678 }),
+      );
+      expect(diagnosis.status).toBe('valid');
+      expect(diagnosis.subject).toBe('12345');
+      expect(diagnosis.companyId).toBe('678');
     });
   });
 
