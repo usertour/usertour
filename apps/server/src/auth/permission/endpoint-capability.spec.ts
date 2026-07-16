@@ -54,6 +54,13 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'environments.getAccessToken': O,
   'environments.createAccessToken': O,
   'environments.deleteAccessToken': O,
+  'environments.listSigningSecrets': O,
+  'environments.getSigningSecret': O,
+  'environments.createSigningSecret': O,
+  'environments.revokeSigningSecret': O,
+  'environments.setRequireIdentityVerification': O,
+  'environments.getIdentityVerificationStats': O,
+  'environments.validateIdentityToken': O,
   // biz
   'biz.queryBizUser': R,
   'biz.queryBizCompany': R,
@@ -130,8 +137,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 95 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(95);
+  it('snapshot covers exactly the same 102 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(102);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

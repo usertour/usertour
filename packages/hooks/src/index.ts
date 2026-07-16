@@ -14,6 +14,7 @@ export * from './hooks/access-tokens';
 export * from './hooks/api-tokens';
 export * from './hooks/oauth-connections';
 export * from './hooks/audit-logs';
+export * from './hooks/identity-verification';
 export * from './hooks/content';
 export * from './hooks/segments';
 export * from './hooks/activity-feed';

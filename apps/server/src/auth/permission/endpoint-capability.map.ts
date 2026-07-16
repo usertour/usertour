@@ -53,6 +53,13 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.getAccessToken': Capability.AccessTokenRead, // O
   'environments.createAccessToken': Capability.AccessTokenManage, // O
   'environments.deleteAccessToken': Capability.AccessTokenManage, // O
+  'environments.listSigningSecrets': Capability.AccessTokenRead, // O
+  'environments.getSigningSecret': Capability.AccessTokenRead, // O
+  'environments.createSigningSecret': Capability.AccessTokenManage, // O
+  'environments.revokeSigningSecret': Capability.AccessTokenManage, // O
+  'environments.setRequireIdentityVerification': Capability.AccessTokenManage, // O
+  'environments.getIdentityVerificationStats': Capability.AccessTokenRead, // O
+  'environments.validateIdentityToken': Capability.AccessTokenRead, // O
 
   // biz
   'biz.queryBizUser': Capability.UserRead, // R

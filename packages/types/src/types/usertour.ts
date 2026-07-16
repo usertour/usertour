@@ -7,7 +7,9 @@ export interface Usertour {
 
   identify: (userId: string, attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
 
-  identifyAnonymous: (attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
+  // No identity-token option: anonymous ids are minted client-side by the
+  // SDK, so a backend can never sign one — the server exempts them by format.
+  identifyAnonymous: (attributes?: Attributes) => Promise<void>;
 
   updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<void>;
 
@@ -103,11 +105,19 @@ interface AttributeChange {
 type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
 
 export type IdentifyOptions = {
-  signature?: string;
+  /**
+   * Identity token: a JWT minted by your backend, HS256-signed with the
+   * environment's signing secret — { sub: userId, companyId?, exp? }.
+   */
+  token?: string;
 };
 
 export interface GroupOptions {
-  signature?: string;
+  /**
+   * Identity token carrying a companyId claim matching this group() call.
+   * Supersedes the token supplied to identify().
+   */
+  token?: string;
   membership?: Attributes;
 }
 

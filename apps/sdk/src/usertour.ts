@@ -117,16 +117,23 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       });
     },
 
-    identify: async (userId: string, attributes?: UserTourTypes.Attributes) => {
-      return await app.identify(userId, attributes);
+    identify: async (
+      userId: string,
+      attributes?: UserTourTypes.Attributes,
+      opts?: UserTourTypes.IdentifyOptions,
+    ) => {
+      return await app.identify(userId, attributes, opts);
     },
 
     identifyAnonymous: async (attributes?: UserTourTypes.Attributes) => {
       return await app.identifyAnonymous(attributes);
     },
 
-    updateUser: async (attributes: UserTourTypes.Attributes) => {
-      return await app.updateUser(attributes);
+    updateUser: async (
+      attributes: UserTourTypes.Attributes,
+      opts?: UserTourTypes.IdentifyOptions,
+    ) => {
+      return await app.updateUser(attributes, opts);
     },
 
     group: async (

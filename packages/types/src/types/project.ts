@@ -4,6 +4,7 @@ export type Environment = {
   token: string;
   createdAt: string;
   isPrimary?: boolean;
+  requireIdentityVerification?: boolean;
 };
 
 export type Project = {

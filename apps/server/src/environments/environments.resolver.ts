@@ -16,6 +16,11 @@ import { Environment } from './models/environment.model';
 import { InstallationStatus } from './models/installation-status.model';
 import { AccessToken } from './dto/access-token.dto';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
+import {
+  EnvironmentSigningSecret,
+  IdentityTokenDiagnosisModel,
+  IdentityVerificationStats,
+} from './dto/signing-secret.dto';
 
 @Resolver(() => Environment)
 @UseGuards(PermissionGuard)
@@ -131,5 +136,72 @@ export class EnvironmentsResolver {
   ) {
     await this.environmentsService.removeAccessToken(environmentId, accessTokenId);
     return true;
+  }
+
+  // Identity verification (ADR 0008). Signing secrets are environment
+  // credentials of the same sensitivity class as API access tokens, so the
+  // whole surface rides the AccessToken capabilities (OWNER-only).
+
+  @Query(() => [EnvironmentSigningSecret])
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
+  async listSigningSecrets(@Args('environmentId') environmentId: string) {
+    const signingSecrets = await this.environmentsService.listActiveSigningSecrets(environmentId);
+    return signingSecrets.map((signingSecret) => ({
+      ...signingSecret,
+      secret: `${signingSecret.secret.slice(0, 7)}...${signingSecret.secret.slice(-4)}`,
+    }));
+  }
+
+  @Query(() => String)
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
+  async getSigningSecret(
+    @Args('environmentId') environmentId: string,
+    @Args('signingSecretId') signingSecretId: string,
+  ) {
+    const signingSecret = await this.environmentsService.getSigningSecret(
+      environmentId,
+      signingSecretId,
+    );
+    return signingSecret.secret;
+  }
+
+  @Mutation(() => EnvironmentSigningSecret)
+  @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  async createSigningSecret(@Args('environmentId') environmentId: string) {
+    return await this.environmentsService.createSigningSecret(environmentId);
+  }
+
+  @Mutation(() => Boolean)
+  @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  async revokeSigningSecret(
+    @Args('environmentId') environmentId: string,
+    @Args('signingSecretId') signingSecretId: string,
+  ) {
+    await this.environmentsService.revokeSigningSecret(environmentId, signingSecretId);
+    return true;
+  }
+
+  @Mutation(() => Environment)
+  @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  async setRequireIdentityVerification(
+    @Args('environmentId') environmentId: string,
+    @Args('required') required: boolean,
+  ) {
+    return await this.environmentsService.setRequireIdentityVerification(environmentId, required);
+  }
+
+  @Query(() => [IdentityVerificationStats])
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
+  async getIdentityVerificationStats(@Args('environmentId') environmentId: string) {
+    return await this.environmentsService.getIdentityVerificationStats(environmentId);
+  }
+
+  @Query(() => IdentityTokenDiagnosisModel)
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
+  async validateIdentityToken(
+    @Args('environmentId') environmentId: string,
+    @Args('token') token: string,
+  ) {
+    return await this.environmentsService.validateIdentityToken(environmentId, token);
   }
 }

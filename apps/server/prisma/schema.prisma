@@ -279,6 +279,8 @@ model Environment {
   deleted               Boolean                @default(false)
   /// Whether this is the primary environment for the project
   isPrimary             Boolean                @default(false)
+  /// When true, SDK identity claims must carry a valid HMAC signature (ADR 0008)
+  requireIdentityVerification Boolean          @default(false)
   project               Project                @relation(fields: [projectId], references: [id])
   projectId             String
   contents              Content[]
@@ -289,6 +291,22 @@ model Environment {
   contentOnEnvironments ContentOnEnvironment[]
   bizSessions           BizSession[]
   integrations          Integration[]
+  signingSecrets        EnvironmentSigningSecret[]
+}
+
+/// Per-environment HMAC signing secrets for SDK identity verification (ADR 0008).
+/// At most 2 active (revokedAt = null) rows per environment — the steady-state
+/// secret plus one rotation slot — enforced at the application layer.
+model EnvironmentSigningSecret {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  environment   Environment @relation(fields: [environmentId], references: [id])
+  environmentId String
+  secret        String      @unique
+  lastUsedAt    DateTime?   @db.Timestamptz(6)
+  revokedAt     DateTime?   @db.Timestamptz(6)
+
+  @@index([environmentId])
 }
 
 model AccessToken {

@@ -20,6 +20,12 @@ export interface SocketAuthData {
   clientContext: ClientContext;
   externalUserId?: string;
   externalCompanyId?: string;
+  /**
+   * Customer-backend-signed JWT proving the claimed identity (ADR 0009):
+   * { sub: externalUserId, companyId?, exp? }, HS256 with the environment's
+   * signing secret.
+   */
+  identityToken?: string;
   clientConditions?: ClientCondition[];
   launchers?: string[];
   token?: string;
@@ -144,6 +150,8 @@ export type UpsertCompanyDto = {
   externalUserId: string;
   attributes?: Record<string, any>;
   membership?: Record<string, any>;
+  /** Identity token whose companyId claim must match externalCompanyId (ADR 0009) */
+  token?: string;
 };
 
 /**

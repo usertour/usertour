@@ -13,6 +13,7 @@ import {
   RiProjectorLine,
   RiPuzzleLine,
   RiShieldKeyholeLine,
+  RiShieldUserLine,
   RiTeamLine,
   RiTerminalBoxLine,
   RiTranslate2,
@@ -48,6 +49,7 @@ export type SettingsSectionKey =
   | 'connected-apps'
   | 'api'
   | 'mcp'
+  | 'identity-verification'
   | 'integrations'
   | 'sso';
 
@@ -218,6 +220,21 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     // Card-stack layout (like general/account) — sits on the muted surface.
     surface: 'muted',
     component: lazy(() => import('./sso').then((module) => ({ default: module.SettingsSsoList }))),
+  },
+  {
+    key: 'identity-verification',
+    title: 'Identity Verification',
+    icon: <RiShieldUserLine className={ICON_CLASS} />,
+    capability: Capability.AccessTokenRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout (like sso/account) — sits on the muted surface.
+    surface: 'muted',
+    component: lazy(() =>
+      import('./identity-verification').then((module) => ({
+        default: module.SettingsIdentityVerification,
+      })),
+    ),
   },
   {
     key: 'billing',

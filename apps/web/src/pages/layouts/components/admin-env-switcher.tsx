@@ -35,7 +35,7 @@ export const AdminEnvSwitcher = () => {
 
   const { environmentList: allEnvironments } = useEnvironmentList();
   // Members restricted to a subset of environments only see those here —
-  // switching into an out-of-scope environment would just be a wall of E0058s.
+  // switching into an out-of-scope environment would just be a wall of E0060s.
   const { canActOn } = useMemberEnvScope();
   const environmentList = React.useMemo(
     () => allEnvironments?.filter((env) => canActOn(env.id)),

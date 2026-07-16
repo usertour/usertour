@@ -18,3 +18,4 @@ export * from './gql/integration';
 export * from './gql/admin';
 export * from './gql/audit';
 export * from './gql/sso';
+export * from './gql/identity-verification';

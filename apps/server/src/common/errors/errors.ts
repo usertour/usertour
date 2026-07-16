@@ -127,7 +127,7 @@ export class NoPermissionError extends BaseError {
  * that set — e.g. publishing to Production with a Development-only membership.
  */
 export class MemberEnvironmentNotAllowedError extends BaseError {
-  code = 'E0058';
+  code = 'E0060';
   messageDict = {
     en: 'Your project membership does not allow acting on this environment',
     'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
@@ -907,6 +907,22 @@ export class MachineTranslationFailedError extends BaseError {
   };
 }
 
+export class SigningSecretLimitReachedError extends BaseError {
+  code = 'E0058';
+  messageDict = {
+    en: 'An environment can have at most 2 active signing secrets. Revoke one before creating another.',
+    'zh-CN': '每个环境最多保留 2 个有效签名密钥，请先吊销一个再创建。',
+  };
+}
+
+export class IdentityVerificationRequiresActiveSecretError extends BaseError {
+  code = 'E0059';
+  messageDict = {
+    en: 'Identity verification requires at least one active signing secret.',
+    'zh-CN': '身份验证需要至少一个有效的签名密钥。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -989,7 +1005,9 @@ const errorMap = {
   E0055: AiNotConfiguredError,
   E0056: MachineTranslationRequiresPaidPlanError,
   E0057: MachineTranslationFailedError,
-  E0058: MemberEnvironmentNotAllowedError,
+  E0058: SigningSecretLimitReachedError,
+  E0059: IdentityVerificationRequiresActiveSecretError,
+  E0060: MemberEnvironmentNotAllowedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
