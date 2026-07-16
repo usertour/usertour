@@ -376,7 +376,11 @@ export function buildReadTools(): McpTool[] {
         companyId: z
           .string()
           .optional()
-          .describe('externalId of the company, for company-scoped segment/attribute rules.'),
+          .describe(
+            'externalId of the company, for company-scoped segment/attribute rules. Taken AS ' +
+              'GIVEN — membership is not checked, so you can what-if any company; at runtime ' +
+              "the user's real company context is whatever the SDK group() call associated.",
+          ),
         url: z
           .string()
           .optional()

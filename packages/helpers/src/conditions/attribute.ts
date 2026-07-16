@@ -56,7 +56,10 @@ function evaluateAttributeConditionsGroup(
         ? evaluateAttributeCondition(condition, options)
         : evaluateAttributeConditionsGroup(condition.conditions || [], options);
 
-    if (!item) {
+    // A FALSE result must still join its bucket — dropping it here made an AND
+    // with one failing condition evaluate true whenever any sibling passed.
+    // Only a nullish item (evaluation produced nothing) is skipped.
+    if (item === null || item === undefined) {
       continue;
     }
 

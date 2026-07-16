@@ -275,12 +275,17 @@ const attributeConditionFields = {
         'Number: is | not | lt | lte | gt | gte | between | any | empty. ' +
         'Boolean: true | false | any | empty. ' +
         'List: includes_any | includes_all | not_includes_any | not_includes_all | any | empty. ' +
-        'DateTime: less_than | exactly | more_than (relative "days ago" — `value` is a number ' +
-        'of days; e.g. attribute `first_seen_at` with op `less_than`, value `7` = "first seen ' +
-        'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
-        'is an absolute date) | any | empty. The relative ops (less_than / more_than / exactly) ' +
-        'are DAY-granularity only — `value` is a whole number of days and there is no unit field; ' +
-        'for hour/minute windows use an `event` condition with a `within` (which has a `unit`).',
+        'DateTime: less_than | exactly | more_than (relative — `value` is a number of days; e.g. ' +
+        'attribute `first_seen_at` with op `less_than`, value `7` = "first seen in the last 7 ' +
+        'days", the canonical new-user filter) | before | on | after (`value` is an absolute ' +
+        'date) | any | empty. The relative ops are ONE-SIDED bounds around (now − N days): ' +
+        '`less_than N` = the date is AFTER now−N — so it also matches every FUTURE date, and on ' +
+        'a future-dated attribute (a trial end, a renewal date) it is NOT "within the last N ' +
+        'days"; `more_than N` = the date is BEFORE now−N. Negative N shifts the bound into the ' +
+        'future: the rolling "within the NEXT 7 days" window is `less_than` value "0" AND ' +
+        '`more_than` value "-7" (two conditions, both required). The relative ops are ' +
+        'DAY-granularity only — no unit field; for hour/minute windows use an `event` condition ' +
+        'with a `within` (which has a `unit`).',
     ),
   value: z
     .string()

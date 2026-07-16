@@ -191,6 +191,27 @@ const classifyUnknownLeaves = (
   return { urlResolvable, companyResolvable, liveOnly };
 };
 
+/**
+ * When a failed start_rules tree contains `unknown` leaves, the fail may be an
+ * ARTIFACT: a not-evaluable condition (company-scoped without `companyId`, a
+ * current_url without `url`) counts as not-matched in the server evaluation, so
+ * the gate reads fail while the leaf reads unknown — two signals that look
+ * contradictory (a real zero-knowledge-eval confusion). Name the way out.
+ */
+const startRulesUnknownCaveat = (tree?: AnnotatedCondition): string => {
+  if (!tree) return '';
+  const u = classifyUnknownLeaves(tree);
+  if (!(u.urlResolvable || u.companyResolvable || u.liveOnly)) return '';
+  const fixes = [
+    u.urlResolvable ? 'pass `url`' : '',
+    u.companyResolvable ? 'pass `companyId`' : '',
+    u.liveOnly ? 'confirm live-only leaves in the app' : '',
+  ]
+    .filter(Boolean)
+    .join(' / ');
+  return ` NOTE: the tree contains \`unknown\` conditions the server could not evaluate — they count as NOT matched in this verdict, so the fail may be an artifact; ${fixes} for a clean verdict.`;
+};
+
 export const buildDiagnoseReport = (
   facts: DiagnoseFacts,
   startConditions?: AnnotatedCondition,
@@ -277,7 +298,7 @@ export const buildDiagnoseReport = (
               : facts.startRulesActive
                 ? 'auto-start enabled and start conditions match.'
                 : startConditions
-                  ? 'auto-start disabled or a start condition does not match — see startConditions.'
+                  ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
                   : 'auto-start is not configured, so it never appears on its own — the normal ' +
                     'pattern for an on-demand guide launched via a checklist / resource-center ' +
                     '`start_content` reference or `usertour.start()`. Confirm something ' +
