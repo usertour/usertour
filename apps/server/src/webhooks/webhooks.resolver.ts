@@ -86,4 +86,11 @@ export class WebhooksResolver {
   async rotateWebhookSecret(@Args('data') { id }: WebhookIdInput) {
     return await this.service.rotateSecret(id);
   }
+
+  // Not audited: a test message mutates nothing — the delivery log records it.
+  @Mutation(() => Webhook)
+  @RequirePermission({ capability: Capability.WebhookManage, scope: ScopeKind.Webhook })
+  async sendWebhookTestEvent(@Args('data') { id }: WebhookIdInput) {
+    return await this.service.sendTestEvent(id);
+  }
 }

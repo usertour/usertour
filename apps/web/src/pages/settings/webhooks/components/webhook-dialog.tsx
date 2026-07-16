@@ -33,6 +33,8 @@ import { useEventList } from '@/hooks/use-event-list';
 
 const EVENT_TOPIC_PREFIX = 'event.tracked';
 const PAGE_VIEWED_TOPIC = `${EVENT_TOPIC_PREFIX}.page_viewed`;
+const CONTENT_NAMESPACE = 'content';
+const CONTENT_PUBLISHED_TOPIC = 'content.published';
 
 const webhookFormSchema = z
   .object({
@@ -40,6 +42,7 @@ const webhookFormSchema = z
     mode: z.enum(['all', 'selected']),
     selectedTopics: z.array(z.string()),
     includePageViewed: z.boolean(),
+    includeContentPublished: z.boolean(),
     description: z.string().max(200).optional(),
     enabled: z.boolean(),
   })
@@ -55,6 +58,7 @@ const formDefaults: WebhookFormValues = {
   mode: 'all',
   selectedTopics: [],
   includePageViewed: false,
+  includeContentPublished: false,
   description: '',
   enabled: true,
 };
@@ -86,6 +90,11 @@ const valuesFromWebhook = (webhook: Webhook): WebhookFormValues => {
     mode: isAll ? 'all' : 'selected',
     selectedTopics: isAll ? [] : webhook.topics,
     includePageViewed: isAll && webhook.topics.includes(PAGE_VIEWED_TOPIC),
+    includeContentPublished:
+      isAll &&
+      (webhook.topics.includes('*') ||
+        webhook.topics.includes(CONTENT_NAMESPACE) ||
+        webhook.topics.includes(CONTENT_PUBLISHED_TOPIC)),
     description: webhook.description ?? '',
     enabled: webhook.enabled,
   };
@@ -95,10 +104,13 @@ const topicsFromValues = (values: WebhookFormValues): string[] => {
   if (values.mode === 'all') {
     // "All events" subscribes at the namespace level so future events flow in
     // automatically; page_viewed is excluded from it server-side and rides as
-    // an explicit topic when opted in.
-    return values.includePageViewed
-      ? [EVENT_TOPIC_PREFIX, PAGE_VIEWED_TOPIC]
-      : [EVENT_TOPIC_PREFIX];
+    // an explicit topic when opted in. Content notifications are their own
+    // namespace, opted into separately.
+    return [
+      EVENT_TOPIC_PREFIX,
+      ...(values.includePageViewed ? [PAGE_VIEWED_TOPIC] : []),
+      ...(values.includeContentPublished ? [CONTENT_NAMESPACE] : []),
+    ];
   }
   return values.selectedTopics;
 };
@@ -264,20 +276,36 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
               />
 
               {mode === 'all' && (
-                <FormField
-                  control={form.control}
-                  name="includePageViewed"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2 space-y-0 pl-6">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <FormLabel className="font-normal text-muted-foreground">
-                        {t('settings.webhooks.form.includePageViewed')}
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+                <>
+                  <FormField
+                    control={form.control}
+                    name="includePageViewed"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 space-y-0 pl-6">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal text-muted-foreground">
+                          {t('settings.webhooks.form.includePageViewed')}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="includeContentPublished"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 space-y-0 pl-6">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal text-muted-foreground">
+                          {t('settings.webhooks.form.includeContentPublished')}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
 
               {mode === 'selected' && (
@@ -289,6 +317,35 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
                       <FormControl>
                         <ScrollArea className="h-64 rounded-md border p-3">
                           <div className="space-y-4">
+                            <div className="space-y-1.5">
+                              <div className="text-xs font-medium text-muted-foreground">
+                                {t('settings.webhooks.topicGroups.configuration')}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id="webhook-topic-content-published"
+                                  checked={field.value.includes(CONTENT_PUBLISHED_TOPIC)}
+                                  onCheckedChange={(next) => {
+                                    field.onChange(
+                                      next
+                                        ? [...field.value, CONTENT_PUBLISHED_TOPIC]
+                                        : field.value.filter(
+                                            (value) => value !== CONTENT_PUBLISHED_TOPIC,
+                                          ),
+                                    );
+                                  }}
+                                />
+                                <Label
+                                  htmlFor="webhook-topic-content-published"
+                                  className="font-normal"
+                                >
+                                  {t('settings.webhooks.form.contentPublished')}
+                                  <span className="ml-1.5 text-xs text-muted-foreground">
+                                    content.published
+                                  </span>
+                                </Label>
+                              </div>
+                            </div>
                             {groupedEvents.map((group) => (
                               <div key={group.key} className="space-y-1.5">
                                 <div className="text-xs font-medium text-muted-foreground">

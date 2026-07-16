@@ -1117,6 +1117,7 @@ const translations = {
         event: 'Events',
         analytics: 'Analytics',
         environment: 'Environment settings',
+        webhook: 'Webhooks',
       },
       scopeNoWrite: 'No write API yet',
       presets: {
@@ -1278,10 +1279,13 @@ const translations = {
         allEvents: 'All events (new event types are included automatically)',
         selectedEvents: 'Only selected events',
         includePageViewed: 'Also send Page Viewed (high volume)',
+        includeContentPublished: 'Also notify when content is published',
+        contentPublished: 'Content published',
         topicsRequired: 'Select at least one event.',
         enabled: 'Enabled',
       },
       topicGroups: {
+        configuration: 'Configuration',
         flows: 'Flows',
         checklists: 'Checklists',
         surveys: 'Surveys',
@@ -1306,6 +1310,12 @@ const translations = {
         rotateConfirmDescription:
           'The current secret stops working immediately — update your receiver to verify with the new secret.',
         rotateConfirmButton: 'Rotate secret',
+      },
+      testEvent: {
+        button: 'Send test event',
+        sent: 'Test event queued — check the delivery log below.',
+        failed: 'Failed to queue the test event',
+        disabledHint: 'Enable the webhook to send a test event.',
       },
       deliveries: {
         title: 'Recent deliveries',

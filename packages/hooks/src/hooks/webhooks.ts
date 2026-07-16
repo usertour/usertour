@@ -6,6 +6,7 @@ import {
   ListWebhooks,
   QueryWebhookDeliveries,
   RotateWebhookSecret,
+  SendWebhookTestEvent,
   UpdateWebhook,
 } from '@usertour/gql';
 
@@ -132,6 +133,17 @@ export const useDeleteWebhookMutation = () => {
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { data: { id } } });
     return !!response.data?.deleteWebhook;
+  };
+  return { invoke, loading, error };
+};
+
+export const useSendWebhookTestEventMutation = () => {
+  // Enqueues a single-attempt test message; the outcome lands in the delivery
+  // log, so consumers refetch it after a short delay rather than via cache.
+  const [mutation, { loading, error }] = useMutation(SendWebhookTestEvent);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { data: { id } } });
+    return !!response.data?.sendWebhookTestEvent;
   };
   return { invoke, loading, error };
 };

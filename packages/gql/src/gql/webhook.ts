@@ -105,3 +105,11 @@ export const RotateWebhookSecret = gql`
     }
   }
 `;
+
+export const SendWebhookTestEvent = gql`
+  mutation SendWebhookTestEvent($data: WebhookIdInput!) {
+    sendWebhookTestEvent(data: $data) {
+      id
+    }
+  }
+`;

@@ -16,6 +16,7 @@ export enum ApiObjectType {
   ATTRIBUTE_DEFINITION = 'attributeDefinition',
   EVENT_DEFINITION = 'eventDefinition',
   EVENT = 'event',
+  WEBHOOK = 'webhook',
   WEBHOOK_MESSAGE = 'webhookMessage',
   CONTENT_SESSION_ANSWER = 'contentSessionAnswer',
   QUESTION = 'question',

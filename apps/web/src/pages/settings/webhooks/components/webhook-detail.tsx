@@ -7,6 +7,7 @@ import {
   useGetWebhookQuery,
   useQueryWebhookDeliveriesQuery,
   useRotateWebhookSecretMutation,
+  useSendWebhookTestEventMutation,
 } from '@usertour/hooks';
 import {
   ArrowLeftIcon,
@@ -14,6 +15,7 @@ import {
   RiEyeLine,
   RiEyeOffLine,
   RiFileCopyLine,
+  SpinnerIcon,
 } from '@usertour/icons';
 import {
   Badge,
@@ -120,17 +122,48 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
   );
 };
 
-const DeliveriesSection = ({ webhookId }: { webhookId: string }) => {
+const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const { deliveries, pageInfo, loading } = useQueryWebhookDeliveriesQuery(webhookId, {
+  const { deliveries, pageInfo, loading, refetch } = useQueryWebhookDeliveriesQuery(webhookId, {
     first: DELIVERIES_PAGE_SIZE,
     after: cursor,
   });
+  const { invoke: sendTestEvent, loading: sendingTest } = useSendWebhookTestEventMutation();
+  const { isViewOnly } = useAppContext();
+  const { toast } = useToast();
   const { t } = useTranslation();
+
+  const handleSendTest = async () => {
+    try {
+      const sent = await sendTestEvent(webhookId);
+      if (sent) {
+        toast({ variant: 'success', title: t('settings.webhooks.testEvent.sent') });
+        // The delivery happens async in the worker — give it a moment before
+        // refreshing the log.
+        setTimeout(() => void refetch(), 1500);
+      } else {
+        toast({ variant: 'destructive', title: t('settings.webhooks.testEvent.failed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xl font-semibold">{t('settings.webhooks.deliveries.title')}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">{t('settings.webhooks.deliveries.title')}</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isViewOnly || !enabled || sendingTest}
+          title={enabled ? undefined : t('settings.webhooks.testEvent.disabledHint')}
+          onClick={() => void handleSendTest()}
+        >
+          {sendingTest && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+          {t('settings.webhooks.testEvent.button')}
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -234,7 +267,7 @@ export const WebhookDetail = () => {
 
       {webhook.secret && <SigningSecretSection webhookId={webhook.id} secret={webhook.secret} />}
 
-      <DeliveriesSection webhookId={webhook.id} />
+      <DeliveriesSection webhookId={webhook.id} enabled={webhook.enabled} />
     </div>
   );
 };

@@ -98,6 +98,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'webhooks.updateWebhook': Capability.WebhookManage,
   'webhooks.deleteWebhook': Capability.WebhookManage,
   'webhooks.rotateWebhookSecret': Capability.WebhookManage,
+  'webhooks.sendWebhookTestEvent': Capability.WebhookManage,
 
   // localizations
   'localizations.createLocalization': Capability.LocalizationCreate, // W

@@ -17,6 +17,19 @@ export interface BizEventTrackedPayload {
   bizEventIds: string[];
 }
 
+/**
+ * Domain event emitted (post-commit, EventEmitter2) when a content version is
+ * published to an environment. Same producer contract as BIZ_EVENT_TRACKED:
+ * ids only, subscribers re-read what they need.
+ */
+export const CONTENT_PUBLISHED = 'content.published';
+
+export interface ContentPublishedPayload {
+  environmentId: string;
+  contentId: string;
+  versionId: string;
+}
+
 /** Job payload for one webhook delivery (one message to one endpoint). */
 export interface WebhookDeliveryJobData {
   webhookId: string;

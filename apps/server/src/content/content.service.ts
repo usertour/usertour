@@ -1,6 +1,8 @@
 import { createdAtWhere, nameContains } from '@/common/filters';
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
+import { CONTENT_PUBLISHED, ContentPublishedPayload } from '@/webhooks/webhook.types';
 import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { VersionUpdateInput } from './dto/version-update.input';
@@ -55,6 +57,7 @@ export class ContentService {
     private webSocketGateway: WebSocketGateway,
     private webSocketV2Gateway: WebSocketV2Gateway,
     private readonly cache: ProjectCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createContent(input: ContentInput) {
@@ -528,6 +531,14 @@ export class ContentService {
       ...this.cache.envContentKeys(environmentId),
       this.cache.keys.publishedVersionId(environmentId, content.id),
     ]);
+
+    // Post-commit: all publish paths (web GraphQL, v2 REST, MCP) funnel here.
+    const publishedPayload: ContentPublishedPayload = {
+      environmentId,
+      contentId: content.id,
+      versionId: version.id,
+    };
+    this.eventEmitter.emit(CONTENT_PUBLISHED, publishedPayload);
 
     return content;
   }

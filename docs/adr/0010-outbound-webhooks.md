@@ -106,12 +106,17 @@ User-controlled URLs mount the shared egress guard (`common/egress`, built for t
 
 M1 is dashboard GraphQL only (`webhooks.*` resolver family, `PermissionGuard` + `ScopeKind.Webhook` id→environment→project resolution, `@AuditWeb` on every mutation, secret auto-redacted by the audit snapshot policy). The v2 REST management endpoints + MCP tools follow in M2 on the same service layer.
 
-## Deferred (M2+)
+## M2 (delivered 2026-07-16, same branch)
 
-- `user.created/updated`, `company.*` topics — **precondition**: attribute-diffing at the biz-user write chokepoints; without change detection the topic is unusably noisy (every identify would fire).
-- `content.published`-class config topics — subscribe to the existing `RESOURCE_CHANGED_EVENT`.
-- v2 REST `/webhooks` management + MCP tools; REST `GET /events` on the new event schema.
-- Send-test-event button; failure alerting / auto-disable.
+- **v2 REST management** (`/v2/projects/:projectId/environments/:environmentId/webhooks`, full CRUD + `POST :id/rotate-secret`) and **MCP tools** (`list/create/update/delete_webhook`) on the same domain service — one validation path, one secret lifecycle. `webhook:read/manage` joined the token-scope catalog and the env-targeted capability set (a webhook credential must name its environments). REST writes audit via the capability-prefix map; `POST` with a path id now derives `update`, not `create` (rotate-secret would otherwise masquerade as a create).
+- **`content.published` config topic.** Emitted post-commit from `ContentService.publishedContentVersion` — the one funnel all three publish surfaces (web/REST/MCP) share — NOT from the audit event: audit `operation` strings differ per surface and its `publish` action collapses to `update` on REST, so keying off audit would be fragile. Thin payload (`data: {contentId, versionId}`). Prefix semantics were generalized to a fixed `WEBHOOK_PREFIX_SUBSCRIPTIONS` list (`event.tracked`, `content`) — still never arbitrary-segment.
+- **Send-test-event**: dashboard mutation enqueues a single-attempt `webhook.test` message addressed to one endpoint (bypasses matching, not the enabled switch or egress guard); outcome lands in the delivery log.
+
+## Deferred (M3+)
+
+- `user.created/updated`, `company.*` topics. Groundwork confirmed: `BizService.upsertBizUsers` / `upsertBizCompanies` already diff (`isEqual` short-circuits no-op writes), so create-vs-update-vs-noop is already distinguished at the chokepoint. Remaining work: carry the signal out of the callers' transactions (post-commit emit, same collector problem event-tracking solved with AsyncLocalStorage), decide the seen-attribute exclusion (the per-event `updateSeenAttributes` writes must NOT fire the topic), payload = v2 `user`/`company` objects, UI groups.
+- REST `GET /events` on the event-instance schema.
+- Failure alerting / auto-disable (delivery log + manual switch cover today's need).
 
 ## Consequences
 

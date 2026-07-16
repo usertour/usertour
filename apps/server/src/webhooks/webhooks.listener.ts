@@ -4,11 +4,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
+import { WEBHOOK_CONTENT_PUBLISHED_TOPIC } from '@usertour/constants';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { ApiObjectType } from '@/api/shared/object-type';
 import { mapEvent } from '@/api/events/event.mapper';
-import { buildEventTopic, matchesSubscription } from './webhook-topics';
-import { BIZ_EVENT_TRACKED, BizEventTrackedPayload, WebhookDeliveryJobData } from './webhook.types';
+import { buildEventTopic, matchesSubscription, matchesTopic } from './webhook-topics';
+import {
+  BIZ_EVENT_TRACKED,
+  BizEventTrackedPayload,
+  CONTENT_PUBLISHED,
+  ContentPublishedPayload,
+  WebhookDeliveryJobData,
+} from './webhook.types';
 
 /**
  * Fans tracked BizEvents out to the environment's webhook endpoints: re-reads
@@ -86,6 +93,52 @@ export class WebhooksListener {
     } catch (error) {
       // Side-channel: a failure to enqueue must not propagate to the tracking path.
       this.logger.error('Failed to enqueue webhook deliveries', error as Error);
+    }
+  }
+
+  @OnEvent(CONTENT_PUBLISHED, { async: true })
+  async onContentPublished(payload: ContentPublishedPayload): Promise<void> {
+    try {
+      const webhooks = await this.prisma.webhook.findMany({
+        where: { environmentId: payload.environmentId, enabled: true },
+      });
+      const matching = webhooks.filter((webhook) =>
+        matchesTopic((webhook.topics as string[]) ?? [], WEBHOOK_CONTENT_PUBLISHED_TOPIC),
+      );
+      if (matching.length === 0) {
+        return;
+      }
+
+      // Thin payload: ids resolve directly against the v2 content endpoints.
+      const jobs = matching.map((webhook) => {
+        const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
+        return {
+          name: 'deliver',
+          data: {
+            webhookId: webhook.id,
+            messageId,
+            topic: WEBHOOK_CONTENT_PUBLISHED_TOPIC,
+            payload: {
+              id: messageId,
+              object: ApiObjectType.WEBHOOK_MESSAGE,
+              type: WEBHOOK_CONTENT_PUBLISHED_TOPIC,
+              createdAt: new Date().toISOString(),
+              environmentId: payload.environmentId,
+              data: { contentId: payload.contentId, versionId: payload.versionId },
+            },
+          },
+          opts: {
+            removeOnComplete: true,
+            removeOnFail: 1000,
+            attempts: 5,
+            backoff: { type: 'exponential', delay: 1000 },
+          },
+        };
+      });
+      await this.queue.addBulk(jobs);
+    } catch (error) {
+      // Side-channel: a failure to enqueue must not propagate to the publish path.
+      this.logger.error('Failed to enqueue content.published webhook deliveries', error as Error);
     }
   }
 }

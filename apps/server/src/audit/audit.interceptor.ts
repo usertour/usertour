@@ -59,7 +59,7 @@ export class AuditInterceptor implements NestInterceptor {
     let resourceId: (r: AuditHttpRequest, result: unknown) => string = (r, result) =>
       resolveResourceId(r.params, result, action);
     if (capability) {
-      const derived = deriveAudit(String(capability), req.method);
+      const derived = deriveAudit(String(capability), req.method, !!req.params?.id);
       if (!derived) {
         return next.handle();
       }
@@ -270,6 +270,7 @@ const RESOURCE_BY_PREFIX: Record<string, string> = {
   company: 'company',
   session: 'session',
   environment: 'environment',
+  webhook: 'webhook',
 };
 
 /** A resolveProjectId result (single / array / absent) normalized to a clean id list. */
@@ -320,6 +321,7 @@ export async function resolveWebAuditProjectIds(
 export function deriveAudit(
   capability: string,
   httpMethod: string,
+  hasPathId = false,
 ): { resourceType: string; action: AuditAction } | null {
   const [prefix, verb] = capability.split(':');
   const resourceType = RESOURCE_BY_PREFIX[prefix];
@@ -340,10 +342,12 @@ export function deriveAudit(
       action = 'delete';
       break;
     case 'manage':
+      // A POST with a path id is an action on an EXISTING resource
+      // (POST /:id/rotate-secret, POST /:id/end) — an update, not a create.
       action =
         httpMethod === 'DELETE'
           ? 'delete'
-          : httpMethod === 'POST' && resourceType !== 'session'
+          : httpMethod === 'POST' && resourceType !== 'session' && !hasPathId
             ? 'create'
             : 'update';
       break;

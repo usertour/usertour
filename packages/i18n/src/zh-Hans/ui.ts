@@ -1058,6 +1058,7 @@ const translations = {
         event: '事件',
         analytics: '分析',
         environment: '环境设置',
+        webhook: 'Webhook',
       },
       scopeNoWrite: '暂无写入 API',
       presets: {
@@ -1214,10 +1215,13 @@ const translations = {
         allEvents: '全部事件(未来新增的事件类型自动包含)',
         selectedEvents: '仅选中的事件',
         includePageViewed: '同时发送页面浏览事件(量很大)',
+        includeContentPublished: '同时在内容发布时通知',
+        contentPublished: '内容已发布',
         topicsRequired: '请至少选择一个事件。',
         enabled: '启用',
       },
       topicGroups: {
+        configuration: '配置变更',
         flows: '引导流程',
         checklists: '清单',
         surveys: '问卷调查',
@@ -1241,6 +1245,12 @@ const translations = {
         rotateConfirmTitle: '确认轮换签名密钥?',
         rotateConfirmDescription: '当前密钥将立即失效 —— 请同步更新您接收端的校验密钥。',
         rotateConfirmButton: '轮换密钥',
+      },
+      testEvent: {
+        button: '发送测试事件',
+        sent: '测试事件已入队 —— 请在下方投递日志中查看结果。',
+        failed: '测试事件入队失败',
+        disabledHint: '请先启用该 Webhook 再发送测试事件。',
       },
       deliveries: {
         title: '最近投递',

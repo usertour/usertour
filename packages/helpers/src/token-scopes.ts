@@ -30,6 +30,8 @@ export const ENV_TARGETED_CAPABILITIES: ReadonlySet<string> = new Set<string>([
   Capability.SegmentUpdate,
   Capability.SegmentDelete,
   Capability.AnalyticsRead,
+  Capability.WebhookRead,
+  Capability.WebhookManage,
 ]);
 
 /** Whether the given scopes act on specific environments (→ an environment selection is required). */
