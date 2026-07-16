@@ -51,6 +51,7 @@ import { AnnouncementService } from '@/web-socket/core/announcement.service';
 import { ContentDataService } from '@/web-socket/core/content-data.service';
 import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+import { IdentityVerificationService } from '@/shared/identity-verification.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
 import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
 import { humanize } from '@usertour/helpers';
@@ -68,6 +69,7 @@ export class WebSocketV2Service {
     private readonly contentDataService: ContentDataService,
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
+    private readonly identityVerificationService: IdentityVerificationService,
   ) {}
 
   // ============================================================================
@@ -125,6 +127,19 @@ export class WebSocketV2Service {
       return null;
     }
     const environmentId = environment.id;
+
+    // Identity verification (ADR 0008/0009): the claimed identity must be
+    // proven before ensureBizUser persists it. Verdict handling and rejection
+    // logging live in the IdentityVerificationService.
+    const identityAccepted = await this.identityVerificationService.verifyConnectionIdentity(
+      environment,
+      externalUserId,
+      externalCompanyId,
+      auth.identityToken,
+    );
+    if (!identityAccepted) {
+      return null;
+    }
 
     // Ensure user exists - guarantees bizUserId is always set on successful connection
     // ensureBizUser will throw if creation fails, caught by gateway's try-catch
@@ -261,7 +276,7 @@ export class WebSocketV2Service {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
-    const { externalCompanyId, externalUserId, attributes = {}, membership = {} } = data;
+    const { externalCompanyId, externalUserId, attributes = {}, membership = {}, token } = data;
 
     // Same identity guard as upsertBizUsers: the user the connection is
     // authenticated as is the only user this socket can write for. The
@@ -271,6 +286,19 @@ export class WebSocketV2Service {
       this.logger.warn(
         `[WS] UpsertCompany payload externalUserId=${externalUserId} does not match socket auth ${socketData.externalUserId}; rejecting`,
       );
+      return false;
+    }
+
+    // Membership verification (ADR 0008/0009): the company may switch per
+    // group() call, so unlike the user identity it must be proven per
+    // message — the token's companyId claim has to match this payload.
+    const membershipAccepted = await this.identityVerificationService.verifyGroupClaim(
+      environment,
+      externalUserId,
+      externalCompanyId,
+      token,
+    );
+    if (!membershipAccepted) {
       return false;
     }
 

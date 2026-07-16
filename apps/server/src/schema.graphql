@@ -596,10 +596,18 @@ type Environment {
   isPrimary: Boolean!
   name: String!
   projectId: String!
+  requireIdentityVerification: Boolean!
   token: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+}
+
+type EnvironmentSigningSecret {
+  createdAt: DateTime!
+  id: ID!
+  lastUsedAt: DateTime
+  secret: String!
 }
 
 type Events {
@@ -630,6 +638,21 @@ type GlobalConfig {
   needsSystemAdminSetup: Boolean!
   require2FA: Boolean!
   ssoCallbackUrl: String
+}
+
+type IdentityTokenDiagnosisModel {
+  companyId: String
+  expiresAt: DateTime
+  status: String!
+  subject: String
+}
+
+type IdentityVerificationStats {
+  anonymous: Int!
+  invalid: Int!
+  missing: Int!
+  subject: String!
+  valid: Int!
 }
 
 type InstallationStatus {
@@ -835,6 +858,7 @@ type Mutation {
   createPortalSession(projectId: String!): String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
+  createSigningSecret(environmentId: String!): EnvironmentSigningSecret!
   createTheme(data: CreateThemeInput!): Theme!
   deleteAccessToken(accessTokenId: String!, environmentId: String!): Boolean!
   deleteAttribute(data: DeleteAttributeInput!): Attribute!
@@ -865,8 +889,10 @@ type Mutation {
   resetUserPassword(data: ResetPasswordInput!): Common!
   resetUserPasswordByCode(data: ResetPasswordByCodeInput!): Common!
   restoreContentVersion(data: VersionIdInput!): Version!
+  revokeSigningSecret(environmentId: String!, signingSecretId: String!): Boolean!
   setDefaultLocalization(id: String!): Localization!
   setDefaultTheme(themeId: String!): Theme!
+  setRequireIdentityVerification(environmentId: String!, required: Boolean!): Environment!
   setupSystemAdmin(data: SetupSystemAdminInput!): Auth!
   signup(data: SignupInput!): Auth!
   startTwoFactorSetup: TwoFactorSetupPayload!
@@ -973,6 +999,7 @@ type Query {
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getContent(contentId: String!): Content
   getContentVersion(versionId: String!): Version!
+  getIdentityVerificationStats(environmentId: String!): [IdentityVerificationStats!]!
   getIntegration(environmentId: String!, provider: String!): Integration!
   getIntegrationObjectMapping(id: String!): IntegrationObjectMapping!
   getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
@@ -985,6 +1012,7 @@ type Query {
   getProjectSsoSettings(projectId: String!): ProjectSsoSettingsModel!
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!
+  getSigningSecret(environmentId: String!, signingSecretId: String!): String!
   getSubscriptionByProjectId(projectId: String!): SubscriptionModel!
   getSubscriptionPlans: [SubscriptionPlanModel!]!
   getSubscriptionUsage(projectId: String!): Int!
@@ -1003,6 +1031,7 @@ type Query {
   listProjectSsoProviders(projectId: String!): [SsoProviderModel!]!
   listSegment(environmentId: String): [Segment!]!
   listSessionsDetail(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
+  listSigningSecrets(environmentId: String!): [EnvironmentSigningSecret!]!
   listThemes(projectId: String!): [Theme!]!
   listVersionLocalizations(versionId: String!): [VersionOnLocalization!]!
   me: User!
@@ -1020,6 +1049,7 @@ type Query {
   queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
   queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
   userEnvironments(projectId: String!): [Environment!]!
+  validateIdentityToken(environmentId: String!, token: String!): IdentityTokenDiagnosisModel!
   verifyInstallation(environmentId: String!): InstallationStatus!
 }
 

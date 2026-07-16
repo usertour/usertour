@@ -61,6 +61,11 @@ export class UpsertCompanyPayload {
   @IsOptional()
   @IsObject()
   membership?: Record<string, any>;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  token?: string;
 }
 
 /**

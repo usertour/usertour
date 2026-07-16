@@ -213,6 +213,7 @@ Table Environment {
   token String [not null]
   deleted Boolean [not null, default: false]
   isPrimary Boolean [not null, default: false, note: 'Whether this is the primary environment for the project']
+  requireIdentityVerification Boolean [not null, default: false, note: 'When true, SDK identity claims must carry a valid HMAC signature (ADR 0008)']
   project Project [not null]
   projectId String [not null]
   contents Content [not null]
@@ -223,6 +224,21 @@ Table Environment {
   contentOnEnvironments ContentOnEnvironment [not null]
   bizSessions BizSession [not null]
   integrations Integration [not null]
+  signingSecrets EnvironmentSigningSecret [not null]
+}
+
+Table EnvironmentSigningSecret {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  secret String [unique, not null]
+  lastUsedAt DateTime
+  revokedAt DateTime
+
+  Note: 'Per-environment HMAC signing secrets for SDK identity verification (ADR 0008).
+At most 2 active (revokedAt = null) rows per environment — the steady-state
+secret plus one rotation slot — enforced at the application layer.'
 }
 
 Table AccessToken {
@@ -772,6 +788,8 @@ Ref: UserOnProject.projectId > Project.id [delete: Cascade]
 Ref: UserOnProject.userId > User.id [delete: Cascade]
 
 Ref: Environment.projectId > Project.id
+
+Ref: EnvironmentSigningSecret.environmentId > Environment.id
 
 Ref: AccessToken.environmentId > Environment.id
 

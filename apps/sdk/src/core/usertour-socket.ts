@@ -95,7 +95,7 @@ export interface IUsertourSocket {
   // setAuth establishes/updates credentials and triggers a background connect
   // when needed; outgoing messages buffer through Socket.IO until the connect
   // resolves, with `EMIT_TIMEOUT` covering the no-connect-ever case.
-  setAuth(externalUserId: string, token: string): void;
+  setAuth(externalUserId: string, token: string, identityToken?: string): void;
   disconnect(): void;
   isConnected(): boolean;
   isInBatch(): boolean;
@@ -169,7 +169,7 @@ export class UsertourSocket implements IUsertourSocket {
    *  - Different credentials: cancels any in-flight connect, disconnects the
    *    current socket, then starts a fresh connect with the new credentials.
    */
-  setAuth(externalUserId: string, token: string): void {
+  setAuth(externalUserId: string, token: string, identityToken?: string): void {
     if (this.requiresReconnect(externalUserId, token)) {
       logger.info('Auth credentials changed, reconnecting socket...');
       this.resetBatchState();
@@ -177,7 +177,12 @@ export class UsertourSocket implements IUsertourSocket {
       this.socket.disconnect();
     }
 
-    this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
+    this.authCredentials = {
+      externalUserId,
+      token,
+      identityToken,
+      clientContext: getClientContext(),
+    };
 
     this.ensureConnecting();
   }
@@ -645,11 +650,26 @@ export class UsertourSocket implements IUsertourSocket {
     }
 
     // Update current auth info - the callback will use this on reconnection
-    if (this.authCredentials) {
-      this.authCredentials = {
-        ...this.authCredentials,
-        ...authInfo,
-      };
+    if (!this.authCredentials) {
+      return;
+    }
+    const identityTokenChanged =
+      authInfo.identityToken !== undefined &&
+      authInfo.identityToken !== this.authCredentials.identityToken;
+    this.authCredentials = {
+      ...this.authCredentials,
+      ...authInfo,
+    };
+
+    // A refreshed identity token must be able to revive a dead socket:
+    // Socket.IO stops auto-reconnecting once a handshake is rejected by the
+    // server's auth middleware (e.g. the previous token expired), so merely
+    // storing the new token would strand the SDK offline until a full page
+    // reload. Restart the connect attempt with the updated credentials.
+    if (identityTokenChanged && !this.socket.isConnected()) {
+      logger.info('Identity token changed while disconnected, reconnecting socket...');
+      this.cancelConnecting();
+      this.ensureConnecting();
     }
   }
 }
