@@ -424,6 +424,8 @@ export async function fetchBefore(
       return prisma.oAuthGrant.findUnique({ where: { id: String(id) } });
     case 'sso_provider':
       return prisma.projectSSOIdentityProvider.findUnique({ where: { id: String(id) } });
+    case 'webhook':
+      return prisma.webhook.findUnique({ where: { id: String(id) } });
     case 'environment':
       return prisma.environment.findUnique({ where: { id: String(id) } });
     default: // content → snapshot policy is 'none' anyway

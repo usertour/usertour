@@ -19,3 +19,4 @@ export * from './gql/admin';
 export * from './gql/audit';
 export * from './gql/sso';
 export * from './gql/identity-verification';
+export * from './gql/webhook';

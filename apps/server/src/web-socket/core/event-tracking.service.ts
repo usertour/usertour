@@ -1,6 +1,9 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
   getCurrentStepId,
   getEventState,
@@ -68,11 +71,44 @@ export class EventTrackingService {
   private readonly logger = new Logger(EventTrackingService.name);
   private eventHandlers = new Map<BizEvents, EventHandler>();
 
+  /**
+   * Collects the BizEvent ids created inside the current tracking call so the
+   * post-commit BIZ_EVENT_TRACKED emit can reference them. AsyncLocalStorage
+   * (same pattern as shared/request-context) instead of a params field: the
+   * handler chain rebuilds its params objects in several places, which would
+   * silently drop a threaded collector.
+   */
+  private readonly createdBizEventIds = new AsyncLocalStorage<string[]>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly bizService: BizService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.registerEventHandlers();
+  }
+
+  /**
+   * Run a tracking operation with BizEvent collection, and emit
+   * BIZ_EVENT_TRACKED after it returns. The operation contains the full
+   * transaction, so by the time we emit, either every collected row is
+   * committed or the transaction threw (which propagates before the emit).
+   */
+  private async trackWithEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
+    const collected: string[] = [];
+    const result = await this.createdBizEventIds.run(collected, operation);
+
+    if (collected.length > 0) {
+      const payload: BizEventTrackedPayload = { environmentId, bizEventIds: collected };
+      this.eventEmitter.emit(BIZ_EVENT_TRACKED, payload);
+    }
+
+    return result;
+  }
+
+  /** Record a created BizEvent id into the active collection scope (if any). */
+  private collectBizEvent(bizEventId: string): void {
+    this.createdBizEventIds.getStore()?.push(bizEventId);
   }
 
   // ============================================================================
@@ -140,6 +176,12 @@ export class EventTrackingService {
       return false;
     }
 
+    return await this.trackWithEmit(events[0].params.environment.id, () =>
+      this.trackEventsByTypeInTransaction(events),
+    );
+  }
+
+  private async trackEventsByTypeInTransaction(events: EventTrackingItem[]): Promise<boolean> {
     return await this.prisma.$transaction(async (tx) => {
       for (const { eventType, params: eventParams } of events) {
         const handler = this.eventHandlers.get(eventType);
@@ -175,9 +217,11 @@ export class EventTrackingService {
    * @returns True if the event was tracked successfully
    */
   async trackCustomEvent(params: EventTransactionParams): Promise<boolean> {
-    return await this.prisma.$transaction(async (tx) => {
-      return await this.executeEventTransaction(tx, params);
-    });
+    return await this.trackWithEmit(params.environment.id, () =>
+      this.prisma.$transaction(async (tx) => {
+        return await this.executeEventTransaction(tx, params);
+      }),
+    );
   }
 
   /**
@@ -198,126 +242,129 @@ export class EventTrackingService {
       params;
     const { id: environmentId } = environment;
 
-    return await this.prisma.$transaction(async (tx) => {
-      // Fetch version to resolve target eventId from version.data.eventId
-      const [bizUser, content, version] = await Promise.all([
-        tx.bizUser.findFirst({
-          where: { externalId: externalUserId, environmentId },
-        }),
-        tx.content.findUnique({
-          where: { id: contentId },
-          select: { id: true, name: true },
-        }),
-        tx.version.findUnique({
-          where: { id: versionId },
-          select: { id: true, sequence: true, data: true },
-        }),
-      ]);
+    return await this.trackWithEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        // Fetch version to resolve target eventId from version.data.eventId
+        const [bizUser, content, version] = await Promise.all([
+          tx.bizUser.findFirst({
+            where: { externalId: externalUserId, environmentId },
+          }),
+          tx.content.findUnique({
+            where: { id: contentId },
+            select: { id: true, name: true },
+          }),
+          tx.version.findUnique({
+            where: { id: versionId },
+            select: { id: true, sequence: true, data: true },
+          }),
+        ]);
 
-      if (!bizUser || !content || !version) {
-        this.logger.warn({
-          message: 'Tracker event rejected: missing entities',
-          contentId,
-          versionId,
-          hasBizUser: !!bizUser,
-          hasContent: !!content,
-          hasVersion: !!version,
+        if (!bizUser || !content || !version) {
+          this.logger.warn({
+            message: 'Tracker event rejected: missing entities',
+            contentId,
+            versionId,
+            hasBizUser: !!bizUser,
+            hasContent: !!content,
+            hasVersion: !!version,
+          });
+          return false;
+        }
+
+        // Resolve target event from version.data.eventId (server is source of truth)
+        const versionData = version.data as Record<string, any> | null;
+        const targetEventId = versionData?.eventId as string | undefined;
+        if (!targetEventId) {
+          this.logger.warn({
+            message: 'Tracker event rejected: no eventId configured in version data',
+            contentId,
+            versionId,
+          });
+          return false;
+        }
+
+        // Look up the actual event by ID (not by codeName)
+        const event = await tx.event.findUnique({
+          where: { id: targetEventId },
         });
-        return false;
-      }
+        if (!event) {
+          this.logger.warn({
+            message: 'Tracker event rejected: target event not found',
+            contentId,
+            versionId,
+            targetEventId,
+          });
+          return false;
+        }
 
-      // Resolve target event from version.data.eventId (server is source of truth)
-      const versionData = version.data as Record<string, any> | null;
-      const targetEventId = versionData?.eventId as string | undefined;
-      if (!targetEventId) {
-        this.logger.warn({
-          message: 'Tracker event rejected: no eventId configured in version data',
-          contentId,
-          versionId,
+        // Dedup: check for recent BizEvent with same key within 3-second window
+        const DEDUP_WINDOW_MS = 3000;
+        const dedupWindow = new Date(Date.now() - DEDUP_WINDOW_MS);
+        const recentEvent = await tx.bizEvent.findFirst({
+          where: {
+            bizUserId: bizUser.id,
+            eventId: event.id,
+            contentId,
+            versionId,
+            createdAt: { gte: dedupWindow },
+          },
         });
-        return false;
-      }
 
-      // Look up the actual event by ID (not by codeName)
-      const event = await tx.event.findUnique({
-        where: { id: targetEventId },
-      });
-      if (!event) {
-        this.logger.warn({
-          message: 'Tracker event rejected: target event not found',
-          contentId,
-          versionId,
-          targetEventId,
+        if (recentEvent) {
+          this.logger.log({
+            message: 'Tracker event deduplicated',
+            contentId,
+            versionId,
+            eventId: event.id,
+            userId: bizUser.id,
+            dedupHit: true,
+          });
+          return true; // Deduped, return success
+        }
+
+        // Build event data with tracker attributes and client context
+        const trackerData = buildTrackerCompletedEventData(content, version);
+        const eventData = assignClientContext(trackerData, clientContext);
+
+        // Filter event data by allowed attributes
+        const filteredData = await this.filterEventDataByAttributes(
+          event.id,
+          eventData,
+          trackerSystemReservedEventAttributes,
+          tx,
+        );
+        if (!filteredData) {
+          return false;
+        }
+
+        // Create BizEvent directly (no BizSession for tracker)
+        const bizEvent = await tx.bizEvent.create({
+          data: {
+            bizUserId: bizUser.id,
+            eventId: event.id,
+            data: filteredData,
+            contentId,
+            versionId,
+            bizCompanyId: bizCompanyId ?? null,
+          },
         });
-        return false;
-      }
+        this.collectBizEvent(bizEvent.id);
 
-      // Dedup: check for recent BizEvent with same key within 3-second window
-      const DEDUP_WINDOW_MS = 3000;
-      const dedupWindow = new Date(Date.now() - DEDUP_WINDOW_MS);
-      const recentEvent = await tx.bizEvent.findFirst({
-        where: {
-          bizUserId: bizUser.id,
-          eventId: event.id,
-          contentId,
-          versionId,
-          createdAt: { gte: dedupWindow },
-        },
-      });
-
-      if (recentEvent) {
         this.logger.log({
-          message: 'Tracker event deduplicated',
+          message: 'Tracker event created',
           contentId,
           versionId,
           eventId: event.id,
           userId: bizUser.id,
-          dedupHit: true,
+          dedupHit: false,
         });
-        return true; // Deduped, return success
-      }
 
-      // Build event data with tracker attributes and client context
-      const trackerData = buildTrackerCompletedEventData(content, version);
-      const eventData = assignClientContext(trackerData, clientContext);
+        // Update seen attributes
+        await this.updateSeenAttributes(tx, bizUser, undefined);
 
-      // Filter event data by allowed attributes
-      const filteredData = await this.filterEventDataByAttributes(
-        event.id,
-        eventData,
-        trackerSystemReservedEventAttributes,
-        tx,
-      );
-      if (!filteredData) {
-        return false;
-      }
-
-      // Create BizEvent directly (no BizSession for tracker)
-      await tx.bizEvent.create({
-        data: {
-          bizUserId: bizUser.id,
-          eventId: event.id,
-          data: filteredData,
-          contentId,
-          versionId,
-          bizCompanyId: bizCompanyId ?? null,
-        },
-      });
-
-      this.logger.log({
-        message: 'Tracker event created',
-        contentId,
-        versionId,
-        eventId: event.id,
-        userId: bizUser.id,
-        dedupHit: false,
-      });
-
-      // Update seen attributes
-      await this.updateSeenAttributes(tx, bizUser, undefined);
-
-      return true;
-    });
+        return true;
+      }),
+    );
   }
 
   /**
@@ -352,65 +399,68 @@ export class EventTrackingService {
     } = params;
     const { id: environmentId } = environment;
 
-    return await this.prisma.$transaction(async (tx) => {
-      const [bizUser, content, version, event] = await Promise.all([
-        tx.bizUser.findFirst({
-          where: { externalId: externalUserId, environmentId },
-        }),
-        tx.content.findUnique({
-          where: { id: contentId },
-          select: { id: true, name: true },
-        }),
-        tx.version.findUnique({
-          where: { id: versionId },
-          select: {
-            id: true,
-            sequence: true,
-            data: true,
-            versionOnLocalization: {
-              where: { enabled: true },
-              select: { localization: { select: { code: true } } },
+    return await this.trackWithEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        const [bizUser, content, version, event] = await Promise.all([
+          tx.bizUser.findFirst({
+            where: { externalId: externalUserId, environmentId },
+          }),
+          tx.content.findUnique({
+            where: { id: contentId },
+            select: { id: true, name: true },
+          }),
+          tx.version.findUnique({
+            where: { id: versionId },
+            select: {
+              id: true,
+              sequence: true,
+              data: true,
+              versionOnLocalization: {
+                where: { enabled: true },
+                select: { localization: { select: { code: true } } },
+              },
             },
+          }),
+          tx.event.findFirst({
+            where: { codeName: eventCodeName, projectId: environment.projectId },
+          }),
+        ]);
+
+        if (!bizUser || !content || !version || !event) {
+          return false;
+        }
+
+        const rawData = buildEventData(content, version);
+        const eventData = assignClientContext(
+          assignDeliveredLocale(rawData, bizUser.data, version.versionOnLocalization),
+          clientContext,
+        );
+
+        const filteredData = await this.filterEventDataByAttributes(
+          event.id,
+          eventData,
+          extraAllowedAttributes,
+          tx,
+        );
+        if (!filteredData) {
+          return false;
+        }
+
+        const bizEvent = await tx.bizEvent.create({
+          data: {
+            bizUserId: bizUser.id,
+            eventId: event.id,
+            data: filteredData,
+            contentId,
+            versionId,
+            bizCompanyId: bizCompanyId ?? null,
           },
-        }),
-        tx.event.findFirst({
-          where: { codeName: eventCodeName, projectId: environment.projectId },
-        }),
-      ]);
+        });
+        this.collectBizEvent(bizEvent.id);
 
-      if (!bizUser || !content || !version || !event) {
-        return false;
-      }
-
-      const rawData = buildEventData(content, version);
-      const eventData = assignClientContext(
-        assignDeliveredLocale(rawData, bizUser.data, version.versionOnLocalization),
-        clientContext,
-      );
-
-      const filteredData = await this.filterEventDataByAttributes(
-        event.id,
-        eventData,
-        extraAllowedAttributes,
-        tx,
-      );
-      if (!filteredData) {
-        return false;
-      }
-
-      await tx.bizEvent.create({
-        data: {
-          bizUserId: bizUser.id,
-          eventId: event.id,
-          data: filteredData,
-          contentId,
-          versionId,
-          bizCompanyId: bizCompanyId ?? null,
-        },
-      });
-
-      return true;
-    });
+        return true;
+      }),
+    );
   }
 
   // ============================================================================
@@ -618,6 +668,7 @@ export class EventTrackingService {
         bizCompanyId: bizSession.bizCompanyId ?? null,
       },
     });
+    this.collectBizEvent(bizEvent.id);
 
     // Handle question answered event
     if (eventCodeName === BizEvents.QUESTION_ANSWERED) {

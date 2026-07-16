@@ -32,6 +32,8 @@ export enum ScopeKind {
   Integration = 'integration',
   /** sso provider id → provider.projectId, else explicit projectId. */
   Sso = 'sso',
+  /** webhook id → webhook.environmentId → project, else explicit environmentId. */
+  Webhook = 'webhook',
 }
 
 /**
@@ -73,6 +75,8 @@ export interface ScopeServices {
   getIntegrationEnvironmentId: (integrationId: string) => Promise<string | null>;
   /** environmentId an integration object mapping belongs to (via its integration). */
   getMappingEnvironmentId: (mappingId: string) => Promise<string | null>;
+  /** environmentId a webhook belongs to. */
+  getWebhookEnvironmentId: (webhookId: string) => Promise<string | null>;
 }
 
 const argProjectId = (args: Record<string, any>): string | undefined =>
@@ -218,6 +222,26 @@ const fromIntegration =
     return projectId ? crossCheck(args, projectId, [environmentId]) : null;
   };
 
+const fromWebhook =
+  (services: ScopeServices): ScopeResolver =>
+  async (args) => {
+    // webhook-id-keyed endpoints (update/delete/rotate/detail/deliveries) …
+    const webhookId = args.webhookId || args.data?.webhookId || args.id || args.data?.id;
+    let environmentId: string | null = null;
+    if (webhookId) {
+      environmentId = await services.getWebhookEnvironmentId(webhookId);
+    } else {
+      // … else create/list, which carry an explicit environmentId.
+      environmentId = args.environmentId || args.data?.environmentId || null;
+    }
+    if (!environmentId) {
+      return null;
+    }
+    const projectId = await services.getEnvironmentProjectId(environmentId);
+    // The webhook's environment rides along for the membership env ceiling.
+    return projectId ? crossCheck(args, projectId, [environmentId]) : null;
+  };
+
 export const createScopeResolvers = (
   services: ScopeServices,
 ): Record<ScopeKind, ScopeResolver> => ({
@@ -235,4 +259,5 @@ export const createScopeResolvers = (
   [ScopeKind.Session]: fromSession(services),
   [ScopeKind.Integration]: fromIntegration(services),
   [ScopeKind.Sso]: projectLevelEntity('projectSSOIdentityProvider', services),
+  [ScopeKind.Webhook]: fromWebhook(services),
 });

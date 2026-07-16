@@ -232,6 +232,7 @@ Table Environment {
   bizSessions BizSession [not null]
   integrations Integration [not null]
   signingSecrets EnvironmentSigningSecret [not null]
+  webhooks Webhook [not null]
 }
 
 Table EnvironmentSigningSecret {
@@ -891,6 +892,43 @@ Table IntegrationLog {
   data Json [note: 'data of integration log']
 }
 
+Table Webhook {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  url String [not null, note: 'Target URL events are POSTed to. HTTPS + public address enforced at the
+application layer (egress guard).']
+  topics Json [not null, note: 'Subscribed topics (string[]): "*" | "event.tracked" | "event.tracked.<codeName>"']
+  enabled Boolean [not null, default: true]
+  secret String [not null, note: 'HMAC-SHA256 signing secret ("whsec_" + 32-byte hex), generated server-side']
+  description String
+  deliveries WebhookDelivery [not null]
+
+  Note: 'Outbound webhook endpoint (ADR 0010). Environment-scoped shared
+infrastructure — deliberately not owned by a user: the data pipeline must
+survive its creator leaving the project.'
+}
+
+Table WebhookDelivery {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  webhook Webhook [not null]
+  webhookId String [not null]
+  messageId String [not null]
+  topic String [not null]
+  attempt Int [not null, note: '1-based attempt number within the retry sequence']
+  success Boolean [not null]
+  responseStatus Int
+  error String [note: 'Failure reason, truncated at the application layer']
+  durationMs Int
+
+  Note: 'One row per delivery attempt (append-only). `messageId` is stable across
+retries of the same webhook message — it is the receiver-side idempotency
+key and equals the payload `id`.'
+}
+
 Table AuditLog {
   id String [pk, note: 'Primary key']
   createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
@@ -1048,3 +1086,7 @@ Ref: IntegrationOAuth.integrationId - Integration.id
 Ref: IntegrationObjectMapping.integrationId > Integration.id
 
 Ref: IntegrationLog.integrationId > Integration.id
+
+Ref: Webhook.environmentId > Environment.id
+
+Ref: WebhookDelivery.webhookId > Webhook.id [delete: Cascade]

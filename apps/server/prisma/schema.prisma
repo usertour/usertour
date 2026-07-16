@@ -292,6 +292,7 @@ model Environment {
   bizSessions           BizSession[]
   integrations          Integration[]
   signingSecrets        EnvironmentSigningSecret[]
+  webhooks              Webhook[]
 }
 
 /// Per-environment HMAC signing secrets for SDK identity verification (ADR 0008).
@@ -1066,6 +1067,52 @@ model IntegrationLog {
   data          Json?       @db.JsonB
 
   @@index([integrationId, status])
+}
+
+/// Outbound webhook endpoint (ADR 0010). Environment-scoped shared
+/// infrastructure — deliberately not owned by a user: the data pipeline must
+/// survive its creator leaving the project.
+model Webhook {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime    @updatedAt @db.Timestamptz(6)
+  environment   Environment @relation(fields: [environmentId], references: [id])
+  environmentId String
+  /// Target URL events are POSTed to. HTTPS + public address enforced at the
+  /// application layer (egress guard).
+  url           String
+  /// Subscribed topics (string[]): "*" | "event.tracked" | "event.tracked.<codeName>"
+  topics        Json        @db.JsonB
+  enabled       Boolean     @default(true)
+  /// HMAC-SHA256 signing secret ("whsec_" + 32-byte hex), generated server-side
+  secret        String
+  description   String?
+
+  deliveries WebhookDelivery[]
+
+  @@index([environmentId])
+}
+
+/// One row per delivery attempt (append-only). `messageId` is stable across
+/// retries of the same webhook message — it is the receiver-side idempotency
+/// key and equals the payload `id`.
+model WebhookDelivery {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  webhook        Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  webhookId      String
+  messageId      String
+  topic          String
+  /// 1-based attempt number within the retry sequence
+  attempt        Int
+  success        Boolean
+  responseStatus Int?
+  /// Failure reason, truncated at the application layer
+  error          String?
+  durationMs     Int?
+
+  @@index([webhookId, createdAt])
+  @@index([createdAt])
 }
 
 /// Append-only audit trail for the open write surface (v2 API + MCP).

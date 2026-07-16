@@ -6,6 +6,8 @@ import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@u
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
   BizUser,
   Content,
@@ -68,6 +70,7 @@ export class WebSocketService {
     private bizService: BizService,
     private integrationService: IntegrationService,
     private projectsService: ProjectsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -1339,6 +1342,14 @@ export class WebSocketService {
     }
 
     // this.integrationService.trackEvent(trackEventData);
+
+    if (result) {
+      const trackedPayload: BizEventTrackedPayload = {
+        environmentId,
+        bizEventIds: [result.id],
+      };
+      this.eventEmitter.emit(BIZ_EVENT_TRACKED, trackedPayload);
+    }
 
     return result;
   }

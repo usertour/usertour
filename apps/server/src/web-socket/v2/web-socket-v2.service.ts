@@ -1,7 +1,9 @@
 import { BizService } from '@/biz/biz.service';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Environment } from '@/common/types/schema';
 import { PrismaService } from 'nestjs-prisma';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
   UpsertUserDto,
   UpsertCompanyDto,
@@ -70,6 +72,7 @@ export class WebSocketV2Service {
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
     private readonly identityVerificationService: IdentityVerificationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ============================================================================
@@ -486,7 +489,7 @@ export class WebSocketV2Service {
 
     const { name, attributes, userOnly } = trackEventDto;
 
-    const success = await this.prisma.$transaction(async (tx) => {
+    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
       // 1. Find or create Event by codeName + projectId
       let event = await tx.event.findFirst({
         where: { codeName: name, projectId },
@@ -516,7 +519,7 @@ export class WebSocketV2Service {
       );
 
       // 3. Create BizEvent
-      await tx.bizEvent.create({
+      return await tx.bizEvent.create({
         data: {
           bizUserId,
           eventId: event.id,
@@ -527,13 +530,17 @@ export class WebSocketV2Service {
           bizCompanyId: userOnly === true ? null : (bizCompanyId ?? null),
         },
       });
-
-      return true;
     });
 
-    if (!success) {
+    if (!createdBizEvent) {
       return false;
     }
+
+    const trackedPayload: BizEventTrackedPayload = {
+      environmentId: environment.id,
+      bizEventIds: [createdBizEvent.id],
+    };
+    this.eventEmitter.emit(BIZ_EVENT_TRACKED, trackedPayload);
 
     await this.contentOrchestratorService.toggleContents(context);
     return true;

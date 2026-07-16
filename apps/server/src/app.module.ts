@@ -36,6 +36,7 @@ import { ApiModule } from './api/api.module';
 import { McpModule } from './mcp/mcp.module';
 import { OAuthModule } from './oauth/oauth.module';
 import { IntegrationModule } from './integration/integration.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { LicenseModule } from './license/license.module';
 import { SharedModule } from './shared/shared.module';
 import { AuditModule } from './audit/audit.module';
@@ -152,6 +153,7 @@ import { Logger } from '@nestjs/common';
     TeamModule,
     SubscriptionModule,
     IntegrationModule,
+    WebhooksModule,
     AuditModule,
     LicenseModule,
     OpenAPIModule,
