@@ -58,15 +58,21 @@ export class ApiContentService {
     } else if (body.themeId) {
       await this.themes.requireTheme(body.themeId, projectId);
     }
+    // Seed the type's default data so a non-flow draft starts complete; a later
+    // update_content_version field-merges onto it rather than a bare object.
+    const data = defaultVersionData(body.type);
+    if (body.type === 'announcement' && body.name && data && typeof data === 'object') {
+      // Mirror the builder's create form: the content name seeds the draft title
+      // (an untitled announcement can't publish — it would render a blank row).
+      (data as Record<string, unknown>).title = body.name;
+    }
     const created = await this.content.createContent({
       type: body.type,
       name: body.name,
       buildUrl: body.buildUrl,
       environmentId: environment.id,
       themeId: body.themeId,
-      // Seed the type's default data so a non-flow draft starts complete; a later
-      // update_content_version field-merges onto it rather than a bare object.
-      data: defaultVersionData(body.type),
+      data,
     });
     if (!created) {
       throw new ParamsError('Failed to create content');

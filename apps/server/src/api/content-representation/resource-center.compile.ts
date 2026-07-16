@@ -1,5 +1,7 @@
 import { cuid } from '@usertour/helpers';
 
+import { ValidationError } from '@/common/errors/errors';
+
 import { compileContent } from './representation.compile';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
 import { compilePlainText } from './text.compile';
@@ -25,6 +27,18 @@ export function compileResourceCenter(
   if (rep.headerText !== undefined) out.headerText = rep.headerText;
 
   if (rep.tabs !== undefined) {
+    // Announcement state (feed, badge, popup) is global to the resource center —
+    // the builder allows exactly one announcement block across all tabs, so the
+    // API enforces the same invariant instead of writing a state the widget
+    // cannot render.
+    const announcementBlocks = rep.tabs.flatMap((t) =>
+      t.blocks.filter((b) => b.type === 'announcement'),
+    );
+    if (announcementBlocks.length > 1) {
+      throw new ValidationError(
+        `A resource center supports at most ONE announcement block across all tabs — remove ${announcementBlocks.length - 1} of them.`,
+      );
+    }
     const prevBlockById = new Map<string, any>();
     for (const t of Array.isArray(base.tabs) ? base.tabs : []) {
       for (const b of Array.isArray(t?.blocks) ? t.blocks : []) {
@@ -132,7 +146,7 @@ function compileBlock(
           };
         }),
       };
-    default:
+    case 'live-chat':
       return {
         ...(prev ?? {}),
         id,
@@ -143,6 +157,28 @@ function compileBlock(
         liveChatProvider: b.provider,
         customLiveChatCode: b.customCode ?? prev?.customLiveChatCode ?? '',
       };
+    case 'announcement':
+      return {
+        ...(prev ?? {}),
+        id,
+        type: 'announcement',
+        ...cond,
+        name: compilePlainText(b.name),
+        ...iconFields(b.icon, prev),
+      };
+    default:
+      // 'unsupported' — the echo of a stored block kind this API version cannot
+      // express (read-backs mark it honestly instead of mislabeling it). Echoing
+      // it back with its id preserves the original verbatim; AUTHORING one is
+      // meaningless, so a new unsupported block (no stored original) is rejected
+      // rather than silently invented.
+      if (!prev) {
+        throw new ValidationError(
+          'An `unsupported` block is echo-only — it preserves an existing block this API ' +
+            'cannot edit. Remove it, or echo it back exactly as read (including its `id`).',
+        );
+      }
+      return prev;
   }
 }
 

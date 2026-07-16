@@ -332,6 +332,62 @@ describe('validateVersionUsable', () => {
       });
       expect(r.ok).toBe(true);
     });
+
+    it('an announcement block counts as tab content (feed entry)', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [{ name: 'News', blocks: [{ type: ResourceCenterBlockType.ANNOUNCEMENT }] }],
+        },
+      });
+      expect(r.ok).toBe(true);
+    });
+  });
+
+  describe('announcement', () => {
+    const announcement = (data: Record<string, unknown>) =>
+      validateVersionUsable({ type: ContentDataType.ANNOUNCEMENT, themeId: 't', data });
+
+    it('errors on a missing / blank title (the builder publish gate)', () => {
+      expect(paths(announcement({ title: '' }).errors)).toContain('title');
+      expect(paths(announcement({ title: '   ' }).errors)).toContain('title');
+    });
+
+    it('requires a theme like every UI type', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.ANNOUNCEMENT,
+        themeId: null,
+        data: { title: 'x', introContent: textBlocks },
+      });
+      expect(paths(r.errors)).toContain('theme');
+    });
+
+    it('errors when Read more is enabled with an empty detail page (dead-end button)', () => {
+      const r = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: true,
+        detailContent: [],
+      });
+      expect(paths(r.errors)).toContain('detailContent');
+    });
+
+    it('warns (not errors) on empty intro content — the row still renders the title', () => {
+      const r = announcement({ title: 'v2.1', introContent: [] });
+      expect(r.ok).toBe(true);
+      expect(paths(r.warnings)).toContain('introContent');
+    });
+
+    it('accepts a titled announcement with intro content and a filled Read more page', () => {
+      const r = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: true,
+        detailContent: textBlocks,
+      });
+      expect(r.ok).toBe(true);
+    });
   });
 
   describe('tracker', () => {

@@ -16,6 +16,7 @@ import { EnvironmentNotInTokenScopeError } from '@/common/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
 import {
+  representationAnnouncement,
   representationBanner,
   representationChecklist,
   representationLauncher,
@@ -214,12 +215,20 @@ export function buildReadTools(): McpTool[] {
       description:
         'Return the JSON Schema for the body you write to `update_content_version` for a content ' +
         'type: `flow` → the `steps` array item; checklist / launcher / banner / tracker / ' +
-        'resource-center → the `data` object. The `data` arg is polymorphic so its schema is NOT ' +
-        'on the tool itself — fetch it here before authoring a non-flow type. Pair with ' +
-        'get_authoring_guide.',
+        'announcement / resource-center → the `data` object. The `data` arg is polymorphic so its ' +
+        'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. Pair ' +
+        'with get_authoring_guide.',
       inputSchema: {
         type: z
-          .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
+          .enum([
+            'flow',
+            'checklist',
+            'launcher',
+            'banner',
+            'tracker',
+            'resource-center',
+            'announcement',
+          ])
           .describe('Content kind whose write-body schema to return.'),
       },
       async handler(args, _ctx) {
@@ -242,6 +251,7 @@ export function buildReadTools(): McpTool[] {
           [ContentDataType.BANNER]: representationBanner,
           [ContentDataType.TRACKER]: representationTracker,
           [ContentDataType.RESOURCE_CENTER]: representationResourceCenter,
+          [ContentDataType.ANNOUNCEMENT]: representationAnnouncement,
         };
         return { type, body: 'data', schema: toJson(byType[type]) };
       },
@@ -252,18 +262,20 @@ export function buildReadTools(): McpTool[] {
       title: 'List content',
       capability: Capability.ContentRead,
       description:
-        'List Usertour content (flow, checklist, launcher, banner, tracker, resource-center) in the ' +
-        'project. Filter by `name`, `type`, `published`, or a created-at range; `deleted: true` lists ' +
-        'soft-deleted content instead (restorable via `restore_content`). Returns ' +
-        '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+        'List Usertour content (flow, checklist, launcher, banner, tracker, resource-center, ' +
+        'announcement) in the project. Filter by `name`, `type`, `published`, or a created-at ' +
+        'range; `deleted: true` lists soft-deleted content instead (restorable via ' +
+        '`restore_content`). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` ' +
+        'to page.',
       inputSchema: {
         ...nameSearchField,
         type: z
           .string()
           .optional()
           .describe(
-            'Filter by content kind: flow, checklist, launcher, banner, tracker, or ' +
-              'resource-center. (A "survey" is a flow with question blocks — not a separate kind.)',
+            'Filter by content kind: flow, checklist, launcher, banner, tracker, ' +
+              'resource-center, or announcement. (A "survey" is a flow with question blocks — ' +
+              'not a separate kind.)',
           ),
         published: z
           .boolean()
@@ -341,7 +353,8 @@ export function buildReadTools(): McpTool[] {
       description:
         'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
         'checklist (published / identified / start_rules / frequency / single_session / hidden / ' +
-        'active_session), each gate evaluated by the SAME runtime function the websocket uses, plus ' +
+        'active_session; for an announcement instead: scheduled / rc_reachability / audience / ' +
+        'seen), each gate evaluated by the SAME runtime function the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
         'unknown so you can see exactly which branch failed. Only gates listed in `blockedBy` ' +

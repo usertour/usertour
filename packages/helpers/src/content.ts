@@ -9,6 +9,7 @@ import {
   Environment,
   Frequency,
   FrequencyUnits,
+  RulesType,
   type RulesFrequencyValue,
   UserTourTypes,
   autoStartRulesSetting,
@@ -146,6 +147,14 @@ export type AutoStartCapabilities = {
    * tracker sets this.
    */
   clientConditionsOnly?: boolean;
+  /**
+   * When set, start (`when`) conditions are restricted to exactly these types —
+   * the type's condition picker offers nothing else. Announcement sets
+   * [USER_ATTR, SEGMENT]: its rules are a server-side audience filter for feed
+   * inclusion, so page/element/event conditions have nothing to evaluate against
+   * (the builder's ANNOUNCEMENT_FILTER_ITEMS mirrors this set).
+   */
+  startConditionTypes?: readonly RulesType[];
 };
 
 const NO_AUTO_START_CAPABILITIES: AutoStartCapabilities = {
@@ -178,8 +187,12 @@ export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilit
   [ContentDataType.BANNER]: { ...NO_AUTO_START_CAPABILITIES },
   // Announcements are a FEED, not a popup: their `when` rules act purely as an
   // audience filter for feed inclusion (announcement.service filterByTargeting);
-  // none of the session-start knobs (frequency / wait / priority / …) apply.
-  [ContentDataType.ANNOUNCEMENT]: { ...NO_AUTO_START_CAPABILITIES },
+  // none of the session-start knobs (frequency / wait / priority / …) apply, and
+  // the filter conditions are user-attribute / segment only.
+  [ContentDataType.ANNOUNCEMENT]: {
+    ...NO_AUTO_START_CAPABILITIES,
+    startConditionTypes: [RulesType.USER_ATTR, RulesType.SEGMENT],
+  },
   [ContentDataType.RESOURCE_CENTER]: {
     ...NO_AUTO_START_CAPABILITIES,
     priority: true,

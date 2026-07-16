@@ -103,6 +103,25 @@ const rcLiveChatBlock = z.object({
   ]),
   customCode: z.string().optional(),
 });
+// Navigation entry into the environment's announcement feed. The block carries no
+// announcement content — the feed lists every published `announcement` content in
+// the environment that passes the user's targeting. Announcement state (feed,
+// badge, popup) is global, so a resource center supports AT MOST ONE announcement
+// block across all tabs (enforced on write).
+const rcAnnouncementBlock = z.object({
+  ...blockBase,
+  type: z.literal('announcement'),
+  name: z.string(),
+  icon: rcIcon.optional(),
+});
+// Echo-only: a stored block kind this API version cannot express. Read-backs mark
+// it honestly instead of mislabeling it; write it back UNCHANGED (with its `id`)
+// to preserve it — authoring a new one is rejected.
+const rcUnsupportedBlock = z.object({
+  ...blockBase,
+  type: z.literal('unsupported'),
+  note: z.string().optional(),
+});
 
 const rcBlock = z.discriminatedUnion('type', [
   rcRichTextBlock,
@@ -111,6 +130,8 @@ const rcBlock = z.discriminatedUnion('type', [
   rcSubPageBlock,
   rcContentListBlock,
   rcLiveChatBlock,
+  rcAnnouncementBlock,
+  rcUnsupportedBlock,
 ]);
 export type RepresentationResourceCenterBlock = z.infer<typeof rcBlock>;
 
@@ -123,9 +144,10 @@ const rcTab = z.object({
     .default([])
     .describe(
       'Tab blocks use the resource-center vocabulary — richtext / divider / action / sub-page / ' +
-        'content-list / live-chat — NOT the flow content blocks. Put text inside a `richtext` ' +
-        'block: { "type": "richtext", "content": [{ "object": "block", "type": "text", ' +
-        '"markdown": "…" }] }. A bare top-level text block (type "text") is rejected here.',
+        'content-list / live-chat / announcement — NOT the flow content blocks. Put text inside ' +
+        'a `richtext` block: { "type": "richtext", "content": [{ "object": "block", "type": ' +
+        '"text", "markdown": "…" }] }. A bare top-level text block (type "text") is rejected ' +
+        'here. At most one `announcement` block per resource center (across all tabs).',
     ),
 });
 

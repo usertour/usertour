@@ -9,7 +9,7 @@
  * non-flow `data` shapes, re-targeting blindly instead of diagnosing, treating
  * a truncated list as complete).
  */
-export const SERVER_INSTRUCTIONS = `You are connected to a Usertour workspace — a user-onboarding platform whose content (flows, checklists, launchers, banners, trackers, resource centers) is delivered to end users by an in-app SDK.
+export const SERVER_INSTRUCTIONS = `You are connected to a Usertour workspace — a user-onboarding platform whose content (flows, checklists, launchers, banners, trackers, resource centers, announcements) is delivered to end users by an in-app SDK.
 
 Before AUTHORING or EDITING content, read \`get_authoring_guide\` once. It is the contract for content that actually renders; do not author from guesswork.
 
@@ -23,6 +23,7 @@ Route by intent:
 
 Facts that prevent common mistakes:
 - A "survey" is a flow with question blocks — there is no separate survey type.
+- An announcement reaches users ONLY through a resource center with an \`announcement\` block — publishing alone does not surface it.
 - Content is project-level; PUBLISHING targets one specific environment.
 - \`steps\` and list-valued \`data\` fields are FULL replacements, not patches — a member you omit is deleted.
 - Lists return { items, nextCursor } — page until nextCursor is null before concluding something does not exist.

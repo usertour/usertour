@@ -18,6 +18,7 @@ import {
   createContentBody,
   updateContentBody,
 } from '@/api/content/content.schema';
+import { isoDateTime } from '@/common/filters';
 import {
   representationHideRules,
   representationStartRules,
@@ -82,9 +83,11 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentCreate,
       description:
         'Create a new piece of Usertour content (flow, checklist, launcher, banner, tracker, ' +
-        'resource-center) in the project, with a draft version themed by `themeId`. A survey is a ' +
-        'flow with question blocks — there is no separate survey type. Returns the created content ' +
-        '(use `update_content_version` to add steps; use `list_themes` to pick a themeId).',
+        'resource-center, announcement) in the project, with a draft version themed by `themeId`. ' +
+        'A survey is a flow with question blocks — there is no separate survey type. An ' +
+        'announcement is a feed item: it reaches users ONLY through a resource center that has an ' +
+        '`announcement` block. Returns the created content (use `update_content_version` to add ' +
+        'steps; use `list_themes` to pick a themeId).',
       // Spread the REST create body (single source of truth — a new field there
       // shows up here automatically); override only themeId's description with
       // MCP-specific guidance (point at list_themes, not the REST endpoint).
@@ -170,10 +173,19 @@ export function buildWriteTools(): McpTool[] {
           .optional()
           .describe(
             'Type-specific body for non-flow content (checklist / launcher / banner / tracker / ' +
-              'resource-center). Fetch its exact shape with get_content_schema. Top-level fields ' +
-              'merge (omit one to leave it unchanged), but a list you DO send — e.g. checklist ' +
-              '`items` — REPLACES that whole list, deleting omitted members (same as `steps`); ' +
-              'a member is matched by its `id`. Validated against the content type.',
+              'announcement / resource-center). Fetch its exact shape with get_content_schema. ' +
+              'Top-level fields merge (omit one to leave it unchanged), but a list you DO send — ' +
+              'e.g. checklist `items` — REPLACES that whole list, deleting omitted members (same ' +
+              'as `steps`); a member is matched by its `id`. Validated against the content type.',
+          ),
+        scheduledAt: isoDateTime
+          .nullable()
+          .optional()
+          .describe(
+            'Announcement versions only: the "announcement time" — the feed hides the ' +
+              'announcement until this instant passes and orders by it (newest first). ISO date ' +
+              'or datetime WITH timezone; `null` clears it (publish then stamps the publish ' +
+              'time). A future value defers visibility.',
           ),
       },
       handler: (args, ctx) =>

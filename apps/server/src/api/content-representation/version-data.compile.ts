@@ -14,6 +14,8 @@ import { representationResourceCenter } from './resource-center.schema';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
 import { compileTargetToElementData } from './target.compile';
 import {
+  representationAnnouncement,
+  RepresentationAnnouncement,
   representationBanner,
   RepresentationBanner,
   representationChecklist,
@@ -80,6 +82,8 @@ export function compileVersionData(
       return compileLauncher(parse(representationLauncher, data), existingData, resolvers);
     case ContentDataType.BANNER:
       return compileBanner(parse(representationBanner, data), existingData, resolvers);
+    case ContentDataType.ANNOUNCEMENT:
+      return compileAnnouncement(parse(representationAnnouncement, data), existingData, resolvers);
     case ContentDataType.RESOURCE_CENTER:
       return compileResourceCenter(
         parse(representationResourceCenter, data),
@@ -241,6 +245,30 @@ function compileLauncher(
       );
     out.behavior = b;
   }
+  return out;
+}
+
+function compileAnnouncement(
+  rep: RepresentationAnnouncement,
+  existing: unknown,
+  r: CompileResolvers,
+): unknown {
+  const base = (existing ?? {}) as Record<string, any>;
+  const out: Record<string, any> = { ...base };
+  if (rep.title !== undefined) out.title = rep.title;
+  // No DismissVariant is passed to compileContent: announcement has no dismiss
+  // action (feed items are marked seen, not dismissed — dismissVariant is null in
+  // the capability matrix), so a `dismiss` in the body is rejected upstream by the
+  // write guards and compileActions never sees one here.
+  if (rep.introContent !== undefined)
+    out.introContent = compileContent(rep.introContent, base.introContent, r);
+  if (rep.enableReadMore !== undefined) out.enableReadMore = rep.enableReadMore;
+  if (rep.readMoreLabel !== undefined) out.readMoreLabel = rep.readMoreLabel;
+  if (rep.detailContent !== undefined)
+    out.detailContent = compileContent(rep.detailContent, base.detailContent, r);
+  if (rep.distribution !== undefined) out.distribution = rep.distribution;
+  if (rep.popupConfig !== undefined)
+    out.popupConfig = { ...(base.popupConfig ?? {}), style: rep.popupConfig.style };
   return out;
 }
 

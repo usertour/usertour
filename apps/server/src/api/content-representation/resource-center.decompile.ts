@@ -108,7 +108,7 @@ function decompileBlock(
           }),
         ),
       };
-    default:
+    case 'live-chat':
       return {
         ...base,
         type: 'live-chat',
@@ -116,6 +116,23 @@ function decompileBlock(
         ...(ic ? { icon: ic } : {}),
         provider: b.liveChatProvider ?? 'custom',
         ...(typeof b.customLiveChatCode === 'string' ? { customCode: b.customLiveChatCode } : {}),
+      };
+    case 'announcement':
+      return {
+        ...base,
+        type: 'announcement',
+        name: decompilePlainText(b.name),
+        ...(ic ? { icon: ic } : {}),
+      };
+    default:
+      // An unknown stored block kind must never be mislabeled as some editable
+      // type — a read-modify-write of the block list (a FULL replacement) would
+      // then overwrite the original with the impostor. Mark it honestly; the
+      // compile side preserves it verbatim when echoed back with its id.
+      return {
+        ...base,
+        type: 'unsupported',
+        note: `Block type "${String(b.type)}" is not editable via this API version — echo this block back unchanged (with its \`id\`) to preserve it, or edit it in the builder.`,
       };
   }
 }

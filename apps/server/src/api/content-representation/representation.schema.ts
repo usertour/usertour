@@ -982,10 +982,16 @@ export const contentVersion = z.object({
   hideRules: representationHideRules.optional(),
   /**
    * Decompiled type-specific body for non-flow content (checklist / launcher /
-   * banner / tracker / resource-center) — only present when the `data` expand is
-   * requested. Shape is determined by the content type.
+   * banner / tracker / announcement / resource-center) — only present when the
+   * `data` expand is requested. Shape is determined by the content type.
    */
   data: z.unknown().optional(),
+  /**
+   * Announcement versions: the "announcement time" gating feed visibility and
+   * ordering. Present only when set (publish stamps it when the author left it
+   * null, so published announcements always carry one).
+   */
+  scheduledAt: z.string().optional(),
   updatedAt: z.string(),
   createdAt: z.string(),
 });

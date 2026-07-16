@@ -1,5 +1,6 @@
 import {
   cuid,
+  isConditionsActived,
   matchTranslationByLocale,
   mergeLocalizedVersionData,
   resolveUserLocaleCode,
@@ -13,6 +14,7 @@ import {
   ContentDataType,
   ContentEditorRoot,
   PopupAnnouncement,
+  RulesCondition,
   ThemeTypesSetting,
 } from '@usertour/types';
 import {
@@ -97,6 +99,34 @@ export class AnnouncementService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       },
     };
+  }
+
+  /**
+   * Diagnose support: evaluate ONE announcement's targeting for a user and
+   * return the verdict plus the STAMPED conditions (`.actived` per leaf) — the
+   * same context + evaluator the feed gate uses (filterByTargeting), exposing
+   * the per-condition facts the feed's boolean filter throws away. No rules /
+   * targeting disabled = visible to everyone.
+   */
+  async evaluateTargetingForDiagnosis(
+    config: AutoStartRulesConfig | null | undefined,
+    environment: Environment,
+    bizUser: BizUser,
+    externalCompanyId?: string,
+  ): Promise<{ matched: boolean; stamped: RulesCondition[] }> {
+    if (!config?.enabledAutoStartRules || !config.autoStartRules?.length) {
+      return { matched: true, stamped: [] };
+    }
+    const context = await this.buildEvaluationContext(
+      environment,
+      bizUser,
+      externalCompanyId ?? '',
+    );
+    const stamped = await this.conditionEvaluationService.evaluateRulesConditions(
+      config.autoStartRules,
+      context,
+    );
+    return { matched: isConditionsActived(stamped), stamped };
   }
 
   /**

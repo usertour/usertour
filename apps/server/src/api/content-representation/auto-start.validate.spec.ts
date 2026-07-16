@@ -133,6 +133,52 @@ describe('validateAutoStartForType', () => {
     expect(validateAutoStartForType(start, undefined, 'flow')).toEqual([]);
   });
 
+  it('announcement rejects every session-start knob and hide rules', () => {
+    const start: RepresentationStartRules = {
+      when: [{ type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' }],
+      frequency: { mode: 'once' },
+      priority: 'high',
+      waitSeconds: 5,
+    };
+    const errs = validateAutoStartForType(start, { when }, 'announcement');
+    expect(errs).toContain('announcement content does not support a start `frequency`.');
+    expect(errs).toContain('announcement content does not support a start `priority`.');
+    expect(errs).toContain('announcement content does not support a start `waitSeconds`.');
+    expect(errs).toContain('announcement content does not support `hideRules`.');
+  });
+
+  it('announcement accepts attribute + segment audience conditions (incl. nested groups)', () => {
+    const start: RepresentationStartRules = {
+      when: [
+        { type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' },
+        {
+          type: 'group',
+          match: 'any',
+          conditions: [{ type: 'segment', segment: 's1', in: true }],
+        },
+      ],
+    };
+    expect(validateAutoStartForType(start, undefined, 'announcement')).toEqual([]);
+  });
+
+  it('announcement rejects audience conditions outside attribute/segment (incl. nested)', () => {
+    const start: RepresentationStartRules = {
+      when: [
+        { type: 'current_url', includes: ['/app'] }, // not an audience condition
+        {
+          type: 'group',
+          match: 'all',
+          conditions: [{ type: 'event', event: 'signup', op: 'occurred' } as never],
+        },
+      ],
+    };
+    const errs = validateAutoStartForType(start, undefined, 'announcement');
+    expect(errs.some((e) => e.includes('`current_url` start condition'))).toBe(true);
+    expect(errs.some((e) => e.includes('`event` start condition'))).toBe(true);
+    // The message names what IS allowed, so the fix is self-evident.
+    expect(errs[0]).toContain('attribute, segment');
+  });
+
   it('clearing rules (null body) is always allowed', () => {
     expect(validateAutoStartForType(null, null, 'launcher')).toEqual([]);
     expect(validateAutoStartForType(undefined, undefined, 'banner')).toEqual([]);

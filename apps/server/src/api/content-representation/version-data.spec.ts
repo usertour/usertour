@@ -42,4 +42,47 @@ describe('version-data builder settings round-trip', () => {
     const back: any = decompileVersionData('banner', internal, idR);
     expect(back.zIndex).toBe(99);
   });
+
+  it('announcement: field-merge preserves untouched fields; popupConfig only reads back for popup', () => {
+    // Simulates the builder-seeded default data (title + intro already present).
+    const existing = {
+      title: 'Seeded title',
+      introContent: [],
+      enableReadMore: false,
+      readMoreLabel: 'Read more',
+      detailContent: [],
+      distribution: 'badge',
+    };
+    // Partial write: only the distribution changes; everything else must survive.
+    const internal: any = compileVersionData(
+      'announcement',
+      { distribution: 'popup', popupConfig: { style: 'modal' } },
+      existing,
+      ids,
+    );
+    expect(internal.title).toBe('Seeded title');
+    expect(internal.readMoreLabel).toBe('Read more');
+    expect(internal.distribution).toBe('popup');
+    expect(internal.popupConfig).toEqual({ style: 'modal' });
+
+    const back: any = decompileVersionData('announcement', internal, idR);
+    expect(back.title).toBe('Seeded title');
+    expect(back.distribution).toBe('popup');
+    expect(back.popupConfig).toEqual({ style: 'modal' });
+
+    // Back to badge: popupConfig is popup-only noise, so the read-back omits it.
+    const badge: any = compileVersionData('announcement', { distribution: 'badge' }, internal, ids);
+    const backBadge: any = decompileVersionData('announcement', badge, idR);
+    expect(backBadge.popupConfig).toBeUndefined();
+  });
+
+  it('announcement popup read-back carries the concrete default style when none is stored', () => {
+    const back: any = decompileVersionData(
+      'announcement',
+      { title: 'x', distribution: 'popup' },
+      idR,
+    );
+    // The runtime default is bubble — the read-back says so instead of leaving a hole.
+    expect(back.popupConfig).toEqual({ style: 'bubble' });
+  });
 });

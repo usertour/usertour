@@ -36,6 +36,7 @@ describe('API v2 version.data codec (e2e)', () => {
   let launcher: Ver;
   let banner: Ver;
   let rc: Ver;
+  let announcement: Ver;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -77,6 +78,7 @@ describe('API v2 version.data codec (e2e)', () => {
     launcher = await newVersion('launcher');
     banner = await newVersion('banner');
     rc = await newVersion('resource-center');
+    announcement = await newVersion('announcement');
   }, 60000);
 
   afterAll(async () => {
@@ -423,6 +425,121 @@ describe('API v2 version.data codec (e2e)', () => {
     });
   });
 
+  describe('announcement', () => {
+    it('round-trips the announcement body + scheduledAt (write → independent read)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        announcement,
+        {
+          data: {
+            title: 'v2.1 released',
+            introContent: [{ type: 'text', markdown: 'We shipped **dark mode**' }],
+            enableReadMore: true,
+            readMoreLabel: 'See details',
+            detailContent: [{ type: 'text', markdown: '# Dark mode\nFull details' }],
+            distribution: 'popup',
+            popupConfig: { style: 'modal' },
+          },
+          scheduledAt: '2030-01-01T00:00:00Z',
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const r = await readData(announcement, token);
+      expect(r.status).toBe(200);
+      expect(r.body.data).toMatchObject({
+        title: 'v2.1 released',
+        enableReadMore: true,
+        readMoreLabel: 'See details',
+        distribution: 'popup',
+        popupConfig: { style: 'modal' },
+      });
+      expect(r.body.data.introContent[0]).toMatchObject({
+        type: 'text',
+        markdown: 'We shipped **dark mode**',
+      });
+      expect(r.body.scheduledAt).toBe('2030-01-01T00:00:00.000Z');
+    });
+
+    it('rejects scheduledAt on a non-announcement version (E1017)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(banner, { scheduledAt: '2030-01-01T00:00:00Z' }, token);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+      expect(res.body.error.message).toMatch(/announcement/i);
+    });
+
+    it('rejects question (survey) blocks in the announcement body (E1017)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        announcement,
+        {
+          data: {
+            introContent: [{ type: 'question', question: { kind: 'nps', name: 'NPS' } }],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+      expect(res.body.error.message).toMatch(/question/i);
+    });
+
+    it('rejects dismiss and goto_step button actions (feed items are marked seen, not dismissed)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        announcement,
+        {
+          data: {
+            introContent: [
+              { type: 'button', text: 'Close', actions: [{ type: 'dismiss' }] },
+              { type: 'button', text: 'Next', actions: [{ type: 'goto_step', step: 'x' }] },
+            ],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+      expect(res.body.error.message).toMatch(/dismiss|goto_step/);
+    });
+
+    it('rejects a non-audience start condition (targeting is attribute/segment only)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        announcement,
+        { startRules: { when: [{ type: 'current_url', includes: ['*/app'] }] } },
+        token,
+      );
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+      expect(res.body.error.message).toMatch(/current_url/);
+      expect(res.body.error.message).toMatch(/attribute, segment/);
+    });
+
+    it('validate flags an untitled announcement and an empty Read-more page', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const empty = await newVersion('announcement');
+      await write(
+        empty,
+        { data: { title: '', enableReadMore: true, detailContent: [] } },
+        token,
+      ).expect(200);
+
+      const r = await api(
+        'get',
+        `/v2/projects/${projectId}/content/${empty.contentId}/versions/${empty.id}/validate`,
+        token,
+      );
+      expect(r.status).toBe(200);
+      expect(r.body.ok).toBe(false);
+      const errorPaths = r.body.errors.map((e: { path: string }) => e.path);
+      expect(errorPaths).toContain('title');
+      expect(errorPaths).toContain('detailContent');
+    });
+  });
+
   describe('resource-center', () => {
     it('round-trips all six block types (write → independent read)', async () => {
       const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
@@ -560,6 +677,57 @@ describe('API v2 version.data codec (e2e)', () => {
         token,
       );
       expect(res.status).toBe(400);
+    });
+
+    it('round-trips an announcement block (the feed entry)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const w = await write(
+        rc,
+        {
+          data: {
+            tabs: [
+              {
+                name: 'News',
+                blocks: [
+                  {
+                    type: 'announcement',
+                    name: "What's new",
+                    icon: { source: 'builtin', type: 'notification-line' },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        token,
+      );
+      expect(w.status).toBe(200);
+
+      const d = (await readData(rc, token)).body.data;
+      expect(d.tabs[0].blocks[0]).toMatchObject({
+        type: 'announcement',
+        name: "What's new",
+        icon: { source: 'builtin', type: 'notification-line' },
+      });
+    });
+
+    it('rejects a second announcement block across tabs (announcement state is global)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const res = await write(
+        rc,
+        {
+          data: {
+            tabs: [
+              { name: 'A', blocks: [{ type: 'announcement', name: 'News' }] },
+              { name: 'B', blocks: [{ type: 'announcement', name: 'More' }] },
+            ],
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('E1017');
+      expect(res.body.error.message).toMatch(/ONE announcement block/);
     });
   });
 });

@@ -469,6 +469,16 @@ export class ApiContentVersionsService {
       content.themeId = body.themeId;
     }
 
+    if (body.scheduledAt !== undefined) {
+      // The "announcement time" only means something on the announcement feed
+      // (visibility gate + ordering key); on any other type it would be a silent
+      // no-op stored on the row — reject instead of accepting dead input.
+      if (contentType !== ContentDataType.ANNOUNCEMENT) {
+        throw new ValidationError('scheduledAt is only supported on announcement versions.');
+      }
+      content.scheduledAt = body.scheduledAt === null ? null : new Date(body.scheduledAt);
+    }
+
     if (body.data !== undefined) {
       if (!contentType) {
         throw new ParamsError('Cannot resolve content type for this version');

@@ -84,6 +84,37 @@ export function validateAutoStartForType(
         errs.push(unsupported(`a \`${type}\` start condition`));
       }
     }
+    if (caps.startConditionTypes) {
+      // The type's `when` is restricted to an explicit whitelist (announcement:
+      // a server-side audience filter — user-attribute / segment only). Translate
+      // the internal whitelist to representation names for the check + message.
+      const allowedInternal = new Set<string>(caps.startConditionTypes);
+      const allowedRepNames = Object.entries(REP_CONDITION_TYPE_TO_INTERNAL)
+        .filter(([, internal]) => allowedInternal.has(internal))
+        .map(([rep]) => rep)
+        .filter((rep) => rep !== 'group');
+      const offending = new Set<string>();
+      const walk = (conds: RepresentationCondition[] | undefined) => {
+        for (const c of conds ?? []) {
+          if (c.type === 'group') {
+            walk(c.conditions);
+          } else {
+            const internal = REP_CONDITION_TYPE_TO_INTERNAL[c.type];
+            if (!internal || !allowedInternal.has(internal)) {
+              offending.add(c.type);
+            }
+          }
+        }
+      };
+      walk(startRules.when);
+      for (const type of offending) {
+        errs.push(
+          unsupported(
+            `a \`${type}\` start condition — this type's targeting supports only: ${allowedRepNames.join(', ')}`,
+          ),
+        );
+      }
+    }
   }
 
   if (hideRules && !caps.hideRules) {

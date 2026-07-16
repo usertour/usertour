@@ -3,6 +3,7 @@ import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
 import {
+  type AnnouncementData,
   type BannerData,
   type ChecklistData,
   ContentActionsItemType,
@@ -69,13 +70,18 @@ export interface ValidateUsableInput {
 }
 
 // UI content types that render and therefore require a theme. Tracker is the
-// only headless type (it fires an event, no UI).
+// only headless type (it fires an event, no UI). Announcement is included even
+// though its theme only styles the POPUP presentation (the feed rows use the
+// resource center's own theme) — the builder seeds every announcement draft
+// with the default theme, and one uniform rule beats a per-distribution
+// exception.
 const UI_TYPES = new Set<string>([
   ContentDataType.FLOW,
   ContentDataType.CHECKLIST,
   ContentDataType.LAUNCHER,
   ContentDataType.BANNER,
   ContentDataType.RESOURCE_CENTER,
+  ContentDataType.ANNOUNCEMENT,
 ]);
 
 // Types that appear ONLY when their auto-start conditions match — they have no
@@ -216,6 +222,9 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       break;
     case ContentDataType.RESOURCE_CENTER:
       validateResourceCenter(parseData<ResourceCenterData>(input.data), err);
+      break;
+    case ContentDataType.ANNOUNCEMENT:
+      validateAnnouncement(parseData<AnnouncementData>(input.data), err, warn);
       break;
     case ContentDataType.TRACKER:
       validateTracker(
@@ -500,6 +509,29 @@ function validateBanner(
   }
 }
 
+function validateAnnouncement(
+  data: AnnouncementData | null,
+  err: (path: string, message: string) => void,
+  warn: (path: string, message: string) => void,
+): void {
+  // The builder's own publish gate: an untitled announcement renders a blank
+  // feed row.
+  if (!data?.title?.trim()) {
+    err('title', 'Announcement has no title; the feed row would render blank. Set data.title.');
+  }
+  if (!hasBlocks(data?.introContent)) {
+    warn('introContent', 'Announcement has no intro content — the feed row shows only the title.');
+  }
+  // "Read more" enabled with an empty detail page is a dead-end button. The
+  // builder lets this publish; the strict validator does not.
+  if (data?.enableReadMore && !hasBlocks(data?.detailContent)) {
+    err(
+      'detailContent',
+      'enableReadMore is on but detailContent is empty — the "Read more" button opens a blank page. Fill detailContent or set enableReadMore to false.',
+    );
+  }
+}
+
 function validateResourceCenter(
   data: ResourceCenterData | null,
   err: (path: string, message: string) => void,
@@ -532,7 +564,8 @@ function tabHasRenderableBlock(blocks: unknown[]): boolean {
         return asArray(block.contentItems).length > 0;
       case ResourceCenterBlockType.ACTION:
       case ResourceCenterBlockType.LIVE_CHAT:
-        return true; // actionable / interactive blocks
+      case ResourceCenterBlockType.ANNOUNCEMENT:
+        return true; // actionable / interactive blocks (announcement = feed entry)
       default:
         return false; // dividers and unknowns don't count as content
     }

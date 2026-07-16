@@ -279,6 +279,56 @@ describe('codec corpus: non-flow version data is round-trip idempotent', () => {
         content: [{ object: 'block', type: 'text', markdown: 'Heads up: *new* feature' }],
       },
     ],
+    [
+      'announcement (badge)',
+      'announcement',
+      {
+        title: 'v2.1 released',
+        introContent: [{ object: 'block', type: 'text', markdown: 'We shipped **dark mode**' }],
+        enableReadMore: true,
+        readMoreLabel: 'See details',
+        detailContent: [
+          { object: 'block', type: 'text', markdown: '# Dark mode\nFull details here' },
+          {
+            object: 'block',
+            type: 'button',
+            text: 'Try it',
+            actions: [{ type: 'navigate', url: '/settings/appearance' }],
+          },
+        ],
+        distribution: 'badge',
+      },
+    ],
+    [
+      'announcement (popup)',
+      'announcement',
+      {
+        title: 'Maintenance window',
+        introContent: [{ object: 'block', type: 'text', markdown: 'Saturday 02:00 UTC' }],
+        distribution: 'popup',
+        popupConfig: { style: 'modal' },
+      },
+    ],
+    [
+      'resource-center with announcement block',
+      'resource-center',
+      {
+        buttonText: 'Help',
+        tabs: [
+          {
+            name: 'News',
+            blocks: [
+              {
+                type: 'announcement',
+                name: "What's new",
+                icon: { source: 'builtin', type: 'notification-line' },
+              },
+              { type: 'divider' },
+            ],
+          },
+        ],
+      },
+    ],
   ];
 
   it.each(DATA)('%s is a fixpoint', (_label, type, rep) => {

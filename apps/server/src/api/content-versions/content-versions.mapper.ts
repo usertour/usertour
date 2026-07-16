@@ -13,6 +13,7 @@ type VersionNode = {
   id: string;
   sequence: number;
   themeId: string | null;
+  scheduledAt?: Date | null;
   updatedAt: Date;
   createdAt: Date;
 };
@@ -57,6 +58,8 @@ export function mapVersion(
     ...(rules?.startRules ? { startRules: rules.startRules } : {}),
     ...(rules?.hideRules ? { hideRules: rules.hideRules } : {}),
     ...(data !== undefined ? { data } : {}),
+    // Announcement "announcement time" — omitted while unset (other types never set it).
+    ...(version.scheduledAt ? { scheduledAt: version.scheduledAt.toISOString() } : {}),
     updatedAt: version.updatedAt.toISOString(),
     createdAt: version.createdAt.toISOString(),
   };

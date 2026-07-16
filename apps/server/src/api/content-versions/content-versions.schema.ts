@@ -8,8 +8,11 @@ import {
   representationStartRules,
   representationStepInput,
 } from '../content-representation/representation.schema';
+import { isoDateTime } from '@/common/filters';
+
 import { representationResourceCenter } from '../content-representation/resource-center.schema';
 import {
+  representationAnnouncement,
   representationBanner,
   representationChecklist,
   representationLauncher,
@@ -58,12 +61,22 @@ export const updateVersionBody = z.object({
       representationLauncher.loose(),
       representationBanner.loose(),
       representationTracker.loose(),
+      representationAnnouncement.loose(),
       representationResourceCenter.loose(),
     ])
     .optional()
     .describe(
       'Type-specific body for a non-flow content version: checklist / launcher / banner / ' +
-        'tracker / resource-center. Field-level merged onto the existing data.',
+        'tracker / announcement / resource-center. Field-level merged onto the existing data.',
+    ),
+  scheduledAt: isoDateTime
+    .nullable()
+    .optional()
+    .describe(
+      'Announcement versions only: the "announcement time" — the feed hides the announcement ' +
+        'until this instant passes, and orders the feed by it (newest first). ISO date or ' +
+        'datetime WITH timezone. `null` = clear (publish stamps the publish time instead). A ' +
+        'future value defers visibility; the value carries across version forks.',
     ),
 });
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}

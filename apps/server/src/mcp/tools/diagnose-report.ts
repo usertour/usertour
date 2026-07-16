@@ -202,6 +202,8 @@ export const buildDiagnoseReport = (
 ): DiagnoseReport => {
   const gates: Gate[] = [];
 
+  const isAnnouncement = facts.contentType === ContentDataType.ANNOUNCEMENT;
+
   gates.push({
     id: 'published',
     status: facts.published ? 'pass' : 'fail',
@@ -209,6 +211,29 @@ export const buildDiagnoseReport = (
       ? 'published to this environment.'
       : 'NOT published to this environment.',
   });
+
+  // Announcement-only structural gates — independent of the user, so they render
+  // right after `published`: the scheduled-time hide and the resource-center
+  // reachability requirement (the two "published but invisible" causes specific
+  // to the feed).
+  if (facts.published && isAnnouncement) {
+    if (facts.scheduledAt) {
+      gates.push({
+        id: 'scheduled',
+        status: facts.scheduledInFuture ? 'fail' : 'pass',
+        detail: facts.scheduledInFuture
+          ? `announcement time ${facts.scheduledAt} is in the FUTURE — the feed, badge, and popup all hide it until then (set scheduledAt earlier or clear it and republish).`
+          : `announcement time ${facts.scheduledAt} has passed.`,
+      });
+    }
+    gates.push({
+      id: 'rc_reachability',
+      status: facts.announcementBlockPublished ? 'pass' : 'fail',
+      detail: facts.announcementBlockPublished
+        ? 'a published resource center in this environment has an announcement block (the feed entry).'
+        : 'NO published resource center in this environment has an announcement block — announcements only reach users through one (feed, badge, and popup are all inside it). Add { "type": "announcement", "name": "What\'s new" } to a resource-center tab and publish it.',
+    });
+  }
 
   if (facts.published) {
     if (facts.userId === undefined) {
@@ -240,10 +265,30 @@ export const buildDiagnoseReport = (
           gates.push({
             id: 'start_rules',
             status: facts.startRulesActive ? 'pass' : 'fail',
-            detail: facts.startRulesActive
-              ? 'auto-start enabled and start conditions match.'
-              : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
+            // For an announcement the rules are a pure AUDIENCE filter (no rules =
+            // visible to everyone), not an auto-start switch — word it as such.
+            detail: isAnnouncement
+              ? facts.startRulesActive
+                ? 'the audience filter matches this user (or there is no targeting).'
+                : 'the audience filter does not match this user — see startConditions.'
+              : facts.startRulesActive
+                ? 'auto-start enabled and start conditions match.'
+                : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
           });
+          if (isAnnouncement && facts.announcementSeen !== undefined) {
+            const popup = facts.announcementDistribution === 'popup';
+            gates.push({
+              id: 'seen',
+              // Seen only BLOCKS the popup presentation (it never re-presents);
+              // the feed keeps showing the item, just marked read.
+              status: facts.announcementSeen && popup ? 'fail' : 'pass',
+              detail: facts.announcementSeen
+                ? popup
+                  ? 'this user has already seen it — a popup presents only ONCE and never re-presents. It remains readable in the feed. To preview the popup again, use a fresh test user.'
+                  : 'this user has already seen it — it stays in the feed (marked read) and no longer counts toward the unread badge.'
+                : `not yet seen by this user — it counts toward the unread badge${popup ? ' and the popup will present if it is the newest unseen one.' : '.'}`,
+            });
+          }
           if (caps.frequency) {
             gates.push({
               id: 'frequency',
@@ -377,6 +422,11 @@ export const buildDiagnoseReport = (
     // conditions match. Keep the summary truthful for the type.
     summary =
       'No server-side blocker — it fires its event when its start conditions match on a matching page. Verify live that identify() fires for this user.';
+  } else if (isAnnouncement) {
+    // An announcement doesn't "show on a page" — it sits in the resource-center
+    // feed and notifies per its distribution level.
+    summary =
+      'No server-side blocker — it is in the announcement feed for this user (badge / popup per its distribution) once they open a resource center with an announcement block.';
   } else {
     summary = `No server-side blocker — it should show on a matching page. Verify live that identify() fires for this user.${targetNote}`;
   }

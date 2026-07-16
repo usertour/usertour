@@ -5,6 +5,7 @@ import { decompileResourceCenter } from './resource-center.decompile';
 import { decompileActions, decompileWhen, DecompileResolvers } from './rules.decompile';
 import { decompileTarget } from './target.decompile';
 import {
+  RepresentationAnnouncement,
   RepresentationBanner,
   RepresentationChecklist,
   RepresentationLauncher,
@@ -31,6 +32,8 @@ export function decompileVersionData(
       return decompileLauncher(data, resolvers);
     case ContentDataType.BANNER:
       return decompileBanner(data, resolvers);
+    case ContentDataType.ANNOUNCEMENT:
+      return decompileAnnouncement(data, resolvers);
     case ContentDataType.RESOURCE_CENTER:
       return decompileResourceCenter(data, resolvers);
     default:
@@ -125,6 +128,27 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
       ...(behavior.actionType ? { action: behavior.actionType } : {}),
       actions: decompileActions(behavior.actions),
     },
+  };
+}
+
+function decompileAnnouncement(data: unknown, r: DecompileResolvers): RepresentationAnnouncement {
+  const d = (data ?? {}) as Record<string, any>;
+  const distribution = (['silent', 'badge', 'popup'] as const).includes(d.distribution)
+    ? d.distribution
+    : 'badge';
+  return {
+    title: typeof d.title === 'string' ? d.title : '',
+    introContent: decompileContent(d.introContent, r).blocks,
+    enableReadMore: !!d.enableReadMore,
+    ...(typeof d.readMoreLabel === 'string' ? { readMoreLabel: d.readMoreLabel } : {}),
+    detailContent: decompileContent(d.detailContent, r).blocks,
+    distribution,
+    // Read-backs carry a concrete style for popup announcements even when the
+    // stored config is absent (the runtime default is bubble) — so an agent sees
+    // what will actually present, not a hole.
+    ...(distribution === 'popup'
+      ? { popupConfig: { style: d.popupConfig?.style === 'modal' ? 'modal' : 'bubble' } }
+      : {}),
   };
 }
 

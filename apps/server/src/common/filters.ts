@@ -16,7 +16,7 @@ const ISO_MESSAGE =
   'Expected an ISO 8601 date ("2026-07-10") or datetime WITH timezone ' +
   '("2026-07-10T00:00:00Z" / "…+08:00") — a timezone-less datetime is ambiguous across deployments.';
 
-const isoDateTime = z.string().refine(isUnambiguousIsoDate, ISO_MESSAGE);
+export const isoDateTime = z.string().refine(isUnambiguousIsoDate, ISO_MESSAGE);
 
 /**
  * Reusable `createdAt` range query fields for v2 list endpoints. Flat params

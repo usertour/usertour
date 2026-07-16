@@ -1,5 +1,6 @@
 import { JsonValue } from '@prisma/client/runtime/library';
 import {
+  DEFAULT_ANNOUNCEMENT_DATA,
   DEFAULT_BANNER_DATA,
   DEFAULT_CHECKLIST_DATA,
   DEFAULT_LAUNCHER_DATA,
@@ -27,6 +28,8 @@ export function defaultVersionData(type: string): JsonValue | undefined {
       return structuredClone(DEFAULT_BANNER_DATA) as unknown as JsonValue;
     case 'resource-center':
       return structuredClone(DEFAULT_RESOURCE_CENTER_DATA) as unknown as JsonValue;
+    case 'announcement':
+      return structuredClone(DEFAULT_ANNOUNCEMENT_DATA) as unknown as JsonValue;
     default:
       return undefined;
   }

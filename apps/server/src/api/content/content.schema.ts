@@ -17,8 +17,9 @@ export const listContentQuery = z.object({
     .string()
     .optional()
     .describe(
-      'Filter by content type: flow, checklist, launcher, banner, tracker, resource-center. ' +
-        '(A survey is a flow with question blocks — there is no separate survey type.)',
+      'Filter by content type: flow, checklist, launcher, banner, tracker, resource-center, ' +
+        'announcement. (A survey is a flow with question blocks — there is no separate survey ' +
+        'type.)',
     ),
   published: z
     .stringbool()
@@ -75,9 +76,15 @@ export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 /** Write body for POST content. */
 export const createContentBody = z.object({
   type: z
-    .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center'])
-    .describe('Content kind.'),
-  name: z.string().optional(),
+    .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center', 'announcement'])
+    .describe(
+      'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
+        'has an `announcement` block — publish alone does not surface it without one.',
+    ),
+  name: z
+    .string()
+    .optional()
+    .describe('Display name. For `announcement` it also seeds the draft title.'),
   buildUrl: z.string().optional(),
   themeId: z
     .string()

@@ -1,9 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
 
-import { ClientContext, ContentDataType, RulesCondition, RulesType } from '@usertour/types';
+import {
+  AnnouncementData,
+  ClientContext,
+  ContentDataType,
+  ResourceCenterBlockType,
+  RulesCondition,
+  RulesType,
+} from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 
 import { BizService } from '@/biz/biz.service';
-import { Environment } from '@/common/types/schema';
+import { BizUser, Environment } from '@/common/types/schema';
 import {
   evaluateCustomContentVersion,
   filterAvailableAutoStartContentVersions,
@@ -15,6 +24,8 @@ import {
   isSingletonContentType,
 } from '@/utils/content-utils';
 
+import { AnnouncementService } from './announcement.service';
+import type { AutoStartRulesConfig } from './condition-evaluation.service';
 import { ContentDataService } from './content-data.service';
 
 export interface DiagnoseParams {
@@ -67,6 +78,19 @@ export interface DiagnoseFacts {
   /** The user's current attribute values (codeName → value), for the MCP layer to show the
    * ACTUAL value next to each user-scoped attribute condition (so the cause is self-evident). */
   userAttributes?: Record<string, unknown>;
+
+  // ── Announcement-only gates (the feed has its own visibility pipeline) ──────
+  /** The published version's "announcement time" (ISO). */
+  scheduledAt?: string;
+  /** scheduledAt is in the future — the feed/badge/popup hide it until then. */
+  scheduledInFuture?: boolean;
+  /** A published resource center in this environment carries a visible announcement
+   * block — the ONLY surface the feed/badge/popup reach users through. */
+  announcementBlockPublished?: boolean;
+  /** This user already has a seen record (badge cleared; a popup never re-presents). */
+  announcementSeen?: boolean;
+  /** Distribution level of the published version (silent / badge / popup). */
+  announcementDistribution?: string;
 }
 
 @Injectable()
@@ -74,6 +98,8 @@ export class ContentDiagnosisService {
   constructor(
     private readonly bizService: BizService,
     private readonly contentDataService: ContentDataService,
+    private readonly announcementService: AnnouncementService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async diagnose(params: DiagnoseParams): Promise<DiagnoseFacts> {
@@ -90,6 +116,21 @@ export class ContentDiagnosisService {
       ? await this.bizService.getBizUser(externalUserId, environment.id)
       : null;
     const userFound = externalUserId ? !!bizUser : undefined;
+
+    // Announcements are a FEED with their own visibility pipeline (scheduledAt +
+    // audience filter + resource-center reachability) — none of the session
+    // machinery below applies, so they get their own gate evaluation.
+    if (contentType === ContentDataType.ANNOUNCEMENT) {
+      return this.diagnoseAnnouncement({
+        environment,
+        contentId,
+        publishedVersionId,
+        externalUserId,
+        externalCompanyId,
+        bizUser,
+        userFound,
+      });
+    }
 
     if (published && bizUser && externalUserId) {
       const cvs = await this.contentDataService.findCustomContentVersions(
@@ -160,5 +201,91 @@ export class ContentDiagnosisService {
       userFound,
       singleSessionApplicable,
     };
+  }
+
+  /**
+   * Announcement gates, each from the REAL feed pipeline (AnnouncementService):
+   * scheduledAt (feed hides until it passes), audience targeting (the same
+   * evaluator filterByTargeting uses, with per-condition facts), reachability (a
+   * published resource center must carry a visible announcement block — mirrors
+   * session-builder's populateAnnouncements guard), and the per-user seen record.
+   */
+  private async diagnoseAnnouncement(input: {
+    environment: Environment;
+    contentId: string;
+    publishedVersionId: string | null;
+    externalUserId?: string;
+    externalCompanyId?: string;
+    bizUser: BizUser | null;
+    userFound?: boolean;
+  }): Promise<DiagnoseFacts> {
+    const { environment, contentId, publishedVersionId, externalUserId, externalCompanyId } = input;
+    const facts: DiagnoseFacts = {
+      contentType: ContentDataType.ANNOUNCEMENT,
+      publishedVersionId,
+      published: !!publishedVersionId,
+      userId: externalUserId,
+      userFound: input.userFound,
+      singleSessionApplicable: false,
+    };
+    if (!publishedVersionId) {
+      return facts;
+    }
+
+    const version = await this.prisma.version.findUnique({
+      where: { id: publishedVersionId },
+      select: { scheduledAt: true, config: true, data: true },
+    });
+    const scheduledAt = version?.scheduledAt ?? null;
+    if (scheduledAt) {
+      facts.scheduledAt = scheduledAt.toISOString();
+      facts.scheduledInFuture = scheduledAt.getTime() > Date.now();
+    }
+    const data = (version?.data ?? null) as unknown as AnnouncementData | null;
+    facts.announcementDistribution = data?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution;
+    facts.announcementBlockPublished = await this.hasPublishedAnnouncementBlock(environment.id);
+
+    if (input.bizUser) {
+      const { matched, stamped } = await this.announcementService.evaluateTargetingForDiagnosis(
+        version?.config as AutoStartRulesConfig | null,
+        environment,
+        input.bizUser,
+        externalCompanyId,
+      );
+      facts.startRulesActive = matched;
+      facts.autoStartRules = stamped;
+      facts.userAttributes = (input.bizUser.data as Record<string, unknown>) ?? {};
+      const seen = await this.announcementService.getSeenAnnouncementIds(input.bizUser.id, [
+        contentId,
+      ]);
+      facts.announcementSeen = seen.has(contentId);
+    }
+    return facts;
+  }
+
+  /**
+   * Whether ANY published resource center in the environment carries a visible
+   * announcement block — without one the feed, badge, and popup are unreachable
+   * (mirrors session-builder's populateAnnouncements early return; block-level
+   * "only show" conditions are evaluated per user at runtime, so a block that
+   * exists but is condition-gated still counts as reachable here).
+   */
+  private async hasPublishedAnnouncementBlock(environmentId: string): Promise<boolean> {
+    const resourceCenters = await this.prisma.contentOnEnvironment.findMany({
+      where: {
+        environmentId,
+        published: true,
+        content: { type: ContentDataType.RESOURCE_CENTER, deleted: false },
+      },
+      select: { publishedVersion: { select: { data: true } } },
+    });
+    return resourceCenters.some((rc) => {
+      const data = rc.publishedVersion?.data as {
+        tabs?: { blocks?: { type?: string }[] }[];
+      } | null;
+      return (data?.tabs ?? []).some((tab) =>
+        (tab.blocks ?? []).some((block) => block?.type === ResourceCenterBlockType.ANNOUNCEMENT),
+      );
+    });
   }
 }
