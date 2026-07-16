@@ -7,13 +7,18 @@ import { PrismaService } from 'nestjs-prisma';
 import { WEBHOOK_CONTENT_PUBLISHED_TOPIC } from '@usertour/constants';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { ApiObjectType } from '@/api/shared/object-type';
+import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
+import { mapUser } from '@/api/users/users.mapper';
 import { buildEventTopic, matchesSubscription, matchesTopic } from './webhook-topics';
 import {
+  BIZ_ENTITY_CHANGED,
   BIZ_EVENT_TRACKED,
+  BizEntityChangedPayload,
   BizEventTrackedPayload,
   CONTENT_PUBLISHED,
   ContentPublishedPayload,
+  EntityChange,
   WebhookDeliveryJobData,
 } from './webhook.types';
 
@@ -94,6 +99,84 @@ export class WebhooksListener {
       // Side-channel: a failure to enqueue must not propagate to the tracking path.
       this.logger.error('Failed to enqueue webhook deliveries', error as Error);
     }
+  }
+
+  @OnEvent(BIZ_ENTITY_CHANGED, { async: true })
+  async onEntityChanged(payload: BizEntityChangedPayload): Promise<void> {
+    try {
+      const webhooks = await this.prisma.webhook.findMany({
+        where: { environmentId: payload.environmentId, enabled: true },
+      });
+      if (webhooks.length === 0) {
+        return;
+      }
+
+      const jobs: { name: string; data: WebhookDeliveryJobData; opts: Record<string, any> }[] = [];
+      for (const change of payload.changes) {
+        const topic = `${change.entity}.${change.action}`;
+        const matching = webhooks.filter((webhook) =>
+          matchesTopic((webhook.topics as string[]) ?? [], topic),
+        );
+        if (matching.length === 0) {
+          continue;
+        }
+
+        // Re-read for the freshest public snapshot (previousAttributes was
+        // captured at diff time inside the transaction).
+        const entityObject = await this.mapChangedEntity(change);
+        if (!entityObject) {
+          continue;
+        }
+
+        for (const webhook of matching) {
+          const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
+          jobs.push({
+            name: 'deliver',
+            data: {
+              webhookId: webhook.id,
+              messageId,
+              topic,
+              payload: {
+                id: messageId,
+                object: ApiObjectType.WEBHOOK_MESSAGE,
+                type: topic,
+                createdAt: new Date().toISOString(),
+                environmentId: payload.environmentId,
+                data: {
+                  [change.entity]: entityObject,
+                  ...(change.previousAttributes
+                    ? { previousAttributes: change.previousAttributes }
+                    : {}),
+                },
+              },
+            },
+            opts: {
+              removeOnComplete: true,
+              removeOnFail: 1000,
+              attempts: 5,
+              backoff: { type: 'exponential', delay: 1000 },
+            },
+          });
+        }
+      }
+
+      if (jobs.length > 0) {
+        await this.queue.addBulk(jobs);
+      }
+    } catch (error) {
+      // Side-channel: a failure to enqueue must not propagate to the write path.
+      this.logger.error('Failed to enqueue entity-change webhook deliveries', error as Error);
+    }
+  }
+
+  /** The v2 public object for a changed row, or null if it vanished meanwhile. */
+  private async mapChangedEntity(change: EntityChange): Promise<Record<string, any> | null> {
+    if (change.entity === 'user') {
+      const bizUser = await this.prisma.bizUser.findUnique({ where: { id: change.bizId } });
+      return bizUser ? mapUser(bizUser) : null;
+    }
+    const bizCompany = await this.prisma.bizCompany.findUnique({ where: { id: change.bizId } });
+    return bizCompany ? mapCompany(bizCompany) : null;
   }
 
   @OnEvent(CONTENT_PUBLISHED, { async: true })

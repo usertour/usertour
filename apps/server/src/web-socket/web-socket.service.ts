@@ -997,7 +997,9 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<UpsertUserResponse> {
     const { userId, attributes } = data;
-    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
+    return await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id),
+    );
   }
 
   /**
@@ -1010,13 +1012,15 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<UpsertCompanyResponse> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
-    return await this.bizService.upsertBizCompanies(
-      this.prisma,
-      externalCompanyId,
-      externalUserId,
-      attributes,
-      environment.id,
-      membership,
+    return await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizCompanies(
+        this.prisma,
+        externalCompanyId,
+        externalUserId,
+        attributes,
+        environment.id,
+        membership,
+      ),
     );
   }
 

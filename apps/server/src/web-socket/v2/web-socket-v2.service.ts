@@ -255,11 +255,8 @@ export class WebSocketV2Service {
       return false;
     }
 
-    const bizUser = await this.bizService.upsertBizUsers(
-      this.prisma,
-      externalUserId,
-      attributes,
-      environment.id,
+    const bizUser = await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id),
     );
     if (!bizUser) {
       await this.socketDataService.delete(socket);
@@ -305,13 +302,15 @@ export class WebSocketV2Service {
       return false;
     }
 
-    const bizCompany = await this.bizService.upsertBizCompanies(
-      this.prisma,
-      externalCompanyId,
-      externalUserId,
-      attributes,
-      environment.id,
-      membership,
+    const bizCompany = await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizCompanies(
+        this.prisma,
+        externalCompanyId,
+        externalUserId,
+        attributes,
+        environment.id,
+        membership,
+      ),
     );
 
     if (!bizCompany) {

@@ -14,8 +14,19 @@ export const WEBHOOK_EVENT_TOPIC_PREFIX = 'event.tracked';
 /** Topic published when a content version is published to an environment. */
 export const WEBHOOK_CONTENT_PUBLISHED_TOPIC = 'content.published';
 
-/** Config-change topics subscribable by exact name. */
-export const WEBHOOK_CONFIG_TOPICS: string[] = [WEBHOOK_CONTENT_PUBLISHED_TOPIC];
+/** Entity-change topics (profile sync): fired on real attribute changes only. */
+export const WEBHOOK_ENTITY_TOPICS: string[] = [
+  'user.created',
+  'user.updated',
+  'company.created',
+  'company.updated',
+];
+
+/** Non-parameterized topics subscribable by exact name. */
+export const WEBHOOK_CONFIG_TOPICS: string[] = [
+  WEBHOOK_CONTENT_PUBLISHED_TOPIC,
+  ...WEBHOOK_ENTITY_TOPICS,
+];
 
 /**
  * Subscription strings granted PREFIX semantics: they match every topic in
@@ -23,7 +34,12 @@ export const WEBHOOK_CONFIG_TOPICS: string[] = [WEBHOOK_CONTENT_PUBLISHED_TOPIC]
  * exactly — behavior-event codeNames may contain dots, so arbitrary
  * segment-prefix matching would be ambiguous.
  */
-export const WEBHOOK_PREFIX_SUBSCRIPTIONS: string[] = [WEBHOOK_EVENT_TOPIC_PREFIX, 'content'];
+export const WEBHOOK_PREFIX_SUBSCRIPTIONS: string[] = [
+  WEBHOOK_EVENT_TOPIC_PREFIX,
+  'content',
+  'user',
+  'company',
+];
 
 /** Subscription string that matches every topic (noisy events excepted). */
 export const WEBHOOK_TOPIC_WILDCARD = '*';

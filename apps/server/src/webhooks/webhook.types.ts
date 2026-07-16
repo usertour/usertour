@@ -30,6 +30,29 @@ export interface ContentPublishedPayload {
   versionId: string;
 }
 
+/**
+ * Domain event emitted (post-commit, EventEmitter2) when biz-user / biz-company
+ * profiles were actually created or changed. Producers are the BizService
+ * upsert chokepoints, which already diff (`isEqual` short-circuits no-op
+ * writes) — a repeated identify with unchanged attributes emits nothing.
+ * `previousAttributes` carries the old values of just the keys that changed
+ * (Stripe-style), captured at diff time inside the transaction.
+ */
+export const BIZ_ENTITY_CHANGED = 'bizEntity.changed';
+
+export interface EntityChange {
+  entity: 'user' | 'company';
+  action: 'created' | 'updated';
+  /** Internal row id — the listener re-reads and maps to the public object. */
+  bizId: string;
+  previousAttributes?: Record<string, any>;
+}
+
+export interface BizEntityChangedPayload {
+  environmentId: string;
+  changes: EntityChange[];
+}
+
 /** Job payload for one webhook delivery (one message to one endpoint). */
 export interface WebhookDeliveryJobData {
   webhookId: string;

@@ -54,6 +54,21 @@ describe('matchesTopic (config topics)', () => {
   });
 });
 
+describe('matchesTopic (entity topics)', () => {
+  it('matches entity topics exactly and via their namespaces', () => {
+    expect(matchesTopic(['user.updated'], 'user.updated')).toBe(true);
+    expect(matchesTopic(['user'], 'user.created')).toBe(true);
+    expect(matchesTopic(['company'], 'company.updated')).toBe(true);
+    expect(matchesTopic(['*'], 'user.updated')).toBe(true);
+  });
+
+  it('keeps entity namespaces separate from each other and from events', () => {
+    expect(matchesTopic(['user'], 'company.updated')).toBe(false);
+    expect(matchesTopic(['user'], 'event.tracked.flow_started')).toBe(false);
+    expect(matchesTopic(['event.tracked'], 'user.updated')).toBe(false);
+  });
+});
+
 describe('isValidSubscription', () => {
   it('accepts the wildcard, the namespaces, and explicit topics', () => {
     expect(isValidSubscription('*')).toBe(true);
@@ -62,11 +77,14 @@ describe('isValidSubscription', () => {
     expect(isValidSubscription('event.tracked.my.custom.event')).toBe(true);
     expect(isValidSubscription('content')).toBe(true);
     expect(isValidSubscription('content.published')).toBe(true);
+    expect(isValidSubscription('user')).toBe(true);
+    expect(isValidSubscription('user.updated')).toBe(true);
+    expect(isValidSubscription('company.created')).toBe(true);
   });
 
   it('rejects unknown namespaces, bare codeNames, and empty parameters', () => {
     expect(isValidSubscription('flow_started')).toBe(false);
-    expect(isValidSubscription('user.updated')).toBe(false);
+    expect(isValidSubscription('user.deleted')).toBe(false);
     expect(isValidSubscription('content.deleted')).toBe(false);
     expect(isValidSubscription('event.tracked.')).toBe(false);
     expect(isValidSubscription('')).toBe(false);

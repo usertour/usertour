@@ -20,6 +20,7 @@ describe('WebhooksListener', () => {
   let prisma: {
     webhook: { findMany: jest.Mock };
     bizEvent: { findMany: jest.Mock };
+    bizUser?: { findUnique: jest.Mock };
   };
   let listener: WebhooksListener;
 
@@ -107,5 +108,70 @@ describe('WebhooksListener', () => {
     await expect(
       listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_x'] }),
     ).resolves.toBeUndefined();
+  });
+
+  describe('onEntityChanged', () => {
+    beforeEach(() => {
+      prisma.bizUser = {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'bu_1',
+          externalId: 'user-42',
+          data: { plan: 'pro' },
+          createdAt: new Date('2026-06-01T08:12:30.000Z'),
+        }),
+      };
+    });
+
+    it('delivers the v2 user object with previousAttributes to matching endpoints', async () => {
+      prisma.webhook.findMany.mockResolvedValue([
+        { id: 'wh_users', topics: ['user'], enabled: true },
+        { id: 'wh_events_only', topics: ['event.tracked'], enabled: true },
+      ]);
+
+      await listener.onEntityChanged({
+        environmentId: 'env_1',
+        changes: [
+          {
+            entity: 'user',
+            action: 'updated',
+            bizId: 'bu_1',
+            previousAttributes: { plan: 'free' },
+          },
+        ],
+      });
+
+      const jobs = queue.addBulk.mock.calls[0][0];
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].data.webhookId).toBe('wh_users');
+      expect(jobs[0].data.topic).toBe('user.updated');
+      expect(jobs[0].data.payload).toMatchObject({
+        type: 'user.updated',
+        data: {
+          user: { id: 'user-42', object: 'user', attributes: { plan: 'pro' } },
+          previousAttributes: { plan: 'free' },
+        },
+      });
+    });
+
+    it('omits previousAttributes on created and skips vanished rows', async () => {
+      prisma.webhook.findMany.mockResolvedValue([
+        { id: 'wh_users', topics: ['user.created'], enabled: true },
+      ]);
+
+      await listener.onEntityChanged({
+        environmentId: 'env_1',
+        changes: [{ entity: 'user', action: 'created', bizId: 'bu_1' }],
+      });
+      const jobs = queue.addBulk.mock.calls[0][0];
+      expect(jobs[0].data.payload.data.previousAttributes).toBeUndefined();
+
+      queue.addBulk.mockClear();
+      prisma.bizUser.findUnique.mockResolvedValue(null);
+      await listener.onEntityChanged({
+        environmentId: 'env_1',
+        changes: [{ entity: 'user', action: 'created', bizId: 'bu_gone' }],
+      });
+      expect(queue.addBulk).not.toHaveBeenCalled();
+    });
   });
 });

@@ -96,7 +96,12 @@ export class EventTrackingService {
    */
   private async trackWithEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
     const collected: string[] = [];
-    const result = await this.createdBizEventIds.run(collected, operation);
+    // Nested entity-change scope: question_answered's bind-to-attribute writes
+    // user attributes inside the same transaction — those changes emit their
+    // own BIZ_ENTITY_CHANGED alongside this scope's BIZ_EVENT_TRACKED.
+    const result = await this.createdBizEventIds.run(collected, () =>
+      this.bizService.withEntityChangeEmit(environmentId, operation),
+    );
 
     if (collected.length > 0) {
       const payload: BizEventTrackedPayload = { environmentId, bizEventIds: collected };

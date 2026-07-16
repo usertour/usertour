@@ -7,9 +7,16 @@ import { createdAtWhere } from '@/common/filters';
 import { SegmentNotFoundError } from '@/common/errors';
 import { createConditionsFilter } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
+import {
+  BIZ_ENTITY_CHANGED,
+  BizEntityChangedPayload,
+  EntityChange,
+} from '@/webhooks/webhook.types';
 import { BizCompany, BizUser, BizUserOnCompany, Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
@@ -90,10 +97,67 @@ interface ResolvedAttributes {
 export class BizService {
   private readonly logger = new Logger(BizService.name);
 
+  /**
+   * Collects entity creations/changes made inside the current call so the
+   * post-commit BIZ_ENTITY_CHANGED emit can reference them. AsyncLocalStorage
+   * (same pattern as EventTrackingService's bizEvent collector): the upsert
+   * chokepoints run inside caller-owned transactions, so they can't emit
+   * themselves. Pushes are no-ops outside a collection scope — an unwrapped
+   * caller silently doesn't notify (fail-safe: missed, never premature).
+   */
+  private readonly entityChanges = new AsyncLocalStorage<EntityChange[]>();
+
   constructor(
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /**
+   * Run an operation (containing its writes/transaction) with entity-change
+   * collection, and emit BIZ_ENTITY_CHANGED after it returns — by then either
+   * every collected change is committed or the operation threw (which
+   * propagates before the emit).
+   */
+  async withEntityChangeEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
+    const changes: EntityChange[] = [];
+    const result = await this.entityChanges.run(changes, operation);
+
+    if (changes.length > 0) {
+      const payload: BizEntityChangedPayload = { environmentId, changes };
+      this.eventEmitter.emit(BIZ_ENTITY_CHANGED, payload);
+    }
+
+    return result;
+  }
+
+  /** Record an entity change into the active collection scope (if any). */
+  private collectEntityChange(change: EntityChange): void {
+    this.entityChanges.getStore()?.push(change);
+  }
+
+  /**
+   * Old values of just the keys the merge changed or removed (Stripe-style
+   * `previous_attributes`) — captured here because only the diff site has both
+   * versions in hand.
+   */
+  private previousAttributesOf(
+    currentData: Record<string, any>,
+    mergedData: Record<string, any>,
+  ): Record<string, any> {
+    const previous: Record<string, any> = {};
+    for (const key of Object.keys(mergedData)) {
+      if (!isEqual(currentData[key], mergedData[key])) {
+        previous[key] = key in currentData ? currentData[key] : null;
+      }
+    }
+    for (const key of Object.keys(currentData)) {
+      if (!(key in mergedData)) {
+        previous[key] = currentData[key];
+      }
+    }
+    return previous;
+  }
 
   async createBizUser(data: CreateBizInput) {
     return await this.prisma.bizUser.create({
@@ -659,13 +723,15 @@ export class BizService {
       where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
-      return await tx.bizUser.create({
+      const created = await tx.bizUser.create({
         data: {
           externalId: String(externalUserId),
           environmentId,
           data: insertAttribute,
         },
       });
+      this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
+      return created;
     }
     const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
@@ -678,7 +744,7 @@ export class BizService {
       return user;
     }
 
-    return await tx.bizUser.update({
+    const updated = await tx.bizUser.update({
       where: {
         id: user.id,
       },
@@ -686,6 +752,13 @@ export class BizService {
         data: insertData,
       },
     });
+    this.collectEntityChange({
+      entity: 'user',
+      action: 'updated',
+      bizId: user.id,
+      previousAttributes: this.previousAttributesOf(currentData, insertData),
+    });
+    return updated;
   }
 
   async upsertBizCompanies(
@@ -731,12 +804,8 @@ export class BizService {
     companyId: string,
     attributes: Record<string, any>,
   ): Promise<BizCompany | null> {
-    return await this.upsertBizCompanyAttributes(
-      this.prisma,
-      projectId,
-      environmentId,
-      companyId,
-      attributes,
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.upsertBizCompanyAttributes(this.prisma, projectId, environmentId, companyId, attributes),
     );
   }
 
@@ -770,7 +839,7 @@ export class BizService {
         return company;
       }
 
-      return await tx.bizCompany.update({
+      const updated = await tx.bizCompany.update({
         where: {
           id: company.id,
         },
@@ -778,15 +847,24 @@ export class BizService {
           data: mergedData,
         },
       });
+      this.collectEntityChange({
+        entity: 'company',
+        action: 'updated',
+        bizId: company.id,
+        previousAttributes: this.previousAttributesOf(currentData, mergedData),
+      });
+      return updated;
     }
 
-    return await tx.bizCompany.create({
+    const created = await tx.bizCompany.create({
       data: {
         externalId: String(externalCompanyId),
         environmentId,
         data: insertAttribute,
       },
     });
+    this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });
+    return created;
   }
 
   async upsertBizMembership(
@@ -1063,12 +1141,18 @@ export class BizService {
     });
     if (existing) return existing;
 
-    return await this.prisma.bizUser.create({
-      data: {
-        externalId: String(externalUserId),
-        environmentId,
-        data: {},
-      },
+    // The socket-connect creation IS the user's birth — notify user.created
+    // here (empty attributes) so the later identify upsert reads as an update.
+    return await this.withEntityChangeEmit(environmentId, async () => {
+      const created = await this.prisma.bizUser.create({
+        data: {
+          externalId: String(externalUserId),
+          environmentId,
+          data: {},
+        },
+      });
+      this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
+      return created;
     });
   }
 
@@ -1092,43 +1176,45 @@ export class BizService {
     // exist yet), so an `attrs` cache slice missing this row produces no
     // observable effect on toggleContents output. The 5-minute TTL self-
     // heals before any new admin-configured rule could reference it.
-    return await this.prisma.$transaction(async (tx) => {
-      // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        // First upsert the user with attributes
+        const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
-      if (!user) {
-        throw new UnknownError('Failed to upsert user');
-      }
-
-      // Handle companies/companies and memberships
-      if (companies) {
-        for (const company of companies) {
-          await this.upsertBizCompanies(
-            tx,
-            company.id,
-            externalUserId,
-            company.attributes || {},
-            environmentId,
-            {},
-          );
+        if (!user) {
+          throw new UnknownError('Failed to upsert user');
         }
-      }
 
-      if (memberships) {
-        for (const membership of memberships) {
-          await this.upsertBizCompanies(
-            tx,
-            membership.company.id,
-            externalUserId,
-            membership.company.attributes || {},
-            environmentId,
-            membership.attributes || {},
-          );
+        // Handle companies/companies and memberships
+        if (companies) {
+          for (const company of companies) {
+            await this.upsertBizCompanies(
+              tx,
+              company.id,
+              externalUserId,
+              company.attributes || {},
+              environmentId,
+              {},
+            );
+          }
         }
-      }
 
-      return user;
-    });
+        if (memberships) {
+          for (const membership of memberships) {
+            await this.upsertBizCompanies(
+              tx,
+              membership.company.id,
+              externalUserId,
+              membership.company.attributes || {},
+              environmentId,
+              membership.attributes || {},
+            );
+          }
+        }
+
+        return user;
+      }),
+    );
   }
 
   async getBizCompany(
