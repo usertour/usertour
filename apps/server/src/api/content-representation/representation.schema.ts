@@ -298,6 +298,17 @@ const attributeConditionFields = {
     .describe('Values for the List operators (includes_any / includes_all / …).'),
 };
 
+/**
+ * The bare `attribute` condition, exported standalone for surfaces that accept
+ * ONLY attribute conditions — segment membership (segments.schema): a segment is
+ * an attribute query, so advertising the full condition vocabulary there taught
+ * agents to write event conditions the service must reject.
+ */
+export const attributeCondition = z.object({
+  type: z.literal('attribute'),
+  ...attributeConditionFields,
+});
+
 export const representationCondition = z.lazy(() =>
   z.discriminatedUnion('type', [
     z.object({
@@ -306,7 +317,7 @@ export const representationCondition = z.lazy(() =>
       conditions: z.array(representationCondition),
     }),
     // attribute condition (user / company / companyMembership — see `scope`).
-    z.object({ type: z.literal('attribute'), ...attributeConditionFields }),
+    attributeCondition,
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({
       type: z.literal('current_url'),
@@ -414,8 +425,22 @@ export const representationCondition = z.lazy(() =>
     z.object({ type: z.literal('text_filled'), target: representationTarget.optional() }),
     z.object({
       type: z.literal('time_window'),
-      start: z.string().optional(),
-      end: z.string().optional(),
+      // Both optional at the TYPE level (read-backs can carry legacy end-only
+      // data), but a WRITE without `start` is rejected by validation: the
+      // runtime treats a start-less window as never matching, so persisting one
+      // would ship a dead condition.
+      start: z
+        .string()
+        .optional()
+        .describe(
+          'Window start (ISO datetime). REQUIRED on write — the runtime never matches a window ' +
+            'without a start, so validation rejects end-only windows. For "until X" semantics, ' +
+            'set start to any past instant and end to X.',
+        ),
+      end: z
+        .string()
+        .optional()
+        .describe('Window end (ISO datetime). Omit for an open-ended "from start onwards" window.'),
     }),
     z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
   ]),

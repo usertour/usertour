@@ -267,13 +267,21 @@ export const buildDiagnoseReport = (
             status: facts.startRulesActive ? 'pass' : 'fail',
             // For an announcement the rules are a pure AUDIENCE filter (no rules =
             // visible to everyone), not an auto-start switch — word it as such.
+            // For other types, "no rules at all" is usually a DESIGNED on-demand
+            // guide (started via start_content / usertour.start()), not a broken
+            // one — say so instead of a generic failure that reads like a bug.
             detail: isAnnouncement
               ? facts.startRulesActive
                 ? 'the audience filter matches this user (or there is no targeting).'
                 : 'the audience filter does not match this user — see startConditions.'
               : facts.startRulesActive
                 ? 'auto-start enabled and start conditions match.'
-                : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
+                : startConditions
+                  ? 'auto-start disabled or a start condition does not match — see startConditions.'
+                  : 'auto-start is not configured, so it never appears on its own — the normal ' +
+                    'pattern for an on-demand guide launched via a checklist / resource-center ' +
+                    '`start_content` reference or `usertour.start()`. Confirm something ' +
+                    'references it; add startRules only if it should also start by itself.',
           });
           // Only meaningful when the audience filter passes — for an excluded
           // user the feed omits the announcement entirely, so a "counts toward
@@ -330,10 +338,16 @@ export const buildDiagnoseReport = (
             const winner = facts.outrankedByName
               ? `'${facts.outrankedByName}'`
               : `content '${facts.outrankedByContentId}'`;
+            // "Lower the priority" is only actionable advice for types that HAVE
+            // the priority knob — a banner does not (writing one is rejected), so
+            // pointing there sends the author down a dead end.
+            const remedy = caps.priority
+              ? "Lower its priority or this one's, or stop the other."
+              : `${facts.contentType} has no priority knob — unpublish the other, or narrow the two contents' start rules (URL patterns / time windows) so they don't overlap.`;
             gates.push({
               id: 'outranked',
               status: 'fail',
-              detail: `another ${facts.contentType} (${winner}) has higher priority and wins the single slot — only one ${facts.contentType} shows at a time. Lower its priority or this one's, or stop the other.`,
+              detail: `another ${facts.contentType} (${winner}) wins the single ${facts.contentType} slot — only one ${facts.contentType} shows at a time. ${remedy}`,
             });
           }
         }
