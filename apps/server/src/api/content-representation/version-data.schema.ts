@@ -277,62 +277,71 @@ export type RepresentationBanner = z.infer<typeof representationBanner>;
 // an optional "Read more" detail page, and the notification level. Announcements
 // are delivered ONLY through a resource center that has an `announcement` block —
 // they never render standalone.
-export const representationAnnouncement = z.object({
-  title: z
-    .string()
-    .optional()
-    .describe(
-      'Title shown in the feed row and the detail view. Required to publish — an untitled ' +
-        'announcement would render a blank row.',
-    ),
-  introContent: z
-    .array(representationBlock)
-    .optional()
-    .describe(
-      'Rich content shown in the feed row (and in the popup, for `distribution: "popup"`). ' +
-        'Same block vocabulary as flow steps MINUS questions: text / image / button / embed / ' +
-        'columns. Button actions here: start_content / navigate / run_javascript only — no ' +
-        'dismiss (feed items are marked seen, not dismissed) and no goto_step.',
-    ),
-  enableReadMore: z
-    .boolean()
-    .optional()
-    .describe('Adds a "Read more" button that opens a detail page rendered from `detailContent`.'),
-  readMoreLabel: z
-    .string()
-    .optional()
-    .describe('Label of the "Read more" button (default "Read more").'),
-  detailContent: z
-    .array(representationBlock)
-    .optional()
-    .describe(
-      'Full content of the "Read more" detail page — only rendered when `enableReadMore` is ' +
-        'true. Same block rules as `introContent`.',
-    ),
-  distribution: z
-    .enum(['silent', 'badge', 'popup'])
-    .optional()
-    .describe(
-      'How loudly users are notified: `silent` = appears in the feed only; `badge` (default) = ' +
-        'feed + unread-count badge on the resource-center launcher; `popup` = feed + badge + ' +
-        'actively presented ONCE to each user (style per `popupConfig`). Only the newest unseen ' +
-        'popup self-presents; it never re-shows after being seen.',
-    ),
-  popupConfig: z
-    .object({
-      style: z
-        .enum(['modal', 'bubble'])
-        .describe(
-          '`modal` = centered modal with overlay; `bubble` = speech bubble anchored at the ' +
-            'resource-center launcher.',
-        ),
-    })
-    .optional()
-    .describe(
-      'Popup presentation — only meaningful when `distribution` is `popup`. Omit for the ' +
-        'default (bubble).',
-    ),
-});
+export const representationAnnouncement = z
+  .object({
+    title: z
+      .string()
+      .optional()
+      .describe(
+        'Title shown in the feed row and the detail view. Required to publish — an untitled ' +
+          'announcement would render a blank row.',
+      ),
+    introContent: z
+      .array(representationBlock)
+      .optional()
+      .describe(
+        'Rich content shown in the feed row (and in the popup, for `distribution: "popup"`). ' +
+          'Same block vocabulary as flow steps MINUS questions: text / image / button / embed / ' +
+          'columns. Button actions here: start_content / navigate / run_javascript only — no ' +
+          'dismiss (feed items are marked seen, not dismissed) and no goto_step.',
+      ),
+    enableReadMore: z
+      .boolean()
+      .optional()
+      .describe(
+        'Adds a "Read more" button that opens a detail page rendered from `detailContent`.',
+      ),
+    readMoreLabel: z
+      .string()
+      .optional()
+      .describe('Label of the "Read more" button (default "Read more").'),
+    detailContent: z
+      .array(representationBlock)
+      .optional()
+      .describe(
+        'Full content of the "Read more" detail page — only rendered when `enableReadMore` is ' +
+          'true. Same block rules as `introContent`.',
+      ),
+    distribution: z
+      .enum(['silent', 'badge', 'popup'])
+      .optional()
+      .describe(
+        'How loudly users are notified: `silent` = appears in the feed only; `badge` (default) = ' +
+          'feed + unread-count badge on the resource-center launcher; `popup` = feed + badge + ' +
+          'actively presented ONCE to each user (style per `popupConfig`). Only the newest unseen ' +
+          'popup self-presents; it never re-shows after being seen.',
+      ),
+    popupConfig: z
+      .object({
+        style: z
+          .enum(['modal', 'bubble'])
+          .describe(
+            '`modal` = centered modal with overlay; `bubble` = speech bubble anchored at the ' +
+              'resource-center launcher.',
+          ),
+      })
+      .optional()
+      .describe(
+        'Popup presentation — only meaningful when `distribution` is `popup`. Omit for the ' +
+          'default (bubble).',
+      ),
+  })
+  .describe(
+    'The announcement body (`data`). NOTE the "announcement time" is NOT in here — it is the ' +
+      'version-level `scheduledAt` field on update_content_version (feed hides the announcement ' +
+      'until it passes; publish stamps it when unset). Delivery requires a resource center with ' +
+      'an `announcement` block published in the same environment.',
+  );
 export type RepresentationAnnouncement = z.infer<typeof representationAnnouncement>;
 
 // ── union (selected by content type) ─────────────────────────────────────────

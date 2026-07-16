@@ -275,7 +275,11 @@ export const buildDiagnoseReport = (
                 ? 'auto-start enabled and start conditions match.'
                 : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
           });
-          if (isAnnouncement && facts.announcementSeen !== undefined) {
+          // Only meaningful when the audience filter passes — for an excluded
+          // user the feed omits the announcement entirely, so a "counts toward
+          // the unread badge" line next to a failed start_rules gate would
+          // contradict it (a real zero-knowledge-eval confusion).
+          if (isAnnouncement && facts.announcementSeen !== undefined && facts.startRulesActive) {
             const popup = facts.announcementDistribution === 'popup';
             gates.push({
               id: 'seen',

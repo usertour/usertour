@@ -353,8 +353,9 @@ export function buildReadTools(): McpTool[] {
       description:
         'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
         'checklist (published / identified / start_rules / frequency / single_session / hidden / ' +
-        'active_session; for an announcement instead: scheduled / rc_reachability / audience / ' +
-        'seen), each gate evaluated by the SAME runtime function the websocket uses, plus ' +
+        'active_session; announcements get their own set: scheduled / rc_reachability / ' +
+        'start_rules-as-audience-filter / seen), each gate evaluated by the SAME runtime function ' +
+        'the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
         'unknown so you can see exactly which branch failed. Only gates listed in `blockedBy` ' +

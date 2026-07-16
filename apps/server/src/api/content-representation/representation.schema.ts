@@ -466,7 +466,12 @@ export const representationAction = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('navigate'),
-    url: z.string(),
+    url: z
+      .string()
+      .describe(
+        'Absolute URL, or an app-relative path ("/docs/x") resolved against the origin the ' +
+          'user is on — relative paths are the normal choice for in-app navigation.',
+      ),
     newTab: z.boolean().optional(),
     newWindow: z.boolean().optional(),
   }),
