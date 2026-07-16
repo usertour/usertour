@@ -47,6 +47,7 @@ const RESOURCE_TYPES = [
   'localization',
   'api_token',
   'access_token',
+  'signing_secret',
   'oauth_grant',
   'integration',
   'sso_provider',
@@ -59,6 +60,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const RESOURCE_LABELS: Record<string, string> = {
   api_token: 'API key',
   access_token: 'SDK token',
+  signing_secret: 'Signing secret',
   oauth_grant: 'Connected app',
   sso_provider: 'SSO provider',
   project_sso_settings: 'SSO settings',

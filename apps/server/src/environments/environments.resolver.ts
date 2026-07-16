@@ -167,12 +167,26 @@ export class EnvironmentsResolver {
 
   @Mutation(() => EnvironmentSigningSecret)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  // Unlike ak_ tokens the utv_ value IS a credential — the result's plaintext
+  // `secret` is blanked by the global SECRET_KEYS redaction before storage.
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'signing_secret',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async createSigningSecret(@Args('environmentId') environmentId: string) {
     return await this.environmentsService.createSigningSecret(environmentId);
   }
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'signing_secret',
+    resourceId: (a) => String(a.signingSecretId ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async revokeSigningSecret(
     @Args('environmentId') environmentId: string,
     @Args('signingSecretId') signingSecretId: string,
@@ -183,6 +197,12 @@ export class EnvironmentsResolver {
 
   @Mutation(() => Environment)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'environment',
+    resourceId: (a) => String(a.environmentId ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async setRequireIdentityVerification(
     @Args('environmentId') environmentId: string,
     @Args('required') required: boolean,

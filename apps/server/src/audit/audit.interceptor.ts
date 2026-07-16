@@ -416,6 +416,8 @@ export async function fetchBefore(
       return prisma.apiToken.findUnique({ where: { id: String(id) } });
     case 'access_token':
       return prisma.accessToken.findUnique({ where: { id: String(id) } });
+    case 'signing_secret':
+      return prisma.environmentSigningSecret.findUnique({ where: { id: String(id) } });
     case 'integration':
       return prisma.integration.findUnique({ where: { id: String(id) } });
     case 'oauth_grant':

@@ -82,6 +82,28 @@ describe('redactSnapshot', () => {
     });
   });
 
+  it('blanks the signing secret in both create results and row snapshots', () => {
+    // createSigningSecret result: plaintext utv_ secret at the top level.
+    expect(
+      redactSnapshot('signing_secret', {
+        id: 'ss1',
+        environmentId: 'env1',
+        secret: 'utv_plaintext',
+        revokedAt: null,
+      }),
+    ).toEqual({
+      id: 'ss1',
+      environmentId: 'env1',
+      secret: '[redacted]',
+      revokedAt: null,
+    });
+    // before-snapshot on revoke: the row carries the encrypted secret — same rule.
+    expect(redactSnapshot('signing_secret', { id: 'ss1', secret: 'enc:v1:...' })).toEqual({
+      id: 'ss1',
+      secret: '[redacted]',
+    });
+  });
+
   it('blanks integration credentials incl. the whole config blob (per-type keys)', () => {
     expect(
       redactSnapshot('integration', {
