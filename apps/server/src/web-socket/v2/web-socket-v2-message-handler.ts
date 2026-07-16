@@ -12,6 +12,23 @@ interface MessageHandler {
 }
 
 /**
+ * Strip credential material from a payload before it reaches a log line.
+ * UpsertCompany carries an identity token — a bearer credential that may
+ * never expire (exp is optional, ADR 0009) — so an error log must not
+ * persist it. Exported for the redaction test.
+ */
+export const redactPayloadForLogging = (payload: unknown): unknown => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+  const record = payload as Record<string, unknown>;
+  if (typeof record.token !== 'string') {
+    return payload;
+  }
+  return { ...record, token: '[REDACTED]' };
+};
+
+/**
  * WebSocket V2 message handler
  * Routes messages to appropriate handlers based on message kind
  */
@@ -243,7 +260,7 @@ export class WebSocketV2MessageHandler {
         message: `Error handling message kind ${kind}: ${err.message}`,
         stack: err.stack,
         socketId: socket.id,
-        payload: payload,
+        payload: redactPayloadForLogging(payload),
       });
       return false;
     }

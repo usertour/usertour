@@ -64,6 +64,26 @@ interface AppStartOptions {
   token: string;
 }
 
+/**
+ * Signature-blind peek at a JWT's payload claims (base64url decode only).
+ * Used solely for developer warnings — the server stays the source of truth
+ * for verification.
+ */
+const decodeTokenClaims = (token: string): Record<string, unknown> | null => {
+  try {
+    const segments = token.split('.');
+    if (segments.length !== 3) {
+      return null;
+    }
+    const base64 = segments[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const parsed = JSON.parse(atob(padded));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 export class UsertourCore extends Evented {
   // === Public Properties ===
   socketService: UsertourSocket;
@@ -93,6 +113,9 @@ export class UsertourCore extends Evented {
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
+  // Identity token (customer-backend-signed JWT, ADR 0009) supplied by the
+  // host app. Kept alongside the ids so reconnect handshakes re-present it.
+  private identityToken: string | undefined;
 
   // === Private Properties ===
   private baseZIndex = WidgetZIndex.BASE;
@@ -157,8 +180,13 @@ export class UsertourCore extends Evented {
    * Identifies a user with the given ID and attributes
    * @param userId - External user ID
    * @param attributes - Optional user attributes
+   * @param opts - Optional identify settings (identity token)
    */
-  async identify(userId: string, attributes?: UserTourTypes.Attributes): Promise<void> {
+  async identify(
+    userId: string,
+    attributes?: UserTourTypes.Attributes,
+    opts?: UserTourTypes.IdentifyOptions,
+  ): Promise<void> {
     // Ensure the SDK has been initialized before calling identify
     this.ensureInit();
 
@@ -187,12 +215,31 @@ export class UsertourCore extends Evented {
     // optimistically would cause a retry-with-same-attrs after a failed
     // upsert to be skipped.
     this.externalUserId = externalUserId;
+    // Only overwrite when a token is supplied (same semantics as group()):
+    // a tokenless re-identify of the same user — e.g. an attributes refresh —
+    // must not wipe the proof the reconnect handshake depends on. A user
+    // switch clears it via reset() above.
+    if (opts?.token) {
+      this.identityToken = opts.token;
+      // A grouped session needs a token whose companyId claim still matches,
+      // or the next reconnect handshake is rejected under enforcement. Warn
+      // only when the claim is actually absent (signature-blind peek), so
+      // hosts refreshing a proper combined token get no noise.
+      if (this.externalCompanyId) {
+        const claims = decodeTokenClaims(opts.token);
+        if (claims && claims.companyId == null) {
+          logger.warn(
+            'identify() received an identity token without a companyId claim while a company is set; the next reconnect will be rejected under enforcement',
+          );
+        }
+      }
+    }
 
     // Hand the auth credentials to the socket layer; the connection lifecycle
     // is owned there. setAuth is synchronous: it triggers a background
     // connect when needed, and any failure surfaces through the EMIT_TIMEOUT
     // applied to the upsert below.
-    this.socketService.setAuth(externalUserId, this.startOptions.token);
+    this.socketService.setAuth(externalUserId, this.startOptions.token, this.identityToken);
 
     const result = await this.socketService.upsertUser(
       {
@@ -229,6 +276,14 @@ export class UsertourCore extends Evented {
     let userId = '';
     if (storageData?.userId) {
       userId = storageData.userId;
+      // Anonymous ids minted before the `anon-` prefix existed are bare
+      // UUIDs. Upgrade them deterministically (same UUID, prefixed) so the
+      // server can keep its anonymous exemption strict — relaxing it to bare
+      // UUIDs would exempt real users whose ids happen to be UUIDs.
+      if (!userId.startsWith('anon-')) {
+        userId = `anon-${userId}`;
+        storage.setLocalStorage(key, { userId });
+      }
     } else {
       userId = `anon-${uuidV4()}`;
       storage.setLocalStorage(key, { userId });
@@ -239,10 +294,21 @@ export class UsertourCore extends Evented {
   /**
    * Updates user attributes
    * @param attributes - New user attributes to update
+   * @param opts - Optional identify settings (identity token refresh)
    */
-  async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
+  async updateUser(
+    attributes: UserTourTypes.Attributes,
+    opts?: UserTourTypes.IdentifyOptions,
+  ): Promise<void> {
     // Ensure the SDK has been initialized before calling updateUser
     const externalUserId = this.ensureIdentify();
+
+    // Store a fresh token BEFORE the change-detection early return, so a
+    // token-refresh call with unchanged attributes still reaches the
+    // reconnect auth (same rule as updateGroup).
+    if (opts?.token) {
+      this.applyIdentityToken(opts.token);
+    }
 
     // Check if attributes have actually changed to avoid unnecessary API calls
     if (!this.attributeManager.userAttrsChanged(attributes)) {
@@ -296,7 +362,14 @@ export class UsertourCore extends Evented {
     // racing this method's ack. Attributes stay below the await for the same
     // reason as identify(): preserves change-detection retry semantics in
     // updateGroup.
+    const previousCompanyId = this.externalCompanyId;
+    const previousIdentityToken = this.identityToken;
     this.externalCompanyId = externalCompanyId;
+    // A token passed here supersedes the identify() one — it must carry a
+    // companyId claim matching this group() call.
+    if (opts?.token) {
+      this.applyIdentityToken(opts.token);
+    }
 
     const result = await this.socketService.upsertCompany(
       {
@@ -304,10 +377,27 @@ export class UsertourCore extends Evented {
         externalCompanyId,
         attributes,
         membership: opts?.membership,
+        token: this.identityToken,
       },
       { batch: true },
     );
     if (!result) {
+      // Roll back the optimistic identity state: a server-rejected membership
+      // claim left in place would ride every reconnect handshake (rejected
+      // companyId + non-matching token) and kill the whole connection.
+      // Compare-and-restore so a concurrent call's successful update is
+      // never clobbered by this rollback.
+      if (this.externalCompanyId === externalCompanyId) {
+        this.externalCompanyId = previousCompanyId;
+      }
+      if (opts?.token) {
+        this.rollbackIdentityToken(opts.token, previousIdentityToken);
+      }
+      // Push the restored state to the socket credentials unconditionally:
+      // a concurrent message may have synced the optimistic companyId into
+      // the reconnect auth while this upsert was in flight, and the tokenless
+      // failure path has no other sync. Idempotent and cheap.
+      this.syncSocketCredentials();
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
@@ -331,6 +421,14 @@ export class UsertourCore extends Evented {
     const externalUserId = this.ensureIdentify();
     const externalCompanyId = this.ensureGroup();
 
+    // Store a fresh token BEFORE the change-detection early return: hosts
+    // refreshing short-lived tokens call updateGroup with unchanged
+    // attributes, and the new token must still reach the reconnect auth.
+    const previousIdentityToken = this.identityToken;
+    if (opts?.token) {
+      this.applyIdentityToken(opts.token);
+    }
+
     // Check if attributes have actually changed to avoid unnecessary API calls
     const hasCompanyChanged = attributes && this.attributeManager.companyAttrsChanged(attributes);
     const hasMembershipChanged =
@@ -347,10 +445,16 @@ export class UsertourCore extends Evented {
         externalCompanyId,
         attributes,
         membership: opts?.membership,
+        token: this.identityToken,
       },
       { batch: true },
     );
     if (!result) {
+      // Same rollback rule as group(): a rejected claim must not stay on the
+      // reconnect auth (compare-and-restore, concurrency-safe).
+      if (opts?.token) {
+        this.rollbackIdentityToken(opts.token, previousIdentityToken);
+      }
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
@@ -1581,6 +1685,29 @@ export class UsertourCore extends Evented {
 
   // === Socket Credentials Synchronization ===
   /**
+   * Single write path for identity-token updates once a session exists:
+   * stores the token and pushes it into the socket's reconnect credentials
+   * immediately. The socket layer restarts a dead connection when the token
+   * changes, so a refreshed token can recover from a rejected handshake.
+   */
+  private applyIdentityToken(token: string): void {
+    this.identityToken = token;
+    this.syncSocketCredentials();
+  }
+
+  /**
+   * Compare-and-restore rollback for a failed optimistic token update: only
+   * undo when the current token is still the one this call installed, so a
+   * concurrent call's successful update is never clobbered.
+   */
+  private rollbackIdentityToken(installedToken: string, previousToken: string | undefined): void {
+    if (this.identityToken === installedToken) {
+      this.identityToken = previousToken;
+      this.syncSocketCredentials();
+    }
+  }
+
+  /**
    * Synchronizes socket credentials
    */
   private syncSocketCredentials() {
@@ -1599,6 +1726,7 @@ export class UsertourCore extends Evented {
       clientContext,
       externalCompanyId,
       externalUserId,
+      identityToken: this.identityToken,
       token,
       flowSessionId,
       checklistSessionId,
@@ -1615,6 +1743,7 @@ export class UsertourCore extends Evented {
   private cleanupUserData() {
     this.externalUserId = undefined;
     this.externalCompanyId = undefined;
+    this.identityToken = undefined;
     // Cleanup all attributes using the attribute manager
     this.attributeManager.cleanup();
   }

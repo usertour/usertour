@@ -8,6 +8,7 @@ export const getUserEnvironments = gql`
       token
       createdAt
       isPrimary
+      requireIdentityVerification
     }
   }
 `;

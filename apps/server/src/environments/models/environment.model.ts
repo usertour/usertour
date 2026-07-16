@@ -15,6 +15,9 @@ export class Environment extends BaseModel {
   @Field(() => Boolean)
   isPrimary: boolean;
 
+  @Field(() => Boolean)
+  requireIdentityVerification: boolean;
+
   // @Field(() => Boolean)
   // published: boolean;
 }
