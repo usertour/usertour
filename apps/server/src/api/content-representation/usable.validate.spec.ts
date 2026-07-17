@@ -798,3 +798,79 @@ describe('validateVersionUsable', () => {
     });
   });
 });
+
+describe('dead launch targets (exists but never published)', () => {
+  const ctxContents = [
+    { id: 'flow-pub', name: 'Published Flow', publishedAnywhere: true },
+    { id: 'flow-draft', name: 'Draft Flow', publishedAnywhere: false },
+  ];
+  const bannerWith = (contentId: string) =>
+    validateVersionUsable({
+      type: ContentDataType.BANNER,
+      themeId: 't',
+      data: {
+        embedPlacement: 'top-of-page',
+        contents: [
+          {
+            children: [
+              {
+                children: [
+                  {
+                    element: {
+                      type: 'button',
+                      data: {
+                        text: 'Go',
+                        actions: [{ type: 'flow-start', data: { contentId } }],
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      conditionContext: { contents: ctxContents as never },
+    });
+
+  it('warns when a start_content action targets a never-published content', () => {
+    const r = bannerWith('flow-draft');
+    expect(r.ok).toBe(true); // warning, not error
+    expect(r.warnings.some((w) => w.message.includes('not published in ANY environment'))).toBe(
+      true,
+    );
+  });
+
+  it('stays quiet for a published target and for unknown ids (existence is another check)', () => {
+    expect(bannerWith('flow-pub').warnings.some((w) => w.message.includes('not published'))).toBe(
+      false,
+    );
+    expect(bannerWith('flow-ghost').warnings.some((w) => w.message.includes('not published'))).toBe(
+      false,
+    );
+  });
+
+  it('warns for a resource-center content-list item pointing at a never-published content', () => {
+    const r = validateVersionUsable({
+      type: ContentDataType.RESOURCE_CENTER,
+      themeId: 't',
+      data: {
+        tabs: [
+          {
+            name: 'Home',
+            blocks: [
+              {
+                type: ResourceCenterBlockType.CONTENT_LIST,
+                contentItems: [{ contentId: 'flow-draft', contentType: 'flow' }],
+              },
+            ],
+          },
+        ],
+      },
+      conditionContext: { contents: ctxContents as never },
+    });
+    expect(r.warnings.some((w) => w.message.includes('list entry silently does nothing'))).toBe(
+      true,
+    );
+  });
+});

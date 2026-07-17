@@ -346,6 +346,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.trigger`));
       collectBindIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
     }
+    collectDeadLaunchTargetWarnings([input.data, input.steps], ctx.contents, warn);
   }
 
   return { ok: errors.length === 0, errors, warnings };
@@ -374,6 +375,59 @@ function collectBindIssues(
       );
     }
   }
+}
+
+/**
+ * Launch/list references whose target EXISTS but is not published in ANY
+ * environment are dead at runtime: existence validation passes, then the
+ * start_content action / resource-center list entry silently does nothing for
+ * real users (the guide's "publish dependencies FIRST" trap — hit verbatim in
+ * the banner acceptance eval, F3). WARNING, not error: the target may
+ * legitimately be published right after this content. Covers `flow-start`
+ * actions anywhere in data/steps and resource-center `contentItems`;
+ * `content_state` conditions are deliberately excluded (an unpublished
+ * reference there has evaluable — if degenerate — semantics).
+ */
+function collectDeadLaunchTargetWarnings(
+  roots: unknown[],
+  contents: { id?: string; name?: string; publishedAnywhere?: boolean }[] | undefined,
+  warn: (path: string, message: string) => void,
+): void {
+  if (!contents?.length) return;
+  const byId = new Map(contents.map((c) => [c.id, c]));
+  const flagged = new Set<string>();
+  const flag = (contentId: string, where: string) => {
+    if (flagged.has(contentId)) return;
+    const target = byId.get(contentId);
+    // Unknown ids are someone else's error (existence checks); only warn for a
+    // KNOWN target that has never been published.
+    if (!target || target.publishedAnywhere !== false) return;
+    flagged.add(contentId);
+    warn(
+      where,
+      `References content "${target.name ?? contentId}" (${contentId}) which is not published in ANY environment — the ${where === 'contentItems' ? 'list entry' : 'start_content action'} silently does nothing for real users until that content is published. Publish the referenced content (to the same environment) first.`,
+    );
+  };
+  const walk = (x: unknown): void => {
+    if (!x) return;
+    if (Array.isArray(x)) {
+      for (const item of x) walk(item);
+      return;
+    }
+    if (typeof x !== 'object') return;
+    const o = x as Record<string, unknown>;
+    if (o.type === ContentActionsItemType.FLOW_START) {
+      const contentId = (o.data as { contentId?: unknown } | undefined)?.contentId;
+      if (typeof contentId === 'string' && contentId) flag(contentId, 'actions');
+    }
+    if (Array.isArray(o.contentItems)) {
+      for (const it of o.contentItems as { contentId?: unknown }[]) {
+        if (typeof it?.contentId === 'string' && it.contentId) flag(it.contentId, 'contentItems');
+      }
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  for (const root of roots) walk(root);
 }
 
 function validateFlow(

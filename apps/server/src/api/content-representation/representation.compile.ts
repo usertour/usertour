@@ -1,6 +1,8 @@
 import { cuid, defaultColumn, defaultStep } from '@usertour/helpers';
 import { StepContentType } from '@usertour/types';
 
+import { ValidationError } from '@/common/errors/errors';
+
 import {
   RepresentationAction,
   RepresentationBlock,
@@ -346,14 +348,18 @@ function compileElement(
       };
     }
     default:
-      // unsupported → keep the original element verbatim when we have it.
-      return (
-        existing ?? {
-          id,
-          element: { type: 'text', data: [{ type: 'paragraph', children: [{ text: '' }] }] },
-          children: null,
-        }
-      );
+      // 'unsupported' — echo-only, mirroring the resource-center block codec:
+      // echoed back with its id it preserves the original element verbatim;
+      // AUTHORING a fresh one is meaningless, and the old empty-text fallback
+      // silently shipped renderable-but-blank content (a real acceptance-eval
+      // finding) — reject instead.
+      if (!existing) {
+        throw new ValidationError(
+          'An `unsupported` block is echo-only — it preserves an existing block this API ' +
+            'cannot edit. Remove it, or echo it back exactly as read (including its `id`).',
+        );
+      }
+      return existing;
   }
 }
 

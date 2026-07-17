@@ -914,3 +914,43 @@ describe('question blocks are flow-only', () => {
     expect(msg).toMatch(/only supported in flows/i);
   });
 });
+
+describe('unsupported blocks are echo-only', () => {
+  it('rejects AUTHORING a fresh unsupported block (no existing element)', () => {
+    // The old fallback silently compiled it into an empty text block —
+    // renderable-but-blank content with the note discarded (acceptance-eval F1).
+    let msg = '';
+    try {
+      compileContent([{ type: 'unsupported', note: 'invented' } as never], undefined, ids);
+    } catch (e) {
+      msg = String((e as { getMessage?: (l: string) => string }).getMessage?.('en') ?? e);
+    }
+    expect(msg).toMatch(/echo-only/);
+  });
+
+  it('echoing an unsupported block back with its id preserves the element verbatim', () => {
+    const existingData = [
+      {
+        children: [
+          {
+            children: [
+              {
+                id: 'blk-1',
+                element: { type: 'exotic-future-kind', data: { keep: 42 } },
+                children: null,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const out: any = compileContent(
+      [{ type: 'unsupported', id: 'blk-1' } as never],
+      existingData,
+      ids,
+    );
+    const el = out[0].children[0].children[0];
+    expect(el.element).toEqual({ type: 'exotic-future-kind', data: { keep: 42 } });
+    expect(el.id).toBe('blk-1');
+  });
+});
