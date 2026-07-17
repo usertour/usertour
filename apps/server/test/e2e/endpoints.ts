@@ -95,10 +95,10 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ p: s.projectId }),
   },
   {
-    key: 'projects.updateProjectName',
+    key: 'projects.updateProject',
     tier: 'O',
     op: 'mutation',
-    doc: 'mutation($n:String!,$p:String!){updateProjectName(name:$n,projectId:$p){__typename}}',
+    doc: 'mutation($n:String,$p:String!){updateProject(name:$n,projectId:$p){__typename}}',
     vars: (s) => ({ n: 'e2e', p: s.projectId }),
   },
   {
