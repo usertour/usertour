@@ -3,7 +3,10 @@ import {
   AttributeBizType,
   AttributeDataType,
 } from '@/attributes/models/attribute.model';
-import { createConditionsFilter } from '@/common/attribute/filter';
+import {
+  createBizCompanyConditionsFilter,
+  createBizUserConditionsFilter,
+} from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable, Logger } from '@nestjs/common';
@@ -489,12 +492,17 @@ export class BizService {
       const attributes = await this.prisma.attribute.findMany({
         where: {
           projectId,
-          bizType: AttributeBizType.USER,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
         },
       });
-      const filter = createConditionsFilter(conditions, attributes);
-      // const conditions = { ...c };
-      const where: Record<string, any> = filter ? filter : {};
+      const filter = createBizUserConditionsFilter(conditions, attributes);
+      // The compiled filter and the search conditions can each carry top-level
+      // OR / bizUsersOnCompany keys, so they are combined as AND members
+      // instead of being spread into one object where the keys would collide.
+      const andFilters: Record<string, any>[] = filter ? [filter] : [];
+      const where: Record<string, any> = {};
       if (segment && segment.dataType === SegmentDataType.MANUAL) {
         where.bizUsersOnSegment = {
           some: {
@@ -509,7 +517,9 @@ export class BizService {
       }
       if (search) {
         // Support searching across multiple fields
-        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.USER);
+        andFilters.push({
+          OR: this.createSearchConditions(search, attributes, AttributeBizType.USER),
+        });
       }
       if (companyId) {
         where.bizUsersOnCompany = {
@@ -517,6 +527,9 @@ export class BizService {
             bizCompanyId: companyId,
           },
         };
+      }
+      if (andFilters.length > 0) {
+        where.AND = andFilters;
       }
       const resp = await findManyCursorConnection(
         (args) =>
@@ -577,12 +590,17 @@ export class BizService {
       const attributes = await this.prisma.attribute.findMany({
         where: {
           projectId: environmenet.projectId,
-          bizType: AttributeBizType.COMPANY,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
         },
       });
-      const filter = createConditionsFilter(conditions, attributes);
-      // const conditions = { ...c };
-      const where: Record<string, any> = filter ? filter : {};
+      const filter = createBizCompanyConditionsFilter(conditions, attributes);
+      // The compiled filter and the search conditions can each carry top-level
+      // OR / bizUsersOnCompany keys, so they are combined as AND members
+      // instead of being spread into one object where the keys would collide.
+      const andFilters: Record<string, any>[] = filter ? [filter] : [];
+      const where: Record<string, any> = {};
       if (segment && segment.dataType === SegmentDataType.MANUAL) {
         where.bizCompaniesOnSegment = {
           some: {
@@ -597,7 +615,12 @@ export class BizService {
       }
       if (search) {
         // Support searching across multiple fields for companies
-        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.COMPANY);
+        andFilters.push({
+          OR: this.createSearchConditions(search, attributes, AttributeBizType.COMPANY),
+        });
+      }
+      if (andFilters.length > 0) {
+        where.AND = andFilters;
       }
       const resp = await findManyCursorConnection(
         (args) =>
@@ -1200,7 +1223,7 @@ export class BizService {
         where: {
           projectId,
           bizType: {
-            in: [AttributeBizType.USER],
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
           },
         },
       });
@@ -1212,11 +1235,15 @@ export class BizService {
         };
       }
       if (segment.dataType === SegmentDataType.CONDITION) {
-        const filter = createConditionsFilter(segment.data, attributes);
-        where = {
-          ...where,
-          ...filter,
-        };
+        const filter = createBizUserConditionsFilter(segment.data, attributes);
+        if (filter) {
+          // Nested under AND so the filter's own bizUsersOnCompany / OR keys
+          // cannot collide with the companyId shortcut applied above.
+          where = {
+            ...where,
+            AND: [filter],
+          };
+        }
       }
     }
 
