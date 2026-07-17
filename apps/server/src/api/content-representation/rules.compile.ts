@@ -323,8 +323,12 @@ export function compileStartRules(
   if (start.waitSeconds !== undefined) setting.wait = start.waitSeconds;
   if (start.startIfNotComplete !== undefined) setting.startIfNotComplete = start.startIfNotComplete;
   return {
-    enabledAutoStartRules: true,
-    autoStartRules: compileConditions(start.when, r),
+    // `when` omitted = settings-only patch: emit no condition keys so the caller's
+    // merge keeps the stored autoStartRules/enabled flag untouched. When present it
+    // is a full replacement (and re-derives the enabled flag).
+    ...(start.when !== undefined
+      ? { enabledAutoStartRules: true, autoStartRules: compileConditions(start.when, r) }
+      : {}),
     ...(Object.keys(setting).length ? { autoStartRulesSetting: setting } : {}),
   };
 }

@@ -954,3 +954,44 @@ describe('unsupported blocks are echo-only', () => {
     expect(el.id).toBe('blk-1');
   });
 });
+
+describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
+  it('a scale question default survives compile → decompile', () => {
+    const compiled = compileStep(
+      {
+        name: 'Q',
+        type: 'modal',
+        sequence: 0,
+        cvid: 'c-scale',
+        content: [
+          {
+            type: 'question',
+            question: {
+              kind: 'rating',
+              name: 'satisfaction',
+              style: 'scale',
+              range: { low: 0, high: 10 },
+              default: 5,
+            },
+          },
+        ],
+      } as never,
+      undefined,
+      ids,
+    );
+    const back = decompileStep({
+      id: 's-scale',
+      cvid: compiled.cvid,
+      name: 'Q',
+      type: 'modal',
+      sequence: 0,
+      data: compiled.data,
+      setting: compiled.setting,
+    });
+    const q = (
+      back.content as { type: string; question?: { default?: number; style?: string } }[]
+    ).find((b) => b.type === 'question')?.question;
+    expect(q?.style).toBe('scale');
+    expect(q?.default).toBe(5);
+  });
+});

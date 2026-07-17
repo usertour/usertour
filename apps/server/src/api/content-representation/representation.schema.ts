@@ -880,7 +880,18 @@ const durationUnit = z.enum(['seconds', 'minutes', 'hours', 'days']);
 export const representationStartRules = z.preprocess(
   rejectLegacyWaitMs,
   z.object({
-    when: z.array(representationCondition),
+    // Optional on WRITE: omit `when` to keep the stored conditions and patch only
+    // the settings (frequency / priority / …) — the same partial-patch contract the
+    // settings already follow. When present it is a FULL replacement of the
+    // condition set. (Requiring it forced authors to re-send conditions just to
+    // change a frequency — a real acceptance-eval failure.)
+    when: z
+      .array(representationCondition)
+      .optional()
+      .describe(
+        'Start conditions (full replacement when present). Omit to keep the existing ' +
+          'conditions and change only the settings.',
+      ),
     frequency: z
       .object({
         mode: z

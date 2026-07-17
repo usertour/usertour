@@ -98,3 +98,26 @@ describe('compileConditions — `flow`-state condition gates any content type', 
     expect(issues[0].message).toMatch(/unknown content/i);
   });
 });
+
+describe('compileStartRules — settings-only patch (when omitted)', () => {
+  it('emits NO condition keys, so the caller merge keeps stored rules untouched', () => {
+    const out = compileStartRules({ frequency: { mode: 'once' } } as never, r) as Record<
+      string,
+      unknown
+    >;
+    expect(out.autoStartRules).toBeUndefined();
+    expect(out.enabledAutoStartRules).toBeUndefined();
+    expect((out.autoStartRulesSetting as { frequency: { frequency: string } }).frequency).toEqual({
+      frequency: 'once',
+    });
+  });
+
+  it('with `when` present it still fully replaces conditions and re-enables', () => {
+    const out = compileStartRules({ when, priority: 'high' } as never, r) as Record<
+      string,
+      unknown
+    >;
+    expect(out.enabledAutoStartRules).toBe(true);
+    expect(Array.isArray(out.autoStartRules)).toBe(true);
+  });
+});

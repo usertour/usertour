@@ -321,6 +321,9 @@ function decompileQuestion(e: any): RepresentationQuestion | undefined {
           low: typeof d.lowRange === 'number' ? d.lowRange : 0,
           high: typeof d.highRange === 'number' ? d.highRange : 10,
         },
+        // Same `rating` storage as star-rating — the read-back was missing only
+        // here, silently dropping a written `default` (flow acceptance eval #22).
+        ...(typeof d.rating === 'number' ? { default: d.rating } : {}),
         ...(lo ? { lowLabel: lo } : {}),
         ...(hi ? { highLabel: hi } : {}),
       };

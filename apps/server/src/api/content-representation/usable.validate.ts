@@ -358,20 +358,52 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
 // error: the question still renders and still records a response event, so the
 // content is usable; the bind just no-ops. Only checked when the attribute list is
 // supplied (conditionContext).
+// Expected bound-attribute data type per question element type: numeric answers
+// (nps / ratings / scale) need Number; text and single-select store String;
+// multi-select stores a List. Mirrors the answer payload the runtime writes.
+const QUESTION_BIND_TYPE: Record<string, { type: number; label: string }> = {
+  nps: { type: 1, label: 'number' },
+  'star-rating': { type: 1, label: 'number' },
+  scale: { type: 1, label: 'number' },
+  'single-line-text': { type: 2, label: 'string' },
+  'multi-line-text': { type: 2, label: 'string' },
+};
+
 function collectBindIssues(
   data: unknown,
   base: string,
-  attrs: { codeName?: string }[] | undefined,
+  attrs: { codeName?: string; dataType?: number }[] | undefined,
   warn: (path: string, message: string) => void,
 ): void {
   if (!Array.isArray(data)) return;
   for (const el of extractQuestionData(data as ContentEditorRoot[])) {
-    const d = (el as { data?: { bindToAttribute?: boolean; selectedAttribute?: string } }).data;
+    const type = (el as { type?: string }).type ?? '';
+    const d = (
+      el as {
+        data?: { bindToAttribute?: boolean; selectedAttribute?: string; allowMultiple?: boolean };
+      }
+    ).data;
     if (!d?.bindToAttribute || !d.selectedAttribute) continue;
-    if (!(attrs ?? []).some((a) => a.codeName === d.selectedAttribute)) {
+    const attr = (attrs ?? []).find((a) => a.codeName === d.selectedAttribute);
+    if (!attr) {
       warn(
         base,
         `A question binds to attribute "${d.selectedAttribute}" but no such attribute exists — the answer records as a response but silently captures nothing onto the user (targeting/segments on it stay empty). Create the attribute or fix the codeName.`,
+      );
+      continue;
+    }
+    // Type fit: a mismatched bind also captures nothing at runtime (the upsert
+    // rejects the value) — same silent-no-op class as a dangling codeName.
+    const expected =
+      type === 'multiple-choice'
+        ? d.allowMultiple
+          ? { type: 4, label: 'list' }
+          : { type: 2, label: 'string' }
+        : QUESTION_BIND_TYPE[type];
+    if (expected && typeof attr.dataType === 'number' && attr.dataType !== expected.type) {
+      warn(
+        base,
+        `A ${type} question binds to attribute "${d.selectedAttribute}", whose data type does not match the answer (${expected.label} expected) — the answer records as a response but the attribute silently captures nothing. Bind a ${expected.label}-typed attribute.`,
       );
     }
   }
