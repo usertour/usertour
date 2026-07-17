@@ -43,6 +43,16 @@ export interface CompileResolvers {
    * the reference through unchanged when absent.
    */
   stepCvid?: (ref: string) => string;
+  /**
+   * Non-representable actions harvested from the container being edited (the
+   * previous step / data body): `javascript-evaluate` plus any future internal
+   * type. A read-back echoes them as `run_javascript` / `unsupported`; when the
+   * echo matches one of these, compile preserves the stored action verbatim
+   * instead of rejecting the write — otherwise a read-modify-write cycle through
+   * the API would force dropping builder-authored actions (the list slots are
+   * full replacements, so "just leave it out" DELETES it).
+   */
+  echoActions?: Rule[];
 }
 
 type Rule = { id: string; type: string; data: any; operators?: 'and' | 'or'; conditions?: Rule[] };
@@ -227,14 +237,46 @@ export type DismissVariant =
   | 'banner-dismis'
   | 'launcher-dismis';
 
+// Internal keys whose array values are ALWAYS action lists (step target.actions,
+// trigger.actions, button element.data.actions, checklist/RC clickedActions) —
+// conditions live under different keys (conditions / *Conditions / *Rules).
+const ACTION_LIST_KEYS = new Set(['actions', 'clickedActions']);
+
+/**
+ * Harvest every internal action from the given (previous-version) containers,
+ * for `CompileResolvers.echoActions`. Walking by key keeps the pool to real
+ * action positions — nothing else in the internal model stores rule-shaped
+ * nodes under these keys.
+ */
+export function collectEchoableActions(...containers: unknown[]): Rule[] {
+  const pool: Rule[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const n of node) walk(n);
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      if (ACTION_LIST_KEYS.has(key) && Array.isArray(value)) {
+        for (const a of value) {
+          if (a && typeof a === 'object' && typeof (a as { type?: unknown }).type === 'string') {
+            pool.push(a as Rule);
+          }
+        }
+      }
+      walk(value);
+    }
+  };
+  for (const c of containers) walk(c);
+  return pool;
+}
+
 export function compileActions(
   actions: RepresentationAction[] | undefined,
   r?: CompileResolvers,
   dismiss: DismissVariant = 'flow-dismis',
 ): Rule[] {
-  return (actions ?? [])
-    .filter((a) => a.type !== 'unsupported')
-    .map((a) => compileAction(a, r, dismiss));
+  return (actions ?? []).map((a) => compileAction(a, r, dismiss));
 }
 
 function compileAction(
@@ -260,10 +302,33 @@ function compileAction(
       });
     case 'dismiss':
       return rule(dismiss, {});
-    case 'run_javascript':
-      throw new ValidationError(
-        'Cannot write a run_javascript action via the API — it is blocked for security. Remove it, or edit this content in the builder.',
+    case 'run_javascript': {
+      // Echo-if-existing: a read-back exposes builder-authored scripts as typed
+      // `run_javascript` actions; echoing one back unchanged preserves the
+      // stored action (matched by script). Authoring a NEW script stays blocked.
+      const stored = r?.echoActions?.find(
+        (e) =>
+          e.type === 'javascript-evaluate' &&
+          ((e.data as { value?: unknown } | undefined)?.value ?? '') === a.script,
       );
+      if (stored) return structuredClone(stored);
+      throw new ValidationError(
+        'Cannot write a run_javascript action via the API — authoring scripts is blocked for security. ' +
+          'An existing action echoed back with its script unchanged is kept; to change or add one, use the builder.',
+      );
+    }
+    case 'unsupported': {
+      // Echo-only placeholder for a non-representable action (read-backs emit it
+      // with `note` = the internal type). Echoing it back preserves the stored
+      // action; writing one fresh is an error, mirroring `unsupported` blocks.
+      const note = (a as { note?: string }).note;
+      const stored = note ? r?.echoActions?.find((e) => e.type === note) : undefined;
+      if (stored) return structuredClone(stored);
+      throw new ValidationError(
+        'Cannot author an "unsupported" action — it is an echo-only placeholder for an existing ' +
+          'non-representable action, and no matching action exists on the version being edited.',
+      );
+    }
     default:
       throw new ValidationError(
         `Cannot write a "${(a as { type: string }).type}" action — this action type is not supported via the API.`,

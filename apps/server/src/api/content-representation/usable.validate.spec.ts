@@ -214,6 +214,25 @@ describe('validateVersionUsable', () => {
       ]);
       expect(clean.warnings).toHaveLength(0);
     });
+
+    it('errors on a body button block with no actions (was a silent publish gap)', () => {
+      const okItem = { name: 'Task', clickedActions: [{ type: 'x' }], completeConditions: [] };
+      const body = (element: unknown) => [{ children: [{ children: [{ element }] }] }];
+      const withBody = (content: unknown) =>
+        validateVersionUsable({
+          type: ContentDataType.CHECKLIST,
+          themeId: 't',
+          data: { items: [okItem], content },
+        });
+      const broken = withBody(body({ type: 'button', data: { text: 'Go', actions: [] } }));
+      expect(broken.ok).toBe(false);
+      expect(broken.errors.some((e) => e.path === 'content')).toBe(true);
+      // a wired button and an empty body both pass
+      expect(
+        withBody(body({ type: 'button', data: { text: 'Go', actions: [{ type: 'x' }] } })).ok,
+      ).toBe(true);
+      expect(withBody([]).ok).toBe(true);
+    });
   });
 
   describe('launcher', () => {
@@ -473,9 +492,10 @@ describe('validateVersionUsable', () => {
         config: { autoStartRules: [cond] as never },
         conditionContext: ctx,
       });
-    // Condition errors are pathed under `config.…`; flow's own errors are not.
+    // Condition errors are pathed under the PUBLIC rule slot (`startRules.when…`,
+    // not the internal `config.autoStartRules`); flow's own errors are not.
     const condErrors = (r: { errors: { path: string; message: string }[] }) =>
-      r.errors.filter((e) => e.path.startsWith('config'));
+      r.errors.filter((e) => e.path.startsWith('startRules.when'));
 
     it('passes a valid user-attr condition', () => {
       const r = run({

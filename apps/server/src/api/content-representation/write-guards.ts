@@ -71,7 +71,7 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'reactive_condition',
           path: at,
-          message: `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
+          message: `A "${type}" condition can't be used in ${slot} — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
         });
       }
       if (type === 'group') {
@@ -100,14 +100,14 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'step_shape',
           path: `${at}.placement`,
-          message: `A tooltip step (${at}) needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
+          message: `A tooltip step needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
         });
       }
       if (caps.placement === 'grid' && isTooltipShape) {
         issues.push({
           rule: 'step_shape',
           path: `${at}.placement`,
-          message: `A modal step (${at}) needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
+          message: `A modal step needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
         });
       }
     }
@@ -118,7 +118,7 @@ export function collectWriteViolations(input: {
         path: `${at}.onClick`,
         message: `onClick (click the target element to advance) only works on a tooltip step; a ${String(
           type,
-        )} step (${at}) has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
+        )} step has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
       });
     }
   };
@@ -186,14 +186,14 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_content, page_navigate, or dismiss instead.`,
+          message: `A "goto_step" action can't be used in ${slotHint}. goto_step navigates between the steps of a flow, and this content type has no steps — use start_content, page_navigate, or dismiss instead.`,
         });
       }
       if (rejectDismiss && obj.type === 'dismiss') {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "dismiss" action can't be used in ${slotHint} (at ${path}). A resource center has no dismiss action — use start_content or page_navigate, or let its built-in close button dismiss it.`,
+          message: `A "dismiss" action can't be used in ${slotHint}. A resource center has no dismiss action — use start_content or page_navigate, or let its built-in close button dismiss it.`,
         });
       }
       for (const key of Object.keys(obj)) {

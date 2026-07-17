@@ -633,10 +633,16 @@ export class ValidationError extends OpenAPIError {
   /**
    * Aggregate several issues into one error. The message carries EVERY issue
    * (joined), so single-string surfaces (the MCP tool error text) show them all;
-   * structured clients read `issues` from the REST error body instead.
+   * structured clients read `issues` from the REST error body instead. Each
+   * message is prefixed with its field path when one exists — the MCP surface
+   * has no `issues[]`, so without the prefix a schema error in a large payload
+   * is unlocatable.
    */
   static fromIssues(issues: ValidationIssue[]): ValidationError {
-    return new ValidationError(issues.map((i) => i.message).join(' | '), issues);
+    return new ValidationError(
+      issues.map((i) => (i.path ? `${i.path}: ${i.message}` : i.message)).join(' | '),
+      issues,
+    );
   }
 }
 

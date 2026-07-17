@@ -147,3 +147,38 @@ describe('collectRuleIssues', () => {
     expect(issues).toHaveLength(0);
   });
 });
+
+describe('public-vocabulary paths and messages (D3)', () => {
+  const ctx = { attributes: [], contents: [{ id: 'real' }] } as never;
+
+  it('renames internal path segments to their representation names', () => {
+    const issues = collectRuleIssues(
+      {
+        items: [
+          {
+            clickedActions: [{ type: 'flow-start', data: { contentId: 'gone' } }],
+            completeConditions: [{ type: 'segment', data: {} }],
+            onlyShowTaskConditions: [{ type: 'segment', data: {} }],
+          },
+        ],
+      },
+      ctx,
+      'data',
+    );
+    const paths = issues.map((i) => i.path).join('\n');
+    expect(paths).toContain('data.items[0].clickActions[0]');
+    expect(paths).toContain('data.items[0].completeWhen[0]');
+    expect(paths).toContain('data.items[0].onlyShowWhen[0]');
+    expect(paths).not.toMatch(/clickedActions|completeConditions|onlyShowTaskConditions/);
+  });
+
+  it('names the action by its public type: start_content, not start-flow', () => {
+    const issues = collectRuleIssues(
+      { actions: [{ type: 'flow-start', data: { contentId: 'gone' } }] },
+      ctx,
+    );
+    expect(
+      issues.some((i) => /start_content action references unknown content/.test(i.message)),
+    ).toBe(true);
+  });
+});

@@ -15,6 +15,7 @@ import { compileText } from './text.compile';
 import {
   CompileResolvers,
   DismissVariant,
+  collectEchoableActions,
   compileActions,
   compileConditions,
   compileTriggers,
@@ -72,6 +73,14 @@ export function compileStep(
   existing: InternalStep | undefined,
   r: CompileResolvers,
 ): CompiledStep {
+  // Non-representable actions on the existing step (builder-authored
+  // javascript-evaluate etc.) — echoing their read-back form preserves them.
+  const resolvers: CompileResolvers = existing
+    ? {
+        ...r,
+        echoActions: collectEchoableActions(existing.data, existing.trigger, existing.target),
+      }
+    : r;
   const target: Record<string, unknown> = step.target
     ? (compileTargetToElementData(step.target, existing?.target) as Record<string, unknown>)
     : ((existing?.target as Record<string, unknown>) ?? {});
@@ -79,7 +88,7 @@ export function compileStep(
   // reads currentStep.target.actions). An explicit onClick sets them; when omitted
   // the target field-merge above already preserved any existing ones.
   if (step.onClick !== undefined) {
-    target.actions = compileActions(step.onClick, r);
+    target.actions = compileActions(step.onClick, resolvers);
   }
   return {
     // cvid is server-owned: preserve the matched existing step's cvid on update,
@@ -91,7 +100,7 @@ export function compileStep(
     name: step.name,
     type: step.type,
     sequence: step.sequence,
-    data: compileContent(step.content, existing?.data, r),
+    data: compileContent(step.content, existing?.data, resolvers),
     target,
     // Omit (undefined) preserves the existing step's triggers, like themeId /
     // onClick above — otherwise a partial update that doesn't re-send `triggers`
@@ -99,7 +108,7 @@ export function compileStep(
     // (compileTriggers(undefined) → []).
     trigger:
       step.triggers !== undefined
-        ? compileTriggers(step.triggers, r)
+        ? compileTriggers(step.triggers, resolvers)
         : ((existing?.trigger as ReturnType<typeof compileTriggers>) ?? []),
     setting: compileSetting(step, existing?.setting),
   };

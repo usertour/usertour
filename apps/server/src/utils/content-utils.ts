@@ -349,14 +349,18 @@ export const launcherIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) 
  * @param b - The second custom content version
  * @returns 1 if a is greater than b, -1 if a is less than b, 0 if they are equal
  */
-const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
-  const a1 = a?.config?.autoStartRulesSetting?.priority;
-  const a2 = b?.config?.autoStartRulesSetting?.priority;
-  if (!a1 || !a2) {
-    return 0;
-  }
-  const index1 = PRIORITIES.indexOf(a1);
-  const index2 = PRIORITIES.indexOf(a2);
+export const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
+  // An unset (or unrecognized) priority ranks as MEDIUM (the builder default) —
+  // bailing out with "equal" when either side is unset made priority a
+  // half-order: content with `highest` could never outrank content with no
+  // priority at all.
+  const rank = (v: CustomContentVersion): number => {
+    const p = v?.config?.autoStartRulesSetting?.priority;
+    const i = p ? PRIORITIES.indexOf(p) : -1;
+    return i === -1 ? PRIORITIES.indexOf(ContentPriority.MEDIUM) : i;
+  };
+  const index1 = rank(a);
+  const index2 = rank(b);
   if (index1 > index2) {
     return 1;
   }

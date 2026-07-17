@@ -334,7 +334,16 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     const push = (issues: { path: string; message: string }[]) => {
       for (const i of issues) err(i.path, i.message);
     };
-    if (input.config) push(collectRuleIssues(input.config, ctx, 'config'));
+    // Walk the two rule lists under their PUBLIC paths (the internal config keys
+    // autoStartRules/hideRules are not what the author wrote).
+    const config = input.config as
+      | { autoStartRules?: unknown; hideRules?: unknown }
+      | null
+      | undefined;
+    if (config?.autoStartRules) {
+      push(collectRuleIssues(config.autoStartRules, ctx, 'startRules.when'));
+    }
+    if (config?.hideRules) push(collectRuleIssues(config.hideRules, ctx, 'hideRules.when'));
     if (input.data) push(collectRuleIssues(input.data, ctx, 'data'));
     collectBindIssues(input.data, 'data', ctx.attributes, warn);
     const steps = asArray<Step>(input.steps);
@@ -342,8 +351,9 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       const s = steps[i];
       const label = (s as { name?: string })?.name;
       const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
-      push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.data`));
-      push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.trigger`));
+      // Internal `data`/`trigger` are `content`/`triggers` in the representation.
+      push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.content`));
+      push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.triggers`));
       collectBindIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
     }
     collectDeadLaunchTargetWarnings([input.data, input.steps], ctx.contents, warn);
@@ -522,11 +532,29 @@ function validateFlow(
   });
 }
 
+/**
+ * A rendered body block missing its required data (a button with no text or no
+ * action) renders broken with no runtime error — the same gate flow steps get
+ * (validateSteps), applied to the non-flow body slots. Empty bodies are fine
+ * (they're optional); only present-but-broken blocks are flagged.
+ */
+function errIfBrokenBlocks(
+  roots: unknown,
+  path: string,
+  err: (path: string, message: string) => void,
+): void {
+  const arr = asArray<ContentEditorRoot>(roots);
+  if (hasBlocks(arr) && hasMissingRequiredData(arr)) {
+    err(path, 'A content block is missing required data (a button needs text and an action).');
+  }
+}
+
 function validateChecklist(
   data: ChecklistData | null,
   err: (path: string, message: string) => void,
   warn: (path: string, message: string) => void,
 ): void {
+  errIfBrokenBlocks(data?.content, 'content', err);
   const items = asArray<ChecklistData['items'][number]>(data?.items);
   if (items.length === 0) {
     err('items', 'Checklist has no items.');
@@ -569,6 +597,7 @@ function validateLauncher(
     if (!hasBlocks(data?.tooltip?.content as ContentEditorRoot[] | undefined)) {
       err('tooltip.content', 'Launcher tooltip has no content.');
     }
+    errIfBrokenBlocks(data?.tooltip?.content, 'tooltip.content', err);
   } else if (actionType === LauncherActionType.PERFORM_ACTION) {
     if (asArray<RulesCondition>(data?.behavior?.actions).length === 0) {
       err('behavior.actions', 'Launcher click performs no action.');
@@ -581,8 +610,9 @@ function validateBanner(
   err: (path: string, message: string) => void,
 ): void {
   if (!hasBlocks(data?.contents)) {
-    err('contents', 'Banner has no content; it renders blank.');
+    err('content', 'Banner has no content; it renders blank.');
   }
+  errIfBrokenBlocks(data?.contents, 'content', err);
   if (
     data?.embedPlacement &&
     BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT.includes(data.embedPlacement) &&
@@ -616,6 +646,8 @@ function validateAnnouncement(
       'enableReadMore is on but detailContent is empty — the "Read more" button opens a blank page. Fill detailContent or set enableReadMore to false.',
     );
   }
+  errIfBrokenBlocks(data?.introContent, 'introContent', err);
+  errIfBrokenBlocks(data?.detailContent, 'detailContent', err);
 }
 
 function validateResourceCenter(
@@ -635,6 +667,10 @@ function validateResourceCenter(
     if (!tabHasRenderableBlock(asArray(tab?.blocks))) {
       err(label, 'Resource center tab has no content blocks.');
     }
+    asArray(tab?.blocks).forEach((raw, j) => {
+      const block = raw as { content?: unknown };
+      errIfBrokenBlocks(block?.content, `${label}.blocks[${j}].content`, err);
+    });
   });
 }
 

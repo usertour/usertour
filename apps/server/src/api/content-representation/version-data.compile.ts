@@ -11,7 +11,12 @@ import { dismissVariantFor } from './contract-map';
 import { compileContent } from './representation.compile';
 import { compileResourceCenter } from './resource-center.compile';
 import { representationResourceCenter } from './resource-center.schema';
-import { compileActions, compileConditions, CompileResolvers } from './rules.compile';
+import {
+  collectEchoableActions,
+  compileActions,
+  compileConditions,
+  CompileResolvers,
+} from './rules.compile';
 import { compileTargetToElementData } from './target.compile';
 import {
   representationAnnouncement,
@@ -73,23 +78,24 @@ export function compileVersionData(
       `Question (survey) blocks are only supported in flows — not in ${contentType}. Remove the question block, or build the survey as a flow with question blocks in its steps.`,
     );
   }
+  // Non-representable actions on the existing body (builder-authored
+  // javascript-evaluate etc.) — echoing their read-back form preserves them.
+  const r: CompileResolvers = existingData
+    ? { ...resolvers, echoActions: collectEchoableActions(existingData) }
+    : resolvers;
   switch (contentType) {
     case ContentDataType.TRACKER:
-      return compileTracker(parse(representationTracker, data), existingData, resolvers);
+      return compileTracker(parse(representationTracker, data), existingData, r);
     case ContentDataType.CHECKLIST:
-      return compileChecklist(parse(representationChecklist, data), existingData, resolvers);
+      return compileChecklist(parse(representationChecklist, data), existingData, r);
     case ContentDataType.LAUNCHER:
-      return compileLauncher(parse(representationLauncher, data), existingData, resolvers);
+      return compileLauncher(parse(representationLauncher, data), existingData, r);
     case ContentDataType.BANNER:
-      return compileBanner(parse(representationBanner, data), existingData, resolvers);
+      return compileBanner(parse(representationBanner, data), existingData, r);
     case ContentDataType.ANNOUNCEMENT:
-      return compileAnnouncement(parse(representationAnnouncement, data), existingData, resolvers);
+      return compileAnnouncement(parse(representationAnnouncement, data), existingData, r);
     case ContentDataType.RESOURCE_CENTER:
-      return compileResourceCenter(
-        parse(representationResourceCenter, data),
-        existingData,
-        resolvers,
-      );
+      return compileResourceCenter(parse(representationResourceCenter, data), existingData, r);
     default:
       throw new ValidationError(`Content type "${contentType}" does not accept a data body`);
   }

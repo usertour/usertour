@@ -521,9 +521,22 @@ export const representationAction = z.discriminatedUnion('type', [
     newWindow: z.boolean().optional(),
   }),
   z.object({ type: z.literal('dismiss') }),
-  // read-only; the write validator rejects this type (no AI/API-injected JS)
-  z.object({ type: z.literal('run_javascript'), script: z.string() }),
-  z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
+  // Echo-only pair: read-backs expose non-representable stored actions as these;
+  // compile preserves the stored action when the echo matches the version being
+  // edited (echoActions pool), and rejects fresh authoring (no AI/API-injected JS).
+  z
+    .object({ type: z.literal('run_javascript'), script: z.string() })
+    .describe(
+      'Read-back of a builder-authored script action. Echo it back UNCHANGED (same script) when ' +
+        'rewriting the surrounding list and the stored action is preserved; omitting it deletes it ' +
+        '(action lists are full replacements). Authoring a new or edited script is rejected.',
+    ),
+  z
+    .object({ type: z.literal('unsupported'), note: z.string().optional() })
+    .describe(
+      'Echo-only placeholder for a stored action this schema cannot express (`note` = internal ' +
+        'type). Echo it back to preserve the stored action; writing one fresh is rejected.',
+    ),
 ]);
 export type RepresentationAction = z.infer<typeof representationAction>;
 
@@ -928,13 +941,19 @@ export const representationStartRules = z.preprocess(
             'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
           ),
       })
-      .optional(),
+      .optional()
+      .describe(
+        'How often the content may auto-start. OMITTED entirely, the runtime behaves as `once` ' +
+          '(show a single time, ever) — the default is applied at evaluation time and does NOT ' +
+          'appear on read-backs, so set it explicitly if you want anything else.',
+      ),
     priority: z
       .enum(['highest', 'high', 'medium', 'low', 'lowest'])
       .optional()
       .describe(
         'Tie-breaker when a user matches the start conditions for more than one piece of content at ' +
-          'the same time — the higher priority starts first.',
+          'the same time — the higher priority starts first. Content with no priority set ranks as ' +
+          '`medium`.',
       ),
     waitSeconds: z
       .number()
