@@ -11,6 +11,7 @@
   },
   "testEnvironment": "node",
   "testTimeout": 30000,
+  "maxWorkers": 8,
   "testRegex": ".e2e-spec.ts$",
   "globalSetup": "<rootDir>/test/global-setup-e2e.ts",
   "setupFiles": ["<rootDir>/test/setup-e2e.ts"],

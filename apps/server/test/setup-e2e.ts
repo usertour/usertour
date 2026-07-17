@@ -14,7 +14,7 @@ const appendConnectionLimit = (variableName: string): void => {
   const url = process.env[variableName];
   if (url && !url.includes('connection_limit=')) {
     const separator = url.includes('?') ? '&' : '?';
-    process.env[variableName] = `${url}${separator}connection_limit=5&pool_timeout=60`;
+    process.env[variableName] = `${url}${separator}connection_limit=3&pool_timeout=60`;
   }
 };
 appendConnectionLimit('DATABASE_URL');

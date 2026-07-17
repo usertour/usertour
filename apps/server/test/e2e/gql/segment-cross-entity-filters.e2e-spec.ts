@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ConditionEvaluationService } from '@/web-socket/core/condition-evaluation.service';
 import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
 import {
@@ -11,16 +10,16 @@ import {
   buildBizUserOnCompany,
   buildEnvironment,
   buildProject,
-  buildSegment,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 /**
- * Functional e2e for cross-entity segment condition filters — user conditions
- * mixing company/membership attributes and company conditions mixing
- * user/membership attributes — executed against a real Postgres so the
- * compiled Prisma JSON/relation filters are validated end-to-end, not just
- * shape-asserted (see src/common/attribute/filter.spec.ts for the shapes).
+ * Functional e2e for the OFFLINE side of cross-entity segment condition
+ * filters — user conditions mixing company/membership attributes and company
+ * conditions mixing user/membership attributes — executed against a real
+ * Postgres so the compiled Prisma JSON/relation filters are validated
+ * end-to-end, not just shape-asserted (see
+ * src/common/attribute/filter.spec.ts for the shapes).
  *
  * The semantics under test:
  *  - One existential quantifier over the whole tree: AND-ed cross-entity
@@ -28,13 +27,13 @@ import { buildAuthorizedUser, teardownProject } from './_support';
  *  - Offline queries scan every membership ("any associated company");
  *    users/companies without memberships can still match through the
  *    fallback branch (cross-entity leaves = false) in OR-ed trees.
- *  - Runtime evaluation binds company/membership leaves to the session's
- *    CURRENT company only, and cross-type OR is honored (regression for the
- *    per-bizType bucket partition this replaced).
+ *
+ * The RUNTIME side (session-scoped current-company binding, cross-type OR in
+ * company segments) lives in the websocket e2e where it runs over the real
+ * SDK path: test/e2e/web-socket/flow-and-autostart.e2e-spec.ts.
  *
  * Numeric enum values (GraphQL sends names, prisma stores ints):
- * AttributeBizType USER=1 COMPANY=2 MEMBERSHIP=3; dataType Number=1 String=2;
- * SegmentBizType USER=1 COMPANY=2; SegmentDataType CONDITION=2.
+ * AttributeBizType USER=1 COMPANY=2 MEMBERSHIP=3; dataType Number=1 String=2.
  */
 describe('Segment cross-entity filters (e2e)', () => {
   let app: INestApplication;
@@ -281,80 +280,6 @@ describe('Segment cross-entity filters (e2e)', () => {
       expect(externalIds.sort()).toEqual(
         [companyEmpty.externalId, companyPro.externalId, companyFree.externalId].sort(),
       );
-    });
-  });
-
-  describe('runtime segment evaluation (ConditionEvaluationService)', () => {
-    const evaluateSegmentForUser = async (
-      segmentId: string,
-      bizUserId: string,
-      externalCompanyId?: string,
-    ): Promise<boolean> => {
-      const conditionEvaluation = app.get(ConditionEvaluationService);
-      const environment = await prisma.environment.findUniqueOrThrow({
-        where: { id: environmentId },
-      });
-      const attributes = await prisma.attribute.findMany({ where: { projectId } });
-      const bizUser = await prisma.bizUser.findUniqueOrThrow({ where: { id: bizUserId } });
-      const evaluated = await conditionEvaluation.evaluateRulesConditions(
-        [{ type: 'segment', data: { segmentId, logic: 'is' } } as any],
-        { environment, attributes, bizUser, externalCompanyId },
-      );
-      return evaluated[0].actived === true;
-    };
-
-    it('binds user segment company conditions to the current company only', async () => {
-      const segment = await buildSegment(prisma, {
-        projectId,
-        environmentId,
-        bizType: 1,
-        dataType: 2,
-        data: [userAttributeCondition(companySubscriptionAttributeId, 'is', 'pro')],
-      });
-
-      // Same user, same segment — only the session's company context differs.
-      await expect(
-        evaluateSegmentForUser(segment.id, userMultiOrg.id, companyPro.externalId),
-      ).resolves.toBe(true);
-      await expect(
-        evaluateSegmentForUser(segment.id, userMultiOrg.id, companyFree.externalId),
-      ).resolves.toBe(false);
-      await expect(evaluateSegmentForUser(segment.id, userMultiOrg.id)).resolves.toBe(false);
-    });
-
-    it('honors OR across entity types in company segment conditions', async () => {
-      // Regression for the per-bizType bucket partition: subscription is
-      // 'enterprise' OR some member is admin. companyPro is not enterprise
-      // but has an admin member — the old bucket-AND evaluation returned
-      // false here.
-      const segment = await buildSegment(prisma, {
-        projectId,
-        environmentId,
-        bizType: 2,
-        dataType: 2,
-        data: [
-          userAttributeCondition(companySubscriptionAttributeId, 'is', 'enterprise', 'or'),
-          userAttributeCondition(membershipRoleAttributeId, 'is', 'admin', 'or'),
-        ],
-      });
-
-      await expect(
-        evaluateSegmentForUser(segment.id, userInPro.id, companyPro.externalId),
-      ).resolves.toBe(true);
-      // userInFree's current company is free (not enterprise) and its only
-      // admin is userMultiOrg — the OR still matches through the membership
-      // branch, so scope the negative case to a segment the company cannot
-      // satisfy: enterprise-only.
-      const enterpriseOnly = await buildSegment(prisma, {
-        projectId,
-        environmentId,
-        bizType: 2,
-        dataType: 2,
-        data: [userAttributeCondition(companySubscriptionAttributeId, 'is', 'enterprise')],
-      });
-      await expect(
-        evaluateSegmentForUser(enterpriseOnly.id, userInFree.id, companyFree.externalId),
-      ).resolves.toBe(false);
     });
   });
 });

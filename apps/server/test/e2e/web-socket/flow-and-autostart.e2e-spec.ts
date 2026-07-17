@@ -50,6 +50,8 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
   let manualFlowSessionId: string;
   let middleStepId: string;
   let autoStartFlowContentId: string;
+  let companySubscriptionAttributeId: string;
+  let membershipRoleAttributeId: string;
 
   beforeAll(async () => {
     harness = await createWebSocketTestApp();
@@ -102,7 +104,10 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
       versionId: manualFlowVersion.id,
     });
 
-    // Cross-entity user segment: "current company's subscription is pro".
+    // Cross-entity attributes are created before the first connection: the
+    // project's attribute list gets cached on first evaluation, so an
+    // attribute created later (inside a nested describe) would be invisible
+    // to condition evaluation for the rest of the suite.
     const companySubscriptionAttribute = await buildAttribute(prisma, {
       projectId,
       codeName: 'subscription',
@@ -110,6 +115,16 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
       bizType: 2,
       dataType: 2,
     });
+    membershipRoleAttributeId = (
+      await buildAttribute(prisma, {
+        projectId,
+        codeName: 'role',
+        displayName: 'Role',
+        bizType: 3,
+        dataType: 2,
+      })
+    ).id;
+    companySubscriptionAttributeId = companySubscriptionAttribute.id;
     await buildBizCompany(prisma, {
       environmentId,
       externalId: externalCompanyIdPro,
@@ -314,5 +329,109 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
       },
     });
     expect(flowStarted).not.toBeNull();
+  });
+
+  describe('company segment with cross-type OR conditions', () => {
+    // Regression for the per-bizType bucket partition the compiled filters
+    // replaced: "subscription is enterprise OR some member is admin" used to
+    // evaluate as an AND across the buckets and never matched a pro company
+    // with an admin member. Runs in its own environment — flows are
+    // singletons per user, so the outer environment's auto-start contents
+    // would steal the session slot.
+    const orExternalUserId = `ws-or-user-${Date.now()}`;
+    const orExternalCompanyId = `ws-or-co-${Date.now()}`;
+    let orEnvironmentToken: string;
+    let orFlowContentId: string;
+
+    beforeAll(async () => {
+      const environment = await buildEnvironment(prisma, { projectId });
+      orEnvironmentToken = environment.token;
+
+      const companySegment = await buildSegment(prisma, {
+        projectId,
+        environmentId: environment.id,
+        bizType: 2,
+        dataType: 2,
+        data: [
+          {
+            type: 'user-attr',
+            operators: 'or',
+            data: { attrId: companySubscriptionAttributeId, logic: 'is', value: 'enterprise' },
+          },
+          {
+            type: 'user-attr',
+            operators: 'or',
+            data: { attrId: membershipRoleAttributeId, logic: 'is', value: 'admin' },
+          },
+        ],
+      });
+
+      const orFlowContent = await buildContent(prisma, {
+        projectId,
+        environmentId: environment.id,
+        name: 'ws-company-segment-flow',
+        type: 'flow',
+      });
+      orFlowContentId = orFlowContent.id;
+      const orFlowVersion = await buildVersion(prisma, {
+        contentId: orFlowContent.id,
+        sequence: 1,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            {
+              type: 'segment',
+              operators: 'and',
+              data: { segmentId: companySegment.id, logic: 'is' },
+            },
+          ],
+          autoStartRulesSetting: { wait: 0 },
+        },
+        data: [],
+      });
+      await buildStep(prisma, {
+        versionId: orFlowVersion.id,
+        sequence: 0,
+        name: 'OR Step',
+        data: [],
+      });
+      await publishVersion(prisma, {
+        environmentId: environment.id,
+        contentId: orFlowContent.id,
+        versionId: orFlowVersion.id,
+      });
+    }, 60000);
+
+    it('honors OR across entity types when evaluating the current company', async () => {
+      const orClient = await connectWebSocketClient(harness.baseUrl, {
+        token: orEnvironmentToken,
+        externalUserId: orExternalUserId,
+      });
+
+      // The company is pro (not enterprise) but the connecting member is an
+      // admin — only the membership branch of the OR can match.
+      const upsertAck = await orClient.sendClientMessage(ClientMessageKind.UPSERT_COMPANY, {
+        externalUserId: orExternalUserId,
+        externalCompanyId: orExternalCompanyId,
+        attributes: { subscription: 'pro' },
+        membership: { role: 'admin' },
+      });
+      expect(upsertAck).toBe(true);
+
+      const endBatchAck = await orClient.sendClientMessage(ClientMessageKind.END_BATCH, {});
+      expect(endBatchAck).toBe(true);
+
+      const orFlowSession = await prisma.bizSession.findFirst({
+        where: {
+          contentId: orFlowContentId,
+          bizUser: { externalId: orExternalUserId },
+          deleted: false,
+        },
+      });
+      expect(orFlowSession).not.toBeNull();
+      expect(orFlowSession?.state).toBe(0);
+
+      orClient.disconnect();
+    });
   });
 });
