@@ -46,6 +46,7 @@ export async function teardownProject(prisma: PrismaService, projectId: string):
   await prisma.bizUserOnSegment.deleteMany({ where: { segment: { projectId } } });
   await prisma.bizCompanyOnSegment.deleteMany({ where: { segment: { projectId } } });
   await prisma.bizSession.deleteMany({ where: { content: { projectId } } });
+  await prisma.bizAnnouncementSeen.deleteMany({ where: { bizUser: { environmentId } } });
   await prisma.bizCompany.deleteMany({ where: { environmentId } });
   await prisma.bizUser.deleteMany({ where: { environmentId } });
   await prisma.step.deleteMany({ where: { version: { content: { projectId } } } });
