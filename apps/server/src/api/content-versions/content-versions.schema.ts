@@ -45,7 +45,16 @@ export class ContentVersionDto extends createZodDto(contentVersion) {}
  */
 export const updateVersionBody = z.object({
   steps: z.array(representationStepInput).optional(),
-  startRules: representationStartRules.nullable().optional(),
+  startRules: representationStartRules
+    .nullable()
+    .optional()
+    .describe(
+      'PATCHES the stored rules field-by-field: an omitted setting (frequency / priority / ' +
+        'waitSeconds / startIfNotComplete) keeps its stored value — including one inherited from ' +
+        'the forked version — so to turn a setting off, send it explicitly (e.g. ' +
+        '`startIfNotComplete: false`). `when`, when present, fully replaces the condition list. ' +
+        '`null` clears the rules entirely (content stops auto-starting).',
+    ),
   hideRules: representationHideRules.nullable().optional(),
   themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
   /**

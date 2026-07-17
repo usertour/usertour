@@ -73,8 +73,17 @@ export const representationPlacement = z
           .enum(['start', 'center', 'end'])
           .optional()
           .describe('Alignment along the side. See `side`.'),
-        sideOffset: z.number().optional(),
-        alignOffset: z.number().optional(),
+        sideOffset: z
+          .number()
+          .optional()
+          .describe('Pixels between the target and the tooltip, along `side`.'),
+        alignOffset: z
+          .number()
+          .optional()
+          .describe(
+            'Pixel shift along the alignment axis. Only applies when `align` is `start` or `end` — ' +
+              'at `center` alignment the runtime ignores it silently.',
+          ),
         // Position mode. `auto` = pick a spot + flip to avoid the viewport edge
         // (ignores side/align). `fixed` = pin to side/align, no flipping. Compile
         // derives it: omitted here but side/align given → `fixed` (honor the
@@ -113,8 +122,14 @@ export const representationPlacement = z
           'centerBottom',
           'rightBottom',
         ]),
-        offsetX: z.number().optional(),
-        offsetY: z.number().optional(),
+        offsetX: z
+          .number()
+          .optional()
+          .describe(
+            'Pixel shift from the grid cell. Applies in every cell EXCEPT `position: "center"`, ' +
+              'where both offsets are ignored silently.',
+          ),
+        offsetY: z.number().optional().describe('See `offsetX`.'),
         backdrop: z.boolean().optional(),
         blockTarget: z.boolean().optional(),
       })
@@ -541,7 +556,8 @@ export const representationTrigger = z.preprocess(
       .optional()
       .describe(
         'Delay in SECONDS between the `when` conditions matching and the `do` actions firing. ' +
-          'The conditions must keep matching for the entire wait, or the actions do not fire. ' +
+          'The timer arms the first time `when` matches and the actions fire after the wait ' +
+          'EVEN IF the conditions have since stopped matching (the match is latched, not re-checked). ' +
           'Capped at 300 seconds by the runtime (a larger value is clamped).',
       ),
   }),
@@ -924,9 +940,10 @@ export const representationStartRules = z.preprocess(
       .number()
       .optional()
       .describe(
-        'Delay in SECONDS between the conditions matching and the start firing. The conditions ' +
-          'must keep matching for the entire wait, or it will not start. Capped at 300 seconds ' +
-          'by the runtime (a larger value is clamped).',
+        'Delay in SECONDS between the conditions matching and the start firing. This wait is ' +
+          'server-tracked: the conditions must keep matching for the entire wait, or it is ' +
+          'cancelled (unlike a step trigger `waitSeconds`, which latches on first match). ' +
+          'Capped at 300 seconds by the runtime (a larger value is clamped).',
       ),
     startIfNotComplete: z
       .boolean()
@@ -938,7 +955,14 @@ export const representationStartRules = z.preprocess(
 );
 export type RepresentationStartRules = z.infer<typeof representationStartRules>;
 
-export const representationHideRules = z.object({ when: z.array(representationCondition) });
+export const representationHideRules = z
+  .object({ when: z.array(representationCondition) })
+  .describe(
+    'While `when` matches, on-screen content of this version is hidden — the session is ' +
+      'SUSPENDED, not ended: when the conditions stop matching the same session reappears at ' +
+      'the same step. Use start-rule conditions to keep content from starting; use hide rules ' +
+      'to blank it in specific places (e.g. a settings page).',
+  );
 export type RepresentationHideRules = z.infer<typeof representationHideRules>;
 
 // ── Write input ──────────────────────────────────────────────────────────────
