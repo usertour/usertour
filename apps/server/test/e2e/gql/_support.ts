@@ -67,6 +67,7 @@ export async function teardownProject(prisma: PrismaService, projectId: string):
   await prisma.integrationObjectMapping.deleteMany({ where: { integration: { environmentId } } });
   await prisma.integration.deleteMany({ where: { environmentId } });
   await prisma.invite.deleteMany({ where: { projectId } });
+  await prisma.environmentSigningSecret.deleteMany({ where: { environmentId } });
   await prisma.environment.deleteMany({ where: { projectId } });
   await prisma.userOnProject.deleteMany({ where: { projectId } });
   await prisma.project.updateMany({ where: { id: projectId }, data: { subscriptionId: null } });

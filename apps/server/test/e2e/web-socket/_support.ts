@@ -55,6 +55,13 @@ export interface WebSocketAuth {
   identityToken?: string;
   clientContext?: Record<string, unknown>;
   clientConditions?: unknown[];
+  // Session-recovery handshake: ids of sessions the SDK held before a
+  // reconnect, restored server-side into the new connection's socket data.
+  flowSessionId?: string;
+  checklistSessionId?: string;
+  bannerSessionId?: string;
+  resourceCenterSessionId?: string;
+  launchers?: string[];
 }
 
 const DEFAULT_CLIENT_CONTEXT = {
