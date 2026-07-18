@@ -456,7 +456,7 @@ export class ContentService {
     await this.requireEnvironmentInContentProject(environmentId, version.contentId);
     const now = new Date();
 
-    const content = await this.prisma.$transaction(async (tx) => {
+    const { content, supersededVersionId } = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
         where: { id: version.contentId },
@@ -485,6 +485,16 @@ export class ContentService {
           data: { scheduledAt: now },
         });
       }
+
+      // Capture the version this publish SUPERSEDES (if any) before the
+      // upsert overwrites it — its versionFull cache entry must be wiped, see
+      // below.
+      const priorCoe = await tx.contentOnEnvironment.findUnique({
+        where: {
+          environmentId_contentId: { environmentId, contentId: content.id },
+        },
+        select: { publishedVersionId: true },
+      });
 
       // Update or create ContentOnEnvironment
       await tx.contentOnEnvironment.upsert({
@@ -521,13 +531,26 @@ export class ContentService {
         },
       });
 
-      return content;
+      return { content, supersededVersionId: priorCoe?.publishedVersionId ?? null };
     });
 
-    await this.cache.invalidate([
+    // versionFull caches Version + Steps on the assumption that a published
+    // version is immutable (see unpublishedContentVersion, which wipes it on
+    // detach). A publish breaks that invariant in two directions and must wipe
+    // BOTH: the SUPERSEDED version detaches and becomes editable again (its
+    // cached entry would go stale on the next edit), and the version being
+    // published may itself have been published→superseded→edited before — a
+    // poisoned entry from its first live period would serve the pre-edit
+    // snapshot to new users for up to the 30-min TTL (RC tier-C, defect 1).
+    const keys = [
       ...this.cache.envContentKeys(environmentId),
       this.cache.keys.publishedVersionId(environmentId, content.id),
-    ]);
+      this.cache.keys.versionFull(version.id),
+    ];
+    if (supersededVersionId && supersededVersionId !== version.id) {
+      keys.push(this.cache.keys.versionFull(supersededVersionId));
+    }
+    await this.cache.invalidate(keys);
 
     return content;
   }

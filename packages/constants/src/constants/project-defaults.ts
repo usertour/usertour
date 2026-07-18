@@ -844,6 +844,19 @@ export const defaultAttributes: ProjectDefaultAttribute[] = [
     description: 'Display name of the Usertour resource center tab the block belongs to',
   },
   {
+    // Referenced by the RESOURCE_CENTER_STARTED event's attribute list since
+    // that event shipped, but the attribute DEFINITION was missing here — so
+    // the Attribute row was never seeded, the AttributeOnEvent link never
+    // created, and filterEventDataByAttributes silently dropped the reason
+    // from every started event (RC tier-C finding). The diff-based
+    // initialization backfills existing projects once this exists.
+    codeName: EventAttributes.RESOURCE_CENTER_START_REASON,
+    displayName: 'Resource Center Start Reason',
+    bizType: AttributeBizTypes.Event,
+    dataType: AttributeDataType.String,
+    description: 'Why the resource center started',
+  },
+  {
     codeName: EventAttributes.RESOURCE_CENTER_END_REASON,
     displayName: 'Resource Center End Reason',
     bizType: AttributeBizTypes.Event,
