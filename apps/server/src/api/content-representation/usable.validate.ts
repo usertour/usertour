@@ -432,7 +432,9 @@ function collectBindIssues(
  */
 function collectDeadLaunchTargetWarnings(
   roots: unknown[],
-  contents: { id?: string; name?: string; publishedAnywhere?: boolean }[] | undefined,
+  contents:
+    | { id?: string; name?: string; type?: string; publishedAnywhere?: boolean }[]
+    | undefined,
   warn: (path: string, message: string) => void,
 ): void {
   if (!contents?.length) return;
@@ -463,8 +465,24 @@ function collectDeadLaunchTargetWarnings(
       if (typeof contentId === 'string' && contentId) flag(contentId, 'actions');
     }
     if (Array.isArray(o.contentItems)) {
-      for (const it of o.contentItems as { contentId?: unknown }[]) {
-        if (typeof it?.contentId === 'string' && it.contentId) flag(it.contentId, 'contentItems');
+      for (const it of o.contentItems as { contentId?: unknown; contentType?: unknown }[]) {
+        if (typeof it?.contentId === 'string' && it.contentId) {
+          flag(it.contentId, 'contentItems');
+          // A list entry DECLARES its target's type; launching goes by id, so a
+          // wrong declaration only mislabels the default icon and semantics —
+          // silently. Warn so the author fixes the label.
+          const target = byId.get(it.contentId);
+          if (
+            target?.type &&
+            typeof it.contentType === 'string' &&
+            it.contentType !== target.type
+          ) {
+            warn(
+              'contentItems',
+              `List entry declares contentType "${it.contentType}" but "${target.name ?? it.contentId}" is a ${target.type}. It still launches the ${target.type} (launching goes by id) — only the default icon and semantics mislabel. Set contentType to "${target.type}".`,
+            );
+          }
+        }
       }
     }
     for (const v of Object.values(o)) walk(v);

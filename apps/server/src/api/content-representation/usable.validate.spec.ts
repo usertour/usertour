@@ -893,4 +893,34 @@ describe('dead launch targets (exists but never published)', () => {
       true,
     );
   });
+
+  it('warns when a list entry declares a contentType that mismatches the real target type (L6)', () => {
+    const rcWithItem = (contentType: string) =>
+      validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              blocks: [
+                {
+                  type: ResourceCenterBlockType.CONTENT_LIST,
+                  contentItems: [{ contentId: 'cl-pub', contentType }],
+                },
+              ],
+            },
+          ],
+        },
+        conditionContext: {
+          contents: [
+            { id: 'cl-pub', name: 'Real Checklist', type: 'checklist', publishedAnywhere: true },
+          ] as never,
+        },
+      });
+    const mismatch = rcWithItem('flow');
+    expect(mismatch.ok).toBe(true); // warning, not error — launching still works by id
+    expect(mismatch.warnings.some((w) => w.message.includes('is a checklist'))).toBe(true);
+    expect(rcWithItem('checklist').warnings.some((w) => w.message.includes('is a'))).toBe(false);
+  });
 });

@@ -193,7 +193,7 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "dismiss" action can't be used in ${slotHint}. A resource center has no dismiss action — use start_content or page_navigate, or let its built-in close button dismiss it.`,
+          message: `A "dismiss" action can't be used in ${slotHint}. A resource center has no dismiss action — use start_content or page_navigate. (Its panel's close button only collapses it back to the launcher; a resource-center session has no user-facing dismiss.)`,
         });
       }
       for (const key of Object.keys(obj)) {

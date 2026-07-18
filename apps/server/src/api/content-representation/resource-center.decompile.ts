@@ -97,6 +97,7 @@ function decompileBlock(
               it.contentType === ContentDataType.CHECKLIST
                 ? ContentDataType.CHECKLIST
                 : ContentDataType.FLOW,
+            ...(typeof it.label === 'string' && it.label ? { label: it.label } : {}),
             ...(icon(it.iconSource, it.iconType, it.iconUrl)
               ? { icon: icon(it.iconSource, it.iconType, it.iconUrl) }
               : {}),

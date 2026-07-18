@@ -25,10 +25,13 @@ export async function loadConditionContext(
       where: { projectId, deleted: false },
       // `name` + published-anywhere: the usability validator warns when a
       // start_content / content-list reference targets content that is not
-      // published in ANY environment — a dead launch at runtime.
+      // published in ANY environment — a dead launch at runtime. `type`: a
+      // resource-center list entry declares its target's contentType; the
+      // validator warns when the declaration doesn't match the real type.
       select: {
         id: true,
         name: true,
+        type: true,
         contentOnEnvironments: { where: { published: true }, select: { id: true }, take: 1 },
       },
     }),
@@ -45,6 +48,7 @@ export async function loadConditionContext(
     contents: contents.map((c) => ({
       id: c.id,
       name: c.name,
+      type: c.type,
       publishedAnywhere: c.contentOnEnvironments.length > 0,
     })) as unknown as ValidateContext['contents'],
     events: events as unknown as ValidateContext['events'],
