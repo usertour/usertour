@@ -1,6 +1,11 @@
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { createConditionsFilter } from '@/common/attribute/filter';
+import {
+  CompanyScan,
+  createBizCompanyConditionsFilter,
+  createBizUserConditionsFilter,
+  createConditionsFilter,
+} from '@/common/attribute/filter';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import {
   evaluateAttributeCondition,
@@ -35,15 +40,6 @@ import {
 // Type Definitions
 // ============================================================================
 
-type SegmentDataItem = {
-  data: {
-    logic: string;
-    attrId: string;
-  };
-  type: 'user-attr';
-  operators: 'and' | 'or';
-};
-
 /**
  * The auto-start-rules slice of a version's `config` JSON that gates visibility
  * ("Only show if..."). Shared by the announcement read paths so the targeting
@@ -52,25 +48,6 @@ type SegmentDataItem = {
 export type AutoStartRulesConfig = {
   enabledAutoStartRules?: boolean;
   autoStartRules?: RulesCondition[];
-};
-
-/**
- * Filter object structure for Prisma queries
- * Contains AND/OR conditions for attribute-based filtering
- */
-type ConditionsFilter = {
-  AND?: any[];
-  OR?: any[];
-};
-
-/**
- * Segment filters grouped by business type
- * Only contains valid filter objects (false values are filtered out in buildSegmentFilters)
- */
-type SegmentFilters = {
-  company?: ConditionsFilter;
-  user?: ConditionsFilter;
-  membership?: ConditionsFilter;
 };
 
 /**
@@ -422,8 +399,7 @@ export class ConditionEvaluationService {
 
     // Route to appropriate segment evaluator based on segment business type
     if (segment.bizType === SegmentBizType.USER) {
-      const userAttrs = context.attributes.filter((attr) => attr.bizType === AttributeBizType.USER);
-      return await this.evaluateUserSegmentCondition(rules, segment, context, userAttrs);
+      return await this.evaluateUserSegmentCondition(rules, segment, context);
     }
 
     if (segment.bizType === SegmentBizType.COMPANY && context.externalCompanyId) {
@@ -438,14 +414,12 @@ export class ConditionEvaluationService {
    * @param rules - The condition to evaluate
    * @param segment - The segment (already fetched)
    * @param context - Condition evaluation context
-   * @param userAttrs - Filtered user attributes
    * @returns boolean indicating if the condition is activated
    */
   private async evaluateUserSegmentCondition(
     rules: RulesCondition,
     segment: { id: string; dataType: number; data: any },
     context: ConditionEvaluationContext,
-    userAttrs: Attribute[],
   ): Promise<boolean> {
     const { logic = 'is' } = rules.data;
 
@@ -464,12 +438,25 @@ export class ConditionEvaluationService {
         return this.applySegmentLogic(logic, !!userOnSegment);
       }
       case SegmentDataType.CONDITION: {
-        const filter = createConditionsFilter(segment.data, userAttrs);
+        // At runtime, company/membership leaves in the segment's conditions
+        // are bound to the session's current company — the same binding every
+        // other company-scoped predicate uses — and evaluate to false when
+        // the session has no company.
+        const companyScan: CompanyScan = context.externalCompanyId
+          ? {
+              type: 'current',
+              bizCompanyWhere: {
+                externalId: String(context.externalCompanyId),
+                environmentId: context.environment.id,
+              },
+            }
+          : { type: 'none' };
+        const filter = createBizUserConditionsFilter(segment.data, context.attributes, companyScan);
         const segmentUser = await this.prisma.bizUser.findFirst({
           where: {
             environmentId: context.environment.id,
             externalId: String(context.bizUser.externalId),
-            ...filter,
+            ...(filter ? { AND: [filter] } : {}),
           },
         });
         return this.applySegmentLogic(logic, !!segmentUser);
@@ -524,13 +511,18 @@ export class ConditionEvaluationService {
         return this.applySegmentLogic(logic, !!companyOnSegment);
       }
       case SegmentDataType.CONDITION: {
-        const found = await this.findCompanyBySegmentConditions(
-          segment,
-          context.attributes,
-          bizCompany,
-          context.environment,
-        );
-        return this.applySegmentLogic(logic, found);
+        // User/membership leaves in the segment's conditions are bound to the
+        // company's memberships by the compiled filter (one member satisfying
+        // the whole tree); company leaves describe the company row itself.
+        const filter = createBizCompanyConditionsFilter(segment.data, context.attributes);
+        const found = await this.prisma.bizCompany.findFirst({
+          where: {
+            id: bizCompany.id,
+            environmentId: context.environment.id,
+            ...(filter ? { AND: [filter] } : {}),
+          },
+        });
+        return this.applySegmentLogic(logic, !!found);
       }
       default: {
         this.logger.warn(`Unknown segment data type: ${segment.dataType}`);
@@ -547,95 +539,6 @@ export class ConditionEvaluationService {
    */
   private applySegmentLogic(logic: string, result: boolean): boolean {
     return logic === 'is' ? result : !result;
-  }
-
-  /**
-   * Find company by segment conditions
-   * @param segment - Segment data containing conditions
-   * @param attributes - Available attributes
-   * @param bizCompany - Business company
-   * @param environment - Environment context
-   * @returns boolean indicating if the condition is activated
-   */
-  private async findCompanyBySegmentConditions(
-    segment: { id: string; dataType: number; data: any },
-    attributes: Attribute[],
-    bizCompany: { id: string },
-    environment: Environment,
-  ): Promise<boolean> {
-    // Early return if segment is not condition-based
-    if (segment.dataType !== SegmentDataType.CONDITION) {
-      return false;
-    }
-
-    const segmentData = segment.data as unknown as SegmentDataItem[];
-    if (!isArray(segmentData) || segmentData.length === 0) {
-      return false;
-    }
-
-    // Build filters for all business types
-    const filters = this.buildSegmentFilters(segmentData, attributes);
-
-    // Query with combined filters
-    const segmentItem = await this.prisma.bizUserOnCompany.findFirst({
-      where: {
-        ...(filters.membership ? filters.membership : {}),
-        bizCompany: {
-          id: bizCompany.id,
-          environmentId: environment.id,
-          ...(filters.company ? filters.company : {}),
-        },
-        ...(filters.user ? { bizUser: filters.user } : {}),
-      },
-    });
-
-    return !!segmentItem;
-  }
-
-  /**
-   * Build filters for company segment conditions by business type
-   * @param segmentData - Segment data items
-   * @param attributes - Available attributes
-   * @returns Object containing filters for company, user, and membership types
-   */
-  private buildSegmentFilters(
-    segmentData: SegmentDataItem[],
-    attributes: Attribute[],
-  ): SegmentFilters {
-    const bizTypes = [
-      { type: AttributeBizType.COMPANY, key: 'company' as const },
-      { type: AttributeBizType.USER, key: 'user' as const },
-      { type: AttributeBizType.MEMBERSHIP, key: 'membership' as const },
-    ] as const;
-
-    const filters: SegmentFilters = {};
-
-    for (const { type, key } of bizTypes) {
-      const conditions = this.filterConditionsByBizType(segmentData, attributes, type);
-      const filter = createConditionsFilter(conditions, attributes);
-      if (filter && typeof filter === 'object' && Object.keys(filter).length > 0) {
-        filters[key] = filter;
-      }
-    }
-
-    return filters;
-  }
-
-  /**
-   * Filter conditions by business type
-   * @param segmentData - Segment data containing conditions
-   * @param attributes - Available attributes
-   * @param bizType - Business type to filter by
-   * @returns Filtered segment data
-   */
-  private filterConditionsByBizType(
-    segmentData: SegmentDataItem[],
-    attributes: Attribute[],
-    bizType: AttributeBizType,
-  ): SegmentDataItem[] {
-    return segmentData.filter((item) =>
-      attributes.find((attr) => attr.bizType === bizType && item.data.attrId === attr.id),
-    );
   }
 
   // ============================================================================

@@ -43,6 +43,10 @@ export type {
   PickElementButtonProps,
 } from './components/element-picker';
 export { GoogleFontCss } from './components/theme/google-font';
+export {
+  AttributeDataTypeIcon,
+  type AttributeDataTypeIconProps,
+} from './components/attributes/attribute-data-type-icon';
 // Generic composition UI primitives live in @usertour/ui —
 // import them from there directly. Examples: ComboboxSelect, DateTimePicker,
 // ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.

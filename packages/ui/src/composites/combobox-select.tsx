@@ -25,19 +25,41 @@ export interface ComboboxSelectProps extends ComboboxSelectBaseProps {
   options?: ComboboxSelectOption[];
   /** Grouped option list (each group renders a heading). */
   groups?: ComboboxSelectGroup[];
+  /**
+   * Where the hint renders: 'stacked' (default) as a second line under the
+   * label, 'trailing' on the same line at the row's trailing edge — the
+   * compact layout for short hints like attribute codeNames. Display only;
+   * the hint participates in search either way (itemToStringValue).
+   */
+  hintPlacement?: 'stacked' | 'trailing';
 }
 
-const renderItem = (option: ComboboxSelectOption) => (
-  <ComboboxItem key={option.value} value={option} disabled={option.disabled}>
-    {option.leading}
-    <div className="min-w-0 flex-1">
-      <div className="truncate">{option.label}</div>
-      {option.hint && (
-        <div className="truncate text-[11px] text-muted-foreground">{option.hint}</div>
-      )}
-    </div>
-  </ComboboxItem>
-);
+const renderItem = (option: ComboboxSelectOption, hintPlacement: 'stacked' | 'trailing') => {
+  if (hintPlacement === 'trailing') {
+    return (
+      <ComboboxItem key={option.value} value={option} disabled={option.disabled}>
+        {option.leading}
+        <span className="min-w-0 flex-1 truncate">{option.label}</span>
+        {option.hint && (
+          <span className="max-w-[45%] shrink-0 truncate text-[11px] text-muted-foreground">
+            {option.hint}
+          </span>
+        )}
+      </ComboboxItem>
+    );
+  }
+  return (
+    <ComboboxItem key={option.value} value={option} disabled={option.disabled}>
+      {option.leading}
+      <div className="min-w-0 flex-1">
+        <div className="truncate">{option.label}</div>
+        {option.hint && (
+          <div className="truncate text-[11px] text-muted-foreground">{option.hint}</div>
+        )}
+      </div>
+    </ComboboxItem>
+  );
+};
 
 // A button-trigger searchable single-select built on the Base UI Combobox kit.
 // Trigger shows the selected label; the search input + filtered list live in
@@ -57,6 +79,7 @@ export const ComboboxSelect = (props: ComboboxSelectProps) => {
     size = 'default',
     surface = 'muted',
     footerSlot,
+    hintPlacement = 'stacked',
     disabled = false,
     className,
     contentClassName,
@@ -111,10 +134,10 @@ export const ComboboxSelect = (props: ComboboxSelectProps) => {
             ? (group: { value: string; items: ComboboxSelectOption[] }) => (
                 <ComboboxGroup key={group.value} items={group.items}>
                   <ComboboxLabel>{group.value}</ComboboxLabel>
-                  {group.items.map(renderItem)}
+                  {group.items.map((option) => renderItem(option, hintPlacement))}
                 </ComboboxGroup>
               )
-            : renderItem}
+            : (option: ComboboxSelectOption) => renderItem(option, hintPlacement)}
         </ComboboxList>
         {footerSlot}
       </ComboboxContent>

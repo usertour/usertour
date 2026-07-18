@@ -5,7 +5,7 @@ import {
   AttributeDataType,
   type RulesCondition,
 } from '@usertour/types';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import {
   useConditionsContext,
   useConditionsT,
@@ -18,6 +18,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 import { validateUserAttr } from '../../validators';
 import { format } from 'date-fns';
 import { DateTimePicker, Input } from '@usertour/ui';
+import { AttributeDataTypeIcon } from '../../../attributes/attribute-data-type-icon';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import {
   DATE_PICKER_OPERATORS,
@@ -146,6 +147,16 @@ const BIZ_GROUP_KEYS: { biz: number; headingKey: string }[] = [
   { biz: AttributeBizTypes.Membership, headingKey: 'conditions.types.userAttr.groups.membership' },
 ];
 
+// Per-item DATA TYPE icons. The entity identity is already carried by the
+// group heading (every item in a group shares it — repeating it per row adds
+// nothing), while the data type differs per attribute and determines the
+// operator set the user gets after picking, so it earns the row slot.
+const ITEM_ICON_CLASS = 'h-4 w-4 shrink-0 text-muted-foreground';
+
+const attributeDataTypeIcon = (dataType: number): ReactNode => (
+  <AttributeDataTypeIcon dataType={dataType} className={ITEM_ICON_CLASS} />
+);
+
 function UserAttrEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
   const { attributes } = useConditionsContext();
@@ -170,6 +181,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
           value: a.id,
           label: a.displayName || a.codeName,
           hint: a.codeName,
+          leading: attributeDataTypeIcon(a.dataType),
         })),
     })).filter((g) => g.items.length > 0);
     return formatted.length > 0 ? formatted : undefined;
@@ -180,6 +192,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       value: a.id,
       label: a.displayName || a.codeName,
       hint: a.codeName,
+      leading: attributeDataTypeIcon(a.dataType),
     }));
   }, [attributes]);
 
@@ -246,6 +259,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
         onChange={handleAttributeChange}
         items={allItems}
         groups={groups}
+        variant="attribute"
         placeholder={t('conditions.types.userAttr.selectPlaceholder')}
         searchPlaceholder={t('conditions.types.userAttr.searchPlaceholder')}
         emptyText={t('conditions.types.userAttr.empty')}
