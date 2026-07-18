@@ -106,8 +106,11 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
       lastProcessedConditionsRef.current = next;
       if (isSameAsLastProcessed) return;
 
+      // Publish empty lists too: deleting the last condition is an unsaved
+      // change like any other — the query above already went unfiltered, and
+      // skipping the publish here would strand the view/segment divergence
+      // with no Save filter button to resolve it.
       setQuery({ ...setQuery(), data: next });
-      if (next.length === 0) return;
       setCurrentConditions({ segmentId: segment.id, data: next });
     },
     [filteredAttributes, setCurrentConditions, setQuery],
