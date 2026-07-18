@@ -91,9 +91,10 @@ export const representationChecklist = z.object({
     .optional()
     .describe(
       'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to ' +
-        'bottom). This is the ONLY built-in cross-task sequencing — there is no per-task "after ' +
-        'task X" condition; for finer dependencies gate a task\'s `onlyShowWhen` on the shared ' +
-        'event/state that completes its prerequisite.',
+        'bottom among the tasks the user can currently SEE — a task hidden by `onlyShowWhen` ' +
+        'does not block the ones after it). This is the ONLY built-in cross-task sequencing — ' +
+        'there is no per-task "after task X" condition; for finer dependencies gate a task\'s ' +
+        '`onlyShowWhen` on the shared event/state that completes its prerequisite.',
     ),
   preventDismiss: z.boolean().optional().describe("When true, users can't dismiss the checklist."),
   autoDismiss: z
