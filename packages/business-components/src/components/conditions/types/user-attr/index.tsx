@@ -1,4 +1,4 @@
-import { UserIcon } from '@usertour/icons';
+import { CompanyIcon, UserIcon, UserIcon2 } from '@usertour/icons';
 import {
   type Attribute,
   AttributeBizTypes,
@@ -49,6 +49,22 @@ const findAttribute = (
 ): Attribute | undefined => attributes?.find((a) => a.id === attrId);
 
 // ---------- Summary (collapsed row) ----------
+
+// Chip icon follows the attribute's ENTITY (settings/attributes tab
+// iconography) — since cross-entity conditions exist, "which entity does
+// this condition read" is the one thing the chip must answer at a glance.
+const ENTITY_ICON_CLASS = 'h-3.5 w-3.5 shrink-0 text-muted-foreground';
+
+const attributeEntityIcon = (bizType: number): ReactNode => {
+  switch (bizType) {
+    case AttributeBizTypes.Company:
+      return <CompanyIcon className={ENTITY_ICON_CLASS} />;
+    case AttributeBizTypes.Membership:
+      return <UserIcon2 className={ENTITY_ICON_CLASS} />;
+    default:
+      return <UserIcon className={ENTITY_ICON_CLASS} />;
+  }
+};
 
 function UserAttrSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
@@ -101,7 +117,7 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
 
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
-      <UserIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      {attributeEntityIcon(attribute.bizType)}
       <span className={summaryTextClass}>
         <span className="font-medium">{attribute.displayName || attribute.codeName}</span>{' '}
         {template ? (
