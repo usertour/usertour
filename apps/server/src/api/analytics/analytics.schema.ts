@@ -133,12 +133,23 @@ export const stepAnalytics = z.object({
   totalTooltipTargetMissing: int(),
 });
 
-/** Per-task row — the task's own view/complete/click counts. */
+/**
+ * Per-task row. completions/clicks are the task's OWN counts (keyed by task id);
+ * the view counts are NOT per-task — the domain aggregation counts whole-checklist
+ * expansions (CHECKLIST_SEEN), so uniqueViews/totalViews repeat the same numbers
+ * on every row. Truth-told in the field descriptions so API consumers don't read
+ * identical rows as "every task equally viewed".
+ */
 export const taskAnalytics = z.object({
   name: z.string(),
   taskId: z.string(),
-  uniqueViews: int(),
-  totalViews: int(),
+  uniqueViews: int().describe(
+    'Times the CHECKLIST panel was expanded (unique users) — a whole-checklist count repeated on ' +
+      'every task row, not this task’s own visibility.',
+  ),
+  totalViews: int().describe(
+    'Whole-checklist expansions (all), repeated on every row — see uniqueViews.',
+  ),
   uniqueCompletions: int(),
   totalCompletions: int(),
   uniqueClicks: int(),

@@ -361,7 +361,13 @@ export const representationCondition = z.lazy(() =>
     z.object({
       type: z.literal('element'),
       target: representationTarget.optional(),
-      state: z.enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked']),
+      state: z
+        .enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked'])
+        .describe(
+          '`present` means VISIBLE IN THE VIEWPORT, not merely in the DOM — an element that is ' +
+            'scrolled off-screen, clipped, or covered never satisfies it (and `hidden` is its ' +
+            'negation). Appearances shorter than about a second can be missed entirely.',
+        ),
     }),
     z.object({
       type: z.literal('content_state'),
@@ -375,8 +381,10 @@ export const representationCondition = z.lazy(() =>
       state: z
         .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
         .describe(
-          "The referenced flow/checklist's state for THIS user. seen = started at least once (TRUE from the " +
-            'moment it opens); unseen = never started; active = currently open/running; inactive = ' +
+          "The referenced flow/checklist's state for THIS user. seen = started at least once (for a " +
+            'flow, TRUE from the moment it opens; for a checklist, TRUE only once the user EXPANDS ' +
+            'the panel — a `initialDisplay: "button"` checklist whose launcher is never clicked ' +
+            'stays unseen forever); unseen = never started; active = currently open/running; inactive = ' +
             'NOT currently running (covers both never-started and ran-then-closed); completed = ' +
             'reached a goal/completion step; uncompleted = not completed. To gate piece B until flow ' +
             'A has run AND closed (the usual "show next thing after the welcome flow" sequencing), ' +
@@ -959,10 +967,12 @@ export const representationStartRules = z.preprocess(
       .number()
       .optional()
       .describe(
-        'Delay in SECONDS between the conditions matching and the start firing. This wait is ' +
-          'server-tracked: the conditions must keep matching for the entire wait, or it is ' +
-          'cancelled (unlike a step trigger `waitSeconds`, which latches on first match). ' +
-          'Capped at 300 seconds by the runtime (a larger value is clamped).',
+        'Delay in SECONDS between the conditions first matching and the content becoming ' +
+          'ELIGIBLE to start. The timer latches on first match (leaving the matching state ' +
+          'mid-wait does NOT cancel it — same as a step trigger wait), but unlike a trigger the ' +
+          'start conditions are re-checked at show time: after the wait elapses the content ' +
+          'appears at the next moment the conditions match again. Capped at 300 seconds by the ' +
+          'runtime (a larger value is clamped).',
       ),
     startIfNotComplete: z
       .boolean()
