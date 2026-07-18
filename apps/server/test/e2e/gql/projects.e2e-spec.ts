@@ -69,16 +69,16 @@ describe('GraphQL projects (e2e)', () => {
     });
   });
 
-  describe('updateProjectName', () => {
+  describe('updateProject', () => {
     it('updates the name and persists it', async () => {
       const res = await graphql(app, {
         token,
-        query: `mutation ($projectId: String!, $name: String!) {
-          updateProjectName(projectId: $projectId, name: $name) { id name }
+        query: `mutation ($projectId: String!, $name: String) {
+          updateProject(projectId: $projectId, name: $name) { id name }
         }`,
         variables: { projectId, name: 'Renamed Project' },
       });
-      expect(gqlData(res).updateProjectName).toMatchObject({
+      expect(gqlData(res).updateProject).toMatchObject({
         id: projectId,
         name: 'Renamed Project',
       });

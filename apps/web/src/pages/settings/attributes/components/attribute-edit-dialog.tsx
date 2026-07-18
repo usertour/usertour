@@ -19,6 +19,7 @@ import {
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
+import { AttributeDataTypeIcon } from '@usertour/business-components';
 import { useUpdateAttributeMutation } from '@usertour/hooks';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import { type Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
@@ -212,9 +213,17 @@ export const AttributeEditDialog = (props: AttributeEditDialogProps) => {
                           variant="outline"
                           className="w-72 justify-between font-normal"
                         >
-                          {selected
-                            ? t(selected.labelKey)
-                            : t('settings.attributes.form.dataTypePlaceholder')}
+                          {selected ? (
+                            <span className="flex items-center gap-1.5">
+                              <AttributeDataTypeIcon
+                                dataType={Number(selected.value)}
+                                className="h-4 w-4 shrink-0 text-muted-foreground"
+                              />
+                              {t(selected.labelKey)}
+                            </span>
+                          ) : (
+                            t('settings.attributes.form.dataTypePlaceholder')
+                          )}
                           <CaretSortIcon className="h-4 w-4 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -223,8 +232,13 @@ export const AttributeEditDialog = (props: AttributeEditDialogProps) => {
                       {DATA_TYPE_OPTIONS.map((option) => (
                         <DropdownMenuItem
                           key={option.value}
+                          className="gap-1.5"
                           onSelect={() => field.onChange(option.value)}
                         >
+                          <AttributeDataTypeIcon
+                            dataType={Number(option.value)}
+                            className="h-4 w-4 shrink-0 text-muted-foreground"
+                          />
                           {t(option.labelKey)}
                         </DropdownMenuItem>
                       ))}
