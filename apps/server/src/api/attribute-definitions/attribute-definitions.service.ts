@@ -128,7 +128,7 @@ export class ApiAttributeDefinitionsService {
   private async requireWritable(id: string, projectId: string) {
     const attr = await this.requireExisting(id, projectId);
     if (attr.predefined) {
-      throw new ValidationError('Cannot modify a predefined attribute definition.');
+      throw new ValidationError('Cannot modify or delete a predefined attribute definition.');
     }
     return attr;
   }

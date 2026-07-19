@@ -57,12 +57,23 @@ function cursorFromUrl(url: string | null): string | null {
   }
 }
 
-/** Shape a paginate() result into the MCP `{ items, nextCursor }` envelope. */
-function toListPayload<T>(result: { results: T[]; next: string | null }): {
+/** Shape a paginate() result into the MCP `{ items, nextCursor, previousCursor }`
+ * envelope. Both directions are surfaced (the REST list carries `previous` too);
+ * pass `previousCursor` back as `cursor` to page backward. */
+function toListPayload<T>(result: {
+  results: T[];
+  next: string | null;
+  previous?: string | null;
+}): {
   items: T[];
   nextCursor: string | null;
+  previousCursor: string | null;
 } {
-  return { items: result.results, nextCursor: cursorFromUrl(result.next) };
+  return {
+    items: result.results,
+    nextCursor: cursorFromUrl(result.next),
+    previousCursor: cursorFromUrl(result.previous ?? null),
+  };
 }
 
 /** Coerce an untyped JSON arg into a string, or undefined if absent/blank. */
@@ -529,17 +540,25 @@ export function buildReadTools(): McpTool[] {
       description:
         'List attribute definitions (the schema of custom attributes) for the project. ' +
         'Optionally filter by `name` (case-insensitive substring of EITHER the machine codeName ' +
-        'or the human displayName — search by the codeName you see in conditions/identify) or ' +
-        '`scope` ("user", "company", or "companyMembership"). Returns `{ items, nextCursor }`.',
+        'or the human displayName — search by the codeName you see in conditions/identify), ' +
+        '`scope` ("user", "company", or "companyMembership"), or `eventName` (only the ' +
+        'event-scoped attributes attached to that event). Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         scope: z
           .enum(['user', 'company', 'companyMembership'])
           .optional()
           .describe('Filter by which object the attribute belongs to.'),
+        eventName: z
+          .string()
+          .optional()
+          .describe('Filter to the attributes attached to this event (by event codeName).'),
         limit: limitSchema,
         cursor: cursorSchema,
-        orderBy: orderBySchema,
+        orderBy: z
+          .enum(['createdAt', '-createdAt', 'codeName', '-codeName', 'displayName', '-displayName'])
+          .optional()
+          .describe('Order by createdAt / codeName / displayName (prefix `-` for descending).'),
       },
       async handler(args, ctx) {
         const result = await ctx.services.attributeDefinitions.list(
@@ -548,12 +567,37 @@ export function buildReadTools(): McpTool[] {
           {
             limit: asLimit(args.limit),
             cursor: asString(args.cursor),
-            orderBy: asOrderBy(args.orderBy),
+            // Validated by the tool's orderBy enum above; the service's
+            // parseOrderBy re-checks against the allowed attribute sort fields.
+            orderBy: asString(args.orderBy) as
+              | 'createdAt'
+              | '-createdAt'
+              | 'codeName'
+              | '-codeName'
+              | 'displayName'
+              | '-displayName'
+              | undefined,
             name: asString(args.name),
             scope: asString(args.scope),
+            eventName: asString(args.eventName),
           },
         );
         return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_attribute_definition',
+      title: 'Get an attribute definition',
+      capability: Capability.AttributeRead,
+      description: 'Get a single attribute definition by id.',
+      inputSchema: { id: z.string().describe('The attribute definition id.') },
+      async handler(args, ctx) {
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        return ctx.services.attributeDefinitions.get(id, ctx.projectId);
       },
     },
 
@@ -583,6 +627,22 @@ export function buildReadTools(): McpTool[] {
           },
         );
         return toListPayload(result);
+      },
+    },
+
+    {
+      name: 'get_event_definition',
+      title: 'Get an event definition',
+      capability: Capability.EventRead,
+      description:
+        'Get a single event definition by id (includes its attached attribute codeNames).',
+      inputSchema: { id: z.string().describe('The event definition id.') },
+      async handler(args, ctx) {
+        const id = asString(args.id);
+        if (!id) {
+          throw new Error('`id` is required.');
+        }
+        return ctx.services.eventDefinitions.get(id, ctx.projectId);
       },
     },
 

@@ -89,16 +89,21 @@ export const createSegmentBody = z.object({
 });
 export class CreateSegmentBodyDto extends createZodDto(createSegmentBody) {}
 
-export const updateSegmentBody = z.object({
-  name: z.string().min(1).optional(),
-  conditions: z
-    .array(segmentCondition)
-    .optional()
-    .describe(
-      'Replaces the conditions (condition segments only). Attribute conditions and groups ' +
-        'only — see create_segment.',
-    ),
-});
+export const updateSegmentBody = z
+  .object({
+    name: z.string().min(1).optional(),
+    conditions: z
+      .array(segmentCondition)
+      .optional()
+      .describe(
+        'Replaces the conditions (condition segments only). Attribute conditions and groups ' +
+          'only — see create_segment.',
+      ),
+  })
+  // Only name/conditions are mutable — bizType and kind are immutable. Reject a
+  // stray key (e.g. a whole create body sent to update) instead of silently
+  // dropping it, so the caller learns the field was not applied.
+  .strict();
 export class UpdateSegmentBodyDto extends createZodDto(updateSegmentBody) {}
 
 export type Segment = z.infer<typeof segment>;

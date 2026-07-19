@@ -54,9 +54,13 @@ export const createEnvironmentBody = z.object({
 });
 export class CreateEnvironmentBodyDto extends createZodDto(createEnvironmentBody) {}
 
-export const updateEnvironmentBody = z.object({
-  name: z.string().min(1).describe('Environment name.'),
-});
+// Only `name` is mutable — isPrimary is not settable here. `.strict()` rejects a
+// stray key (e.g. isPrimary copied from a read) rather than silently dropping it.
+export const updateEnvironmentBody = z
+  .object({
+    name: z.string().min(1).describe('Environment name.'),
+  })
+  .strict();
 export class UpdateEnvironmentBodyDto extends createZodDto(updateEnvironmentBody) {}
 
 export type Environment = z.infer<typeof environment>;
