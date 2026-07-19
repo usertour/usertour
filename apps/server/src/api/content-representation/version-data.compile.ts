@@ -173,6 +173,21 @@ function compileChecklist(
   return out;
 }
 
+// A launcher tooltip setting the runtime doesn't implement is read-only: echoing
+// the stored value is fine, but changing it (to any different value) is rejected
+// so an author isn't misled into thinking the knob does something.
+function assertInertLauncherSetting(
+  label: string,
+  incoming: boolean | undefined,
+  stored: unknown,
+): void {
+  if (incoming !== undefined && stored !== undefined && incoming !== stored) {
+    throw new ValidationError(
+      `\`tooltip.settings.${label}\` is read-only — it is not implemented at runtime, so it cannot be changed via the API. Echo the stored value back or omit the field.`,
+    );
+  }
+}
+
 function compileLauncher(
   rep: RepresentationLauncher,
   existing: unknown,
@@ -189,10 +204,27 @@ function compileLauncher(
   if (rep.buttonText !== undefined) out.buttonText = rep.buttonText;
   if (rep.zIndex !== undefined) out.zIndex = rep.zIndex;
   if (rep.target !== undefined) {
-    out.target = {
+    const tgt: Record<string, any> = {
       ...(base.target ?? {}),
       element: compileTargetToElementData(rep.target, base.target?.element),
     };
+    // Beacon placement on the target → target.alignment, deriving alignType the
+    // same way the tooltip does (explicit wins; side/align given → `fixed`; else
+    // leave seeded) so `align` actually takes effect instead of forcing center.
+    const bp = rep.target.placement;
+    if (bp !== undefined) {
+      const derivedAlignType =
+        bp.alignType ?? (bp.side !== undefined || bp.align !== undefined ? 'fixed' : undefined);
+      tgt.alignment = {
+        ...(base.target?.alignment ?? {}),
+        ...(bp.side !== undefined ? { side: bp.side } : {}),
+        ...(bp.align !== undefined ? { align: bp.align } : {}),
+        ...(bp.sideOffset !== undefined ? { sideOffset: bp.sideOffset } : {}),
+        ...(bp.alignOffset !== undefined ? { alignOffset: bp.alignOffset } : {}),
+        ...(derivedAlignType !== undefined ? { alignType: derivedAlignType } : {}),
+      };
+    }
+    out.target = tgt;
   }
   if (rep.tooltip !== undefined) {
     const t: Record<string, any> = { ...(base.tooltip ?? {}) };
@@ -228,9 +260,23 @@ function compileLauncher(
       if (s.dismissAfterFirstActivation !== undefined) {
         settings.dismissAfterFirstActivation = s.dismissAfterFirstActivation;
       }
+      // keepOpenWhenHovered / hideLauncherWhenTooltipShown are NOT wired at
+      // runtime (tooltip always stays open on hover; launcher never hides). They
+      // round-trip but are read-only: an echo of the stored value is kept, a
+      // CHANGED value is rejected so authors aren't misled (launcher recon L2).
+      assertInertLauncherSetting(
+        'keepOpenWhenHovered',
+        s.keepOpenWhenHovered,
+        base.tooltip?.settings?.keepTooltipOpenWhenHovered,
+      );
       if (s.keepOpenWhenHovered !== undefined) {
         settings.keepTooltipOpenWhenHovered = s.keepOpenWhenHovered;
       }
+      assertInertLauncherSetting(
+        'hideLauncherWhenTooltipShown',
+        s.hideLauncherWhenTooltipShown,
+        base.tooltip?.settings?.hideLauncherWhenTooltipIsDisplayed,
+      );
       if (s.hideLauncherWhenTooltipShown !== undefined) {
         settings.hideLauncherWhenTooltipIsDisplayed = s.hideLauncherWhenTooltipShown;
       }

@@ -35,6 +35,126 @@ describe('version-data builder settings round-trip', () => {
     expect(internal.tooltip.alignment.alignType).toBe('fixed');
   });
 
+  it('launcher target.placement positions the beacon on the target (L3) and round-trips', () => {
+    const rep = {
+      style: 'beacon',
+      target: { selector: '.x', placement: { side: 'right', align: 'end', alignOffset: 8 } },
+      tooltip: { content: [] },
+    };
+    const internal: any = compileVersionData('launcher', rep, undefined, ids);
+    // Beacon position lands on target.alignment with alignType derived to fixed.
+    expect(internal.target.alignment).toMatchObject({
+      side: 'right',
+      align: 'end',
+      alignOffset: 8,
+      alignType: 'fixed',
+    });
+    // element selector still compiled alongside.
+    expect(internal.target.element).toBeDefined();
+    const back: any = decompileVersionData('launcher', internal, idR);
+    expect(back.target.placement).toEqual({ side: 'right', align: 'end', alignOffset: 8 });
+  });
+
+  it('auto-mode alignment (the seeded default) omits placement on read-back — no echo→fixed flip', () => {
+    // DEFAULT_LAUNCHER_DATA seeds target/tooltip alignment {top,center,auto}.
+    // A read-back that surfaced {top,center} would, when echoed, derive `fixed`
+    // and silently pin an auto-centered launcher (launcher A+B finding). Compile
+    // a target + tooltip against that seed WITHOUT authoring placement.
+    const seededExisting = {
+      type: 'icon',
+      target: {
+        element: undefined,
+        alignment: {
+          side: 'top',
+          align: 'center',
+          alignType: 'auto',
+          sideOffset: 0,
+          alignOffset: 0,
+        },
+      },
+      tooltip: {
+        alignment: {
+          side: 'top',
+          align: 'center',
+          alignType: 'auto',
+          sideOffset: 0,
+          alignOffset: 0,
+        },
+        content: [],
+      },
+    };
+    const internal: any = compileVersionData(
+      'launcher',
+      { target: { selector: '.x' }, tooltip: { content: [] } },
+      seededExisting,
+      ids,
+    );
+    expect(internal.target.alignment.alignType).toBe('auto'); // stayed auto
+    const back: any = decompileVersionData('launcher', internal, idR);
+    expect(back.target.placement).toBeUndefined();
+    expect(back.tooltip.placement).toBeUndefined();
+  });
+
+  it('launcher dead tooltip settings are read-only: echo kept, change rejected (L2)', () => {
+    const existing = {
+      type: 'icon',
+      tooltip: {
+        settings: {
+          dismissAfterFirstActivation: false,
+          keepTooltipOpenWhenHovered: false,
+          hideLauncherWhenTooltipIsDisplayed: false,
+        },
+      },
+    };
+    // Echo of the stored (false) value is accepted.
+    const echoed: any = compileVersionData(
+      'launcher',
+      {
+        tooltip: { settings: { keepOpenWhenHovered: false, hideLauncherWhenTooltipShown: false } },
+      },
+      existing,
+      ids,
+    );
+    expect(echoed.tooltip.settings.keepTooltipOpenWhenHovered).toBe(false);
+    // Changing either is rejected.
+    const msg = (fn: () => unknown) => {
+      try {
+        fn();
+      } catch (e) {
+        return (e as { getMessage?: (l: string) => string }).getMessage?.('en') ?? String(e);
+      }
+      throw new Error('expected throw');
+    };
+    expect(
+      msg(() =>
+        compileVersionData(
+          'launcher',
+          { tooltip: { settings: { keepOpenWhenHovered: true } } },
+          existing,
+          ids,
+        ),
+      ),
+    ).toMatch(/read-only/i);
+    expect(
+      msg(() =>
+        compileVersionData(
+          'launcher',
+          { tooltip: { settings: { hideLauncherWhenTooltipShown: true } } },
+          existing,
+          ids,
+        ),
+      ),
+    ).toMatch(/read-only/i);
+    // dismissAfterFirstActivation (the live one) is freely writable.
+    const live: any = compileVersionData(
+      'launcher',
+      { tooltip: { settings: { dismissAfterFirstActivation: true } } },
+      existing,
+      ids,
+    );
+    expect(live.tooltip.settings.dismissAfterFirstActivation).toBe(true);
+  });
+
   it('banner zIndex', () => {
     const rep = { placement: 'top-of-page', zIndex: 99, content: [] };
     const internal: any = compileVersionData('banner', rep, undefined, ids);
