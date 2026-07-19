@@ -184,7 +184,9 @@ export class EventTrackingService {
    * Track a tracker event.
    * Tracker does not use BizSession — creates BizEvent directly with contentId/versionId.
    * Resolves target event from version.data.eventId (user-selected event, not a fixed event).
-   * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a configurable window.
+   * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a fixed
+   * 3-second window (DEDUP_WINDOW_MS below — not configurable). Best-effort (findFirst-then-create,
+   * no DB unique constraint), so truly simultaneous fires can still both land.
    */
   async trackTrackerEvent(params: {
     environment: Environment;
