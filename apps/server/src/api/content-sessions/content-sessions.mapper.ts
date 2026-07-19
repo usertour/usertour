@@ -1,6 +1,6 @@
-import { ContentDataType, EventAttributes } from '@usertour/types';
+import { ContentDataType, ContentEditorElementType, EventAttributes } from '@usertour/types';
 
-import { extractQuestionData } from '@/utils/content-question';
+import { extractQuestionData, numberQuestionTypes } from '@/utils/content-question';
 import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
 
 import { ApiObjectType } from '../shared/object-type';
@@ -70,10 +70,15 @@ export function mapSessionAnswers(
       if (!question) {
         return null;
       }
-      const answerValue =
-        answer.numberAnswer?.toString() ||
-        answer.textAnswer ||
-        (answer.listAnswer ? JSON.stringify(answer.listAnswer) : '');
+      // Emit the answer in its real type, selected by the question type — number
+      // questions keep a number, multiple-choice keeps the option array, the rest
+      // are text. Selecting by TYPE (not by which column is truthy) is why a scale
+      // answer of 0 and an empty text answer no longer collapse or drop.
+      const answerValue = numberQuestionTypes.includes(question.type)
+        ? (answer.numberAnswer ?? null)
+        : question.type === ContentEditorElementType.MULTIPLE_CHOICE
+          ? (answer.listAnswer ?? [])
+          : (answer.textAnswer ?? '');
       return {
         id: answer.id,
         object: ApiObjectType.CONTENT_SESSION_ANSWER,

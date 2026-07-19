@@ -40,7 +40,14 @@ const sessionAnswer = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_SESSION_ANSWER),
   answerType: z.string(),
-  answerValue: z.string(),
+  answerValue: z
+    .union([z.number(), z.string(), z.array(z.string())])
+    .nullable()
+    .describe(
+      "The answer's value in its real type, keyed off answerType: nps / star-rating / scale → a " +
+        'number; single-line-text / multi-line-text → a string; multiple-choice → an array of the ' +
+        'chosen option strings. null only when the stored value is missing.',
+    ),
   createdAt: z.string(),
   questionCvid: z.string(),
   questionName: z.string(),

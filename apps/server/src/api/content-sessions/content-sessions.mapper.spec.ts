@@ -1,6 +1,11 @@
-import { BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
+import {
+  BizEvents,
+  ContentDataType,
+  ContentEditorElementType,
+  EventAttributes,
+} from '@usertour/types';
 
-import { mapContentSession } from './content-sessions.mapper';
+import { mapContentSession, mapSessionAnswers } from './content-sessions.mapper';
 
 // The honest lifecycle derivation: `completed` reads a genuine completion EVENT
 // (never state === 1), `endedAt`/`endReason` describe the close. These fabricate
@@ -108,5 +113,66 @@ describe('mapContentSession — honest lifecycle', () => {
     const out = mapContentSession(session({ state: 1, bizEvent: [] }), [], null);
     expect(out.endedAt).toBe(T1.toISOString());
     expect(out.endReason).toBeNull();
+  });
+});
+
+// A step carrying one question element, in the ContentEditorRoot[] shape
+// extractQuestionData reads (root node -> `element` with type + data.cvid/name).
+const step = (type: ContentEditorElementType, cvid: string, name = 'Q') => ({
+  data: [{ element: { type, data: { cvid, name } } }],
+});
+// A raw analytics answer row (the three typed columns default to empty/null).
+const answer = (cvid: string, over: Record<string, unknown>) => ({
+  id: `ans-${cvid}`,
+  cvid,
+  createdAt: T0,
+  numberAnswer: null as number | null,
+  textAnswer: null as string | null,
+  listAnswer: [] as string[],
+  ...over,
+});
+
+describe('mapSessionAnswers — typed by question type', () => {
+  it('a number question (nps) yields a number, not a string', () => {
+    const [out] = mapSessionAnswers(
+      [answer('q_nps', { numberAnswer: 9 })],
+      [step(ContentEditorElementType.NPS, 'q_nps')],
+    );
+    expect(out.answerType).toBe('nps');
+    expect(out.answerValue).toBe(9);
+    expect(typeof out.answerValue).toBe('number');
+  });
+
+  it('a scale answer of 0 survives (selected by type, not by truthiness)', () => {
+    const [out] = mapSessionAnswers(
+      [answer('q_scale', { numberAnswer: 0 })],
+      [step(ContentEditorElementType.SCALE, 'q_scale')],
+    );
+    expect(out.answerValue).toBe(0);
+  });
+
+  it('a text question yields the string', () => {
+    const [out] = mapSessionAnswers(
+      [answer('q_txt', { textAnswer: 'Loved it' })],
+      [step(ContentEditorElementType.SINGLE_LINE_TEXT, 'q_txt')],
+    );
+    expect(out.answerValue).toBe('Loved it');
+  });
+
+  it('a multiple-choice question yields the option array, not a JSON string', () => {
+    const [out] = mapSessionAnswers(
+      [answer('q_mc', { listAnswer: ['email', 'docs'] })],
+      [step(ContentEditorElementType.MULTIPLE_CHOICE, 'q_mc')],
+    );
+    expect(Array.isArray(out.answerValue)).toBe(true);
+    expect(out.answerValue).toEqual(['email', 'docs']);
+  });
+
+  it('drops an answer whose cvid matches no question in the version', () => {
+    const out = mapSessionAnswers(
+      [answer('orphan', { numberAnswer: 3 })],
+      [step(ContentEditorElementType.NPS, 'q_nps')],
+    );
+    expect(out).toEqual([]);
   });
 });
