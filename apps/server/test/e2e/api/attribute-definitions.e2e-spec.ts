@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildAttribute } from '../factories';
+import { buildAttribute, buildBizUser } from '../factories';
 import { buildAuthorizedUser } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 import { OpenApiFixture, openapi, seedApiFixture, teardownApiFixture } from '../openapi';
@@ -227,6 +227,43 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
     const list = await api('get', basePath(), token);
     expect(list.body.results.map((a: { id: string }) => a.id)).not.toContain(id);
+  });
+
+  it('retypes an attribute when no stored value conflicts, and rejects when one does', async () => {
+    const token = await mint([
+      Capability.AttributeCreate,
+      Capability.AttributeUpdate,
+      Capability.AttributeRead,
+    ]);
+    // (a) no stored values yet → the type can be corrected.
+    const ok = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'number',
+      codeName: 'attr_retype_ok',
+      displayName: 'R',
+    });
+    const okPatch = await send('patch', `${basePath()}/${ok.body.id}`, token).send({
+      dataType: 'string',
+    });
+    expect(okPatch.status).toBe(200);
+    expect(okPatch.body.dataType).toBe('string');
+
+    // (b) a stored value that won't fit the new type → rejected (E1017), unchanged.
+    const bad = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'number',
+      codeName: 'attr_retype_bad',
+      displayName: 'R2',
+    });
+    await buildBizUser(prisma, {
+      environmentId: fx.environmentId,
+      data: { attr_retype_bad: 42 },
+    });
+    const badPatch = await send('patch', `${basePath()}/${bad.body.id}`, token).send({
+      dataType: 'string',
+    });
+    expect(badPatch.status).toBe(400);
+    expect(badPatch.body.error.code).toBe('E1017');
   });
 
   it('gets an attribute definition by id (404 unknown → E1022)', async () => {

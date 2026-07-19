@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { AttributesService } from '@/attributes/attributes.service';
+import { BizService } from '@/biz/biz.service';
 import {
   AttributeDefinitionNotFoundError,
   InvalidScopeError,
@@ -40,7 +41,10 @@ function toArray(value: string | string[] | undefined): string[] | undefined {
  */
 @Injectable()
 export class ApiAttributeDefinitionsService {
-  constructor(private readonly attributes: AttributesService) {}
+  constructor(
+    private readonly attributes: AttributesService,
+    private readonly biz: BizService,
+  ) {}
 
   async list(
     requestUrl: string,
@@ -103,13 +107,27 @@ export class ApiAttributeDefinitionsService {
     }
   }
 
-  /** Update the human-facing fields of an attribute (dataType/scope/codeName are fixed). */
+  /**
+   * Update an attribute. displayName/description are freely editable; `dataType`
+   * may be corrected only while no stored value conflicts with the new type (so a
+   * type wrongly inferred from a first mistyped upsert can be fixed safely).
+   * scope/codeName stay immutable.
+   */
   async update(id: string, projectId: string, body: UpdateAttributeBody): Promise<Attribute> {
-    await this.requireWritable(id, projectId);
+    const attr = await this.requireWritable(id, projectId);
+    let dataType: number | undefined;
+    if (body.dataType !== undefined) {
+      const next = mapDataTypeToInternal(body.dataType);
+      if (next !== attr.dataType) {
+        await this.biz.assertStoredValuesFitDataType(projectId, attr.bizType, attr.codeName, next);
+        dataType = next;
+      }
+    }
     const updated = await this.attributes.update({
       id,
       ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
       ...(body.description !== undefined ? { description: body.description } : {}),
+      ...(dataType !== undefined ? { dataType } : {}),
     });
     return mapAttribute(updated);
   }

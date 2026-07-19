@@ -1018,6 +1018,65 @@ export class BizService {
     return { ok: true, value };
   }
 
+  // A retype is safe only if every stored value already validates as the new
+  // type — bounded to avoid an unbounded scan on a large project.
+  private static readonly RETYPE_SCAN_CAP = 10000;
+
+  /**
+   * Guard an attribute `dataType` change: throw unless every stored value in the
+   * attribute's scope (across the project) already fits the new type. Lets a
+   * wrong type — e.g. inferred from a first mistyped upsert — be corrected while
+   * it is still safe, without silently invalidating existing data.
+   */
+  async assertStoredValuesFitDataType(
+    projectId: string,
+    bizType: AttributeBizType,
+    codeName: string,
+    newDataType: number,
+  ): Promise<void> {
+    const cap = BizService.RETYPE_SCAN_CAP;
+    // Only NON-NULL stored values matter (a null is not a value); AnyNull excludes
+    // both JSON-null and absent keys.
+    const where = { data: { path: [codeName], not: Prisma.AnyNull } };
+    let rows: { data: Prisma.JsonValue | null }[];
+    if (bizType === AttributeBizType.USER) {
+      rows = await this.prisma.bizUser.findMany({
+        where: { environment: { projectId }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else if (bizType === AttributeBizType.COMPANY) {
+      rows = await this.prisma.bizCompany.findMany({
+        where: { environment: { projectId }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else if (bizType === AttributeBizType.MEMBERSHIP) {
+      rows = await this.prisma.bizUserOnCompany.findMany({
+        where: { bizCompany: { environment: { projectId } }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else {
+      return; // event-scoped attributes have no stored end-user values
+    }
+    if (rows.length > cap) {
+      throw new ValidationError(
+        `"${codeName}" has too many stored values to safely re-type. Clear its values, or delete and recreate the attribute with the intended type.`,
+      );
+    }
+    const fakeAttr = { codeName, dataType: newDataType } as Attribute;
+    const conflicts = rows.filter(
+      (r) => !this.validateAttrValue(fakeAttr, (r.data as Record<string, unknown>)?.[codeName]).ok,
+    ).length;
+    if (conflicts > 0) {
+      const expected = BizAttributeTypes[newDataType] ?? String(newDataType);
+      throw new ValidationError(
+        `Cannot change the type of "${codeName}" to ${expected}: ${conflicts} stored value(s) do not fit. Fix or clear those values, or delete and recreate the attribute.`,
+      );
+    }
+  }
+
   private async linkAttributesToEvent(
     tx: Prisma.TransactionClient,
     eventId: string,
