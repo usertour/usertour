@@ -68,6 +68,12 @@ const usersOccurrences = (c: ReturnType<typeof counts>) => ({
   uniqueUsers: c.uniqueViews,
   totalOccurrences: c.totalViews,
 });
+// Announcements have ONE signal (SEEN, once per user); the domain runs them
+// through the tracker-style event aggregation, whose "completions" mirror views.
+const seenOnly = (c: ReturnType<typeof counts>) => ({
+  uniqueSeen: c.uniqueViews,
+  totalSeen: c.totalViews,
+});
 
 export interface AnalyticsMeta {
   contentId: string;
@@ -174,8 +180,17 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
         ...usersOccurrences(top),
         byDay: byDay(usersOccurrences),
       };
+    case ContentDataType.ANNOUNCEMENT:
+      return {
+        ...base,
+        contentType: 'announcement',
+        ...seenOnly(top),
+        byDay: byDay(seenOnly),
+      };
     default:
-      // The service rejects non-v2 content types before mapping.
+      // Unreachable for v2 content (every V2_CONTENT_TYPES member has a case
+      // above); kept as a guard for future types so a gap fails loudly in tests
+      // rather than shipping a silent wrong shape.
       throw new Error(`Unsupported content type for analytics: ${meta.contentType}`);
   }
 }

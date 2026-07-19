@@ -176,6 +176,26 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueUsers: 10, totalOccurrences: 14 }]);
   });
 
+  it('announcement: seen counts only — was the mapper default-throw gap (announcement A+B, L1)', () => {
+    const raw = {
+      ...rawCounts,
+      viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }],
+    };
+    const out = mapContentAnalytics(raw, meta(ContentDataType.ANNOUNCEMENT));
+    expect(out).toMatchObject({ contentType: 'announcement', uniqueSeen: 10, totalSeen: 14 });
+    expect(out).not.toHaveProperty('uniqueCompletions');
+    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10, totalSeen: 14 }]);
+  });
+
+  it('covers EVERY content type the service admits — none may hit the default throw', () => {
+    // The service gates on V2_CONTENT_TYPES = Object.values(ContentDataType), so
+    // every enum member must have a mapper case; announcement was missing one
+    // and get_content_analytics threw a bare internal error (A+B round, L1).
+    for (const type of Object.values(ContentDataType)) {
+      expect(() => mapContentAnalytics(rawCounts, meta(type))).not.toThrow();
+    }
+  });
+
   it('rejects content types outside the v2 union', () => {
     expect(() => mapContentAnalytics(rawCounts, meta('survey'))).toThrow(
       /Unsupported content type/,

@@ -1013,7 +1013,8 @@ export function buildReadTools(): McpTool[] {
         '(the selector-health signal); checklists starts + completions (= every visible task ' +
         'done) and per-task rows; launchers seen + activations; banners seen + dismissals; ' +
         'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
-        'event. All with a per-day series. Defaults to the last 30 days, UTC.',
+        'event; announcements seen counts (once per user). All with a per-day series. Defaults ' +
+        'to the last 30 days, UTC.',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,

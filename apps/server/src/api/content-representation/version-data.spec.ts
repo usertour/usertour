@@ -43,7 +43,7 @@ describe('version-data builder settings round-trip', () => {
     expect(back.zIndex).toBe(99);
   });
 
-  it('announcement: field-merge preserves untouched fields; popupConfig only reads back for popup', () => {
+  it('announcement: field-merge preserves untouched fields; a stored popupConfig echoes under every distribution', () => {
     // Simulates the builder-seeded default data (title + intro already present).
     const existing = {
       title: 'Seeded title',
@@ -70,10 +70,17 @@ describe('version-data builder settings round-trip', () => {
     expect(back.distribution).toBe('popup');
     expect(back.popupConfig).toEqual({ style: 'modal' });
 
-    // Back to badge: popupConfig is popup-only noise, so the read-back omits it.
+    // Back to badge: the STORED config keeps echoing — hiding it made a written
+    // popupConfig a ghost (invisible on read, resurfacing when distribution
+    // later switched back to popup — announcement A+B, L2).
     const badge: any = compileVersionData('announcement', { distribution: 'badge' }, internal, ids);
     const backBadge: any = decompileVersionData('announcement', badge, idR);
-    expect(backBadge.popupConfig).toBeUndefined();
+    expect(backBadge.popupConfig).toEqual({ style: 'modal' });
+
+    // With nothing stored, non-popup distributions still omit the key (no
+    // invented default outside popup).
+    const bare: any = decompileVersionData('announcement', { distribution: 'badge' }, idR);
+    expect(bare.popupConfig).toBeUndefined();
   });
 
   it('announcement popup read-back carries the concrete default style when none is stored', () => {

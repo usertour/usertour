@@ -285,7 +285,9 @@ export const representationAnnouncement = z
       .optional()
       .describe(
         'Title shown in the feed row and the detail view. Required to publish — an untitled ' +
-          'announcement would render a blank row.',
+          "announcement would render a blank row. Seeded from the content's `name` at create, " +
+          'then INDEPENDENT: renaming the content later does not update the title (and events/' +
+          'analytics label by the content name, not this title).',
       ),
     introContent: z
       .array(representationBlock)
@@ -333,8 +335,9 @@ export const representationAnnouncement = z
       })
       .optional()
       .describe(
-        'Popup presentation — only meaningful when `distribution` is `popup`. Omit for the ' +
-          'default (bubble).',
+        'Popup presentation — only USED when `distribution` is `popup` (stored and echoed under ' +
+          'other distributions, taking effect if distribution later switches to popup). Omit for ' +
+          'the default (bubble).',
       ),
   })
   .describe(

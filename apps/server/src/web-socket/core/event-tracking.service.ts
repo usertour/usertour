@@ -378,7 +378,18 @@ export class EventTrackingService {
         }),
       ]);
 
-      if (!bizUser || !content || !version || !event) {
+      if (!event) {
+        // The project is missing the event DEFINITION (seed/backfill gap, not a
+        // client error) — the announcement rollout shipped without a backfill
+        // and every existing project silently dropped ALL its seen events
+        // (announcement A+B round). Losing analytics silently is the worst
+        // outcome; make the gap observable.
+        this.logger.warn(
+          `Dropping ${eventCodeName} for project ${environment.projectId}: no event definition (run the project-defaults backfill to seed missing events/attributes).`,
+        );
+        return false;
+      }
+      if (!bizUser || !content || !version) {
         return false;
       }
 

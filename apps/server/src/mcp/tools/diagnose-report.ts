@@ -251,7 +251,7 @@ export const buildDiagnoseReport = (
       id: 'rc_reachability',
       status: facts.announcementBlockPublished ? 'pass' : 'fail',
       detail: facts.announcementBlockPublished
-        ? 'a published resource center in this environment has an announcement block (the feed entry).'
+        ? 'a published resource center in this environment has an announcement block (the feed entry). Caveat: this checks the block EXISTS — a block hidden by its own onlyShowWhen conditions still counts, so specific users may still lack the entry.'
         : 'NO published resource center in this environment has an announcement block — announcements only reach users through one (feed, badge, and popup are all inside it). Add { "type": "announcement", "name": "What\'s new" } to a resource-center tab and publish it.',
     });
   }

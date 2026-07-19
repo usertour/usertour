@@ -171,10 +171,27 @@ export function collectWriteViolations(input: {
     // goto_step is flow-only — every non-flow type's action set excludes STEP_GOTO
     // (unknown type: reject too; compile rejects the type right after).
     const rejectGotoStep = !caps?.actions.includes(ContentActionsItemType.STEP_GOTO);
-    // A type with action slots but no dismiss variant (resource center) can't dismiss;
-    // types with no action slots at all (tracker) are left to their own schema.
+    // A type with action slots but no dismiss variant (resource center,
+    // announcement) can't dismiss; types with no action slots at all (tracker)
+    // are left to their own schema.
     const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
-    const slotHint = `a ${contentType}'s content`;
+    const slotHint = `${contentType === 'announcement' ? 'an' : 'a'} ${contentType}'s content`;
+    // Name the actions this type ACTUALLY allows (public representation names) —
+    // the previous fixed text recommended `dismiss` to types that reject it, and
+    // used internal names; both sent authors straight into a second E1017.
+    const allowedHint = [
+      caps?.actions.includes(ContentActionsItemType.FLOW_START) ? 'start_content' : null,
+      caps?.actions.includes(ContentActionsItemType.PAGE_NAVIGATE) ? 'navigate' : null,
+      caps?.dismissVariant ? 'dismiss' : null,
+    ]
+      .filter(Boolean)
+      .join(' / ');
+    const perTypeDismissReason: Record<string, string> = {
+      'resource-center':
+        "A resource center has no dismiss action — its panel's close button only collapses it back to the launcher; the session has no user-facing dismiss.",
+      announcement:
+        'An announcement has no dismiss action — feed entries are marked seen, never dismissed, and the popup dismisses itself on any interaction.',
+    };
     const walk = (node: unknown, path: string): void => {
       if (Array.isArray(node)) {
         node.forEach((n, i) => walk(n, `${path}[${i}]`));
@@ -186,14 +203,16 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "goto_step" action can't be used in ${slotHint}. goto_step navigates between the steps of a flow, and this content type has no steps — use start_content, page_navigate, or dismiss instead.`,
+          message: `A "goto_step" action can't be used in ${slotHint}. goto_step navigates between the steps of a flow, and this content type has no steps — use ${allowedHint || 'the actions this type supports'} instead.`,
         });
       }
       if (rejectDismiss && obj.type === 'dismiss') {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "dismiss" action can't be used in ${slotHint}. A resource center has no dismiss action — use start_content or page_navigate. (Its panel's close button only collapses it back to the launcher; a resource-center session has no user-facing dismiss.)`,
+          message: `A "dismiss" action can't be used in ${slotHint}. ${
+            perTypeDismissReason[contentType ?? ''] ?? 'This content type has no dismiss action.'
+          } Use ${allowedHint || 'the actions this type supports'} instead.`,
         });
       }
       for (const key of Object.keys(obj)) {

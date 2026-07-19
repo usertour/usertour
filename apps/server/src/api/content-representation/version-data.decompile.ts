@@ -145,10 +145,15 @@ function decompileAnnouncement(data: unknown, r: DecompileResolvers): Representa
     distribution,
     // Read-backs carry a concrete style for popup announcements even when the
     // stored config is absent (the runtime default is bubble) — so an agent sees
-    // what will actually present, not a hole.
+    // what will actually present, not a hole. A STORED config is also echoed
+    // under the other distributions: hiding it made a written popupConfig a
+    // ghost (invisible on read, resurfacing when distribution later switched
+    // to popup — announcement A+B, L2).
     ...(distribution === 'popup'
       ? { popupConfig: { style: d.popupConfig?.style === 'modal' ? 'modal' : 'bubble' } }
-      : {}),
+      : d.popupConfig?.style === 'modal' || d.popupConfig?.style === 'bubble'
+        ? { popupConfig: { style: d.popupConfig.style } }
+        : {}),
   };
 }
 

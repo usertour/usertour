@@ -774,10 +774,18 @@ export function buildWriteTools(): McpTool[] {
       audit: auditCreate('environment'),
       title: 'Create an environment',
       capability: Capability.EnvironmentManage,
-      description: 'Create an environment in the project. The first one is made primary.',
+      description:
+        'Create an environment in the project. The first one is made primary. NOTE: a credential ' +
+        'restricted to an environment allowlist can CREATE environments but cannot act on the new ' +
+        'one (publish / diagnose / delete all fail E1029) until the allowlist is widened in the ' +
+        "console — check the response's `inTokenScope` before planning work in it.",
       inputSchema: { ...createEnvironmentBody.shape },
       handler: (args, ctx) =>
-        ctx.services.environments.create(ctx.projectId, args as unknown as CreateEnvironmentBody),
+        ctx.services.environments.create(
+          ctx.projectId,
+          args as unknown as CreateEnvironmentBody,
+          ctx.auth.allowedEnvironmentIds(ctx.token),
+        ),
     },
     {
       name: 'update_environment',
@@ -804,6 +812,7 @@ export function buildWriteTools(): McpTool[] {
           String(args.id),
           ctx.projectId,
           args as unknown as UpdateEnvironmentBody,
+          ctx.auth.allowedEnvironmentIds(ctx.token),
         );
       },
     },

@@ -398,6 +398,25 @@ describe('validateVersionUsable', () => {
       expect(paths(r.warnings)).toContain('introContent');
     });
 
+    it('warns on detail content with Read more DISABLED — an unreachable detail page (was silent)', () => {
+      const r = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: false,
+        detailContent: textBlocks,
+      });
+      expect(r.ok).toBe(true); // warning, not error
+      expect(r.warnings.some((w) => w.message.includes('unreachable'))).toBe(true);
+      // no such warning when read-more is on or the detail page is empty
+      const on = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: true,
+        detailContent: textBlocks,
+      });
+      expect(on.warnings.some((w) => w.message.includes('unreachable'))).toBe(false);
+    });
+
     it('accepts a titled announcement with intro content and a filled Read more page', () => {
       const r = announcement({
         title: 'v2.1',

@@ -664,6 +664,14 @@ function validateAnnouncement(
       'enableReadMore is on but detailContent is empty — the "Read more" button opens a blank page. Fill detailContent or set enableReadMore to false.',
     );
   }
+  // The inverse is a silent dead end: authored detail content that no user can
+  // ever reach (the runtime ships moreContent=null when the toggle is off).
+  if (!data?.enableReadMore && hasBlocks(data?.detailContent)) {
+    warn(
+      'detailContent',
+      'detailContent has content but enableReadMore is false — the detail page is unreachable (no "Read more" affordance renders). Set enableReadMore to true, or remove the unused detailContent.',
+    );
+  }
   errIfBrokenBlocks(data?.introContent, 'introContent', err);
   errIfBrokenBlocks(data?.detailContent, 'detailContent', err);
 }

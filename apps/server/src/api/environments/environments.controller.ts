@@ -87,8 +87,17 @@ export class ApiEnvironmentsController {
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Environment created', type: EnvironmentDto })
-  async create(@Param('projectId') projectId: string, @Body() body: CreateEnvironmentBodyDto) {
-    return this.service.create(projectId, body);
+  async create(
+    @Param('projectId') projectId: string,
+    @Body() body: CreateEnvironmentBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    // Pass the credential's scope so the response's `inTokenScope` tells the
+    // truth: a token with an environment ALLOWLIST cannot act on the
+    // environment it just created (the list doesn't grow automatically), and
+    // reporting `true` sent callers straight into E1029 walls (announcement
+    // A+B round).
+    return this.service.create(projectId, body, this.scope(req));
   }
 
   @Patch(':id')
@@ -105,7 +114,7 @@ export class ApiEnvironmentsController {
     @Req() req: { apiToken: AuthedApiToken },
   ) {
     await this.requireEnvironmentInScope(req, projectId, id);
-    return this.service.update(id, projectId, body);
+    return this.service.update(id, projectId, body, this.scope(req));
   }
 
   @Delete(':id')

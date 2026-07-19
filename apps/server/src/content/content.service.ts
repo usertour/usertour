@@ -746,6 +746,11 @@ export class ContentService {
             config: newConfig,
             data: processedData as Prisma.JsonValue,
             themeId: editedVersion.themeId,
+            // Announcement time carries into the copy like fork/restore —
+            // without it, duplicating a future-scheduled announcement and
+            // publishing made it live IMMEDIATELY (publish stamps an empty
+            // scheduledAt with `now`).
+            scheduledAt: editedVersion.scheduledAt,
             steps: { create: [...steps] },
           },
         });
@@ -822,6 +827,10 @@ export class ContentService {
             config: restoreVersion.config,
             data: restoreVersion.data,
             themeId: restoreVersion.themeId,
+            // Announcement time carries like fork does — restoring an old
+            // announcement then publishing must not re-stamp `now` and hoist
+            // it to the top of the feed.
+            scheduledAt: restoreVersion.scheduledAt,
             steps: { create: [...oldSteps] },
           } as any,
         });
