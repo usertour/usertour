@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { toArray } from '../shared/query';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 import { Environment } from '@/environments/models/environment.model';
+import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
@@ -17,7 +19,24 @@ import {
   SessionExpand,
 } from './content-sessions.schema';
 
-const SESSION_INCLUDE = { content: true, bizCompany: true, bizUser: true, version: true };
+// Load only the session's lifecycle events (completion + ending) alongside the
+// session — they're single-occurrence, so this is a bounded per-session join,
+// not the full event stream. The mapper reads `completed` / `endReason` from
+// them (never from state === 1, which conflates completion and dismissal).
+const SESSION_INCLUDE: Prisma.BizSessionInclude = {
+  content: true,
+  bizCompany: true,
+  bizUser: true,
+  version: true,
+  bizEvent: {
+    where: {
+      event: {
+        codeName: { in: [...GENUINE_COMPLETION_EVENTS, ...DISMISSED_EVENTS] as string[] },
+      },
+    },
+    include: { event: { select: { codeName: true } } },
+  },
+};
 
 /**
  * v2 content-sessions handler (environment-scoped). Depends on the domain

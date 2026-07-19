@@ -942,7 +942,10 @@ export function buildReadTools(): McpTool[] {
         completed: z
           .boolean()
           .optional()
-          .describe('Filter to completed (true) or open (false) sessions.'),
+          .describe(
+            'Filter by GENUINE completion (reached the goal), not "ended": a dismissed session ' +
+              'is false, and a completed-but-still-open checklist is true.',
+          ),
         expand: z
           .array(z.enum(['answers', 'content', 'company', 'user', 'version']))
           .optional()
