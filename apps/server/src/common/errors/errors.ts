@@ -265,6 +265,24 @@ export class EnvironmentNotInTokenScopeError extends OpenAPIError {
   }
 }
 
+/**
+ * Creating an environment with a token restricted to an environment allowlist
+ * would mint an environment OUTSIDE that allowlist — the token could neither use
+ * nor delete it (every follow-up op 403s E1029, an undeletable orphan). Refuse up
+ * front: environment creation needs a token scoped to ALL environments (no
+ * allowlist, and an owner with no environment ceiling). Rename/delete of an
+ * in-scope environment stay allowed for allowlist tokens.
+ */
+export class EnvironmentCreateRequiresFullScopeError extends OpenAPIError {
+  code = 'E1032';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'Cannot create an environment with a token restricted to an environment allowlist — the new environment would be outside the token scope and unusable. Use a token scoped to all environments.',
+    'zh-CN':
+      '使用限定了环境范围的 API 密钥无法创建环境——新建的环境会落在密钥范围之外、无法使用。请改用可访问全部环境的密钥。',
+  };
+}
+
 export class ThemeNotFoundError extends OpenAPIError {
   code = 'E1021';
   statusCode = HttpStatus.NOT_FOUND;

@@ -92,11 +92,10 @@ export class ApiEnvironmentsController {
     @Body() body: CreateEnvironmentBodyDto,
     @Req() req: { apiToken: AuthedApiToken },
   ) {
-    // Pass the credential's scope so the response's `inTokenScope` tells the
-    // truth: a token with an environment ALLOWLIST cannot act on the
-    // environment it just created (the list doesn't grow automatically), and
-    // reporting `true` sent callers straight into E1029 walls (announcement
-    // A+B round).
+    // The service refuses creation from an allowlist-scoped token (E1032): the new
+    // environment would fall outside the allowlist and be an undeletable orphan.
+    // Pass the scope so a full-scope token's created env still maps `inTokenScope`
+    // correctly (always true for it).
     return this.service.create(projectId, body, this.scope(req));
   }
 

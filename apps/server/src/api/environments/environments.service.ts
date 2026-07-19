@@ -4,6 +4,7 @@ import { Prisma, type Environment as PrismaEnvironment } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
 import {
+  EnvironmentCreateRequiresFullScopeError,
   EnvironmentLimitError,
   EnvironmentNotFoundError,
   LastEnvironmentCannotBeDeletedError,
@@ -102,6 +103,13 @@ export class ApiEnvironmentsService {
     body: CreateEnvironmentBody,
     allowedEnvironmentIds: string[] | null = null,
   ): Promise<Environment> {
+    // A token restricted to an environment allowlist cannot act on the environment
+    // it would create (the allowlist doesn't grow) — it'd be an undeletable orphan,
+    // every follow-up op 403ing E1029. Refuse up front; creation needs a token
+    // scoped to all environments. Rename/delete of an in-scope env stay allowed.
+    if (allowedEnvironmentIds !== null) {
+      throw new EnvironmentCreateRequiresFullScopeError();
+    }
     try {
       const env = await this.environments.create({ name: body.name, projectId });
       return mapEnvironment(env, allowedEnvironmentIds);

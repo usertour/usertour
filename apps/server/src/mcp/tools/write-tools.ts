@@ -787,10 +787,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create an environment',
       capability: Capability.EnvironmentManage,
       description:
-        'Create an environment in the project. The first one is made primary. NOTE: a credential ' +
-        'restricted to an environment allowlist can CREATE environments but cannot act on the new ' +
-        'one (publish / diagnose / delete all fail E1029) until the allowlist is widened in the ' +
-        "console — check the response's `inTokenScope` before planning work in it.",
+        'Create an environment in the project. The first one is made primary. NOTE: this needs a ' +
+        'credential scoped to ALL environments — a credential restricted to an environment ' +
+        'allowlist is refused (E1032), because the new environment would fall outside its ' +
+        'allowlist and be unusable (an undeletable orphan). Create environments in the console, ' +
+        'or with an unrestricted token.',
       inputSchema: { ...createEnvironmentBody.shape },
       handler: (args, ctx) =>
         ctx.services.environments.create(
