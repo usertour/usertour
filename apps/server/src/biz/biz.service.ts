@@ -8,7 +8,6 @@ import { SegmentNotFoundError } from '@/common/errors';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
-  createConditionsFilter,
 } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -1280,13 +1279,25 @@ export class BizService {
           const environment = await this.prisma.environment.findFirst({
             where: { id: environmentId },
           });
+          // A company segment may reference user / membership attributes
+          // (cross-entity), so load all three attribute types and compile with the
+          // cross-entity company filter — mirrors listBizUsers so the API/MCP
+          // "list companies by segment" evaluates the SAME rules the web builder
+          // authored (a company-attributes-only compile would silently mis-count).
           const attributes = await this.prisma.attribute.findMany({
             where: {
               projectId: environment?.projectId,
-              bizType: { in: [AttributeBizType.COMPANY] },
+              bizType: {
+                in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+              },
             },
           });
-          where = { ...where, ...createConditionsFilter(segment.data, attributes) };
+          const filter = createBizCompanyConditionsFilter(segment.data, attributes);
+          if (filter) {
+            // Nested under AND so the filter's own bizUsersOnCompany / OR keys
+            // cannot collide with the base where.
+            where = { ...where, AND: [filter] };
+          }
         }
       }
     }

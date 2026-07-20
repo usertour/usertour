@@ -1,5 +1,7 @@
 import { INestApplication } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { BizAttributeTypes, Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
@@ -142,6 +144,63 @@ describe('API v2 /companies parity with v1 (e2e)', () => {
     const res = await api('get', v2path(`?segmentId=${foreign.id}`), v2Token);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1025');
+  });
+
+  it('lists companies by a CROSS-ENTITY company segment (rule on a user attribute)', async () => {
+    // A company segment whose rule references a USER attribute — the web builder
+    // allows this (cross-entity segments), so listing companies by that segment
+    // must evaluate the member's attribute, not compile company-attributes-only and
+    // silently return the wrong set.
+    const tierAttr = await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      bizType: AttributeBizType.USER,
+      dataType: BizAttributeTypes.String,
+      codeName: 'tier',
+    });
+    const companyWithVip = await buildBizCompany(prisma, {
+      environmentId: fx.environmentId,
+      externalId: 'co-xentity-vip',
+    });
+    const companyNoVip = await buildBizCompany(prisma, {
+      environmentId: fx.environmentId,
+      externalId: 'co-xentity-basic',
+    });
+    const vipUser = await buildBizUser(prisma, {
+      environmentId: fx.environmentId,
+      externalId: 'bu-xentity-vip',
+      data: { tier: 'vip' },
+    });
+    const basicUser = await buildBizUser(prisma, {
+      environmentId: fx.environmentId,
+      externalId: 'bu-xentity-basic',
+      data: { tier: 'basic' },
+    });
+    await buildBizUserOnCompany(prisma, { bizUserId: vipUser.id, bizCompanyId: companyWithVip.id });
+    await buildBizUserOnCompany(prisma, {
+      bizUserId: basicUser.id,
+      bizCompanyId: companyNoVip.id,
+    });
+
+    const segment = await buildSegment(prisma, {
+      projectId: fx.projectId,
+      environmentId: fx.environmentId,
+      bizType: SegmentBizType.COMPANY,
+      dataType: SegmentDataType.CONDITION,
+      data: [
+        {
+          type: 'user-attr',
+          operators: 'and',
+          data: { attrId: tierAttr.id, logic: 'is', value: 'vip' },
+        },
+      ] as unknown as Prisma.InputJsonValue,
+    });
+
+    const res = await api('get', v2path(`?segmentId=${segment.id}`), v2Token);
+    expect(res.status).toBe(200);
+    const ids = res.body.results.map((c: { id: string }) => c.id);
+    // Only the company whose MEMBER matches the cross-entity rule comes back.
+    expect(ids).toContain('co-xentity-vip');
+    expect(ids).not.toContain('co-xentity-basic');
   });
 
   it('rejects insufficient scope (403 E1012)', async () => {
