@@ -39,6 +39,15 @@ interface ConditionsProps {
   // so the verb reads as "Add filter" — gating contexts (autostart, button
   // disable, RC block display) keep the default condition phrasing.
   addLabelKey?: string;
+
+  // Open the top-level add-condition menu immediately on mount, and report
+  // when it closes (`selected` = a type was picked). For hosts whose "Add
+  // filter" entry point reveals this component: auto-opening collapses their
+  // two-click flow into one, and a close-without-selection lets them undo
+  // the reveal instead of stranding an empty bar. Nested group lists are
+  // unaffected.
+  autoOpenAddMenu?: boolean;
+  onAddMenuClose?: (selected: boolean) => void;
 }
 
 const defaultTranslator: ConditionsTranslator = (key) => key;
@@ -67,6 +76,8 @@ export function Conditions({
   baseZIndex,
   t,
   addLabelKey = 'conditions.actions.addCondition',
+  autoOpenAddMenu,
+  onAddMenuClose,
 }: ConditionsProps) {
   const translator = t ?? defaultTranslator;
   const value = useMemo(
@@ -108,7 +119,12 @@ export function Conditions({
 
   return (
     <ConditionsProvider value={value}>
-      <ConditionList conditions={conditions} onChange={onChange} />
+      <ConditionList
+        conditions={conditions}
+        onChange={onChange}
+        autoOpenAddMenu={autoOpenAddMenu}
+        onAddMenuClose={onAddMenuClose}
+      />
     </ConditionsProvider>
   );
 }

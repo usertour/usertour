@@ -140,7 +140,15 @@ export const USER_CONFIG: EntityConfig<BizUser> = {
   useAddToManualSegment: useAddUsersAdapter,
   useSaveFilter: useSaveSegmentFilter,
   attributeBizType: AttributeBizTypes.User,
-  conditionAttributeFilter: (attr) => attr.bizType === AttributeBizTypes.User,
+  // Toolbar/segment conditions accept User, Company and Membership
+  // attributes — company/membership conditions filter users through their
+  // company memberships (any associated company offline, the session's
+  // current company at runtime). The table itself only renders User columns
+  // (see attributeBizType).
+  conditionAttributeFilter: (attr) =>
+    attr.bizType === AttributeBizTypes.User ||
+    attr.bizType === AttributeBizTypes.Company ||
+    attr.bizType === AttributeBizTypes.Membership,
   segmentBizType: ['USER'],
   routeParamKey: 'userId',
   navToDetail: (envId, id) => `/env/${envId}/user/${id}`,
@@ -172,10 +180,14 @@ export const COMPANY_CONFIG: EntityConfig<BizCompany> = {
   useAddToManualSegment: useAddCompaniesAdapter,
   useSaveFilter: useSaveCompanySegmentFilter,
   attributeBizType: AttributeBizTypes.Company,
-  // Toolbar conditions accept Company AND Membership attributes — the
-  // table itself only renders Company columns (see attributeBizType).
+  // Toolbar/segment conditions accept Company, Membership and User
+  // attributes — user/membership conditions filter companies through their
+  // memberships (one member satisfying the whole tree). The table itself
+  // only renders Company columns (see attributeBizType).
   conditionAttributeFilter: (attr) =>
-    attr.bizType === AttributeBizTypes.Company || attr.bizType === AttributeBizTypes.Membership,
+    attr.bizType === AttributeBizTypes.Company ||
+    attr.bizType === AttributeBizTypes.Membership ||
+    attr.bizType === AttributeBizTypes.User,
   segmentBizType: ['COMPANY'],
   groupIcon: <Group2LineIcon width={16} height={16} className="mr-1" />,
   routeParamKey: 'companyId',

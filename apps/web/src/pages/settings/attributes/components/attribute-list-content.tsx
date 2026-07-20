@@ -5,6 +5,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { Attribute, AttributeBizTypes } from '@usertour/types';
 import { Badge, ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
+import { AttributeDataTypeIcon } from '@usertour/business-components';
 import { RiShieldCheckFill } from '@usertour/icons';
 import { AttributeRowActions } from './attribute-row-actions';
 
@@ -81,7 +82,15 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
       className: 'hidden sm:table-cell',
       cell: (attribute) => {
         const key = DATA_TYPE_I18N_KEY[attribute.dataType];
-        return key ? t(key) : '';
+        return (
+          <span className="flex items-center gap-1.5">
+            <AttributeDataTypeIcon
+              dataType={attribute.dataType}
+              className="h-4 w-4 shrink-0 text-muted-foreground"
+            />
+            {key ? t(key) : ''}
+          </span>
+        );
       },
     },
     {
