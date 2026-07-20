@@ -233,7 +233,9 @@ export class EventTrackingService {
    * Track a tracker event.
    * Tracker does not use BizSession — creates BizEvent directly with contentId/versionId.
    * Resolves target event from version.data.eventId (user-selected event, not a fixed event).
-   * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a configurable window.
+   * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a fixed
+   * 3-second window (DEDUP_WINDOW_MS below — not configurable). Best-effort (findFirst-then-create,
+   * no DB unique constraint), so truly simultaneous fires can still both land.
    */
   async trackTrackerEvent(params: {
     environment: Environment;
@@ -431,7 +433,18 @@ export class EventTrackingService {
           }),
         ]);
 
-        if (!bizUser || !content || !version || !event) {
+        if (!event) {
+          // The project is missing the event DEFINITION (seed/backfill gap, not a
+          // client error) — the announcement rollout shipped without a backfill
+          // and every existing project silently dropped ALL its seen events
+          // (announcement A+B round). Losing analytics silently is the worst
+          // outcome; make the gap observable.
+          this.logger.warn(
+            `Dropping ${eventCodeName} for project ${environment.projectId}: no event definition (run the project-defaults backfill to seed missing events/attributes).`,
+          );
+          return false;
+        }
+        if (!bizUser || !content || !version) {
           return false;
         }
 

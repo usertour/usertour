@@ -5,6 +5,7 @@ import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
 import {
+  buildAttribute,
   buildBizCompany,
   buildBizUser,
   buildEnvironment,
@@ -194,6 +195,29 @@ describe('API v2 segments (e2e)', () => {
     });
     expect(upd.status).toBe(400);
     expect(upd.body.error.code).toBe('E1017');
+
+    // The narrowed schema (attribute + group ONLY) must still accept the full
+    // legitimate shape: attribute leaves nested in groups. The attribute must
+    // EXIST — semantic validation rejects dangling references.
+    await buildAttribute(prisma, { projectId, bizType: 1, dataType: 1, codeName: 'plan' });
+    const attrSeg = await send('post', segPath(), token).send({
+      name: 'Pro or trial seg',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [
+        {
+          type: 'group',
+          match: 'any',
+          conditions: [
+            { type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' },
+            { type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'trial' },
+          ],
+        },
+      ],
+    });
+    expect(attrSeg.status).toBe(201);
+    const read = await api('get', `${segPath()}/${attrSeg.body.id}`, token);
+    expect(read.body.conditions?.[0]).toMatchObject({ type: 'group', match: 'any' });
   });
 
   it('deletes a segment (204), then 404', async () => {

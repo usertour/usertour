@@ -73,8 +73,17 @@ export const representationPlacement = z
           .enum(['start', 'center', 'end'])
           .optional()
           .describe('Alignment along the side. See `side`.'),
-        sideOffset: z.number().optional(),
-        alignOffset: z.number().optional(),
+        sideOffset: z
+          .number()
+          .optional()
+          .describe('Pixels between the target and the tooltip, along `side`.'),
+        alignOffset: z
+          .number()
+          .optional()
+          .describe(
+            'Pixel shift along the alignment axis. Only applies when `align` is `start` or `end` — ' +
+              'at `center` alignment the runtime ignores it silently.',
+          ),
         // Position mode. `auto` = pick a spot + flip to avoid the viewport edge
         // (ignores side/align). `fixed` = pin to side/align, no flipping. Compile
         // derives it: omitted here but side/align given → `fixed` (honor the
@@ -113,8 +122,14 @@ export const representationPlacement = z
           'centerBottom',
           'rightBottom',
         ]),
-        offsetX: z.number().optional(),
-        offsetY: z.number().optional(),
+        offsetX: z
+          .number()
+          .optional()
+          .describe(
+            'Pixel shift from the grid cell. Applies in every cell EXCEPT `position: "center"`, ' +
+              'where both offsets are ignored silently.',
+          ),
+        offsetY: z.number().optional().describe('See `offsetX`.'),
         backdrop: z.boolean().optional(),
         blockTarget: z.boolean().optional(),
       })
@@ -275,12 +290,17 @@ const attributeConditionFields = {
         'Number: is | not | lt | lte | gt | gte | between | any | empty. ' +
         'Boolean: true | false | any | empty. ' +
         'List: includes_any | includes_all | not_includes_any | not_includes_all | any | empty. ' +
-        'DateTime: less_than | exactly | more_than (relative "days ago" — `value` is a number ' +
-        'of days; e.g. attribute `first_seen_at` with op `less_than`, value `7` = "first seen ' +
-        'in the last 7 days", the canonical new-user filter) | before | on | after (`value` ' +
-        'is an absolute date) | any | empty. The relative ops (less_than / more_than / exactly) ' +
-        'are DAY-granularity only — `value` is a whole number of days and there is no unit field; ' +
-        'for hour/minute windows use an `event` condition with a `within` (which has a `unit`).',
+        'DateTime: less_than | exactly | more_than (relative — `value` is a number of days; e.g. ' +
+        'attribute `first_seen_at` with op `less_than`, value `7` = "first seen in the last 7 ' +
+        'days", the canonical new-user filter) | before | on | after (`value` is an absolute ' +
+        'date) | any | empty. The relative ops are ONE-SIDED bounds around (now − N days): ' +
+        '`less_than N` = the date is AFTER now−N — so it also matches every FUTURE date, and on ' +
+        'a future-dated attribute (a trial end, a renewal date) it is NOT "within the last N ' +
+        'days"; `more_than N` = the date is BEFORE now−N. Negative N shifts the bound into the ' +
+        'future: the rolling "within the NEXT 7 days" window is `less_than` value "0" AND ' +
+        '`more_than` value "-7" (two conditions, both required). The relative ops are ' +
+        'DAY-granularity only — no unit field; for hour/minute windows use an `event` condition ' +
+        'with a `within` (which has a `unit`).',
     ),
   value: z
     .string()
@@ -298,6 +318,17 @@ const attributeConditionFields = {
     .describe('Values for the List operators (includes_any / includes_all / …).'),
 };
 
+/**
+ * The bare `attribute` condition, exported standalone for surfaces that accept
+ * ONLY attribute conditions — segment membership (segments.schema): a segment is
+ * an attribute query, so advertising the full condition vocabulary there taught
+ * agents to write event conditions the service must reject.
+ */
+export const attributeCondition = z.object({
+  type: z.literal('attribute'),
+  ...attributeConditionFields,
+});
+
 export const representationCondition = z.lazy(() =>
   z.discriminatedUnion('type', [
     z.object({
@@ -306,7 +337,7 @@ export const representationCondition = z.lazy(() =>
       conditions: z.array(representationCondition),
     }),
     // attribute condition (user / company / companyMembership — see `scope`).
-    z.object({ type: z.literal('attribute'), ...attributeConditionFields }),
+    attributeCondition,
     z.object({ type: z.literal('segment'), segment: z.string(), in: z.boolean() }),
     z.object({
       type: z.literal('current_url'),
@@ -330,7 +361,13 @@ export const representationCondition = z.lazy(() =>
     z.object({
       type: z.literal('element'),
       target: representationTarget.optional(),
-      state: z.enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked']),
+      state: z
+        .enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked'])
+        .describe(
+          '`present` means VISIBLE IN THE VIEWPORT, not merely in the DOM — an element that is ' +
+            'scrolled off-screen, clipped, or covered never satisfies it (and `hidden` is its ' +
+            'negation). Appearances shorter than about a second can be missed entirely.',
+        ),
     }),
     z.object({
       type: z.literal('content_state'),
@@ -344,8 +381,10 @@ export const representationCondition = z.lazy(() =>
       state: z
         .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
         .describe(
-          "The referenced flow/checklist's state for THIS user. seen = started at least once (TRUE from the " +
-            'moment it opens); unseen = never started; active = currently open/running; inactive = ' +
+          "The referenced flow/checklist's state for THIS user. seen = started at least once (for a " +
+            'flow, TRUE from the moment it opens; for a checklist, TRUE only once the user EXPANDS ' +
+            'the panel — a `initialDisplay: "button"` checklist whose launcher is never clicked ' +
+            'stays unseen forever); unseen = never started; active = currently open/running; inactive = ' +
             'NOT currently running (covers both never-started and ran-then-closed); completed = ' +
             'reached a goal/completion step; uncompleted = not completed. To gate piece B until flow ' +
             'A has run AND closed (the usual "show next thing after the welcome flow" sequencing), ' +
@@ -414,8 +453,22 @@ export const representationCondition = z.lazy(() =>
     z.object({ type: z.literal('text_filled'), target: representationTarget.optional() }),
     z.object({
       type: z.literal('time_window'),
-      start: z.string().optional(),
-      end: z.string().optional(),
+      // Both optional at the TYPE level (read-backs can carry legacy end-only
+      // data), but a WRITE without `start` is rejected by validation: the
+      // runtime treats a start-less window as never matching, so persisting one
+      // would ship a dead condition.
+      start: z
+        .string()
+        .optional()
+        .describe(
+          'Window start (ISO datetime). REQUIRED on write — the runtime never matches a window ' +
+            'without a start, so validation rejects end-only windows. For "until X" semantics, ' +
+            'set start to any past instant and end to X.',
+        ),
+      end: z
+        .string()
+        .optional()
+        .describe('Window end (ISO datetime). Omit for an open-ended "from start onwards" window.'),
     }),
     z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
   ]),
@@ -476,9 +529,22 @@ export const representationAction = z.discriminatedUnion('type', [
     newWindow: z.boolean().optional(),
   }),
   z.object({ type: z.literal('dismiss') }),
-  // read-only; the write validator rejects this type (no AI/API-injected JS)
-  z.object({ type: z.literal('run_javascript'), script: z.string() }),
-  z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
+  // Echo-only pair: read-backs expose non-representable stored actions as these;
+  // compile preserves the stored action when the echo matches the version being
+  // edited (echoActions pool), and rejects fresh authoring (no AI/API-injected JS).
+  z
+    .object({ type: z.literal('run_javascript'), script: z.string() })
+    .describe(
+      'Read-back of a builder-authored script action. Echo it back UNCHANGED (same script) when ' +
+        'rewriting the surrounding list and the stored action is preserved; omitting it deletes it ' +
+        '(action lists are full replacements). Authoring a new or edited script is rejected.',
+    ),
+  z
+    .object({ type: z.literal('unsupported'), note: z.string().optional() })
+    .describe(
+      'Echo-only placeholder for a stored action this schema cannot express (`note` = internal ' +
+        'type). Echo it back to preserve the stored action; writing one fresh is rejected.',
+    ),
 ]);
 export type RepresentationAction = z.infer<typeof representationAction>;
 
@@ -511,7 +577,8 @@ export const representationTrigger = z.preprocess(
       .optional()
       .describe(
         'Delay in SECONDS between the `when` conditions matching and the `do` actions firing. ' +
-          'The conditions must keep matching for the entire wait, or the actions do not fire. ' +
+          'The timer arms the first time `when` matches and the actions fire after the wait ' +
+          'EVEN IF the conditions have since stopped matching (the match is latched, not re-checked). ' +
           'Capped at 300 seconds by the runtime (a larger value is clamped).',
       ),
   }),
@@ -850,7 +917,18 @@ const durationUnit = z.enum(['seconds', 'minutes', 'hours', 'days']);
 export const representationStartRules = z.preprocess(
   rejectLegacyWaitMs,
   z.object({
-    when: z.array(representationCondition),
+    // Optional on WRITE: omit `when` to keep the stored conditions and patch only
+    // the settings (frequency / priority / …) — the same partial-patch contract the
+    // settings already follow. When present it is a FULL replacement of the
+    // condition set. (Requiring it forced authors to re-send conditions just to
+    // change a frequency — a real acceptance-eval failure.)
+    when: z
+      .array(representationCondition)
+      .optional()
+      .describe(
+        'Start conditions (full replacement when present). Omit to keep the existing ' +
+          'conditions and change only the settings.',
+      ),
     frequency: z
       .object({
         mode: z
@@ -871,21 +949,30 @@ export const representationStartRules = z.preprocess(
             'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
           ),
       })
-      .optional(),
+      .optional()
+      .describe(
+        'How often the content may auto-start. OMITTED entirely, the runtime behaves as `once` ' +
+          '(show a single time, ever) — the default is applied at evaluation time and does NOT ' +
+          'appear on read-backs, so set it explicitly if you want anything else.',
+      ),
     priority: z
       .enum(['highest', 'high', 'medium', 'low', 'lowest'])
       .optional()
       .describe(
         'Tie-breaker when a user matches the start conditions for more than one piece of content at ' +
-          'the same time — the higher priority starts first.',
+          'the same time — the higher priority starts first. Content with no priority set ranks as ' +
+          '`medium`.',
       ),
     waitSeconds: z
       .number()
       .optional()
       .describe(
-        'Delay in SECONDS between the conditions matching and the start firing. The conditions ' +
-          'must keep matching for the entire wait, or it will not start. Capped at 300 seconds ' +
-          'by the runtime (a larger value is clamped).',
+        'Delay in SECONDS between the conditions first matching and the content becoming ' +
+          'ELIGIBLE to start. The timer latches on first match (leaving the matching state ' +
+          'mid-wait does NOT cancel it — same as a step trigger wait), but unlike a trigger the ' +
+          'start conditions are re-checked at show time: after the wait elapses the content ' +
+          'appears at the next moment the conditions match again. Capped at 300 seconds by the ' +
+          'runtime (a larger value is clamped).',
       ),
     startIfNotComplete: z
       .boolean()
@@ -897,7 +984,14 @@ export const representationStartRules = z.preprocess(
 );
 export type RepresentationStartRules = z.infer<typeof representationStartRules>;
 
-export const representationHideRules = z.object({ when: z.array(representationCondition) });
+export const representationHideRules = z
+  .object({ when: z.array(representationCondition) })
+  .describe(
+    'While `when` matches, on-screen content of this version is hidden — the session is ' +
+      'SUSPENDED, not ended: when the conditions stop matching the same session reappears at ' +
+      'the same step. Use start-rule conditions to keep content from starting; use hide rules ' +
+      'to blank it in specific places (e.g. a settings page).',
+  );
 export type RepresentationHideRules = z.infer<typeof representationHideRules>;
 
 // ── Write input ──────────────────────────────────────────────────────────────

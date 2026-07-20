@@ -134,7 +134,7 @@ export class ApiEventDefinitionsService {
   private async requireWritable(id: string, projectId: string) {
     const event = await this.requireExisting(id, projectId);
     if (event.predefined) {
-      throw new ValidationError('Cannot modify a predefined event definition.');
+      throw new ValidationError('Cannot modify or delete a predefined event definition.');
     }
     return event;
   }

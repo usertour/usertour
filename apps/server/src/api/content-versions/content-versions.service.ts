@@ -409,7 +409,7 @@ export class ApiContentVersionsService {
           throw new ValidationError(`Duplicate step key "${key}" in this request.`);
         }
         if (knownCvids.has(key)) {
-          throw new ValidationError(`Step key "${key}" must not equal an existing step id.`);
+          throw new ValidationError(`Step key "${key}" must not equal an existing step cvid.`);
         }
         keyToCvid.set(key, p.cvid);
       }
@@ -440,15 +440,25 @@ export class ApiContentVersionsService {
 
     if (body.startRules !== undefined || body.hideRules !== undefined) {
       const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
-      if (body.startRules !== undefined) {
-        const compiled = compileStartRules(body.startRules ?? undefined, resolvers) as {
+      if (body.startRules === null) {
+        // A null CLEAR wipes the WHOLE start config — conditions AND settings.
+        // Leaving autoStartRulesSetting behind looked cleared on read (the read
+        // keys off enabled/rules) but the stale wait/startIfNotComplete/priority
+        // resurrected on the next startRules write after a fork — a real
+        // acceptance-eval defect (flow round, F3).
+        Object.assign(config, { enabledAutoStartRules: false, autoStartRules: [] });
+        // `undefined` drops the key when the JSON column serializes — no residue.
+        (config as { autoStartRulesSetting?: unknown }).autoStartRulesSetting = undefined;
+      } else if (body.startRules !== undefined) {
+        const compiled = compileStartRules(body.startRules, resolvers) as {
           autoStartRulesSetting?: Record<string, unknown>;
         } & Record<string, unknown>;
         // The start-rule SETTING (frequency / priority / wait / startIfNotComplete) is a
         // PARTIAL patch: compileStartRules emits only the fields the caller supplied, so
         // merge them onto the existing setting rather than replacing it wholesale —
         // otherwise sending `frequency` alone would silently drop a stored `priority`.
-        // (The `when` conditions ARE a full replace — the caller sends the entire set.)
+        // `when` is a full replace WHEN PRESENT; omitted, compileStartRules emits no
+        // condition keys and the stored conditions survive (settings-only patch).
         const existingSetting =
           (config as { autoStartRulesSetting?: Record<string, unknown> }).autoStartRulesSetting ??
           {};

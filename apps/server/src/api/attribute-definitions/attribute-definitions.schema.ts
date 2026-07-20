@@ -77,6 +77,13 @@ export class CreateAttributeBodyDto extends createZodDto(createAttributeBody) {}
 export const updateAttributeBody = z.object({
   displayName: z.string().min(1).optional().describe('Human-readable name.'),
   description: z.string().optional().describe('Optional description.'),
+  dataType: createDataType
+    .optional()
+    .describe(
+      "Change the attribute's value type. Allowed only while NO stored value would conflict with " +
+        'the new type (else rejected — clear the conflicting values, or delete + recreate). Fixes ' +
+        'a wrong type inferred from a first mistyped upsert. `scope` and `codeName` stay immutable.',
+    ),
 });
 export class UpdateAttributeBodyDto extends createZodDto(updateAttributeBody) {}
 

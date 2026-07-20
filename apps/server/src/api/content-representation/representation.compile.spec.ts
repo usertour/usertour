@@ -914,3 +914,84 @@ describe('question blocks are flow-only', () => {
     expect(msg).toMatch(/only supported in flows/i);
   });
 });
+
+describe('unsupported blocks are echo-only', () => {
+  it('rejects AUTHORING a fresh unsupported block (no existing element)', () => {
+    // The old fallback silently compiled it into an empty text block —
+    // renderable-but-blank content with the note discarded (acceptance-eval F1).
+    let msg = '';
+    try {
+      compileContent([{ type: 'unsupported', note: 'invented' } as never], undefined, ids);
+    } catch (e) {
+      msg = String((e as { getMessage?: (l: string) => string }).getMessage?.('en') ?? e);
+    }
+    expect(msg).toMatch(/echo-only/);
+  });
+
+  it('echoing an unsupported block back with its id preserves the element verbatim', () => {
+    const existingData = [
+      {
+        children: [
+          {
+            children: [
+              {
+                id: 'blk-1',
+                element: { type: 'exotic-future-kind', data: { keep: 42 } },
+                children: null,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const out: any = compileContent(
+      [{ type: 'unsupported', id: 'blk-1' } as never],
+      existingData,
+      ids,
+    );
+    const el = out[0].children[0].children[0];
+    expect(el.element).toEqual({ type: 'exotic-future-kind', data: { keep: 42 } });
+    expect(el.id).toBe('blk-1');
+  });
+});
+
+describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
+  it('a scale question default survives compile → decompile', () => {
+    const compiled = compileStep(
+      {
+        name: 'Q',
+        type: 'modal',
+        sequence: 0,
+        cvid: 'c-scale',
+        content: [
+          {
+            type: 'question',
+            question: {
+              kind: 'rating',
+              name: 'satisfaction',
+              style: 'scale',
+              range: { low: 0, high: 10 },
+              default: 5,
+            },
+          },
+        ],
+      } as never,
+      undefined,
+      ids,
+    );
+    const back = decompileStep({
+      id: 's-scale',
+      cvid: compiled.cvid,
+      name: 'Q',
+      type: 'modal',
+      sequence: 0,
+      data: compiled.data,
+      setting: compiled.setting,
+    });
+    const q = (
+      back.content as { type: string; question?: { default?: number; style?: string } }[]
+    ).find((b) => b.type === 'question')?.question;
+    expect(q?.style).toBe('scale');
+    expect(q?.default).toBe(5);
+  });
+});

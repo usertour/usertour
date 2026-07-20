@@ -1259,4 +1259,49 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(res.body.error.code).toBe('E1012');
     });
   });
+
+  describe('startRules lifecycle: settings-only patch + null clear wipes settings', () => {
+    it('patches settings without when, and a null clear leaves nothing to resurrect', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+      const c = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const v = await buildVersion(prisma, { contentId: c.id, sequence: 0 });
+      const path = `/v2/projects/${projectId}/content/${c.id}/versions/${v.id}`;
+      const when = [{ type: 'current_url', includes: ['/app/*'] }];
+
+      // Full write: conditions + three settings.
+      await api('patch', path, token)
+        .send({ startRules: { when, priority: 'high', waitSeconds: 5, startIfNotComplete: true } })
+        .expect(200);
+
+      // Settings-only patch (NO when): conditions and untouched settings survive.
+      await api('patch', path, token)
+        .send({ startRules: { frequency: { mode: 'once' } } })
+        .expect(200);
+      const afterPatch = await api('get', path, token);
+      expect(afterPatch.body.startRules).toMatchObject({
+        when: [{ type: 'current_url', includes: ['/app/*'] }],
+        frequency: { mode: 'once' },
+        priority: 'high',
+        waitSeconds: 5,
+        startIfNotComplete: true,
+      });
+
+      // Null clear: read-back shows nothing…
+      await api('patch', path, token).send({ startRules: null }).expect(200);
+      const cleared = await api('get', path, token);
+      expect(cleared.body.startRules).toBeUndefined();
+
+      // …and a later write does NOT resurrect the old wait/startIfNotComplete
+      // (the pre-fix defect: the cleared setting lingered in config and came
+      // back on the next startRules write).
+      await api('patch', path, token)
+        .send({ startRules: { when, priority: 'low' } })
+        .expect(200);
+      const rewritten = await api('get', path, token);
+      expect(rewritten.body.startRules).toMatchObject({ priority: 'low' });
+      expect(rewritten.body.startRules.waitSeconds).toBeUndefined();
+      expect(rewritten.body.startRules.startIfNotComplete).toBeUndefined();
+      expect(rewritten.body.startRules.frequency).toBeUndefined();
+    });
+  });
 });

@@ -34,6 +34,7 @@ import {
   QuestionAnalyticsResponseDto,
   ResourceCenterAnalyticsDto,
   TrackerAnalyticsDto,
+  AnnouncementAnalyticsDto,
 } from './analytics.schema';
 import { ApiAnalyticsService } from './analytics.service';
 
@@ -77,6 +78,7 @@ export class ApiAnalyticsController {
     BannerAnalyticsDto,
     ResourceCenterAnalyticsDto,
     TrackerAnalyticsDto,
+    AnnouncementAnalyticsDto,
   )
   @ApiResponse({
     status: 200,
@@ -89,6 +91,7 @@ export class ApiAnalyticsController {
         { $ref: getSchemaPath(BannerAnalyticsDto) },
         { $ref: getSchemaPath(ResourceCenterAnalyticsDto) },
         { $ref: getSchemaPath(TrackerAnalyticsDto) },
+        { $ref: getSchemaPath(AnnouncementAnalyticsDto) },
       ],
       discriminator: { propertyName: 'contentType' },
     },

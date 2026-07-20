@@ -5,7 +5,10 @@ import {
 } from '@/attributes/models/attribute.model';
 import { createdAtWhere } from '@/common/filters';
 import { SegmentNotFoundError } from '@/common/errors';
-import { createConditionsFilter } from '@/common/attribute/filter';
+import {
+  createBizCompanyConditionsFilter,
+  createBizUserConditionsFilter,
+} from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -562,12 +565,17 @@ export class BizService {
       const attributes = await this.prisma.attribute.findMany({
         where: {
           projectId,
-          bizType: AttributeBizType.USER,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
         },
       });
-      const filter = createConditionsFilter(conditions, attributes);
-      // const conditions = { ...c };
-      const where: Record<string, any> = filter ? filter : {};
+      const filter = createBizUserConditionsFilter(conditions, attributes);
+      // The compiled filter and the search conditions can each carry top-level
+      // OR / bizUsersOnCompany keys, so they are combined as AND members
+      // instead of being spread into one object where the keys would collide.
+      const andFilters: Record<string, any>[] = filter ? [filter] : [];
+      const where: Record<string, any> = {};
       if (segment && segment.dataType === SegmentDataType.MANUAL) {
         where.bizUsersOnSegment = {
           some: {
@@ -582,7 +590,9 @@ export class BizService {
       }
       if (search) {
         // Support searching across multiple fields
-        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.USER);
+        andFilters.push({
+          OR: this.createSearchConditions(search, attributes, AttributeBizType.USER),
+        });
       }
       if (companyId) {
         where.bizUsersOnCompany = {
@@ -590,6 +600,9 @@ export class BizService {
             bizCompanyId: companyId,
           },
         };
+      }
+      if (andFilters.length > 0) {
+        where.AND = andFilters;
       }
       const resp = await findManyCursorConnection(
         (args) =>
@@ -650,12 +663,17 @@ export class BizService {
       const attributes = await this.prisma.attribute.findMany({
         where: {
           projectId: environmenet.projectId,
-          bizType: AttributeBizType.COMPANY,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
         },
       });
-      const filter = createConditionsFilter(conditions, attributes);
-      // const conditions = { ...c };
-      const where: Record<string, any> = filter ? filter : {};
+      const filter = createBizCompanyConditionsFilter(conditions, attributes);
+      // The compiled filter and the search conditions can each carry top-level
+      // OR / bizUsersOnCompany keys, so they are combined as AND members
+      // instead of being spread into one object where the keys would collide.
+      const andFilters: Record<string, any>[] = filter ? [filter] : [];
+      const where: Record<string, any> = {};
       if (segment && segment.dataType === SegmentDataType.MANUAL) {
         where.bizCompaniesOnSegment = {
           some: {
@@ -670,7 +688,12 @@ export class BizService {
       }
       if (search) {
         // Support searching across multiple fields for companies
-        where.OR = this.createSearchConditions(search, attributes, AttributeBizType.COMPANY);
+        andFilters.push({
+          OR: this.createSearchConditions(search, attributes, AttributeBizType.COMPANY),
+        });
+      }
+      if (andFilters.length > 0) {
+        where.AND = andFilters;
       }
       const resp = await findManyCursorConnection(
         (args) =>
@@ -1096,6 +1119,65 @@ export class BizService {
     return { ok: true, value };
   }
 
+  // A retype is safe only if every stored value already validates as the new
+  // type — bounded to avoid an unbounded scan on a large project.
+  private static readonly RETYPE_SCAN_CAP = 10000;
+
+  /**
+   * Guard an attribute `dataType` change: throw unless every stored value in the
+   * attribute's scope (across the project) already fits the new type. Lets a
+   * wrong type — e.g. inferred from a first mistyped upsert — be corrected while
+   * it is still safe, without silently invalidating existing data.
+   */
+  async assertStoredValuesFitDataType(
+    projectId: string,
+    bizType: AttributeBizType,
+    codeName: string,
+    newDataType: number,
+  ): Promise<void> {
+    const cap = BizService.RETYPE_SCAN_CAP;
+    // Only NON-NULL stored values matter (a null is not a value); AnyNull excludes
+    // both JSON-null and absent keys.
+    const where = { data: { path: [codeName], not: Prisma.AnyNull } };
+    let rows: { data: Prisma.JsonValue | null }[];
+    if (bizType === AttributeBizType.USER) {
+      rows = await this.prisma.bizUser.findMany({
+        where: { environment: { projectId }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else if (bizType === AttributeBizType.COMPANY) {
+      rows = await this.prisma.bizCompany.findMany({
+        where: { environment: { projectId }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else if (bizType === AttributeBizType.MEMBERSHIP) {
+      rows = await this.prisma.bizUserOnCompany.findMany({
+        where: { bizCompany: { environment: { projectId } }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else {
+      return; // event-scoped attributes have no stored end-user values
+    }
+    if (rows.length > cap) {
+      throw new ValidationError(
+        `"${codeName}" has too many stored values to safely re-type. Clear its values, or delete and recreate the attribute with the intended type.`,
+      );
+    }
+    const fakeAttr = { codeName, dataType: newDataType } as Attribute;
+    const conflicts = rows.filter(
+      (r) => !this.validateAttrValue(fakeAttr, (r.data as Record<string, unknown>)?.[codeName]).ok,
+    ).length;
+    if (conflicts > 0) {
+      const expected = BizAttributeTypes[newDataType] ?? String(newDataType);
+      throw new ValidationError(
+        `Cannot change the type of "${codeName}" to ${expected}: ${conflicts} stored value(s) do not fit. Fix or clear those values, or delete and recreate the attribute.`,
+      );
+    }
+  }
+
   private async linkAttributesToEvent(
     tx: Prisma.TransactionClient,
     eventId: string,
@@ -1283,13 +1365,25 @@ export class BizService {
           const environment = await this.prisma.environment.findFirst({
             where: { id: environmentId },
           });
+          // A company segment may reference user / membership attributes
+          // (cross-entity), so load all three attribute types and compile with the
+          // cross-entity company filter — mirrors listBizUsers so the API/MCP
+          // "list companies by segment" evaluates the SAME rules the web builder
+          // authored (a company-attributes-only compile would silently mis-count).
           const attributes = await this.prisma.attribute.findMany({
             where: {
               projectId: environment?.projectId,
-              bizType: { in: [AttributeBizType.COMPANY] },
+              bizType: {
+                in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+              },
             },
           });
-          where = { ...where, ...createConditionsFilter(segment.data, attributes) };
+          const filter = createBizCompanyConditionsFilter(segment.data, attributes);
+          if (filter) {
+            // Nested under AND so the filter's own bizUsersOnCompany / OR keys
+            // cannot collide with the base where.
+            where = { ...where, AND: [filter] };
+          }
         }
       }
     }
@@ -1392,7 +1486,7 @@ export class BizService {
         where: {
           projectId,
           bizType: {
-            in: [AttributeBizType.USER],
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
           },
         },
       });
@@ -1404,11 +1498,15 @@ export class BizService {
         };
       }
       if (segment.dataType === SegmentDataType.CONDITION) {
-        const filter = createConditionsFilter(segment.data, attributes);
-        where = {
-          ...where,
-          ...filter,
-        };
+        const filter = createBizUserConditionsFilter(segment.data, attributes);
+        if (filter) {
+          // Nested under AND so the filter's own bizUsersOnCompany / OR keys
+          // cannot collide with the companyId shortcut applied above.
+          where = {
+            ...where,
+            AND: [filter],
+          };
+        }
       }
     }
 

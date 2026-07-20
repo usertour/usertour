@@ -3,7 +3,7 @@ import {
   decompileConditions,
 } from '../content-representation/rules.decompile';
 import { ApiObjectType } from '../shared/object-type';
-import type { Segment } from './segments.schema';
+import type { Segment, SegmentCondition } from './segments.schema';
 
 type SegmentNode = {
   id: string;
@@ -31,7 +31,12 @@ export function mapSegment(node: SegmentNode, resolvers: DecompileResolvers): Se
     name: node.name ?? '',
     bizType: bizTypeName(node.bizType),
     kind,
-    ...(kind === 'condition' ? { conditions: decompileConditions(node.data, resolvers) } : {}),
+    // The general decompiler emits the full condition union, but stored segment
+    // conditions are attribute/group only (the builder offers nothing else and
+    // the write path rejects the rest) — narrow to the segment vocabulary.
+    ...(kind === 'condition'
+      ? { conditions: decompileConditions(node.data, resolvers) as SegmentCondition[] }
+      : {}),
     createdAt: new Date(node.createdAt).toISOString(),
     updatedAt: new Date(node.updatedAt).toISOString(),
   };

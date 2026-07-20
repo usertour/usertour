@@ -91,9 +91,10 @@ export const representationChecklist = z.object({
     .optional()
     .describe(
       'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to ' +
-        'bottom). This is the ONLY built-in cross-task sequencing — there is no per-task "after ' +
-        'task X" condition; for finer dependencies gate a task\'s `onlyShowWhen` on the shared ' +
-        'event/state that completes its prerequisite.',
+        'bottom among the tasks the user can currently SEE — a task hidden by `onlyShowWhen` ' +
+        'does not block the ones after it). This is the ONLY built-in cross-task sequencing — ' +
+        'there is no per-task "after task X" condition; for finer dependencies gate a task\'s ' +
+        '`onlyShowWhen` on the shared event/state that completes its prerequisite.',
     ),
   preventDismiss: z.boolean().optional().describe("When true, users can't dismiss the checklist."),
   autoDismiss: z
@@ -114,9 +115,10 @@ export const representationChecklist = z.object({
 export type RepresentationChecklist = z.infer<typeof representationChecklist>;
 
 // ── launcher  (from LauncherData) ────────────────────────────────────────────
-// `target` is the launcher's anchor element; `tooltip.content` are blocks; the
-// behavior `actions` are actions (perform-action mode). Screenshot / zIndex are
-// dropped on read and preserved on write.
+// `target` is the launcher's anchor element (+ where the beacon sits on it, via
+// `target.placement`); `tooltip.content` are blocks; the behavior `actions` are
+// actions (perform-action mode). `zIndex` round-trips; the target `screenshot`
+// is preserved on write but not represented on read.
 const launcherPlacement = z.object({
   side: z
     .enum(['top', 'right', 'bottom', 'left'])
@@ -144,6 +146,48 @@ const launcherPlacement = z.object({
         '`auto`. Without this, an `auto` launcher renders center and your `align` is ignored.',
     ),
 });
+// Where the BEACON/icon sits on its target element (same shape as the tooltip
+// placement, positioning the launcher itself). Maps to the internal
+// `target.alignment`.
+const beaconPlacement = z.object({
+  side: z
+    .enum(['top', 'right', 'bottom', 'left'])
+    .optional()
+    .describe(
+      'Which side of the target the beacon sits on. OMIT side+align to center the beacon on the ' +
+        'target (with viewport-edge flipping); setting side (or align) pins it there.',
+    ),
+  align: z
+    .enum(['start', 'center', 'end'])
+    .optional()
+    .describe('Alignment along the side. See `side`.'),
+  sideOffset: z.number().optional(),
+  alignOffset: z
+    .number()
+    .optional()
+    .describe(
+      'Pixel shift along the alignment axis. Only applies when `align` is `start`/`end` — at ' +
+        '`center` (or under `auto`) the runtime ignores it.',
+    ),
+  alignType: z
+    .enum(['auto', 'fixed'])
+    .optional()
+    .describe(
+      'Position mode. `auto` centers on the target and flips at the viewport edge (ignoring ' +
+        'side/align); `fixed` pins to side/align. Providing side/align implies `fixed`, omitting ' +
+        'them implies `auto` — so leave `auto` and the beacon centers regardless of `align`.',
+    ),
+});
+// Launcher target = the shared element target PLUS where the beacon sits on it.
+const launcherTarget = representationTarget.extend({
+  placement: beaconPlacement
+    .optional()
+    .describe(
+      'Where the beacon sits relative to its target element. Omit to center it on the target. ' +
+        '(The tooltip has its own `tooltip.placement`; this positions the launcher itself.) ' +
+        'Read back ONLY when a side/align is pinned — an auto-centered beacon omits it.',
+    ),
+});
 export const representationLauncher = z.object({
   style: z.enum(['beacon', 'icon', 'hidden', 'button']).optional(),
   icon: z
@@ -162,7 +206,7 @@ export const representationLauncher = z.object({
     })
     .optional(),
   buttonText: z.string().optional(),
-  target: representationTarget.optional(),
+  target: launcherTarget.optional(),
   /** Stacking order (CSS z-index — must be an integer; may be negative). */
   zIndex: z.number().int().optional(),
   tooltip: z
@@ -176,9 +220,24 @@ export const representationLauncher = z.object({
       content: z.array(representationBlock).optional(),
       settings: z
         .object({
-          dismissAfterFirstActivation: z.boolean().optional(),
-          keepOpenWhenHovered: z.boolean().optional(),
-          hideLauncherWhenTooltipShown: z.boolean().optional(),
+          dismissAfterFirstActivation: z
+            .boolean()
+            .optional()
+            .describe('Dismiss the launcher after its tooltip is first shown and closed.'),
+          keepOpenWhenHovered: z
+            .boolean()
+            .optional()
+            .describe(
+              'READ-ONLY — not wired at runtime: the tooltip ALWAYS stays open while hovered ' +
+                'regardless of this value. Echoed for round-trip; changing it is rejected.',
+            ),
+          hideLauncherWhenTooltipShown: z
+            .boolean()
+            .optional()
+            .describe(
+              'READ-ONLY — not wired at runtime: the launcher is NEVER hidden while its tooltip ' +
+                'shows. Echoed for round-trip; changing it is rejected.',
+            ),
         })
         .optional(),
     })
@@ -284,7 +343,9 @@ export const representationAnnouncement = z
       .optional()
       .describe(
         'Title shown in the feed row and the detail view. Required to publish — an untitled ' +
-          'announcement would render a blank row.',
+          "announcement would render a blank row. Seeded from the content's `name` at create, " +
+          'then INDEPENDENT: renaming the content later does not update the title (and events/' +
+          'analytics label by the content name, not this title).',
       ),
     introContent: z
       .array(representationBlock)
@@ -332,8 +393,9 @@ export const representationAnnouncement = z
       })
       .optional()
       .describe(
-        'Popup presentation — only meaningful when `distribution` is `popup`. Omit for the ' +
-          'default (bubble).',
+        'Popup presentation — only USED when `distribution` is `popup` (stored and echoed under ' +
+          'other distributions, taking effect if distribution later switches to popup). Omit for ' +
+          'the default (bubble).',
       ),
   })
   .describe(

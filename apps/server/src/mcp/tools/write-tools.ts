@@ -322,7 +322,11 @@ export function buildWriteTools(): McpTool[] {
         'existing ones and are type-checked against each attribute definition (a value whose type ' +
         'mismatches is rejected, never coerced/stored wrong); a DateTime value must be full ISO ' +
         '8601 with time + zone (e.g. "2026-01-15T00:00:00Z") — a date-only string or epoch number ' +
-        'is rejected. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'is rejected. An attribute with NO definition yet is AUTO-CREATED, its type inferred from ' +
+        'this first value — so send the correct JSON type on the first write (a number as 42 not ' +
+        '"42", a date as full ISO-UTC), or it locks in as String. The type can be corrected later ' +
+        'via update_attribute_definition only while no stored value conflicts. With multiple ' +
+        'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The user external id.'),
         environmentId: environmentIdSchema,
@@ -368,7 +372,11 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Create or update a company by external id (idempotent). Attributes merge into the ' +
-        'existing ones. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'existing ones and are type-checked against each definition (a type mismatch is rejected). ' +
+        'An attribute with NO definition yet is AUTO-CREATED with its type inferred from this first ' +
+        'value — send the correct JSON type (42 not "42"), or it locks in as String (correctable ' +
+        'via update_attribute_definition only while no stored value conflicts). With multiple ' +
+        'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The company external id.'),
         environmentId: environmentIdSchema,
@@ -628,7 +636,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create an attribute definition',
       capability: Capability.AttributeCreate,
       description:
-        'Define a custom attribute on user / company / companyMembership. codeName is immutable.',
+        'Define a custom attribute on user / company / companyMembership. codeName + scope are ' +
+        'immutable; dataType can be changed later (update_attribute_definition) only while no ' +
+        'stored value conflicts with the new type. Note: upsert_user/upsert_company AUTO-CREATE an ' +
+        'undefined attribute (type inferred from the first value), so define it up front only when ' +
+        'you want to pin the type before any write.',
       inputSchema: { ...createAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.create(
@@ -774,10 +786,19 @@ export function buildWriteTools(): McpTool[] {
       audit: auditCreate('environment'),
       title: 'Create an environment',
       capability: Capability.EnvironmentManage,
-      description: 'Create an environment in the project. The first one is made primary.',
+      description:
+        'Create an environment in the project. The first one is made primary. NOTE: this needs a ' +
+        'credential scoped to ALL environments — a credential restricted to an environment ' +
+        'allowlist is refused (E1032), because the new environment would fall outside its ' +
+        'allowlist and be unusable (an undeletable orphan). Create environments in the console, ' +
+        'or with an unrestricted token.',
       inputSchema: { ...createEnvironmentBody.shape },
       handler: (args, ctx) =>
-        ctx.services.environments.create(ctx.projectId, args as unknown as CreateEnvironmentBody),
+        ctx.services.environments.create(
+          ctx.projectId,
+          args as unknown as CreateEnvironmentBody,
+          ctx.auth.allowedEnvironmentIds(ctx.token),
+        ),
     },
     {
       name: 'update_environment',
@@ -804,6 +825,7 @@ export function buildWriteTools(): McpTool[] {
           String(args.id),
           ctx.projectId,
           args as unknown as UpdateEnvironmentBody,
+          ctx.auth.allowedEnvironmentIds(ctx.token),
         );
       },
     },

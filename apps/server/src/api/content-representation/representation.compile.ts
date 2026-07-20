@@ -1,6 +1,8 @@
 import { cuid, defaultColumn, defaultStep } from '@usertour/helpers';
 import { StepContentType } from '@usertour/types';
 
+import { ValidationError } from '@/common/errors/errors';
+
 import {
   RepresentationAction,
   RepresentationBlock,
@@ -13,6 +15,7 @@ import { compileText } from './text.compile';
 import {
   CompileResolvers,
   DismissVariant,
+  collectEchoableActions,
   compileActions,
   compileConditions,
   compileTriggers,
@@ -70,6 +73,14 @@ export function compileStep(
   existing: InternalStep | undefined,
   r: CompileResolvers,
 ): CompiledStep {
+  // Non-representable actions on the existing step (builder-authored
+  // javascript-evaluate etc.) — echoing their read-back form preserves them.
+  const resolvers: CompileResolvers = existing
+    ? {
+        ...r,
+        echoActions: collectEchoableActions(existing.data, existing.trigger, existing.target),
+      }
+    : r;
   const target: Record<string, unknown> = step.target
     ? (compileTargetToElementData(step.target, existing?.target) as Record<string, unknown>)
     : ((existing?.target as Record<string, unknown>) ?? {});
@@ -77,7 +88,7 @@ export function compileStep(
   // reads currentStep.target.actions). An explicit onClick sets them; when omitted
   // the target field-merge above already preserved any existing ones.
   if (step.onClick !== undefined) {
-    target.actions = compileActions(step.onClick, r);
+    target.actions = compileActions(step.onClick, resolvers);
   }
   return {
     // cvid is server-owned: preserve the matched existing step's cvid on update,
@@ -89,7 +100,7 @@ export function compileStep(
     name: step.name,
     type: step.type,
     sequence: step.sequence,
-    data: compileContent(step.content, existing?.data, r),
+    data: compileContent(step.content, existing?.data, resolvers),
     target,
     // Omit (undefined) preserves the existing step's triggers, like themeId /
     // onClick above — otherwise a partial update that doesn't re-send `triggers`
@@ -97,7 +108,7 @@ export function compileStep(
     // (compileTriggers(undefined) → []).
     trigger:
       step.triggers !== undefined
-        ? compileTriggers(step.triggers, r)
+        ? compileTriggers(step.triggers, resolvers)
         : ((existing?.trigger as ReturnType<typeof compileTriggers>) ?? []),
     setting: compileSetting(step, existing?.setting),
   };
@@ -346,14 +357,18 @@ function compileElement(
       };
     }
     default:
-      // unsupported → keep the original element verbatim when we have it.
-      return (
-        existing ?? {
-          id,
-          element: { type: 'text', data: [{ type: 'paragraph', children: [{ text: '' }] }] },
-          children: null,
-        }
-      );
+      // 'unsupported' — echo-only, mirroring the resource-center block codec:
+      // echoed back with its id it preserves the original element verbatim;
+      // AUTHORING a fresh one is meaningless, and the old empty-text fallback
+      // silently shipped renderable-but-blank content (a real acceptance-eval
+      // finding) — reject instead.
+      if (!existing) {
+        throw new ValidationError(
+          'An `unsupported` block is echo-only — it preserves an existing block this API ' +
+            'cannot edit. Remove it, or echo it back exactly as read (including its `id`).',
+        );
+      }
+      return existing;
   }
 }
 

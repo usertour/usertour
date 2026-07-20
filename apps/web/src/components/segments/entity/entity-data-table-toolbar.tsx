@@ -106,8 +106,11 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
       lastProcessedConditionsRef.current = next;
       if (isSameAsLastProcessed) return;
 
+      // Publish empty lists too: deleting the last condition is an unsaved
+      // change like any other — the query above already went unfiltered, and
+      // skipping the publish here would strand the view/segment divergence
+      // with no Save filter button to resolve it.
       setQuery({ ...setQuery(), data: next });
-      if (next.length === 0) return;
       setCurrentConditions({ segmentId: segment.id, data: next });
     },
     [filteredAttributes, setCurrentConditions, setQuery],
@@ -119,6 +122,19 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
       setQuery({ ...setQuery(), search: value });
     },
     [setQuery],
+  );
+
+  // Dismissing the type menu without picking anything undoes the reveal —
+  // otherwise the bar would linger as an empty row with a stranded "Add
+  // filter" button. Guarded on emptiness so dismissing a LATER add-menu
+  // open (bar already carrying condition chips) never hides the bar.
+  const handleAddMenuClose = useCallback(
+    (selected: boolean) => {
+      if (!selected && conditions.length === 0) {
+        setShowFilterBar(false);
+      }
+    },
+    [conditions],
   );
 
   return (
@@ -136,6 +152,12 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
             baseZIndex={WebZIndex.RULES}
             t={t}
             addLabelKey="conditions.actions.addFilter"
+            // The bar only mounts empty through the toolbar's "Add filter"
+            // button, so jump straight into the type menu — one click flow.
+            // Bars restored for a segment that already has conditions mount
+            // non-empty and stay closed.
+            autoOpenAddMenu={conditions.length === 0}
+            onAddMenuClose={handleAddMenuClose}
           />
         </div>
       )}

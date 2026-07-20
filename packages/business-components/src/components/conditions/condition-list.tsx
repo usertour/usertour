@@ -33,6 +33,11 @@ interface Props {
   // Only the immediate top-level row gets this badge; nested groups keep
   // their own list semantics ([If]) regardless of the parent context.
   firstRowLabel?: 'if' | 'where';
+  // Forwarded to this list's own add-condition dropdown (never to nested
+  // group lists — those are instantiated by the group row, not through
+  // these props). See AddConditionDropdown for semantics.
+  autoOpenAddMenu?: boolean;
+  onAddMenuClose?: (selected: boolean) => void;
 }
 
 // Backfill missing ids without re-rolling them on every render. Only mints
@@ -97,6 +102,8 @@ export function ConditionList({
   filterItems: filterItemsOverride,
   isNested,
   firstRowLabel = 'if',
+  autoOpenAddMenu,
+  onAddMenuClose,
 }: Props) {
   const { isHorizontal, isShowIf, disabled } = useConditionsContext();
   const t = useConditionsT();
@@ -180,6 +187,8 @@ export function ConditionList({
           onSelect={handleAdd}
           filterItems={filterItemsOverride}
           isNested={isNested}
+          defaultOpen={autoOpenAddMenu}
+          onMenuClose={onAddMenuClose}
         />
       </div>
     );
@@ -232,6 +241,8 @@ export function ConditionList({
         onSelect={handleAdd}
         filterItems={filterItemsOverride}
         isNested={isNested}
+        defaultOpen={autoOpenAddMenu}
+        onMenuClose={onAddMenuClose}
       />
     </div>
   );

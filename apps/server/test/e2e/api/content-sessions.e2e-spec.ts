@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { Capability } from '@usertour/types';
+import { Capability, ContentEditorElementType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
@@ -10,6 +10,7 @@ import {
   buildEnvironment,
   buildProject,
   buildSession,
+  buildStep,
   buildVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
@@ -35,6 +36,8 @@ describe('API v2 /sessions (e2e)', () => {
   // A second content + session in the same environment, to prove cross-content listing.
   let otherContentId: string;
   let otherSessionId: string;
+  // A survey session with real answers, to prove typed answerValue on expand=answers.
+  let surveySessionId: string;
   const userExternalId = 'bu-session-jane';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -105,6 +108,70 @@ describe('API v2 /sessions (e2e)', () => {
       projectId,
     });
     otherSessionId = otherSession.id;
+
+    // A survey (a flow with question steps) + a session carrying real answers, so
+    // the answers expand can prove each value comes back in its true type. Two
+    // question steps: an NPS (number) and a multiple-choice (string array).
+    const survey = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const surveyVersionId = (await buildVersion(prisma, { contentId: survey.id, sequence: 0 })).id;
+    await buildStep(prisma, {
+      versionId: surveyVersionId,
+      sequence: 0,
+      data: [
+        {
+          element: {
+            type: ContentEditorElementType.NPS,
+            data: { cvid: 'q_nps', name: 'How likely?' },
+          },
+        },
+      ] as unknown as object,
+    });
+    await buildStep(prisma, {
+      versionId: surveyVersionId,
+      sequence: 1,
+      data: [
+        {
+          element: {
+            type: ContentEditorElementType.MULTIPLE_CHOICE,
+            data: { cvid: 'q_mc', name: 'Which channels?' },
+          },
+        },
+      ] as unknown as object,
+    });
+    const surveySession = await buildSession(prisma, {
+      bizUserId: bizUser.id,
+      contentId: survey.id,
+      versionId: surveyVersionId,
+      environmentId,
+      projectId,
+    });
+    surveySessionId = surveySession.id;
+    // BizAnswer has no Prisma-level FK relations — plain columns — so the rows can
+    // be written directly. bizEventId is a bare column here (no event needed).
+    await prisma.bizAnswer.createMany({
+      data: [
+        {
+          bizEventId: `evt-${surveySession.id}-nps`,
+          bizSessionId: surveySession.id,
+          contentId: survey.id,
+          versionId: surveyVersionId,
+          bizUserId: bizUser.id,
+          environmentId,
+          cvid: 'q_nps',
+          numberAnswer: 9,
+        },
+        {
+          bizEventId: `evt-${surveySession.id}-mc`,
+          bizSessionId: surveySession.id,
+          contentId: survey.id,
+          versionId: surveyVersionId,
+          bizUserId: bizUser.id,
+          environmentId,
+          cvid: 'q_mc',
+          listAnswer: ['email', 'docs'],
+        },
+      ],
+    });
   }, 60000);
 
   afterAll(async () => {
@@ -146,6 +213,21 @@ describe('API v2 /sessions (e2e)', () => {
     const token = await mint([Capability.SessionRead]);
     const res = await api('get', base(`/${sessionId}?expand=user`), token);
     expect(res.body.user).toMatchObject({ id: userExternalId, object: 'user' });
+  });
+
+  it('answers come back in their real type on expand=answers (number, array)', async () => {
+    const token = await mint([Capability.SessionRead]);
+    const res = await api('get', base(`/${surveySessionId}?expand=answers`), token);
+    expect(res.status).toBe(200);
+    const answers = res.body.answers as { answerType: string; answerValue: unknown }[];
+    const nps = answers.find((a) => a.answerType === 'nps');
+    const mc = answers.find((a) => a.answerType === 'multiple-choice');
+    // NPS is a number, not the string "9".
+    expect(nps?.answerValue).toBe(9);
+    expect(typeof nps?.answerValue).toBe('number');
+    // Multiple-choice is the option array, not a JSON-encoded string.
+    expect(Array.isArray(mc?.answerValue)).toBe(true);
+    expect(mc?.answerValue).toEqual(['email', 'docs']);
   });
 
   it('lists all sessions in the environment (across content)', async () => {

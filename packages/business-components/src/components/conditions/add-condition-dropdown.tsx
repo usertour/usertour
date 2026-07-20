@@ -27,6 +27,13 @@ interface Props {
   // AND/OR toggling, and validation hard to reason about both for users
   // and for code paths that walk the tree.
   isNested?: boolean;
+  // Open the type menu immediately on mount. Used by filter-bar hosts whose
+  // "Add filter" entry point reveals this component — auto-opening collapses
+  // their two-click flow (reveal, then open) into one.
+  defaultOpen?: boolean;
+  // Fires after the menu closes; `selected` tells whether a type was picked.
+  // Lets the host undo its reveal when the menu was dismissed without adding.
+  onMenuClose?: (selected: boolean) => void;
 }
 
 // "Add condition" trigger + popup of registered types. Filters by either the
@@ -40,6 +47,8 @@ export function AddConditionDropdown({
   onSelect,
   filterItems: filterItemsOverride,
   isNested,
+  defaultOpen,
+  onMenuClose,
 }: Props) {
   const t = useConditionsT();
   const { filterItems: ctxFilter, disabled, isHorizontal, addLabelKey } = useConditionsContext();
@@ -52,20 +61,25 @@ export function AddConditionDropdown({
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (open || !pendingSchemaRef.current) return;
+      if (open) {
+        return;
+      }
       const schema = pendingSchemaRef.current;
       pendingSchemaRef.current = null;
-      onSelect({
-        id: cuid(),
-        type: schema.type,
-        data: schema.defaultData() as never,
-      });
+      if (schema) {
+        onSelect({
+          id: cuid(),
+          type: schema.type,
+          data: schema.defaultData() as never,
+        });
+      }
+      onMenuClose?.(Boolean(schema));
     },
-    [onSelect],
+    [onSelect, onMenuClose],
   );
 
   return (
-    <ConditionDropdownMenu onOpenChange={handleOpenChange}>
+    <ConditionDropdownMenu defaultOpen={defaultOpen} onOpenChange={handleOpenChange}>
       <ConditionDropdownMenuTrigger asChild disabled={disabled}>
         {/* Inline link rather than a ghost button — Add condition reads
             as a lighter "extra action" beneath the chip rows, not as

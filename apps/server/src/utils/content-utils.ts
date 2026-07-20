@@ -349,14 +349,18 @@ export const launcherIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) 
  * @param b - The second custom content version
  * @returns 1 if a is greater than b, -1 if a is less than b, 0 if they are equal
  */
-const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
-  const a1 = a?.config?.autoStartRulesSetting?.priority;
-  const a2 = b?.config?.autoStartRulesSetting?.priority;
-  if (!a1 || !a2) {
-    return 0;
-  }
-  const index1 = PRIORITIES.indexOf(a1);
-  const index2 = PRIORITIES.indexOf(a2);
+export const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
+  // An unset (or unrecognized) priority ranks as MEDIUM (the builder default) —
+  // bailing out with "equal" when either side is unset made priority a
+  // half-order: content with `highest` could never outrank content with no
+  // priority at all.
+  const rank = (v: CustomContentVersion): number => {
+    const p = v?.config?.autoStartRulesSetting?.priority;
+    const i = p ? PRIORITIES.indexOf(p) : -1;
+    return i === -1 ? PRIORITIES.indexOf(ContentPriority.MEDIUM) : i;
+  };
+  const index1 = rank(a);
+  const index2 = rank(b);
   if (index1 > index2) {
     return 1;
   }
@@ -1516,7 +1520,7 @@ export const checklistItemIsCompleted = (
  * @param currentItem - The current item to check
  * @returns True if the checklist item can be completed, false otherwise
  */
-const canCompleteChecklistItem = (
+export const canCompleteChecklistItem = (
   completionOrder: 'any' | 'ordered',
   items: ChecklistItemType[],
   currentItem: ChecklistItemType,
@@ -1528,10 +1532,15 @@ const canCompleteChecklistItem = (
     return true;
   }
 
-  // For 'ordered' completion, check if all previous items are completed
+  // For 'ordered' completion, every previous item the user can SEE must be
+  // completed. Invisible items (onlyShowWhen not matching) are skipped: the
+  // widget receives only the visible slice and renders the first visible
+  // incomplete task as clickable, so counting hidden items here made that task
+  // silently uncompletable — the click was recorded but completion refused,
+  // with no feedback anywhere (checklist tier-C, landmine L3).
   if (completionOrder === 'ordered') {
     const previousItems = items.slice(0, currentIndex);
-    return previousItems.every((item) => item.isCompleted);
+    return previousItems.every((item) => item.isCompleted || item.isVisible === false);
   }
 
   return false;

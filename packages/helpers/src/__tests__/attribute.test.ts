@@ -1142,6 +1142,73 @@ describe('Attribute Filter - Complete Test Suite', () => {
     });
   });
 
+  describe('DateTime relative ops: future dates + negative day values (contract lock)', () => {
+    // The relative ops are one-sided bounds around (now − N days):
+    //   lessThan N  ⇔  date ≥ now − N days   — so it matches ALL FUTURE dates too
+    //   moreThan N  ⇔  date ≤ now − N days
+    // and N flows through plain date arithmetic, so NEGATIVE N means "now + |N|
+    // days". These two facts combine into the only expressible rolling
+    // "within the next N days" window (lessThan 0 AND moreThan −N). The v2 API
+    // docs teach this recipe — this suite locks the semantics they depend on.
+    const daysFromNow = (d: number) => new Date(Date.now() + d * 24 * 60 * 60 * 1000).toISOString();
+    const optionsWithDate = (iso: string) => ({
+      ...defaultOptions,
+      userAttributes: { ...testUserAttributes, signUpDate: iso } as UserTourTypes.Attributes,
+    });
+    const relCondition = (logic: 'lessThan' | 'moreThan', value: number): RulesCondition[] => [
+      {
+        id: 'condition-rel',
+        type: 'condition',
+        operators: 'and',
+        data: { logic, value, attrId: 'signUpDate-attr' },
+      },
+    ];
+
+    test('lessThan N matches ALL future dates (the "last N days" reading only holds for past dates)', () => {
+      expect(
+        evaluateFilterConditions(relCondition('lessThan', 7), optionsWithDate(daysFromNow(30))),
+      ).toBe(true);
+    });
+
+    test('lessThan 0 means "date is in the future"', () => {
+      expect(
+        evaluateFilterConditions(relCondition('lessThan', 0), optionsWithDate(daysFromNow(3))),
+      ).toBe(true);
+      expect(
+        evaluateFilterConditions(relCondition('lessThan', 0), optionsWithDate(daysFromNow(-3))),
+      ).toBe(false);
+    });
+
+    test('moreThan −N means "date is before now + N days"', () => {
+      expect(
+        evaluateFilterConditions(relCondition('moreThan', -7), optionsWithDate(daysFromNow(3))),
+      ).toBe(true);
+      expect(
+        evaluateFilterConditions(relCondition('moreThan', -7), optionsWithDate(daysFromNow(10))),
+      ).toBe(false);
+    });
+
+    test('lessThan 0 AND moreThan −7 = the rolling "within the next 7 days" window', () => {
+      const window: RulesCondition[] = [
+        {
+          id: 'w1',
+          type: 'condition',
+          operators: 'and',
+          data: { logic: 'lessThan', value: 0, attrId: 'signUpDate-attr' },
+        },
+        {
+          id: 'w2',
+          type: 'condition',
+          operators: 'and',
+          data: { logic: 'moreThan', value: -7, attrId: 'signUpDate-attr' },
+        },
+      ];
+      expect(evaluateFilterConditions(window, optionsWithDate(daysFromNow(3)))).toBe(true);
+      expect(evaluateFilterConditions(window, optionsWithDate(daysFromNow(10)))).toBe(false);
+      expect(evaluateFilterConditions(window, optionsWithDate(daysFromNow(-3)))).toBe(false);
+    });
+  });
+
   describe('Complex conditions with AND/OR logic', () => {
     test('should evaluate AND condition correctly', () => {
       const condition: RulesCondition[] = [

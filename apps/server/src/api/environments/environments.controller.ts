@@ -87,8 +87,16 @@ export class ApiEnvironmentsController {
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Environment created', type: EnvironmentDto })
-  async create(@Param('projectId') projectId: string, @Body() body: CreateEnvironmentBodyDto) {
-    return this.service.create(projectId, body);
+  async create(
+    @Param('projectId') projectId: string,
+    @Body() body: CreateEnvironmentBodyDto,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    // The service refuses creation from an allowlist-scoped token (E1032): the new
+    // environment would fall outside the allowlist and be an undeletable orphan.
+    // Pass the scope so a full-scope token's created env still maps `inTokenScope`
+    // correctly (always true for it).
+    return this.service.create(projectId, body, this.scope(req));
   }
 
   @Patch(':id')
@@ -105,7 +113,7 @@ export class ApiEnvironmentsController {
     @Req() req: { apiToken: AuthedApiToken },
   ) {
     await this.requireEnvironmentInScope(req, projectId, id);
-    return this.service.update(id, projectId, body);
+    return this.service.update(id, projectId, body, this.scope(req));
   }
 
   @Delete(':id')

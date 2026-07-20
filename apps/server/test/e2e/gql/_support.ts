@@ -46,6 +46,7 @@ export async function teardownProject(prisma: PrismaService, projectId: string):
   await prisma.bizUserOnSegment.deleteMany({ where: { segment: { projectId } } });
   await prisma.bizCompanyOnSegment.deleteMany({ where: { segment: { projectId } } });
   await prisma.bizSession.deleteMany({ where: { content: { projectId } } });
+  await prisma.bizAnnouncementSeen.deleteMany({ where: { bizUser: { environmentId } } });
   await prisma.bizCompany.deleteMany({ where: { environmentId } });
   await prisma.bizUser.deleteMany({ where: { environmentId } });
   await prisma.step.deleteMany({ where: { version: { content: { projectId } } } });
@@ -68,6 +69,7 @@ export async function teardownProject(prisma: PrismaService, projectId: string):
   // WebhookDelivery rows cascade with their webhook.
   await prisma.webhook.deleteMany({ where: { environmentId } });
   await prisma.invite.deleteMany({ where: { projectId } });
+  await prisma.environmentSigningSecret.deleteMany({ where: { environmentId } });
   await prisma.environment.deleteMany({ where: { projectId } });
   await prisma.userOnProject.deleteMany({ where: { projectId } });
   await prisma.project.updateMany({ where: { id: projectId }, data: { subscriptionId: null } });

@@ -117,6 +117,13 @@ const usersOccurrences = {
   uniqueUsers: int().describe('Distinct users who fired the tracked event.'),
   totalOccurrences: int().describe('Occurrences of the tracked event.'),
 };
+const seenOnly = {
+  uniqueSeen: int().describe(
+    'Distinct users who saw the announcement (opened the feed listing it, or had its popup ' +
+      'presented). Seen fires once per (user, announcement), so unique and total normally match.',
+  ),
+  totalSeen: int(),
+};
 
 /** Per-step funnel row — a step's own view/complete counts (semantics do not vary here). */
 export const stepAnalytics = z.object({
@@ -133,12 +140,23 @@ export const stepAnalytics = z.object({
   totalTooltipTargetMissing: int(),
 });
 
-/** Per-task row — the task's own view/complete/click counts. */
+/**
+ * Per-task row. completions/clicks are the task's OWN counts (keyed by task id);
+ * the view counts are NOT per-task — the domain aggregation counts whole-checklist
+ * expansions (CHECKLIST_SEEN), so uniqueViews/totalViews repeat the same numbers
+ * on every row. Truth-told in the field descriptions so API consumers don't read
+ * identical rows as "every task equally viewed".
+ */
 export const taskAnalytics = z.object({
   name: z.string(),
   taskId: z.string(),
-  uniqueViews: int(),
-  totalViews: int(),
+  uniqueViews: int().describe(
+    'Times the CHECKLIST panel was expanded (unique users) — a whole-checklist count repeated on ' +
+      'every task row, not this task’s own visibility.',
+  ),
+  totalViews: int().describe(
+    'Whole-checklist expansions (all), repeated on every row — see uniqueViews.',
+  ),
   uniqueCompletions: int(),
   totalCompletions: int(),
   uniqueClicks: int(),
@@ -205,6 +223,13 @@ export const trackerAnalytics = z.object({
   byDay: z.array(z.object({ date, ...usersOccurrences })),
 });
 
+export const announcementAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('announcement'),
+  ...seenOnly,
+  byDay: z.array(z.object({ date, ...seenOnly })),
+});
+
 export const contentAnalytics = z.discriminatedUnion('contentType', [
   flowAnalytics,
   checklistAnalytics,
@@ -212,6 +237,7 @@ export const contentAnalytics = z.discriminatedUnion('contentType', [
   bannerAnalytics,
   resourceCenterAnalytics,
   trackerAnalytics,
+  announcementAnalytics,
 ]);
 export type ContentAnalytics = z.infer<typeof contentAnalytics>;
 
@@ -223,6 +249,7 @@ export class LauncherAnalyticsDto extends createZodDto(launcherAnalytics) {}
 export class BannerAnalyticsDto extends createZodDto(bannerAnalytics) {}
 export class ResourceCenterAnalyticsDto extends createZodDto(resourceCenterAnalytics) {}
 export class TrackerAnalyticsDto extends createZodDto(trackerAnalytics) {}
+export class AnnouncementAnalyticsDto extends createZodDto(announcementAnalytics) {}
 
 // ── question analytics (surveys) ─────────────────────────────────────────────
 

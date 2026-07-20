@@ -334,7 +334,16 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     const push = (issues: { path: string; message: string }[]) => {
       for (const i of issues) err(i.path, i.message);
     };
-    if (input.config) push(collectRuleIssues(input.config, ctx, 'config'));
+    // Walk the two rule lists under their PUBLIC paths (the internal config keys
+    // autoStartRules/hideRules are not what the author wrote).
+    const config = input.config as
+      | { autoStartRules?: unknown; hideRules?: unknown }
+      | null
+      | undefined;
+    if (config?.autoStartRules) {
+      push(collectRuleIssues(config.autoStartRules, ctx, 'startRules.when'));
+    }
+    if (config?.hideRules) push(collectRuleIssues(config.hideRules, ctx, 'hideRules.when'));
     if (input.data) push(collectRuleIssues(input.data, ctx, 'data'));
     collectBindIssues(input.data, 'data', ctx.attributes, warn);
     const steps = asArray<Step>(input.steps);
@@ -342,10 +351,12 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       const s = steps[i];
       const label = (s as { name?: string })?.name;
       const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
-      push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.data`));
-      push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.trigger`));
+      // Internal `data`/`trigger` are `content`/`triggers` in the representation.
+      push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.content`));
+      push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.triggers`));
       collectBindIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
     }
+    collectDeadLaunchTargetWarnings([input.data, input.steps], ctx.contents, warn);
   }
 
   return { ok: errors.length === 0, errors, warnings };
@@ -357,23 +368,126 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
 // error: the question still renders and still records a response event, so the
 // content is usable; the bind just no-ops. Only checked when the attribute list is
 // supplied (conditionContext).
+// Expected bound-attribute data type per question element type: numeric answers
+// (nps / ratings / scale) need Number; text and single-select store String;
+// multi-select stores a List. Mirrors the answer payload the runtime writes.
+const QUESTION_BIND_TYPE: Record<string, { type: number; label: string }> = {
+  nps: { type: 1, label: 'number' },
+  'star-rating': { type: 1, label: 'number' },
+  scale: { type: 1, label: 'number' },
+  'single-line-text': { type: 2, label: 'string' },
+  'multi-line-text': { type: 2, label: 'string' },
+};
+
 function collectBindIssues(
   data: unknown,
   base: string,
-  attrs: { codeName?: string }[] | undefined,
+  attrs: { codeName?: string; dataType?: number }[] | undefined,
   warn: (path: string, message: string) => void,
 ): void {
   if (!Array.isArray(data)) return;
   for (const el of extractQuestionData(data as ContentEditorRoot[])) {
-    const d = (el as { data?: { bindToAttribute?: boolean; selectedAttribute?: string } }).data;
+    const type = (el as { type?: string }).type ?? '';
+    const d = (
+      el as {
+        data?: { bindToAttribute?: boolean; selectedAttribute?: string; allowMultiple?: boolean };
+      }
+    ).data;
     if (!d?.bindToAttribute || !d.selectedAttribute) continue;
-    if (!(attrs ?? []).some((a) => a.codeName === d.selectedAttribute)) {
+    const attr = (attrs ?? []).find((a) => a.codeName === d.selectedAttribute);
+    if (!attr) {
       warn(
         base,
         `A question binds to attribute "${d.selectedAttribute}" but no such attribute exists — the answer records as a response but silently captures nothing onto the user (targeting/segments on it stay empty). Create the attribute or fix the codeName.`,
       );
+      continue;
+    }
+    // Type fit: a mismatched bind also captures nothing at runtime (the upsert
+    // rejects the value) — same silent-no-op class as a dangling codeName.
+    const expected =
+      type === 'multiple-choice'
+        ? d.allowMultiple
+          ? { type: 4, label: 'list' }
+          : { type: 2, label: 'string' }
+        : QUESTION_BIND_TYPE[type];
+    if (expected && typeof attr.dataType === 'number' && attr.dataType !== expected.type) {
+      warn(
+        base,
+        `A ${type} question binds to attribute "${d.selectedAttribute}", whose data type does not match the answer (${expected.label} expected) — the answer records as a response but the attribute silently captures nothing. Bind a ${expected.label}-typed attribute.`,
+      );
     }
   }
+}
+
+/**
+ * Launch/list references whose target EXISTS but is not published in ANY
+ * environment are dead at runtime: existence validation passes, then the
+ * start_content action / resource-center list entry silently does nothing for
+ * real users (the guide's "publish dependencies FIRST" trap — hit verbatim in
+ * the banner acceptance eval, F3). WARNING, not error: the target may
+ * legitimately be published right after this content. Covers `flow-start`
+ * actions anywhere in data/steps and resource-center `contentItems`;
+ * `content_state` conditions are deliberately excluded (an unpublished
+ * reference there has evaluable — if degenerate — semantics).
+ */
+function collectDeadLaunchTargetWarnings(
+  roots: unknown[],
+  contents:
+    | { id?: string; name?: string; type?: string; publishedAnywhere?: boolean }[]
+    | undefined,
+  warn: (path: string, message: string) => void,
+): void {
+  if (!contents?.length) return;
+  const byId = new Map(contents.map((c) => [c.id, c]));
+  const flagged = new Set<string>();
+  const flag = (contentId: string, where: string) => {
+    if (flagged.has(contentId)) return;
+    const target = byId.get(contentId);
+    // Unknown ids are someone else's error (existence checks); only warn for a
+    // KNOWN target that has never been published.
+    if (!target || target.publishedAnywhere !== false) return;
+    flagged.add(contentId);
+    warn(
+      where,
+      `References content "${target.name ?? contentId}" (${contentId}) which is not published in ANY environment — the ${where === 'contentItems' ? 'list entry' : 'start_content action'} silently does nothing for real users until that content is published. Publish the referenced content (to the same environment) first.`,
+    );
+  };
+  const walk = (x: unknown): void => {
+    if (!x) return;
+    if (Array.isArray(x)) {
+      for (const item of x) walk(item);
+      return;
+    }
+    if (typeof x !== 'object') return;
+    const o = x as Record<string, unknown>;
+    if (o.type === ContentActionsItemType.FLOW_START) {
+      const contentId = (o.data as { contentId?: unknown } | undefined)?.contentId;
+      if (typeof contentId === 'string' && contentId) flag(contentId, 'actions');
+    }
+    if (Array.isArray(o.contentItems)) {
+      for (const it of o.contentItems as { contentId?: unknown; contentType?: unknown }[]) {
+        if (typeof it?.contentId === 'string' && it.contentId) {
+          flag(it.contentId, 'contentItems');
+          // A list entry DECLARES its target's type; launching goes by id, so a
+          // wrong declaration only mislabels the default icon and semantics —
+          // silently. Warn so the author fixes the label.
+          const target = byId.get(it.contentId);
+          if (
+            target?.type &&
+            typeof it.contentType === 'string' &&
+            it.contentType !== target.type
+          ) {
+            warn(
+              'contentItems',
+              `List entry declares contentType "${it.contentType}" but "${target.name ?? it.contentId}" is a ${target.type}. It still launches the ${target.type} (launching goes by id) — only the default icon and semantics mislabel. Set contentType to "${target.type}".`,
+            );
+          }
+        }
+      }
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  for (const root of roots) walk(root);
 }
 
 function validateFlow(
@@ -436,11 +550,29 @@ function validateFlow(
   });
 }
 
+/**
+ * A rendered body block missing its required data (a button with no text or no
+ * action) renders broken with no runtime error — the same gate flow steps get
+ * (validateSteps), applied to the non-flow body slots. Empty bodies are fine
+ * (they're optional); only present-but-broken blocks are flagged.
+ */
+function errIfBrokenBlocks(
+  roots: unknown,
+  path: string,
+  err: (path: string, message: string) => void,
+): void {
+  const arr = asArray<ContentEditorRoot>(roots);
+  if (hasBlocks(arr) && hasMissingRequiredData(arr)) {
+    err(path, 'A content block is missing required data (a button needs text and an action).');
+  }
+}
+
 function validateChecklist(
   data: ChecklistData | null,
   err: (path: string, message: string) => void,
   warn: (path: string, message: string) => void,
 ): void {
+  errIfBrokenBlocks(data?.content, 'content', err);
   const items = asArray<ChecklistData['items'][number]>(data?.items);
   if (items.length === 0) {
     err('items', 'Checklist has no items.');
@@ -483,6 +615,7 @@ function validateLauncher(
     if (!hasBlocks(data?.tooltip?.content as ContentEditorRoot[] | undefined)) {
       err('tooltip.content', 'Launcher tooltip has no content.');
     }
+    errIfBrokenBlocks(data?.tooltip?.content, 'tooltip.content', err);
   } else if (actionType === LauncherActionType.PERFORM_ACTION) {
     if (asArray<RulesCondition>(data?.behavior?.actions).length === 0) {
       err('behavior.actions', 'Launcher click performs no action.');
@@ -495,8 +628,9 @@ function validateBanner(
   err: (path: string, message: string) => void,
 ): void {
   if (!hasBlocks(data?.contents)) {
-    err('contents', 'Banner has no content; it renders blank.');
+    err('content', 'Banner has no content; it renders blank.');
   }
+  errIfBrokenBlocks(data?.contents, 'content', err);
   if (
     data?.embedPlacement &&
     BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT.includes(data.embedPlacement) &&
@@ -530,6 +664,16 @@ function validateAnnouncement(
       'enableReadMore is on but detailContent is empty — the "Read more" button opens a blank page. Fill detailContent or set enableReadMore to false.',
     );
   }
+  // The inverse is a silent dead end: authored detail content that no user can
+  // ever reach (the runtime ships moreContent=null when the toggle is off).
+  if (!data?.enableReadMore && hasBlocks(data?.detailContent)) {
+    warn(
+      'detailContent',
+      'detailContent has content but enableReadMore is false — the detail page is unreachable (no "Read more" affordance renders). Set enableReadMore to true, or remove the unused detailContent.',
+    );
+  }
+  errIfBrokenBlocks(data?.introContent, 'introContent', err);
+  errIfBrokenBlocks(data?.detailContent, 'detailContent', err);
 }
 
 function validateResourceCenter(
@@ -549,6 +693,10 @@ function validateResourceCenter(
     if (!tabHasRenderableBlock(asArray(tab?.blocks))) {
       err(label, 'Resource center tab has no content blocks.');
     }
+    asArray(tab?.blocks).forEach((raw, j) => {
+      const block = raw as { content?: unknown };
+      errIfBrokenBlocks(block?.content, `${label}.blocks[${j}].content`, err);
+    });
   });
 }
 

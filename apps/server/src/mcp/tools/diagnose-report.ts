@@ -191,6 +191,27 @@ const classifyUnknownLeaves = (
   return { urlResolvable, companyResolvable, liveOnly };
 };
 
+/**
+ * When a failed start_rules tree contains `unknown` leaves, the fail may be an
+ * ARTIFACT: a not-evaluable condition (company-scoped without `companyId`, a
+ * current_url without `url`) counts as not-matched in the server evaluation, so
+ * the gate reads fail while the leaf reads unknown — two signals that look
+ * contradictory (a real zero-knowledge-eval confusion). Name the way out.
+ */
+const startRulesUnknownCaveat = (tree?: AnnotatedCondition): string => {
+  if (!tree) return '';
+  const u = classifyUnknownLeaves(tree);
+  if (!(u.urlResolvable || u.companyResolvable || u.liveOnly)) return '';
+  const fixes = [
+    u.urlResolvable ? 'pass `url`' : '',
+    u.companyResolvable ? 'pass `companyId`' : '',
+    u.liveOnly ? 'confirm live-only leaves in the app' : '',
+  ]
+    .filter(Boolean)
+    .join(' / ');
+  return ` NOTE: the tree contains \`unknown\` conditions the server could not evaluate — they count as NOT matched in this verdict, so the fail may be an artifact; ${fixes} for a clean verdict.`;
+};
+
 export const buildDiagnoseReport = (
   facts: DiagnoseFacts,
   startConditions?: AnnotatedCondition,
@@ -230,7 +251,7 @@ export const buildDiagnoseReport = (
       id: 'rc_reachability',
       status: facts.announcementBlockPublished ? 'pass' : 'fail',
       detail: facts.announcementBlockPublished
-        ? 'a published resource center in this environment has an announcement block (the feed entry).'
+        ? 'a published resource center in this environment has an announcement block (the feed entry). Caveat: this checks the block EXISTS — a block hidden by its own onlyShowWhen conditions still counts, so specific users may still lack the entry.'
         : 'NO published resource center in this environment has an announcement block — announcements only reach users through one (feed, badge, and popup are all inside it). Add { "type": "announcement", "name": "What\'s new" } to a resource-center tab and publish it.',
     });
   }
@@ -267,13 +288,21 @@ export const buildDiagnoseReport = (
             status: facts.startRulesActive ? 'pass' : 'fail',
             // For an announcement the rules are a pure AUDIENCE filter (no rules =
             // visible to everyone), not an auto-start switch — word it as such.
+            // For other types, "no rules at all" is usually a DESIGNED on-demand
+            // guide (started via start_content / usertour.start()), not a broken
+            // one — say so instead of a generic failure that reads like a bug.
             detail: isAnnouncement
               ? facts.startRulesActive
                 ? 'the audience filter matches this user (or there is no targeting).'
                 : 'the audience filter does not match this user — see startConditions.'
               : facts.startRulesActive
                 ? 'auto-start enabled and start conditions match.'
-                : 'auto-start disabled / no rules / a start condition does not match — see startConditions.',
+                : startConditions
+                  ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
+                  : 'auto-start is not configured, so it never appears on its own — the normal ' +
+                    'pattern for an on-demand guide launched via a checklist / resource-center ' +
+                    '`start_content` reference or `usertour.start()`. Confirm something ' +
+                    'references it; add startRules only if it should also start by itself.',
           });
           // Only meaningful when the audience filter passes — for an excluded
           // user the feed omits the announcement entirely, so a "counts toward
@@ -330,10 +359,16 @@ export const buildDiagnoseReport = (
             const winner = facts.outrankedByName
               ? `'${facts.outrankedByName}'`
               : `content '${facts.outrankedByContentId}'`;
+            // "Lower the priority" is only actionable advice for types that HAVE
+            // the priority knob — a banner does not (writing one is rejected), so
+            // pointing there sends the author down a dead end.
+            const remedy = caps.priority
+              ? "Lower its priority or this one's, or stop the other."
+              : `${facts.contentType} has no priority knob — unpublish the other, or narrow the two contents' start rules (URL patterns / time windows) so they don't overlap.`;
             gates.push({
               id: 'outranked',
               status: 'fail',
-              detail: `another ${facts.contentType} (${winner}) has higher priority and wins the single slot — only one ${facts.contentType} shows at a time. Lower its priority or this one's, or stop the other.`,
+              detail: `another ${facts.contentType} (${winner}) wins the single ${facts.contentType} slot — only one ${facts.contentType} shows at a time. ${remedy}`,
             });
           }
         }

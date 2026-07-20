@@ -144,6 +144,20 @@ describe('API v2 /environments (e2e)', () => {
     expect(res.body.error.code).toBe('E1012');
   });
 
+  it('rejects create from an allowlist-scoped token (403 E1032, no orphan)', async () => {
+    // A token restricted to specific environments cannot act on what it would
+    // create (the allowlist doesn't grow) — refuse up front rather than mint an
+    // undeletable orphan. Creation needs an all-environments token.
+    const token = await mint([Capability.EnvironmentManage], [primaryEnvId]);
+    const res = await send('post', base(), token).send({ name: 'Orphan' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('E1032');
+    // And nothing was created.
+    const listToken = await mint([Capability.EnvironmentRead]);
+    const list = await api('get', base(), listToken);
+    expect(list.body.results.map((e: { name: string }) => e.name)).not.toContain('Orphan');
+  });
+
   // The item routes use `:id` (not `:environmentId`), so the guard's path-param
   // scope check never fires — the handlers assert the token's env allowlist
   // themselves. A token scoped to one environment must not read, rename, or

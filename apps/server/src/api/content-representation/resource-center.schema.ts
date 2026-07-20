@@ -16,25 +16,42 @@ import {
  * conditionally shown.
  */
 
+const rcIconType = z
+  .string()
+  .optional()
+  .describe(
+    "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` style — " +
+      'e.g. `home-line`, `question-line`, `chat-line`, `settings-line`, `rocket`. ' +
+      'NOT lucide names: `help-circle` / `sparkles` / `book-open` / `message-circle` are not in ' +
+      "the set and render nothing (silent, no error). Unsure of a name? Use source='none' rather " +
+      'than guess. Common names + an intent→name table are in get_authoring_guide.',
+  );
+
 const rcIcon = z.object({
+  source: z
+    .enum(['none', 'builtin', 'upload', 'url'])
+    .optional()
+    .describe(
+      "Icon source. 'builtin' = a named icon from the bundled RemixIcon set (see `type`); " +
+        "'upload'/'url' = a custom image via `url`; 'none' = no icon.",
+    ),
+  type: rcIconType,
+  url: z.string().optional(),
+});
+
+// Content-list ITEMS additionally accept 'inherit' — fall back to the block's
+// flow/checklist default icon. Only meaningful there: on a tab or block an
+// 'inherit' icon has nothing to inherit from and renders empty, so the plain
+// rcIcon (no 'inherit') gates those positions.
+const rcItemIcon = z.object({
   source: z
     .enum(['none', 'builtin', 'upload', 'url', 'inherit'])
     .optional()
     .describe(
-      "Icon source. 'builtin' = a named icon from the bundled RemixIcon set (see `type`); " +
-        "'upload'/'url' = a custom image via `url`; 'none' = no icon; 'inherit' (content-list " +
-        'items only) falls back to the block default.',
+      "Icon source. 'inherit' (default) falls back to the block's flowIcon/checklistIcon; " +
+        "'builtin' = a named RemixIcon (see `type`); 'upload'/'url' = a custom image; 'none' = no icon.",
     ),
-  type: z
-    .string()
-    .optional()
-    .describe(
-      "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` style — " +
-        'e.g. `home-line`, `question-line`, `chat-line`, `settings-line`, `rocket`. ' +
-        'NOT lucide names: `help-circle` / `sparkles` / `book-open` / `message-circle` are not in ' +
-        "the set and render nothing (silent, no error). Unsure of a name? Use source='none' rather " +
-        'than guess. Common names + an intent→name table are in get_authoring_guide.',
-    ),
+  type: rcIconType,
   url: z.string().optional(),
 });
 
@@ -71,7 +88,15 @@ const rcSubPageBlock = z.object({
 const rcContentListItem = z.object({
   content: z.string(), // referenced content id
   contentType: z.enum(['flow', 'checklist']),
-  icon: rcIcon.optional(),
+  label: z
+    .string()
+    .optional()
+    .describe(
+      "Display name for this list entry; omitted or empty falls back to the referenced content's " +
+        'admin name. `items` is a full-list replacement — when rewriting it, echo the read-back ' +
+        '`label` or it is cleared.',
+    ),
+  icon: rcItemIcon.optional(),
   navigateUrl: z.string().optional(),
   navigateOpenType: z.enum(['same', 'new']).optional(),
   onlyShowWhen: z.array(representationCondition).optional(),

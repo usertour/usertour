@@ -14,7 +14,11 @@ export const listContentSessionsQuery = z.object({
   completed: z
     .stringbool()
     .optional()
-    .describe('Filter to completed (true) or open (false) sessions.'),
+    .describe(
+      'Filter by GENUINE completion: true = the user reached the goal (flow finished / every ' +
+        'checklist task done), false = did not. This is NOT "ended" — a dismissed session is ' +
+        'not completed, and a completed checklist may still be open.',
+    ),
   limit,
   cursor,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
@@ -36,7 +40,14 @@ const sessionAnswer = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_SESSION_ANSWER),
   answerType: z.string(),
-  answerValue: z.string(),
+  answerValue: z
+    .union([z.number(), z.string(), z.array(z.string())])
+    .nullable()
+    .describe(
+      "The answer's value in its real type, keyed off answerType: nps / star-rating / scale → a " +
+        'number; single-line-text / multi-line-text → a string; multiple-choice → an array of the ' +
+        'chosen option strings. null only when the stored value is missing.',
+    ),
   createdAt: z.string(),
   questionCvid: z.string(),
   questionName: z.string(),
@@ -78,8 +89,34 @@ export const contentSession = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_SESSION),
   answers: z.array(sessionAnswer).nullable(),
-  completedAt: z.string().nullable(),
-  completed: z.boolean(),
+  completed: z
+    .boolean()
+    .describe(
+      'Whether the user GENUINELY reached the goal — a flow ran to its end (or an explicit ' +
+        'completion step) / every checklist task was checked. Independent of whether the session ' +
+        'is still open: a completed checklist can still be showing, and a flow can complete at a ' +
+        'mid-flow completion step and keep running. Only flows and checklists can be completed; ' +
+        'banners / launchers / resource centers are seen-then-dismissed and are always false.',
+    ),
+  completedAt: z
+    .string()
+    .nullable()
+    .describe('When the goal was reached (null if never completed).'),
+  endedAt: z
+    .string()
+    .nullable()
+    .describe(
+      'When the session closed (null while it is still open/active). A session can be completed ' +
+        'but not yet ended (still open), or ended without being completed (dismissed).',
+    ),
+  endReason: z
+    .string()
+    .nullable()
+    .describe(
+      'Why the session ended (null while open) — e.g. `user_closed`, `auto_dismissed`, ' +
+        '`action`, `end_from_program`, `admin_ended`. Distinguishes a genuine finish from a ' +
+        'dismissal even when both leave the session ended.',
+    ),
   contentId: z.string(),
   content: embeddedContent.nullable(),
   createdAt: z.string(),

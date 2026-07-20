@@ -45,14 +45,24 @@ export function compileResourceCenter(
         if (b?.id) prevBlockById.set(b.id, b);
       }
     }
-    out.tabs = rep.tabs.map((t) => ({
-      id: t.id ?? cuid(),
-      name: t.name,
-      iconSource: t.icon?.source ?? 'none',
-      iconType: t.icon?.type ?? '',
-      ...(t.icon?.url !== undefined ? { iconUrl: t.icon.url } : {}),
-      blocks: t.blocks.map((b) => compileBlock(b, prevBlockById, r)),
-    }));
+    // Tabs merge like blocks do: an echoed `id` carries the stored tab forward
+    // (prev-spread keeps builder-only fields; iconFields keeps the icon when
+    // omitted) — without this, any tabs write silently reset tab icons and
+    // shredded unknown stored fields (RC A+B round).
+    const prevTabById = new Map<string, any>();
+    for (const t of Array.isArray(base.tabs) ? base.tabs : []) {
+      if (t?.id) prevTabById.set(t.id, t);
+    }
+    out.tabs = rep.tabs.map((t) => {
+      const prevTab = t.id ? prevTabById.get(t.id) : undefined;
+      return {
+        ...(prevTab ?? {}),
+        id: t.id ?? cuid(),
+        name: t.name,
+        ...iconFields(t.icon, prevTab),
+        blocks: t.blocks.map((b) => compileBlock(b, prevBlockById, r)),
+      };
+    });
   }
   return out;
 }
@@ -101,8 +111,10 @@ function compileBlock(
         // flow/checklist/banner/launcher). A `dismiss` here is rejected upstream by
         // assertNonFlowData, so compileActions only ever sees start_content / navigate here; the
         // `flow-dismis` default would be wrong, but is unreachable. Keep both in sync if that
-        // guard ever changes.
-        clickedActions: compileActions(b.clickActions ?? []),
+        // guard ever changes. `r` MUST be passed: it carries the echoActions pool, without
+        // which a builder-authored run_javascript on this block can never be echoed back —
+        // and since tabs are a full-list replacement, that made the whole RC un-editable.
+        clickedActions: compileActions(b.clickActions ?? [], r),
       };
     case 'sub-page':
       return {
@@ -134,6 +146,7 @@ function compileBlock(
           return {
             contentId: it.content,
             contentType: it.contentType,
+            ...(it.label !== undefined ? { label: it.label } : {}),
             ...(it.icon?.source !== undefined ? { iconSource: it.icon.source } : {}),
             ...(it.icon?.type !== undefined ? { iconType: it.icon.type } : {}),
             ...(it.icon?.url !== undefined ? { iconUrl: it.icon.url } : {}),
@@ -146,7 +159,19 @@ function compileBlock(
           };
         }),
       };
-    case 'live-chat':
+    case 'live-chat': {
+      // `customCode` is arbitrary JS executed in the host page — the same
+      // security rule as run_javascript applies: an echo of the STORED code is
+      // kept, omitting it keeps it too, an empty string clears it, but new or
+      // edited code is rejected (author scripts in the builder).
+      const storedCode = prev?.customLiveChatCode ?? '';
+      if (b.customCode !== undefined && b.customCode !== '' && b.customCode !== storedCode) {
+        throw new ValidationError(
+          'Cannot write live-chat `customCode` via the API — custom scripts are blocked for ' +
+            'security, like run_javascript. Echo the stored code back unchanged (or omit the ' +
+            'field) to keep it; author or edit the script in the builder.',
+        );
+      }
       return {
         ...(prev ?? {}),
         id,
@@ -155,8 +180,9 @@ function compileBlock(
         name: compilePlainText(b.name),
         ...iconFields(b.icon, prev),
         liveChatProvider: b.provider,
-        customLiveChatCode: b.customCode ?? prev?.customLiveChatCode ?? '',
+        customLiveChatCode: b.customCode ?? storedCode,
       };
+    }
     case 'announcement':
       return {
         ...(prev ?? {}),

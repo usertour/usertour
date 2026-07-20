@@ -202,10 +202,12 @@ describe('MCP endpoint (e2e)', () => {
       expect(names).toEqual(
         [
           'diagnose_content',
+          'get_attribute_definition',
           'get_authoring_guide',
           'get_content',
           'get_content_schema',
           'get_content_version',
+          'get_event_definition',
           'get_user',
           'list_attribute_definitions',
           'list_content',

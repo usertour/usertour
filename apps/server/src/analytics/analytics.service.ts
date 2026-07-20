@@ -6,6 +6,7 @@ import {
   contentEndReason,
 } from '@usertour/types';
 import { rollingDayWindows } from '@/analytics/rolling-day-windows';
+import { GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
 import { createdAtWhere } from '@/common/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
@@ -1936,12 +1937,7 @@ export class AnalyticsService {
   async getContentSessionWithRelations(
     id: string,
     environmentId: string,
-    include?: {
-      content?: boolean;
-      bizCompany?: boolean;
-      bizUser?: boolean;
-      version?: boolean;
-    },
+    include?: Prisma.BizSessionInclude,
   ) {
     return await this.prisma.bizSession.findUnique({
       where: { id, environmentId },
@@ -1969,8 +1965,20 @@ export class AnalyticsService {
       contentId,
       environmentId,
       bizUser: userId ? { externalId: userId } : undefined,
-      // A session is "completed" when state === 1 (see content-sessions.mapper).
-      ...(completed !== undefined ? { state: completed ? 1 : { not: 1 } } : {}),
+      // "completed" = the session genuinely reached its goal (has a
+      // FLOW_COMPLETED / CHECKLIST_COMPLETED event), NOT state === 1 (which also
+      // covers dismissals). Matches the honest `completed` field in the mapper.
+      ...(completed !== undefined
+        ? {
+            bizEvent: completed
+              ? {
+                  some: { event: { codeName: { in: [...GENUINE_COMPLETION_EVENTS] as string[] } } },
+                }
+              : {
+                  none: { event: { codeName: { in: [...GENUINE_COMPLETION_EVENTS] as string[] } } },
+                },
+          }
+        : {}),
       ...createdAtWhere(createdAfter, createdBefore),
     };
 

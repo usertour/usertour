@@ -75,6 +75,24 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
   const al = (tooltip.alignment ?? {}) as Record<string, any>;
   const settings = (tooltip.settings ?? {}) as Record<string, any>;
   const target = decompileTarget(d.target?.element);
+  // Beacon placement read back from target.alignment ONLY when actually PINNED
+  // (alignType 'fixed'). In `auto` mode the seeded side/align (top/center) are
+  // just the auto starting position, not an author choice — surfacing them would
+  // make a read-modify-write echo derive `fixed` and silently convert the beacon
+  // from auto-centering to pinned (launcher A+B finding). alignType is
+  // governing-only and not itself surfaced.
+  const targetAl = (d.target?.alignment ?? {}) as Record<string, any>;
+  const targetPlacement =
+    targetAl.alignType === 'fixed' && targetAl.side && targetAl.align
+      ? {
+          side: targetAl.side,
+          align: targetAl.align,
+          ...(typeof targetAl.sideOffset === 'number' ? { sideOffset: targetAl.sideOffset } : {}),
+          ...(typeof targetAl.alignOffset === 'number'
+            ? { alignOffset: targetAl.alignOffset }
+            : {}),
+        }
+      : undefined;
   return {
     style: (
       [
@@ -93,9 +111,14 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
     },
     ...(typeof d.buttonText === 'string' ? { buttonText: d.buttonText } : {}),
     ...(typeof d.zIndex === 'number' ? { zIndex: d.zIndex } : {}),
-    ...(target ? { target } : {}),
+    ...(target
+      ? { target: { ...target, ...(targetPlacement ? { placement: targetPlacement } : {}) } }
+      : {}),
     tooltip: {
-      ...(al.side && al.align
+      // Same as the beacon: only surface placement when PINNED (alignType
+      // 'fixed'), so an auto tooltip's seeded top/center isn't echoed back into
+      // a `fixed` derivation on read-modify-write.
+      ...(al.alignType === 'fixed' && al.side && al.align
         ? {
             placement: {
               side: al.side,
@@ -145,10 +168,15 @@ function decompileAnnouncement(data: unknown, r: DecompileResolvers): Representa
     distribution,
     // Read-backs carry a concrete style for popup announcements even when the
     // stored config is absent (the runtime default is bubble) — so an agent sees
-    // what will actually present, not a hole.
+    // what will actually present, not a hole. A STORED config is also echoed
+    // under the other distributions: hiding it made a written popupConfig a
+    // ghost (invisible on read, resurfacing when distribution later switched
+    // to popup — announcement A+B, L2).
     ...(distribution === 'popup'
       ? { popupConfig: { style: d.popupConfig?.style === 'modal' ? 'modal' : 'bubble' } }
-      : {}),
+      : d.popupConfig?.style === 'modal' || d.popupConfig?.style === 'bubble'
+        ? { popupConfig: { style: d.popupConfig.style } }
+        : {}),
   };
 }
 

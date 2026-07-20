@@ -1,5 +1,10 @@
 import { collectRuleIssues } from './condition-validate';
-import { compileConditions, compileStartRules } from './rules.compile';
+import {
+  collectEchoableActions,
+  compileActions,
+  compileConditions,
+  compileStartRules,
+} from './rules.compile';
 
 // current_url needs no id resolution; stub the resolvers.
 const r = { attributeId: (c: string) => c, eventId: (c: string) => c } as any;
@@ -96,5 +101,89 @@ describe('compileConditions — `flow`-state condition gates any content type', 
     const issues = collectRuleIssues(gateOn('nope'), { contents: [{ id: 'banner-1' }] } as any);
     expect(issues).toHaveLength(1);
     expect(issues[0].message).toMatch(/unknown content/i);
+  });
+});
+
+describe('compileStartRules — settings-only patch (when omitted)', () => {
+  it('emits NO condition keys, so the caller merge keeps stored rules untouched', () => {
+    const out = compileStartRules({ frequency: { mode: 'once' } } as never, r) as Record<
+      string,
+      unknown
+    >;
+    expect(out.autoStartRules).toBeUndefined();
+    expect(out.enabledAutoStartRules).toBeUndefined();
+    expect((out.autoStartRulesSetting as { frequency: { frequency: string } }).frequency).toEqual({
+      frequency: 'once',
+    });
+  });
+
+  it('with `when` present it still fully replaces conditions and re-enables', () => {
+    const out = compileStartRules({ when, priority: 'high' } as never, r) as Record<
+      string,
+      unknown
+    >;
+    expect(out.enabledAutoStartRules).toBe(true);
+    expect(Array.isArray(out.autoStartRules)).toBe(true);
+  });
+});
+
+describe('compileActions — echo-if-existing for non-representable actions', () => {
+  const jsRule = {
+    id: 'a1',
+    type: 'javascript-evaluate',
+    data: { value: 'console.log(1)' },
+  };
+  const mysteryRule = { id: 'a2', type: 'future-mystery-action', data: { x: 1 } };
+  const pool = { ...r, echoActions: [jsRule, mysteryRule] };
+  const msg = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      return (e as { getMessage?: (l: string) => string }).getMessage?.('en') ?? String(e);
+    }
+    throw new Error('expected throw');
+  };
+
+  it('run_javascript echoed with the stored script → stored action preserved verbatim', () => {
+    const out = compileActions([{ type: 'run_javascript', script: 'console.log(1)' }] as any, pool);
+    expect(out).toEqual([jsRule]);
+    expect(out[0]).not.toBe(jsRule); // cloned, not shared
+  });
+
+  it('run_javascript with a DIFFERENT script → rejected (no new/edited scripts)', () => {
+    expect(
+      msg(() => compileActions([{ type: 'run_javascript', script: 'evil()' }] as any, pool)),
+    ).toMatch(/blocked for security/i);
+  });
+
+  it('run_javascript with no pool (fresh create) → rejected', () => {
+    expect(
+      msg(() => compileActions([{ type: 'run_javascript', script: 'console.log(1)' }] as any, r)),
+    ).toMatch(/blocked for security/i);
+  });
+
+  it('unsupported echo whose note matches a stored action → preserved verbatim', () => {
+    const out = compileActions(
+      [{ type: 'unsupported', note: 'future-mystery-action' }] as any,
+      pool,
+    );
+    expect(out).toEqual([mysteryRule]);
+  });
+
+  it('fresh unsupported (no matching stored action) → rejected, not silently dropped', () => {
+    expect(msg(() => compileActions([{ type: 'unsupported', note: 'nope' }] as any, pool))).toMatch(
+      /echo-only/i,
+    );
+    expect(msg(() => compileActions([{ type: 'unsupported' }] as any, r))).toMatch(/echo-only/i);
+  });
+
+  it('collectEchoableActions harvests actions/clickedActions lists at any depth, nothing else', () => {
+    const prev = {
+      items: [{ clickedActions: [jsRule], completeConditions: [{ type: 'task-is-clicked' }] }],
+      content: [{ children: [{ children: [{ element: { data: { actions: [mysteryRule] } } }] }] }],
+      hideRules: [{ type: 'current-page', data: {} }],
+    };
+    const got = collectEchoableActions(prev);
+    expect(got).toEqual([jsRule, mysteryRule]);
   });
 });

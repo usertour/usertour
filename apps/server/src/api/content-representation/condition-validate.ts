@@ -67,6 +67,16 @@ const CONDITION_ERROR_MESSAGES: Record<string, string> = {
     'event-attribute condition is missing or references an unknown attribute',
 };
 
+// The walk descends the COMPILED (internal) structure, but issue paths face the
+// API author — rename the internal keys that differ from their representation
+// names so a reported path matches what the author actually wrote.
+const PUBLIC_PATH_SEGMENT: Record<string, string> = {
+  clickedActions: 'clickActions',
+  completeConditions: 'completeWhen',
+  onlyShowTaskConditions: 'onlyShowWhen',
+  whereConditions: 'where',
+};
+
 export function collectRuleIssues(
   value: unknown,
   ctx: ValidateContext,
@@ -97,7 +107,7 @@ export function collectRuleIssues(
         // starts nothing at runtime.
         const cid = (obj.data as { contentId?: unknown } | undefined)?.contentId;
         if (typeof cid === 'string' && cid && !contentIds.has(cid)) {
-          issues.push({ path: at, message: 'start-flow action references unknown content' });
+          issues.push({ path: at, message: 'start_content action references unknown content' });
         }
       } else if (type === 'content-list' && contentIds && Array.isArray(obj.contentItems)) {
         // Resource-center content-list items each link to a flow/checklist; a
@@ -118,7 +128,9 @@ export function collectRuleIssues(
     }
     // Recurse into every value — rules nest under group.conditions,
     // event.whereConditions, button actions/disable/hide conditions, etc.
-    for (const key of Object.keys(obj)) walk(obj[key], `${at}.${key}`);
+    for (const key of Object.keys(obj)) {
+      walk(obj[key], `${at}.${PUBLIC_PATH_SEGMENT[key] ?? key}`);
+    }
   };
 
   walk(value, path);

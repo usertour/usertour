@@ -1,4 +1,5 @@
 import { compileResourceCenter } from './resource-center.compile';
+import { representationResourceCenter } from './resource-center.schema';
 import { decompileResourceCenter } from './resource-center.decompile';
 
 const ids = { attributeId: (c: string) => c, eventId: (c: string) => c } as never;
@@ -111,5 +112,193 @@ describe('resource-center block codec: announcement + unknown-block honesty', ()
         ),
       ),
     ).toMatch(/echo-only/);
+  });
+});
+
+describe('action-block clickActions echo pool (RC A+B defect D1)', () => {
+  // The action-block compile path must pass the resolvers through — without
+  // them the echoActions pool never reaches compileActions, and an RC whose
+  // action block carries a builder-authored run_javascript could not have ANY
+  // tab edited via the API (tabs are a full-list replacement; the required
+  // echo of that block was always rejected).
+  const jsRule = { id: 'x1', type: 'javascript-evaluate', data: { value: 'alert("rc")' } };
+  const poolIds = { ...(ids as object), echoActions: [jsRule] } as never;
+
+  it('run_javascript echoed with the stored script is preserved on an action block', () => {
+    const rep = tabs([
+      {
+        type: 'action',
+        name: 'Do it',
+        clickActions: [{ type: 'run_javascript', script: 'alert("rc")' }],
+      },
+    ]);
+    const internal: any = compileResourceCenter(rep as never, undefined, poolIds);
+    expect(internal.tabs[0].blocks[0].clickedActions).toEqual([jsRule]);
+  });
+
+  it('fresh run_javascript on an action block is still rejected', () => {
+    const rep = tabs([
+      {
+        type: 'action',
+        name: 'Do it',
+        clickActions: [{ type: 'run_javascript', script: 'evil()' }],
+      },
+    ]);
+    expect(thrownMessage(() => compileResourceCenter(rep as never, undefined, poolIds))).toMatch(
+      /blocked for security/i,
+    );
+  });
+});
+
+describe('RC A+B fixes: label, tab merge, customCode gate, inherit placement', () => {
+  it('content-list item label round-trips and survives an echo (was: silently shredded)', () => {
+    const rep = tabs([
+      {
+        type: 'content-list',
+        name: 'Guides',
+        items: [{ content: 'c1', contentType: 'flow', label: 'Builder label' }],
+      },
+    ]);
+    const internal: any = compileResourceCenter(rep as never, undefined, ids);
+    expect(internal.tabs[0].blocks[0].contentItems[0].label).toBe('Builder label');
+    const back: any = decompileResourceCenter(internal, idR);
+    expect(back.tabs[0].blocks[0].items[0].label).toBe('Builder label');
+    // echo the read-back through compile again — label still there
+    const echoed: any = compileResourceCenter(back, internal, ids);
+    expect(echoed.tabs[0].blocks[0].contentItems[0].label).toBe('Builder label');
+  });
+
+  it('an echoed tab id carries stored builder-only fields and the icon forward', () => {
+    const existing = {
+      tabs: [
+        {
+          id: 'tab1',
+          name: 'Home',
+          iconSource: 'builtin',
+          iconType: 'home-line',
+          builderTabFlag: true,
+          blocks: [],
+        },
+      ],
+    };
+    const rep = { tabs: [{ id: 'tab1', name: 'Home renamed', blocks: [] }] };
+    const internal: any = compileResourceCenter(rep as never, existing, ids);
+    const tab = internal.tabs[0];
+    expect(tab.name).toBe('Home renamed');
+    expect(tab.builderTabFlag).toBe(true); // prev-spread keeps unknown stored fields
+    expect(tab.iconSource).toBe('builtin'); // omitted icon no longer resets to none
+    expect(tab.iconType).toBe('home-line');
+  });
+
+  it('live-chat customCode: fresh write rejected; echo of stored code kept; omit keeps', () => {
+    const fresh = tabs([
+      { type: 'live-chat', name: 'Chat', provider: 'custom', customCode: 'evil()' },
+    ]);
+    expect(thrownMessage(() => compileResourceCenter(fresh as never, undefined, ids))).toMatch(
+      /blocked for security/i,
+    );
+
+    const existing = {
+      tabs: [
+        {
+          id: 'tabX',
+          name: 'Tab',
+          blocks: [
+            {
+              id: 'lc1',
+              type: 'live-chat',
+              name: [{ type: 'paragraph', children: [{ text: 'Chat' }] }],
+              liveChatProvider: 'custom',
+              customLiveChatCode: 'openChat()',
+            },
+          ],
+        },
+      ],
+    };
+    const echo = {
+      tabs: [
+        {
+          id: 'tabX',
+          name: 'Tab',
+          blocks: [
+            {
+              id: 'lc1',
+              type: 'live-chat',
+              name: 'Chat',
+              provider: 'custom',
+              customCode: 'openChat()',
+            },
+          ],
+        },
+      ],
+    };
+    const kept: any = compileResourceCenter(echo as never, existing, ids);
+    expect(kept.tabs[0].blocks[0].customLiveChatCode).toBe('openChat()');
+
+    const omit = {
+      tabs: [
+        {
+          id: 'tabX',
+          name: 'Tab',
+          blocks: [{ id: 'lc1', type: 'live-chat', name: 'Chat', provider: 'custom' }],
+        },
+      ],
+    };
+    const keptToo: any = compileResourceCenter(omit as never, existing, ids);
+    expect(keptToo.tabs[0].blocks[0].customLiveChatCode).toBe('openChat()');
+
+    const edited = {
+      tabs: [
+        {
+          id: 'tabX',
+          name: 'Tab',
+          blocks: [
+            {
+              id: 'lc1',
+              type: 'live-chat',
+              name: 'Chat',
+              provider: 'custom',
+              customCode: 'evil()',
+            },
+          ],
+        },
+      ],
+    };
+    expect(thrownMessage(() => compileResourceCenter(edited as never, existing, ids))).toMatch(
+      /blocked for security/i,
+    );
+  });
+
+  it("icon source 'inherit' is schema-legal on content-list items only", () => {
+    const itemLevel = representationResourceCenter.safeParse({
+      tabs: [
+        {
+          name: 'T',
+          blocks: [
+            {
+              type: 'content-list',
+              name: 'Guides',
+              items: [{ content: 'c1', contentType: 'flow', icon: { source: 'inherit' } }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(itemLevel.success).toBe(true);
+
+    const tabLevel = representationResourceCenter.safeParse({
+      tabs: [{ name: 'T', icon: { source: 'inherit' }, blocks: [] }],
+    });
+    expect(tabLevel.success).toBe(false);
+
+    const blockLevel = representationResourceCenter.safeParse({
+      tabs: [
+        {
+          name: 'T',
+          blocks: [{ type: 'action', name: 'Go', icon: { source: 'inherit' }, clickActions: [] }],
+        },
+      ],
+    });
+    expect(blockLevel.success).toBe(false);
   });
 });

@@ -214,6 +214,25 @@ describe('validateVersionUsable', () => {
       ]);
       expect(clean.warnings).toHaveLength(0);
     });
+
+    it('errors on a body button block with no actions (was a silent publish gap)', () => {
+      const okItem = { name: 'Task', clickedActions: [{ type: 'x' }], completeConditions: [] };
+      const body = (element: unknown) => [{ children: [{ children: [{ element }] }] }];
+      const withBody = (content: unknown) =>
+        validateVersionUsable({
+          type: ContentDataType.CHECKLIST,
+          themeId: 't',
+          data: { items: [okItem], content },
+        });
+      const broken = withBody(body({ type: 'button', data: { text: 'Go', actions: [] } }));
+      expect(broken.ok).toBe(false);
+      expect(broken.errors.some((e) => e.path === 'content')).toBe(true);
+      // a wired button and an empty body both pass
+      expect(
+        withBody(body({ type: 'button', data: { text: 'Go', actions: [{ type: 'x' }] } })).ok,
+      ).toBe(true);
+      expect(withBody([]).ok).toBe(true);
+    });
   });
 
   describe('launcher', () => {
@@ -379,6 +398,25 @@ describe('validateVersionUsable', () => {
       expect(paths(r.warnings)).toContain('introContent');
     });
 
+    it('warns on detail content with Read more DISABLED — an unreachable detail page (was silent)', () => {
+      const r = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: false,
+        detailContent: textBlocks,
+      });
+      expect(r.ok).toBe(true); // warning, not error
+      expect(r.warnings.some((w) => w.message.includes('unreachable'))).toBe(true);
+      // no such warning when read-more is on or the detail page is empty
+      const on = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: true,
+        detailContent: textBlocks,
+      });
+      expect(on.warnings.some((w) => w.message.includes('unreachable'))).toBe(false);
+    });
+
     it('accepts a titled announcement with intro content and a filled Read more page', () => {
       const r = announcement({
         title: 'v2.1',
@@ -473,9 +511,10 @@ describe('validateVersionUsable', () => {
         config: { autoStartRules: [cond] as never },
         conditionContext: ctx,
       });
-    // Condition errors are pathed under `config.…`; flow's own errors are not.
+    // Condition errors are pathed under the PUBLIC rule slot (`startRules.when…`,
+    // not the internal `config.autoStartRules`); flow's own errors are not.
     const condErrors = (r: { errors: { path: string; message: string }[] }) =>
-      r.errors.filter((e) => e.path.startsWith('config'));
+      r.errors.filter((e) => e.path.startsWith('startRules.when'));
 
     it('passes a valid user-attr condition', () => {
       const r = run({
@@ -796,5 +835,111 @@ describe('validateVersionUsable', () => {
       });
       expect(report.warnings.filter((w) => w.path.includes('waitSeconds'))).toEqual([]);
     });
+  });
+});
+
+describe('dead launch targets (exists but never published)', () => {
+  const ctxContents = [
+    { id: 'flow-pub', name: 'Published Flow', publishedAnywhere: true },
+    { id: 'flow-draft', name: 'Draft Flow', publishedAnywhere: false },
+  ];
+  const bannerWith = (contentId: string) =>
+    validateVersionUsable({
+      type: ContentDataType.BANNER,
+      themeId: 't',
+      data: {
+        embedPlacement: 'top-of-page',
+        contents: [
+          {
+            children: [
+              {
+                children: [
+                  {
+                    element: {
+                      type: 'button',
+                      data: {
+                        text: 'Go',
+                        actions: [{ type: 'flow-start', data: { contentId } }],
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      conditionContext: { contents: ctxContents as never },
+    });
+
+  it('warns when a start_content action targets a never-published content', () => {
+    const r = bannerWith('flow-draft');
+    expect(r.ok).toBe(true); // warning, not error
+    expect(r.warnings.some((w) => w.message.includes('not published in ANY environment'))).toBe(
+      true,
+    );
+  });
+
+  it('stays quiet for a published target and for unknown ids (existence is another check)', () => {
+    expect(bannerWith('flow-pub').warnings.some((w) => w.message.includes('not published'))).toBe(
+      false,
+    );
+    expect(bannerWith('flow-ghost').warnings.some((w) => w.message.includes('not published'))).toBe(
+      false,
+    );
+  });
+
+  it('warns for a resource-center content-list item pointing at a never-published content', () => {
+    const r = validateVersionUsable({
+      type: ContentDataType.RESOURCE_CENTER,
+      themeId: 't',
+      data: {
+        tabs: [
+          {
+            name: 'Home',
+            blocks: [
+              {
+                type: ResourceCenterBlockType.CONTENT_LIST,
+                contentItems: [{ contentId: 'flow-draft', contentType: 'flow' }],
+              },
+            ],
+          },
+        ],
+      },
+      conditionContext: { contents: ctxContents as never },
+    });
+    expect(r.warnings.some((w) => w.message.includes('list entry silently does nothing'))).toBe(
+      true,
+    );
+  });
+
+  it('warns when a list entry declares a contentType that mismatches the real target type (L6)', () => {
+    const rcWithItem = (contentType: string) =>
+      validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              blocks: [
+                {
+                  type: ResourceCenterBlockType.CONTENT_LIST,
+                  contentItems: [{ contentId: 'cl-pub', contentType }],
+                },
+              ],
+            },
+          ],
+        },
+        conditionContext: {
+          contents: [
+            { id: 'cl-pub', name: 'Real Checklist', type: 'checklist', publishedAnywhere: true },
+          ] as never,
+        },
+      });
+    const mismatch = rcWithItem('flow');
+    expect(mismatch.ok).toBe(true); // warning, not error — launching still works by id
+    expect(mismatch.warnings.some((w) => w.message.includes('is a checklist'))).toBe(true);
+    expect(rcWithItem('checklist').warnings.some((w) => w.message.includes('is a'))).toBe(false);
   });
 });

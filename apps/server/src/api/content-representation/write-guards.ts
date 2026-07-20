@@ -71,7 +71,7 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'reactive_condition',
           path: at,
-          message: `A "${type}" condition can't be used in ${slot} (at ${at}) — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
+          message: `A "${type}" condition can't be used in ${slot} — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
         });
       }
       if (type === 'group') {
@@ -100,14 +100,14 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'step_shape',
           path: `${at}.placement`,
-          message: `A tooltip step (${at}) needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
+          message: `A tooltip step needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
         });
       }
       if (caps.placement === 'grid' && isTooltipShape) {
         issues.push({
           rule: 'step_shape',
           path: `${at}.placement`,
-          message: `A modal step (${at}) needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
+          message: `A modal step needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
         });
       }
     }
@@ -118,7 +118,7 @@ export function collectWriteViolations(input: {
         path: `${at}.onClick`,
         message: `onClick (click the target element to advance) only works on a tooltip step; a ${String(
           type,
-        )} step (${at}) has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
+        )} step has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
       });
     }
   };
@@ -171,10 +171,27 @@ export function collectWriteViolations(input: {
     // goto_step is flow-only — every non-flow type's action set excludes STEP_GOTO
     // (unknown type: reject too; compile rejects the type right after).
     const rejectGotoStep = !caps?.actions.includes(ContentActionsItemType.STEP_GOTO);
-    // A type with action slots but no dismiss variant (resource center) can't dismiss;
-    // types with no action slots at all (tracker) are left to their own schema.
+    // A type with action slots but no dismiss variant (resource center,
+    // announcement) can't dismiss; types with no action slots at all (tracker)
+    // are left to their own schema.
     const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
-    const slotHint = `a ${contentType}'s content`;
+    const slotHint = `${contentType === 'announcement' ? 'an' : 'a'} ${contentType}'s content`;
+    // Name the actions this type ACTUALLY allows (public representation names) —
+    // the previous fixed text recommended `dismiss` to types that reject it, and
+    // used internal names; both sent authors straight into a second E1017.
+    const allowedHint = [
+      caps?.actions.includes(ContentActionsItemType.FLOW_START) ? 'start_content' : null,
+      caps?.actions.includes(ContentActionsItemType.PAGE_NAVIGATE) ? 'navigate' : null,
+      caps?.dismissVariant ? 'dismiss' : null,
+    ]
+      .filter(Boolean)
+      .join(' / ');
+    const perTypeDismissReason: Record<string, string> = {
+      'resource-center':
+        "A resource center has no dismiss action — its panel's close button only collapses it back to the launcher; the session has no user-facing dismiss.",
+      announcement:
+        'An announcement has no dismiss action — feed entries are marked seen, never dismissed, and the popup dismisses itself on any interaction.',
+    };
     const walk = (node: unknown, path: string): void => {
       if (Array.isArray(node)) {
         node.forEach((n, i) => walk(n, `${path}[${i}]`));
@@ -186,14 +203,16 @@ export function collectWriteViolations(input: {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "goto_step" action can't be used in ${slotHint} (at ${path}). goto_step navigates between the steps of a flow, and this content type has no steps — use start_content, page_navigate, or dismiss instead.`,
+          message: `A "goto_step" action can't be used in ${slotHint}. goto_step navigates between the steps of a flow, and this content type has no steps — use ${allowedHint || 'the actions this type supports'} instead.`,
         });
       }
       if (rejectDismiss && obj.type === 'dismiss') {
         issues.push({
           rule: 'action_not_allowed',
           path,
-          message: `A "dismiss" action can't be used in ${slotHint} (at ${path}). A resource center has no dismiss action — use start_content or page_navigate, or let its built-in close button dismiss it.`,
+          message: `A "dismiss" action can't be used in ${slotHint}. ${
+            perTypeDismissReason[contentType ?? ''] ?? 'This content type has no dismiss action.'
+          } Use ${allowedHint || 'the actions this type supports'} instead.`,
         });
       }
       for (const key of Object.keys(obj)) {
