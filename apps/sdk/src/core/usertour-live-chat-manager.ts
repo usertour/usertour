@@ -59,13 +59,60 @@ export class UsertourLiveChatManager {
   }
 
   /**
+   * Whether the provider's script is actually present on the host page. Every
+   * provider call below uses optional chaining, so opening a missing provider
+   * is a SILENT no-op — and its close listener never attaches, which means the
+   * caller would hide the resource center and nothing would ever restore it.
+   * Check availability up front instead.
+   */
+  isProviderAvailable(provider: LiveChatProvider): boolean {
+    const w = window as any;
+    switch (provider) {
+      case LiveChatProvider.CRISP:
+        return !!w.$crisp;
+      case LiveChatProvider.INTERCOM:
+        return typeof w.Intercom === 'function';
+      case LiveChatProvider.ZENDESK_CLASSIC:
+      case LiveChatProvider.ZENDESK_MESSENGER:
+        return typeof w.zE === 'function';
+      case LiveChatProvider.FRESHCHAT:
+        return !!(w.FreshworksWidget ?? w.fcWidget ?? w.fdWidget);
+      case LiveChatProvider.HELP_SCOUT:
+        return typeof w.Beacon === 'function';
+      case LiveChatProvider.HUBSPOT:
+        // The loader script may not have exposed HubSpotConversations yet —
+        // accept its settings object or container as evidence it's installed;
+        // openHubSpot's ready-polling (now with a deadline) covers the rest.
+        return !!(
+          w.HubSpotConversations ??
+          w.hsConversationsSettings ??
+          document.getElementById(UsertourLiveChatManager.HUBSPOT_CONTAINER_ID)
+        );
+      case LiveChatProvider.CUSTOM:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Open a live chat provider widget and listen for close events.
    * Automatically tears down any previously active session.
+   *
+   * Returns false (and does nothing) when the provider's script is not present
+   * on the page — callers must NOT hide their own UI in that case, since no
+   * close event would ever arrive to restore it.
    *
    * Does not handle CUSTOM — that is fire-and-forget with no session to
    * track; use `executeCustomCode` instead.
    */
-  open(block: ResourceCenterLiveChatBlock): void {
+  open(block: ResourceCenterLiveChatBlock): boolean {
+    if (!this.isProviderAvailable(block.liveChatProvider)) {
+      logger.warn(
+        `Live chat provider "${block.liveChatProvider}" is not detected on this page — install the provider's script on the host page, or the chat cannot open.`,
+      );
+      return false;
+    }
     this.teardownSession();
     this.activeBlock = block;
 
@@ -75,6 +122,7 @@ export class UsertourLiveChatManager {
       this.openWidget(block);
       this.sessionCleanup = this.listenClose(block, () => this.handleProviderClose());
     }
+    return true;
   }
 
   /**
@@ -274,15 +322,31 @@ export class UsertourLiveChatManager {
       ?.style.setProperty('visibility', value, 'important');
   }
 
+  /** How long to wait for HubSpot to become ready before giving the UI back. */
+  private static readonly HUBSPOT_READY_TIMEOUT_MS = 10_000;
+
   private openHubSpot(onClose: () => void): () => void {
     const timerId = UsertourLiveChatManager.HUBSPOT_POLL_TIMER_ID;
+    const startedAt = Date.now();
     let observer: MutationObserver | null = null;
     let disposed = false;
 
     const setup = () => {
       const w = window as any;
       const container = document.getElementById(UsertourLiveChatManager.HUBSPOT_CONTAINER_ID);
-      if (!w.HubSpotConversations || !container) return;
+      if (!w.HubSpotConversations || !container) {
+        // Never became ready — stop polling (the old code polled forever) and
+        // report a close so the caller restores its UI instead of staying
+        // hidden behind a chat that will never open.
+        if (Date.now() - startedAt > UsertourLiveChatManager.HUBSPOT_READY_TIMEOUT_MS) {
+          timerManager.clearInterval(timerId);
+          if (!disposed) {
+            logger.warn('HubSpot live chat did not become ready in time; restoring the UI.');
+            onClose();
+          }
+        }
+        return;
+      }
 
       // API and DOM both ready — stop polling
       timerManager.clearInterval(timerId);

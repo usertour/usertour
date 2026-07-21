@@ -337,7 +337,14 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         await this.expand(false);
         return;
       }
-      this.liveChatManager.open(block);
+      // A provider whose script is missing on the page cannot open — and no
+      // close event would ever arrive to un-hide the RC (liveChatActive would
+      // stay true forever, the launcher invisible until a full reload). Fall
+      // back to a plain collapse, same as the CUSTOM fire-and-forget path.
+      if (!this.liveChatManager.open(block)) {
+        await this.expand(false);
+        return;
+      }
       // Hide RC and mark live chat active in a single render to avoid the
       // launcher flashing between expanded:false and liveChatActive:true.
       // Mirror expand(false)'s persistence + analytics so closing-via-chat
