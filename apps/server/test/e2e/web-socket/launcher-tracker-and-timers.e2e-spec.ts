@@ -41,6 +41,8 @@ describe('WebSocket v2 launcher, tracker and timers (e2e)', () => {
 
   let launcherContentId: string;
   let launcherSessionId: string;
+  let launcherBContentId: string;
+  let launcherCContentId: string;
   let trackerContentId: string;
   let trackerVersionId: string;
   let trackerEventCodeName: string;
@@ -96,6 +98,27 @@ describe('WebSocket v2 launcher, tracker and timers (e2e)', () => {
       contentId: launcherContent.id,
       versionId: launcherVersion.id,
     });
+
+    // Two more launchers for the incremental-start regression: starting one
+    // must not remove the other's live session (a page can carry many).
+    const buildPublishedLauncher = async (name: string): Promise<string> => {
+      const content = await buildContent(prisma, {
+        projectId,
+        environmentId,
+        name,
+        type: 'launcher',
+      });
+      const version = await buildVersion(prisma, {
+        contentId: content.id,
+        sequence: 1,
+        config: { ...alwaysOnAutoStartConfig, autoStartRulesSetting: { wait: 0 } },
+        data: {},
+      });
+      await publishVersion(prisma, { environmentId, contentId: content.id, versionId: version.id });
+      return content.id;
+    };
+    launcherBContentId = await buildPublishedLauncher('ws-launcher-b');
+    launcherCContentId = await buildPublishedLauncher('ws-launcher-c');
 
     // Tracker: version.data.eventId names the target event definition.
     const trackerEvent = await buildEvent(prisma, {
@@ -240,6 +263,46 @@ describe('WebSocket v2 launcher, tracker and timers (e2e)', () => {
 
     const dismissedEvent = await findSessionEvent(launcherSessionId, 'launcher_dismissed');
     expect(dismissedEvent).not.toBeNull();
+  });
+
+  it('starting one launcher does not remove another launcher live session (incremental)', async () => {
+    // The SDK starts each found launcher with its OWN StartContent. Under the
+    // old full-state batch semantics, each call treated every other launcher
+    // as "removed" — a RemoveLauncher was emitted per sibling and only the
+    // last-started launcher survived first paint on a many-launcher page.
+    const before = client.serverMessages.length;
+
+    expect(
+      await client.sendClientMessage(ClientMessageKind.START_CONTENT, {
+        contentId: launcherBContentId,
+        startReason: 'start_from_condition',
+      }),
+    ).toBe(true);
+    expect(
+      await client.sendClientMessage(ClientMessageKind.START_CONTENT, {
+        contentId: launcherCContentId,
+        startReason: 'start_from_condition',
+      }),
+    ).toBe(true);
+
+    // No RemoveLauncher may be emitted by either single-content start.
+    const removals = client.serverMessages
+      .slice(before)
+      .filter((message) => message.kind === ServerMessageKind.REMOVE_LAUNCHER);
+    expect(removals).toEqual([]);
+
+    // Both sessions are live — B survived C's start.
+    for (const contentId of [launcherBContentId, launcherCContentId]) {
+      const session = await prisma.bizSession.findFirst({
+        where: {
+          contentId,
+          bizUser: { externalId: externalUserId, environmentId },
+          deleted: false,
+          state: 0,
+        },
+      });
+      expect(session).not.toBeNull();
+    }
   });
 
   it('TrackTrackerEvent records the tracker target event and dedups within the window', async () => {
