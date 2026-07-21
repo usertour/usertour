@@ -25,7 +25,13 @@ export const listAttributeDefinitionsQuery = z.object({
   limit,
   cursor,
   ...nameSearchField,
-  scope: z.string().optional().describe('Filter by scope: user, company, or companyMembership.'),
+  scope: z
+    .string()
+    .optional()
+    .describe(
+      'Filter by scope: user, company, companyMembership, or eventDefinition (event attributes ' +
+        '— read-only here; they are managed via the event-definitions surface).',
+    ),
   orderBy: singleOrArray(orderByField).describe('Order by field(s), e.g. -createdAt.'),
   eventName: singleOrArray(z.string()).describe('Filter to attributes on these event(s).'),
 });

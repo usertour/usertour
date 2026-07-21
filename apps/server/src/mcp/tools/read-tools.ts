@@ -541,14 +541,18 @@ export function buildReadTools(): McpTool[] {
         'List attribute definitions (the schema of custom attributes) for the project. ' +
         'Optionally filter by `name` (case-insensitive substring of EITHER the machine codeName ' +
         'or the human displayName — search by the codeName you see in conditions/identify), ' +
-        '`scope` ("user", "company", or "companyMembership"), or `eventName` (only the ' +
-        'event-scoped attributes attached to that event). Returns `{ items, nextCursor }`.',
+        '`scope` ("user", "company", "companyMembership", or "eventDefinition" for event ' +
+        'attributes), or `eventName` (only the event-scoped attributes attached to that one ' +
+        'event). Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         scope: z
-          .enum(['user', 'company', 'companyMembership'])
+          .enum(['user', 'company', 'companyMembership', 'eventDefinition'])
           .optional()
-          .describe('Filter by which object the attribute belongs to.'),
+          .describe(
+            'Filter by which object the attribute belongs to. `eventDefinition` lists event ' +
+              'attributes (read-only here — they are managed via the event-definitions surface).',
+          ),
         eventName: z
           .string()
           .optional()

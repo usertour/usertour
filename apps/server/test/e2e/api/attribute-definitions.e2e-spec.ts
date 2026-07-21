@@ -173,6 +173,31 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(res.body.error.code).toBe('E1015');
   });
 
+  it('filters event attributes with scope=eventDefinition (and excludes them from scope=user)', async () => {
+    // Event attributes (bizType 4) are readable through the same list — the
+    // scope filter accepts `eventDefinition` even though CREATE deliberately
+    // doesn't (event attributes are managed via the event-definitions surface).
+    await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      codeName: 'attr_event_scoped',
+      bizType: 4,
+      dataType: 2,
+    });
+    const codes = async (scope: string) => {
+      const res = await api(
+        'get',
+        `/v2/projects/${fx.projectId}/attribute-definitions?scope=${scope}&limit=100`,
+        v2Token,
+      );
+      expect(res.status).toBe(200);
+      return res.body.results.map((a: { codeName: string }) => a.codeName);
+    };
+    const eventScoped = await codes('eventDefinition');
+    expect(eventScoped).toContain('attr_event_scoped');
+    expect(eventScoped).not.toContain(codeName); // the user-scoped fixture stays out
+    expect(await codes('user')).not.toContain('attr_event_scoped');
+  });
+
   async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const minted = await graphql(app, {
       query: CREATE,
