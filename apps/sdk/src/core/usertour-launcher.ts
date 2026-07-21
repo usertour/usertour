@@ -168,7 +168,17 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       // here or the beacon never opens.
       const el = this.watcher.getElement();
       if (el && this.getSessionId()) {
-        this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+        if (el.isConnected) {
+          this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+        } else {
+          // The found element has since been DETACHED (SPA re-render kept the
+          // JS reference but unmounted the node). Don't hand a dead reference
+          // to the positioning layer — write the store closed instead; the
+          // 200ms check loop's checkVisibility() re-finds by selector and
+          // reopens via ELEMENT_CHANGED. (The store must exist either way, or
+          // checkTargetVisibility bails on !store and the beacon never opens.)
+          this.setStoreData({ ...store, openState: false, triggerRef: undefined });
+        }
       }
       return;
     }

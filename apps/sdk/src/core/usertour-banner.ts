@@ -159,7 +159,14 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       // re-run still lands the update.
       const el = this.watcher.getElement();
       if (el) {
-        this.setStoreData({ ...store, openState: true, targetElement: el });
+        if (el.isConnected) {
+          this.setStoreData({ ...store, openState: true, targetElement: el });
+        } else {
+          // Detached (SPA re-render) — don't hand a dead reference to the
+          // renderer; the check loop's checkVisibility() re-finds by selector
+          // and reopens via ELEMENT_CHANGED.
+          this.setStoreData({ ...store, openState: false, targetElement: undefined });
+        }
       }
       return;
     }
