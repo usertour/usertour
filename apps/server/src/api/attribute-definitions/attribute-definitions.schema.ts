@@ -33,9 +33,22 @@ export const listAttributeDefinitionsQuery = z.object({
         '— read-only here; they are managed via the event-definitions surface).',
     ),
   orderBy: singleOrArray(orderByField).describe('Order by field(s), e.g. -createdAt.'),
-  eventName: singleOrArray(z.string()).describe('Filter to attributes on these event(s).'),
+  eventName: singleOrArray(z.string()).describe(
+    'Filter to attributes attached to these event(s), matched by event codeName (EXACT match — ' +
+      'not displayName; a displayName silently matches nothing). Multiple values OR together.',
+  ),
 });
 export class ListAttributeDefinitionsQueryDto extends createZodDto(listAttributeDefinitionsQuery) {}
+
+// The only scopes an attribute can actually carry (bizType 1-4). Using the full
+// ApiObjectType enum here made the docs list 17 impossible values (step, theme,
+// contentAnalytics, ...) for a field that only ever holds these four.
+const attributeScope = z.enum([
+  ApiObjectType.USER,
+  ApiObjectType.COMPANY,
+  ApiObjectType.COMPANY_MEMBERSHIP,
+  ApiObjectType.EVENT_DEFINITION,
+]);
 
 export const attribute = z.object({
   id: z.string(),
@@ -47,7 +60,10 @@ export const attribute = z.object({
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
-  scope: z.nativeEnum(ApiObjectType),
+  scope: attributeScope.describe(
+    'Which object the attribute belongs to. `eventDefinition` = an event attribute (managed ' +
+      'via the event-definitions surface).',
+  ),
 });
 export class AttributeDto extends createZodDto(attribute) {}
 
