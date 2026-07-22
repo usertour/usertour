@@ -22,7 +22,9 @@ import {
 export const versionExpand = z.enum(['questions', 'steps', 'data']);
 
 export const getContentVersionQuery = z.object({
-  expand: singleOrArray(versionExpand).describe('Inline the version questions.'),
+  expand: singleOrArray(versionExpand).describe(
+    'Inline: questions, steps (the full step tree — how you read a flow body), data.',
+  ),
 });
 export class GetContentVersionQueryDto extends createZodDto(getContentVersionQuery) {}
 
@@ -30,7 +32,9 @@ export const listContentVersionsQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   cursor: z.string().optional(),
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
-  expand: singleOrArray(versionExpand).describe('Inline the version questions.'),
+  expand: singleOrArray(versionExpand).describe(
+    'Inline: questions, steps (the full step tree — how you read a flow body), data.',
+  ),
 });
 export class ListContentVersionsQueryDto extends createZodDto(listContentVersionsQuery) {}
 
