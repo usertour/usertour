@@ -12,7 +12,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -63,7 +63,7 @@ export class ApiUsersController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'User external ID' })
   @ApiResponse({ status: 200, description: 'User found', type: UserDto })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'User not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @EnvironmentDecorator() environment: Environment,
@@ -95,7 +95,7 @@ export class ApiUsersController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'User external ID' })
   @ApiResponse({ status: 204, description: 'User deleted' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'User not found', type: ErrorResponseDto })
   async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     await this.service.delete(id, environment);
   }

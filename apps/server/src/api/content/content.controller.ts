@@ -14,7 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -82,7 +82,7 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Content found', type: ContentDto })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -109,7 +109,7 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Content updated', type: ContentDto })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async update(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -125,7 +125,7 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 204, description: 'Content deleted' })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
     await this.service.remove(id, projectId);
   }
@@ -143,7 +143,7 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Restored content', type: ContentDto })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async restore(@Param('id') id: string, @Param('projectId') projectId: string) {
     return this.service.restore(id, projectId);
   }
@@ -158,7 +158,7 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID to duplicate' })
   @ApiResponse({ status: 201, description: 'Duplicated content', type: ContentDto })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async duplicate(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -179,7 +179,14 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Published; returns the content', type: ContentDto })
-  @ApiResponse({ status: 404, description: 'Content or version not found' })
+  @ApiResponse({ status: 404, description: 'Content or version not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 422,
+    description:
+      'Version is not publishable (E1027) — it fails render-usability validation; the message ' +
+      'lists every blocking issue. Run the validate endpoint first for a dry-run.',
+    type: ErrorResponseDto,
+  })
   async publish(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -203,7 +210,7 @@ export class ApiContentController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 200, description: 'Unpublished; returns the content', type: ContentDto })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async unpublish(
     @Param('id') id: string,
     @Param('projectId') projectId: string,

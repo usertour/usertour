@@ -14,7 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -64,7 +64,7 @@ export class ApiSegmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment found', type: SegmentDto })
-  @ApiResponse({ status: 404, description: 'Segment not found' })
+  @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
   async get(@Param('id') id: string, @Param('projectId') projectId: string) {
     return this.service.get(id, projectId);
   }
@@ -84,7 +84,7 @@ export class ApiSegmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment updated', type: SegmentDto })
-  @ApiResponse({ status: 404, description: 'Segment not found' })
+  @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -100,7 +100,7 @@ export class ApiSegmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 204, description: 'Segment deleted' })
-  @ApiResponse({ status: 404, description: 'Segment not found' })
+  @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }
@@ -135,7 +135,11 @@ export class ApiSegmentMembersController {
     description: 'User or company external ID (per segment bizType)',
   })
   @ApiResponse({ status: 204, description: 'Member added' })
-  @ApiResponse({ status: 404, description: 'Segment, user, or company not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Segment, user, or company not found',
+    type: ErrorResponseDto,
+  })
   @HttpCode(204)
   async add(
     @Param('id') id: string,
@@ -161,7 +165,11 @@ export class ApiSegmentMembersController {
     description: 'User or company external ID (per segment bizType)',
   })
   @ApiResponse({ status: 204, description: 'Member removed' })
-  @ApiResponse({ status: 404, description: 'Segment, user, or company not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Segment, user, or company not found',
+    type: ErrorResponseDto,
+  })
   async remove(
     @Param('id') id: string,
     @Param('projectId') projectId: string,

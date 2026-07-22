@@ -11,7 +11,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -68,7 +68,7 @@ export class ApiContentSessionsController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session found', type: ContentSessionDto })
-  @ApiResponse({ status: 404, description: 'Content session not found' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @EnvironmentDecorator() environment: Environment,
@@ -85,7 +85,7 @@ export class ApiContentSessionsController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 204, description: 'Content session deleted' })
-  @ApiResponse({ status: 404, description: 'Content session not found' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
   async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     await this.service.delete(id, environment);
   }
@@ -98,7 +98,7 @@ export class ApiContentSessionsController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session ended', type: ContentSessionDto })
-  @ApiResponse({ status: 404, description: 'Content session not found' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
   async end(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     return this.service.end(id, environment);
   }

@@ -19,7 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -99,7 +99,11 @@ export class ApiAnalyticsController {
       discriminator: { propertyName: 'contentType' },
     },
   })
-  @ApiResponse({ status: 404, description: 'Content or environment not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Content or environment not found',
+    type: ErrorResponseDto,
+  })
   async contentAnalytics(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -126,7 +130,11 @@ export class ApiAnalyticsController {
     description: 'Question analytics',
     type: QuestionAnalyticsResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Content or environment not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Content or environment not found',
+    type: ErrorResponseDto,
+  })
   async questionAnalytics(
     @Param('id') id: string,
     @Param('projectId') projectId: string,

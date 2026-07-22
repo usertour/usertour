@@ -13,7 +13,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -61,7 +61,7 @@ export class ApiThemesController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme found', type: ThemeDto })
-  @ApiResponse({ status: 404, description: 'Theme not found' })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -85,7 +85,7 @@ export class ApiThemesController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme updated', type: ThemeDto })
-  @ApiResponse({ status: 404, description: 'Theme not found' })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -107,8 +107,12 @@ export class ApiThemesController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 204, description: 'Theme deleted' })
-  @ApiResponse({ status: 404, description: 'Theme not found' })
-  @ApiResponse({ status: 409, description: 'Theme is used by live or draft content (E1031)' })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description: 'Theme is used by live or draft content (E1031)',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

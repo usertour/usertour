@@ -14,7 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -71,7 +71,7 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 200, description: 'Environment found', type: EnvironmentDto })
-  @ApiResponse({ status: 404, description: 'Environment not found' })
+  @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -107,7 +107,7 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 200, description: 'Environment updated', type: EnvironmentDto })
-  @ApiResponse({ status: 404, description: 'Environment not found' })
+  @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
   async update(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -128,7 +128,7 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 204, description: 'Environment deleted' })
-  @ApiResponse({ status: 404, description: 'Environment not found' })
+  @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
   async remove(
     @Param('id') id: string,
     @Param('projectId') projectId: string,

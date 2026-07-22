@@ -13,7 +13,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -64,7 +64,11 @@ export class ApiAttributeDefinitionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Attribute definition ID' })
   @ApiResponse({ status: 200, description: 'Attribute definition found', type: AttributeDto })
-  @ApiResponse({ status: 404, description: 'Attribute definition not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Attribute definition not found',
+    type: ErrorResponseDto,
+  })
   async get(@Param('projectId') projectId: string, @Param('id') id: string) {
     return this.service.get(id, projectId);
   }
@@ -74,7 +78,11 @@ export class ApiAttributeDefinitionsController {
   @ApiOperation({ summary: 'Create an attribute definition' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Attribute definition created', type: AttributeDto })
-  @ApiResponse({ status: 409, description: 'An attribute with this codeName already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'An attribute with this codeName already exists',
+    type: ErrorResponseDto,
+  })
   async create(@Param('projectId') projectId: string, @Body() body: CreateAttributeBodyDto) {
     return this.service.create(projectId, body);
   }
@@ -85,7 +93,11 @@ export class ApiAttributeDefinitionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Attribute definition ID' })
   @ApiResponse({ status: 200, description: 'Attribute definition updated', type: AttributeDto })
-  @ApiResponse({ status: 404, description: 'Attribute definition not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Attribute definition not found',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -101,7 +113,11 @@ export class ApiAttributeDefinitionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Attribute definition ID' })
   @ApiResponse({ status: 204, description: 'Attribute definition deleted' })
-  @ApiResponse({ status: 404, description: 'Attribute definition not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Attribute definition not found',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

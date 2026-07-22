@@ -12,7 +12,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiStandardErrorResponses } from '../shared/error-response';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -64,7 +64,7 @@ export class ApiCompaniesController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiResponse({ status: 200, description: 'Company found', type: CompanyDto })
-  @ApiResponse({ status: 404, description: 'Company not found' })
+  @ApiResponse({ status: 404, description: 'Company not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @EnvironmentDecorator() environment: Environment,
@@ -96,7 +96,7 @@ export class ApiCompaniesController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiResponse({ status: 204, description: 'Company deleted' })
-  @ApiResponse({ status: 404, description: 'Company not found' })
+  @ApiResponse({ status: 404, description: 'Company not found', type: ErrorResponseDto })
   async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     await this.service.delete(id, environment);
   }
@@ -113,7 +113,7 @@ export class ApiCompaniesController {
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiParam({ name: 'userId', description: 'User external ID' })
   @ApiResponse({ status: 204, description: 'Membership created or updated' })
-  @ApiResponse({ status: 404, description: 'Company or user not found' })
+  @ApiResponse({ status: 404, description: 'Company or user not found', type: ErrorResponseDto })
   async upsertMembership(
     @Param('id') id: string,
     @Param('userId') userId: string,
@@ -135,7 +135,7 @@ export class ApiCompaniesController {
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiParam({ name: 'userId', description: 'User external ID' })
   @ApiResponse({ status: 204, description: 'Membership removed' })
-  @ApiResponse({ status: 404, description: 'Membership not found' })
+  @ApiResponse({ status: 404, description: 'Membership not found', type: ErrorResponseDto })
   async removeMembership(
     @Param('id') id: string,
     @Param('userId') userId: string,
