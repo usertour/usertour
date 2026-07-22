@@ -65,6 +65,13 @@ export function ApiStandardErrorResponses() {
       type: ErrorResponseDto,
     }),
     ApiResponse({
+      status: 429,
+      description:
+        'Rate limit exceeded — E1013. Limits apply per API credential (falling back to client ' +
+        'IP); retry after backing off.',
+      type: ErrorResponseDto,
+    }),
+    ApiResponse({
       status: 403,
       description:
         'Refused — E1000 invalid key, E1011 project not in token scope, E1012 insufficient ' +

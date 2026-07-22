@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AnalyticsModule } from '@/analytics/analytics.module';
 import { ApiTokenModule } from '@/api-token/api-token.module';
@@ -7,6 +9,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
+import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
@@ -43,6 +46,21 @@ import { ApiUsersService } from './users/users.service';
  */
 @Module({
   imports: [
+    // v2 REST rate limiting (per credential; see ApiThrottlerGuard). Module-
+    // scoped ThrottlerModule — the websocket gateway configures its own.
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'api',
+            ttl: config.get<number>('API_THROTTLE_TTL', 60_000),
+            limit: config.get<number>('API_THROTTLE_LIMIT', 1000),
+          },
+        ],
+      }),
+    }),
     ApiTokenModule,
     EventsModule,
     AttributesModule,
@@ -87,6 +105,8 @@ import { ApiUsersService } from './users/users.service';
     // controller-scoped OpenAPIExceptionFilter can never see. Non-/v2 traffic
     // keeps the default behavior.
     { provide: APP_FILTER, useClass: V2FallbackExceptionFilter },
+    // Global guard, no-op off /v2 (see ApiThrottlerGuard).
+    { provide: APP_GUARD, useClass: ApiThrottlerGuard },
   ],
   // Exported for the MCP module, which binds these read services as tools.
   exports: [

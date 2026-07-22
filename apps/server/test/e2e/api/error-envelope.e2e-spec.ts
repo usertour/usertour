@@ -4,6 +4,51 @@ import request from 'supertest';
 import { createTestApp } from '../create-test-app';
 
 /**
+ * Rate limiting needs its own app with a tiny limit — the env is read at
+ * module init, so it must be set BEFORE the app is created (and restored so
+ * other suites keep the roomy default).
+ */
+describe('API v2 rate limiting (e2e)', () => {
+  let app: INestApplication;
+  const prevLimit = process.env.API_THROTTLE_LIMIT;
+
+  beforeAll(async () => {
+    process.env.API_THROTTLE_LIMIT = '3';
+    app = await createTestApp();
+  }, 60000);
+
+  afterAll(async () => {
+    if (prevLimit === undefined) {
+      process.env.API_THROTTLE_LIMIT = undefined as unknown as string;
+      Reflect.deleteProperty(process.env, 'API_THROTTLE_LIMIT');
+    } else {
+      process.env.API_THROTTLE_LIMIT = prevLimit;
+    }
+    await app?.close();
+  });
+
+  it('throttles the 4th request from one credential with the E1013 envelope', async () => {
+    const call = () =>
+      request(app.getHttpServer())
+        .get('/v2/projects/any/environments')
+        .set('Authorization', 'Bearer utp_throttle_probe');
+    for (let i = 0; i < 3; i++) {
+      const res = await call();
+      expect(res.status).not.toBe(429); // 403 invalid key — but counted
+    }
+    const fourth = await call();
+    expect(fourth.status).toBe(429);
+    expect(fourth.body.error?.code).toBe('E1013');
+
+    // A DIFFERENT credential is not affected (per-credential buckets).
+    const other = await request(app.getHttpServer())
+      .get('/v2/projects/any/environments')
+      .set('Authorization', 'Bearer utp_other_credential');
+    expect(other.status).not.toBe(429);
+  });
+});
+
+/**
  * The v2 error-envelope PROMISE: every /v2 error is `{ error: { code, ... } }`,
  * including exceptions thrown BEFORE any route handler exists — a malformed
  * JSON body (dies in the express body-parser middleware) and an unknown /v2
