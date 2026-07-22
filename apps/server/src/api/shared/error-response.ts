@@ -55,8 +55,8 @@ export function ApiStandardErrorResponses() {
     ApiResponse({
       status: 400,
       description:
-        'Invalid request — E1017 validation (may carry `issues`), E1015 invalid scope, ' +
-        'E1016 invalid orderBy.',
+        'Invalid request — E1017 validation (may carry `issues`; an invalid orderBy/limit is ' +
+        'also E1017), E1015 invalid scope, E0003 invalid against current domain state.',
       type: ErrorResponseDto,
     }),
     ApiResponse({

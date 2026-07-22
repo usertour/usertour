@@ -308,6 +308,27 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(no.body.error.code).toBe('E1022');
   });
 
+  it('splits strict-mode unknown keys into per-key issues, each with a path', async () => {
+    // zod reports a strict violation as ONE object-level "Unrecognized keys:
+    // a, b" issue with no per-key path; the mapping layer splits it so clients
+    // can act per field — the documented point of `issues`.
+    const token = await mint([Capability.AttributeCreate]);
+    const res = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_strict_split',
+      displayName: 'S',
+      bogusA: 1,
+      bogusB: 2,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    const issues = res.body.error.issues as { message: string; path?: string }[];
+    const paths = issues.map((i) => i.path);
+    expect(paths).toEqual(expect.arrayContaining(['bogusA', 'bogusB']));
+    expect(issues).toHaveLength(2); // one per stray key, not one blob
+  });
+
   it('rejects a duplicate codeName (409 E1023)', async () => {
     const token = await mint([Capability.AttributeCreate]);
     const res = await send('post', basePath(), token).send({

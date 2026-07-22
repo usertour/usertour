@@ -25,14 +25,33 @@ export function zodIssuesToValidationIssues(
   pathPrefix?: string,
 ): ValidationIssue[] {
   const raw =
-    (error as { issues?: { message?: string; path?: (string | number)[] }[] })?.issues ?? [];
-  return raw.map((issue) => {
+    (
+      error as {
+        issues?: { code?: string; keys?: string[]; message?: string; path?: (string | number)[] }[];
+      }
+    )?.issues ?? [];
+  return raw.flatMap((issue) => {
     const path = formatZodPath(issue.path);
     const prefixed = pathPrefix ? (path ? `${pathPrefix}.${path}` : pathPrefix) : path;
-    return {
-      rule: 'schema' as const,
-      message: issue.message ?? 'Invalid input',
-      ...(prefixed ? { path: prefixed } : {}),
-    };
+
+    // zod reports strict-mode violations as ONE `unrecognized_keys` issue hung
+    // on the OBJECT ("Unrecognized keys: a, b, c" with no per-key path). Split
+    // it so each stray key gets its own issue WITH a path — the whole point of
+    // `issues` is per-field, machine-actionable errors.
+    if (issue.code === 'unrecognized_keys' && issue.keys?.length) {
+      return issue.keys.map((key) => ({
+        rule: 'schema' as const,
+        message: `Unrecognized key: "${key}"`,
+        path: prefixed ? `${prefixed}.${key}` : key,
+      }));
+    }
+
+    return [
+      {
+        rule: 'schema' as const,
+        message: issue.message ?? 'Invalid input',
+        ...(prefixed ? { path: prefixed } : {}),
+      },
+    ];
   });
 }
