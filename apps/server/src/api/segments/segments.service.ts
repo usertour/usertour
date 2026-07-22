@@ -149,6 +149,16 @@ export class ApiSegmentsService {
       conds.forEach((c, i) => {
         const at = `${path}[${i}]`;
         const type = (c as { type?: unknown })?.type;
+        if (type === 'unsupported') {
+          // The read side emits this placeholder for a stored condition the
+          // schema cannot express. Echoing it back cannot preserve the stored
+          // condition (conditions are a full replacement and the placeholder
+          // carries no data), so refuse with directions instead of silently
+          // dropping it.
+          throw new ValidationError(
+            `"unsupported" at ${at} is a read-side placeholder for a stored condition this API cannot express — it cannot be written back. Remove it from the write (which DELETES that stored condition) or migrate the segment's conditions in the builder first.`,
+          );
+        }
         if (typeof type !== 'string' || !ALLOWED.has(type)) {
           throw new ValidationError(
             `Segment conditions support only attribute conditions (and groups of them); got "${String(type)}" at ${at}. A segment's membership is computed from user/company attributes — event / page-url / element / flow / other content-targeting condition types are not evaluated for a segment (they would silently match every user). Use attribute conditions here, or put that logic on the content's start rules instead.`,

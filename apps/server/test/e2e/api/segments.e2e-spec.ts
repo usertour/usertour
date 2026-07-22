@@ -220,6 +220,71 @@ describe('API v2 segments (e2e)', () => {
     expect(read.body.conditions?.[0]).toMatchObject({ type: 'group', match: 'any' });
   });
 
+  it('reads a legacy company-attr stored condition as a normal attribute condition', async () => {
+    // `company-attr` predates the unified user-attr storage type. The runtime
+    // matches it fine (filters resolve attrId directly), so the read side must
+    // NOT misreport live data as `unsupported`.
+    const token = await mint([Capability.SegmentRead]);
+    const attr = await buildAttribute(prisma, {
+      projectId,
+      bizType: 2, // company attribute
+      dataType: 2,
+      codeName: 'legacy_subscription',
+    });
+    const legacy = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'legacy company-attr seg',
+      bizType: 2,
+      dataType: 2, // condition
+      data: [
+        {
+          type: 'company-attr',
+          operators: 'and',
+          data: { attrId: attr.id, logic: 'is', value: 'pro' },
+        },
+      ],
+    });
+    const res = await api('get', `${segPath()}/${legacy.id}`, token);
+    expect(res.status).toBe(200);
+    expect(res.body.conditions?.[0]).toMatchObject({
+      type: 'attribute',
+      scope: 'company',
+      attribute: 'legacy_subscription',
+      op: 'is',
+      value: 'pro',
+    });
+  });
+
+  it('reads a truly unknown stored condition as `unsupported`, and refuses its echo on write', async () => {
+    const token = await mint([
+      Capability.SegmentRead,
+      Capability.SegmentCreate,
+      Capability.SegmentUpdate,
+    ]);
+    const weird = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'weird legacy seg',
+      bizType: 1,
+      dataType: 2,
+      data: [{ type: 'weird-legacy-type', operators: 'and', data: {} }],
+    });
+    // Read: the placeholder is part of the schema now (a typed client must not
+    // choke on the whole list because one segment carries it).
+    const res = await api('get', `${segPath()}/${weird.id}`, token);
+    expect(res.status).toBe(200);
+    expect(res.body.conditions?.[0]).toEqual({ type: 'unsupported', note: 'weird-legacy-type' });
+
+    // Write-back of the echo is refused with directions, never silently dropped.
+    const upd = await send('patch', `${segPath()}/${weird.id}`, token).send({
+      conditions: [{ type: 'unsupported', note: 'weird-legacy-type' }],
+    });
+    expect(upd.status).toBe(400);
+    expect(upd.body.error.code).toBe('E1017');
+    expect(upd.body.error.message).toContain('cannot be written back');
+  });
+
   it('deletes a segment (204), then 404', async () => {
     const token = await mint([
       Capability.SegmentCreate,

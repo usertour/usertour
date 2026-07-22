@@ -156,6 +156,14 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
         conditions: decompileConditions(c.conditions, r),
       };
     case 'user-attr':
+    // `company-attr` is a legacy stored type from before attribute conditions
+    // were unified under `user-attr` + attrId. The runtime never dispatches on
+    // the type string here — the segment filters resolve `data.attrId` against
+    // the attribute definitions directly — so stored company-attr conditions
+    // still MATCH in production. Decompiling them as `unsupported` misreported
+    // live data (and made GET /segments emit a shape outside its own schema);
+    // the shape is identical, so read it exactly like user-attr.
+    case 'company-attr':
       // One representation `attribute` type; `scope` (from the attribute's bizType)
       // carries user / company / companyMembership so it round-trips losslessly.
       return {

@@ -30,7 +30,8 @@ export const segmentKind = z.enum(['all', 'condition', 'manual']);
  */
 export type SegmentCondition =
   | z.infer<typeof attributeCondition>
-  | { type: 'group'; match: 'all' | 'any'; conditions: SegmentCondition[] };
+  | { type: 'group'; match: 'all' | 'any'; conditions: SegmentCondition[] }
+  | { type: 'unsupported'; note?: string };
 
 export const segmentCondition: z.ZodType<SegmentCondition> = z.lazy(() =>
   z.discriminatedUnion('type', [
@@ -40,6 +41,16 @@ export const segmentCondition: z.ZodType<SegmentCondition> = z.lazy(() =>
       conditions: z.array(segmentCondition),
     }),
     attributeCondition,
+    // Read-side placeholder for a STORED condition this schema cannot express
+    // (`note` = the internal type). The decompiler emits it for unknown legacy
+    // types, so the read schema must be able to carry it — same contract as the
+    // content representation. Writing one is rejected (see
+    // assertSegmentConditionTypes); remove it from the write or migrate the
+    // segment in the builder.
+    z.object({
+      type: z.literal('unsupported'),
+      note: z.string().optional(),
+    }),
   ]),
 ) as unknown as z.ZodType<SegmentCondition>;
 
