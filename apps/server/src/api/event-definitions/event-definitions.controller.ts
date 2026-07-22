@@ -106,6 +106,11 @@ export class ApiEventDefinitionsController {
   @ApiParam({ name: 'id', description: 'Event definition ID' })
   @ApiResponse({ status: 204, description: 'Event definition deleted' })
   @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description: 'Event definition already has recorded events (E1030) and cannot be deleted.',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

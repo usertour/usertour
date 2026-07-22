@@ -159,6 +159,13 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Updated content version', type: ContentVersionDto })
   @ApiResponse({ status: 404, description: 'Content version not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'E0049 the version is published (read-only — fork an editable draft first), or E0050 ' +
+      'it was modified concurrently (re-read and retry).',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('id') id: string,
     @Param('contentId') contentId: string,

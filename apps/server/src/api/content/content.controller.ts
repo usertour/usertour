@@ -126,6 +126,11 @@ export class ApiContentController {
   @ApiParam({ name: 'id', description: 'Content ID' })
   @ApiResponse({ status: 204, description: 'Content deleted' })
   @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description: 'Content is still published (E1028) — unpublish it from every environment first.',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('id') id: string, @Param('projectId') projectId: string) {
     await this.service.remove(id, projectId);
   }

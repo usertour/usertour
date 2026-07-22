@@ -129,6 +129,13 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 204, description: 'Environment deleted' })
   @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'State conflict — E0023 cannot delete the primary environment (set another primary ' +
+      'first), E0022 cannot delete the last environment.',
+    type: ErrorResponseDto,
+  })
   async remove(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
