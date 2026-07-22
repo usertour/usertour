@@ -14,6 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -34,6 +35,7 @@ import {
 
 /** Environments — project-level. Read (environment:read) + create/rename/delete (environment:manage). */
 @ApiTags('Environments')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/environments')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

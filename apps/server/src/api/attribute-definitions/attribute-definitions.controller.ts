@@ -13,6 +13,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -31,6 +32,7 @@ import {
 } from './attribute-definitions.schema';
 
 @ApiTags('Attribute definitions')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/attribute-definitions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

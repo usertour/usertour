@@ -14,6 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -35,6 +36,7 @@ import {
 
 /** Segment definitions — project-level (the segment's env column is legacy/unused). */
 @ApiTags('Segments')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/segments')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -110,6 +112,7 @@ export class ApiSegmentsController {
  * external id, per the segment's bizType.
  */
 @ApiTags('Segments')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/environments/:environmentId/segments/:id/members')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

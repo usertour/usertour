@@ -12,6 +12,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -32,6 +33,7 @@ import {
 } from './content-versions.schema';
 
 @ApiTags('Content versions')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/content/:contentId/versions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)

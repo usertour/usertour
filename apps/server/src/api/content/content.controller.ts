@@ -14,6 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -37,6 +38,7 @@ import {
 } from './content.schema';
 
 @ApiTags('Content')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/content')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
