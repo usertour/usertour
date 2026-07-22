@@ -84,15 +84,17 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     const { totalHits, timeToExpire, isBlocked, timeToBlockExpire } =
       await this.storageService.increment(key, ttl, limit, blockDuration, name);
 
-    const resetSeconds = Math.max(1, Math.ceil(timeToExpire / 1000));
+    // timeToExpire / timeToBlockExpire are ALREADY seconds (the storage
+    // divides by 1000; see @nestjs/throttler throttler.service.js) — dividing
+    // again froze Reset/Retry-After at 1s, defeating client back-off.
+    const resetSeconds = Math.max(1, timeToExpire);
     res.header('X-RateLimit-Limit', String(limit));
     res.header('X-RateLimit-Remaining', String(Math.max(0, limit - totalHits)));
     res.header('X-RateLimit-Reset', String(resetSeconds));
 
     if (isBlocked || totalHits > limit) {
-      const retryAfter = isBlocked
-        ? Math.max(1, Math.ceil(timeToBlockExpire / 1000))
-        : resetSeconds;
+      // timeToBlockExpire is ALREADY seconds too — same unit as timeToExpire.
+      const retryAfter = isBlocked ? Math.max(1, timeToBlockExpire) : resetSeconds;
       res.header('Retry-After', String(retryAfter));
       throw new RateLimitExceededError();
     }
@@ -115,7 +117,7 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     const ip = (req.ips as string[])?.[0] ?? (req.ip as string) ?? 'unknown';
     const fallback: ResolvedThrottle = {
       tracker: `api:ip:${ip}`,
-      limit: this.config.get<number>('API_THROTTLE_FALLBACK_LIMIT', 100),
+      limit: Number(this.config.get('API_THROTTLE_FALLBACK_LIMIT') ?? 100),
     };
 
     const auth = (req.headers as Record<string, string> | undefined)?.authorization;
@@ -162,10 +164,10 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
   private async resolvePlanLimit(projectId: string | undefined): Promise<number> {
     // Self-hosted deployments have no plans: flat, env-configurable limit.
     if (this.config.get('globalConfig.isSelfHostedMode')) {
-      return this.config.get<number>('API_THROTTLE_LIMIT', 1000);
+      return Number(this.config.get('API_THROTTLE_LIMIT') ?? 1000);
     }
     if (!projectId) {
-      return this.config.get<number>('API_THROTTLE_FALLBACK_LIMIT', 100);
+      return Number(this.config.get('API_THROTTLE_FALLBACK_LIMIT') ?? 100);
     }
     // Same subscription resolution as the environment/team-member limits
     // (projects.service.resolveProjectFeatures) — no subscription = Hobby.

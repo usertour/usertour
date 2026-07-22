@@ -46,11 +46,17 @@ describe('API v2 rate limiting (e2e)', () => {
     expect(fourth.body.error?.code).toBe('E1013');
     // Standard RFC 9110 header, not the library's name-suffixed variant —
     // off-the-shelf retry middleware backs off on exactly this.
-    expect(Number(fourth.headers['retry-after'])).toBeGreaterThan(0);
-    // Standard unsuffixed rate-limit headers — the dashboard for pacing.
+    // Magnitude matters: Retry-After/Reset are SECONDS within the window.
+    // A string-typed TTL froze Reset at a 12-digit epoch-like number (window
+    // never reset); a double /1000 froze it at 1. Both must stay impossible.
+    const retryAfter = Number(fourth.headers['retry-after']);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(61);
     expect(fourth.headers['x-ratelimit-limit']).toBe('3');
     expect(fourth.headers['x-ratelimit-remaining']).toBe('0');
-    expect(Number(fourth.headers['x-ratelimit-reset'])).toBeGreaterThan(0);
+    const reset = Number(fourth.headers['x-ratelimit-reset']);
+    expect(reset).toBeGreaterThan(0);
+    expect(reset).toBeLessThanOrEqual(61);
   });
 });
 
@@ -100,4 +106,42 @@ describe('API v2 error envelope fallback (e2e)', () => {
     expect(res.body.statusCode).toBe(404);
     expect(res.body.error).not.toBeInstanceOf(Object);
   });
+});
+
+describe('API v2 rate limit window reset (e2e)', () => {
+  let app: INestApplication;
+  const prevFallback = process.env.API_THROTTLE_FALLBACK_LIMIT;
+  const prevTtl = process.env.API_THROTTLE_TTL;
+
+  beforeAll(async () => {
+    // Deliberately STRINGS (process.env always is): this is the exact shape
+    // that turned `Date.now() + ttl` into string concatenation and made the
+    // window immortal — quotas became lifetime totals.
+    process.env.API_THROTTLE_FALLBACK_LIMIT = '2';
+    process.env.API_THROTTLE_TTL = '2000';
+    app = await createTestApp();
+  }, 60000);
+
+  afterAll(async () => {
+    if (prevFallback === undefined)
+      Reflect.deleteProperty(process.env, 'API_THROTTLE_FALLBACK_LIMIT');
+    else process.env.API_THROTTLE_FALLBACK_LIMIT = prevFallback;
+    if (prevTtl === undefined) Reflect.deleteProperty(process.env, 'API_THROTTLE_TTL');
+    else process.env.API_THROTTLE_TTL = prevTtl;
+    await app?.close();
+  });
+
+  it('the quota comes back after the window elapses (per minute, not per lifetime)', async () => {
+    const call = () => request(app.getHttpServer()).get('/v2/projects/any/environments');
+    await call();
+    await call();
+    const blocked = await call();
+    expect(blocked.status).toBe(429);
+    // Reset must be within the 2s window, not an epoch-sized number.
+    expect(Number(blocked.headers['x-ratelimit-reset'])).toBeLessThanOrEqual(3);
+
+    await new Promise((r) => setTimeout(r, 2500)); // let the window expire
+    const revived = await call();
+    expect(revived.status).not.toBe(429); // fresh quota — the window DID reset
+  }, 15000);
 });

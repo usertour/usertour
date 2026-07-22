@@ -59,8 +59,12 @@ import { ApiUsersService } from './users/users.service';
         throttlers: [
           {
             name: 'api',
-            ttl: config.get<number>('API_THROTTLE_TTL', 60_000),
-            limit: config.get<number>('API_THROTTLE_LIMIT', 1000),
+            // Number(...) is load-bearing: env values arrive as STRINGS and the
+            // throttler storage computes `Date.now() + ttl` — with a string
+            // that's concatenation, pushing expiry millions of years out (the
+            // window then NEVER resets and quotas become lifetime totals).
+            ttl: Number(config.get('API_THROTTLE_TTL') ?? 60_000),
+            limit: Number(config.get('API_THROTTLE_LIMIT') ?? 1000),
           },
         ],
       }),
