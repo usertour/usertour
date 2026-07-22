@@ -10,41 +10,43 @@ import { createTestApp } from '../create-test-app';
  */
 describe('API v2 rate limiting (e2e)', () => {
   let app: INestApplication;
-  const prevLimit = process.env.API_THROTTLE_LIMIT;
+  const prevFallback = process.env.API_THROTTLE_FALLBACK_LIMIT;
 
   beforeAll(async () => {
-    process.env.API_THROTTLE_LIMIT = '3';
+    // Unknown credentials share the per-IP fallback bucket — tiny limit so the
+    // suite can hit it fast. Valid-credential (plan) limits are exercised in
+    // the attribute-definitions suite, which has token infrastructure.
+    process.env.API_THROTTLE_FALLBACK_LIMIT = '3';
     app = await createTestApp();
   }, 60000);
 
   afterAll(async () => {
-    if (prevLimit === undefined) {
-      process.env.API_THROTTLE_LIMIT = undefined as unknown as string;
-      Reflect.deleteProperty(process.env, 'API_THROTTLE_LIMIT');
+    if (prevFallback === undefined) {
+      Reflect.deleteProperty(process.env, 'API_THROTTLE_FALLBACK_LIMIT');
     } else {
-      process.env.API_THROTTLE_LIMIT = prevLimit;
+      process.env.API_THROTTLE_FALLBACK_LIMIT = prevFallback;
     }
     await app?.close();
   });
 
-  it('throttles the 4th request from one credential with the E1013 envelope', async () => {
-    const call = () =>
+  it('unknown credentials share the per-IP bucket: rotating garbage bearers does not reset it', async () => {
+    const call = (bearer: string) =>
       request(app.getHttpServer())
         .get('/v2/projects/any/environments')
-        .set('Authorization', 'Bearer utp_throttle_probe');
+        .set('Authorization', `Bearer ${bearer}`);
+    // Three different garbage tokens — same IP bucket, all counted together.
     for (let i = 0; i < 3; i++) {
-      const res = await call();
+      const res = await call(`utp_garbage_${i}`);
       expect(res.status).not.toBe(429); // 403 invalid key — but counted
     }
-    const fourth = await call();
+    // Fourth request with YET ANOTHER fresh string: still throttled — rotating
+    // credentials must not mint fresh buckets.
+    const fourth = await call('utp_garbage_fresh');
     expect(fourth.status).toBe(429);
     expect(fourth.body.error?.code).toBe('E1013');
-
-    // A DIFFERENT credential is not affected (per-credential buckets).
-    const other = await request(app.getHttpServer())
-      .get('/v2/projects/any/environments')
-      .set('Authorization', 'Bearer utp_other_credential');
-    expect(other.status).not.toBe(429);
+    // Standard RFC 9110 header, not the library's name-suffixed variant —
+    // off-the-shelf retry middleware backs off on exactly this.
+    expect(Number(fourth.headers['retry-after'])).toBeGreaterThan(0);
   });
 });
 

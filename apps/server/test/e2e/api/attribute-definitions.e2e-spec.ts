@@ -291,6 +291,27 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(badPatch.body.error.code).toBe('E1017');
   });
 
+  it('enforces the plan API rate limit (Hobby: 100/min) on a valid credential', async () => {
+    // The pricing page promises "N API requests/min" per plan from
+    // PLAN_FEATURES.apiRateLimit; a project without a subscription is Hobby
+    // (100). The 101st request within the window must be the E1013 envelope
+    // with a standard Retry-After header.
+    const token = await mint([Capability.AttributeRead]);
+    const url = `/v2/projects/${fx.projectId}/attribute-definitions?limit=1`;
+    let throttled: request.Response | null = null;
+    for (let i = 0; i < 101; i++) {
+      const res = await api('get', url, token);
+      if (res.status === 429) {
+        throttled = res;
+        break;
+      }
+      expect(res.status).toBe(200);
+    }
+    expect(throttled).not.toBeNull();
+    expect(throttled?.body.error.code).toBe('E1013');
+    expect(Number(throttled?.headers['retry-after'])).toBeGreaterThan(0);
+  }, 30000);
+
   it('gets an attribute definition by id (404 unknown → E1022)', async () => {
     const token = await mint([Capability.AttributeCreate, Capability.AttributeRead]);
     const created = await send('post', basePath(), token).send({

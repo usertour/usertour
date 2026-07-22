@@ -67,8 +67,9 @@ export function ApiStandardErrorResponses() {
     ApiResponse({
       status: 429,
       description:
-        'Rate limit exceeded — E1013. Limits apply per API credential (falling back to client ' +
-        'IP); retry after backing off.',
+        "Rate limit exceeded — E1013. The limit follows the project's plan " +
+        '(100/500/1000/3000 requests per minute); unknown credentials share a per-IP bucket. ' +
+        'The standard Retry-After header says how many seconds to back off.',
       type: ErrorResponseDto,
     }),
     ApiResponse({
