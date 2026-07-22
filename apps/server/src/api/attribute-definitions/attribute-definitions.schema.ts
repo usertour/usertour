@@ -32,7 +32,9 @@ export const listAttributeDefinitionsQuery = z.object({
       'Filter by scope: user, company, companyMembership, or eventDefinition (event attributes ' +
         '— read-only here; they are managed via the event-definitions surface).',
     ),
-  orderBy: singleOrArray(orderByField).describe('Order by field(s), e.g. -createdAt.'),
+  orderBy: singleOrArray(orderByField).describe(
+    'Order by createdAt / codeName / displayName (prefix - for descending).',
+  ),
   eventName: singleOrArray(z.string()).describe(
     'Filter to attributes attached to these event(s), matched by event codeName (EXACT match — ' +
       'not displayName; a displayName silently matches nothing). Multiple values OR together.',
