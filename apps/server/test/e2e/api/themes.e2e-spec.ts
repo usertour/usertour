@@ -226,6 +226,44 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(echoed.status).toBe(200);
   });
 
+  it('system theme: content changes rejected, but defaulting it is allowed (no one-way door)', async () => {
+    // The default-pointer must be able to RETURN to a system theme — before
+    // this guard was narrowed, moving the default off Standard Light was
+    // irreversible via the API (isSystem blocked even a pure isDefault:true,
+    // while the builder's setDefaultTheme allows it).
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const system = await buildTheme(prisma, {
+      projectId,
+      name: 'System Light',
+      isSystem: true,
+    });
+    // Move the default AWAY (onto a fresh custom theme)...
+    const custom = await send('post', basePath(), token).send({
+      name: 'TempDefault',
+      isDefault: true,
+    });
+    expect(custom.status).toBe(201);
+    // ...content edits on the system theme stay refused...
+    const rename = await send('patch', `${basePath()}/${system.id}`, token).send({
+      name: 'Hacked',
+    });
+    expect(rename.status).toBe(400);
+    expect(rename.body.error.code).toBe('E1017');
+    // ...but a PURE isDefault:true is a project-state switch, not a theme
+    // modification — the default comes back.
+    const restore = await send('patch', `${basePath()}/${system.id}`, token).send({
+      isDefault: true,
+    });
+    expect(restore.status).toBe(200);
+    expect(restore.body.isDefault).toBe(true);
+    const customAfter = await api('get', `${basePath()}/${custom.body.id}`, token);
+    expect(customAfter.body.isDefault).toBe(false);
+  });
+
   it('rejects CHANGING a builder-managed media key, explicitly (not silently)', async () => {
     const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
     const created = await send('post', basePath(), token).send({ name: 'MediaGuard' });

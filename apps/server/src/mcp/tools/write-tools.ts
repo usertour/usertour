@@ -597,7 +597,9 @@ export function buildWriteTools(): McpTool[] {
       description:
         "Update a theme's metadata (name / isDefault) and/or `settings` (a partial style " +
         'patch, field-merged onto the current settings with auto colors derived). System themes ' +
-        '(`isSystem: true` on list_themes) are READ-ONLY — create_theme your own copy instead. ' +
+        '(`isSystem: true` on list_themes) reject content changes (name / settings) — ' +
+        'create_theme your own copy instead — but `isDefault: true` IS allowed on them: it ' +
+        'only moves the project default pointer. ' +
         '`variations` are not yet editable via the API.',
       inputSchema: {
         id: z.string().describe('The theme id.'),

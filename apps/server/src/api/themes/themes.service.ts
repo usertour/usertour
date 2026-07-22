@@ -158,12 +158,18 @@ export class ApiThemesService {
 
   /**
    * Update a theme's metadata and/or styling. A `settings` patch is field-merged onto
-   * the theme's current settings and auto colors are re-derived. Rejects system themes.
+   * the theme's current settings and auto colors are re-derived. System themes reject
+   * CONTENT changes only — `isDefault: true` is a project-state pointer, not a theme
+   * modification, and stays allowed (the builder can default a system theme; without
+   * this the default is a one-way door: once moved off a system theme, the API could
+   * never move it back).
    */
   async update(id: string, projectId: string, body: UpdateThemeBody): Promise<Theme> {
     const theme = await this.requireTheme(id, projectId);
-    if (theme.isSystem) {
-      throw new ValidationError('Cannot modify a system theme.');
+    if (theme.isSystem && (body.name !== undefined || body.settings !== undefined)) {
+      throw new ValidationError(
+        'Cannot modify a system theme (setting it as the project default is allowed).',
+      );
     }
     // Ground the stored settings on the complete defaultSettings before patching —
     // the same fill the builder does on load (theme-builder.tsx: deepmerge(defaultSettings,
