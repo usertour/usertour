@@ -74,35 +74,47 @@ export const listContentResponse = z.object({
 export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 
 /** Write body for POST content. */
-export const createContentBody = z.object({
-  type: z
-    .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center', 'announcement'])
-    .describe(
-      'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
-        'has an `announcement` block — publish alone does not surface it without one.',
-    ),
-  name: z
-    .string()
-    .optional()
-    .describe('Display name. For `announcement` it also seeds the draft title.'),
-  buildUrl: z.string().optional(),
-  themeId: z
-    .string()
-    .optional()
-    .describe(
-      'Theme applied to the initial draft version. Required for every type except `tracker` ' +
-        '(which has no UI) — content has no usable styling without one. List options with the ' +
-        'themes endpoint; use the one with isDefault if unsure.',
-    ),
-});
+export const createContentBody = z
+  .object({
+    type: z
+      .enum([
+        'flow',
+        'checklist',
+        'launcher',
+        'banner',
+        'tracker',
+        'resource-center',
+        'announcement',
+      ])
+      .describe(
+        'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
+          'has an `announcement` block — publish alone does not surface it without one.',
+      ),
+    name: z
+      .string()
+      .optional()
+      .describe('Display name. For `announcement` it also seeds the draft title.'),
+    buildUrl: z.string().optional(),
+    themeId: z
+      .string()
+      .optional()
+      .describe(
+        'Theme applied to the initial draft version. Required for every type except `tracker` ' +
+          '(which has no UI) — content has no usable styling without one. List options with the ' +
+          'themes endpoint; use the one with isDefault if unsure.',
+      ),
+  })
+  .strict();
 export class CreateContentBodyDto extends createZodDto(createContentBody) {}
 export type CreateContentBody = z.infer<typeof createContentBody>;
 
 /** Write body for PATCH content/:id (metadata only). */
-export const updateContentBody = z.object({
-  name: z.string().optional(),
-  buildUrl: z.string().optional(),
-});
+export const updateContentBody = z
+  .object({
+    name: z.string().optional(),
+    buildUrl: z.string().optional(),
+  })
+  .strict();
 export class UpdateContentBodyDto extends createZodDto(updateContentBody) {}
 export type UpdateContentBody = z.infer<typeof updateContentBody>;
 

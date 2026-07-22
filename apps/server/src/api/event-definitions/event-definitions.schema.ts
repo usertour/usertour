@@ -55,22 +55,26 @@ const eventAttributes = z
       'usertour.track(name, { prop: value }). Unknown codeNames are rejected.',
   );
 
-export const createEventDefinitionBody = z.object({
-  codeName: codeNameSchema.describe('Stable identifier, unique per project. Immutable.'),
-  displayName: z.string().min(1).describe('Human-readable name.'),
-  description: z.string().optional().describe('Optional description.'),
-  attributes: eventAttributes.optional(),
-});
+export const createEventDefinitionBody = z
+  .object({
+    codeName: codeNameSchema.describe('Stable identifier, unique per project. Immutable.'),
+    displayName: z.string().min(1).describe('Human-readable name.'),
+    description: z.string().optional().describe('Optional description.'),
+    attributes: eventAttributes.optional(),
+  })
+  .strict();
 export class CreateEventDefinitionBodyDto extends createZodDto(createEventDefinitionBody) {}
 
 // codeName is fixed at creation; only the human-facing fields + attributes are mutable.
-export const updateEventDefinitionBody = z.object({
-  displayName: z.string().min(1).optional().describe('Human-readable name.'),
-  description: z.string().optional().describe('Optional description.'),
-  attributes: eventAttributes
-    .optional()
-    .describe('Replace the attached attributes with these codeNames. Omit to leave unchanged.'),
-});
+export const updateEventDefinitionBody = z
+  .object({
+    displayName: z.string().min(1).optional().describe('Human-readable name.'),
+    description: z.string().optional().describe('Optional description.'),
+    attributes: eventAttributes
+      .optional()
+      .describe('Replace the attached attributes with these codeNames. Omit to leave unchanged.'),
+  })
+  .strict();
 export class UpdateEventDefinitionBodyDto extends createZodDto(updateEventDefinitionBody) {}
 
 export const listEventDefinitionsResponse = z.object({

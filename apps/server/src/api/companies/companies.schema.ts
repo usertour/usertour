@@ -24,29 +24,33 @@ export const getCompanyQuery = z.object({
 });
 export class GetCompanyQueryDto extends createZodDto(getCompanyQuery) {}
 
-export const upsertCompanyBody = z.object({
-  // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
-  attributes: z
-    .record(codeNameSchema, z.any())
-    .optional()
-    .describe(
-      'Custom attributes to set on the company (merged into existing attributes). Each key must ' +
-        'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
-    ),
-});
+export const upsertCompanyBody = z
+  .object({
+    // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
+    attributes: z
+      .record(codeNameSchema, z.any())
+      .optional()
+      .describe(
+        'Custom attributes to set on the company (merged into existing attributes). Each key must ' +
+          'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
+      ),
+  })
+  .strict();
 export class UpsertCompanyBodyDto extends createZodDto(upsertCompanyBody) {}
 
-export const upsertMembershipBody = z.object({
-  // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
-  attributes: z
-    .record(codeNameSchema, z.any())
-    .optional()
-    .describe(
-      "Custom attributes to set on the membership (e.g. the user's role in the company). Each " +
-        'key must be a valid codeName: start with a letter, then letters/digits/underscores, ' +
-        '2–20 chars.',
-    ),
-});
+export const upsertMembershipBody = z
+  .object({
+    // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
+    attributes: z
+      .record(codeNameSchema, z.any())
+      .optional()
+      .describe(
+        "Custom attributes to set on the membership (e.g. the user's role in the company). Each " +
+          'key must be a valid codeName: start with a letter, then letters/digits/underscores, ' +
+          '2–20 chars.',
+      ),
+  })
+  .strict();
 export class UpsertMembershipBodyDto extends createZodDto(upsertMembershipBody) {}
 
 const embeddedUser = z.object({

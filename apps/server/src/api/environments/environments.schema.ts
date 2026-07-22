@@ -49,9 +49,11 @@ export class ListEnvironmentsResponseDto extends createZodDto(listEnvironmentsRe
 
 // `isPrimary` is not settable here — switching the primary environment is an
 // admin operation with project-wide side effects; this surface only names envs.
-export const createEnvironmentBody = z.object({
-  name: z.string().min(1).describe('Environment name.'),
-});
+export const createEnvironmentBody = z
+  .object({
+    name: z.string().min(1).describe('Environment name.'),
+  })
+  .strict();
 export class CreateEnvironmentBodyDto extends createZodDto(createEnvironmentBody) {}
 
 // Only `name` is mutable — isPrimary is not settable here. `.strict()` rejects a

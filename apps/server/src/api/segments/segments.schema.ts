@@ -72,21 +72,23 @@ export const listSegmentsResponse = z.object({
 });
 export class ListSegmentsResponseDto extends createZodDto(listSegmentsResponse) {}
 
-export const createSegmentBody = z.object({
-  name: z.string().min(1).describe('Segment name.'),
-  bizType: segmentBizType.describe('What the segment groups: user or company. Immutable.'),
-  // `all` is the built-in everyone segment and cannot be created.
-  kind: z.enum(['condition', 'manual']).describe('Segment kind. Immutable.'),
-  conditions: z
-    .array(segmentCondition)
-    .optional()
-    .describe(
-      'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
-        'them, nothing else (a segment is an attribute query). For "users who did X" audiences, ' +
-        'store the fact as an attribute too and segment on that, or put the event condition on ' +
-        "the content's start rules.",
-    ),
-});
+export const createSegmentBody = z
+  .object({
+    name: z.string().min(1).describe('Segment name.'),
+    bizType: segmentBizType.describe('What the segment groups: user or company. Immutable.'),
+    // `all` is the built-in everyone segment and cannot be created.
+    kind: z.enum(['condition', 'manual']).describe('Segment kind. Immutable.'),
+    conditions: z
+      .array(segmentCondition)
+      .optional()
+      .describe(
+        'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
+          'them, nothing else (a segment is an attribute query). For "users who did X" audiences, ' +
+          'store the fact as an attribute too and segment on that, or put the event condition on ' +
+          "the content's start rules.",
+      ),
+  })
+  .strict();
 export class CreateSegmentBodyDto extends createZodDto(createSegmentBody) {}
 
 export const updateSegmentBody = z
