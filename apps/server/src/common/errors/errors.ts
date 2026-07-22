@@ -283,6 +283,20 @@ export class EnvironmentCreateRequiresFullScopeError extends OpenAPIError {
   };
 }
 
+/**
+ * A /v2 request that matched no route at all. Emitted by the global fallback
+ * filter so even "Cannot GET /v2/..." keeps the v2 error envelope (the Nest
+ * default renders a bare {message, error, statusCode} shape).
+ */
+export class UnknownRouteError extends OpenAPIError {
+  code = 'E1033';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Unknown API route',
+    'zh-CN': '未知的 API 路径',
+  };
+}
+
 export class ThemeNotFoundError extends OpenAPIError {
   code = 'E1021';
   statusCode = HttpStatus.NOT_FOUND;

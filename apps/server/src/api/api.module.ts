@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 
 import { AnalyticsModule } from '@/analytics/analytics.module';
 import { ApiTokenModule } from '@/api-token/api-token.module';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
@@ -80,6 +82,11 @@ import { ApiUsersService } from './users/users.service';
     ApiSegmentsService,
     ApiEnvironmentsService,
     OpenAPIExceptionFilter,
+    // Global fallback: keeps the v2 error envelope for exceptions thrown BEFORE
+    // any route handler (body-parser JSON failures, unknown /v2 routes) that the
+    // controller-scoped OpenAPIExceptionFilter can never see. Non-/v2 traffic
+    // keeps the default behavior.
+    { provide: APP_FILTER, useClass: V2FallbackExceptionFilter },
   ],
   // Exported for the MCP module, which binds these read services as tools.
   exports: [
