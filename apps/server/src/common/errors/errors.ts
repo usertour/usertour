@@ -293,6 +293,30 @@ export class EnvironmentCreateRequiresFullScopeError extends OpenAPIError {
  * filter so even "Cannot GET /v2/..." keeps the v2 error envelope (the Nest
  * default renders a bare {message, error, statusCode} shape).
  */
+/**
+ * State-conflict deletes on themes, same family as E1028/E1030/E1031 (and the
+ * environments' E0022/E0023): the request is well-formed, the CURRENT STATE
+ * refuses it. E1034 is resolvable (move the default first); E1035 is a
+ * permanent property — the message offers no fake way out.
+ */
+export class DefaultThemeCannotBeDeletedError extends OpenAPIError {
+  code = 'E1034';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete the default theme — set another theme as the project default first.',
+    'zh-CN': '无法删除默认主题——请先将其他主题设为项目默认。',
+  };
+}
+
+export class SystemThemeCannotBeDeletedError extends OpenAPIError {
+  code = 'E1035';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'System themes cannot be deleted. Duplicate one into your own theme if you need a variant.',
+    'zh-CN': '系统主题不可删除。如需修改,请基于它创建自己的主题副本。',
+  };
+}
+
 export class UnknownRouteError extends OpenAPIError {
   code = 'E1033';
   statusCode = HttpStatus.NOT_FOUND;

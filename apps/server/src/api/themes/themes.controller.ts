@@ -110,7 +110,10 @@ export class ApiThemesController {
   @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
   @ApiResponse({
     status: 409,
-    description: 'Theme is used by live or draft content (E1031)',
+    description:
+      'State conflict — E1031 the theme is used by a draft or live version (the message names ' +
+      'them), E1034 it is the project default (set another default first), E1035 system ' +
+      'themes cannot be deleted.',
     type: ErrorResponseDto,
   })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {

@@ -9,7 +9,12 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
-import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
+import {
+  DefaultThemeCannotBeDeletedError,
+  SystemThemeCannotBeDeletedError,
+  ThemeNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
 import {
@@ -219,11 +224,22 @@ export class ApiThemesService {
     return mapTheme(updated, FULL, resolvers);
   }
 
-  /** Delete a theme. Rejects the default and system themes. */
+  /**
+   * Delete a theme. Default / system themes refuse as 409 state conflicts with
+   * their own codes (E1034 / E1035) — not E1017, which would tell the caller to
+   * fix a request that can never succeed by retrying. Same family as E1031.
+   */
   async delete(id: string, projectId: string): Promise<void> {
     const theme = await this.requireTheme(id, projectId);
-    if (theme.isSystem || theme.isDefault) {
-      throw new ValidationError('Cannot delete the default or a system theme.');
+    // Permanent refusal FIRST: E1034's advice ("move the default, then retry")
+    // must only be given when following it can succeed. A default+system theme
+    // (every fresh project's out-of-the-box state) can never be deleted — E1034
+    // would send the caller to move the default and then hit E1035 anyway.
+    if (theme.isSystem) {
+      throw new SystemThemeCannotBeDeletedError();
+    }
+    if (theme.isDefault) {
+      throw new DefaultThemeCannotBeDeletedError();
     }
     await this.themes.deleteTheme(id);
   }

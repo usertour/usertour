@@ -438,11 +438,42 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(freed.status).toBe(204);
   });
 
-  it('cannot delete the default theme (400 E1017)', async () => {
+  it('cannot delete the default theme (409 E1034 state-conflict, with a real way out)', async () => {
     const token = await mint([Capability.ThemeDelete]);
     const res = await send('delete', `${basePath()}/${defaultThemeId}`, token).send();
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('E1017');
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1034');
+    expect(res.body.error.message).toContain('default');
+  });
+
+  it('cannot delete a system theme (409 E1035, permanent — no fake way out)', async () => {
+    const token = await mint([Capability.ThemeDelete]);
+    const system = await buildTheme(prisma, { projectId, name: 'SysDel', isSystem: true });
+    const res = await send('delete', `${basePath()}/${system.id}`, token).send();
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1035');
+  });
+
+  it('a default+system theme gets E1035, not E1034 — never advice that dead-ends', async () => {
+    // Every fresh project starts here (the default IS a system theme). E1034's
+    // "move the default first" would send the caller to do that and then hit
+    // E1035 anyway — the permanent refusal must win the guard order.
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeDelete,
+    ]);
+    const both = await buildTheme(prisma, {
+      projectId,
+      name: 'SysDefault',
+      isSystem: true,
+    });
+    // make it the default via the API (also re-exercises the endpoint-8 fix)
+    const set = await send('patch', `${basePath()}/${both.id}`, token).send({ isDefault: true });
+    expect(set.status).toBe(200);
+    const res = await send('delete', `${basePath()}/${both.id}`, token).send();
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1035');
   });
 
   it('POST rejects a token without theme:create (403 E1012)', async () => {
