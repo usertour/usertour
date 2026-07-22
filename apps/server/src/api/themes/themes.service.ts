@@ -19,7 +19,7 @@ import {
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
-import { themeSettingsPatchSchema } from './settings.schema';
+import { BUILDER_MANAGED_SETTING_PATHS, themeSettingsPatchSchema } from './settings.schema';
 import { mapTheme } from './themes.mapper';
 import {
   CreateThemeBody,
@@ -109,16 +109,40 @@ export class ApiThemesService {
   }
 
   /**
+   * Builder-managed keys (media assets: avatar identity, logo/header images,
+   * custom launcher icon) are accepted by the schema so that reading a theme
+   * and writing the settings back round-trips — but they may not be CHANGED
+   * through the API. Echoing the current value (or omitting the key) is fine;
+   * a differing value is rejected explicitly rather than silently dropped.
+   */
+  private assertBuilderManagedUnchanged(patch: unknown, base: unknown): void {
+    const at = (obj: unknown, path: string): unknown =>
+      path
+        .split('.')
+        .reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], obj);
+    const changed = BUILDER_MANAGED_SETTING_PATHS.filter((path) => {
+      const patched = at(patch, path);
+      return patched !== undefined && JSON.stringify(patched) !== JSON.stringify(at(base, path));
+    });
+    if (changed.length) {
+      throw new ValidationError(
+        `settings.${changed[0]} is managed in the theme builder and read-only via the API — write it back unchanged or omit it.`,
+      );
+    }
+  }
+
+  /**
    * Create a theme. Starts from the fixed built-in `defaultSettings` (a neutral base — NOT a
    * copy of the project's default / isDefault theme); an optional `settings` patch is
    * field-merged onto it and auto colors derived. `variations` are not yet writable.
    */
   async create(projectId: string, body: CreateThemeBody): Promise<Theme> {
-    const settings = body.settings
-      ? deriveThemeAutoColors(
-          deepMergeThemeSettings(defaultSettings, this.parseSettingsPatch(body.settings)),
-        )
-      : defaultSettings;
+    let settings: ThemeTypesSetting = defaultSettings;
+    if (body.settings) {
+      const patch = this.parseSettingsPatch(body.settings);
+      this.assertBuilderManagedUnchanged(patch, defaultSettings);
+      settings = deriveThemeAutoColors(deepMergeThemeSettings(defaultSettings, patch));
+    }
     const created = await this.themes.createTheme({
       projectId,
       name: body.name,
@@ -146,20 +170,24 @@ export class ApiThemesService {
     // settings)) and create() does. A legacy theme whose stored JSON predates a nested
     // field (e.g. buttons.primary.border) would otherwise reach deriveThemeAutoColors
     // incomplete and 500 on its deep dereferences.
-    const settingsUpdate =
-      body.settings !== undefined
-        ? {
-            settings: deriveThemeAutoColors(
-              deepMergeThemeSettings(
-                deepMergeThemeSettings(
-                  defaultSettings,
-                  (theme.settings ?? {}) as Partial<ThemeTypesSetting>,
-                ),
-                this.parseSettingsPatch(body.settings),
-              ),
-            ) as unknown as JsonValue,
-          }
-        : {};
+    let settingsUpdate = {};
+    if (body.settings !== undefined) {
+      const patch = this.parseSettingsPatch(body.settings);
+      // Base = the STORED settings (exactly what reads return), so echoing a
+      // read response back is always accepted.
+      this.assertBuilderManagedUnchanged(patch, theme.settings ?? {});
+      settingsUpdate = {
+        settings: deriveThemeAutoColors(
+          deepMergeThemeSettings(
+            deepMergeThemeSettings(
+              defaultSettings,
+              (theme.settings ?? {}) as Partial<ThemeTypesSetting>,
+            ),
+            patch,
+          ),
+        ) as unknown as JsonValue,
+      };
+    }
     // The domain updateTheme deliberately drops isDefault (the builder moves the
     // default via its dedicated setDefaultTheme action), so passing it through
     // would be a silent no-op. Route the flag to the same domain primitive here.

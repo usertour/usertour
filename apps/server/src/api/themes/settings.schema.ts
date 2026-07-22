@@ -23,10 +23,22 @@ const leafSchema = (c: ThemeSettingConstraint): z.ZodTypeAny => {
       let s = z.number();
       if (c.min !== undefined) s = s.min(c.min);
       if (c.max !== undefined) s = s.max(c.max);
-      return s;
+      // The builder has always STORED numeric inputs as strings ("8") — the TS
+      // type says number but the runtime data disagrees. Accept the stored
+      // shape and normalize to a real number on write, so read-modify-write of
+      // existing themes round-trips (console sweep endpoint 7).
+      return z.preprocess(
+        (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v.trim()) ? Number(v.trim()) : v),
+        s,
+      );
     }
     case 'color': {
-      const hex = z.string().regex(HEX, 'Must be a hex color (e.g. #2563eb)');
+      // Stored data carries occasional stray whitespace (" #007AC3") — trim
+      // before validating; genuinely malformed values ("#fffffff") still fail.
+      const hex = z.preprocess(
+        (v) => (typeof v === 'string' ? v.trim() : v),
+        z.string().regex(HEX, 'Must be a hex color (e.g. #2563eb)'),
+      );
       return c.allowAuto ? z.union([hex, z.literal('Auto')]) : hex;
     }
     case 'enum': {
@@ -74,17 +86,104 @@ const buildTree = (flat: Record<string, ThemeSettingConstraint>): Tree => {
   return root;
 };
 
+/**
+ * Color-group companion keys. The SSOT lists only the keys the builder UI
+ * exposes, but `ThemeTypesSettingsColor` is one uniform stored shape —
+ * `{background, color, hover, active, autoHover?, autoActive?}` — and the
+ * builder's color control always persists the whole group (auto* are the
+ * derived concrete colors behind 'Auto'). Without these, reading a theme and
+ * writing it back failed on unrecognized keys in EVERY stored theme. They are
+ * storage companions, not UI fields, so they are completed here rather than
+ * added to the SSOT (the builder-parity test pins the SSOT to the UI).
+ *
+ * The resource-center launcher color group ({background, hover, active,
+ * foreground}) is a different type — detected by `foreground` and left alone.
+ */
+const COLOR_GROUP_KEYS = ['background', 'color', 'hover', 'active'] as const;
+const COLOR_COMPANION_KEYS = [...COLOR_GROUP_KEYS, 'autoHover', 'autoActive'] as const;
+
+const completeColorGroups = (tree: Tree): void => {
+  const isStandardColorGroup =
+    !('foreground' in tree) &&
+    COLOR_GROUP_KEYS.some((k) => {
+      const child = tree[k];
+      return child && isConstraint(child) && child.kind === 'color';
+    });
+  if (isStandardColorGroup) {
+    for (const key of COLOR_COMPANION_KEYS) {
+      if (!(key in tree)) {
+        tree[key] = { kind: 'color', allowAuto: true };
+      }
+    }
+  }
+  for (const child of Object.values(tree)) {
+    if (!isConstraint(child)) {
+      completeColorGroups(child);
+    }
+  }
+};
+
+/**
+ * Media-asset / builder-managed keys, deliberately NOT in the SSOT (see its
+ * header). They exist in every stored theme, so the schema must ACCEPT them
+ * for read-modify-write to round-trip — but they may not be CHANGED via the
+ * API: the service rejects a patch whose value differs from the theme's
+ * current one (no silent drop, per the strict-body decision).
+ */
+export const BUILDER_MANAGED_SETTING_PATHS: readonly string[] = [
+  'avatar.type',
+  'avatar.url',
+  'avatar.name',
+  'resourceCenter.logoUrl',
+  'resourceCenter.headerBackground.imageUrl',
+  'resourceCenter.dividerLines',
+  'resourceCenterLauncherButton.iconUrl',
+];
+
+const addBuilderManagedLeaves = (tree: Tree): void => {
+  for (const path of BUILDER_MANAGED_SETTING_PATHS) {
+    const segments = path.split('.');
+    let node = tree;
+    segments.forEach((seg, i) => {
+      if (i === segments.length - 1) {
+        // Marker consumed by treeToZod: accept anything, guard in the service.
+        node[seg] = { kind: 'builder-managed' } as unknown as ThemeSettingConstraint;
+        return;
+      }
+      const next = node[seg];
+      if (!next || isConstraint(next)) {
+        node[seg] = {};
+      }
+      node = node[seg] as Tree;
+    });
+  }
+};
+
 /** A strict object whose keys are all optional (partial patch + reject unknown). */
 const treeToZod = (tree: Tree): z.ZodTypeAny => {
   const shape: Record<string, z.ZodTypeAny> = {};
   for (const [key, child] of Object.entries(tree)) {
-    shape[key] = (isConstraint(child) ? leafSchema(child) : treeToZod(child)).optional();
+    const leaf = isConstraint(child)
+      ? (child.kind as string) === 'builder-managed'
+        ? z.unknown()
+        : leafSchema(child)
+      : treeToZod(child);
+    // Stored settings use null for "unset" in places (e.g. a borderRadius the
+    // builder never touched) — treat null exactly like an omitted key: the
+    // preprocess strips it BEFORE validation, so a null can never overwrite a
+    // stored value. The inner .nullable() is never reached at runtime — it
+    // exists so the OpenAPI projection declares null as acceptable and
+    // spec-validating clients don't reject the round-trip the server allows.
+    shape[key] = z.preprocess((v) => (v === null ? undefined : v), leaf.optional().nullable());
   }
   return z.object(shape).strict();
 };
 
 /** The generated partial-settings patch schema (built once from the SSOT). */
-export const themeSettingsPatchSchema = treeToZod(
-  buildTree(THEME_SETTING_CONSTRAINTS as unknown as Record<string, ThemeSettingConstraint>),
+const settingsTree = buildTree(
+  THEME_SETTING_CONSTRAINTS as unknown as Record<string, ThemeSettingConstraint>,
 );
+completeColorGroups(settingsTree);
+addBuilderManagedLeaves(settingsTree);
+export const themeSettingsPatchSchema = treeToZod(settingsTree);
 export type ThemeSettingsPatch = z.infer<typeof themeSettingsPatchSchema>;

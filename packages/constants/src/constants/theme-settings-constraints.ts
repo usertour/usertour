@@ -17,6 +17,8 @@ export type ThemeSettingConstraint =
   | { kind: 'string' };
 
 export const THEME_SETTING_CONSTRAINTS = {
+  'announcement.bubbleWidth': { kind: 'number', min: 200, max: 600 },
+  'announcement.modalWidth': { kind: 'number', min: 300, max: 1000 },
   'avatar.size': { kind: 'number', min: 24, max: 120 },
   'backdrop.color': { kind: 'color', allowAuto: false },
   'backdrop.highlight.color': { kind: 'color', allowAuto: false },
@@ -192,6 +194,8 @@ export const THEME_SETTING_CONSTRAINTS = {
   'resourceCenter.transitionDuration': { kind: 'number', min: 0, max: 1000 },
   'resourceCenter.zIndex': { kind: 'number' },
   'resourceCenterLauncherButton.borderRadius': { kind: 'number', min: 0, max: 40 },
+  'resourceCenterUnreadBadge.backgroundColor': { kind: 'color', allowAuto: false },
+  'resourceCenterUnreadBadge.textColor': { kind: 'color', allowAuto: false },
   'resourceCenterLauncherButton.color.active': { kind: 'color', allowAuto: true },
   'resourceCenterLauncherButton.color.background': { kind: 'color', allowAuto: true },
   'resourceCenterLauncherButton.color.foreground': { kind: 'color', allowAuto: true },
