@@ -285,6 +285,56 @@ describe('API v2 segments (e2e)', () => {
     expect(upd.body.error.message).toContain('cannot be written back');
   });
 
+  it('a condition whose attribute was DELETED reads as `unsupported`, not a leaked cuid', async () => {
+    // Full loop from console sweep endpoint 15: create attribute -> reference
+    // it in a segment -> delete the attribute (204, nothing blocks it). The
+    // condition used to decompile with the raw internal id in `attribute` — a
+    // field whose contract is a codeName — looking perfectly healthy on read
+    // and only failing on write-back. It must surface as `unsupported` with a
+    // note that says what happened.
+    const token = await mint([
+      Capability.SegmentRead,
+      Capability.SegmentCreate,
+      Capability.AttributeCreate,
+      Capability.AttributeDelete,
+    ]);
+    const created = await request(app.getHttpServer())
+      .post(`/v2/projects/${projectId}/attribute-definitions`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        codeName: 'seg_doomed_attr',
+        displayName: 'Doomed',
+        scope: 'user',
+        dataType: 'string',
+      });
+    expect(created.status).toBe(201);
+    const attrId = created.body.id;
+
+    const seg = await send('post', segPath(), token).send({
+      name: 'refs doomed attr',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [
+        { type: 'attribute', scope: 'user', attribute: 'seg_doomed_attr', op: 'is', value: 'x' },
+      ],
+    });
+    expect(seg.status).toBe(201);
+
+    const del = await request(app.getHttpServer())
+      .delete(`/v2/projects/${projectId}/attribute-definitions/${attrId}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(del.status).toBe(204);
+
+    const read = await api('get', `${segPath()}/${seg.body.id}`, token);
+    expect(read.status).toBe(200);
+    const cond = read.body.conditions?.[0];
+    expect(cond.type).toBe('unsupported');
+    expect(cond.note).toContain('deleted attribute');
+    expect(cond.note).toContain(attrId);
+    // The raw cuid must NOT appear as a codeName-contract value anywhere.
+    expect(cond.attribute).toBeUndefined();
+  });
+
   it('deletes a segment (204), then 404', async () => {
     const token = await mint([
       Capability.SegmentCreate,

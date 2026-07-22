@@ -62,6 +62,10 @@ export function buildDecompileResolversFrom(
     attributeCode: (id) => attrMap.get(id) ?? id,
     attributeScope: (id) => scopeMap.get(id) ?? 'user',
     eventCode: (id) => eventMap.get(id) ?? id,
+    // Catalog-backed: undefined = the id is NOT in the project's definitions
+    // (deleted) — the decompiler emits `unsupported` instead of leaking the id.
+    tryAttributeCode: (id) => attrMap.get(id),
+    tryEventCode: (id) => eventMap.get(id),
   };
 }
 

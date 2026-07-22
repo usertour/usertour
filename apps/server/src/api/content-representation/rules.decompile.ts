@@ -21,18 +21,33 @@ import { decompileTarget } from './target.decompile';
 export interface DecompileResolvers {
   attributeCode: (id: string) => string;
   /**
+   * Like attributeCode but returns undefined for an id the catalog does NOT
+   * contain (a deleted attribute). The decompiler turns that into an
+   * `unsupported` condition instead of leaking the raw cuid into a field whose
+   * contract is a codeName — leaking looked healthy on read and only failed on
+   * write-back (console sweep endpoint 15). Optional: identity resolvers
+   * (no catalog at hand) never report "deleted".
+   */
+  tryAttributeCode?: (id: string) => string | undefined;
+  /**
    * Internal id → its attribute scope, so a `user-attr` condition decompiles to the
    * `attribute` condition's `scope` (user / company / companyMembership). Optional —
    * resolvers that don't track scope fall back to `user`.
    */
   attributeScope?: (id: string) => AttributeScope;
   eventCode: (id: string) => string;
+  /** Like eventCode; undefined = deleted event (see tryAttributeCode). */
+  tryEventCode?: (id: string) => string | undefined;
 }
 
 export const IDENTITY_RESOLVERS: DecompileResolvers = {
   attributeCode: (id) => id,
   attributeScope: () => 'user',
   eventCode: (id) => id,
+  // No catalog — identity resolution can't distinguish "deleted" from "unknown
+  // to me", so it never reports deleted.
+  tryAttributeCode: (id) => id,
+  tryEventCode: (id) => id,
 };
 
 type RuleNode = {
@@ -163,29 +178,47 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
     // still MATCH in production. Decompiling them as `unsupported` misreported
     // live data (and made GET /segments emit a shape outside its own schema);
     // the shape is identical, so read it exactly like user-attr.
-    case 'company-attr':
+    case 'company-attr': {
       // One representation `attribute` type; `scope` (from the attribute's bizType)
       // carries user / company / companyMembership so it round-trips losslessly.
+      const attrId = d.attrId ?? '';
+      const attrCode = (r.tryAttributeCode ?? r.attributeCode)(attrId);
+      if (attrCode === undefined) {
+        return {
+          type: 'unsupported',
+          note: `references a deleted attribute (was internal id ${attrId}) — this condition no longer matches anything; remove it or recreate the attribute`,
+        };
+      }
       return {
         type: 'attribute',
-        scope: r.attributeScope?.(d.attrId ?? '') ?? 'user',
-        attribute: r.attributeCode(d.attrId ?? ''),
+        scope: r.attributeScope?.(attrId) ?? 'user',
+        attribute: attrCode,
         op: mapAttrOp(d.logic),
         ...(d.value != null ? { value: String(d.value) } : {}),
         ...(d.value2 != null ? { value2: String(d.value2) } : {}),
         ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
       };
-    case 'event-attr':
+    }
+    case 'event-attr': {
       // attrId → code via the shared attributeCode map (ids are unique, so no
       // bizType ambiguity on the read side).
+      const eventAttrId = d.attrId ?? '';
+      const eventAttrCode = (r.tryAttributeCode ?? r.attributeCode)(eventAttrId);
+      if (eventAttrCode === undefined) {
+        return {
+          type: 'unsupported',
+          note: `references a deleted event attribute (was internal id ${eventAttrId})`,
+        };
+      }
       return {
         type: 'event_attribute',
-        attribute: r.attributeCode(d.attrId ?? ''),
+        attribute: eventAttrCode,
         op: mapAttrOp(d.logic),
         ...(d.value != null ? { value: String(d.value) } : {}),
         ...(d.value2 != null ? { value2: String(d.value2) } : {}),
         ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
       };
+    }
     case 'task-is-clicked':
       return { type: 'task_clicked' };
     case 'segment':
@@ -210,10 +243,18 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
         content: d.contentId ?? '',
         state: (own(CONTENT_STATE, d.logic) ?? 'seen') as never,
       };
-    case 'event':
+    case 'event': {
+      const eventId = d.eventId ?? '';
+      const eventCode = (r.tryEventCode ?? r.eventCode)(eventId);
+      if (eventCode === undefined) {
+        return {
+          type: 'unsupported',
+          note: `references a deleted event (was internal id ${eventId})`,
+        };
+      }
       return {
         type: 'event',
-        event: r.eventCode(d.eventId ?? ''),
+        event: eventCode,
         ...mapCount(d),
         ...mapWithin(d),
         ...(own(SCOPE, d.scope) ? { scope: own(SCOPE, d.scope) as never } : {}),
@@ -221,6 +262,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
           ? { where: decompileWhen(d.whereConditions, r) as unknown as EventWhereCondition[] }
           : {}),
       };
+    }
     case 'text-input': {
       const target = decompileTarget(d.elementData);
       return {
