@@ -38,7 +38,7 @@ export class ApiEventDefinitionsService {
     query: ListEventDefinitionsQuery,
   ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
     const { cursor, limit, name } = query;
-    const sortOrders = parseOrderBy(query.orderBy, ['createdAt']);
+    const sortOrders = parseOrderBy(query.orderBy, ['createdAt', 'codeName', 'displayName']);
 
     return paginate({
       requestUrl,

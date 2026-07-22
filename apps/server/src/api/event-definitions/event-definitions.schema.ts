@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { singleOrArray } from '../shared/query';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '@/common/filters';
@@ -18,7 +18,11 @@ export const listEventDefinitionsQuery = z.object({
   cursor,
   limit,
   ...nameSearchField,
-  orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
+  orderBy: singleOrArray(
+    // Same sortable set as the sibling attribute-definitions catalog: both are
+    // definition directories with codeName/displayName columns.
+    z.enum(['createdAt', '-createdAt', 'codeName', '-codeName', 'displayName', '-displayName']),
+  ).describe('Order by createdAt / codeName / displayName (prefix - for descending).'),
 });
 export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefinitionsQuery) {}
 
