@@ -1,7 +1,4 @@
-import {
-  type DecompileResolvers,
-  decompileConditions,
-} from '../content-representation/rules.decompile';
+import { type DecompileResolvers, decompileWhen } from '../content-representation/rules.decompile';
 import { ApiObjectType } from '../shared/object-type';
 import type { Segment, SegmentCondition } from './segments.schema';
 
@@ -34,8 +31,13 @@ export function mapSegment(node: SegmentNode, resolvers: DecompileResolvers): Se
     // The general decompiler emits the full condition union, but stored segment
     // conditions are attribute/group only (the builder offers nothing else and
     // the write path rejects the rest) — narrow to the segment vocabulary.
+    // decompileWhen, not decompileConditions: the top-level list's and/or lives
+    // on its first node's `operators` (missing = OR at runtime), and the
+    // representation's bare-list convention is AND — an OR list must come back
+    // wrapped in group{match:'any'} or the definition reads REVERSED and a
+    // read-modify-write round-trip would permanently rewrite it to AND.
     ...(kind === 'condition'
-      ? { conditions: decompileConditions(node.data, resolvers) as SegmentCondition[] }
+      ? { conditions: decompileWhen(node.data, resolvers) as SegmentCondition[] }
       : {}),
     createdAt: new Date(node.createdAt).toISOString(),
     updatedAt: new Date(node.updatedAt).toISOString(),

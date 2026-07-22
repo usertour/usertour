@@ -1,7 +1,4 @@
-import {
-  type DecompileResolvers,
-  decompileConditions,
-} from '../content-representation/rules.decompile';
+import { type DecompileResolvers, decompileWhen } from '../content-representation/rules.decompile';
 import { ApiObjectType } from '../shared/object-type';
 import type { Theme, ThemeExpand } from './themes.schema';
 
@@ -28,7 +25,9 @@ function mapVariations(raw: unknown, resolvers: DecompileResolvers) {
   return (Array.isArray(raw) ? (raw as InternalVariation[]) : []).map((v) => ({
     id: v.id ?? '',
     name: v.name ?? '',
-    conditions: decompileConditions(v.conditions, resolvers),
+    // decompileWhen (not decompileConditions): an OR top-level list must wrap
+    // in group{match:'any'} — see segments.mapper for the full reasoning.
+    conditions: decompileWhen(v.conditions, resolvers),
     settings: (v.settings ?? {}) as Record<string, unknown>,
   }));
 }

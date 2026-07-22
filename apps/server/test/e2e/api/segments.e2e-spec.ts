@@ -335,6 +335,73 @@ describe('API v2 segments (e2e)', () => {
     expect(cond.attribute).toBeUndefined();
   });
 
+  it('a stored OR list (missing operators) reads as group{any}, never a bare AND list', async () => {
+    // The runtime treats a missing/non-'and' `operators` as OR (filter.ts), and
+    // the representation's bare-list convention is AND — so an OR list MUST
+    // come back wrapped in group{match:'any'}. Before this fix the flat list
+    // read as the REVERSE of what matches, and a read-modify-write round-trip
+    // silently rewrote the segment's live behavior to AND.
+    const token = await mint([Capability.SegmentRead, Capability.SegmentUpdate]);
+    // A LIVE attribute — a dangling id would (correctly) decompile to
+    // `unsupported` via the deleted-reference guard and mask this case.
+    const segAttr = await buildAttribute(prisma, {
+      projectId,
+      codeName: 'seg_orlist_attr',
+      bizType: 1,
+      dataType: 2,
+    });
+    const segAttrId = segAttr.id;
+    const orSeg = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'legacy OR segment',
+      bizType: 1,
+      dataType: 2,
+      data: [
+        // no `operators` key at all — the exact legacy shape
+        { type: 'user-attr', data: { attrId: segAttrId, logic: 'is', value: 'a' } },
+        { type: 'user-attr', data: { attrId: segAttrId, logic: 'is', value: 'b' } },
+      ],
+    });
+    const read = await api('get', `${segPath()}/${orSeg.id}`, token);
+    expect(read.status).toBe(200);
+    expect(read.body.conditions).toHaveLength(1);
+    expect(read.body.conditions[0]).toMatchObject({ type: 'group', match: 'any' });
+    expect(read.body.conditions[0].conditions).toHaveLength(2);
+
+    // Round-trip: writing the read shape back must PRESERVE the OR semantics.
+    const upd = await send('patch', `${segPath()}/${orSeg.id}`, token).send({
+      conditions: read.body.conditions,
+    });
+    expect(upd.status).toBe(200);
+    const reread = await api('get', `${segPath()}/${orSeg.id}`, token);
+    expect(reread.body.conditions[0]).toMatchObject({ type: 'group', match: 'any' });
+
+    // An explicit AND list stays a bare list (the convention's default).
+    const andSeg = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'explicit AND segment',
+      bizType: 1,
+      dataType: 2,
+      data: [
+        {
+          type: 'user-attr',
+          operators: 'and',
+          data: { attrId: segAttrId, logic: 'is', value: 'a' },
+        },
+        {
+          type: 'user-attr',
+          operators: 'and',
+          data: { attrId: segAttrId, logic: 'is', value: 'b' },
+        },
+      ],
+    });
+    const andRead = await api('get', `${segPath()}/${andSeg.id}`, token);
+    expect(andRead.body.conditions).toHaveLength(2);
+    expect(andRead.body.conditions[0].type).toBe('attribute');
+  });
+
   it('deletes a segment (204), then 404', async () => {
     const token = await mint([
       Capability.SegmentCreate,
