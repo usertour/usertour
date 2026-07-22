@@ -277,9 +277,14 @@ export class EnvironmentCreateRequiresFullScopeError extends OpenAPIError {
   code = 'E1032';
   statusCode = HttpStatus.FORBIDDEN;
   messageDict = {
-    en: 'Cannot create an environment with a token restricted to an environment allowlist — the new environment would be outside the token scope and unusable. Use a token scoped to all environments.',
+    // NOT "use a token scoped to all environments": tokens holding env-targeted
+    // capabilities (user/company/session/segment/analytics, content:publish) are
+    // REQUIRED to name environments at creation — "all environments" is not
+    // grantable for them, so that advice would be impossible to follow. The
+    // executable fix is a separate project-level-only token.
+    en: 'Cannot create an environment with this token — its environment allowlist cannot cover an environment that does not exist yet. Tokens holding env-targeted capabilities (user/company/session/segment/analytics, content:publish) always carry an allowlist, so use a separate token with project-level capabilities only (e.g. environment:manage, themes, attribute/event definitions, content read/write).',
     'zh-CN':
-      '使用限定了环境范围的 API 密钥无法创建环境——新建的环境会落在密钥范围之外、无法使用。请改用可访问全部环境的密钥。',
+      '此密钥无法创建环境——它的环境名单不可能覆盖一个还不存在的环境。带用户/公司/会话/分群/分析或发布能力的密钥在创建时必须指名环境,因此请另建一把只含项目级能力(环境管理、主题、属性/事件定义、内容读写)的密钥来创建环境。',
   };
 }
 

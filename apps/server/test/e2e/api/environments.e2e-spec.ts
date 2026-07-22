@@ -156,6 +156,11 @@ describe('API v2 /environments (e2e)', () => {
     const res = await send('post', base(), token).send({ name: 'Orphan' });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1032');
+    // The message must point at the EXECUTABLE fix (a project-level-only
+    // token) — never "scope it to all environments", which env-targeted
+    // capabilities make impossible to follow.
+    expect(res.body.error.message).toContain('project-level');
+    expect(res.body.error.message).not.toContain('scoped to all environments');
     // And nothing was created.
     const listToken = await mint([Capability.EnvironmentRead]);
     const list = await api('get', base(), listToken);
