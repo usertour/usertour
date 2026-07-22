@@ -33,7 +33,9 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
   private readonly docUrl: string;
 
   constructor(private configService: ConfigService) {
-    this.docUrl = this.configService.get<string>('app.docUrl') || 'https://docs.usertour.com';
+    // Fallback must be a REAL host: docs live at docs.usertour.io (the .com
+    // variant doesn't even resolve, so every error response carried a dead link).
+    this.docUrl = this.configService.get<string>('app.docUrl') || 'https://docs.usertour.io';
   }
 
   catch(exception: unknown, host: ArgumentsHost) {
