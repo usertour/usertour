@@ -306,6 +306,12 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
         break;
       }
       expect(res.status).toBe(200);
+      if (i === 0) {
+        // Every successful response carries the standard pacing headers.
+        expect(res.headers['x-ratelimit-limit']).toBe('100');
+        expect(Number(res.headers['x-ratelimit-remaining'])).toBe(99);
+        expect(Number(res.headers['x-ratelimit-reset'])).toBeGreaterThan(0);
+      }
     }
     expect(throttled).not.toBeNull();
     expect(throttled?.body.error.code).toBe('E1013');

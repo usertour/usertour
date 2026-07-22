@@ -47,6 +47,10 @@ describe('API v2 rate limiting (e2e)', () => {
     // Standard RFC 9110 header, not the library's name-suffixed variant —
     // off-the-shelf retry middleware backs off on exactly this.
     expect(Number(fourth.headers['retry-after'])).toBeGreaterThan(0);
+    // Standard unsuffixed rate-limit headers — the dashboard for pacing.
+    expect(fourth.headers['x-ratelimit-limit']).toBe('3');
+    expect(fourth.headers['x-ratelimit-remaining']).toBe('0');
+    expect(Number(fourth.headers['x-ratelimit-reset'])).toBeGreaterThan(0);
   });
 });
 

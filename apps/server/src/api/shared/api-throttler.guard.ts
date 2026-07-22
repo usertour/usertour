@@ -1,6 +1,6 @@
 import { ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerLimitDetail, ThrottlerRequest } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerRequest } from '@nestjs/throttler';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -58,13 +58,45 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     return super.canActivate(context);
   }
 
-  /** Swap the static module limit for the credential's plan allowance. */
+  /**
+   * Full override (no super call): swaps the static module limit for the
+   * credential's plan allowance AND owns the response headers. The library's
+   * own headers are name-suffixed (X-RateLimit-Limit-Api, Retry-After-Api) —
+   * shapes no client or retry middleware recognizes — so they are disabled in
+   * the module config (setHeaders: false) and the STANDARD ones are set here:
+   *
+   *  - every /v2 response carries X-RateLimit-Limit / -Remaining / -Reset, so
+   *    integrators can pace themselves BEFORE hitting the wall (and can see
+   *    the allowance their plan actually grants);
+   *  - a breach carries RFC 9110 `Retry-After` and the E1013 envelope.
+   */
   protected async handleRequest(requestProps: ThrottlerRequest): Promise<boolean> {
-    const req = requestProps.context.switchToHttp().getRequest<Record<string, any>>();
+    const { context, ttl, throttler, blockDuration, generateKey } = requestProps;
+    const http = context.switchToHttp();
+    const req = http.getRequest<Record<string, any>>();
+    const res = http.getResponse();
     const resolved = req.__apiThrottle as ResolvedThrottle | undefined;
-    return super.handleRequest(
-      resolved ? { ...requestProps, limit: resolved.limit } : requestProps,
-    );
+    const limit = resolved?.limit ?? requestProps.limit;
+    const tracker = resolved?.tracker ?? (await this.getTracker(req));
+    const name = throttler.name ?? 'api';
+    const key = generateKey(context, tracker, name);
+
+    const { totalHits, timeToExpire, isBlocked, timeToBlockExpire } =
+      await this.storageService.increment(key, ttl, limit, blockDuration, name);
+
+    const resetSeconds = Math.max(1, Math.ceil(timeToExpire / 1000));
+    res.header('X-RateLimit-Limit', String(limit));
+    res.header('X-RateLimit-Remaining', String(Math.max(0, limit - totalHits)));
+    res.header('X-RateLimit-Reset', String(resetSeconds));
+
+    if (isBlocked || totalHits > limit) {
+      const retryAfter = isBlocked
+        ? Math.max(1, Math.ceil(timeToBlockExpire / 1000))
+        : resetSeconds;
+      res.header('Retry-After', String(retryAfter));
+      throw new RateLimitExceededError();
+    }
+    return true;
   }
 
   protected async getTracker(req: Record<string, unknown>): Promise<string> {
@@ -75,17 +107,6 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     const ip =
       (req.ips as string[] | undefined)?.[0] ?? (req.ip as string | undefined) ?? 'unknown';
     return `api:ip:${ip}`;
-  }
-
-  protected async throwThrottlingException(
-    context: ExecutionContext,
-    detail: ThrottlerLimitDetail,
-  ): Promise<void> {
-    // The library emits a name-suffixed variant no client recognizes; set the
-    // RFC 9110 header so standard retry middleware actually backs off.
-    const res = context.switchToHttp().getResponse();
-    res?.header?.('Retry-After', String(Math.max(1, Math.ceil(detail.timeToExpire / 1000))));
-    throw new RateLimitExceededError();
   }
 
   // ── bucket + limit resolution ───────────────────────────────────────

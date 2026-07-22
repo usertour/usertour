@@ -69,7 +69,8 @@ export function ApiStandardErrorResponses() {
       description:
         "Rate limit exceeded — E1013. The limit follows the project's plan " +
         '(100/500/1000/3000 requests per minute); unknown credentials share a per-IP bucket. ' +
-        'The standard Retry-After header says how many seconds to back off.',
+        'Every response also carries X-RateLimit-Limit / -Remaining / -Reset for pacing; a 429 ' +
+        'adds the standard Retry-After header (seconds to back off).',
       type: ErrorResponseDto,
     }),
     ApiResponse({

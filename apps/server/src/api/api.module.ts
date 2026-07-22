@@ -52,6 +52,10 @@ import { ApiUsersService } from './users/users.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
+        // The library's headers are name-suffixed (X-RateLimit-Limit-Api) and
+        // useless to standard clients; ApiThrottlerGuard sets the standard,
+        // unsuffixed ones itself.
+        setHeaders: false,
         throttlers: [
           {
             name: 'api',
