@@ -317,6 +317,21 @@ export class SystemThemeCannotBeDeletedError extends OpenAPIError {
   };
 }
 
+/**
+ * Predefined attribute/event definitions are a permanent property — like
+ * E1035 (system themes): 409, no un-predefine action exists, so the message
+ * points at the real alternative instead of a fake way out. Shared by all
+ * four sites (attribute/event x modify/delete).
+ */
+export class PredefinedDefinitionCannotBeChangedError extends OpenAPIError {
+  code = 'E1036';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Predefined definitions cannot be modified or deleted — create your own definition instead.',
+    'zh-CN': '预定义的属性/事件不可修改或删除——如需自定义,请新建一个自己的定义。',
+  };
+}
+
 export class UnknownRouteError extends OpenAPIError {
   code = 'E1033';
   statusCode = HttpStatus.NOT_FOUND;

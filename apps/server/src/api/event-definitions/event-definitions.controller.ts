@@ -90,6 +90,13 @@ export class ApiEventDefinitionsController {
   @ApiParam({ name: 'id', description: 'Event definition ID' })
   @ApiResponse({ status: 200, description: 'Event definition updated', type: EventDefinitionDto })
   @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The definition is predefined (E1036) — it cannot be modified or deleted; create your ' +
+      'own definition instead.',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -108,7 +115,9 @@ export class ApiEventDefinitionsController {
   @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
   @ApiResponse({
     status: 409,
-    description: 'Event definition already has recorded events (E1030) and cannot be deleted.',
+    description:
+      'State conflict — E1030 the event already has recorded events, E1036 it is predefined; ' +
+      'neither can be deleted.',
     type: ErrorResponseDto,
   })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {

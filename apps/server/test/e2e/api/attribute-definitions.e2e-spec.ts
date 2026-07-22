@@ -386,7 +386,7 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(res.body.error.code).toBe('E1022');
   });
 
-  it('cannot modify a predefined attribute (400 E1017)', async () => {
+  it('cannot modify or delete a predefined attribute (409 E1036)', async () => {
     const token = await mint([Capability.AttributeUpdate, Capability.AttributeDelete]);
     const predef = await prisma.attribute.create({
       data: {
@@ -402,11 +402,11 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const patched = await send('patch', `${basePath()}/${predef.id}`, token).send({
       displayName: 'nope',
     });
-    expect(patched.status).toBe(400);
-    expect(patched.body.error.code).toBe('E1017');
+    expect(patched.status).toBe(409);
+    expect(patched.body.error.code).toBe('E1036');
 
     const deleted = await send('delete', `${basePath()}/${predef.id}`, token).send();
-    expect(deleted.status).toBe(400);
-    expect(deleted.body.error.code).toBe('E1017');
+    expect(deleted.status).toBe(409);
+    expect(deleted.body.error.code).toBe('E1036');
   });
 });

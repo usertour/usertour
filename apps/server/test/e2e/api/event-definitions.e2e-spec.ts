@@ -298,7 +298,7 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect(res.body.error.code).toBe('E1024');
   });
 
-  it('cannot modify a predefined event (400 E1017)', async () => {
+  it('cannot modify a predefined event (409 E1036 — permanent, points at the alternative)', async () => {
     const token = await mint([Capability.EventUpdate]);
     const predef = await prisma.event.create({
       data: {
@@ -312,8 +312,9 @@ describe('API v2 /event-definitions (e2e)', () => {
     const res = await send('patch', `${basePath()}/${predef.id}`, token).send({
       displayName: 'no',
     });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('E1017');
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1036');
+    expect(res.body.error.message).toContain('create your own');
   });
 
   it('renders into one OpenAPI doc alongside v1 (zod schema via cleanupOpenApiDoc)', () => {

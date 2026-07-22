@@ -98,6 +98,13 @@ export class ApiAttributeDefinitionsController {
     description: 'Attribute definition not found',
     type: ErrorResponseDto,
   })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The definition is predefined (E1036) — it cannot be modified or deleted; create your ' +
+      'own definition instead.',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -116,6 +123,13 @@ export class ApiAttributeDefinitionsController {
   @ApiResponse({
     status: 404,
     description: 'Attribute definition not found',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The definition is predefined (E1036) — it cannot be modified or deleted; create your ' +
+      'own definition instead.',
     type: ErrorResponseDto,
   })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {

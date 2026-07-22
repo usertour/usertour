@@ -5,9 +5,9 @@ import { BizService } from '@/biz/biz.service';
 import {
   AttributeDefinitionNotFoundError,
   InvalidScopeError,
+  PredefinedDefinitionCannotBeChangedError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
-  ValidationError,
 } from '@/common/errors/errors';
 
 import {
@@ -146,7 +146,7 @@ export class ApiAttributeDefinitionsService {
   private async requireWritable(id: string, projectId: string) {
     const attr = await this.requireExisting(id, projectId);
     if (attr.predefined) {
-      throw new ValidationError('Cannot modify or delete a predefined attribute definition.');
+      throw new PredefinedDefinitionCannotBeChangedError();
     }
     return attr;
   }
