@@ -41,10 +41,28 @@ export function buildCompileResolversFrom(
     attributes.filter((a) => a.bizType === AttributeBizType.EVENT).map((a) => [a.codeName, a.id]),
   );
   const eventMap = new Map(events.map((e) => [e.codeName, e.id]));
+  // Unresolved codes fall back to the raw string (legacy behavior several
+  // callers rely on for round-tripping), but each miss is RECORDED so write
+  // paths can refuse instead of persisting a dead condition whose attrId is a
+  // codeName nothing will ever resolve (console sweep batch C).
+  const misses: string[] = [];
   return {
-    attributeId: (code, scope = 'user') => attrMap.get(`${scope}:${code}`) ?? code,
-    eventId: (code) => eventMap.get(code) ?? code,
-    eventAttributeId: (code) => eventAttrMap.get(code) ?? code,
+    attributeId: (code, scope = 'user') => {
+      const id = attrMap.get(`${scope}:${code}`);
+      if (id === undefined) misses.push(`attribute "${code}" (scope ${scope})`);
+      return id ?? code;
+    },
+    eventId: (code) => {
+      const id = eventMap.get(code);
+      if (id === undefined) misses.push(`event "${code}"`);
+      return id ?? code;
+    },
+    eventAttributeId: (code) => {
+      const id = eventAttrMap.get(code);
+      if (id === undefined) misses.push(`event attribute "${code}"`);
+      return id ?? code;
+    },
+    misses,
   };
 }
 

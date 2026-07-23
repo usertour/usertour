@@ -896,11 +896,12 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
 
-      // A renderable step (so the version is otherwise usable) plus a start rule
-      // whose condition points at an attribute code that doesn't exist in the
-      // project. The compile resolver passes the unknown code through unchanged,
-      // so without semantic validation this would publish a silent dead ref.
-      await rpc(
+      // A start rule whose condition points at an attribute code that doesn't
+      // exist in the project. The WRITE now refuses (console sweep batch C —
+      // the compile resolver used to pass the unknown code through and store a
+      // dead reference that only validate/publish could catch later; segments
+      // always refused at write time and versions now match that standard).
+      const writeRes = await rpc(
         {
           jsonrpc: '2.0',
           id: 2,
@@ -929,27 +930,11 @@ describe('MCP endpoint (e2e)', () => {
         },
         token,
       );
-
-      const report = parseToolContent(
-        extractResult(
-          await rpc(
-            {
-              jsonrpc: '2.0',
-              id: 3,
-              method: 'tools/call',
-              params: {
-                name: 'validate_content_version',
-                arguments: { contentId: created.id, id: created.editedVersionId },
-              },
-            },
-            token,
-          ),
-        ),
-      );
-      expect(report.ok).toBe(false);
-      expect(
-        report.errors.some((e: { message: string }) => /unknown attribute/.test(e.message)),
-      ).toBe(true);
+      const writeResult = extractResult(writeRes);
+      expect(writeResult.result.isError).toBe(true);
+      const errText = JSON.stringify(writeResult.result.content);
+      expect(errText).toMatch(/ghost_attr/);
+      expect(errText).toMatch(/unknown/i);
     });
 
     it('update_content_version rejects a run_javascript action with a specific, non-retryable message', async () => {
