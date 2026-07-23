@@ -596,6 +596,10 @@ describe('API v2 segments (e2e)', () => {
     const res = await send('put', `${memberPath(seg.body.id)}/no-such-user`, token).send();
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E1001');
+    // The message must say WHICH table was searched and why — a bare
+    // "User not found" reads as a typo hunt when the real issue is a
+    // cross-bizType mistake (console sweep endpoint 26).
+    expect(res.body.error.message).toContain('USER segment');
   });
 
   it('POST rejects a token without segment:create (403 E1012)', async () => {

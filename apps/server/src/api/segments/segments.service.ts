@@ -220,7 +220,9 @@ export class ApiSegmentsService {
     if (seg.bizType === SegmentBizType.COMPANY) {
       const company = await this.biz.getBizCompany(externalId, environmentId);
       if (!company) {
-        throw new CompanyNotFoundError();
+        throw new CompanyNotFoundError(
+          `this is a COMPANY segment, and externalId "${externalId}" does not exist among companies in this environment (to manage a user, target a user segment)`,
+        );
       }
       await this.biz.createBizCompanyOnSegment([
         { segmentId: id, bizCompanyId: company.id, data: {} },
@@ -228,7 +230,9 @@ export class ApiSegmentsService {
     } else {
       const user = await this.biz.getBizUser(externalId, environmentId);
       if (!user) {
-        throw new UserNotFoundError();
+        throw new UserNotFoundError(
+          `this is a USER segment, and externalId "${externalId}" does not exist among users in this environment (to manage a company, target a company segment)`,
+        );
       }
       await this.biz.createBizUserOnSegment([{ segmentId: id, bizUserId: user.id, data: {} }]);
     }
@@ -245,13 +249,17 @@ export class ApiSegmentsService {
     if (seg.bizType === SegmentBizType.COMPANY) {
       const company = await this.biz.getBizCompany(externalId, environmentId);
       if (!company) {
-        throw new CompanyNotFoundError();
+        throw new CompanyNotFoundError(
+          `this is a COMPANY segment, and externalId "${externalId}" does not exist among companies in this environment (to manage a user, target a user segment)`,
+        );
       }
       await this.biz.deleteBizCompanyOnSegment({ segmentId: id, bizCompanyIds: [company.id] });
     } else {
       const user = await this.biz.getBizUser(externalId, environmentId);
       if (!user) {
-        throw new UserNotFoundError();
+        throw new UserNotFoundError(
+          `this is a USER segment, and externalId "${externalId}" does not exist among users in this environment (to manage a company, target a company segment)`,
+        );
       }
       await this.biz.deleteBizUserOnSegment({ segmentId: id, bizUserIds: [user.id] });
     }

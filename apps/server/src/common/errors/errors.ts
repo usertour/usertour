@@ -496,6 +496,22 @@ export class UserNotFoundError extends OpenAPIError {
     en: 'User not found',
     'zh-CN': '用户未找到',
   };
+
+  /**
+   * Optionally add call-site context (E1029 precedent) — e.g. the segment
+   * member endpoints look the externalId up in the table the SEGMENT's bizType
+   * dictates, and a bare "User not found" reads as a typo hunt when the real
+   * issue is a company externalId aimed at a user segment.
+   */
+  constructor(context?: string) {
+    super();
+    if (context) {
+      this.messageDict = {
+        en: `User not found — ${context}`,
+        'zh-CN': `用户未找到——${context}`,
+      };
+    }
+  }
 }
 
 export class UserRegistrationDisabledError extends BaseError {
@@ -578,6 +594,17 @@ export class CompanyNotFoundError extends OpenAPIError {
     en: 'Company not found',
     'zh-CN': '公司未找到',
   };
+
+  /** Optional call-site context; see {@link UserNotFoundError}. */
+  constructor(context?: string) {
+    super();
+    if (context) {
+      this.messageDict = {
+        en: `Company not found — ${context}`,
+        'zh-CN': `公司未找到——${context}`,
+      };
+    }
+  }
 }
 
 export class CompanyMembershipNotFoundError extends OpenAPIError {
