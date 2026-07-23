@@ -109,6 +109,17 @@ describe('API v2 /content (e2e)', () => {
     expect(item).not.toHaveProperty('publishedVersion');
   });
 
+  it('rejects an unknown type filter with E1017 (enum, not a silent empty list)', async () => {
+    // A typo (resourceCenter / survey) used to return 0 rows and read as
+    // "no such content"; the filter now shares the create body's enum.
+    const token = await mint([Capability.ContentRead]);
+    const res = await api('get', `/v2/projects/${projectId}/content?type=bogus`, token);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    const ok = await api('get', `/v2/projects/${projectId}/content?type=flow`, token);
+    expect(ok.status).toBe(200);
+  });
+
   it('exposes per-environment publish state via environments[]', async () => {
     const token = await mint([Capability.ContentRead]);
     const res = await api('get', `/v2/projects/${projectId}/content/${publishedId}`, token);

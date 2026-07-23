@@ -1,3 +1,4 @@
+import { ContentDataType } from '@usertour/types';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
@@ -9,17 +10,26 @@ import { cursor, limit } from '../shared/pagination.schema';
 
 export const contentExpand = z.enum(['editedVersion', 'publishedVersion']);
 
+/**
+ * One enum for every place a content type is named — create body AND list
+ * filter — DERIVED from the domain's ContentDataType so a new type lands in
+ * both automatically. The filter used to be a free string (a typo silently
+ * returned an empty list that read as "no such content"), and the create body
+ * carried its own hand-copied list.
+ */
+export const contentTypeEnum = z.enum(
+  Object.values(ContentDataType) as [`${ContentDataType}`, ...`${ContentDataType}`[]],
+);
+
 export const listContentQuery = z.object({
   limit,
   cursor,
   ...nameSearchField,
-  type: z
-    .string()
+  type: contentTypeEnum
     .optional()
     .describe(
-      'Filter by content type: flow, checklist, launcher, banner, tracker, resource-center, ' +
-        'announcement. (A survey is a flow with question blocks — there is no separate survey ' +
-        'type.)',
+      'Filter by content type. (A survey is a flow with question blocks — there is no separate ' +
+        'survey type.)',
     ),
   published: z
     .stringbool()
@@ -76,20 +86,10 @@ export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 /** Write body for POST content. */
 export const createContentBody = z
   .object({
-    type: z
-      .enum([
-        'flow',
-        'checklist',
-        'launcher',
-        'banner',
-        'tracker',
-        'resource-center',
-        'announcement',
-      ])
-      .describe(
-        'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
-          'has an `announcement` block — publish alone does not surface it without one.',
-      ),
+    type: contentTypeEnum.describe(
+      'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
+        'has an `announcement` block — publish alone does not surface it without one.',
+    ),
     name: z
       .string()
       .optional()

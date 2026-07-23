@@ -11,7 +11,7 @@ import { buildDecompileResolversFrom } from '@/api/content-representation/attrib
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
-import { ContentExpand } from '@/api/content/content.schema';
+import { ContentExpand, type ListContentQuery } from '@/api/content/content.schema';
 import { EnvironmentNotInTokenScopeError } from '@/common/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
@@ -315,7 +315,9 @@ export function buildReadTools(): McpTool[] {
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
           name: asString(args.name),
-          type: asString(args.type),
+          // The MCP inputSchema already constrains this to the enum; the cast
+          // bridges the generic arg bag to the now-enum-typed query field.
+          type: asString(args.type) as ListContentQuery['type'],
           published: typeof args.published === 'boolean' ? args.published : undefined,
           deleted: typeof args.deleted === 'boolean' ? args.deleted : undefined,
           expand: asStringArray(args.expand) as ContentExpand[] | undefined,
