@@ -13,6 +13,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -31,6 +32,7 @@ import {
 } from './event-definitions.schema';
 
 @ApiTags('Event definitions')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/event-definitions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -62,7 +64,7 @@ export class ApiEventDefinitionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Event definition ID' })
   @ApiResponse({ status: 200, description: 'Event definition found', type: EventDefinitionDto })
-  @ApiResponse({ status: 404, description: 'Event definition not found' })
+  @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
   async get(@Param('projectId') projectId: string, @Param('id') id: string) {
     return this.service.get(id, projectId);
   }
@@ -72,7 +74,11 @@ export class ApiEventDefinitionsController {
   @ApiOperation({ summary: 'Create an event definition' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Event definition created', type: EventDefinitionDto })
-  @ApiResponse({ status: 409, description: 'An event with this codeName already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'An event with this codeName already exists',
+    type: ErrorResponseDto,
+  })
   async create(@Param('projectId') projectId: string, @Body() body: CreateEventDefinitionBodyDto) {
     return this.service.create(projectId, body);
   }
@@ -83,7 +89,14 @@ export class ApiEventDefinitionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Event definition ID' })
   @ApiResponse({ status: 200, description: 'Event definition updated', type: EventDefinitionDto })
-  @ApiResponse({ status: 404, description: 'Event definition not found' })
+  @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The definition is predefined (E1036) — it cannot be modified or deleted; create your ' +
+      'own definition instead.',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -99,7 +112,14 @@ export class ApiEventDefinitionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Event definition ID' })
   @ApiResponse({ status: 204, description: 'Event definition deleted' })
-  @ApiResponse({ status: 404, description: 'Event definition not found' })
+  @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'State conflict — E1030 the event already has recorded events, E1036 it is predefined; ' +
+      'neither can be deleted.',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

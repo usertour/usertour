@@ -597,7 +597,9 @@ export function buildWriteTools(): McpTool[] {
       description:
         "Update a theme's metadata (name / isDefault) and/or `settings` (a partial style " +
         'patch, field-merged onto the current settings with auto colors derived). System themes ' +
-        '(`isSystem: true` on list_themes) are READ-ONLY — create_theme your own copy instead. ' +
+        '(`isSystem: true` on list_themes) reject content changes (name / settings) — ' +
+        'create_theme your own copy instead — but `isDefault: true` IS allowed on them: it ' +
+        'only moves the project default pointer. ' +
         '`variations` are not yet editable via the API.',
       inputSchema: {
         id: z.string().describe('The theme id.'),
@@ -787,11 +789,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create an environment',
       capability: Capability.EnvironmentManage,
       description:
-        'Create an environment in the project. The first one is made primary. NOTE: this needs a ' +
-        'credential scoped to ALL environments — a credential restricted to an environment ' +
-        'allowlist is refused (E1032), because the new environment would fall outside its ' +
-        'allowlist and be unusable (an undeletable orphan). Create environments in the console, ' +
-        'or with an unrestricted token.',
+        'Create an environment in the project. The first one is made primary. NOTE: a credential ' +
+        'holding env-targeted capabilities (user/company/session/segment/analytics, ' +
+        'content:publish) always carries an environment allowlist and is refused here (E1032) — ' +
+        'the new environment would fall outside that list and be unusable. Create environments ' +
+        'in the console, or with a separate credential holding project-level capabilities only.',
       inputSchema: { ...createEnvironmentBody.shape },
       handler: (args, ctx) =>
         ctx.services.environments.create(

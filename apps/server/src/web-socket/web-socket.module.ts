@@ -48,13 +48,17 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
         throttlers: [
           {
             name: 'short',
-            ttl: configService.get<number>('WS_THROTTLE_SHORT_TTL', 1000),
-            limit: configService.get<number>('WS_THROTTLE_SHORT_LIMIT', 30),
+            // Number(...) is load-bearing: env values are STRINGS, and the
+            // throttler storage computes `Date.now() + ttl` — string concat
+            // would push expiry out ~5.6M years and the window would never
+            // reset (same latent bug the v2 API limiter shipped and fixed).
+            ttl: Number(configService.get('WS_THROTTLE_SHORT_TTL') ?? 1000),
+            limit: Number(configService.get('WS_THROTTLE_SHORT_LIMIT') ?? 30),
           },
           {
             name: 'medium',
-            ttl: configService.get<number>('WS_THROTTLE_MEDIUM_TTL', 60000),
-            limit: configService.get<number>('WS_THROTTLE_MEDIUM_LIMIT', 300),
+            ttl: Number(configService.get('WS_THROTTLE_MEDIUM_TTL') ?? 60000),
+            limit: Number(configService.get('WS_THROTTLE_MEDIUM_LIMIT') ?? 300),
           },
         ],
       }),

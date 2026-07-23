@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AnalyticsModule } from '@/analytics/analytics.module';
 import { ApiTokenModule } from '@/api-token/api-token.module';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
+import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
@@ -44,6 +49,29 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
  */
 @Module({
   imports: [
+    // v2 REST rate limiting (per credential; see ApiThrottlerGuard). Module-
+    // scoped ThrottlerModule — the websocket gateway configures its own.
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        // The library's headers are name-suffixed (X-RateLimit-Limit-Api) and
+        // useless to standard clients; ApiThrottlerGuard sets the standard,
+        // unsuffixed ones itself.
+        setHeaders: false,
+        throttlers: [
+          {
+            name: 'api',
+            // Number(...) is load-bearing: env values arrive as STRINGS and the
+            // throttler storage computes `Date.now() + ttl` — with a string
+            // that's concatenation, pushing expiry millions of years out (the
+            // window then NEVER resets and quotas become lifetime totals).
+            ttl: Number(config.get('API_THROTTLE_TTL') ?? 60_000),
+            limit: Number(config.get('API_THROTTLE_LIMIT') ?? 1000),
+          },
+        ],
+      }),
+    }),
     ApiTokenModule,
     EventsModule,
     AttributesModule,
@@ -86,6 +114,13 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiEnvironmentsService,
     ApiWebhooksService,
     OpenAPIExceptionFilter,
+    // Global fallback: keeps the v2 error envelope for exceptions thrown BEFORE
+    // any route handler (body-parser JSON failures, unknown /v2 routes) that the
+    // controller-scoped OpenAPIExceptionFilter can never see. Non-/v2 traffic
+    // keeps the default behavior.
+    { provide: APP_FILTER, useClass: V2FallbackExceptionFilter },
+    // Global guard, no-op off /v2 (see ApiThrottlerGuard).
+    { provide: APP_GUARD, useClass: ApiThrottlerGuard },
   ],
   // Exported for the MCP module, which binds these read services as tools.
   exports: [

@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {
+  BuiltInSegmentCannotBeChangedError,
   CompanyNotFoundError,
   SegmentNotFoundError,
   UserNotFoundError,
@@ -93,6 +94,16 @@ export class ApiSegmentsService {
     const dataType = body.kind === 'condition' ? SegmentDataType.CONDITION : SegmentDataType.MANUAL;
     const resolvers = await loadResolvers(this.prisma, projectId);
     let data: JsonValue | undefined;
+    // A manual segment's membership is managed explicitly (add/remove member);
+    // silently dropping a supplied `conditions` made callers believe they had
+    // created a filtered segment when they got an empty one. Refuse, like the
+    // update path always has.
+    if (body.kind === 'manual' && body.conditions !== undefined) {
+      throw new ValidationError(
+        'A manual segment cannot carry `conditions` — its members are managed explicitly. ' +
+          'Use kind "condition" for a filtered segment.',
+      );
+    }
     if (body.kind === 'condition') {
       this.assertSegmentConditionTypes(body.conditions);
       data = compileConditions(body.conditions, resolvers.compile) as unknown as JsonValue;
@@ -112,7 +123,7 @@ export class ApiSegmentsService {
   async update(id: string, projectId: string, body: UpdateSegmentBody): Promise<Segment> {
     const seg = await this.requireSegment(id, projectId);
     if (seg.dataType === SegmentDataType.ALL) {
-      throw new ValidationError('Cannot modify the built-in "all" segment.');
+      throw new BuiltInSegmentCannotBeChangedError();
     }
     const resolvers = await loadResolvers(this.prisma, projectId);
     let data: JsonValue | undefined;
@@ -149,6 +160,16 @@ export class ApiSegmentsService {
       conds.forEach((c, i) => {
         const at = `${path}[${i}]`;
         const type = (c as { type?: unknown })?.type;
+        if (type === 'unsupported') {
+          // The read side emits this placeholder for a stored condition the
+          // schema cannot express. Echoing it back cannot preserve the stored
+          // condition (conditions are a full replacement and the placeholder
+          // carries no data), so refuse with directions instead of silently
+          // dropping it.
+          throw new ValidationError(
+            `"unsupported" at ${at} is a read-side placeholder for a stored condition this API cannot express — it cannot be written back. Remove it from the write (which DELETES that stored condition) or migrate the segment's conditions in the builder first.`,
+          );
+        }
         if (typeof type !== 'string' || !ALLOWED.has(type)) {
           throw new ValidationError(
             `Segment conditions support only attribute conditions (and groups of them); got "${String(type)}" at ${at}. A segment's membership is computed from user/company attributes — event / page-url / element / flow / other content-targeting condition types are not evaluated for a segment (they would silently match every user). Use attribute conditions here, or put that logic on the content's start rules instead.`,
@@ -183,7 +204,7 @@ export class ApiSegmentsService {
   async delete(id: string, projectId: string): Promise<void> {
     const seg = await this.requireSegment(id, projectId);
     if (seg.dataType === SegmentDataType.ALL) {
-      throw new ValidationError('Cannot delete the built-in "all" segment.');
+      throw new BuiltInSegmentCannotBeChangedError();
     }
     await this.biz.deleteSegment({ id });
   }
@@ -199,7 +220,9 @@ export class ApiSegmentsService {
     if (seg.bizType === SegmentBizType.COMPANY) {
       const company = await this.biz.getBizCompany(externalId, environmentId);
       if (!company) {
-        throw new CompanyNotFoundError();
+        throw new CompanyNotFoundError(
+          `this is a COMPANY segment, and externalId "${externalId}" does not exist among companies in this environment (to manage a user, target a user segment)`,
+        );
       }
       await this.biz.createBizCompanyOnSegment([
         { segmentId: id, bizCompanyId: company.id, data: {} },
@@ -207,7 +230,9 @@ export class ApiSegmentsService {
     } else {
       const user = await this.biz.getBizUser(externalId, environmentId);
       if (!user) {
-        throw new UserNotFoundError();
+        throw new UserNotFoundError(
+          `this is a USER segment, and externalId "${externalId}" does not exist among users in this environment (to manage a company, target a company segment)`,
+        );
       }
       await this.biz.createBizUserOnSegment([{ segmentId: id, bizUserId: user.id, data: {} }]);
     }
@@ -224,13 +249,17 @@ export class ApiSegmentsService {
     if (seg.bizType === SegmentBizType.COMPANY) {
       const company = await this.biz.getBizCompany(externalId, environmentId);
       if (!company) {
-        throw new CompanyNotFoundError();
+        throw new CompanyNotFoundError(
+          `this is a COMPANY segment, and externalId "${externalId}" does not exist among companies in this environment (to manage a user, target a user segment)`,
+        );
       }
       await this.biz.deleteBizCompanyOnSegment({ segmentId: id, bizCompanyIds: [company.id] });
     } else {
       const user = await this.biz.getBizUser(externalId, environmentId);
       if (!user) {
-        throw new UserNotFoundError();
+        throw new UserNotFoundError(
+          `this is a USER segment, and externalId "${externalId}" does not exist among users in this environment (to manage a company, target a company segment)`,
+        );
       }
       await this.biz.deleteBizUserOnSegment({ segmentId: id, bizUserIds: [user.id] });
     }

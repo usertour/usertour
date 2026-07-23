@@ -4,6 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import {
   EventDefinitionNotFoundError,
+  PredefinedDefinitionCannotBeChangedError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
   ValidationError,
@@ -38,7 +39,7 @@ export class ApiEventDefinitionsService {
     query: ListEventDefinitionsQuery,
   ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
     const { cursor, limit, name } = query;
-    const sortOrders = parseOrderBy(query.orderBy, ['createdAt']);
+    const sortOrders = parseOrderBy(query.orderBy, ['createdAt', 'codeName', 'displayName']);
 
     return paginate({
       requestUrl,
@@ -134,7 +135,7 @@ export class ApiEventDefinitionsService {
   private async requireWritable(id: string, projectId: string) {
     const event = await this.requireExisting(id, projectId);
     if (event.predefined) {
-      throw new ValidationError('Cannot modify or delete a predefined event definition.');
+      throw new PredefinedDefinitionCannotBeChangedError();
     }
     return event;
   }

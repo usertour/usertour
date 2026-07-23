@@ -309,6 +309,58 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('refuses a settings-only startRules patch when auto-start is not enabled (no dead invisible settings)', async () => {
+    // frequency/priority written without `when` on a version whose auto-start
+    // is off used to land in storage but read back as startRules: null — the
+    // decompiler keys off the enabled flag (console sweep batch C).
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { priority: 'high' } });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    expect(res.body.error.message).toContain('auto-start is not enabled');
+
+    // Once `when` enables it, a later settings-only patch is legal and READABLE.
+    const enable = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { when: [{ type: 'current_url', includes: ['/x'] }] } });
+    expect(enable.status).toBe(200);
+    const settingsOnly = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { priority: 'high' } });
+    expect(settingsOnly.status).toBe(200);
+    expect(settingsOnly.body.startRules).toMatchObject({ priority: 'high' });
+  });
+
+  it('refuses conditions referencing unknown attributes/events (like segments always did)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({
+      startRules: {
+        when: [
+          { type: 'attribute', scope: 'user', attribute: 'no_such_attr', op: 'is', value: 'x' },
+        ],
+      },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    expect(res.body.error.message).toContain('no_such_attr');
+  });
+
   it('rejects editing a PUBLISHED (locked) version with a readable 409 E0049 — not a 500', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // Isolated fixture: a published edited version (locked for edits).

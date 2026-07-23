@@ -1,7 +1,7 @@
 // Multiple selection (checkbox) component for SDK widget
 
 import { cn } from '@usertour/tailwind';
-import { forwardRef, memo, useCallback, useState } from 'react';
+import { forwardRef, memo, useCallback, useId, useState } from 'react';
 
 import { Button, Checkbox, Label } from '../primitives';
 import { useWidgetLocale } from '../locale/context';
@@ -47,6 +47,10 @@ export const MultipleSelection = memo(
       ref,
     ) => {
       const { messages } = useWidgetLocale();
+      // Instance-unique id prefix — same collision fix as SingleSelection: the
+      // hard-coded `c1${index}` ids broke Label→checkbox association whenever two
+      // question instances were mounted at once.
+      const uid = useId();
       const [otherValue, setOtherValue] = useState<string>('');
       const [isEditing, setIsEditing] = useState<boolean>(false);
       const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -136,10 +140,10 @@ export const MultipleSelection = memo(
                 <OptionItem key={index}>
                   <Checkbox
                     checked={getCheckboxChecked(option.value, index)}
-                    id={`c1${index}`}
+                    id={`${uid}-${index}`}
                     onCheckedChange={() => handleOptionClick(option.value, index)}
                   />
-                  <Label htmlFor={`c1${index}`} className="grow cursor-pointer">
+                  <Label htmlFor={`${uid}-${index}`} className="grow cursor-pointer">
                     {option.label || option.value || `${messages.optionPrefix} ${index + 1}`}
                   </Label>
                 </OptionItem>

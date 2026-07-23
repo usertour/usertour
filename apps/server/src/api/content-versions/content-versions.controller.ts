@@ -12,6 +12,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -32,6 +33,7 @@ import {
 } from './content-versions.schema';
 
 @ApiTags('Content versions')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/content/:contentId/versions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -66,7 +68,7 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Content version found', type: ContentVersionDto })
-  @ApiResponse({ status: 404, description: 'Content version not found' })
+  @ApiResponse({ status: 404, description: 'Content version not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @Param('contentId') contentId: string,
@@ -88,7 +90,7 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Usability report', type: VersionUsabilityReportDto })
-  @ApiResponse({ status: 404, description: 'Content version not found' })
+  @ApiResponse({ status: 404, description: 'Content version not found', type: ErrorResponseDto })
   async validate(
     @Param('id') id: string,
     @Param('contentId') contentId: string,
@@ -110,7 +112,7 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiResponse({ status: 201, description: 'Created content version', type: ContentVersionDto })
-  @ApiResponse({ status: 404, description: 'Content not found' })
+  @ApiResponse({ status: 404, description: 'Content not found', type: ErrorResponseDto })
   async create(
     @Param('projectId') projectId: string,
     @Param('contentId') contentId: string,
@@ -132,7 +134,7 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID to restore' })
   @ApiResponse({ status: 201, description: 'New draft version', type: ContentVersionDto })
-  @ApiResponse({ status: 404, description: 'Content version not found' })
+  @ApiResponse({ status: 404, description: 'Content version not found', type: ErrorResponseDto })
   async restore(
     @Param('id') id: string,
     @Param('contentId') contentId: string,
@@ -156,7 +158,14 @@ export class ApiContentVersionsController {
   @ApiParam({ name: 'contentId', description: 'Content ID' })
   @ApiParam({ name: 'id', description: 'Content version ID' })
   @ApiResponse({ status: 200, description: 'Updated content version', type: ContentVersionDto })
-  @ApiResponse({ status: 404, description: 'Content version not found' })
+  @ApiResponse({ status: 404, description: 'Content version not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'E0049 the version is published (read-only — fork an editable draft first), or E0050 ' +
+      'it was modified concurrently (re-read and retry).',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('id') id: string,
     @Param('contentId') contentId: string,

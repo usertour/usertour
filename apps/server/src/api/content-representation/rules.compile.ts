@@ -36,6 +36,8 @@ export interface CompileResolvers {
    * this must be a separate map. Falls back to `attributeId` when absent.
    */
   eventAttributeId?: (code: string) => string;
+  /** Codes that failed to resolve during compilation — write paths refuse when non-empty. */
+  misses?: string[];
   /**
    * Resolve a `goto_step` target reference (an author `key` or an existing
    * `cvid`) to the real step cvid. Present only when compiling flow steps; the

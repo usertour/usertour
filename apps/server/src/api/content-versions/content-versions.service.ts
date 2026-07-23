@@ -334,10 +334,42 @@ export class ApiContentVersionsService {
         ),
       );
     }
+    // A settings-only startRules patch (no `when`) is only meaningful when
+    // auto-start is already enabled on this version. Otherwise the settings
+    // land in storage but the read side keys off the enabled flag — they'd be
+    // stored dead AND invisible (the caller sees startRules: null and assumes
+    // the write was lost). Refuse instead of silently swallowing.
+    if (
+      body.startRules &&
+      body.startRules.when === undefined &&
+      !(version as { config?: { enabledAutoStartRules?: boolean } | null }).config
+        ?.enabledAutoStartRules
+    ) {
+      issues.push({
+        rule: 'auto_start' as const,
+        message:
+          'startRules without `when` only patches settings, but auto-start is not enabled on ' +
+          'this version — include `when` to enable it (the settings would otherwise be stored ' +
+          'dead and read back as null)',
+      });
+    }
     issues.push(...(await this.contentReferenceIssues(refs, projectId)));
     if (issues.length > 0) {
       throw ValidationError.fromIssues(issues);
     }
+    const refuseUnresolvedCodes = () => {
+      // Segment writes have always refused unknown attribute/event codes
+      // (assertConditionsValid); the version write compiled them into attrId
+      // as the raw codeName — a dead condition the read side then reports as
+      // "references a deleted attribute". Same standard here: draft leniency
+      // tolerates INCOMPLETE content, not never-resolvable references.
+      const misses = [...new Set(resolvers.misses ?? [])];
+      if (misses.length) {
+        throw new ValidationError(
+          `Conditions reference unknown definitions: ${misses.join(', ')}. Create them first or fix the codeName.`,
+        );
+      }
+    };
 
     if (body.steps) {
       // Per-step theme overrides must reference a live project theme (a null clears
@@ -500,6 +532,9 @@ export class ApiContentVersionsService {
         resolvers,
       );
     }
+
+    // All compiles are done — refuse if any condition referenced an unknown code.
+    refuseUnresolvedCodes();
 
     if (Object.keys(content).length > 0) {
       const result = await this.content.updateContentVersion(

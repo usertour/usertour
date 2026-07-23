@@ -173,6 +173,31 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(res.body.error.code).toBe('E1015');
   });
 
+  it('filters event attributes with scope=eventDefinition (and excludes them from scope=user)', async () => {
+    // Event attributes (bizType 4) are readable through the same list — the
+    // scope filter accepts `eventDefinition` even though CREATE deliberately
+    // doesn't (event attributes are managed via the event-definitions surface).
+    await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      codeName: 'attr_event_scoped',
+      bizType: 4,
+      dataType: 2,
+    });
+    const codes = async (scope: string) => {
+      const res = await api(
+        'get',
+        `/v2/projects/${fx.projectId}/attribute-definitions?scope=${scope}&limit=100`,
+        v2Token,
+      );
+      expect(res.status).toBe(200);
+      return res.body.results.map((a: { codeName: string }) => a.codeName);
+    };
+    const eventScoped = await codes('eventDefinition');
+    expect(eventScoped).toContain('attr_event_scoped');
+    expect(eventScoped).not.toContain(codeName); // the user-scoped fixture stays out
+    expect(await codes('user')).not.toContain('attr_event_scoped');
+  });
+
   async function mint(scopes: Capability[], environmentIds?: string[]): Promise<string> {
     const minted = await graphql(app, {
       query: CREATE,
@@ -266,6 +291,33 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(badPatch.body.error.code).toBe('E1017');
   });
 
+  it('enforces the plan API rate limit (Hobby: 100/min) on a valid credential', async () => {
+    // The pricing page promises "N API requests/min" per plan from
+    // PLAN_FEATURES.apiRateLimit; a project without a subscription is Hobby
+    // (100). The 101st request within the window must be the E1013 envelope
+    // with a standard Retry-After header.
+    const token = await mint([Capability.AttributeRead]);
+    const url = `/v2/projects/${fx.projectId}/attribute-definitions?limit=1`;
+    let throttled: request.Response | null = null;
+    for (let i = 0; i < 101; i++) {
+      const res = await api('get', url, token);
+      if (res.status === 429) {
+        throttled = res;
+        break;
+      }
+      expect(res.status).toBe(200);
+      if (i === 0) {
+        // Every successful response carries the standard pacing headers.
+        expect(res.headers['x-ratelimit-limit']).toBe('100');
+        expect(Number(res.headers['x-ratelimit-remaining'])).toBe(99);
+        expect(Number(res.headers['x-ratelimit-reset'])).toBeGreaterThan(0);
+      }
+    }
+    expect(throttled).not.toBeNull();
+    expect(throttled?.body.error.code).toBe('E1013');
+    expect(Number(throttled?.headers['retry-after'])).toBeGreaterThan(0);
+  }, 30000);
+
   it('gets an attribute definition by id (404 unknown → E1022)', async () => {
     const token = await mint([Capability.AttributeCreate, Capability.AttributeRead]);
     const created = await send('post', basePath(), token).send({
@@ -281,6 +333,27 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const no = await api('get', `${basePath()}/nope`, token);
     expect(no.status).toBe(404);
     expect(no.body.error.code).toBe('E1022');
+  });
+
+  it('splits strict-mode unknown keys into per-key issues, each with a path', async () => {
+    // zod reports a strict violation as ONE object-level "Unrecognized keys:
+    // a, b" issue with no per-key path; the mapping layer splits it so clients
+    // can act per field — the documented point of `issues`.
+    const token = await mint([Capability.AttributeCreate]);
+    const res = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_strict_split',
+      displayName: 'S',
+      bogusA: 1,
+      bogusB: 2,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    const issues = res.body.error.issues as { message: string; path?: string }[];
+    const paths = issues.map((i) => i.path);
+    expect(paths).toEqual(expect.arrayContaining(['bogusA', 'bogusB']));
+    expect(issues).toHaveLength(2); // one per stray key, not one blob
   });
 
   it('rejects a duplicate codeName (409 E1023)', async () => {
@@ -313,7 +386,7 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(res.body.error.code).toBe('E1022');
   });
 
-  it('cannot modify a predefined attribute (400 E1017)', async () => {
+  it('cannot modify or delete a predefined attribute (409 E1036)', async () => {
     const token = await mint([Capability.AttributeUpdate, Capability.AttributeDelete]);
     const predef = await prisma.attribute.create({
       data: {
@@ -329,11 +402,11 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const patched = await send('patch', `${basePath()}/${predef.id}`, token).send({
       displayName: 'nope',
     });
-    expect(patched.status).toBe(400);
-    expect(patched.body.error.code).toBe('E1017');
+    expect(patched.status).toBe(409);
+    expect(patched.body.error.code).toBe('E1036');
 
     const deleted = await send('delete', `${basePath()}/${predef.id}`, token).send();
-    expect(deleted.status).toBe(400);
-    expect(deleted.body.error.code).toBe('E1017');
+    expect(deleted.status).toBe(409);
+    expect(deleted.body.error.code).toBe('E1036');
   });
 });

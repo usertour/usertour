@@ -14,6 +14,54 @@ const resolvers = {
 };
 
 describe('decompileCondition', () => {
+  describe('deleted-reference conditions become `unsupported` (never leak raw ids)', () => {
+    // `attribute`/`event` fields contract is a codeName. A catalog-backed
+    // resolver that can't find the id means the definition was DELETED — the
+    // old `?? id` fallback leaked the cuid, which looked healthy on read and
+    // only failed on write-back (console sweep endpoint 15).
+    const catalog = {
+      attributeCode: (id: string) => id,
+      eventCode: (id: string) => id,
+      tryAttributeCode: (id: string) => (id === 'a1' ? 'plan' : undefined),
+      tryEventCode: (id: string) => (id === 'e1' ? 'signed_up' : undefined),
+    };
+
+    it('user-attr with a deleted attribute', () => {
+      const out = decompileCondition(
+        { type: 'user-attr', data: { attrId: 'gone1', logic: 'is', value: 'x' } },
+        catalog,
+      ) as { type: string; note?: string };
+      expect(out.type).toBe('unsupported');
+      expect(out.note).toContain('deleted attribute');
+      expect(out.note).toContain('gone1');
+    });
+
+    it('event condition with a deleted event', () => {
+      const out = decompileCondition(
+        { type: 'event', data: { eventId: 'gone2', logic: 'seen' } },
+        catalog,
+      ) as { type: string; note?: string };
+      expect(out.type).toBe('unsupported');
+      expect(out.note).toContain('deleted event');
+    });
+
+    it('live ids still resolve normally through the same resolver', () => {
+      const out = decompileCondition(
+        { type: 'user-attr', data: { attrId: 'a1', logic: 'is', value: 'x' } },
+        catalog,
+      ) as { attribute?: string };
+      expect(out.attribute).toBe('plan');
+    });
+
+    it('identity resolvers (no catalog) never report deleted', () => {
+      const out = decompileCondition(
+        { type: 'user-attr', data: { attrId: 'whatever', logic: 'is', value: 'x' } },
+        IDENTITY_RESOLVERS,
+      ) as { type: string };
+      expect(out.type).toBe('attribute');
+    });
+  });
+
   it('group → match comes from the children joiner, not the group node', () => {
     // A group's internal and/or is stored on its CHILDREN's `operators` (the
     // runtime reads `group.conditions[0].operators`). The group node's own

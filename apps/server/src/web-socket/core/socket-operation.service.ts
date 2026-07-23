@@ -92,6 +92,12 @@ interface HandleBatchSessionsOptions {
   socket: Socket;
   /** Content type to determine which methods to call */
   contentType: ContentDataType;
+  /**
+   * When true, `newSessions` is a partial batch (e.g. a single-content start),
+   * NOT the full target state — sessions absent from it are left alone instead
+   * of being removed. Only a full-state sync (default) may remove.
+   */
+  incremental?: boolean;
 }
 
 interface HandleBatchSessionsResult {
@@ -393,16 +399,19 @@ export class SocketOperationService {
     socketData: SocketData,
     sessions: CustomContentSession[],
     contentType: ContentDataType,
+    incremental = false,
   ): Promise<boolean> {
     const { clientConditions = [] } = socketData;
     const currentSessions = extractSessionsByContentType(socketData, contentType);
 
-    // Process sessions: add new, update changed, remove obsolete
+    // Process sessions: add new, update changed, remove obsolete (removal is
+    // skipped in incremental mode — see HandleBatchSessionsOptions.incremental)
     const { updatedSessions, removedContentIds } = await this.handleBatchSessions({
       currentSessions,
       newSessions: sessions,
       socket,
       contentType,
+      incremental,
     });
 
     // Cleanup conditions for removed content
@@ -609,7 +618,7 @@ export class SocketOperationService {
   private async handleBatchSessions(
     params: HandleBatchSessionsOptions,
   ): Promise<HandleBatchSessionsResult> {
-    const { currentSessions, newSessions, socket, contentType } = params;
+    const { currentSessions, newSessions, socket, contentType, incremental = false } = params;
     const {
       newSessions: categorizedNewSessions,
       removedSessions,
@@ -627,7 +636,15 @@ export class SocketOperationService {
     );
 
     const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
-    const contentIdsToRemove = removedSessions.map((session) => session.content.id);
+    // Incremental mode: `newSessions` is a PARTIAL batch (e.g. a single-content
+    // StartContent — the SDK starts each found launcher one by one), NOT the
+    // full target state. Treating the absent sessions as "removed" makes every
+    // single-content start REMOVE all other live launchers — each StartContent
+    // in a burst then kills the previous one's session, and only the last few
+    // survive first paint. Only a full-state sync may remove.
+    const contentIdsToRemove = incremental
+      ? []
+      : removedSessions.map((session) => session.content.id);
 
     const { addedSessions, removedContentIds } = await this.emitBatchSessions({
       socket,

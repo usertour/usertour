@@ -19,6 +19,8 @@ import {
 } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
+
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
@@ -40,6 +42,7 @@ import { ApiAnalyticsService } from './analytics.service';
 
 /** Content analytics — read-only aggregates over an environment's sessions (analytics:read). */
 @ApiTags('Analytics')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/content/:id/analytics')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -96,7 +99,11 @@ export class ApiAnalyticsController {
       discriminator: { propertyName: 'contentType' },
     },
   })
-  @ApiResponse({ status: 404, description: 'Content or environment not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Content or environment not found',
+    type: ErrorResponseDto,
+  })
   async contentAnalytics(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -123,7 +130,11 @@ export class ApiAnalyticsController {
     description: 'Question analytics',
     type: QuestionAnalyticsResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Content or environment not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Content or environment not found',
+    type: ErrorResponseDto,
+  })
   async questionAnalytics(
     @Param('id') id: string,
     @Param('projectId') projectId: string,

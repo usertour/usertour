@@ -166,7 +166,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
   });
 
   const basePath = () => `/v2/projects/${projectId}/themes`;
-  const send = (method: 'post' | 'patch' | 'delete', path: string, token: string) =>
+  const send = (method: 'get' | 'post' | 'patch' | 'delete', path: string, token: string) =>
     request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
 
   it('creates a theme, applying a partial settings patch onto the default styling', async () => {
@@ -202,6 +202,77 @@ describe('API v2 themes + version themeId (e2e)', () => {
       settings: { font: { fontSize: 999 } },
     });
     expect(res.status).toBe(400);
+  });
+
+  it('round-trips: settings read from the API can be written back unchanged', async () => {
+    // The read-modify-write loop every agent uses. Before the companion-key /
+    // numeric-string / media-echo fixes, EVERY stored theme failed this.
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeRead,
+      Capability.ThemeUpdate,
+    ]);
+    const created = await send('post', basePath(), token).send({ name: 'RoundTrip' });
+    expect(created.status).toBe(201);
+    const read = await send(
+      'get',
+      `${basePath()}/${created.body.id}?expand=settings`,
+      token,
+    ).send();
+    expect(read.status).toBe(200);
+    const echoed = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: read.body.settings, // byte-for-byte what the API returned
+    });
+    expect(echoed.status).toBe(200);
+  });
+
+  it('system theme: content changes rejected, but defaulting it is allowed (no one-way door)', async () => {
+    // The default-pointer must be able to RETURN to a system theme — before
+    // this guard was narrowed, moving the default off Standard Light was
+    // irreversible via the API (isSystem blocked even a pure isDefault:true,
+    // while the builder's setDefaultTheme allows it).
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const system = await buildTheme(prisma, {
+      projectId,
+      name: 'System Light',
+      isSystem: true,
+    });
+    // Move the default AWAY (onto a fresh custom theme)...
+    const custom = await send('post', basePath(), token).send({
+      name: 'TempDefault',
+      isDefault: true,
+    });
+    expect(custom.status).toBe(201);
+    // ...content edits on the system theme stay refused...
+    const rename = await send('patch', `${basePath()}/${system.id}`, token).send({
+      name: 'Hacked',
+    });
+    expect(rename.status).toBe(409);
+    expect(rename.body.error.code).toBe('E1035');
+    // ...but a PURE isDefault:true is a project-state switch, not a theme
+    // modification — the default comes back.
+    const restore = await send('patch', `${basePath()}/${system.id}`, token).send({
+      isDefault: true,
+    });
+    expect(restore.status).toBe(200);
+    expect(restore.body.isDefault).toBe(true);
+    const customAfter = await api('get', `${basePath()}/${custom.body.id}`, token);
+    expect(customAfter.body.isDefault).toBe(false);
+  });
+
+  it('rejects CHANGING a builder-managed media key, explicitly (not silently)', async () => {
+    const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
+    const created = await send('post', basePath(), token).send({ name: 'MediaGuard' });
+    const res = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: { avatar: { url: 'https://evil.example/x.png' } },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    expect(res.body.error.message).toContain('theme builder');
   });
 
   it('omits settings/variations without expand, includes them with expand', async () => {
@@ -367,11 +438,42 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(freed.status).toBe(204);
   });
 
-  it('cannot delete the default theme (400 E1017)', async () => {
+  it('cannot delete the default theme (409 E1034 state-conflict, with a real way out)', async () => {
     const token = await mint([Capability.ThemeDelete]);
     const res = await send('delete', `${basePath()}/${defaultThemeId}`, token).send();
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('E1017');
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1034');
+    expect(res.body.error.message).toContain('default');
+  });
+
+  it('cannot delete a system theme (409 E1035, permanent — no fake way out)', async () => {
+    const token = await mint([Capability.ThemeDelete]);
+    const system = await buildTheme(prisma, { projectId, name: 'SysDel', isSystem: true });
+    const res = await send('delete', `${basePath()}/${system.id}`, token).send();
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1035');
+  });
+
+  it('a default+system theme gets E1035, not E1034 — never advice that dead-ends', async () => {
+    // Every fresh project starts here (the default IS a system theme). E1034's
+    // "move the default first" would send the caller to do that and then hit
+    // E1035 anyway — the permanent refusal must win the guard order.
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeDelete,
+    ]);
+    const both = await buildTheme(prisma, {
+      projectId,
+      name: 'SysDefault',
+      isSystem: true,
+    });
+    // make it the default via the API (also re-exercises the endpoint-8 fix)
+    const set = await send('patch', `${basePath()}/${both.id}`, token).send({ isDefault: true });
+    expect(set.status).toBe(200);
+    const res = await send('delete', `${basePath()}/${both.id}`, token).send();
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E1035');
   });
 
   it('POST rejects a token without theme:create (403 E1012)', async () => {

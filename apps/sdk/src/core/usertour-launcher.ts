@@ -19,6 +19,8 @@ const LAUNCHER_TARGET_MISSING_SECONDS = 3600;
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   // === Properties ===
   private watcher: UsertourElementWatcher | null = null;
+  // Serialized target the live watcher was built for (idempotency key).
+  private watcherTargetKey: string | null = null;
 
   // === Abstract Methods Implementation ===
   /**
@@ -144,18 +146,50 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   private setupElementWatcher(store: LauncherStore): void {
     const data = store.launcherData;
 
-    // Clean up existing watcher
-    if (this.watcher) {
-      this.watcher.destroy();
-      this.watcher = null;
-    }
-
     const targetElement = data?.target?.element as ElementSelectorPropsData;
     if (!targetElement) {
       logger.error('Target element not found', { data });
       return;
     }
 
+    // Idempotent for an unchanged target: show() re-runs whenever the server
+    // re-sends AddLauncher (which it does whenever an ack times out — with many
+    // launchers activating at once the SDK's serialized message handling easily
+    // exceeds the 2s ack window, so re-sends arrive in waves). Tearing down a
+    // LIVE watcher on every re-send wipes its found/announced element state
+    // mid-flight and drops most beacons on first paint; keep it instead.
+    const targetKey = JSON.stringify(targetElement);
+    if (this.watcher && this.watcherTargetKey === targetKey) {
+      // The re-run may carry NEW session state: a sessionless pre-activation
+      // found its element and called startContent (no store written — the
+      // ELEMENT_FOUND handler only opens when a session exists), and this
+      // re-send is the server handing back the real session. The watcher's
+      // once(ELEMENT_FOUND) is already consumed, so complete the found path
+      // here or the beacon never opens.
+      const el = this.watcher.getElement();
+      if (el && this.getSessionId()) {
+        if (el.isConnected) {
+          this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+        } else {
+          // The found element has since been DETACHED (SPA re-render kept the
+          // JS reference but unmounted the node). Don't hand a dead reference
+          // to the positioning layer — write the store closed instead; the
+          // 200ms check loop's checkVisibility() re-finds by selector and
+          // reopens via ELEMENT_CHANGED. (The store must exist either way, or
+          // checkTargetVisibility bails on !store and the beacon never opens.)
+          this.setStoreData({ ...store, openState: false, triggerRef: undefined });
+        }
+      }
+      return;
+    }
+
+    // Clean up existing watcher (target actually changed)
+    if (this.watcher) {
+      this.watcher.destroy();
+      this.watcher = null;
+    }
+
+    this.watcherTargetKey = targetKey;
     this.watcher = new UsertourElementWatcher(targetElement);
 
     // Use launcher-specific timeout (1 hour) for continuous element monitoring
@@ -289,5 +323,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       this.watcher.destroy();
       this.watcher = null;
     }
+    this.watcherTargetKey = null;
   }
 }

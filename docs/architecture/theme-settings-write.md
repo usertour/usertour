@@ -275,3 +275,35 @@ only; reads return the full stored settings.
 | `PATCH /v2/projects/:p/themes/:id` (`update_theme`) | body gains optional `settings` (partial, merged onto current) |
 | read (`GET …/themes/:id?expand=settings`) | unchanged (pass-through) |
 | capability | unchanged (`theme:create` / `theme:update`) |
+
+## 8. Round-trip amendments (console sweep endpoint 7, 2026-07-22)
+
+A full audit against production data (3,928 stored themes) found **every one**
+failed read-modify-write: the SSOT lists the builder's *UI fields*, but the
+builder *stores* more than its UI shows. Three amendments close the gap
+without touching the SSOT/parity contract:
+
+1. **Color-group companions** (generator-level, `completeColorGroups`).
+   `ThemeTypesSettingsColor` is one uniform stored shape — the color control
+   always persists `{background, color, hover, active}` and the derived
+   `autoHover`/`autoActive`. The generator completes every standard color
+   group to all six keys (the RC launcher group — detected by `foreground` —
+   is a different four-key type and is left alone). Writes to `auto*` are
+   harmless: `deriveThemeAutoColors` re-derives them after every merge.
+2. **Stored-shape tolerance.** Numeric strings (`"8"` — the builder has always
+   stored numbers as strings; the TS type lies) are normalized to numbers;
+   `null` means "unset" (treated as omitted); stray whitespace in colors is
+   trimmed. Range/enum/hex violations still fail — the ~23 production themes
+   with genuinely out-of-range values (e.g. `borderRadius: 50` on a max-32
+   field) get a precise error and are fixed once in the builder.
+3. **Builder-managed media keys echo, never change** (`BUILDER_MANAGED_-
+   SETTING_PATHS` + a service guard). Media-asset keys (avatar identity,
+   logo/header images, custom launcher icon) pass the schema so a read
+   response can be written back verbatim, but the service rejects a value
+   that DIFFERS from the theme's current one — explicit refusal, no silent
+   drop, builder stays the only writer.
+
+The parity gap that motivated the audit also surfaced 4 missing SSOT rows
+(announcement widths, unread-badge colors) — the builder had gained sections
+without the table following; the parity test was failing and nobody saw it
+(CI runs no tests). Rows added, parity green.

@@ -11,6 +11,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -30,6 +31,7 @@ import {
 } from './content-sessions.schema';
 
 @ApiTags('Sessions')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/environments/:environmentId/sessions')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -66,7 +68,7 @@ export class ApiContentSessionsController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session found', type: ContentSessionDto })
-  @ApiResponse({ status: 404, description: 'Content session not found' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @EnvironmentDecorator() environment: Environment,
@@ -83,7 +85,7 @@ export class ApiContentSessionsController {
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 204, description: 'Content session deleted' })
-  @ApiResponse({ status: 404, description: 'Content session not found' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
   async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     await this.service.delete(id, environment);
   }
@@ -91,12 +93,17 @@ export class ApiContentSessionsController {
   @Post(':id/end')
   @HttpCode(200)
   @RequireCapability(Capability.SessionManage)
-  @ApiOperation({ summary: 'End a session' })
+  @ApiOperation({
+    summary: 'End a session',
+    description:
+      'End an in-progress session. Idempotent: a session already in its terminal state is ' +
+      'returned as-is. Tracker sessions have no end semantics and refuse with E1017.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session ended', type: ContentSessionDto })
-  @ApiResponse({ status: 404, description: 'Content session not found' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
   async end(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     return this.service.end(id, environment);
   }

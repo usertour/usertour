@@ -25,11 +25,32 @@ export const listAttributeDefinitionsQuery = z.object({
   limit,
   cursor,
   ...nameSearchField,
-  scope: z.string().optional().describe('Filter by scope: user, company, or companyMembership.'),
-  orderBy: singleOrArray(orderByField).describe('Order by field(s), e.g. -createdAt.'),
-  eventName: singleOrArray(z.string()).describe('Filter to attributes on these event(s).'),
+  scope: z
+    .string()
+    .optional()
+    .describe(
+      'Filter by scope: user, company, companyMembership, or eventDefinition (event attributes ' +
+        '— read-only here; they are managed via the event-definitions surface).',
+    ),
+  orderBy: singleOrArray(orderByField).describe(
+    'Order by createdAt / codeName / displayName (prefix - for descending).',
+  ),
+  eventName: singleOrArray(z.string()).describe(
+    'Filter to attributes attached to these event(s), matched by event codeName (EXACT match — ' +
+      'not displayName; a displayName silently matches nothing). Multiple values OR together.',
+  ),
 });
 export class ListAttributeDefinitionsQueryDto extends createZodDto(listAttributeDefinitionsQuery) {}
+
+// The only scopes an attribute can actually carry (bizType 1-4). Using the full
+// ApiObjectType enum here made the docs list 17 impossible values (step, theme,
+// contentAnalytics, ...) for a field that only ever holds these four.
+const attributeScope = z.enum([
+  ApiObjectType.USER,
+  ApiObjectType.COMPANY,
+  ApiObjectType.COMPANY_MEMBERSHIP,
+  ApiObjectType.EVENT_DEFINITION,
+]);
 
 export const attribute = z.object({
   id: z.string(),
@@ -41,7 +62,10 @@ export const attribute = z.object({
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
-  scope: z.nativeEnum(ApiObjectType),
+  scope: attributeScope.describe(
+    'Which object the attribute belongs to. `eventDefinition` = an event attribute (managed ' +
+      'via the event-definitions surface).',
+  ),
 });
 export class AttributeDto extends createZodDto(attribute) {}
 
@@ -61,30 +85,34 @@ const createDataType = z.enum([
   AttributeDataTypeNames.DateTime,
 ]);
 
-export const createAttributeBody = z.object({
-  scope: createScope.describe(
-    'Which object the attribute belongs to: user, company, or companyMembership.',
-  ),
-  dataType: createDataType.describe('The attribute value type.'),
-  codeName: codeNameSchema.describe('Stable identifier, unique per project + scope. Immutable.'),
-  displayName: z.string().min(1).describe('Human-readable name.'),
-  description: z.string().optional().describe('Optional description.'),
-});
+export const createAttributeBody = z
+  .object({
+    scope: createScope.describe(
+      'Which object the attribute belongs to: user, company, or companyMembership.',
+    ),
+    dataType: createDataType.describe('The attribute value type.'),
+    codeName: codeNameSchema.describe('Stable identifier, unique per project + scope. Immutable.'),
+    displayName: z.string().min(1).describe('Human-readable name.'),
+    description: z.string().optional().describe('Optional description.'),
+  })
+  .strict();
 export class CreateAttributeBodyDto extends createZodDto(createAttributeBody) {}
 
 // Only the human-facing fields are mutable; dataType / scope / codeName are fixed
 // at creation.
-export const updateAttributeBody = z.object({
-  displayName: z.string().min(1).optional().describe('Human-readable name.'),
-  description: z.string().optional().describe('Optional description.'),
-  dataType: createDataType
-    .optional()
-    .describe(
-      "Change the attribute's value type. Allowed only while NO stored value would conflict with " +
-        'the new type (else rejected — clear the conflicting values, or delete + recreate). Fixes ' +
-        'a wrong type inferred from a first mistyped upsert. `scope` and `codeName` stay immutable.',
-    ),
-});
+export const updateAttributeBody = z
+  .object({
+    displayName: z.string().min(1).optional().describe('Human-readable name.'),
+    description: z.string().optional().describe('Optional description.'),
+    dataType: createDataType
+      .optional()
+      .describe(
+        "Change the attribute's value type. Allowed only while NO stored value would conflict with " +
+          'the new type (else rejected — clear the conflicting values, or delete + recreate). Fixes ' +
+          'a wrong type inferred from a first mistyped upsert. `scope` and `codeName` stay immutable.',
+      ),
+  })
+  .strict();
 export class UpdateAttributeBodyDto extends createZodDto(updateAttributeBody) {}
 
 export const listAttributeDefinitionsResponse = z.object({

@@ -130,11 +130,15 @@ describe('API v2 /environments (e2e)', () => {
     expect((await api('get', `${base()}/${id}`, token)).status).toBe(404);
   });
 
-  it('cannot delete the primary environment (400 E1017)', async () => {
+  it('cannot delete the primary environment (409 E0023 state-conflict)', async () => {
+    // Same family as E1028/E1030/E1031: the request is well-formed, the current
+    // STATE refuses it — a 409 with the specific code, not a generic E1017
+    // (which would tell the caller to fix a request that can never succeed).
     const token = await mint([Capability.EnvironmentManage]);
     const res = await send('delete', `${base()}/${primaryEnvId}`, token).send();
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('E1017');
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('E0023');
+    expect(res.body.error.message).toContain('primary');
   });
 
   it('rejects create without environment:manage (403 E1012)', async () => {
@@ -152,6 +156,11 @@ describe('API v2 /environments (e2e)', () => {
     const res = await send('post', base(), token).send({ name: 'Orphan' });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1032');
+    // The message must point at the EXECUTABLE fix (a project-level-only
+    // token) — never "scope it to all environments", which env-targeted
+    // capabilities make impossible to follow.
+    expect(res.body.error.message).toContain('project-level');
+    expect(res.body.error.message).not.toContain('scoped to all environments');
     // And nothing was created.
     const listToken = await mint([Capability.EnvironmentRead]);
     const list = await api('get', base(), listToken);

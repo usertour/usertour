@@ -7,8 +7,6 @@ import {
   EnvironmentCreateRequiresFullScopeError,
   EnvironmentLimitError,
   EnvironmentNotFoundError,
-  LastEnvironmentCannotBeDeletedError,
-  PrimaryEnvironmentCannotBeDeletedError,
   ValidationError,
 } from '@/common/errors/errors';
 import { EnvironmentsService } from '@/environments/environments.service';
@@ -134,20 +132,15 @@ export class ApiEnvironmentsService {
     return mapEnvironment(env, allowedEnvironmentIds);
   }
 
-  /** Delete an environment. The primary / last environment cannot be deleted. */
+  /**
+   * Delete an environment. The primary / last environment cannot be deleted —
+   * those domain guards (E0023 / E0022) pass through as-is: the exception
+   * filter's DOMAIN_ERROR_STATUS maps them to 409 state-conflicts (same family
+   * as E1028/E1030/E1031), keeping their specific codes instead of squashing
+   * them into a generic E1017 that told callers to "fix the request".
+   */
   async delete(id: string, projectId: string): Promise<void> {
     await this.get(id, projectId); // 404 if not in this project
-    try {
-      await this.environments.delete(id);
-    } catch (error) {
-      // Domain guards are BaseErrors (render 500); surface them as 400.
-      if (
-        error instanceof PrimaryEnvironmentCannotBeDeletedError ||
-        error instanceof LastEnvironmentCannotBeDeletedError
-      ) {
-        throw new ValidationError(error.getMessage('en'));
-      }
-      throw error;
-    }
+    await this.environments.delete(id);
   }
 }

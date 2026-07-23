@@ -77,8 +77,15 @@ export function mapDataTypeToInternal(name: AttributeDataTypeNames): number {
   }
 }
 
+/** The only scopes an attribute can carry (bizType 1-4). */
+export type AttributeScope =
+  | ApiObjectType.USER
+  | ApiObjectType.COMPANY
+  | ApiObjectType.COMPANY_MEMBERSHIP
+  | ApiObjectType.EVENT_DEFINITION;
+
 /** Domain `bizType` int -> public scope. */
-export function mapBizTypeToScope(bizType: number): ApiObjectType {
+export function mapBizTypeToScope(bizType: number): AttributeScope {
   switch (bizType) {
     case 1:
       return ApiObjectType.USER;

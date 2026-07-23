@@ -3,7 +3,11 @@ import { Prisma } from '@prisma/client';
 import { toArray } from '../shared/query';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
+import {
+  ContentNotFoundError,
+  ContentSessionNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
 import { Environment } from '@/environments/models/environment.model';
 import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
@@ -121,12 +125,26 @@ export class ApiContentSessionsService {
     }
   }
 
-  /** End an in-progress session, then return the (now-completed) session. */
+  /**
+   * End an in-progress session, then return the (now-completed) session.
+   * Idempotent: a session already in its terminal state returns as-is — same
+   * family as unpublishing an unpublished environment or removing a
+   * non-member. The domain endSession returns one `false` for three different
+   * situations (missing / already ended / type without end semantics); the
+   * old blanket E1005 LIED for the last two — the session exists.
+   */
   async end(id: string, environment: Environment): Promise<ContentSession> {
-    await this.requireSession(id, environment);
+    const session = await this.requireSession(id, environment);
+    if ((session as { state?: number }).state === 1) {
+      return this.get(id, environment, {});
+    }
     const success = await this.analytics.endSession(id);
     if (!success) {
-      throw new ContentSessionNotFoundError();
+      // requireSession just saw it and it is not ended — the domain refused
+      // because this content type has no end semantics (tracker).
+      throw new ValidationError(
+        'Sessions of this content type cannot be ended — it has no dismiss/end semantics.',
+      );
     }
     return this.get(id, environment, {});
   }

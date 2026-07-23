@@ -14,6 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenAuthService, type AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -34,6 +35,7 @@ import {
 
 /** Environments — project-level. Read (environment:read) + create/rename/delete (environment:manage). */
 @ApiTags('Environments')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/environments')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -69,7 +71,7 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 200, description: 'Environment found', type: EnvironmentDto })
-  @ApiResponse({ status: 404, description: 'Environment not found' })
+  @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -105,7 +107,7 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 200, description: 'Environment updated', type: EnvironmentDto })
-  @ApiResponse({ status: 404, description: 'Environment not found' })
+  @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
   async update(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -126,7 +128,14 @@ export class ApiEnvironmentsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Environment ID' })
   @ApiResponse({ status: 204, description: 'Environment deleted' })
-  @ApiResponse({ status: 404, description: 'Environment not found' })
+  @ApiResponse({ status: 404, description: 'Environment not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'State conflict — E0023 cannot delete the primary environment (set another primary ' +
+      'first), E0022 cannot delete the last environment.',
+    type: ErrorResponseDto,
+  })
   async remove(
     @Param('id') id: string,
     @Param('projectId') projectId: string,

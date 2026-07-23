@@ -13,6 +13,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
@@ -32,6 +33,7 @@ import {
 } from './themes.schema';
 
 @ApiTags('Themes')
+@ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/themes')
 @UseGuards(ApiTokenGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -59,7 +61,7 @@ export class ApiThemesController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme found', type: ThemeDto })
-  @ApiResponse({ status: 404, description: 'Theme not found' })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
   async get(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
@@ -83,7 +85,14 @@ export class ApiThemesController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme updated', type: ThemeDto })
-  @ApiResponse({ status: 404, description: 'Theme not found' })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'System themes cannot be modified (E1035) — duplicate one into your own theme; ' +
+      'isDefault: true alone is allowed (it only moves the project default pointer).',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -105,8 +114,15 @@ export class ApiThemesController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 204, description: 'Theme deleted' })
-  @ApiResponse({ status: 404, description: 'Theme not found' })
-  @ApiResponse({ status: 409, description: 'Theme is used by live or draft content (E1031)' })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'State conflict — E1031 the theme is used by a draft or live version (the message names ' +
+      'them), E1034 it is the project default (set another default first), E1035 system ' +
+      'themes cannot be deleted.',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

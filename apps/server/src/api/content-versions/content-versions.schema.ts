@@ -22,7 +22,9 @@ import {
 export const versionExpand = z.enum(['questions', 'steps', 'data']);
 
 export const getContentVersionQuery = z.object({
-  expand: singleOrArray(versionExpand).describe('Inline the version questions.'),
+  expand: singleOrArray(versionExpand).describe(
+    'Inline: questions, steps (the full step tree — how you read a flow body), data.',
+  ),
 });
 export class GetContentVersionQueryDto extends createZodDto(getContentVersionQuery) {}
 
@@ -30,7 +32,9 @@ export const listContentVersionsQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   cursor: z.string().optional(),
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
-  expand: singleOrArray(versionExpand).describe('Inline the version questions.'),
+  expand: singleOrArray(versionExpand).describe(
+    'Inline: questions, steps (the full step tree — how you read a flow body), data.',
+  ),
 });
 export class ListContentVersionsQueryDto extends createZodDto(listContentVersionsQuery) {}
 
@@ -43,51 +47,53 @@ export class ContentVersionDto extends createZodDto(contentVersion) {}
  * `themeId` switches the theme (a theme is required for the version to render, so
  * it can be changed but not cleared).
  */
-export const updateVersionBody = z.object({
-  steps: z.array(representationStepInput).optional(),
-  startRules: representationStartRules
-    .nullable()
-    .optional()
-    .describe(
-      'PATCHES the stored rules field-by-field: an omitted setting (frequency / priority / ' +
-        'waitSeconds / startIfNotComplete) keeps its stored value — including one inherited from ' +
-        'the forked version — so to turn a setting off, send it explicitly (e.g. ' +
-        '`startIfNotComplete: false`). `when`, when present, fully replaces the condition list. ' +
-        '`null` clears the rules entirely (content stops auto-starting).',
-    ),
-  hideRules: representationHideRules.nullable().optional(),
-  themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
-  /**
-   * Type-specific body for non-flow content — one of the five `*Data` shapes. The
-   * members are `.loose()` so a partial body for the content's actual type is never
-   * stripped at this boundary (the union only documents the shapes; the strict,
-   * type-correct validation happens in `compileVersionData`). Field-level merged
-   * onto the existing version data. Not used by `flow` (use `steps`).
-   */
-  data: z
-    .union([
-      representationChecklist.loose(),
-      representationLauncher.loose(),
-      representationBanner.loose(),
-      representationTracker.loose(),
-      representationAnnouncement.loose(),
-      representationResourceCenter.loose(),
-    ])
-    .optional()
-    .describe(
-      'Type-specific body for a non-flow content version: checklist / launcher / banner / ' +
-        'tracker / announcement / resource-center. Field-level merged onto the existing data.',
-    ),
-  scheduledAt: isoDateTime
-    .nullable()
-    .optional()
-    .describe(
-      'Announcement versions only: the "announcement time" — the feed hides the announcement ' +
-        'until this instant passes, and orders the feed by it (newest first). ISO date or ' +
-        'datetime WITH timezone. `null` = clear (publish stamps the publish time instead). A ' +
-        'future value defers visibility; the value carries across version forks.',
-    ),
-});
+export const updateVersionBody = z
+  .object({
+    steps: z.array(representationStepInput).optional(),
+    startRules: representationStartRules
+      .nullable()
+      .optional()
+      .describe(
+        'PATCHES the stored rules field-by-field: an omitted setting (frequency / priority / ' +
+          'waitSeconds / startIfNotComplete) keeps its stored value — including one inherited from ' +
+          'the forked version — so to turn a setting off, send it explicitly (e.g. ' +
+          '`startIfNotComplete: false`). `when`, when present, fully replaces the condition list. ' +
+          '`null` clears the rules entirely (content stops auto-starting).',
+      ),
+    hideRules: representationHideRules.nullable().optional(),
+    themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
+    /**
+     * Type-specific body for non-flow content — one of the five `*Data` shapes. The
+     * members are `.loose()` so a partial body for the content's actual type is never
+     * stripped at this boundary (the union only documents the shapes; the strict,
+     * type-correct validation happens in `compileVersionData`). Field-level merged
+     * onto the existing version data. Not used by `flow` (use `steps`).
+     */
+    data: z
+      .union([
+        representationChecklist.loose(),
+        representationLauncher.loose(),
+        representationBanner.loose(),
+        representationTracker.loose(),
+        representationAnnouncement.loose(),
+        representationResourceCenter.loose(),
+      ])
+      .optional()
+      .describe(
+        'Type-specific body for a non-flow content version: checklist / launcher / banner / ' +
+          'tracker / announcement / resource-center. Field-level merged onto the existing data.',
+      ),
+    scheduledAt: isoDateTime
+      .nullable()
+      .optional()
+      .describe(
+        'Announcement versions only: the "announcement time" — the feed hides the announcement ' +
+          'until this instant passes, and orders the feed by it (newest first). ISO date or ' +
+          'datetime WITH timezone. `null` = clear (publish stamps the publish time instead). A ' +
+          'future value defers visibility; the value carries across version forks.',
+      ),
+  })
+  .strict();
 export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;
 

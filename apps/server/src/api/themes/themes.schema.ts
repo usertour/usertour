@@ -81,25 +81,29 @@ const settingsField = themeSettingsPatchSchema
       'colors are derived server-side.',
   );
 
-export const createThemeBody = z.object({
-  name: z.string().min(1).describe('Theme name.'),
-  isDefault: z.boolean().optional().describe('Make this the project default theme.'),
-  settings: settingsField,
-});
+export const createThemeBody = z
+  .object({
+    name: z.string().min(1).describe('Theme name.'),
+    isDefault: z.boolean().optional().describe('Make this the project default theme.'),
+    settings: settingsField,
+  })
+  .strict();
 export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
 
-export const updateThemeBody = z.object({
-  name: z.string().min(1).optional(),
-  isDefault: z
-    .boolean()
-    .optional()
-    .describe(
-      'Set `true` to make this the project default theme (the previous default is ' +
-        'cleared). `false` on the current default is rejected — default another ' +
-        'theme instead; a project always keeps a default.',
-    ),
-  settings: settingsField,
-});
+export const updateThemeBody = z
+  .object({
+    name: z.string().min(1).optional(),
+    isDefault: z
+      .boolean()
+      .optional()
+      .describe(
+        'Set `true` to make this the project default theme (the previous default is ' +
+          'cleared). `false` on the current default is rejected — default another ' +
+          'theme instead; a project always keeps a default.',
+      ),
+    settings: settingsField,
+  })
+  .strict();
 export class UpdateThemeBodyDto extends createZodDto(updateThemeBody) {}
 
 export type Theme = z.infer<typeof theme>;

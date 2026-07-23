@@ -25,6 +25,12 @@ const DOMAIN_ERROR_STATUS: Record<string, HttpStatus> = {
   E0049: HttpStatus.CONFLICT, // VersionNotEditableError — create a new editable version
   E0050: HttpStatus.CONFLICT, // VersionConflictError — concurrent modification
   E0003: HttpStatus.BAD_REQUEST, // ParamsError — invalid request against domain state
+  // State-conflict deletes, same family as E1028/E1030/E1031: the request is
+  // well-formed, the CURRENT STATE refuses it and the message says what to do
+  // first. Previously squashed into E1017 (400), which told callers to "fix the
+  // request and retry" — a retry can never succeed.
+  E0022: HttpStatus.CONFLICT, // LastEnvironmentCannotBeDeletedError
+  E0023: HttpStatus.CONFLICT, // PrimaryEnvironmentCannotBeDeletedError — set another primary first
 };
 
 @Catch()
@@ -33,7 +39,9 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
   private readonly docUrl: string;
 
   constructor(private configService: ConfigService) {
-    this.docUrl = this.configService.get<string>('app.docUrl') || 'https://docs.usertour.com';
+    // Fallback must be a REAL host: docs live at docs.usertour.io (the .com
+    // variant doesn't even resolve, so every error response carried a dead link).
+    this.docUrl = this.configService.get<string>('app.docUrl') || 'https://docs.usertour.io';
   }
 
   catch(exception: unknown, host: ArgumentsHost) {

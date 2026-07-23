@@ -277,9 +277,82 @@ export class EnvironmentCreateRequiresFullScopeError extends OpenAPIError {
   code = 'E1032';
   statusCode = HttpStatus.FORBIDDEN;
   messageDict = {
-    en: 'Cannot create an environment with a token restricted to an environment allowlist — the new environment would be outside the token scope and unusable. Use a token scoped to all environments.',
+    // NOT "use a token scoped to all environments": tokens holding env-targeted
+    // capabilities (user/company/session/segment/analytics, content:publish) are
+    // REQUIRED to name environments at creation — "all environments" is not
+    // grantable for them, so that advice would be impossible to follow. The
+    // executable fix is a separate project-level-only token.
+    en: 'Cannot create an environment with this token — its environment allowlist cannot cover an environment that does not exist yet. Tokens holding env-targeted capabilities (user/company/session/segment/analytics, content:publish) always carry an allowlist, so use a separate token with project-level capabilities only (e.g. environment:manage, themes, attribute/event definitions, content read/write).',
     'zh-CN':
-      '使用限定了环境范围的 API 密钥无法创建环境——新建的环境会落在密钥范围之外、无法使用。请改用可访问全部环境的密钥。',
+      '此密钥无法创建环境——它的环境名单不可能覆盖一个还不存在的环境。带用户/公司/会话/分群/分析或发布能力的密钥在创建时必须指名环境,因此请另建一把只含项目级能力(环境管理、主题、属性/事件定义、内容读写)的密钥来创建环境。',
+  };
+}
+
+/**
+ * A /v2 request that matched no route at all. Emitted by the global fallback
+ * filter so even "Cannot GET /v2/..." keeps the v2 error envelope (the Nest
+ * default renders a bare {message, error, statusCode} shape).
+ */
+/**
+ * State-conflict deletes on themes, same family as E1028/E1030/E1031 (and the
+ * environments' E0022/E0023): the request is well-formed, the CURRENT STATE
+ * refuses it. E1034 is resolvable (move the default first); E1035 is a
+ * permanent property — the message offers no fake way out.
+ */
+export class DefaultThemeCannotBeDeletedError extends OpenAPIError {
+  code = 'E1034';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete the default theme — set another theme as the project default first.',
+    'zh-CN': '无法删除默认主题——请先将其他主题设为项目默认。',
+  };
+}
+
+export class SystemThemeCannotBeChangedError extends OpenAPIError {
+  code = 'E1035';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'System themes cannot be modified or deleted. Duplicate one into your own theme if you need a variant. (Setting a system theme as the project default IS allowed.)',
+    'zh-CN':
+      '系统主题不可修改或删除。如需自定义,请基于它创建自己的主题副本。(允许将系统主题设为项目默认。)',
+  };
+}
+
+/**
+ * Predefined attribute/event definitions are a permanent property — like
+ * E1035 (system themes): 409, no un-predefine action exists, so the message
+ * points at the real alternative instead of a fake way out. Shared by all
+ * four sites (attribute/event x modify/delete).
+ */
+export class PredefinedDefinitionCannotBeChangedError extends OpenAPIError {
+  code = 'E1036';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Predefined definitions cannot be modified or deleted — create your own definition instead.',
+    'zh-CN': '预定义的属性/事件不可修改或删除——如需自定义,请新建一个自己的定义。',
+  };
+}
+
+/**
+ * The built-in "all" segment (every user / every company) is a fixture, not
+ * user data — same permanent-property family as E1035/E1036: 409, no way to
+ * un-built-in it, the message points at the real alternative.
+ */
+export class BuiltInSegmentCannotBeChangedError extends OpenAPIError {
+  code = 'E1037';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'The built-in "all" segment cannot be modified or deleted — create a condition segment if you need a filtered audience.',
+    'zh-CN': '内置的"all"分群不可修改或删除——如需筛选人群,请新建一个条件分群。',
+  };
+}
+
+export class UnknownRouteError extends OpenAPIError {
+  code = 'E1033';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Unknown API route',
+    'zh-CN': '未知的 API 路径',
   };
 }
 
@@ -423,6 +496,22 @@ export class UserNotFoundError extends OpenAPIError {
     en: 'User not found',
     'zh-CN': '用户未找到',
   };
+
+  /**
+   * Optionally add call-site context (E1029 precedent) — e.g. the segment
+   * member endpoints look the externalId up in the table the SEGMENT's bizType
+   * dictates, and a bare "User not found" reads as a typo hunt when the real
+   * issue is a company externalId aimed at a user segment.
+   */
+  constructor(context?: string) {
+    super();
+    if (context) {
+      this.messageDict = {
+        en: `User not found — ${context}`,
+        'zh-CN': `用户未找到——${context}`,
+      };
+    }
+  }
 }
 
 export class UserRegistrationDisabledError extends BaseError {
@@ -505,6 +594,17 @@ export class CompanyNotFoundError extends OpenAPIError {
     en: 'Company not found',
     'zh-CN': '公司未找到',
   };
+
+  /** Optional call-site context; see {@link UserNotFoundError}. */
+  constructor(context?: string) {
+    super();
+    if (context) {
+      this.messageDict = {
+        en: `Company not found — ${context}`,
+        'zh-CN': `公司未找到——${context}`,
+      };
+    }
+  }
 }
 
 export class CompanyMembershipNotFoundError extends OpenAPIError {

@@ -50,6 +50,11 @@ export class UsertourElementWatcher extends Evented {
     this.targetMissingSeconds = seconds;
   }
 
+  /** The element this watcher has found, if any. */
+  getElement(): Element | null {
+    return this.element;
+  }
+
   // === Element Finding ===
   /**
    * Attempts to find the target element in the DOM

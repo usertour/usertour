@@ -30,7 +30,8 @@ export const segmentKind = z.enum(['all', 'condition', 'manual']);
  */
 export type SegmentCondition =
   | z.infer<typeof attributeCondition>
-  | { type: 'group'; match: 'all' | 'any'; conditions: SegmentCondition[] };
+  | { type: 'group'; match: 'all' | 'any'; conditions: SegmentCondition[] }
+  | { type: 'unsupported'; note?: string };
 
 export const segmentCondition: z.ZodType<SegmentCondition> = z.lazy(() =>
   z.discriminatedUnion('type', [
@@ -40,6 +41,16 @@ export const segmentCondition: z.ZodType<SegmentCondition> = z.lazy(() =>
       conditions: z.array(segmentCondition),
     }),
     attributeCondition,
+    // Read-side placeholder for a STORED condition this schema cannot express
+    // (`note` = the internal type). The decompiler emits it for unknown legacy
+    // types, so the read schema must be able to carry it — same contract as the
+    // content representation. Writing one is rejected (see
+    // assertSegmentConditionTypes); remove it from the write or migrate the
+    // segment in the builder.
+    z.object({
+      type: z.literal('unsupported'),
+      note: z.string().optional(),
+    }),
   ]),
 ) as unknown as z.ZodType<SegmentCondition>;
 
@@ -72,21 +83,23 @@ export const listSegmentsResponse = z.object({
 });
 export class ListSegmentsResponseDto extends createZodDto(listSegmentsResponse) {}
 
-export const createSegmentBody = z.object({
-  name: z.string().min(1).describe('Segment name.'),
-  bizType: segmentBizType.describe('What the segment groups: user or company. Immutable.'),
-  // `all` is the built-in everyone segment and cannot be created.
-  kind: z.enum(['condition', 'manual']).describe('Segment kind. Immutable.'),
-  conditions: z
-    .array(segmentCondition)
-    .optional()
-    .describe(
-      'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
-        'them, nothing else (a segment is an attribute query). For "users who did X" audiences, ' +
-        'store the fact as an attribute too and segment on that, or put the event condition on ' +
-        "the content's start rules.",
-    ),
-});
+export const createSegmentBody = z
+  .object({
+    name: z.string().min(1).describe('Segment name.'),
+    bizType: segmentBizType.describe('What the segment groups: user or company. Immutable.'),
+    // `all` is the built-in everyone segment and cannot be created.
+    kind: z.enum(['condition', 'manual']).describe('Segment kind. Immutable.'),
+    conditions: z
+      .array(segmentCondition)
+      .optional()
+      .describe(
+        'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
+          'them, nothing else (a segment is an attribute query). For "users who did X" audiences, ' +
+          'store the fact as an attribute too and segment on that, or put the event condition on ' +
+          "the content's start rules.",
+      ),
+  })
+  .strict();
 export class CreateSegmentBodyDto extends createZodDto(createSegmentBody) {}
 
 export const updateSegmentBody = z

@@ -9,7 +9,12 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
-import { ThemeNotFoundError, ValidationError } from '@/common/errors/errors';
+import {
+  DefaultThemeCannotBeDeletedError,
+  SystemThemeCannotBeChangedError,
+  ThemeNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
 import { ThemesService } from '@/themes/themes.service';
 
 import {
@@ -19,7 +24,7 @@ import {
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
-import { themeSettingsPatchSchema } from './settings.schema';
+import { BUILDER_MANAGED_SETTING_PATHS, themeSettingsPatchSchema } from './settings.schema';
 import { mapTheme } from './themes.mapper';
 import {
   CreateThemeBody,
@@ -109,16 +114,40 @@ export class ApiThemesService {
   }
 
   /**
+   * Builder-managed keys (media assets: avatar identity, logo/header images,
+   * custom launcher icon) are accepted by the schema so that reading a theme
+   * and writing the settings back round-trips — but they may not be CHANGED
+   * through the API. Echoing the current value (or omitting the key) is fine;
+   * a differing value is rejected explicitly rather than silently dropped.
+   */
+  private assertBuilderManagedUnchanged(patch: unknown, base: unknown): void {
+    const at = (obj: unknown, path: string): unknown =>
+      path
+        .split('.')
+        .reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], obj);
+    const changed = BUILDER_MANAGED_SETTING_PATHS.filter((path) => {
+      const patched = at(patch, path);
+      return patched !== undefined && JSON.stringify(patched) !== JSON.stringify(at(base, path));
+    });
+    if (changed.length) {
+      throw new ValidationError(
+        `settings.${changed[0]} is managed in the theme builder and read-only via the API — write it back unchanged or omit it.`,
+      );
+    }
+  }
+
+  /**
    * Create a theme. Starts from the fixed built-in `defaultSettings` (a neutral base — NOT a
    * copy of the project's default / isDefault theme); an optional `settings` patch is
    * field-merged onto it and auto colors derived. `variations` are not yet writable.
    */
   async create(projectId: string, body: CreateThemeBody): Promise<Theme> {
-    const settings = body.settings
-      ? deriveThemeAutoColors(
-          deepMergeThemeSettings(defaultSettings, this.parseSettingsPatch(body.settings)),
-        )
-      : defaultSettings;
+    let settings: ThemeTypesSetting = defaultSettings;
+    if (body.settings) {
+      const patch = this.parseSettingsPatch(body.settings);
+      this.assertBuilderManagedUnchanged(patch, defaultSettings);
+      settings = deriveThemeAutoColors(deepMergeThemeSettings(defaultSettings, patch));
+    }
     const created = await this.themes.createTheme({
       projectId,
       name: body.name,
@@ -134,32 +163,40 @@ export class ApiThemesService {
 
   /**
    * Update a theme's metadata and/or styling. A `settings` patch is field-merged onto
-   * the theme's current settings and auto colors are re-derived. Rejects system themes.
+   * the theme's current settings and auto colors are re-derived. System themes reject
+   * CONTENT changes only — `isDefault: true` is a project-state pointer, not a theme
+   * modification, and stays allowed (the builder can default a system theme; without
+   * this the default is a one-way door: once moved off a system theme, the API could
+   * never move it back).
    */
   async update(id: string, projectId: string, body: UpdateThemeBody): Promise<Theme> {
     const theme = await this.requireTheme(id, projectId);
-    if (theme.isSystem) {
-      throw new ValidationError('Cannot modify a system theme.');
+    if (theme.isSystem && (body.name !== undefined || body.settings !== undefined)) {
+      throw new SystemThemeCannotBeChangedError();
     }
     // Ground the stored settings on the complete defaultSettings before patching —
     // the same fill the builder does on load (theme-builder.tsx: deepmerge(defaultSettings,
     // settings)) and create() does. A legacy theme whose stored JSON predates a nested
     // field (e.g. buttons.primary.border) would otherwise reach deriveThemeAutoColors
     // incomplete and 500 on its deep dereferences.
-    const settingsUpdate =
-      body.settings !== undefined
-        ? {
-            settings: deriveThemeAutoColors(
-              deepMergeThemeSettings(
-                deepMergeThemeSettings(
-                  defaultSettings,
-                  (theme.settings ?? {}) as Partial<ThemeTypesSetting>,
-                ),
-                this.parseSettingsPatch(body.settings),
-              ),
-            ) as unknown as JsonValue,
-          }
-        : {};
+    let settingsUpdate = {};
+    if (body.settings !== undefined) {
+      const patch = this.parseSettingsPatch(body.settings);
+      // Base = the STORED settings (exactly what reads return), so echoing a
+      // read response back is always accepted.
+      this.assertBuilderManagedUnchanged(patch, theme.settings ?? {});
+      settingsUpdate = {
+        settings: deriveThemeAutoColors(
+          deepMergeThemeSettings(
+            deepMergeThemeSettings(
+              defaultSettings,
+              (theme.settings ?? {}) as Partial<ThemeTypesSetting>,
+            ),
+            patch,
+          ),
+        ) as unknown as JsonValue,
+      };
+    }
     // The domain updateTheme deliberately drops isDefault (the builder moves the
     // default via its dedicated setDefaultTheme action), so passing it through
     // would be a silent no-op. Route the flag to the same domain primitive here.
@@ -185,11 +222,22 @@ export class ApiThemesService {
     return mapTheme(updated, FULL, resolvers);
   }
 
-  /** Delete a theme. Rejects the default and system themes. */
+  /**
+   * Delete a theme. Default / system themes refuse as 409 state conflicts with
+   * their own codes (E1034 / E1035) — not E1017, which would tell the caller to
+   * fix a request that can never succeed by retrying. Same family as E1031.
+   */
   async delete(id: string, projectId: string): Promise<void> {
     const theme = await this.requireTheme(id, projectId);
-    if (theme.isSystem || theme.isDefault) {
-      throw new ValidationError('Cannot delete the default or a system theme.');
+    // Permanent refusal FIRST: E1034's advice ("move the default, then retry")
+    // must only be given when following it can succeed. A default+system theme
+    // (every fresh project's out-of-the-box state) can never be deleted — E1034
+    // would send the caller to move the default and then hit E1035 anyway.
+    if (theme.isSystem) {
+      throw new SystemThemeCannotBeChangedError();
+    }
+    if (theme.isDefault) {
+      throw new DefaultThemeCannotBeDeletedError();
     }
     await this.themes.deleteTheme(id);
   }

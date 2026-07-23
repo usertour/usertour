@@ -1,3 +1,4 @@
+import { ContentDataType } from '@usertour/types';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray } from '../shared/query';
@@ -9,17 +10,26 @@ import { cursor, limit } from '../shared/pagination.schema';
 
 export const contentExpand = z.enum(['editedVersion', 'publishedVersion']);
 
+/**
+ * One enum for every place a content type is named — create body AND list
+ * filter — DERIVED from the domain's ContentDataType so a new type lands in
+ * both automatically. The filter used to be a free string (a typo silently
+ * returned an empty list that read as "no such content"), and the create body
+ * carried its own hand-copied list.
+ */
+export const contentTypeEnum = z.enum(
+  Object.values(ContentDataType) as [`${ContentDataType}`, ...`${ContentDataType}`[]],
+);
+
 export const listContentQuery = z.object({
   limit,
   cursor,
   ...nameSearchField,
-  type: z
-    .string()
+  type: contentTypeEnum
     .optional()
     .describe(
-      'Filter by content type: flow, checklist, launcher, banner, tracker, resource-center, ' +
-        'announcement. (A survey is a flow with question blocks — there is no separate survey ' +
-        'type.)',
+      'Filter by content type. (A survey is a flow with question blocks — there is no separate ' +
+        'survey type.)',
     ),
   published: z
     .stringbool()
@@ -74,35 +84,38 @@ export const listContentResponse = z.object({
 export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 
 /** Write body for POST content. */
-export const createContentBody = z.object({
-  type: z
-    .enum(['flow', 'checklist', 'launcher', 'banner', 'tracker', 'resource-center', 'announcement'])
-    .describe(
+export const createContentBody = z
+  .object({
+    type: contentTypeEnum.describe(
       'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
         'has an `announcement` block — publish alone does not surface it without one.',
     ),
-  name: z
-    .string()
-    .optional()
-    .describe('Display name. For `announcement` it also seeds the draft title.'),
-  buildUrl: z.string().optional(),
-  themeId: z
-    .string()
-    .optional()
-    .describe(
-      'Theme applied to the initial draft version. Required for every type except `tracker` ' +
-        '(which has no UI) — content has no usable styling without one. List options with the ' +
-        'themes endpoint; use the one with isDefault if unsure.',
-    ),
-});
+    name: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('Display name. For `announcement` it also seeds the draft title.'),
+    buildUrl: z.string().optional(),
+    themeId: z
+      .string()
+      .optional()
+      .describe(
+        'Theme applied to the initial draft version. Required for every type except `tracker` ' +
+          '(which has no UI) — content has no usable styling without one. List options with the ' +
+          'themes endpoint; use the one with isDefault if unsure.',
+      ),
+  })
+  .strict();
 export class CreateContentBodyDto extends createZodDto(createContentBody) {}
 export type CreateContentBody = z.infer<typeof createContentBody>;
 
 /** Write body for PATCH content/:id (metadata only). */
-export const updateContentBody = z.object({
-  name: z.string().optional(),
-  buildUrl: z.string().optional(),
-});
+export const updateContentBody = z
+  .object({
+    name: z.string().min(1).optional(),
+    buildUrl: z.string().optional(),
+  })
+  .strict();
 export class UpdateContentBodyDto extends createZodDto(updateContentBody) {}
 export type UpdateContentBody = z.infer<typeof updateContentBody>;
 
@@ -127,7 +140,7 @@ export type UnpublishContentBody = z.infer<typeof unpublishContentBody>;
 // inert promise the v2 contract does not repeat. Publishing (the actually
 // env-scoped act) stays explicit on the publish endpoint.
 export const duplicateContentBody = z.object({
-  name: z.string().optional().describe('Name for the copy (defaults to the source name).'),
+  name: z.string().min(1).optional().describe('Name for the copy (defaults to the source name).'),
 });
 export class DuplicateContentBodyDto extends createZodDto(duplicateContentBody) {}
 export type DuplicateContentBody = z.infer<typeof duplicateContentBody>;
