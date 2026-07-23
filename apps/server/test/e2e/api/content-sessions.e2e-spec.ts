@@ -64,7 +64,7 @@ describe('API v2 /sessions (e2e)', () => {
   function base(suffix = ''): string {
     return `/v2/projects/${projectId}/environments/${environmentId}/sessions${suffix}`;
   }
-  function api(method: 'get', path: string, token?: string) {
+  function api(method: 'get' | 'post', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
@@ -252,6 +252,42 @@ describe('API v2 /sessions (e2e)', () => {
     const res = await api('get', base(`?userId=${userExternalId}`), token);
     expect(res.status).toBe(200);
     expect(res.body.results.map((s: { id: string }) => s.id)).toContain(sessionId);
+  });
+
+  it('ending an already-ended session is idempotent 200, never E1005 (the session EXISTS)', async () => {
+    // Domain endSession returns one `false` for missing / already-ended /
+    // no-end-semantics; the blanket E1005 lied for the last two (console
+    // sweep, sessions group). Ended -> return as-is, same idempotent family
+    // as unpublishing an unpublished environment.
+    const token = await mint([Capability.SessionRead, Capability.SessionManage]);
+    const flow = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const fv = await buildVersion(prisma, { contentId: flow.id, sequence: 0 });
+    const ended = await buildSession(prisma, {
+      bizUserId: (await buildBizUser(prisma, { environmentId })).id,
+      contentId: flow.id,
+      versionId: fv.id,
+      environmentId,
+      projectId,
+      state: 1,
+    });
+    const res = await api('post', `${base()}/${ended.id}/end`, token);
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(ended.id);
+
+    // A tracker session has no end semantics — explicit 400, not "not found".
+    const tracker = await buildContent(prisma, { projectId, environmentId, type: 'tracker' });
+    const tv = await buildVersion(prisma, { contentId: tracker.id, sequence: 0 });
+    const trackerSession = await buildSession(prisma, {
+      bizUserId: (await buildBizUser(prisma, { environmentId })).id,
+      contentId: tracker.id,
+      versionId: tv.id,
+      environmentId,
+      projectId,
+    });
+    const t = await api('post', `${base()}/${trackerSession.id}/end`, token);
+    expect(t.status).toBe(400);
+    expect(t.body.error.code).toBe('E1017');
+    expect(t.body.error.message).toContain('cannot be ended');
   });
 
   it('returns 404 for an unknown session (E1005)', async () => {

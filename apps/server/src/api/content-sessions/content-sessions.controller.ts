@@ -93,7 +93,12 @@ export class ApiContentSessionsController {
   @Post(':id/end')
   @HttpCode(200)
   @RequireCapability(Capability.SessionManage)
-  @ApiOperation({ summary: 'End a session' })
+  @ApiOperation({
+    summary: 'End a session',
+    description:
+      'End an in-progress session. Idempotent: a session already in its terminal state is ' +
+      'returned as-is. Tracker sessions have no end semantics and refuse with E1017.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })
