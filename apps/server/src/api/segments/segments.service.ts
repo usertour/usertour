@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {
+  BuiltInSegmentCannotBeChangedError,
   CompanyNotFoundError,
   SegmentNotFoundError,
   UserNotFoundError,
@@ -122,7 +123,7 @@ export class ApiSegmentsService {
   async update(id: string, projectId: string, body: UpdateSegmentBody): Promise<Segment> {
     const seg = await this.requireSegment(id, projectId);
     if (seg.dataType === SegmentDataType.ALL) {
-      throw new ValidationError('Cannot modify the built-in "all" segment.');
+      throw new BuiltInSegmentCannotBeChangedError();
     }
     const resolvers = await loadResolvers(this.prisma, projectId);
     let data: JsonValue | undefined;
@@ -203,7 +204,7 @@ export class ApiSegmentsService {
   async delete(id: string, projectId: string): Promise<void> {
     const seg = await this.requireSegment(id, projectId);
     if (seg.dataType === SegmentDataType.ALL) {
-      throw new ValidationError('Cannot delete the built-in "all" segment.');
+      throw new BuiltInSegmentCannotBeChangedError();
     }
     await this.biz.deleteSegment({ id });
   }

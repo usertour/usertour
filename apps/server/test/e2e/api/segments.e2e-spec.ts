@@ -489,14 +489,15 @@ describe('API v2 segments (e2e)', () => {
     expect((await api('get', `${segPath()}/${id}`, token)).status).toBe(404);
   });
 
-  it('cannot modify or delete the built-in "all" segment (400 E1017)', async () => {
+  it('cannot modify or delete the built-in "all" segment (409 E1037 — permanent property)', async () => {
     const token = await mint([Capability.SegmentUpdate, Capability.SegmentDelete]);
     const upd = await send('patch', `${segPath()}/${allSegmentId}`, token).send({ name: 'x' });
-    expect(upd.status).toBe(400);
-    expect(upd.body.error.code).toBe('E1017');
+    expect(upd.status).toBe(409);
+    expect(upd.body.error.code).toBe('E1037');
     const del = await send('delete', `${segPath()}/${allSegmentId}`, token).send();
-    expect(del.status).toBe(400);
-    expect(del.body.error.code).toBe('E1017');
+    expect(del.status).toBe(409);
+    expect(del.body.error.code).toBe('E1037');
+    expect(del.body.error.message).toContain('condition segment');
   });
 
   it('adds + removes a member on a manual user segment', async () => {

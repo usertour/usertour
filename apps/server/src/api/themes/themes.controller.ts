@@ -86,6 +86,13 @@ export class ApiThemesController {
   @ApiParam({ name: 'id', description: 'Theme ID' })
   @ApiResponse({ status: 200, description: 'Theme updated', type: ThemeDto })
   @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'System themes cannot be modified (E1035) — duplicate one into your own theme; ' +
+      'isDefault: true alone is allowed (it only moves the project default pointer).',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,

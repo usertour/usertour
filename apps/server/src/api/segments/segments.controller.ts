@@ -85,6 +85,13 @@ export class ApiSegmentsController {
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment updated', type: SegmentDto })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The built-in "all" segment cannot be modified or deleted (E1037) — create a condition ' +
+      'segment for a filtered audience.',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -101,6 +108,13 @@ export class ApiSegmentsController {
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 204, description: 'Segment deleted' })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The built-in "all" segment cannot be modified or deleted (E1037) — create a condition ' +
+      'segment for a filtered audience.',
+    type: ErrorResponseDto,
+  })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
   }

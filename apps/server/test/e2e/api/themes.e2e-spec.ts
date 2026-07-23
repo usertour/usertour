@@ -251,8 +251,8 @@ describe('API v2 themes + version themeId (e2e)', () => {
     const rename = await send('patch', `${basePath()}/${system.id}`, token).send({
       name: 'Hacked',
     });
-    expect(rename.status).toBe(400);
-    expect(rename.body.error.code).toBe('E1017');
+    expect(rename.status).toBe(409);
+    expect(rename.body.error.code).toBe('E1035');
     // ...but a PURE isDefault:true is a project-state switch, not a theme
     // modification — the default comes back.
     const restore = await send('patch', `${basePath()}/${system.id}`, token).send({

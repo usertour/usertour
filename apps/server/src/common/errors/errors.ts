@@ -308,12 +308,13 @@ export class DefaultThemeCannotBeDeletedError extends OpenAPIError {
   };
 }
 
-export class SystemThemeCannotBeDeletedError extends OpenAPIError {
+export class SystemThemeCannotBeChangedError extends OpenAPIError {
   code = 'E1035';
   statusCode = HttpStatus.CONFLICT;
   messageDict = {
-    en: 'System themes cannot be deleted. Duplicate one into your own theme if you need a variant.',
-    'zh-CN': '系统主题不可删除。如需修改,请基于它创建自己的主题副本。',
+    en: 'System themes cannot be modified or deleted. Duplicate one into your own theme if you need a variant. (Setting a system theme as the project default IS allowed.)',
+    'zh-CN':
+      '系统主题不可修改或删除。如需自定义,请基于它创建自己的主题副本。(允许将系统主题设为项目默认。)',
   };
 }
 
@@ -329,6 +330,20 @@ export class PredefinedDefinitionCannotBeChangedError extends OpenAPIError {
   messageDict = {
     en: 'Predefined definitions cannot be modified or deleted — create your own definition instead.',
     'zh-CN': '预定义的属性/事件不可修改或删除——如需自定义,请新建一个自己的定义。',
+  };
+}
+
+/**
+ * The built-in "all" segment (every user / every company) is a fixture, not
+ * user data — same permanent-property family as E1035/E1036: 409, no way to
+ * un-built-in it, the message points at the real alternative.
+ */
+export class BuiltInSegmentCannotBeChangedError extends OpenAPIError {
+  code = 'E1037';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'The built-in "all" segment cannot be modified or deleted — create a condition segment if you need a filtered audience.',
+    'zh-CN': '内置的"all"分群不可修改或删除——如需筛选人群,请新建一个条件分群。',
   };
 }
 

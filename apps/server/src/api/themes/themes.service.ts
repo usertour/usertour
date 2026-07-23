@@ -11,7 +11,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 
 import {
   DefaultThemeCannotBeDeletedError,
-  SystemThemeCannotBeDeletedError,
+  SystemThemeCannotBeChangedError,
   ThemeNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
@@ -172,9 +172,7 @@ export class ApiThemesService {
   async update(id: string, projectId: string, body: UpdateThemeBody): Promise<Theme> {
     const theme = await this.requireTheme(id, projectId);
     if (theme.isSystem && (body.name !== undefined || body.settings !== undefined)) {
-      throw new ValidationError(
-        'Cannot modify a system theme (setting it as the project default is allowed).',
-      );
+      throw new SystemThemeCannotBeChangedError();
     }
     // Ground the stored settings on the complete defaultSettings before patching —
     // the same fill the builder does on load (theme-builder.tsx: deepmerge(defaultSettings,
@@ -236,7 +234,7 @@ export class ApiThemesService {
     // (every fresh project's out-of-the-box state) can never be deleted — E1034
     // would send the caller to move the default and then hit E1035 anyway.
     if (theme.isSystem) {
-      throw new SystemThemeCannotBeDeletedError();
+      throw new SystemThemeCannotBeChangedError();
     }
     if (theme.isDefault) {
       throw new DefaultThemeCannotBeDeletedError();
