@@ -1,7 +1,11 @@
 import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
+import {
+  createBizUserConditionsFilter,
+  createConditionsFilter,
+  createFilterItem,
+} from '@/common/attribute/filter';
 import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
@@ -705,12 +709,25 @@ export class WebSocketService {
       return logic === 'is' ? !!user : !user;
     }
     if (segment.dataType === SegmentDataType.CONDITION) {
-      const filter = createConditionsFilter(segment.data, attributes);
+      // Cross-entity, like every other evaluation path (biz.service queries and
+      // the company-segment check above): a user segment may legally hold
+      // company/membership attribute conditions — the single-entity
+      // createConditionsFilter evaluated those against BizUser.data, where the
+      // value is always empty (fail-open under `empty`-style operators), so the
+      // SDK runtime disagreed with the API's member computation for the SAME
+      // segment.
+      const filter = createBizUserConditionsFilter(segment.data, attributes);
+      if (!filter) {
+        // Empty definition matches nobody in a runtime membership check.
+        return logic !== 'is';
+      }
       const segmentUser = await this.prisma.bizUser.findFirst({
         where: {
           environmentId: environment.id,
           externalId: String(bizUser.externalId),
-          ...filter,
+          // Nested under AND so the filter's own OR/bizUsersOnCompany keys
+          // cannot collide (same pattern as biz.service).
+          AND: [filter],
         },
       });
       return logic === 'is' ? !!segmentUser : !segmentUser;

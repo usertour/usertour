@@ -8,10 +8,12 @@ import {
   buildAttribute,
   buildBizCompany,
   buildBizUser,
+  buildBizUserOnCompany,
   buildEnvironment,
   buildProject,
   buildSegment,
 } from '../factories';
+import { WebSocketService } from '@/web-socket/web-socket.service';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -164,6 +166,19 @@ describe('API v2 segments (e2e)', () => {
     const badConds = await send('patch', `${segPath()}/${id}`, token).send({ conditions: [] });
     expect(badConds.status).toBe(400);
     expect(badConds.body.error.code).toBe('E1017');
+  });
+
+  it('rejects conditions on a MANUAL segment at create (explicit, not silently dropped)', async () => {
+    const token = await mint([Capability.SegmentCreate]);
+    const res = await send('post', segPath(), token).send({
+      name: 'manual with conds',
+      bizType: 'user',
+      kind: 'manual',
+      conditions: [{ type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'x' }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    expect(res.body.error.message).toContain('manual');
   });
 
   it('rejects a non-attribute condition type in a segment (400 E1017)', async () => {
@@ -400,6 +415,62 @@ describe('API v2 segments (e2e)', () => {
     const andRead = await api('get', `${segPath()}/${andSeg.id}`, token);
     expect(andRead.body.conditions).toHaveLength(2);
     expect(andRead.body.conditions[0].type).toBe('attribute');
+  });
+
+  it('SDK runtime segment check agrees with the API on a cross-entity (company-attr) user segment', async () => {
+    // A user segment holding a COMPANY attribute condition is a legal, builder-
+    // supported configuration. Every other evaluation path (biz.service member
+    // computation, the websocket company check) is cross-entity; the runtime
+    // user check used the single-entity filter and evaluated the company
+    // attribute against BizUser.data — always empty, so the SDK disagreed with
+    // the API about the SAME segment (fail-open under empty-style operators).
+    const token = await mint([Capability.SegmentCreate]);
+    await buildAttribute(prisma, {
+      projectId,
+      codeName: 'seg_x_industry',
+      bizType: 2, // company
+      dataType: 2,
+    });
+
+    const seg = await send('post', segPath(), token).send({
+      name: 'cross-entity seg',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [
+        {
+          type: 'attribute',
+          scope: 'company',
+          attribute: 'seg_x_industry',
+          op: 'is',
+          value: 'saas',
+        },
+      ],
+    });
+    expect(seg.status).toBe(201);
+
+    // A user whose COMPANY carries the value, linked via membership...
+    const insider = await buildBizUser(prisma, { environmentId, data: {} });
+    const acme = await buildBizCompany(prisma, {
+      environmentId,
+      data: { seg_x_industry: 'saas' },
+    });
+    await buildBizUserOnCompany(prisma, { bizUserId: insider.id, bizCompanyId: acme.id });
+    // ...and one with no membership at all.
+    const outsider = await buildBizUser(prisma, { environmentId, data: {} });
+
+    const ws = app.get(WebSocketService);
+    const environment = await prisma.environment.findUniqueOrThrow({
+      where: { id: environmentId },
+    });
+    const attributes = (await prisma.attribute.findMany({ where: { projectId } })) as never;
+    const rules = { type: 'segment', data: { segmentId: seg.body.id, logic: 'is' } } as never;
+
+    expect(await ws.activedUserSegmentRulesCondition(rules, environment, attributes, insider)).toBe(
+      true,
+    );
+    expect(
+      await ws.activedUserSegmentRulesCondition(rules, environment, attributes, outsider),
+    ).toBe(false);
   });
 
   it('deletes a segment (204), then 404', async () => {

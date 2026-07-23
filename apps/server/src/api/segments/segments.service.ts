@@ -93,6 +93,16 @@ export class ApiSegmentsService {
     const dataType = body.kind === 'condition' ? SegmentDataType.CONDITION : SegmentDataType.MANUAL;
     const resolvers = await loadResolvers(this.prisma, projectId);
     let data: JsonValue | undefined;
+    // A manual segment's membership is managed explicitly (add/remove member);
+    // silently dropping a supplied `conditions` made callers believe they had
+    // created a filtered segment when they got an empty one. Refuse, like the
+    // update path always has.
+    if (body.kind === 'manual' && body.conditions !== undefined) {
+      throw new ValidationError(
+        'A manual segment cannot carry `conditions` — its members are managed explicitly. ' +
+          'Use kind "condition" for a filtered segment.',
+      );
+    }
     if (body.kind === 'condition') {
       this.assertSegmentConditionTypes(body.conditions);
       data = compileConditions(body.conditions, resolvers.compile) as unknown as JsonValue;
