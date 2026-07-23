@@ -109,6 +109,26 @@ describe('API v2 /content (e2e)', () => {
     expect(item).not.toHaveProperty('publishedVersion');
   });
 
+  it('rejects an empty-string name on create and update (E1017, like every other resource)', async () => {
+    // Themes/segments/environments/definitions all enforce min(1); content was
+    // the one resource where "" slipped through — a nameless row in the
+    // dashboard that name-search can never find.
+    const token = await mint([Capability.ContentCreate, Capability.ContentUpdate]);
+    const created = await request(app.getHttpServer())
+      .post(`/v2/projects/${projectId}/content`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ type: 'tracker', name: '' });
+    expect(created.status).toBe(400);
+    expect(created.body.error.code).toBe('E1017');
+
+    const upd = await request(app.getHttpServer())
+      .patch(`/v2/projects/${projectId}/content/${flowId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: '' });
+    expect(upd.status).toBe(400);
+    expect(upd.body.error.code).toBe('E1017');
+  });
+
   it('rejects an unknown type filter with E1017 (enum, not a silent empty list)', async () => {
     // A typo (resourceCenter / survey) used to return 0 rows and read as
     // "no such content"; the filter now shares the create body's enum.
