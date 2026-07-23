@@ -3169,6 +3169,11 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: 'Loading builder...',
+    incompleteBlocks: {
+      title: 'Fill in required fields before saving',
+      description:
+        'A block is missing required content (e.g. a button label, or an image / embed URL).',
+    },
     versionConflict: {
       title: 'This content was updated elsewhere',
       description:

@@ -17,6 +17,6 @@ export const Audit = Reflector.createDecorator<ExplicitAuditMeta>();
  * GraphQL branch records `source='web'` with the logged-in user as the actor.
  *
  *   @AuditWeb({ action: 'delete', resourceType: 'theme' })
- *   @AuditWeb({ action: 'create', resourceType: 'content', resourceId: (_a, r) => (r as { id: string }).id })
+ *   @AuditWeb({ action: 'create', resourceType: 'content', resourceId: (_a, r) => String((r as { id?: string })?.id ?? '') })
  */
 export const AuditWeb = Reflector.createDecorator<WebAuditMeta>();

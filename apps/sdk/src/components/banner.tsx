@@ -202,6 +202,15 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
     }
 
     if (requiresElement && !targetElement) {
+      // The component below returns null so the CONTENT unmounts, but the
+      // mount shell insertMountEl placed into the page (with the banner's
+      // height styles) is only removed on component unmount — leaving a
+      // transparent banner-sized gap while the target is hidden. Pull the
+      // shell out; the effect re-inserts it when the target reappears.
+      const mountEl = mountElRef.current;
+      if (mountEl?.parentNode) {
+        mountEl.parentNode.removeChild(mountEl);
+      }
       return;
     }
 

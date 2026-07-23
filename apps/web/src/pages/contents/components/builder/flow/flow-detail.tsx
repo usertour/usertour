@@ -255,9 +255,8 @@ const FlowBuilderDetailFooter = () => {
       setIsShowError(true);
       toast({
         variant: 'destructive',
-        title: 'Fill in required fields before saving',
-        description:
-          'A block is missing required content (e.g. a button label, or an image / embed URL).',
+        title: t('contentBuilder.incompleteBlocks.title'),
+        description: t('contentBuilder.incompleteBlocks.description'),
       });
       return;
     }

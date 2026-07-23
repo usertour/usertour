@@ -26,7 +26,7 @@ export class ThemesResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'theme',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createTheme(@Args('data') data: CreateThemeInput) {
     return this.themesService.createTheme(data);
@@ -55,7 +55,7 @@ export class ThemesResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'theme',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async copyTheme(@Args('data') data: CopyThemeInput) {
     return await this.themesService.copyTheme(data);

@@ -44,7 +44,7 @@ export class ContentResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'content',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createContent(@Args('data') data: ContentInput) {
     return await this.contentService.createContent(data);
@@ -66,7 +66,7 @@ export class ContentResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'content',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
     return await this.contentService.duplicateContent(data.contentId, data.name);
@@ -132,7 +132,7 @@ export class ContentResolver {
     // publishedContentVersion returns the CONTENT row (its id IS the content id) —
     // reading `contentId` here yields undefined and the required-column write of
     // the audit row fails silently, wiping web publishes from the audit trail.
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
     environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
   })
   async publishedContentVersion(
