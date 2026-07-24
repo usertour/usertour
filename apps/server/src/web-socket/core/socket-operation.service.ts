@@ -18,6 +18,7 @@ import {
   categorizeSessions,
   detectChangedPreservedSessions,
   extractSessionsByContentType,
+  getSessionKey,
 } from '@/utils/websocket-utils';
 import { SocketDataService } from './socket-data.service';
 
@@ -623,7 +624,10 @@ export class SocketOperationService {
     );
 
     const preservedUnchangedSessions = preservedSessions.filter(
-      (session) => !changedPreservedSessions.some((s) => s.id === session.id),
+      (session) =>
+        !changedPreservedSessions.some(
+          (changedSession) => getSessionKey(changedSession) === getSessionKey(session),
+        ),
     );
 
     const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];

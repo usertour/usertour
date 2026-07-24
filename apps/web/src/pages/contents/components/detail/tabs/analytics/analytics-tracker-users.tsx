@@ -39,6 +39,7 @@ interface TrackerUserNode {
   firstTrackedAt: string;
   lastTrackedAt: string;
   eventsCount: number;
+  companiesCount?: number;
   bizUser: {
     id: string;
     externalId: string;
@@ -377,6 +378,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                     const showSecondLine = email && primaryText !== email ? email : null;
                     const companyName =
                       (bizCompany?.data?.name as string) || bizCompany?.externalId || '';
+                    const extraCompaniesCount = (user.companiesCount ?? 0) - 1;
 
                     return (
                       <TableRow key={user.id} className="h-10">
@@ -401,6 +403,14 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                                     >
                                       {companyName}
                                     </Link>
+                                    {extraCompaniesCount > 0 && (
+                                      <>
+                                        {' '}
+                                        {t('contents.analytics.trackerUsers.moreCompanies', {
+                                          count: extraCompaniesCount,
+                                        })}
+                                      </>
+                                    )}
                                   </span>
                                 )}
                               </div>

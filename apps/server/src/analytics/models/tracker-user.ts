@@ -20,4 +20,7 @@ export class TrackerUser {
 
   @Field(() => Int)
   eventsCount: number;
+
+  @Field(() => Int)
+  companiesCount: number;
 }
