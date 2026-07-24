@@ -2304,6 +2304,7 @@ const translations = {
         lastTracked: 'Last tracked',
         events: 'Events',
         from: 'from',
+        moreCompanies: '+{{count}}',
         totalCount: '{{count}} user in total.',
         totalCount_other: '{{count}} users in total.',
         rowsPerPage: 'Rows per page',
@@ -3272,6 +3273,11 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: 'Loading builder...',
+    incompleteBlocks: {
+      title: 'Fill in required fields before saving',
+      description:
+        'A block is missing required content (e.g. a button label, or an image / embed URL).',
+    },
     versionConflict: {
       title: 'This content was updated elsewhere',
       description:

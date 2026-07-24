@@ -40,7 +40,15 @@ export const ResourceCenterFrameRoot = memo(
         data-animate-frame={animateFrame ? 'true' : 'false'}
         className={cn(
           'group',
-          'relative w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
+          // The panel backdrop applies to the OPEN state only. This root is
+          // shared by the compact launcher and the expanded panel; painting it
+          // unconditionally put the (light) panel background behind the dark
+          // round launcher, where it bled through the anti-aliased seam
+          // between the iframe clip and the root's own radius — a light ring
+          // around the launcher on dark host pages. Compact state stays
+          // transparent: the trigger layer paints its own launcher background.
+          'relative w-full flex flex-col overflow-hidden text-sdk-foreground',
+          'data-[state=open]:bg-sdk-background',
           mode === 'iframe' && 'h-screen',
           mode !== 'iframe' && 'h-full',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',

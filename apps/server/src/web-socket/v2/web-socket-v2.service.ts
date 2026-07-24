@@ -704,13 +704,39 @@ export class WebSocketV2Service {
     params: TrackTrackerEventDto,
   ): Promise<boolean> {
     const { socketData } = context;
-    const { environment, externalUserId, clientContext, bizCompanyId } = socketData;
+    const {
+      environment,
+      externalUserId,
+      clientContext,
+      bizCompanyId,
+      trackerSessions = [],
+    } = socketData;
+
+    // A report is only valid against the distributed snapshot: the tracker
+    // session this server armed the socket with. The snapshot also supplies
+    // the eventId — Version rows become editable again once fully unpublished,
+    // so the live row cannot stand in for the definition the SDK evaluated.
+    const distributed = trackerSessions.find(
+      (session) =>
+        session.content.id === params.contentId && session.version.id === params.versionId,
+    );
+    const eventId = distributed?.version.tracker?.eventId;
+    if (!eventId) {
+      this.logger.warn({
+        message: 'Tracker event rejected: no distributed tracker session for report',
+        contentId: params.contentId,
+        versionId: params.versionId,
+      });
+      return false;
+    }
+
     return await this.eventTrackingService.trackTrackerEvent({
       environment,
       externalUserId,
       clientContext,
       contentId: params.contentId,
       versionId: params.versionId,
+      eventId,
       bizCompanyId,
     });
   }

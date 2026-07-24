@@ -24,7 +24,7 @@ export class AttributesResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'attribute',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createAttribute(@Args('data') data: CreateAttributeInput) {
     return this.service.create(data);

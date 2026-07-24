@@ -30,7 +30,7 @@ export class LocalizationsResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'localization',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createLocalization(@Args('data') data: CreateLocalizationInput) {
     return this.service.create(data);

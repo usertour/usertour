@@ -141,7 +141,13 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     return { bannerData: evaluatedBannerData };
   }
 
+  /** See usertour-launcher.ts: the found handler must render the LATEST
+   * store, not its closure snapshot (watcher reuse + pre-found content
+   * update = stale content on first paint). */
+  private pendingWatcherStore: BannerStore | null = null;
+
   private setupElementWatcher(store: BannerStore): void {
+    this.pendingWatcherStore = store;
     const data = store.bannerData;
     const targetElement = data?.containerElement;
     if (!targetElement) {
@@ -187,7 +193,11 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
-        this.setStoreData({ ...store, openState: true, targetElement: el });
+        this.setStoreData({
+          ...(this.pendingWatcherStore ?? store),
+          openState: true,
+          targetElement: el,
+        });
       }
     });
 

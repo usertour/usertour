@@ -32,7 +32,7 @@ export class EnvironmentsResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'environment',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createEnvironments(@Args('data') newData: CreateEnvironmentInput) {
     return this.environmentsService.create(newData);

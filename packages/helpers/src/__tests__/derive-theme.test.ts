@@ -1,4 +1,4 @@
-import { defaultSettings } from '@usertour/types';
+import { defaultSettings } from '@usertour/constants';
 import { generateStateColors } from '../color';
 import { deepClone } from '../utils';
 import { deepMergeThemeSettings } from '../convert-settings';

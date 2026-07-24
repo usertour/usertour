@@ -2181,6 +2181,7 @@ const translations = {
         lastTracked: '最近追踪',
         events: '事件',
         from: '来自',
+        moreCompanies: '+{{count}}',
         totalCount: '共 {{count}} 位用户。',
         totalCount_other: '共 {{count}} 位用户。',
         rowsPerPage: '每页行数',
@@ -3103,6 +3104,10 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: '加载编辑器中...',
+    incompleteBlocks: {
+      title: '保存前请填写必填内容',
+      description: '有内容块缺少必填项(例如按钮文字、图片或嵌入链接)。',
+    },
     versionConflict: {
       title: '内容已在其他位置更新',
       description:

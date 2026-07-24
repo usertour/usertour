@@ -233,6 +233,8 @@ type TrackerUserAggregateRow = {
   firstTrackedAt: Date;
   lastTrackedAt: Date;
   eventsCount: bigint;
+  lastCompanyId: string | null;
+  companiesCount: bigint;
 };
 
 @Injectable()
@@ -2204,9 +2206,21 @@ export class AnalyticsService {
     });
     const userMap = new Map(users.map((u) => [u.id, u]));
 
+    // The company label comes from the user's latest attributed event, so it
+    // names where the tracker actually fired; membership is only a fallback
+    // for rows whose events carry no company attribution.
+    const lastCompanyIds = pagedRows
+      .map((g) => g.lastCompanyId)
+      .filter((companyId): companyId is string => !!companyId);
+    const companies = lastCompanyIds.length
+      ? await this.prisma.bizCompany.findMany({ where: { id: { in: lastCompanyIds } } })
+      : [];
+    const companyMap = new Map(companies.map((company) => [company.id, company]));
+
     const edges = pagedRows.map((g) => {
       const user = userMap.get(g.bizUserId);
-      const company = user?.bizUsersOnCompany?.[0]?.bizCompany;
+      const eventCompany = g.lastCompanyId ? companyMap.get(g.lastCompanyId) : undefined;
+      const company = eventCompany ?? user?.bizUsersOnCompany?.[0]?.bizCompany;
       return {
         cursor: this.encodeTrackerCursor(g),
         node: {
@@ -2216,6 +2230,7 @@ export class AnalyticsService {
           firstTrackedAt: g.firstTrackedAt,
           lastTrackedAt: g.lastTrackedAt,
           eventsCount: Number(g.eventsCount),
+          companiesCount: Number(g.companiesCount),
         },
       };
     });
@@ -2308,7 +2323,10 @@ export class AnalyticsService {
           be."bizUserId" as "bizUserId",
           MIN(be."createdAt") as "firstTrackedAt",
           MAX(be."createdAt") as "lastTrackedAt",
-          COUNT(be.id) as "eventsCount"
+          COUNT(be.id) as "eventsCount",
+          (ARRAY_AGG(be."bizCompanyId" ORDER BY be."createdAt" DESC)
+            FILTER (WHERE be."bizCompanyId" IS NOT NULL))[1] as "lastCompanyId",
+          COUNT(DISTINCT be."bizCompanyId") as "companiesCount"
         FROM "BizEvent" be
         INNER JOIN "BizUser" bu ON bu.id = be."bizUserId"
         WHERE be."contentId" = ${contentId}

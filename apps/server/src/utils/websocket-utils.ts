@@ -300,6 +300,16 @@ export const convertToClientConditions = (trackConditions: TrackCondition[]): Cl
 // ============================================================================
 
 /**
+ * Composite identity key for batch session diffing. Tracker sessions carry no
+ * biz session id, so identity degrades to the content id component — every
+ * consumer matching batch sessions (categorization, change detection, and the
+ * unchanged-set exclusion in handleBatchSessions) must use this same key; a
+ * raw id compare treats all id-less sessions as one.
+ */
+export const getSessionKey = (session: CustomContentSession) =>
+  `${session.id}:${session.content.id}`;
+
+/**
  * Efficiently categorize sessions into new, removed, and preserved groups
  * Uses Set/Map for O(1) lookup performance while maintaining readable filter syntax
  * @param currentSessions - Current sessions
@@ -314,9 +324,6 @@ export const categorizeSessions = (
   removedSessions: CustomContentSession[];
   preservedSessions: CustomContentSession[];
 } => {
-  // Helper function to create composite key
-  const getSessionKey = (session: CustomContentSession) => `${session.id}:${session.content.id}`;
-
   // Create Sets for O(1) lookup performance
   const targetContentIds = new Set(targetSessions.map((session) => session.content.id));
   const currentSessionKeys = new Set(currentSessions.map(getSessionKey));
@@ -352,10 +359,9 @@ export const detectChangedPreservedSessions = (
   preservedSessions: CustomContentSession[],
 ): CustomContentSession[] => {
   return preservedSessions.filter((session) => {
-    if (!session?.id) {
-      return false;
-    }
-    const oldSession = currentSessions.find((s) => s.id === session.id);
+    const oldSession = currentSessions.find(
+      (currentSession) => getSessionKey(currentSession) === getSessionKey(session),
+    );
     if (!oldSession) {
       return false;
     }

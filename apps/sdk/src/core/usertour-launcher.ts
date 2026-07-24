@@ -143,7 +143,17 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    * Sets up the element watcher for a launcher
    * @private
    */
+  /**
+   * The store the NEXT element-found should render. The found handler must
+   * not rely on its closure: with watcher reuse, a content update that lands
+   * while the element is still unfound re-enters here (same targetKey, no
+   * element yet) and would otherwise be shown with the OLD closure snapshot
+   * when the element finally appears.
+   */
+  private pendingWatcherStore: LauncherStore | null = null;
+
   private setupElementWatcher(store: LauncherStore): void {
+    this.pendingWatcherStore = store;
     const data = store.launcherData;
 
     const targetElement = data?.target?.element as ElementSelectorPropsData;
@@ -198,7 +208,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     // Handle element found
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
-        this.handleElementFound(el, store);
+        this.handleElementFound(el, this.pendingWatcherStore ?? store);
       }
     });
 

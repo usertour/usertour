@@ -27,7 +27,7 @@ export class EventsResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'event',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createEvent(@UserEntity() @Args('data') data: CreateEventInput) {
     return this.service.create(data);

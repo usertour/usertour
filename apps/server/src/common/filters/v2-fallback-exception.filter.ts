@@ -36,7 +36,13 @@ export class V2FallbackExceptionFilter extends BaseExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     if (host.getType() !== 'http') {
-      return super.catch(exception, host);
+      // NOT super.catch: BaseExceptionFilter assumes an express response, and
+      // in the GraphQL / websocket contexts that assumption breaks — it
+      // REPLACED the surface's own error channel (Apollo formatError with
+      // domain codes like E0005, the gateways' ws handlers) with a bare
+      // "Internal Server Error". Rethrow so those pipelines handle their
+      // exceptions exactly as they did before this filter existed.
+      throw exception;
     }
     const request = host.switchToHttp().getRequest<Request>();
     if (!request?.path?.startsWith('/v2')) {

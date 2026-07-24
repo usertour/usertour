@@ -406,7 +406,10 @@ export const eventSchema: ConditionTypeSchema<EventData> = {
   // chip looks clean — easy to miss on save.
   validate: (condition, ctx) => {
     const data = readData(condition);
-    const own = validateEvent(data);
+    // ctx.events enables the existence check (a deleted event's dangling id
+    // gates nothing at runtime) — every sibling chip already passes its
+    // catalog; this one didn't, so the save toast fired with no red chip.
+    const own = validateEvent(data, ctx.events);
     if (own) return own;
     const where = data.whereConditions ?? [];
     if (where.length > 0 && validateConditions(where, ctx).length > 0) {

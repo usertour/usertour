@@ -84,7 +84,7 @@ export class BizResolver {
   @AuditWeb({
     action: 'create',
     resourceType: 'segment',
-    resourceId: (_a, r) => (r as { id: string }).id,
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
   })
   async createSegment(@Args('data') data: CreatSegment) {
     return await this.service.creatSegment(data);
