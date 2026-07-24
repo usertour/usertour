@@ -51,6 +51,7 @@ import { isNullish } from '@usertour/helpers';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { calculateChecklistProgress } from '@/utils/content-utils';
 import { BizService } from '@/biz/biz.service';
+import { ContentDataService } from './content-data.service';
 import type {
   EventTrackingParams,
   EventTrackingItem,
@@ -71,6 +72,7 @@ export class EventTrackingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bizService: BizService,
+    private readonly contentDataService: ContentDataService,
   ) {
     this.registerEventHandlers();
   }
@@ -183,6 +185,10 @@ export class EventTrackingService {
   /**
    * Track a tracker event.
    * Tracker does not use BizSession — creates BizEvent directly with contentId/versionId.
+   * Resolves the environment's currently published version server-side and rejects when
+   * nothing is published: tracker removal on unpublish is lazy (next toggleContents), so
+   * the SDK may keep reporting from a stale distribution in the meantime. The
+   * client-reported versionId is kept only as an observability field.
    * Resolves target event from version.data.eventId (user-selected event, not a fixed event).
    * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a configurable window.
    */
@@ -198,6 +204,20 @@ export class EventTrackingService {
       params;
     const { id: environmentId } = environment;
 
+    const publishedVersionId = await this.contentDataService.findPublishedVersionId(
+      contentId,
+      environmentId,
+    );
+    if (!publishedVersionId) {
+      this.logger.warn({
+        message: 'Tracker event rejected: content not published in environment',
+        contentId,
+        reportedVersionId: versionId,
+        environmentId,
+      });
+      return false;
+    }
+
     return await this.prisma.$transaction(async (tx) => {
       // Fetch version to resolve target eventId from version.data.eventId
       const [bizUser, content, version] = await Promise.all([
@@ -209,7 +229,7 @@ export class EventTrackingService {
           select: { id: true, name: true },
         }),
         tx.version.findUnique({
-          where: { id: versionId },
+          where: { id: publishedVersionId },
           select: { id: true, sequence: true, data: true },
         }),
       ]);
@@ -218,7 +238,7 @@ export class EventTrackingService {
         this.logger.warn({
           message: 'Tracker event rejected: missing entities',
           contentId,
-          versionId,
+          versionId: publishedVersionId,
           hasBizUser: !!bizUser,
           hasContent: !!content,
           hasVersion: !!version,
@@ -233,7 +253,7 @@ export class EventTrackingService {
         this.logger.warn({
           message: 'Tracker event rejected: no eventId configured in version data',
           contentId,
-          versionId,
+          versionId: publishedVersionId,
         });
         return false;
       }
@@ -246,7 +266,7 @@ export class EventTrackingService {
         this.logger.warn({
           message: 'Tracker event rejected: target event not found',
           contentId,
-          versionId,
+          versionId: publishedVersionId,
           targetEventId,
         });
         return false;
@@ -260,7 +280,7 @@ export class EventTrackingService {
           bizUserId: bizUser.id,
           eventId: event.id,
           contentId,
-          versionId,
+          versionId: publishedVersionId,
           createdAt: { gte: dedupWindow },
         },
       });
@@ -269,7 +289,7 @@ export class EventTrackingService {
         this.logger.log({
           message: 'Tracker event deduplicated',
           contentId,
-          versionId,
+          versionId: publishedVersionId,
           eventId: event.id,
           userId: bizUser.id,
           dedupHit: true,
@@ -299,7 +319,7 @@ export class EventTrackingService {
           eventId: event.id,
           data: filteredData,
           contentId,
-          versionId,
+          versionId: publishedVersionId,
           bizCompanyId: bizCompanyId ?? null,
         },
       });
@@ -307,7 +327,8 @@ export class EventTrackingService {
       this.logger.log({
         message: 'Tracker event created',
         contentId,
-        versionId,
+        versionId: publishedVersionId,
+        ...(versionId !== publishedVersionId ? { reportedVersionId: versionId } : {}),
         eventId: event.id,
         userId: bizUser.id,
         dedupHit: false,
