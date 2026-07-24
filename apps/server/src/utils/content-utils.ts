@@ -2154,6 +2154,17 @@ export const hasContentSessionChanges = (
     return true;
   }
 
+  // Tracker sessions ship the full condition tree in version.config with
+  // server-side `actived` flags frozen at distribution time; a flip (e.g.
+  // segment membership after a company switch) must re-emit the session.
+  if (!isEqual(oldVersion.tracker, newVersion.tracker)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.config, newVersion.config)) {
+    return true;
+  }
+
   if (!isEqual(oldSession.expandPending, newSession.expandPending)) {
     return true;
   }
