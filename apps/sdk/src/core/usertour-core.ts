@@ -1666,17 +1666,33 @@ export class UsertourCore extends Evented {
           isActive = isConditionsActived(evaluatedRules);
         }
 
+        let reported = false;
         if (!trackerState.isActive && isActive) {
-          await this.socketService.trackTrackerEvent({
+          reported = await this.socketService.trackTrackerEvent({
             contentId: session.content.id,
             versionId: session.version.id,
           });
         }
 
-        this.activeTrackers.set(contentId, {
-          session,
-          isActive,
-        });
+        // The report ack above is a real yield point: an ADD_TRACKER may have
+        // replaced this entry (or a REMOVE_TRACKER deleted it) while it was in
+        // flight. Writing the captured session back would clobber the newer
+        // distribution — the server got its ack and will never re-send.
+        const latestState = this.activeTrackers.get(contentId);
+        if (!latestState) {
+          continue;
+        }
+        if (latestState.session === session) {
+          this.activeTrackers.set(contentId, { session, isActive });
+        } else if (reported) {
+          // Replaced mid-flight but the occurrence was recorded — carry the
+          // edge onto the new session so it does not double-report (the dedup
+          // window keys on versionId and would not catch a cross-version pair).
+          this.activeTrackers.set(contentId, { session: latestState.session, isActive: true });
+        }
+        // Replaced and nothing recorded (report rejected or no edge fired):
+        // leave the new entry as addTracker stored it, so the next tick
+        // evaluates the new definition fresh and can still report the edge.
       }
     } finally {
       this.isTrackerMonitorRunning = false;

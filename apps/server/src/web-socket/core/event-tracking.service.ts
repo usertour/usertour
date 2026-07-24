@@ -51,7 +51,6 @@ import { isNullish } from '@usertour/helpers';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { calculateChecklistProgress } from '@/utils/content-utils';
 import { BizService } from '@/biz/biz.service';
-import { ContentDataService } from './content-data.service';
 import type {
   EventTrackingParams,
   EventTrackingItem,
@@ -72,7 +71,6 @@ export class EventTrackingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bizService: BizService,
-    private readonly contentDataService: ContentDataService,
   ) {
     this.registerEventHandlers();
   }
@@ -185,15 +183,13 @@ export class EventTrackingService {
   /**
    * Track a tracker event.
    * Tracker does not use BizSession — creates BizEvent directly with contentId/versionId.
-   * Publish state is judged server-side: rejects when the content has no published
-   * version in the environment (tracker removal on unpublish is lazy — next
-   * toggleContents — so a stale distribution may keep reporting in the meantime).
-   * The event itself resolves from the client-reported versionId — the definition
-   * the SDK actually evaluated, validated to belong to this content. Re-resolving
-   * from the current published version instead would fabricate events during a
-   * republish window: the reported version's conditions matched, the current
-   * version's never did.
-   * Resolves target event from version.data.eventId (user-selected event, not a fixed event).
+   * The caller resolves versionId and eventId from the socket's distributed tracker
+   * snapshot, so both reflect the definition the SDK actually evaluated — Version
+   * rows become editable again once fully unpublished, so the live row cannot stand
+   * in for what the client was served. Publish state is checked inside the
+   * transaction (tracker removal on unpublish is lazy — next toggleContents — so a
+   * stale distribution may keep reporting in the meantime; a cached check could be
+   * re-primed with a pre-unpublish read and stay stale for its full TTL).
    * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a configurable window.
    */
   async trackTrackerEvent(params: {
@@ -202,10 +198,18 @@ export class EventTrackingService {
     clientContext: ClientContext;
     contentId: string;
     versionId: string;
+    eventId: string;
     bizCompanyId?: string;
   }): Promise<boolean> {
-    const { environment, externalUserId, clientContext, contentId, versionId, bizCompanyId } =
-      params;
+    const {
+      environment,
+      externalUserId,
+      clientContext,
+      contentId,
+      versionId,
+      eventId,
+      bizCompanyId,
+    } = params;
     const { id: environmentId } = environment;
 
     const reject = (reason: string, extra: Record<string, unknown> = {}): false => {
@@ -218,17 +222,8 @@ export class EventTrackingService {
       return false;
     };
 
-    const publishedVersionId = await this.contentDataService.findPublishedVersionId(
-      contentId,
-      environmentId,
-    );
-    if (!publishedVersionId) {
-      return reject('content not published in environment', { environmentId });
-    }
-
     return await this.prisma.$transaction(async (tx) => {
-      // Fetch version to resolve target eventId from version.data.eventId
-      const [bizUser, content, version] = await Promise.all([
+      const [bizUser, content, version, contentOnEnvironment, event] = await Promise.all([
         tx.bizUser.findFirst({
           where: { externalId: externalUserId, environmentId },
         }),
@@ -238,9 +233,20 @@ export class EventTrackingService {
         }),
         tx.version.findUnique({
           where: { id: versionId },
-          select: { id: true, sequence: true, data: true, contentId: true },
+          select: { id: true, sequence: true },
+        }),
+        tx.contentOnEnvironment.findFirst({
+          where: { environmentId, contentId, published: true, content: { deleted: false } },
+          select: { contentId: true },
+        }),
+        tx.event.findUnique({
+          where: { id: eventId },
         }),
       ]);
+
+      if (!contentOnEnvironment) {
+        return reject('content not published in environment', { environmentId });
+      }
 
       if (!bizUser || !content || !version) {
         return reject('missing entities', {
@@ -250,25 +256,8 @@ export class EventTrackingService {
         });
       }
 
-      if (version.contentId !== contentId) {
-        return reject('version does not belong to content', {
-          versionContentId: version.contentId,
-        });
-      }
-
-      // Resolve target event from version.data.eventId (server is source of truth)
-      const versionData = version.data as Record<string, any> | null;
-      const targetEventId = versionData?.eventId as string | undefined;
-      if (!targetEventId) {
-        return reject('no eventId configured in version data');
-      }
-
-      // Look up the actual event by ID (not by codeName)
-      const event = await tx.event.findUnique({
-        where: { id: targetEventId },
-      });
       if (!event) {
-        return reject('target event not found', { targetEventId });
+        return reject('target event not found', { targetEventId: eventId });
       }
 
       // Dedup: check for recent BizEvent with same key within 3-second window
