@@ -44,7 +44,14 @@ export type RepresentationTracker = z.infer<typeof representationTracker>;
 // state (isCompleted / isVisible …) is preserved; omit `id` for a new item.
 // `completeWhen` / `onlyShowWhen` are conditions; `clickActions` are actions.
 const checklistItem = z.object({
-  id: z.string().optional(),
+  id: z
+    .string()
+    .optional()
+    .describe(
+      'Server-owned task identity — ECHO it back when rewriting `items`. An item written ' +
+        "without its existing id gets a NEW one: in-flight users' completion state for it " +
+        'resets and its per-task analytics rows break. Omit only for a genuinely new task.',
+    ),
   name: z.string(),
   description: z
     .string()
@@ -85,7 +92,10 @@ const checklistItem = z.object({
     ),
 });
 export const representationChecklist = z.object({
-  buttonText: z.string().optional(),
+  buttonText: z
+    .string()
+    .optional()
+    .describe('Label on the collapsed checklist launcher pill (e.g. "Getting started").'),
   initialDisplay: z
     .enum(['expanded', 'button'])
     .optional()
@@ -108,7 +118,13 @@ export const representationChecklist = z.object({
     .boolean()
     .optional()
     .describe('When true, the checklist closes on its own once every task is done.'),
-  content: z.array(representationBlock).optional(),
+  content: z
+    .array(representationBlock)
+    .optional()
+    .describe(
+      'Rich content shown at the top of the expanded panel, above the task list — typically a ' +
+        'short welcome line framing what the tasks achieve.',
+    ),
   items: z
     .array(checklistItem)
     .optional()
@@ -139,8 +155,14 @@ const launcherPlacement = z.object({
     .enum(['start', 'center', 'end'])
     .optional()
     .describe('Alignment along the side. See `side`.'),
-  sideOffset: z.number().optional(),
-  alignOffset: z.number().optional(),
+  sideOffset: z
+    .number()
+    .optional()
+    .describe('Gap in pixels between the tooltip and its anchor, along `side`.'),
+  alignOffset: z
+    .number()
+    .optional()
+    .describe('Pixel shift along the alignment axis. Only applies when `align` is `start`/`end`.'),
   // Position mode, derived on compile like a flow tooltip: explicit wins;
   // else side/align given → `fixed`; else `auto`. Exposed so `align` can
   // actually take effect (a launcher left in `auto` renders center regardless).
@@ -168,7 +190,10 @@ const beaconPlacement = z.object({
     .enum(['start', 'center', 'end'])
     .optional()
     .describe('Alignment along the side. See `side`.'),
-  sideOffset: z.number().optional(),
+  sideOffset: z
+    .number()
+    .optional()
+    .describe('Gap in pixels between the beacon and the target edge, along `side`.'),
   alignOffset: z
     .number()
     .optional()
@@ -196,11 +221,27 @@ const launcherTarget = representationTarget.extend({
     ),
 });
 export const representationLauncher = z.object({
-  style: z.enum(['beacon', 'icon', 'hidden', 'button']).optional(),
+  style: z
+    .enum(['beacon', 'icon', 'hidden', 'button'])
+    .optional()
+    .describe(
+      'Visual form: `beacon` = pulsing dot, `icon` = a static icon (see `icon`), `button` = a ' +
+        'text button (see `buttonText`), `hidden` = no visual — interactions on the target ' +
+        'element itself drive `behavior`.',
+    ),
   icon: z
     .object({
-      source: z.enum(['none', 'builtin', 'upload', 'url', 'inherit']).optional(),
-      url: z.string().optional(),
+      source: z
+        .enum(['none', 'builtin', 'upload', 'url', 'inherit'])
+        .optional()
+        .describe(
+          'Where the icon comes from: `builtin` uses `type` (a RemixIcon name), `upload`/`url` ' +
+            'use `url`, `inherit` takes the theme launcher icon, `none` shows no icon.',
+        ),
+      url: z
+        .string()
+        .optional()
+        .describe("Image URL for the icon — only used when source is 'upload' or 'url'."),
       type: z
         .string()
         .optional()
@@ -212,14 +253,21 @@ export const representationLauncher = z.object({
         ),
     })
     .optional(),
-  buttonText: z.string().optional(),
-  target: launcherTarget.optional(),
+  buttonText: z
+    .string()
+    .optional()
+    .describe("Label of the button — only rendered when style is 'button'."),
+  target: launcherTarget
+    .optional()
+    .describe('The page element the launcher anchors to (selector + beacon placement on it).'),
   /** Stacking order (CSS z-index — must be an integer; may be negative). */
   zIndex: z.number().int().optional(),
   tooltip: z
     .object({
-      placement: launcherPlacement.optional(),
-      width: z.number().optional(),
+      placement: launcherPlacement
+        .optional()
+        .describe('Where the tooltip opens relative to its anchor (see `reference`).'),
+      width: z.number().optional().describe('Tooltip width in pixels. Omit for the default.'),
       reference: z
         .enum(['target', 'launcher'])
         .optional()
@@ -251,12 +299,38 @@ export const representationLauncher = z.object({
     .optional(),
   behavior: z
     .object({
-      triggerElement: z.enum(['launcher', 'target', 'target-or-launcher']).optional(),
-      event: z.enum(['clicked', 'hovered']).optional(),
-      action: z.enum(['show-tooltip', 'perform-action']).optional(),
-      actions: z.array(representationAction).optional(),
+      triggerElement: z
+        .enum(['launcher', 'target', 'target-or-launcher'])
+        .optional()
+        .describe(
+          'Which element listens for the interaction: the launcher visual, the target element ' +
+            "itself, or either. With style 'hidden' the target is the only thing to interact with.",
+        ),
+      event: z
+        .enum(['clicked', 'hovered'])
+        .optional()
+        .describe('The interaction that triggers the launcher: click or hover.'),
+      action: z
+        .enum(['show-tooltip', 'perform-action'])
+        .optional()
+        .describe(
+          "What the interaction does: 'show-tooltip' opens `tooltip.content`; 'perform-action' " +
+            'runs `actions` directly (e.g. start a flow) with no tooltip.',
+        ),
+      actions: z
+        .array(representationAction)
+        .optional()
+        .describe(
+          "The action list run when action is 'perform-action' (e.g. " +
+            '[{ "type": "start_content", "content": "<flowId>" }]). Ignored under ' +
+            "'show-tooltip' — put button actions inside the tooltip content instead.",
+        ),
     })
-    .optional(),
+    .optional()
+    .describe(
+      'How users interact with the launcher and what that interaction does. Omit for the ' +
+        'default (click the launcher to show the tooltip).',
+    ),
 });
 export type RepresentationLauncher = z.infer<typeof representationLauncher>;
 
@@ -309,7 +383,13 @@ export const representationBanner = z.object({
         .describe('Slide the banner in instead of popping into place.'),
     })
     .optional(),
-  containerTarget: representationTarget.optional(),
+  containerTarget: representationTarget
+    .optional()
+    .describe(
+      'The anchor element for the container/element-relative `placement` variants (top/bottom ' +
+        'of it, or immediately before/after it). Required by those placements; ignored for ' +
+        'top/bottom-of-page.',
+    ),
   layout: z
     .object({
       maxContentWidth: z
