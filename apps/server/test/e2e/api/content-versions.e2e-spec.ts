@@ -309,6 +309,34 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('an authored embed gets parsedUrl so it actually renders (not the grey placeholder)', async () => {
+    // The widget renders oembed.html, else iframes parsedUrl, else a grey
+    // placeholder. The compiler only wrote `url`, so an API-authored embed was
+    // a placeholder forever. A url outside every oEmbed provider scheme
+    // resolves without any external call: parsedUrl = url, no oembed.
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'E',
+          type: 'modal',
+          placement: { position: 'center' },
+          content: [{ type: 'embed', url: 'https://intranet.example.com/demo' }],
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    const row = await prisma.step.findFirst({ where: { versionId: version.id } });
+    const json = JSON.stringify(row?.data ?? {});
+    expect(json).toContain('"parsedUrl":"https://intranet.example.com/demo"');
+  });
+
   it('refuses a settings-only startRules patch when auto-start is not enabled (no dead invisible settings)', async () => {
     // frequency/priority written without `when` on a version whose auto-start
     // is off used to land in storage but read back as startRules: null — the

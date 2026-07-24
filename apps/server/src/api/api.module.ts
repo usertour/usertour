@@ -9,6 +9,7 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
+import { UtilitiesModule } from '@/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
@@ -77,6 +78,7 @@ import { ApiUsersService } from './users/users.service';
     AnalyticsModule,
     ThemesModule,
     EnvironmentsModule,
+    UtilitiesModule,
   ],
   // Order here drives the OpenAPI tag order (NestJS emits operations per controller),
   // which is what the docs sidebar renders: core content first, audience next,

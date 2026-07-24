@@ -15,6 +15,8 @@ import { ContentService, type WriteActor } from '@/content/content.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
+import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
+import { UtilitiesService } from '@/utilities/utilities.service';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
   type ContentReference,
@@ -95,6 +97,7 @@ export class ApiContentVersionsService {
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
     private readonly themes: ApiThemesService,
+    private readonly utilities: UtilitiesService,
   ) {}
 
   async get(
@@ -535,6 +538,26 @@ export class ApiContentVersionsService {
 
     // All compiles are done — refuse if any condition referenced an unknown code.
     refuseUnresolvedCodes();
+
+    // Resolve embeds whose url is new or changed (parsedUrl !== url), the way
+    // the builder does — otherwise they render as a grey placeholder (new) or
+    // keep showing the PREVIOUS content (url edited, old oembed retained by
+    // the keep-style merge). 5s cap per provider call; failure degrades to a
+    // plain iframe like the builder's failure path.
+    await Promise.all(
+      [content.steps, content.data].map((payload) =>
+        payload
+          ? resolveStaleEmbeds(payload, (url) =>
+              Promise.race([
+                this.utilities.queryOembedInfo(url),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error('oembed timeout')), 5000),
+                ),
+              ]),
+            )
+          : undefined,
+      ),
+    );
 
     if (Object.keys(content).length > 0) {
       const result = await this.content.updateContentVersion(
