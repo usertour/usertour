@@ -301,10 +301,13 @@ export const convertToClientConditions = (trackConditions: TrackCondition[]): Cl
 
 /**
  * Composite identity key for batch session diffing. Tracker sessions carry no
- * biz session id, so identity degrades to the content id component — both
- * categorization and change detection must use this same key.
+ * biz session id, so identity degrades to the content id component — every
+ * consumer matching batch sessions (categorization, change detection, and the
+ * unchanged-set exclusion in handleBatchSessions) must use this same key; a
+ * raw id compare treats all id-less sessions as one.
  */
-const getSessionKey = (session: CustomContentSession) => `${session.id}:${session.content.id}`;
+export const getSessionKey = (session: CustomContentSession) =>
+  `${session.id}:${session.content.id}`;
 
 /**
  * Efficiently categorize sessions into new, removed, and preserved groups
