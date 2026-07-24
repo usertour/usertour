@@ -353,6 +353,7 @@ export const queryTrackerUsers = gql`
           firstTrackedAt
           lastTrackedAt
           eventsCount
+          companiesCount
           bizUser {
             id
             externalId

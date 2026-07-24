@@ -1917,6 +1917,7 @@ const translations = {
         lastTracked: 'Last tracked',
         events: 'Events',
         from: 'from',
+        moreCompanies: '+{{count}}',
         totalCount: '{{count}} user in total.',
         totalCount_other: '{{count}} users in total.',
         rowsPerPage: 'Rows per page',

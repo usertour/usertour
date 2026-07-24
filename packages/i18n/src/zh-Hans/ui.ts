@@ -1818,6 +1818,7 @@ const translations = {
         lastTracked: '最近追踪',
         events: '事件',
         from: '来自',
+        moreCompanies: '+{{count}}',
         totalCount: '共 {{count}} 位用户。',
         totalCount_other: '共 {{count}} 位用户。',
         rowsPerPage: '每页行数',
