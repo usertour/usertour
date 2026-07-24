@@ -46,7 +46,14 @@ export type RepresentationTracker = z.infer<typeof representationTracker>;
 const checklistItem = z.object({
   id: z.string().optional(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z
+    .string()
+    .optional()
+    .describe(
+      'Optional supporting text rendered below the task name. A short benefit statement or time ' +
+        'estimate ("Send an invite so your team can collaborate", "~30 sec") measurably lifts ' +
+        'task click-through — prefer setting it over leaving the row name-only.',
+    ),
   // completeWhen also accepts the parameterless `task_clicked` (a task completes
   // when its item is clicked) — valid only here (incl. nested in OR groups), not
   // in the general condition set.
