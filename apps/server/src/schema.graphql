@@ -1305,6 +1305,7 @@ type TooltipTargetMissingResponse {
 type TrackerUser {
   bizCompany: BizModel
   bizUser: BizUser!
+  companiesCount: Int!
   eventsCount: Int!
   firstTrackedAt: DateTime!
   id: String!

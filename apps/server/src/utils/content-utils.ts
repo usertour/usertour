@@ -2154,6 +2154,25 @@ export const hasContentSessionChanges = (
     return true;
   }
 
+  // Tracker sessions ship the full condition tree in version.config with
+  // server-side `actived` flags frozen at distribution time; a flip (e.g.
+  // segment membership after a company switch) must re-emit the session.
+  // version.id is compared here too, scoped to trackers: tracker events
+  // attribute against the distributed version id, so publishing a new version
+  // with an identical payload must still refresh the snapshot — other types
+  // act through their biz session and gain nothing from a forced re-emit.
+  if (oldVersion.tracker || newVersion.tracker) {
+    if (oldVersion.id !== newVersion.id) {
+      return true;
+    }
+    if (!isEqual(oldVersion.tracker, newVersion.tracker)) {
+      return true;
+    }
+    if (!isEqual(oldVersion.config, newVersion.config)) {
+      return true;
+    }
+  }
+
   if (!isEqual(oldSession.expandPending, newSession.expandPending)) {
     return true;
   }

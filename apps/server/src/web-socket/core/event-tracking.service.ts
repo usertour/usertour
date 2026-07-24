@@ -183,7 +183,13 @@ export class EventTrackingService {
   /**
    * Track a tracker event.
    * Tracker does not use BizSession — creates BizEvent directly with contentId/versionId.
-   * Resolves target event from version.data.eventId (user-selected event, not a fixed event).
+   * The caller resolves versionId and eventId from the socket's distributed tracker
+   * snapshot, so both reflect the definition the SDK actually evaluated — Version
+   * rows become editable again once fully unpublished, so the live row cannot stand
+   * in for what the client was served. Publish state is checked inside the
+   * transaction (tracker removal on unpublish is lazy — next toggleContents — so a
+   * stale distribution may keep reporting in the meantime; a cached check could be
+   * re-primed with a pre-unpublish read and stay stale for its full TTL).
    * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a configurable window.
    */
   async trackTrackerEvent(params: {
@@ -192,15 +198,32 @@ export class EventTrackingService {
     clientContext: ClientContext;
     contentId: string;
     versionId: string;
+    eventId: string;
     bizCompanyId?: string;
   }): Promise<boolean> {
-    const { environment, externalUserId, clientContext, contentId, versionId, bizCompanyId } =
-      params;
+    const {
+      environment,
+      externalUserId,
+      clientContext,
+      contentId,
+      versionId,
+      eventId,
+      bizCompanyId,
+    } = params;
     const { id: environmentId } = environment;
 
+    const reject = (reason: string, extra: Record<string, unknown> = {}): false => {
+      this.logger.warn({
+        message: `Tracker event rejected: ${reason}`,
+        contentId,
+        versionId,
+        ...extra,
+      });
+      return false;
+    };
+
     return await this.prisma.$transaction(async (tx) => {
-      // Fetch version to resolve target eventId from version.data.eventId
-      const [bizUser, content, version] = await Promise.all([
+      const [bizUser, content, version, contentOnEnvironment, event] = await Promise.all([
         tx.bizUser.findFirst({
           where: { externalId: externalUserId, environmentId },
         }),
@@ -210,46 +233,31 @@ export class EventTrackingService {
         }),
         tx.version.findUnique({
           where: { id: versionId },
-          select: { id: true, sequence: true, data: true },
+          select: { id: true, sequence: true },
+        }),
+        tx.contentOnEnvironment.findFirst({
+          where: { environmentId, contentId, published: true, content: { deleted: false } },
+          select: { contentId: true },
+        }),
+        tx.event.findUnique({
+          where: { id: eventId },
         }),
       ]);
 
+      if (!contentOnEnvironment) {
+        return reject('content not published in environment', { environmentId });
+      }
+
       if (!bizUser || !content || !version) {
-        this.logger.warn({
-          message: 'Tracker event rejected: missing entities',
-          contentId,
-          versionId,
+        return reject('missing entities', {
           hasBizUser: !!bizUser,
           hasContent: !!content,
           hasVersion: !!version,
         });
-        return false;
       }
 
-      // Resolve target event from version.data.eventId (server is source of truth)
-      const versionData = version.data as Record<string, any> | null;
-      const targetEventId = versionData?.eventId as string | undefined;
-      if (!targetEventId) {
-        this.logger.warn({
-          message: 'Tracker event rejected: no eventId configured in version data',
-          contentId,
-          versionId,
-        });
-        return false;
-      }
-
-      // Look up the actual event by ID (not by codeName)
-      const event = await tx.event.findUnique({
-        where: { id: targetEventId },
-      });
       if (!event) {
-        this.logger.warn({
-          message: 'Tracker event rejected: target event not found',
-          contentId,
-          versionId,
-          targetEventId,
-        });
-        return false;
+        return reject('target event not found', { targetEventId: eventId });
       }
 
       // Dedup: check for recent BizEvent with same key within 3-second window
@@ -272,7 +280,6 @@ export class EventTrackingService {
           versionId,
           eventId: event.id,
           userId: bizUser.id,
-          dedupHit: true,
         });
         return true; // Deduped, return success
       }
@@ -310,7 +317,6 @@ export class EventTrackingService {
         versionId,
         eventId: event.id,
         userId: bizUser.id,
-        dedupHit: false,
       });
 
       // Update seen attributes
