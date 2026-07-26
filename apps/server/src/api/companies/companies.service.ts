@@ -53,9 +53,11 @@ export class ApiCompaniesService {
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
     const { limit, cursor, segmentId, createdAfter, createdBefore } = query;
     const expand = toArray<CompanyExpand>(query.expand);
-    // v1: always load the membership rows; load the user only when needed.
-    const includeBizUser = expand.includes('memberships.user') || expand.includes('users');
-    const include = { bizUsersOnCompany: { include: { bizUser: includeBizUser } } };
+    // Always load the membership rows; load the user for ANY expand — even the
+    // plain memberships expand needs bizUser.externalId (v2 emits external ids
+    // on memberships, unlike v1 which only loaded the user for user-shaped
+    // expands). Mirrors the getCompany include above.
+    const include = { bizUsersOnCompany: { include: { bizUser: expand.length > 0 } } };
     const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
     // A foreign segmentId must 404, not silently apply another tenant's segment.
@@ -145,11 +147,7 @@ export class ApiCompaniesService {
     // Echo the membership itself (this was the ONLY write returning a bare
     // success) — with the EXTERNAL ids the v2 surface addresses by, not the
     // internal row ids.
-    return {
-      ...mapMembership(membership),
-      companyId,
-      userId,
-    } as CompanyMembership;
+    return mapMembership(membership, { companyId, userId }) as CompanyMembership;
   }
 
   /** Remove the membership linking a user to a company. 404 when not linked. */

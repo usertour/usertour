@@ -57,8 +57,8 @@ export const companyMembership = z.object({
   object: z.literal(ApiObjectType.COMPANY_MEMBERSHIP),
   attributes: z.record(z.string(), z.any()),
   createdAt: z.string(),
-  companyId: z.string(),
-  userId: z.string(),
+  companyId: z.string().describe('External company id — the id companies are addressed by.'),
+  userId: z.string().describe('External user id — the id users are addressed by.'),
   company: company.optional(),
 });
 
