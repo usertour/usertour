@@ -346,7 +346,9 @@ export function buildWriteTools(): McpTool[] {
         'is rejected. An attribute with NO definition yet is AUTO-CREATED, its type inferred from ' +
         'this first value — so send the correct JSON type on the first write (a number as 42 not ' +
         '"42", a date as full ISO-UTC), or it locks in as String. The type can be corrected later ' +
-        'via update_attribute_definition only while no stored value conflicts. With multiple ' +
+        'via update_attribute_definition only while no stored value conflicts. A TYPO in a codeName ' +
+        'therefore creates a new attribute silently and the real one is NOT updated — double-check ' +
+        'codeNames against list_attribute_definitions. With multiple ' +
         'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The user external id.'),
@@ -396,7 +398,8 @@ export function buildWriteTools(): McpTool[] {
         'existing ones and are type-checked against each definition (a type mismatch is rejected). ' +
         'An attribute with NO definition yet is AUTO-CREATED with its type inferred from this first ' +
         'value — send the correct JSON type (42 not "42"), or it locks in as String (correctable ' +
-        'via update_attribute_definition only while no stored value conflicts). With multiple ' +
+        'via update_attribute_definition only while no stored value conflicts). A TYPO in a ' +
+        'codeName silently creates a new attribute and the real one is NOT updated. With multiple ' +
         'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().describe('The company external id.'),
@@ -446,7 +449,11 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Add a user to a company, or update the membership (idempotent). Optional membership ' +
-        'attributes merge. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'attributes merge. Returns the membership (external ids + attributes). An attribute with ' +
+        'an unknown codeName AUTO-CREATES a definition (dataType inferred from the value) — a ' +
+        "typo'd codeName therefore lands on a silently-created new attribute while the REAL one " +
+        'is not updated. With multiple environments you must pass `environmentId` (single-env ' +
+        'projects default).',
       inputSchema: {
         companyId: z.string().describe('The company external id.'),
         userId: z.string().describe('The user external id.'),
@@ -454,13 +461,12 @@ export function buildWriteTools(): McpTool[] {
         ...upsertMembershipBody.shape,
       },
       handler: async (args, ctx) => {
-        await ctx.services.companies.upsertMembership(
+        return ctx.services.companies.upsertMembership(
           String(args.companyId),
           String(args.userId),
           await resolveEnvironment(args, ctx),
           args as unknown as UpsertMembershipBody,
         );
-        return { success: true };
       },
     },
     {

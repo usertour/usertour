@@ -102,17 +102,20 @@ export class ApiCompaniesController {
   }
 
   @Put(':id/memberships/:userId')
-  @HttpCode(204)
   @RequireCapability(Capability.CompanyWrite)
   @ApiOperation({
     summary: 'Add a member',
-    description: 'Add a user to the company, or update the membership (idempotent).',
+    description:
+      'Add a user to the company, or update the membership (idempotent). Returns the membership ' +
+      '(external ids + attributes). Membership attributes with an unknown codeName auto-create a ' +
+      "definition (dataType inferred from the value) — a typo'd codeName therefore silently " +
+      'creates a new attribute while the real one is not updated.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiParam({ name: 'userId', description: 'User external ID' })
-  @ApiResponse({ status: 204, description: 'Membership created or updated' })
+  @ApiResponse({ status: 200, description: 'Membership created or updated (echoed)' })
   @ApiResponse({ status: 404, description: 'Company or user not found', type: ErrorResponseDto })
   async upsertMembership(
     @Param('id') id: string,
@@ -120,7 +123,7 @@ export class ApiCompaniesController {
     @EnvironmentDecorator() environment: Environment,
     @Body() body: UpsertMembershipBodyDto,
   ) {
-    await this.service.upsertMembership(id, userId, environment, body);
+    return this.service.upsertMembership(id, userId, environment, body);
   }
 
   @Delete(':id/memberships/:userId')

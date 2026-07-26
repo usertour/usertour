@@ -16,11 +16,13 @@ import { mapCompany } from './companies.mapper';
 import {
   Company,
   CompanyExpand,
+  CompanyMembership,
   GetCompanyQuery,
   ListCompaniesQuery,
   UpsertCompanyBody,
   UpsertMembershipBody,
 } from './companies.schema';
+import { mapMembership } from '../shared/biz-refs';
 
 /**
  * v2 companies handler (environment-scoped). Prisma->API mapping + the per-method
@@ -118,7 +120,7 @@ export class ApiCompaniesService {
     userId: string,
     environment: Environment,
     body: UpsertMembershipBody,
-  ): Promise<void> {
+  ): Promise<CompanyMembership> {
     const bizCompany = await this.biz.getBizCompany(companyId, environment.id);
     if (!bizCompany) {
       throw new CompanyNotFoundError();
@@ -134,12 +136,20 @@ export class ApiCompaniesService {
       AttributeBizType.MEMBERSHIP,
       body.attributes,
     );
-    await this.biz.upsertBizCompanyMembership(
+    const membership = await this.biz.upsertBizCompanyMembership(
       environment.projectId,
       bizCompany.id,
       bizUser.id,
       body.attributes ?? {},
     );
+    // Echo the membership itself (this was the ONLY write returning a bare
+    // success) — with the EXTERNAL ids the v2 surface addresses by, not the
+    // internal row ids.
+    return {
+      ...mapMembership(membership),
+      companyId,
+      userId,
+    } as CompanyMembership;
   }
 
   /** Remove the membership linking a user to a company. 404 when not linked. */

@@ -70,6 +70,8 @@ export const companyMembership = z.object({
   user: embeddedUser.optional(),
 });
 
+export type CompanyMembership = z.infer<typeof companyMembership>;
+
 export const company = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.COMPANY),
