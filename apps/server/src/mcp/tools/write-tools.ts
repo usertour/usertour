@@ -467,8 +467,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Remove a user from a company',
       capability: Capability.CompanyWrite,
       description:
-        'Remove a user from a company. With multiple environments you must pass `environmentId` ' +
-        '(single-env projects default).',
+        'Remove a user from a company. DESTRUCTIVE, not a hide: the membership record and its ' +
+        'membership-scoped attributes (e.g. a role) are deleted for good — re-adding the user ' +
+        'creates a brand-new membership with empty attributes and a new join date, so ' +
+        'remove-then-re-add is NOT an undo. With multiple environments you must pass ' +
+        '`environmentId` (single-env projects default).',
       inputSchema: {
         companyId: z.string().describe('The company external id.'),
         userId: z.string().describe('The user external id.'),
@@ -766,8 +769,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'End a session',
       capability: Capability.SessionManage,
       description:
-        'End an in-progress session. With multiple environments you must pass `environmentId` ' +
-        '(single-env projects default). Returns the completed session.',
+        'End an in-progress session (endReason admin_ended). Idempotent: ending an already-ended ' +
+        'session is a no-op that returns it unchanged — the original endedAt/endReason are ' +
+        'preserved, not overwritten. Tracker sessions have no end semantics and refuse with E1017. ' +
+        'With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default). Returns the ended session.',
       inputSchema: {
         id: z.string().describe('The session id.'),
         environmentId: environmentIdSchema,
@@ -785,7 +791,13 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a session',
       capability: Capability.SessionManage,
       description:
-        'Delete a session. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'Delete a session — PERMANENT, with three distinct consequences: (1) the session record ' +
+        'is gone (no restore_session exists); (2) its recorded answers vanish from question ' +
+        'analytics irreversibly — deleting "test" sessions rewrites real response counts; (3) ' +
+        'attribute values the session wrote onto the user via bindAttribute REMAIN on the user — ' +
+        'clearing those is a separate user-attribute update, or the user profile will contradict ' +
+        'the survey analytics. With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default).',
       inputSchema: {
         id: z.string().describe('The session id.'),
         environmentId: environmentIdSchema,

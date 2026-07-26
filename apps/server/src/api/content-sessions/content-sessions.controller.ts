@@ -80,7 +80,15 @@ export class ApiContentSessionsController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.SessionManage)
-  @ApiOperation({ summary: 'Delete a session' })
+  @ApiOperation({
+    summary: 'Delete a session',
+    description:
+      'PERMANENT, with three distinct consequences: the session record is gone (no restore ' +
+      'exists); its recorded answers vanish from question analytics irreversibly — deleting ' +
+      '"test" sessions rewrites real response counts; and attribute values the session wrote ' +
+      'onto the user via bindAttribute REMAIN on the user (clearing those is a separate ' +
+      'user-attribute update, or the profile will contradict the survey analytics).',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Content session ID' })

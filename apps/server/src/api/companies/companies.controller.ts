@@ -128,7 +128,11 @@ export class ApiCompaniesController {
   @RequireCapability(Capability.CompanyWrite)
   @ApiOperation({
     summary: 'Remove a member',
-    description: 'Remove a user from the company.',
+    description:
+      'Remove a user from the company. DESTRUCTIVE, not a hide: the membership record and its ' +
+      'membership-scoped attributes (e.g. a role) are deleted for good — re-adding creates a ' +
+      'brand-new membership with empty attributes and a new join date, so remove-then-re-add ' +
+      'is NOT an undo.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
