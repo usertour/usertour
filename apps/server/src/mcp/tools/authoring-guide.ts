@@ -6,6 +6,8 @@
  * otherwise only reveal after a failure. Keep it in sync with the usability
  * validator and the representation schema.
  */
+import { BuiltinLauncherIcon } from '@usertour/constants';
+
 export const AUTHORING_GUIDE = `# Authoring Usertour content
 
 ## Lifecycle
@@ -148,8 +150,8 @@ An \`announcement\` is a FEED item, not a popup you position — users read it i
 
 ## Builtin icon names (resource center + launcher)
 An icon field with \`source: "builtin"\` takes a **RemixIcon** name in \`-line\` / \`-fill\` kebab style — **NOT lucide names**. A name that isn't in the set renders **nothing, silently** (no error). So don't guess lucide-style names like \`help-circle\`, \`book-open\`, \`sparkles\`, \`message-circle\` — they will not render. Intent → valid name:
-- help / support → \`question-line\` · chat / message → \`chat-line\` · home → \`home-line\` · settings → \`settings-line\`
-- new / launch → \`rocket\` · doc / file → \`file-text-line\` · list / menu → \`list-check\` or \`menu-line\` · search → \`search-line\`
-- star / favorite → \`star-line\` · notification → \`notification-line\` · check → \`check-line\` · info → \`information-fill\` · mail → \`mail-line\`
-Names are \`thing-line\` / \`thing-fill\` (e.g. \`home-line\`, \`home-fill\`). **No builtin exists for some concepts (book, keyboard, sparkles) — use a near match or, when unsure, \`source: "none"\` rather than a guess that silently fails.**
+- help / support → \`${BuiltinLauncherIcon.QuestionLine}\` · chat / message → \`${BuiltinLauncherIcon.ChatLine}\` · home → \`${BuiltinLauncherIcon.HomeLine}\` · settings → \`${BuiltinLauncherIcon.SettingsLine}\`
+- new / launch → \`${BuiltinLauncherIcon.Rocket}\` · doc / file → \`${BuiltinLauncherIcon.FileTextLine}\` · list / menu → \`${BuiltinLauncherIcon.ListCheck}\` or \`${BuiltinLauncherIcon.MenuLine}\` · search → \`${BuiltinLauncherIcon.SearchLine}\`
+- star / favorite → \`${BuiltinLauncherIcon.StarLine}\` · notification → \`${BuiltinLauncherIcon.NotificationLine}\` · check → \`${BuiltinLauncherIcon.CheckLine}\` · info → \`${BuiltinLauncherIcon.InformationFill}\` · mail → \`${BuiltinLauncherIcon.MailLine}\`
+Names are \`thing-line\` / \`thing-fill\` (e.g. \`${BuiltinLauncherIcon.HomeLine}\`, \`${BuiltinLauncherIcon.HomeFill}\`); \`${BuiltinLauncherIcon.KeyboardLine}\` / \`${BuiltinLauncherIcon.BookLine}\` / \`${BuiltinLauncherIcon.BugLine}\` exist too. **A name outside the registry silently renders nothing — validate now rejects it with the bad name spelled out; when unsure, use \`source: "none"\`.**
 `;

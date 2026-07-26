@@ -270,6 +270,39 @@ describe('validateVersionUsable', () => {
       expect(r.ok).toBe(false);
     });
 
+    it('errors on a builtin icon name outside the registry (renders nothing, silently)', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.LAUNCHER,
+        themeId: 't',
+        data: {
+          iconSource: 'builtin',
+          iconType: 'help-circle', // a LUCIDE name — the classic mistake
+          target: { element: { customSelector: '#x' } },
+          behavior: { actionType: LauncherActionType.SHOW_TOOLTIP },
+          tooltip: { content: textBlocks },
+        },
+      });
+      expect(r.ok).toBe(false);
+      expect(r.errors.some((i) => i.message.includes('help-circle'))).toBe(true);
+    });
+
+    it('accepts a registered builtin icon name (incl. the gap fills: keyboard/book/bug)', () => {
+      for (const iconType of ['home-line', 'keyboard-line', 'book-line', 'bug-line']) {
+        const r = validateVersionUsable({
+          type: ContentDataType.LAUNCHER,
+          themeId: 't',
+          data: {
+            iconSource: 'builtin',
+            iconType,
+            target: { element: { customSelector: '#x' } },
+            behavior: { actionType: LauncherActionType.SHOW_TOOLTIP },
+            tooltip: { content: textBlocks },
+          },
+        });
+        expect(r.ok).toBe(true);
+      }
+    });
+
     it('accepts a show-tooltip launcher with target + content', () => {
       const r = validateVersionUsable({
         type: ContentDataType.LAUNCHER,

@@ -1,3 +1,4 @@
+import { BUILTIN_LAUNCHER_ICON_NAMES } from '@usertour/constants';
 import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
@@ -608,6 +609,22 @@ function validateLauncher(
 ): void {
   if (!hasTarget(data?.target?.element)) {
     err('target', 'Launcher has no target element to anchor to; it never shows.');
+  }
+  // A builtin icon name outside the SDK's registry renders NOTHING, silently —
+  // an icon-style launcher with a bad name is invisible while every write was
+  // green. The registry names are RemixIcon kebab `-line`/`-fill` (NOT lucide:
+  // `help-circle` / `sparkles` render nothing); the neutral name list lives in
+  // @usertour/constants with a parity test against the icons package.
+  if (
+    data?.iconSource === 'builtin' &&
+    typeof data.iconType === 'string' &&
+    data.iconType &&
+    !BUILTIN_LAUNCHER_ICON_NAMES.includes(data.iconType)
+  ) {
+    err(
+      'icon.type',
+      `"${data.iconType}" is not a registered builtin icon — it renders nothing. Use a RemixIcon kebab name from get_authoring_guide's icon table (e.g. "home-line", "question-line").`,
+    );
   }
   const actionType = data?.behavior?.actionType;
   // SHOW_TOOLTIP needs tooltip content; PERFORM_ACTION needs actions.
