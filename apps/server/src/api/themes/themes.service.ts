@@ -132,8 +132,17 @@ export class ApiThemesService {
       return patched !== undefined && JSON.stringify(patched) !== JSON.stringify(at(base, path));
     });
     if (changed.length) {
+      // Report EVERY violated path at once (issues carry them individually) —
+      // the one-at-a-time fail-fast made callers discover this boundary by
+      // round-tripping once per field.
+      const paths = changed.map((path) => `settings.${path}`);
       throw new ValidationError(
-        `settings.${changed[0]} is managed in the theme builder and read-only via the API — write it back unchanged or omit it.`,
+        `${paths.join(', ')} ${paths.length === 1 ? 'is' : 'are'} managed in the theme builder and read-only via the API — write them back unchanged or omit them.`,
+        paths.map((path) => ({
+          rule: 'schema',
+          path,
+          message: 'built-in (builder-managed): echo back unchanged or omit',
+        })),
       );
     }
   }

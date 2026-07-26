@@ -123,11 +123,9 @@ const LIVE_ONLY = new Set<string>([
 const leafStatus = (
   stamped: RulesCondition,
   readable: RepresentationCondition,
-  hasUrl: boolean,
   hasCompany: boolean,
 ): ConditionStatus => {
   if (LIVE_ONLY.has(stamped.type)) return 'unknown';
-  if (stamped.type === RulesType.CURRENT_PAGE && !hasUrl) return 'unknown';
   // A company / companyMembership attribute condition can't be evaluated without a company
   // context (the diagnose `companyId`). Report unknown — NOT a definitive `unmatched` that
   // would read as "the user's company doesn't qualify" — so the agent passes companyId
@@ -145,7 +143,6 @@ const leafStatus = (
 export const annotateConditions = (
   stamped: RulesCondition[],
   readable: RepresentationCondition[],
-  hasUrl: boolean,
   hasCompany = false,
 ): AnnotatedCondition | undefined => {
   if (!stamped || stamped.length === 0) return undefined;
@@ -159,7 +156,7 @@ export const annotateConditions = (
         conditions: s.conditions.map((sc, i) => node(sc, rChildren[i])),
       } as AnnotatedCondition;
     }
-    return { ...(r as object), status: leafStatus(s, r, hasUrl, hasCompany) } as AnnotatedCondition;
+    return { ...(r as object), status: leafStatus(s, r, hasCompany) } as AnnotatedCondition;
   };
 
   // The top-level list is itself an AND/OR group (the join is on the first item).
@@ -181,8 +178,7 @@ export const annotateConditions = (
  */
 const classifyUnknownLeaves = (
   node?: AnnotatedCondition,
-): { urlResolvable: boolean; companyResolvable: boolean; liveOnly: boolean } => {
-  let urlResolvable = false;
+): { companyResolvable: boolean; liveOnly: boolean } => {
   let companyResolvable = false;
   let liveOnly = false;
   const walk = (n?: AnnotatedCondition) => {
@@ -194,13 +190,12 @@ const classifyUnknownLeaves = (
     if (n.status !== 'unknown') return;
     const type = (n as { type?: string }).type;
     const scope = (n as { scope?: string }).scope;
-    if (type === 'current_url') urlResolvable = true;
-    else if (type === 'attribute' && (scope === 'company' || scope === 'companyMembership'))
+    if (type === 'attribute' && (scope === 'company' || scope === 'companyMembership'))
       companyResolvable = true;
     else liveOnly = true;
   };
   walk(node);
-  return { urlResolvable, companyResolvable, liveOnly };
+  return { companyResolvable, liveOnly };
 };
 
 /**
@@ -213,9 +208,8 @@ const classifyUnknownLeaves = (
 const startRulesUnknownCaveat = (tree?: AnnotatedCondition): string => {
   if (!tree) return '';
   const u = classifyUnknownLeaves(tree);
-  if (!(u.urlResolvable || u.companyResolvable || u.liveOnly)) return '';
+  if (!(u.companyResolvable || u.liveOnly)) return '';
   const fixes = [
-    u.urlResolvable ? 'pass `url`' : '',
     u.companyResolvable ? 'pass `companyId`' : '',
     u.liveOnly ? 'confirm live-only leaves in the app' : '',
   ]
@@ -422,19 +416,17 @@ export const buildDiagnoseReport = (
   // second blocker beside the real ones.
   const su = classifyUnknownLeaves(startConditions);
   const hu = classifyUnknownLeaves(hideConditions);
-  const urlResolvable = su.urlResolvable || hu.urlResolvable;
   const companyResolvable = su.companyResolvable || hu.companyResolvable;
   const liveOnly = su.liveOnly || hu.liveOnly;
-  const anyUnknown = urlResolvable || companyResolvable || liveOnly;
+  const anyUnknown = companyResolvable || liveOnly;
   const resolveUnknown = [
-    urlResolvable ? 'pass `url` to resolve current_url conditions' : '',
     companyResolvable ? 'pass `companyId` to resolve company-scoped conditions' : '',
     liveOnly ? 'confirm live-only conditions (DOM element / text) in the running app' : '',
   ]
     .filter(Boolean)
     .join('; ');
   const hasUnknown = (c: ReturnType<typeof classifyUnknownLeaves>) =>
-    c.urlResolvable || c.companyResolvable || c.liveOnly;
+    c.companyResolvable || c.liveOnly;
   const unknownWhere = [
     hasUnknown(su) ? 'startConditions' : '',
     hasUnknown(hu) ? 'hideConditions' : '',

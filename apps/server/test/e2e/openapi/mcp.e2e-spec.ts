@@ -589,7 +589,12 @@ describe('MCP endpoint (e2e)', () => {
           method: 'tools/call',
           params: {
             name: 'diagnose_content',
-            arguments: { contentId: archived.id, environmentId: envA },
+            arguments: {
+              contentId: archived.id,
+              environmentId: envA,
+              url: 'https://app.example.com/',
+              userId: bizUserExternalId,
+            },
           },
         },
         token,

@@ -34,9 +34,16 @@ export interface DiagnoseParams {
   /** The MCP layer resolves the type via the v2 content service and passes it here
    * (the websocket layer never looks up type-by-id — it always knows type from context). */
   contentType: ContentDataType;
-  externalUserId?: string;
+  /** REQUIRED — diagnosis is always for a specific end-user (real display only
+   * happens for identified users; structural checks belong to validate). The
+   * not-found case is still a real answer: the identified gate fails. */
+  externalUserId: string;
   externalCompanyId?: string;
-  url?: string;
+  /** The page URL current_url conditions evaluate against — REQUIRED: the
+   * runtime matcher needs a real URL (an empty one matches nothing, not even
+   * the whole-site wildcard), so an omitted URL fabricates start_rules
+   * failures. The MCP tool enforces this at its boundary too. */
+  url: string;
 }
 
 /**

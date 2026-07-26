@@ -595,7 +595,9 @@ const bindAttributeField = z
   .describe(
     'Optional: codeName of an EXISTING attribute (create it first with create_attribute_definition) ' +
       'to ALSO save this answer onto the user for targeting/segmentation — use the codeName, NOT the ' +
-      "id. It is NOT validated: a wrong/typo'd code still publishes and then silently captures nothing. " +
+      'id. The write does not check it, but validate_content_version WARNS when the attribute is ' +
+      'missing or its dataType mismatches the answer — read warnings. A wrong code that slips ' +
+      'through silently captures nothing at runtime. ' +
       'Match the attribute dataType to the answer: number (nps / rating), string (single-select choice), ' +
       'list (multi-select choice). Leaving it unset still records the answer as a response event — bind ' +
       'only when you need to target/segment on it.',

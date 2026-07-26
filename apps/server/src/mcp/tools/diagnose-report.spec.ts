@@ -180,13 +180,9 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
         value: 'enterprise',
       },
     ] as any;
-    expect(annotateConditions(stamped, readable, false, false)?.conditions?.[0].status).toBe(
-      'unknown',
-    );
+    expect(annotateConditions(stamped, readable, false)?.conditions?.[0].status).toBe('unknown');
     // With a company context it is evaluated against the runtime stamp (actived false → unmatched).
-    expect(annotateConditions(stamped, readable, false, true)?.conditions?.[0].status).toBe(
-      'unmatched',
-    );
+    expect(annotateConditions(stamped, readable, true)?.conditions?.[0].status).toBe('unmatched');
   });
 });
 
@@ -258,19 +254,25 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.gates.find((g) => g.id === 'active_slot')?.detail).toContain('Welcome Tour');
   });
 
-  it('unknown leaves are flagged NOT blockers, with how to resolve each (url vs live-only)', () => {
-    // Real blocker (frequency) PLUS a current_url leaf that is unknown because no url was
-    // passed. The summary must not let the unknown read as a second blocker, and must say
-    // `url` resolves it — the gap the diagnose eval flagged (unknown easily misread as fail).
+  it('unknown leaves are flagged NOT blockers, with how to resolve each (live-only)', () => {
+    // Real blocker (frequency) PLUS an element leaf that is unknown because it can only be
+    // observed in the running app. The summary must not let the unknown read as a second
+    // blocker, and must say how to resolve it. (current_url no longer produces unknowns:
+    // `url` is required at the tool boundary, so it is always evaluated.)
     const stamped: RulesCondition[] = [
-      { id: id(), type: 'current-page', data: { includes: ['*/'] }, operators: 'and' },
+      {
+        id: id(),
+        type: 'element',
+        data: { elementData: { customSelector: '.cta' }, logic: 'present' },
+        operators: 'and',
+      },
     ];
     const tree = annotateConditions(stamped, decompileConditions(stamped, resolvers), false);
-    expect(tree?.conditions?.[0].status).toBe('unknown'); // current_url, no url → unknown
+    expect(tree?.conditions?.[0].status).toBe('unknown'); // live-only: DOM state
     const r = buildDiagnoseReport(facts({ frequencyAllowed: false }), tree);
     expect(r.blockedBy).toEqual(['frequency']); // the unknown leaf is NOT in blockedBy
     expect(r.summary).toMatch(/not blockers/i);
-    expect(r.summary).toContain('pass `url`');
+    expect(r.summary).toContain('live-only');
     expect(r.summary).toContain('startConditions');
   });
 
@@ -298,7 +300,7 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
         value: 'enterprise',
       },
     ] as any;
-    const tree = annotateConditions(stamped, readable, false, false); // company unknown
+    const tree = annotateConditions(stamped, readable, false); // company unknown
     const r = buildDiagnoseReport(
       facts({ startRulesActive: false, autoStartRules: stamped }),
       tree,

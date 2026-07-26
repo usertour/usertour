@@ -297,6 +297,26 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.body.error.message).toContain('theme builder');
   });
 
+  it('reports EVERY violated builder-managed path at once (no one-at-a-time crawl)', async () => {
+    const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
+    const created = await send('post', basePath(), token).send({ name: 'MediaGuardAll' });
+    const res = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: {
+        avatar: { type: 'photo', name: 'someone', url: 'https://x/a.png' },
+      },
+    });
+    expect(res.status).toBe(400);
+    const paths = (res.body.error.issues ?? []).map((i: { path?: string }) => i.path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        'settings.avatar.type',
+        'settings.avatar.name',
+        'settings.avatar.url',
+      ]),
+    );
+    expect(paths).toHaveLength(3);
+  });
+
   it('omits settings/variations without expand, includes them with expand', async () => {
     const token = await mint([Capability.ThemeRead]);
     const bare = await api('get', `${basePath()}/${themeId}`, token);

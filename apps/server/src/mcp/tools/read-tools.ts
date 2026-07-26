@@ -411,9 +411,11 @@ export function buildReadTools(): McpTool[] {
         contentId: z.string().describe('The content id.'),
         userId: z
           .string()
-          .optional()
           .describe(
-            'externalId of the end-user to diagnose for (omit for a structural-only check).',
+            'REQUIRED: externalId of the end-user to diagnose for. Every real display happens ' +
+              'for an identified user, so diagnosis is always per-user (the identified gate ' +
+              'answers whether this externalId exists). For structural correctness without a ' +
+              'user, use validate_content_version instead.',
           ),
         companyId: z
           .string()
@@ -425,9 +427,10 @@ export function buildReadTools(): McpTool[] {
           ),
         url: z
           .string()
-          .optional()
           .describe(
-            'A page URL to evaluate current_url conditions against (omit → reported as unknown).',
+            'REQUIRED: the page URL to evaluate current_url conditions against — pass the page ' +
+              'where you expect the content to appear. For content with no URL conditions (or a ' +
+              'whole-site wildcard) any real page URL of the app works.',
           ),
         environmentId: environmentIdSchema,
       },
@@ -435,6 +438,12 @@ export function buildReadTools(): McpTool[] {
         const contentId = asString(args.contentId);
         if (!contentId) {
           throw new Error('`contentId` is required.');
+        }
+        if (!asString(args.url)) {
+          throw new Error('`url` is required — the page URL to evaluate against.');
+        }
+        if (!asString(args.userId)) {
+          throw new Error('`userId` is required — diagnosis is always for a specific end-user.');
         }
         const environment = await resolveEnvironment(args, ctx);
         // Archived content is the #1 real-world reason content "doesn't show" —
@@ -508,7 +517,6 @@ export function buildReadTools(): McpTool[] {
             }),
           ]);
           const resolvers = buildDecompileResolversFrom(attributes, events);
-          const hasUrl = !!url;
           // Company / companyMembership conditions can only be evaluated when a company context
           // was supplied — else they're `unknown`, not a definitive `unmatched` (see leafStatus).
           const hasCompany = !!asString(args.companyId);
@@ -516,7 +524,6 @@ export function buildReadTools(): McpTool[] {
             startConditions = annotateConditions(
               facts.autoStartRules,
               decompileConditions(facts.autoStartRules, resolvers),
-              hasUrl,
               hasCompany,
             );
           }
@@ -524,7 +531,6 @@ export function buildReadTools(): McpTool[] {
             hideConditions = annotateConditions(
               facts.hideRules,
               decompileConditions(facts.hideRules, resolvers),
-              hasUrl,
               hasCompany,
             );
           }
@@ -875,6 +881,12 @@ export function buildReadTools(): McpTool[] {
         const contentId = asString(args.contentId);
         if (!contentId) {
           throw new Error('`contentId` is required.');
+        }
+        if (!asString(args.url)) {
+          throw new Error('`url` is required — the page URL to evaluate against.');
+        }
+        if (!asString(args.userId)) {
+          throw new Error('`userId` is required — diagnosis is always for a specific end-user.');
         }
         const result = await ctx.services.contentVersions.list(
           'mcp://content-versions',
