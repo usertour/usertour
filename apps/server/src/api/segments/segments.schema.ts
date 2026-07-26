@@ -94,9 +94,11 @@ export const createSegmentBody = z
       .optional()
       .describe(
         'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
-          'them, nothing else (a segment is an attribute query). For "users who did X" audiences, ' +
-          'store the fact as an attribute too and segment on that, or put the event condition on ' +
-          "the content's start rules.",
+          'them, nothing else (a segment is an attribute query). Multiple top-level conditions ' +
+          'are ANDed — [A, B] means A AND B (measured, not assumed); for OR wrap them in one ' +
+          '{ "type": "group", "match": "any", "conditions": [A, B] }, same as content rules. For ' +
+          '"users who did X" audiences, store the fact as an attribute too and segment on that, ' +
+          "or put the event condition on the content's start rules.",
       ),
   })
   .strict();
@@ -110,7 +112,8 @@ export const updateSegmentBody = z
       .optional()
       .describe(
         'Replaces the conditions (condition segments only). Attribute conditions and groups ' +
-          'only — see create_segment.',
+          'only; top-level siblings are ANDed, wrap in a match:"any" group for OR — see ' +
+          'create_segment.',
       ),
   })
   // Only name/conditions are mutable — bizType and kind are immutable. Reject a
