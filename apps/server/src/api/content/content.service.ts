@@ -35,6 +35,21 @@ import {
  * `environments[]` instead of the deprecated single publishedVersionId — the one
  * intentional shape change vs v1. Depends on the domain {@link ContentService}.
  */
+/**
+ * E1004 for content that EXISTS but is soft-deleted. Same code, distinct
+ * message: "no such id" and "archived" demand opposite next moves, and the
+ * shared "Content not found" text sent callers digging through list pages to
+ * prove the id was ever real. Archived is also the #1 real-world reason
+ * content "doesn't show", so the message names the way back (restore).
+ */
+function archivedContentError(): ContentNotFoundError {
+  return new ContentNotFoundError(
+    'Content exists but is ARCHIVED (soft-deleted) — archived content never renders and default ' +
+      'lists hide it. List it with deleted:true; restore it (restore_content / POST ' +
+      '/content/{id}/restore) to work on it again.',
+  );
+}
+
 @Injectable()
 export class ApiContentService {
   constructor(
@@ -195,8 +210,11 @@ export class ApiContentService {
 
   private async requireContent(id: string, projectId: string) {
     const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
-    if (!node || (node as { deleted?: boolean }).deleted) {
+    if (!node) {
       throw new ContentNotFoundError();
+    }
+    if ((node as { deleted?: boolean }).deleted) {
+      throw archivedContentError();
     }
     return node;
   }
@@ -245,8 +263,11 @@ export class ApiContentService {
   async get(id: string, projectId: string, query: GetContentQuery): Promise<Content> {
     const expand = toArray<ContentExpand>(query.expand);
     const node = await this.content.findContentWithRelations(id, projectId, this.include(expand));
-    if (!node || (node as { deleted?: boolean }).deleted) {
+    if (!node) {
       throw new ContentNotFoundError();
+    }
+    if ((node as { deleted?: boolean }).deleted) {
+      throw archivedContentError();
     }
     return mapContent(node, expand);
   }

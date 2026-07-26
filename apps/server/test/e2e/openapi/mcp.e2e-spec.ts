@@ -573,6 +573,39 @@ describe('MCP endpoint (e2e)', () => {
       expect(payload.schema.type).toBe('array');
     });
 
+    it('diagnose_content answers for ARCHIVED content with an archived gate instead of E1004', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const archived = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+        deleted: true,
+        name: 'mcp archived flow',
+      });
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'diagnose_content',
+            arguments: { contentId: archived.id, environmentId: envA },
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const payload = parseToolContent(extractResult(res));
+      // The #1 real-world "why isn't it showing" answer must be an ANSWER:
+      // a diagnosis whose single failing gate says archived + the way back —
+      // not a Content-not-found error indistinguishable from a wrong id.
+      expect(payload.blockedBy).toEqual(['archived']);
+      expect(payload.gates).toHaveLength(1);
+      expect(payload.gates[0]).toMatchObject({ id: 'archived', status: 'fail' });
+      expect(payload.gates[0].detail).toContain('restore_content');
+      expect(payload.summary).toContain('ARCHIVED');
+    });
+
     it('get_content_schema batches several types with the shared $defs emitted once', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const res = await rpc(

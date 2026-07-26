@@ -69,9 +69,17 @@ export class ApiAnalyticsService {
 
   private async requireContent(id: string, projectId: string) {
     const content = await this.prisma.content.findFirst({
-      where: { id, projectId, deleted: false },
-      select: { id: true, type: true },
+      where: { id, projectId },
+      select: { id: true, type: true, deleted: true },
     });
+    if (content?.deleted) {
+      // Same code, archived-specific message — "no such id" and "archived" demand
+      // opposite next moves (see ApiContentService.archivedContentError).
+      throw new ContentNotFoundError(
+        'Content exists but is ARCHIVED (soft-deleted); its analytics are not readable while ' +
+          'archived. Restore it (restore_content / POST /content/{id}/restore) first.',
+      );
+    }
     // Legacy pre-v2 kinds (nps/survey/event) are outside the v2 surface — the
     // per-type response union has no shape for them.
     if (!content || !V2_CONTENT_TYPES.has(content.type)) {

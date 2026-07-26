@@ -623,6 +623,17 @@ export class ContentNotFoundError extends OpenAPIError {
     en: 'Content not found',
     'zh-CN': '内容未找到',
   };
+
+  // Same code, optionally sharper message (mirrors ValidationError): "no such
+  // id" and "exists but archived" demand opposite next moves, and the envelope
+  // renders from messageDict — a bare `super(message)` never reaches it.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class ContentSessionNotFoundError extends OpenAPIError {

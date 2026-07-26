@@ -206,6 +206,28 @@ describe('API v2 /content (e2e)', () => {
     expect(res.body.error.code).toBe('E1004');
   });
 
+  it('distinguishes ARCHIVED from never-existed in the E1004 message (and unknown ids stay plain)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentCreate]);
+    const content = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'flow',
+      deleted: true,
+      name: 'Archived one',
+    });
+
+    // Archived id: same code, but the message says WHAT happened and the way back.
+    const archived = await api('get', `/v2/projects/${projectId}/content/${content.id}`, token);
+    expect(archived.status).toBe(404);
+    expect(archived.body.error.code).toBe('E1004');
+    expect(archived.body.error.message).toContain('ARCHIVED');
+    expect(archived.body.error.message).toContain('restore');
+
+    // Unknown id: the plain message, so the two states stay distinguishable.
+    const unknown = await api('get', `/v2/projects/${projectId}/content/does-not-exist`, token);
+    expect(unknown.body.error.message).not.toContain('ARCHIVED');
+  });
+
   it('rejects insufficient scope (403 E1012)', async () => {
     const token = await mint([Capability.UserRead]);
     const res = await api('get', `/v2/projects/${projectId}/content`, token);

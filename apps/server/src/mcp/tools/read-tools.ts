@@ -437,6 +437,30 @@ export function buildReadTools(): McpTool[] {
           throw new Error('`contentId` is required.');
         }
         const environment = await resolveEnvironment(args, ctx);
+        // Archived content is the #1 real-world reason content "doesn't show" —
+        // the one case this tool must answer, not refuse. A plain get() would
+        // throw E1004 here, indistinguishable from a wrong id; instead return a
+        // real diagnosis with a single failing `archived` gate.
+        const rawNode = await ctx.prisma.content.findFirst({
+          where: { id: contentId, projectId: ctx.projectId },
+          select: { deleted: true, type: true, updatedAt: true },
+        });
+        if (rawNode?.deleted) {
+          return {
+            contentType: rawNode.type,
+            summary:
+              'This content is ARCHIVED (soft-deleted) — that alone is why it never shows. ' +
+              'Archived content is unpublished everywhere and hidden from default lists.',
+            blockedBy: ['archived'],
+            gates: [
+              {
+                id: 'archived',
+                status: 'fail',
+                detail: `soft-deleted (last state change ${rawNode.updatedAt.toISOString()}). restore_content brings it back as an UNPUBLISHED draft — it then still needs publish (and its start rules) before users can see it. No other gate is evaluated while archived.`,
+              },
+            ],
+          };
+        }
         const content = (await ctx.services.content.get(contentId, ctx.projectId, {})) as {
           type: string;
         };
