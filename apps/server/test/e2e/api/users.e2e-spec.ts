@@ -189,6 +189,31 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     return gqlData(minted).createApiToken.token;
   }
 
+  it('a NEW user is born with first/last_seen_at — targeting works on the very first evaluation', async () => {
+    // Historically first_seen_at was written only as a side effect of the
+    // first BizEvent landing, so "new user" targeting (first_seen_at
+    // less_than N) missed exactly the first pageview it exists for. Creation
+    // IS the first sighting: both attributes are seeded at create time.
+    const token = await mint([Capability.UserWrite, Capability.UserRead]);
+    const created = await request(app.getHttpServer())
+      .put(v2path('/bu-fresh-seen'))
+      .set('Authorization', `Bearer ${token}`)
+      .send({ attributes: { name: 'Fresh' } });
+    expect(created.status).toBe(200);
+    const attrs = created.body.attributes;
+    expect(typeof attrs.first_seen_at).toBe('string');
+    expect(typeof attrs.last_seen_at).toBe('string');
+    expect(Number.isNaN(Date.parse(attrs.first_seen_at))).toBe(false);
+
+    // An explicit caller value WINS over the seed (backfill imports).
+    const explicit = await request(app.getHttpServer())
+      .put(v2path('/bu-backfill-seen'))
+      .set('Authorization', `Bearer ${token}`)
+      .send({ attributes: { first_seen_at: '2020-01-01T00:00:00.000Z' } });
+    expect(explicit.status).toBe(200);
+    expect(explicit.body.attributes.first_seen_at).toBe('2020-01-01T00:00:00.000Z');
+  });
+
   it('PUT upserts a user (create → merge update), then DELETE removes it (204)', async () => {
     const token = await mint([Capability.UserWrite, Capability.UserRead, Capability.UserDelete]);
     const put = (id: string, body: object) =>

@@ -35,6 +35,9 @@ export type AnnotatedCondition = RepresentationCondition & {
   /** The user's ACTUAL current value for a user-scoped `attribute` leaf (null = not set),
    * so an unmatched condition explains itself without a separate get_user + date math. */
   actual?: unknown;
+  /** Extra human-readable context for this leaf (e.g. why an unmatched attribute
+   * can never match yet). */
+  note?: string;
 };
 
 /** Collect the segment + content-state ids referenced anywhere in a condition tree, so the
@@ -87,7 +90,16 @@ export const attachUserAttributeValues = (
   }
   const ref = node as { type: string; scope?: string; attribute?: string };
   if (ref.type === 'attribute' && ref.scope === 'user' && ref.attribute) {
-    node.actual = userAttributes[ref.attribute] ?? null;
+    const value = userAttributes[ref.attribute];
+    node.actual = value ?? null;
+    if (value === undefined && node.status === 'unmatched') {
+      // The condition didn't fail on a wrong VALUE — the user has no value at
+      // all. Event-derived attributes (event_attribute rules, custom
+      // event-written fields) don't exist before their first event lands, so a
+      // rule on one cannot match on the user's earliest evaluations — say so
+      // instead of letting the agent chase targeting logic.
+      node.note = `the user has NO value for "${ref.attribute}" yet — a rule on it cannot match until something writes it (event-derived attributes only exist after their first event lands)`;
+    }
   }
 };
 

@@ -150,6 +150,13 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     expect(c[1].actual).toBeNull(); // user scope, absent → null (attribute not set)
     expect(c[2].actual).toBeUndefined(); // company scope → untouched (not user data)
     expect(c[3].actual).toBeUndefined(); // segment → untouched
+    // An unmatched leaf whose attribute has NO value at all carries a note —
+    // it did not fail on a wrong value, it cannot match until something writes
+    // the attribute (agents chased targeting logic here; console sweep C-item).
+    const notes = tree.conditions as Array<{ note?: string }>;
+    expect(notes[1].note).toContain('NO value');
+    expect(notes[1].note).toContain('missing_attr');
+    expect(notes[0].note).toBeUndefined(); // present value, no note
   });
 
   it('content (flow-state) condition uses the runtime .actived, not live-only unknown', () => {

@@ -89,6 +89,21 @@ interface ResolvedAttributes {
   createdNewAttribute: boolean;
 }
 
+/**
+ * Seed data for a NEW biz record. first/last_seen_at were historically written
+ * only as a side effect of the first BizEvent landing (event-tracking's
+ * isFirstEvent branch) — so a brand-new user's FIRST auto-start evaluation ran
+ * before first_seen_at existed, and "new user" targeting (first_seen_at
+ * less_than N) missed exactly the first pageview it exists for (the welcome
+ * screen). Creation IS the first sighting: seed both at create time. Explicit
+ * caller attributes still win (spread after the seed); the event path's
+ * isFirstEvent check is naturally idempotent and keeps refreshing last_seen_at.
+ */
+const seedSeenAttributes = (attributes: Record<string, any>): Record<string, any> => {
+  const now = new Date().toISOString();
+  return { first_seen_at: now, last_seen_at: now, ...attributes };
+};
+
 @Injectable()
 export class BizService {
   private readonly logger = new Logger(BizService.name);
@@ -100,13 +115,13 @@ export class BizService {
 
   async createBizUser(data: CreateBizInput) {
     return await this.prisma.bizUser.create({
-      data,
+      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
     });
   }
 
   async createBizCompany(data: CreateBizInput) {
     return await this.prisma.bizCompany.create({
-      data,
+      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
     });
   }
 
@@ -686,7 +701,7 @@ export class BizService {
         data: {
           externalId: String(externalUserId),
           environmentId,
-          data: insertAttribute,
+          data: seedSeenAttributes(insertAttribute),
         },
       });
     }
@@ -807,7 +822,7 @@ export class BizService {
       data: {
         externalId: String(externalCompanyId),
         environmentId,
-        data: insertAttribute,
+        data: seedSeenAttributes(insertAttribute),
       },
     });
   }
@@ -1149,7 +1164,7 @@ export class BizService {
       data: {
         externalId: String(externalUserId),
         environmentId,
-        data: {},
+        data: seedSeenAttributes({}),
       },
     });
   }
