@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -62,6 +63,7 @@ export class McpService {
   constructor(
     private readonly auth: ApiTokenAuthService,
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
     private readonly audit: AuditService,
     private readonly contentDiagnosis: ContentDiagnosisService,
     contentService: ApiContentService,
@@ -131,6 +133,7 @@ export class McpService {
             const ctx: McpToolContext = {
               token,
               projectId,
+              dashboardUrl: this.configService.get<string>('app.homepageUrl') || '',
               auth: this.auth,
               prisma: this.prisma,
               services: this.services,

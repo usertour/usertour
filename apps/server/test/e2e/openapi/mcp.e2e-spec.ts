@@ -573,6 +573,46 @@ describe('MCP endpoint (e2e)', () => {
       expect(payload.schema.type).toBe('array');
     });
 
+    it('get_content_schema batches several types with the shared $defs emitted once', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'get_content_schema',
+            arguments: { type: ['flow', 'checklist', 'launcher'] },
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const payload = parseToolContent(extractResult(res));
+      expect(payload.types).toEqual(['flow', 'checklist', 'launcher']);
+      expect(payload.body).toEqual({ flow: 'steps', checklist: 'data', launcher: 'data' });
+      // Each requested type is a property of one wrapper schema...
+      expect(Object.keys(payload.schema.properties)).toEqual(['flow', 'checklist', 'launcher']);
+      // ...and the shared vocabulary is hoisted into ONE $defs — the batch must be
+      // materially smaller than three standalone fetches, or batching is pointless.
+      const single = async (t: string) => {
+        const r = await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: { name: 'get_content_schema', arguments: { type: t } },
+          },
+          token,
+        );
+        return JSON.stringify(parseToolContent(extractResult(r)).schema).length;
+      };
+      const standalone =
+        (await single('flow')) + (await single('checklist')) + (await single('launcher'));
+      const batched = JSON.stringify(payload.schema).length;
+      expect(batched).toBeLessThan(standalone * 0.6);
+    });
+
     it('calling a tool outside the token scope is unknown to the token', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const res = await rpc(

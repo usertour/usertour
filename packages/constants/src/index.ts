@@ -22,4 +22,5 @@ export * from './constants/button';
 export * from './constants/checklist';
 export * from './constants/launcher';
 export * from './constants/builtin-launcher-icons';
+export * from './constants/content-editor-path';
 export * from './constants/resource-center';

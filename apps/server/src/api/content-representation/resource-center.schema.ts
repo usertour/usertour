@@ -60,6 +60,13 @@ const blockBase = {
   onlyShowWhen: z.array(representationCondition).optional(),
 };
 
+/** Rendered block labels go through the plain-text codec, so they interpolate. */
+const rcBlockName = z
+  .string()
+  .describe(
+    'Visible label of this block row. Supports `{{ attribute_code | default: "x" }}` user-attribute interpolation.',
+  );
+
 const rcRichTextBlock = z.object({
   ...blockBase,
   type: z.literal('richtext'),
@@ -74,19 +81,19 @@ const rcDividerBlock = z.object({
 const rcActionBlock = z.object({
   ...blockBase,
   type: z.literal('action'),
-  name: z.string(),
+  name: rcBlockName,
   icon: rcIcon.optional(),
   clickActions: z.array(representationAction).default([]),
 });
 const rcSubPageBlock = z.object({
   ...blockBase,
   type: z.literal('sub-page'),
-  name: z.string(),
+  name: rcBlockName,
   icon: rcIcon.optional(),
   content: z.array(representationBlock).default([]),
 });
 const rcContentListItem = z.object({
-  content: z.string(), // referenced content id
+  content: z.string().describe('Id of the flow/checklist this entry starts on click.'),
   contentType: z.enum(['flow', 'checklist']),
   label: z
     .string()
@@ -97,14 +104,24 @@ const rcContentListItem = z.object({
         '`label` or it is cleared.',
     ),
   icon: rcItemIcon.optional(),
-  navigateUrl: z.string().optional(),
-  navigateOpenType: z.enum(['same', 'new']).optional(),
+  navigateUrl: z
+    .string()
+    .optional()
+    .describe(
+      'URL also opened when the entry is clicked, AFTER the referenced content starts — e.g. ' +
+        'take the user to the page where the flow begins. Supports `{{ attribute_code | ' +
+        'default: "x" }}` interpolation.',
+    ),
+  navigateOpenType: z
+    .enum(['same', 'new'])
+    .optional()
+    .describe('Open `navigateUrl` in the same tab (default) or a new one.'),
   onlyShowWhen: z.array(representationCondition).optional(),
 });
 const rcContentListBlock = z.object({
   ...blockBase,
   type: z.literal('content-list'),
-  name: z.string(),
+  name: rcBlockName,
   icon: rcIcon.optional(),
   flowIcon: rcIcon.optional(),
   checklistIcon: rcIcon.optional(),
@@ -114,19 +131,34 @@ const rcContentListBlock = z.object({
 const rcLiveChatBlock = z.object({
   ...blockBase,
   type: z.literal('live-chat'),
-  name: z.string(),
+  name: rcBlockName,
   icon: rcIcon.optional(),
-  provider: z.enum([
-    'crisp',
-    'custom',
-    'freshchat',
-    'help-scout',
-    'hubspot',
-    'intercom',
-    'zendesk-classic',
-    'zendesk-messenger',
-  ]),
-  customCode: z.string().optional(),
+  provider: z
+    .enum([
+      'crisp',
+      'custom',
+      'freshchat',
+      'help-scout',
+      'hubspot',
+      'intercom',
+      'zendesk-classic',
+      'zendesk-messenger',
+    ])
+    .describe(
+      'Which chat widget the click opens. The SDK only INVOKES the provider — the host page must ' +
+        "already have that provider's script installed, or clicking logs a console warning and " +
+        'nothing opens. Not checkable at write time (the server cannot see the host page), so ' +
+        'confirm which provider the host actually runs.',
+    ),
+  customCode: z
+    .string()
+    .optional()
+    .describe(
+      "For provider 'custom': script run on CLICK (not page load) via new Function; hosts can " +
+        'disable it with usertour.disableEvalJs(). Echo-only via the API — echo the stored code ' +
+        'back unchanged (or omit the field) to keep it, empty string clears it; writing new or ' +
+        'edited code is rejected (same security policy as run_javascript). Author scripts in the builder.',
+    ),
 });
 // Navigation entry into the environment's announcement feed. The block carries no
 // announcement content — the feed lists every published `announcement` content in
@@ -136,7 +168,7 @@ const rcLiveChatBlock = z.object({
 const rcAnnouncementBlock = z.object({
   ...blockBase,
   type: z.literal('announcement'),
-  name: z.string(),
+  name: rcBlockName,
   icon: rcIcon.optional(),
 });
 // Echo-only: a stored block kind this API version cannot express. Read-backs mark
@@ -162,7 +194,9 @@ export type RepresentationResourceCenterBlock = z.infer<typeof rcBlock>;
 
 const rcTab = z.object({
   id: z.string().optional(),
-  name: z.string(),
+  name: z
+    .string()
+    .describe('Tab label. Plain text — NO `{{ }}` interpolation (braces would render literally).'),
   icon: rcIcon.optional(),
   blocks: z
     .array(rcBlock)
@@ -177,8 +211,20 @@ const rcTab = z.object({
 });
 
 export const representationResourceCenter = z.object({
-  buttonText: z.string().optional(),
-  headerText: z.string().optional(),
+  buttonText: z
+    .string()
+    .optional()
+    .describe(
+      'Text on the floating resource-center launcher (only rendered when the theme launcher is ' +
+        'in text mode). Plain string — NO `{{ }}` interpolation.',
+    ),
+  headerText: z
+    .string()
+    .optional()
+    .describe(
+      'Panel header title on the home view. Plain string — NO `{{ }}` interpolation (braces ' +
+        'would render literally); for a personalized greeting use a `richtext` block instead.',
+    ),
   tabs: z.array(rcTab).optional(),
 });
 export type RepresentationResourceCenter = z.infer<typeof representationResourceCenter>;

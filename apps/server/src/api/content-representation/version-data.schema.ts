@@ -52,14 +52,18 @@ const checklistItem = z.object({
         "without its existing id gets a NEW one: in-flight users' completion state for it " +
         'resets and its per-task analytics rows break. Omit only for a genuinely new task.',
     ),
-  name: z.string(),
+  name: z
+    .string()
+    .describe(
+      'The visible task row label. Plain string — NO `{{ }}` interpolation (braces would render literally).',
+    ),
   description: z
     .string()
     .optional()
     .describe(
       'Optional supporting text rendered below the task name. A short benefit statement or time ' +
         'estimate ("Send an invite so your team can collaborate", "~30 sec") measurably lifts ' +
-        'task click-through — prefer setting it over leaving the row name-only.',
+        'task click-through — prefer setting it over leaving the row name-only. Plain string — NO `{{ }}` interpolation (braces would render literally).',
     ),
   // completeWhen also accepts the parameterless `task_clicked` (a task completes
   // when its item is clicked) — valid only here (incl. nested in OR groups), not
@@ -95,7 +99,9 @@ export const representationChecklist = z.object({
   buttonText: z
     .string()
     .optional()
-    .describe('Label on the collapsed checklist launcher pill (e.g. "Getting started").'),
+    .describe(
+      'Label on the collapsed checklist launcher pill (e.g. "Getting started"). Plain string — NO `{{ }}` interpolation (braces would render literally).',
+    ),
   initialDisplay: z
     .enum(['expanded', 'button'])
     .optional()
@@ -256,7 +262,10 @@ export const representationLauncher = z.object({
   buttonText: z
     .string()
     .optional()
-    .describe("Label of the button — only rendered when style is 'button'."),
+    .describe(
+      "Label of the button — only rendered when style is 'button'. " +
+        'Plain string — NO `{{ }}` interpolation.',
+    ),
   target: launcherTarget
     .optional()
     .describe('The page element the launcher anchors to (selector + beacon placement on it).'),
@@ -432,7 +441,7 @@ export const representationAnnouncement = z
         'Title shown in the feed row and the detail view. Required to publish — an untitled ' +
           "announcement would render a blank row. Seeded from the content's `name` at create, " +
           'then INDEPENDENT: renaming the content later does not update the title (and events/' +
-          'analytics label by the content name, not this title).',
+          'analytics label by the content name, not this title). Plain string — NO `{{ }}` interpolation (braces would render literally). For a personalized body use the intro/detail content blocks.',
       ),
     introContent: z
       .array(representationBlock)

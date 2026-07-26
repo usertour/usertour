@@ -30,6 +30,7 @@ import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
 import { ThemeExpand } from '@/api/themes/themes.schema';
 
 import { McpTool, McpToolContext } from '../mcp.types';
+import { editorUrlFor, withEditorUrl } from './editor-url';
 import { READ_ONLY } from './annotations';
 import { AUTHORING_GUIDE } from './authoring-guide';
 import {
@@ -202,6 +203,16 @@ export const environmentIdSchema = z
  * same policy as write-tools. Handlers return a plain JSON-serializable payload.
  * `inputSchema` is a zod raw shape the SDK validates.
  */
+const contentSchemaType = z.enum([
+  'flow',
+  'checklist',
+  'launcher',
+  'banner',
+  'tracker',
+  'resource-center',
+  'announcement',
+]);
+
 export function buildReadTools(): McpTool[] {
   const tools: McpTool[] = [
     {
@@ -221,29 +232,26 @@ export function buildReadTools(): McpTool[] {
 
     {
       name: 'get_content_schema',
-      title: 'Get the write schema for a content type',
+      title: 'Get the write schema for one or more content types',
       capability: Capability.ContentRead,
       description:
         'Return the JSON Schema for the body you write to `update_content_version` for a content ' +
         'type: `flow` → the `steps` array item; checklist / launcher / banner / tracker / ' +
         'announcement / resource-center → the `data` object. The `data` arg is polymorphic so its ' +
-        'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. Pair ' +
-        'with get_authoring_guide.',
+        'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. ' +
+        'Authoring SEVERAL types? Pass an array — the shared vocabulary (conditions / actions / ' +
+        'blocks, ~90% of each schema) is then emitted once in `$defs` instead of once per call. ' +
+        'Pair with get_authoring_guide.',
       inputSchema: {
         type: z
-          .enum([
-            'flow',
-            'checklist',
-            'launcher',
-            'banner',
-            'tracker',
-            'resource-center',
-            'announcement',
-          ])
-          .describe('Content kind whose write-body schema to return.'),
+          .union([contentSchemaType, z.array(contentSchemaType).min(1)])
+          .describe(
+            'Content kind whose write-body schema to return — or an ARRAY of kinds to fetch ' +
+              'several in one call with the shared `$defs` emitted once.',
+          ),
       },
       async handler(args, _ctx) {
-        const type = String(args.type);
+        const types = Array.isArray(args.type) ? args.type.map(String) : [String(args.type)];
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails. `reused: 'ref'`
         // hoists the shared sub-schemas (conditions / blocks / actions, referenced
@@ -253,10 +261,8 @@ export function buildReadTools(): McpTool[] {
         // not appear in `required` — otherwise the agent thinks it must send them.
         const toJson = (s: z.ZodType) =>
           z.toJSONSchema(s, { unrepresentable: 'any', reused: 'ref', io: 'input' });
-        if (type === ContentDataType.FLOW) {
-          return { type, body: 'steps', schema: toJson(z.array(representationStepInput)) };
-        }
-        const byType: Record<string, z.ZodType> = {
+        const schemaFor: Record<string, z.ZodType> = {
+          [ContentDataType.FLOW]: z.array(representationStepInput),
           [ContentDataType.CHECKLIST]: representationChecklist,
           [ContentDataType.LAUNCHER]: representationLauncher,
           [ContentDataType.BANNER]: representationBanner,
@@ -264,7 +270,28 @@ export function buildReadTools(): McpTool[] {
           [ContentDataType.RESOURCE_CENTER]: representationResourceCenter,
           [ContentDataType.ANNOUNCEMENT]: representationAnnouncement,
         };
-        return { type, body: 'data', schema: toJson(byType[type]) };
+        const bodyFor = (t: string) => (t === (ContentDataType.FLOW as string) ? 'steps' : 'data');
+        if (types.length === 1) {
+          const type = types[0];
+          return { type, body: bodyFor(type), schema: toJson(schemaFor[type]) };
+        }
+        // Several types in ONE toJSONSchema call: wrap them as properties of a
+        // synthetic object so zod hoists the sub-schemas they SHARE into a single
+        // `$defs` — the whole point of batching (fetched separately, each copy of
+        // the common vocabulary is ~90% of the payload). `.optional()` keeps the
+        // wrapper's `required` list empty: the wrapper is a container, not a shape
+        // anyone writes.
+        const wrapper = z.object(
+          Object.fromEntries(types.map((t) => [t, (schemaFor[t] as z.ZodType).optional()])),
+        );
+        return {
+          types,
+          body: Object.fromEntries(types.map((t) => [t, bodyFor(t)])),
+          note:
+            "`schema.properties.<type>` is that type's write-body schema; shared definitions " +
+            'are under `schema.$defs`.',
+          schema: toJson(wrapper),
+        };
       },
     },
 
@@ -335,7 +362,8 @@ export function buildReadTools(): McpTool[] {
       description:
         'Get a single piece of Usertour content by its id. Optionally `expand` the ' +
         '"editedVersion" and/or "publishedVersion" objects inline. Publish state is ' +
-        'per-environment under `environments[]`.',
+        'per-environment under `environments[]`. Includes `editorUrl` — a dashboard deep link a ' +
+        'human can open to review the content (when the server knows its dashboard URL).',
       inputSchema: {
         id: z
           .string()
@@ -355,7 +383,8 @@ export function buildReadTools(): McpTool[] {
         const expand = Array.isArray(args.expand)
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpand[])
           : undefined;
-        return ctx.services.content.get(id, ctx.projectId, { expand });
+        const content = await ctx.services.content.get(id, ctx.projectId, { expand });
+        return withEditorUrl(content, await editorUrlFor(ctx, content.type, content.id));
       },
     },
 

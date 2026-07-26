@@ -54,6 +54,7 @@ import { McpTool } from '../mcp.types';
 import { writeAnnotationsFor } from './annotations';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
+import { editorUrlFor, withEditorUrl } from './editor-url';
 
 // Theme `settings` is exposed to MCP as a permissive object (its full ~136-field
 // schema would bloat every tools/list); the agent fetches the exact fields/ranges
@@ -87,7 +88,9 @@ export function buildWriteTools(): McpTool[] {
         'A survey is a flow with question blocks — there is no separate survey type. An ' +
         'announcement is a feed item: it reaches users ONLY through a resource center that has an ' +
         '`announcement` block. Returns the created content (use `update_content_version` to add ' +
-        'steps; use `list_themes` to pick a themeId).',
+        'steps; use `list_themes` to pick a themeId). The response includes `editorUrl` — a ' +
+        'dashboard deep link a human can open to review it in the visual editor (present when ' +
+        'the server knows its dashboard URL).',
       // Spread the REST create body (single source of truth — a new field there
       // shows up here automatically); override only themeId's description with
       // MCP-specific guidance (point at list_themes, not the REST endpoint).
@@ -98,8 +101,13 @@ export function buildWriteTools(): McpTool[] {
             '(no UI). Use `list_themes`; pick the one with isDefault if unsure.',
         ),
       },
-      handler: (args, ctx) =>
-        ctx.services.content.create(ctx.projectId, args as unknown as CreateContentBody),
+      handler: async (args, ctx) => {
+        const content = await ctx.services.content.create(
+          ctx.projectId,
+          args as unknown as CreateContentBody,
+        );
+        return withEditorUrl(content, await editorUrlFor(ctx, content.type, content.id));
+      },
     },
     {
       name: 'update_content',
@@ -269,7 +277,9 @@ export function buildWriteTools(): McpTool[] {
         'but if it can act on multiple you must pass `environmentId` (it is NOT chosen for you). ' +
         'When the user has not named a target environment, never choose one yourself: ask, or ' +
         'leave the version unpublished and report that publishing needs an environment choice. ' +
-        'Returns the content with refreshed `environments[]`.',
+        'Returns the content with refreshed `environments[]` and `editorUrl` (a dashboard deep ' +
+        'link for human review) — after publishing, share that link so the user can see what ' +
+        'went live.',
       inputSchema: {
         contentId: z.string(),
         versionId: z.string(),
@@ -277,12 +287,16 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
-        return ctx.services.content.publish(
+        const content = await ctx.services.content.publish(
           String(args.contentId),
           ctx.projectId,
           environment.id,
           String(args.versionId),
           { userId: ctx.token.userId, tokenId: ctx.token.id },
+        );
+        return withEditorUrl(
+          content,
+          await editorUrlFor(ctx, content.type, content.id, environment.id),
         );
       },
     },

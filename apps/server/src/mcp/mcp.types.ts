@@ -46,6 +46,9 @@ export interface McpServices {
 export interface McpToolContext {
   token: AuthedApiToken;
   projectId: string;
+  /** Dashboard base URL (app.homepageUrl) for `editorUrl` deep links; '' when
+   * not configured (self-host without APP_HOMEPAGE_URL) — links are omitted. */
+  dashboardUrl: string;
   auth: ApiTokenAuthService;
   prisma: PrismaService;
   services: McpServices;
