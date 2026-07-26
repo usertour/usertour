@@ -283,33 +283,45 @@ export const buildDiagnoseReport = (
         // e.g. banner/launcher have no frequency or hide rules, resource-center has no
         // frequency. Showing an inapplicable gate would be noise/misleading.
         const caps = getAutoStartCapabilities(facts.contentType);
-        // The fresh-start gates (start_rules / frequency / single_session) decide
-        // whether the runtime would AUTO-START a NEW session. When one is already
-        // active, the runtime resumes it instead of re-evaluating these — so emitting
-        // them would contradict "currently active" (see active_session). Only the hide
-        // gate still applies to an active session (a hide rule can cancel it).
-        if (!facts.hasActiveSession) {
+        // The start_rules verdict is a CONFIGURATION fact and must not appear or
+        // disappear based on the session state of whichever user you happened to
+        // diagnose with: hiding it behind an active session made the same content
+        // read healthy via one user and broken via another (the dead-checklist
+        // audit case). Always emit it, truthfully. With an active session a fail
+        // is INFORMATIONAL — the runtime resumes the session without
+        // re-evaluating start rules — so it is excluded from blockedBy there.
+        {
+          // For an announcement the rules are a pure AUDIENCE filter (no rules =
+          // visible to everyone), not an auto-start switch — word it as such.
+          // For other types, "no rules at all" is usually a DESIGNED on-demand
+          // guide (started via start_content / usertour.start()), not a broken
+          // one — say so instead of a generic failure that reads like a bug.
+          const startRulesDetail = isAnnouncement
+            ? facts.startRulesActive
+              ? 'the audience filter matches this user (or there is no targeting).'
+              : 'the audience filter does not match this user — see startConditions.'
+            : facts.startRulesActive
+              ? 'auto-start enabled and start conditions match.'
+              : startConditions
+                ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
+                : 'auto-start is not configured, so it never appears on its own — the normal ' +
+                  'pattern for an on-demand guide launched via a checklist / resource-center ' +
+                  '`start_content` reference or `usertour.start()`. Confirm something ' +
+                  'references it; add startRules only if it should also start by itself.';
           gates.push({
             id: 'start_rules',
             status: facts.startRulesActive ? 'pass' : 'fail',
-            // For an announcement the rules are a pure AUDIENCE filter (no rules =
-            // visible to everyone), not an auto-start switch — word it as such.
-            // For other types, "no rules at all" is usually a DESIGNED on-demand
-            // guide (started via start_content / usertour.start()), not a broken
-            // one — say so instead of a generic failure that reads like a bug.
-            detail: isAnnouncement
-              ? facts.startRulesActive
-                ? 'the audience filter matches this user (or there is no targeting).'
-                : 'the audience filter does not match this user — see startConditions.'
-              : facts.startRulesActive
-                ? 'auto-start enabled and start conditions match.'
-                : startConditions
-                  ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
-                  : 'auto-start is not configured, so it never appears on its own — the normal ' +
-                    'pattern for an on-demand guide launched via a checklist / resource-center ' +
-                    '`start_content` reference or `usertour.start()`. Confirm something ' +
-                    'references it; add startRules only if it should also start by itself.',
+            detail:
+              facts.hasActiveSession && !facts.startRulesActive
+                ? `informational, not a blocker here (this user is covered by the active session): ${startRulesDetail}`
+                : startRulesDetail,
           });
+        }
+        // The remaining fresh-start gates (frequency / single_session) are
+        // per-user STATE about whether a NEW session may start — meaningless
+        // while one is already active (the runtime resumes it), so they stay
+        // conditional; only the hide gate still applies to an active session.
+        if (!facts.hasActiveSession) {
           // Only meaningful when the audience filter passes — for an excluded
           // user the feed omits the announcement entirely, so a "counts toward
           // the unread badge" line next to a failed start_rules gate would
@@ -410,7 +422,12 @@ export const buildDiagnoseReport = (
     });
   }
 
-  const blockedBy = gates.filter((g) => g.status === 'fail').map((g) => g.id);
+  const blockedBy = gates
+    .filter((g) => g.status === 'fail')
+    .map((g) => g.id)
+    // A failing start_rules during an ACTIVE session is informational — the
+    // content IS showing (resumed), nothing is blocked by it.
+    .filter((id) => !(facts.hasActiveSession && id === 'start_rules'));
   // `unknown` conditions are NOT blockers (only `blockedBy` blocks). Classify them so the
   // summary names what resolves each, and never lets an agent read an `unknown` leaf as a
   // second blocker beside the real ones.
@@ -451,7 +468,11 @@ export const buildDiagnoseReport = (
   } else if (facts.hasActiveSession) {
     summary = facts.hidden
       ? 'Has an active session, but a hide rule is active — the runtime will cancel it (won’t show).'
-      : 'Currently active for this user — it is showing (or resumes on the next load).';
+      : `Currently active for this user — it is showing (or resumes on the next load)${
+          renderTargets.length
+            ? ' — provided its target element exists on the page; the server cannot verify that (see the target gate)'
+            : ''
+        }.`;
   } else if (blockedBy.length) {
     summary = `Blocked by: ${blockedBy.join(', ')}.${
       anyUnknown

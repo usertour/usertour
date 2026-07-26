@@ -245,6 +245,29 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.gates.find((g) => g.id === 'outranked')?.detail).toContain('c_winner');
   });
 
+  it('start_rules stays on the checklist even with an active session (config fact, informational)', () => {
+    // The dead-checklist audit case: no auto-start configured, but the asked-about
+    // user happens to have an active session. The gate list must still carry the
+    // configuration truth — while NOT counting it as a blocker (it is showing).
+    const r = buildDiagnoseReport(facts({ hasActiveSession: true, startRulesActive: false }));
+    const gate = r.gates.find((g) => g.id === 'start_rules');
+    expect(gate?.status).toBe('fail');
+    expect(gate?.detail).toContain('informational');
+    expect(gate?.detail).toContain('never appears on its own');
+    expect(r.blockedBy).not.toContain('start_rules');
+    expect(r.summary).toMatch(/currently active/i);
+  });
+
+  it('active-session summary hedges when a render target cannot be verified', () => {
+    const r = buildDiagnoseReport(
+      facts({ hasActiveSession: true, startRulesActive: true }),
+      undefined,
+      undefined,
+      ['a[href="/tasks"]'],
+    );
+    expect(r.summary).toContain('provided its target element exists');
+  });
+
   it('active slot held by another content → blocked, even though its own gates pass', () => {
     const r = buildDiagnoseReport(
       facts({ activeSlotHeldByContentId: 'c_holder', activeSlotHeldByName: 'Welcome Tour' }),
