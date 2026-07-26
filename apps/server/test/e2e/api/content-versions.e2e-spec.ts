@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Capability } from '@usertour/types';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
@@ -765,6 +766,112 @@ describe('API v2 /content-versions (e2e)', () => {
       ],
     });
     expect(res.status).toBe(400);
+  });
+
+  it('rejects a replacement write whose goto targets a step this same write deletes', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const versionId = (await buildVersion(prisma, { contentId: content.id, sequence: 0 })).id;
+    const base = `/v2/projects/${projectId}/content/${content.id}/versions/${versionId}`;
+    const seed = await api('patch', base, token).send({
+      steps: [
+        {
+          key: 'a',
+          name: 'A',
+          type: 'modal',
+          content: [
+            { type: 'text', markdown: 'a' },
+            { type: 'button', text: 'Go', actions: [{ type: 'goto_step', step: 'b' }] },
+          ],
+        },
+        { key: 'b', name: 'B', type: 'modal', content: [{ type: 'text', markdown: 'b' }] },
+      ],
+    });
+    expect(seed.status).toBe(200);
+    const read = await api('get', `${base}?expand=steps`, token);
+    type StepRow = { name: string; cvid: string };
+    const stepA = read.body.steps.find((s: StepRow) => s.name === 'A');
+    const bCvid = read.body.steps.find((s: StepRow) => s.name === 'B').cvid;
+
+    // The natural-but-dangerous edit: send only step A, its goto still aimed at
+    // B — which this very write would delete. The old validator resolved the
+    // ref against the PRE-write step set and let the dangling goto into the
+    // store silently; now the request itself is the only legal target set.
+    const drop = await api('patch', base, token).send({ steps: [stepA] });
+    expect(drop.status).toBe(400);
+    expect(drop.body.error.code).toBe('E1017');
+    expect(drop.body.error.message).toContain(bCvid);
+    expect(drop.body.error.message).toContain('not part of this request');
+
+    // And the rejection was atomic: both steps are still there.
+    const after = await api('get', `${base}?expand=steps`, token);
+    expect(after.body.steps).toHaveLength(2);
+  });
+
+  it('echoes a pre-existing dangling goto verbatim instead of blocking every edit', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    // Legacy stored shape: a step whose button goto points at a cvid that no
+    // step has (builder-era leftover, or a write from before the guard above).
+    await buildStep(prisma, {
+      versionId: version.id,
+      type: 'modal',
+      name: 'Legacy',
+      cvid: 'legacy-cv-1',
+      sequence: 0,
+      data: [
+        {
+          children: [
+            {
+              children: [
+                {
+                  element: {
+                    type: 'button',
+                    data: {
+                      text: 'Go',
+                      actions: [{ type: 'step-goto', data: { stepCvid: 'ghost-cv-404' } }],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ] as unknown as Prisma.InputJsonValue,
+    });
+    const base = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+    const read = await api('get', `${base}?expand=steps`, token);
+    type Block = { type: string; actions?: { type: string; step: string }[] };
+    const step = read.body.steps[0];
+    const gotoOf = (blocks: Block[]) => blocks.find((b) => b.type === 'button')?.actions?.[0];
+    // Read-back is honest about the dangling ref…
+    expect(gotoOf(step.content)).toMatchObject({ type: 'goto_step', step: 'ghost-cv-404' });
+
+    // …and echoing it back (with an unrelated copy edit) is ACCEPTED: the ref
+    // is preserved verbatim, not endorsed — validate/publish still flag it.
+    const echo = await api('patch', base, token).send({
+      steps: [{ ...step, name: 'Legacy renamed' }],
+    });
+    expect(echo.status).toBe(200);
+    const after = await api('get', `${base}?expand=steps`, token);
+    expect(after.body.steps[0].name).toBe('Legacy renamed');
+    expect(gotoOf(after.body.steps[0].content)).toMatchObject({
+      type: 'goto_step',
+      step: 'ghost-cv-404',
+    });
+
+    // The exemption is verbatim-only: a DIFFERENT unknown ref is still rejected.
+    const mutated = {
+      ...step,
+      content: (step.content as Block[]).map((b) =>
+        b.type === 'button'
+          ? { ...b, actions: [{ type: 'goto_step', step: 'brand-new-ghost' }] }
+          : b,
+      ),
+    };
+    const fresh = await api('patch', base, token).send({ steps: [mutated] });
+    expect(fresh.status).toBe(400);
   });
 
   it('rejects duplicate step keys in one write (400)', async () => {

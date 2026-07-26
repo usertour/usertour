@@ -430,12 +430,47 @@ export class ApiContentVersionsService {
 
       // One handle→cvid table: every step answers to its own cvid; a step with a
       // `key` also answers to that key (key wins if it ever collides with a cvid).
-      const knownCvids = new Set<string>([
-        ...planned.map((p) => p.cvid),
-        ...((version.steps ?? []) as { cvid?: string }[])
+      //
+      // The legal goto-target set is THIS REQUEST ONLY. `steps` is a full
+      // replacement, so a stored step that isn't echoed here is deleted by this
+      // very write — validating a goto against the pre-write step set would let
+      // the write CREATE a dangling reference (it did: the check passed against
+      // steps it was simultaneously deleting), which then poisons every later
+      // echo edit. An echoed step's own cvid is in `planned`, so referencing
+      // in-request steps by cvid still works.
+      const knownCvids = new Set<string>(planned.map((p) => p.cvid));
+      // Echo exemption, same policy as run_javascript / customCode: a ref that
+      // is ALREADY dangling in the stored data (builder legacy, or writes from
+      // before this guard) passes through VERBATIM. Without it, one stale goto
+      // an author never touched makes the whole flow un-editable — read it
+      // back, write it back, rejected. validate/publish still report it; the
+      // fix belongs there, not as a toll on every unrelated edit.
+      const storedCvids = new Set(
+        ((version.steps ?? []) as { cvid?: string }[])
           .map((s) => s.cvid)
           .filter((c): c is string => Boolean(c)),
-      ]);
+      );
+      const storedDanglingRefs = new Set<string>();
+      const collectDanglingGotoRefs = (node: unknown): void => {
+        if (Array.isArray(node)) {
+          for (const v of node) collectDanglingGotoRefs(v);
+          return;
+        }
+        if (!node || typeof node !== 'object') return;
+        const o = node as { type?: unknown; data?: { stepCvid?: unknown } };
+        // Only step-goto targets THIS content's steps; flow-start's stepCvid
+        // points into ANOTHER content and never goes through this resolver.
+        if (
+          o.type === 'step-goto' &&
+          typeof o.data?.stepCvid === 'string' &&
+          o.data.stepCvid &&
+          !storedCvids.has(o.data.stepCvid)
+        ) {
+          storedDanglingRefs.add(o.data.stepCvid);
+        }
+        for (const v of Object.values(o)) collectDanglingGotoRefs(v);
+      };
+      collectDanglingGotoRefs(version.steps ?? []);
       const keyToCvid = new Map<string, string>();
       for (const p of planned) {
         const key = (p.input as { key?: string }).key;
@@ -458,8 +493,13 @@ export class ApiContentVersionsService {
           if (knownCvids.has(ref)) {
             return ref;
           }
+          if (storedDanglingRefs.has(ref)) {
+            // Verbatim echo of a pre-existing dangling reference: preserved,
+            // not endorsed — validate/publish still flag it.
+            return ref;
+          }
           throw new ValidationError(
-            `"go to step" references unknown step "${ref}" — use a step \`key\` from this request or an existing step cvid.`,
+            `"go to step" references step "${ref}" which is not part of this request — steps are a FULL replacement, so a goto may only target a step \`key\` or cvid present in this same write. To keep the target step, echo it in \`steps\` too.`,
           );
         },
       };
