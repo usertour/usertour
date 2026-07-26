@@ -1423,6 +1423,66 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(Array.isArray(res.body.warnings)).toBe(true);
     });
 
+    it('warns on DEAD content: no start rules AND nothing references it', async () => {
+      const token = await mint([Capability.ContentRead]);
+      const deadWarn = (body: { warnings: { message: string }[] }) =>
+        body.warnings.some((w) => w.message.includes('reachable by NO user'));
+
+      // 1) Dead: an on-demand flow that nothing references — warning, not error.
+      const dead = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const deadV = await buildUsableFlowVersion(prisma, { contentId: dead.id, projectId });
+      const validatePath = `/v2/projects/${projectId}/content/${dead.id}/versions/${deadV.id}/validate`;
+      const r1 = await api('get', validatePath, token);
+      expect(r1.body.ok).toBe(true);
+      expect(deadWarn(r1.body)).toBe(true);
+
+      // 2) Referenced: a resource center lists it → no longer dead.
+      const rc = await buildContent(prisma, { projectId, environmentId, type: 'resource-center' });
+      const rcV = await buildVersion(prisma, {
+        contentId: rc.id,
+        sequence: 0,
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              blocks: [
+                {
+                  type: 'content-list',
+                  name: 'Guides',
+                  contentItems: [{ contentId: dead.id, contentType: 'flow' }],
+                },
+              ],
+            },
+          ],
+        } as unknown as Prisma.InputJsonValue,
+      });
+      await prisma.content.update({ where: { id: rc.id }, data: { editedVersionId: rcV.id } });
+      const r2 = await api('get', validatePath, token);
+      expect(deadWarn(r2.body)).toBe(false);
+
+      // 3) Start rules configured: never dead, referenced or not.
+      const ruled = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const ruledV = await buildUsableFlowVersion(prisma, { contentId: ruled.id, projectId });
+      await prisma.version.update({
+        where: { id: ruledV.id },
+        data: {
+          config: {
+            enabledAutoStartRules: true,
+            autoStartRules: [
+              { id: 'r1', type: 'current-page', data: { includes: ['*'] }, operators: 'and' },
+            ],
+            autoStartRulesSetting: {},
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+      const r3 = await api(
+        'get',
+        `/v2/projects/${projectId}/content/${ruled.id}/versions/${ruledV.id}/validate`,
+        token,
+      );
+      expect(deadWarn(r3.body)).toBe(false);
+    });
+
     it('reports errors for an unusable version (no theme) without mutating', async () => {
       const token = await mint([Capability.ContentRead]);
       const res = await api(

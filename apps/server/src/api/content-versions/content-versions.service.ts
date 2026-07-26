@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { toArray } from '../shared/query';
 import { cuid } from '@usertour/helpers';
@@ -639,13 +640,77 @@ export class ApiContentVersionsService {
       config?: unknown;
       content?: { type?: string };
     };
-    return validateVersionUsable({
-      type: v.content?.type ?? ContentDataType.FLOW,
+    const type = v.content?.type ?? ContentDataType.FLOW;
+    const report = validateVersionUsable({
+      type,
       themeId: v.themeId,
       steps: v.steps as Step[],
       data: v.data,
       config: v.config as { autoStartRules?: RulesCondition[] } | null,
       conditionContext: await loadConditionContext(this.prisma, projectId),
     });
+
+    // DEAD-CONTENT check for the two types the no-start-rules warning exempts
+    // (flow / checklist are legitimately started on demand — from a resource
+    // center list or a start_content button — so missing rules alone is not
+    // warnable). But NO rules AND NO inbound reference means published content
+    // no user can ever reach: the audit found exactly that shipping silently.
+    // Reference scanning needs the DB, so it lives here, not in the pure
+    // validator. Warning, not error: a usertour.start() call in the HOST APP's
+    // code is a real entry point the server cannot see.
+    const rules = (v.config as { autoStartRules?: RulesCondition[] } | null)?.autoStartRules;
+    const startsOnDemandOnly =
+      (type === ContentDataType.FLOW || type === ContentDataType.CHECKLIST) &&
+      (!rules || rules.length === 0);
+    if (startsOnDemandOnly && !(await this.isReferencedByOtherContent(projectId, contentId))) {
+      report.warnings.push({
+        severity: 'warning',
+        path: 'config.autoStartRules',
+        message: `${type} has no start rules AND nothing references it (no resource-center list entry, no start_content action) — published, it is reachable by NO user. Add startRules, or reference it from a resource center / button; if your app launches it via usertour.start(), ignore this warning.`,
+      });
+    }
+    return report;
+  }
+
+  /**
+   * Does any OTHER live content in the project reference this content id
+   * (resource-center content-list entries and start_content actions both store
+   * the raw content id inside their version/step JSON)? Scanned only over the
+   * surfaces that can actually reach users: each live content's edited version
+   * and its published versions — a match inside an old historical version is
+   * not an entry point. Coarse containment filter in SQL (jsonb::text LIKE),
+   * which can only over-count — acceptable for suppressing a warning, never
+   * for raising one.
+   */
+  private async isReferencedByOtherContent(projectId: string, contentId: string): Promise<boolean> {
+    const others = await this.prisma.content.findMany({
+      where: { projectId, deleted: false, id: { not: contentId } },
+      select: {
+        editedVersionId: true,
+        contentOnEnvironments: { select: { publishedVersionId: true } },
+      },
+    });
+    const versionIds = [
+      ...new Set(
+        others.flatMap((c) => [
+          c.editedVersionId,
+          ...c.contentOnEnvironments.map((e) => e.publishedVersionId),
+        ]),
+      ),
+    ].filter((x): x is string => Boolean(x));
+    if (versionIds.length === 0) {
+      return false;
+    }
+    const needle = `%${contentId}%`;
+    const rows = await this.prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT (
+        (SELECT COUNT(*) FROM "Version" v
+          WHERE v.id IN (${Prisma.join(versionIds)}) AND v.data::text LIKE ${needle})
+        +
+        (SELECT COUNT(*) FROM "Step" s
+          WHERE s."versionId" IN (${Prisma.join(versionIds)})
+            AND (s.data::text LIKE ${needle} OR s.trigger::text LIKE ${needle}))
+      ) AS n`;
+    return Number(rows[0]?.n ?? 0) > 0;
   }
 }
