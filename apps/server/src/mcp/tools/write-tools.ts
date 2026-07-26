@@ -174,8 +174,16 @@ export function buildWriteTools(): McpTool[] {
         'for user attributes. Returns the updated version with the persisted body decompiled — ' +
         '`steps` for a flow, `data` for other types — so you can confirm the write without a re-read.',
       inputSchema: {
-        contentId: z.string(),
-        versionId: z.string(),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
         steps: z.array(representationStepInput).optional(),
         startRules: representationStartRules.nullable().optional(),
         hideRules: representationHideRules.nullable().optional(),
@@ -244,7 +252,18 @@ export function buildWriteTools(): McpTool[] {
         'name it does NOT change what end-users see; the live/published version is untouched until ' +
         'you separately `publish_content` this restored draft. To recover a DELETED content, use ' +
         '`restore_content` instead. Returns the new version.',
-      inputSchema: { contentId: z.string(), versionId: z.string() },
+      inputSchema: {
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
+      },
       handler: (args, ctx) =>
         ctx.services.contentVersions.restore(
           String(args.versionId),
@@ -288,8 +307,16 @@ export function buildWriteTools(): McpTool[] {
         'link for human review) — after publishing, share that link so the user can see what ' +
         'went live.',
       inputSchema: {
-        contentId: z.string(),
-        versionId: z.string(),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {

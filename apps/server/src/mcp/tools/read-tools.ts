@@ -882,12 +882,6 @@ export function buildReadTools(): McpTool[] {
         if (!contentId) {
           throw new Error('`contentId` is required.');
         }
-        if (!asString(args.url)) {
-          throw new Error('`url` is required — the page URL to evaluate against.');
-        }
-        if (!asString(args.userId)) {
-          throw new Error('`userId` is required — diagnosis is always for a specific end-user.');
-        }
         const result = await ctx.services.contentVersions.list(
           'mcp://content-versions',
           ctx.projectId,
@@ -910,8 +904,16 @@ export function buildReadTools(): McpTool[] {
         'Get a content version by id. `expand: ["steps"]` inlines the decompiled steps — read ' +
         'these before calling `update_content_version`. Also supports "data" and "questions".',
       inputSchema: {
-        contentId: z.string().describe('The content id.'),
-        id: z.string().describe('The content version id.'),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        id: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
         expand: z
           .array(z.enum(['questions', 'steps', 'data']))
           .optional()
@@ -939,8 +941,16 @@ export function buildReadTools(): McpTool[] {
         'block publish (e.g. a tooltip step with no target, an empty checklist, no theme). Run ' +
         'this after authoring and before `publish_content`.',
       inputSchema: {
-        contentId: z.string().describe('The content id.'),
-        id: z.string().describe('The content version id.'),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        id: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
       },
       async handler(args, ctx) {
         const contentId = asString(args.contentId);

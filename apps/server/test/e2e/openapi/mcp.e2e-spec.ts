@@ -833,6 +833,28 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
       expect(report).toMatchObject({ ok: true, errors: [] });
+
+      // list_content_versions works with contentId alone. Regression: a
+      // multi-site anchor edit once pasted diagnose_content's url/userId
+      // guards into this handler, bricking the tool while every suite stayed
+      // green — because nothing here ever called it.
+      const versions = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 5,
+              method: 'tools/call',
+              params: {
+                name: 'list_content_versions',
+                arguments: { contentId: created.id },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(versions.items.map((v: { id: string }) => v.id)).toContain(created.editedVersionId);
     });
 
     it('update_content_version writes a non-flow data body (checklist) via MCP', async () => {
