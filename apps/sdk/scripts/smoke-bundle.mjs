@@ -12,12 +12,29 @@
  * node's native ESM loader, so static-import evaluation order is the real
  * thing, not a re-implementation.
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const SELF = fileURLToPath(import.meta.url);
+
+// Parent mode: run the boot check twice — a normal DOM, then one where ANY
+// localStorage access THROWS (sandboxed iframe / strict privacy policies).
+// A logger or cache touching storage unguarded at module scope kills the whole
+// SDK in exactly those pages, and the normal pass can't see it.
+if (!process.env.SMOKE_MODE) {
+  for (const mode of ['normal', 'no-storage']) {
+    execFileSync(process.execPath, [SELF], {
+      stdio: 'inherit',
+      env: { ...process.env, SMOKE_MODE: mode },
+    });
+  }
+  process.exit(0);
+}
+const NO_STORAGE = process.env.SMOKE_MODE === 'no-storage';
 const pkg = JSON.parse(readFileSync(join(HERE, '../package.json'), 'utf8'));
 const entry = join(HERE, `../dist/${pkg.version}/es2020/usertour.js`);
 if (!existsSync(entry)) {
@@ -29,30 +46,51 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'https://smoke.local/',
   pretendToBeVisual: true,
 });
-const w = dom.window;
+const jsdomWindow = dom.window;
+const throwSecurity = () => {
+  throw new jsdomWindow.DOMException('Storage is disabled in this context', 'SecurityError');
+};
+// In no-storage mode, wrap the window so touching localStorage/sessionStorage
+// throws exactly like a sandboxed iframe does; everything else passes through.
+const w = NO_STORAGE
+  ? new Proxy(jsdomWindow, {
+      get(target, key) {
+        if (key === 'localStorage' || key === 'sessionStorage') throwSecurity();
+        const value = target[key];
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    })
+  : jsdomWindow;
 
 // Browser globals the bundle touches at module init. jsdom's window carries
 // most; define lazily and tolerate node's own read-only globals (navigator).
 const expose = {
   window: w,
-  document: w.document,
-  location: w.location,
-  history: w.history,
-  localStorage: w.localStorage,
-  sessionStorage: w.sessionStorage,
-  getComputedStyle: w.getComputedStyle.bind(w),
-  HTMLElement: w.HTMLElement,
-  HTMLIFrameElement: w.HTMLIFrameElement,
-  Element: w.Element,
-  Node: w.Node,
-  CustomEvent: w.CustomEvent,
-  MutationObserver: w.MutationObserver,
+  document: jsdomWindow.document,
+  location: jsdomWindow.location,
+  history: jsdomWindow.history,
+  getComputedStyle: jsdomWindow.getComputedStyle.bind(jsdomWindow),
+  HTMLElement: jsdomWindow.HTMLElement,
+  HTMLIFrameElement: jsdomWindow.HTMLIFrameElement,
+  Element: jsdomWindow.Element,
+  Node: jsdomWindow.Node,
+  CustomEvent: jsdomWindow.CustomEvent,
+  MutationObserver: jsdomWindow.MutationObserver,
   requestAnimationFrame: (cb) => setTimeout(() => cb(Date.now()), 16),
   cancelAnimationFrame: clearTimeout,
 };
 for (const [k, v] of Object.entries(expose)) {
   try {
     if (!(k in globalThis) || globalThis[k] == null) globalThis[k] = v;
+  } catch {}
+}
+for (const storageKey of ['localStorage', 'sessionStorage']) {
+  try {
+    if (NO_STORAGE) {
+      Object.defineProperty(globalThis, storageKey, { get: throwSecurity, configurable: true });
+    } else if (!(storageKey in globalThis) || globalThis[storageKey] == null) {
+      globalThis[storageKey] = jsdomWindow[storageKey];
+    }
   } catch {}
 }
 // Shims for APIs jsdom lacks; put them on window too (bundle may read either).
@@ -63,7 +101,7 @@ const shims = {
   WebSocket: class { close() {} send() {} addEventListener() {} removeEventListener() {} },
 };
 for (const [k, v] of Object.entries(shims)) {
-  w[k] ??= v;
+  jsdomWindow[k] ??= v;
   try {
     globalThis[k] ??= v;
   } catch {}
@@ -72,7 +110,7 @@ for (const [k, v] of Object.entries(shims)) {
 try {
   await import(pathToFileURL(entry).href);
 } catch (e) {
-  console.error('SMOKE FAIL — bundle threw during module evaluation:');
+  console.error(`SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle threw during module evaluation:`);
   console.error('  ', String(e?.stack ?? e).split('\n').slice(0, 4).join('\n   '));
   process.exit(1);
 }
@@ -81,8 +119,8 @@ try {
 await new Promise((r) => setTimeout(r, 300));
 
 if (typeof w.usertour === 'undefined' || w.usertour === null) {
-  console.error('SMOKE FAIL — bundle evaluated but window.usertour never appeared.');
+  console.error(`SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle evaluated but window.usertour never appeared.`);
   process.exit(1);
 }
-console.log('smoke OK — chunked es2020 bundle boots; window.usertour is present.');
+console.log(`smoke OK [${process.env.SMOKE_MODE}] — chunked es2020 bundle boots; window.usertour is present.`);
 process.exit(0);
