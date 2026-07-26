@@ -154,10 +154,13 @@ const rcLiveChatBlock = z.object({
     .string()
     .optional()
     .describe(
-      "For provider 'custom': script run on CLICK (not page load) via new Function; hosts can " +
-        'disable it with usertour.disableEvalJs(). Echo-only via the API — echo the stored code ' +
-        'back unchanged (or omit the field) to keep it, empty string clears it; writing new or ' +
-        'edited code is rejected (same security policy as run_javascript). Author scripts in the builder.',
+      "Only meaningful — and only RETURNED — when provider is 'custom': the script run on CLICK " +
+        '(not page load) via new Function; hosts can disable it with usertour.disableEvalJs(). ' +
+        'Echo-only via the API — echo the stored code back unchanged (or omit the field) to keep ' +
+        'it, empty string clears it; writing new or edited code is rejected (same security policy ' +
+        'as run_javascript). Author scripts in the builder. For other providers the field never ' +
+        'appears in reads; any leftover script from a past provider switch stays stored and ' +
+        'resurfaces if the provider returns to custom.',
     ),
 });
 // Navigation entry into the environment's announcement feed. The block carries no

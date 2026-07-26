@@ -116,7 +116,17 @@ function decompileBlock(
         name: decompilePlainText(b.name),
         ...(ic ? { icon: ic } : {}),
         provider: b.liveChatProvider ?? 'custom',
-        ...(typeof b.customLiveChatCode === 'string' ? { customCode: b.customLiveChatCode } : {}),
+        // Pure cascade: customCode is settable ONLY under provider 'custom', so
+        // it is emitted only there (empty string included — "no script yet" is
+        // information). For other providers the field is business-meaningless
+        // and never returned; a leftover stored script (provider switched away
+        // in the builder) stays in storage untouched — echoing the block
+        // without the key keeps it (omit = keep), and it resurfaces if the
+        // provider is ever switched back to custom.
+        ...((b.liveChatProvider ?? 'custom') === 'custom' &&
+        typeof b.customLiveChatCode === 'string'
+          ? { customCode: b.customLiveChatCode }
+          : {}),
       };
     case 'announcement':
       return {

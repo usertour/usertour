@@ -190,6 +190,37 @@ describe('RC A+B fixes: label, tab merge, customCode gate, inherit placement', (
     expect(tab.iconType).toBe('home-line');
   });
 
+  it('live-chat customCode cascades on provider: emitted only for custom; leftovers stay stored', () => {
+    const stored = (provider: string, code: string) => ({
+      id: 'lc1',
+      type: 'live-chat',
+      name: [{ type: 'paragraph', children: [{ text: 'Chat' }] }],
+      liveChatProvider: provider,
+      customLiveChatCode: code,
+    });
+    const tabOf = (block: object) => ({ tabs: [{ id: 't', name: 'T', blocks: [block] }] });
+    const readBlock = (block: object) =>
+      (decompileResourceCenter(tabOf(block), idR) as { tabs: { blocks: object[] }[] }).tabs[0]
+        .blocks[0] as Record<string, unknown>;
+
+    // custom: the load-bearing field — present even when EMPTY ("no script yet").
+    expect(readBlock(stored('custom', ''))).toMatchObject({ customCode: '' });
+    expect(readBlock(stored('custom', 'openChat()'))).toMatchObject({ customCode: 'openChat()' });
+    // other providers: never emitted, empty or not (settability mirror).
+    expect('customCode' in readBlock(stored('intercom', ''))).toBe(false);
+    expect('customCode' in readBlock(stored('intercom', 'openChat()'))).toBe(false);
+
+    // A hidden leftover survives the full read → echo → write cycle: the echo
+    // has no customCode key, and omit means KEEP — the script stays stored and
+    // resurfaces if the provider is ever switched back to custom.
+    const existing = tabOf(stored('intercom', 'openChat()'));
+    const echo = decompileResourceCenter(existing, idR);
+    const recompiled = compileResourceCenter(echo as never, existing, ids) as {
+      tabs: { blocks: { customLiveChatCode?: string }[] }[];
+    };
+    expect(recompiled.tabs[0].blocks[0].customLiveChatCode).toBe('openChat()');
+  });
+
   it('live-chat customCode: fresh write rejected; echo of stored code kept; omit keeps', () => {
     const fresh = tabs([
       { type: 'live-chat', name: 'Chat', provider: 'custom', customCode: 'evil()' },
