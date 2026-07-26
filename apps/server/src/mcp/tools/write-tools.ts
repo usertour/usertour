@@ -134,7 +134,12 @@ export function buildWriteTools(): McpTool[] {
       audit: auditDelete('content', undefined, { idArg: 'contentId' }),
       title: 'Delete content',
       capability: Capability.ContentDelete,
-      description: 'Delete a piece of content (soft delete — recoverable with `restore_content`).',
+      description:
+        'Delete a piece of content (soft delete — recoverable with `restore_content`). Deleting ' +
+        'also UNPUBLISHES it from every environment and permanently discards the per-environment ' +
+        'publish state (which environments, which version, since when) — restore brings back an ' +
+        'UNPUBLISHED draft, not that history. "Was this ever live?" is answerable afterwards only ' +
+        "through the dashboard's audit log (publish / unpublish / delete are recorded there).",
       inputSchema: { contentId: z.string() },
       handler: async (args, ctx) => {
         await ctx.services.content.remove(String(args.contentId), ctx.projectId);
@@ -148,8 +153,10 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Restore a soft-deleted content (find it via `list_content` with `deleted: true`). It comes ' +
-        'back as an UNPUBLISHED draft with its versions and history intact — publish again explicitly ' +
-        'to go live. Idempotent if the content is not deleted. Returns the restored content.',
+        'back as an UNPUBLISHED draft with its VERSIONS intact — but not its publish state: the ' +
+        'per-environment publish history was discarded at delete time (the audit log is the only ' +
+        'record). Publish again explicitly to go live. Idempotent if the content is not deleted. ' +
+        'Returns the restored content.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) => ctx.services.content.restore(String(args.contentId), ctx.projectId),
     },
