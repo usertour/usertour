@@ -264,6 +264,28 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(customAfter.body.isDefault).toBe(false);
   });
 
+  it('writes a media URL (logo) — admin-provided URLs are plainly writable now', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({ name: 'MediaWrite' });
+    const res = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: { resourceCenter: { logoUrl: 'https://cdn.example.com/brand/logo.svg' } },
+    });
+    expect(res.status).toBe(200);
+    const read = await api('get', `${basePath()}/${created.body.id}?expand=settings`, token);
+    expect(read.body.settings.resourceCenter.logoUrl).toBe(
+      'https://cdn.example.com/brand/logo.svg',
+    );
+    // Garbage is still rejected — it renders straight into end users' pages.
+    const bad = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: { resourceCenter: { logoUrl: 'javascript:alert(1)' } },
+    });
+    expect(bad.status).toBe(400);
+  });
+
   it('rejects CHANGING a builder-managed media key, explicitly (not silently)', async () => {
     const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
     const created = await send('post', basePath(), token).send({ name: 'MediaGuard' });

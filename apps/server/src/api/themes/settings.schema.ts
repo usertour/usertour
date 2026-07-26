@@ -124,30 +124,47 @@ const completeColorGroups = (tree: Tree): void => {
 };
 
 /**
- * Media-asset / builder-managed keys, deliberately NOT in the SSOT (see its
+ * BUILT-IN / builder-managed keys, deliberately NOT in the SSOT (see its
  * header). They exist in every stored theme, so the schema must ACCEPT them
  * for read-modify-write to round-trip — but they may not be CHANGED via the
  * API: the service rejects a patch whose value differs from the theme's
- * current one (no silent drop, per the strict-body decision).
+ * current one (no silent drop, per the strict-body decision). The avatar
+ * triple (type+name+url) addresses the builder's built-in avatar collections
+ * and must move as one; dividerLines is a builder-internal toggle.
+ *
+ * NOTE this list used to also hold the logo/header/launcher-icon URLs — that
+ * was a scope cut from when theme writes first opened, not a real boundary:
+ * the caller is the workspace admin and can already put arbitrary URLs into
+ * image/embed content blocks that render to the same end users. Those three
+ * are now plainly writable (WRITABLE_MEDIA_URL_PATHS below).
  */
 export const BUILDER_MANAGED_SETTING_PATHS: readonly string[] = [
   'avatar.type',
   'avatar.url',
   'avatar.name',
+  'resourceCenter.dividerLines',
+];
+
+/**
+ * Media URLs the API may WRITE. Admin-provided URLs, same trust model as the
+ * image/embed content blocks; empty string clears the image. Not in the SSOT
+ * because the SSOT mirrors the builder's STYLE form controls (the builder edits
+ * these via upload, and the ↔ parity test asserts they stay out of it).
+ */
+export const WRITABLE_MEDIA_URL_PATHS: readonly string[] = [
   'resourceCenter.logoUrl',
   'resourceCenter.headerBackground.imageUrl',
-  'resourceCenter.dividerLines',
   'resourceCenterLauncherButton.iconUrl',
 ];
 
-const addBuilderManagedLeaves = (tree: Tree): void => {
-  for (const path of BUILDER_MANAGED_SETTING_PATHS) {
+const addMarkerLeaves = (tree: Tree, paths: readonly string[], marker: string): void => {
+  for (const path of paths) {
     const segments = path.split('.');
     let node = tree;
     segments.forEach((seg, i) => {
       if (i === segments.length - 1) {
-        // Marker consumed by treeToZod: accept anything, guard in the service.
-        node[seg] = { kind: 'builder-managed' } as unknown as ThemeSettingConstraint;
+        // Marker consumed by treeToZod.
+        node[seg] = { kind: marker } as unknown as ThemeSettingConstraint;
         return;
       }
       const next = node[seg];
@@ -159,14 +176,38 @@ const addBuilderManagedLeaves = (tree: Tree): void => {
   }
 };
 
+const isHttpUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 /** A strict object whose keys are all optional (partial patch + reject unknown). */
 const treeToZod = (tree: Tree): z.ZodTypeAny => {
   const shape: Record<string, z.ZodTypeAny> = {};
   for (const [key, child] of Object.entries(tree)) {
     const leaf = isConstraint(child)
       ? (child.kind as string) === 'builder-managed'
-        ? z.unknown()
-        : leafSchema(child)
+        ? z
+            .unknown()
+            .describe(
+              'Built-in (builder-managed): echo it back unchanged or omit it — a changed value ' +
+                'is rejected.',
+            )
+        : (child.kind as string) === 'media-url'
+          ? z
+              .string()
+              .refine((v) => v === '' || isHttpUrl(v), {
+                message: 'must be an http(s) URL, or an empty string to clear the image',
+              })
+              .describe(
+                'Image URL rendered to end users (writable). Empty string clears it. The builder ' +
+                  'sets this via upload; the API accepts any http(s) URL you host.',
+              )
+          : leafSchema(child)
       : treeToZod(child);
     // Stored settings use null for "unset" in places (e.g. a borderRadius the
     // builder never touched) — treat null exactly like an omitted key: the
@@ -184,6 +225,7 @@ const settingsTree = buildTree(
   THEME_SETTING_CONSTRAINTS as unknown as Record<string, ThemeSettingConstraint>,
 );
 completeColorGroups(settingsTree);
-addBuilderManagedLeaves(settingsTree);
+addMarkerLeaves(settingsTree, BUILDER_MANAGED_SETTING_PATHS, 'builder-managed');
+addMarkerLeaves(settingsTree, WRITABLE_MEDIA_URL_PATHS, 'media-url');
 export const themeSettingsPatchSchema = treeToZod(settingsTree);
 export type ThemeSettingsPatch = z.infer<typeof themeSettingsPatchSchema>;

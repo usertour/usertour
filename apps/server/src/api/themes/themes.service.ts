@@ -114,11 +114,13 @@ export class ApiThemesService {
   }
 
   /**
-   * Builder-managed keys (media assets: avatar identity, logo/header images,
-   * custom launcher icon) are accepted by the schema so that reading a theme
+   * Built-in / builder-managed keys (the avatar identity triple + the
+   * dividerLines toggle) are accepted by the schema so that reading a theme
    * and writing the settings back round-trips — but they may not be CHANGED
    * through the API. Echoing the current value (or omitting the key) is fine;
    * a differing value is rejected explicitly rather than silently dropped.
+   * (The logo/header/launcher-icon URLs are plainly writable — see
+   * WRITABLE_MEDIA_URL_PATHS.)
    */
   private assertBuilderManagedUnchanged(patch: unknown, base: unknown): void {
     const at = (obj: unknown, path: string): unknown =>

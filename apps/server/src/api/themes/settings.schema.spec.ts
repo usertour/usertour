@@ -53,8 +53,20 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
     // rejects them when the value differs from the theme's current one.
     expect(ok({ avatar: { type: 'url', url: 'https://x/a.png' } })).toBe(true);
     expect(ok({ resourceCenter: { logoUrl: 'https://x/l.png' } })).toBe(true);
+
     // a plain style number (icon size) stays in
     expect(ok({ avatar: { size: 40 } })).toBe(true);
+  });
+
+  it('media URLs are writable with real validation: http(s) or empty only', () => {
+    // Writable — the caller is the workspace admin; same trust as image/embed blocks.
+    expect(ok({ resourceCenter: { logoUrl: 'https://cdn.example.com/logo.svg' } })).toBe(true);
+    expect(ok({ resourceCenterLauncherButton: { iconUrl: 'http://a.b/i.png' } })).toBe(true);
+    expect(ok({ resourceCenter: { headerBackground: { imageUrl: '' } } })).toBe(true); // clear
+    // But not garbage — these render straight into end users' pages.
+    expect(ok({ resourceCenter: { logoUrl: 'not a url' } })).toBe(false);
+    expect(ok({ resourceCenter: { logoUrl: 'javascript:alert(1)' } })).toBe(false);
+    expect(ok({ resourceCenter: { headerBackground: { imageUrl: 'ftp://x/y' } } })).toBe(false);
   });
 
   it('accepts an empty patch', () => {
