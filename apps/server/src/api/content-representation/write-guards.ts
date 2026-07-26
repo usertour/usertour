@@ -1,6 +1,7 @@
 import { ContentActionsItemType, ContentDataType } from '@usertour/types';
 
 import type { ValidationIssue } from '@/common/errors/errors';
+import { isHttpUrl } from '@/common/url';
 
 import {
   REACTIVE_REJECTED_REP_CONDITION_TYPES,
@@ -32,6 +33,12 @@ import {
  *  - `step_shape`: placement shape must match the step kind (tooltip→{side,align},
  *    modal→{position}; wrong-shape fields are silently dropped otherwise), and
  *    onClick (click-the-target-to-advance) only works on a tooltip.
+ *  - `media_url`: an image/embed block's `url` (and an image's `link.url`) must
+ *    be an absolute http(s) URL — the SDK renders it verbatim into src/href, so
+ *    anything else is a silently broken image/iframe (same bar as theme media
+ *    URLs). A value the stored version already carries passes VERBATIM
+ *    (preserve-not-endorse, the dangling-goto policy): legacy data must stay
+ *    echo-editable.
  * checklist `completeWhen` / RC `onlyShowWhen` intentionally allow the full
  * condition set — only the reactive slots above are restricted.
  */
@@ -55,6 +62,9 @@ export function collectWriteViolations(input: {
   startRules?: { when?: unknown } | null;
   hideRules?: { when?: unknown } | null;
   contentType?: string;
+  /** URL strings the stored version already carries — verbatim echoes of these
+   * pass the media_url rule (legacy data stays echo-editable). */
+  storedUrls?: ReadonlySet<string>;
 }): WriteWalkResult {
   const issues: ValidationIssue[] = [];
   const refs: ContentReference[] = [];
@@ -141,6 +151,40 @@ export function collectWriteViolations(input: {
     }
     for (const key of Object.keys(obj)) {
       buttonReactive(obj[key], `${path}.${key}`);
+    }
+  };
+
+  /** Image/embed blocks (any nesting, like buttons): url fields must be http(s). */
+  const mediaUrlAt = (value: unknown, path: string, what: string): void => {
+    if (typeof value !== 'string') return;
+    if (isHttpUrl(value) || input.storedUrls?.has(value)) return;
+    issues.push({
+      rule: 'media_url',
+      path,
+      message: `${what} must be a full http(s) URL (it is rendered verbatim on the page, so ${JSON.stringify(
+        value,
+      )} would just be broken there). Host the asset somewhere reachable and pass its absolute URL.`,
+    });
+  };
+  const mediaUrls = (node: unknown, path: string): void => {
+    if (Array.isArray(node)) {
+      node.forEach((n, i) => mediaUrls(n, `${path}[${i}]`));
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const obj = node as Record<string, unknown>;
+    if (obj.type === 'image' || obj.type === 'embed') {
+      mediaUrlAt(obj.url, `${path}.url`, `An ${String(obj.type)} block's url`);
+      if (obj.type === 'image') {
+        mediaUrlAt(
+          (obj.link as Record<string, unknown> | undefined)?.url,
+          `${path}.link.url`,
+          "An image block's link url",
+        );
+      }
+    }
+    for (const key of Object.keys(obj)) {
+      mediaUrls(obj[key], `${path}.${key}`);
     }
   };
 
@@ -235,6 +279,7 @@ export function collectWriteViolations(input: {
       buttonReactive(step.content, `steps[${i}].content`);
     });
     collectRefs(input.steps, 'steps', 'a step');
+    mediaUrls(input.steps, 'steps');
   }
 
   // data (non-flow body): action-type rules, button reactive slots, refs.
@@ -244,6 +289,7 @@ export function collectWriteViolations(input: {
     }
     buttonReactive(input.data, 'data');
     collectRefs(input.data, 'data', "the content's data");
+    mediaUrls(input.data, 'data');
   }
 
   // start / hide rules: refs; a tracker's start conditions are a reactive slot

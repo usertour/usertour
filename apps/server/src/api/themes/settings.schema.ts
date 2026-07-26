@@ -1,6 +1,8 @@
 import { THEME_SETTING_CONSTRAINTS, type ThemeSettingConstraint } from '@usertour/constants';
 import { z } from 'zod';
 
+import { isHttpUrl } from '@/common/url';
+
 /**
  * The theme `settings` write contract — a zod schema GENERATED from the neutral
  * constraint SSOT (`THEME_SETTING_CONSTRAINTS` in @usertour/constants), NOT from
@@ -173,15 +175,6 @@ const addMarkerLeaves = (tree: Tree, paths: readonly string[], marker: string): 
       }
       node = node[seg] as Tree;
     });
-  }
-};
-
-const isHttpUrl = (value: string): boolean => {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
   }
 };
 

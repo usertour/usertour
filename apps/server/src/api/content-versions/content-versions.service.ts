@@ -324,12 +324,34 @@ export class ApiContentVersionsService {
     // target types are folded in, then everything is rejected in a single E1017
     // whose `issues[]` lists each problem with its rule family and path — so a
     // client fixes the whole request in one round-trip.
+    // Verbatim-echo exemption for the media_url rule: every string under a
+    // url-ish key anywhere in the STORED version. Deliberately over-collected
+    // (a navigate url could exempt an identical image url) — the set can only
+    // preserve values this version already stores, never admit new ones.
+    const storedUrls = new Set<string>();
+    const collectStoredUrls = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        for (const v of node) collectStoredUrls(v);
+        return;
+      }
+      if (!node || typeof node !== 'object') return;
+      for (const [key, value] of Object.entries(node)) {
+        if (typeof value === 'string' && /url/i.test(key)) {
+          storedUrls.add(value);
+        } else {
+          collectStoredUrls(value);
+        }
+      }
+    };
+    collectStoredUrls(version.steps ?? []);
+    collectStoredUrls((version as { data?: unknown }).data ?? undefined);
     const { issues, refs } = collectWriteViolations({
       steps: body.steps,
       data: body.data,
       startRules: body.startRules ?? undefined,
       hideRules: body.hideRules ?? undefined,
       contentType,
+      storedUrls,
     });
     if (body.startRules !== undefined || body.hideRules !== undefined) {
       issues.push(

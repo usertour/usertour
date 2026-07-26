@@ -651,7 +651,8 @@ export type ValidationIssue = {
     | 'action_not_allowed'
     | 'step_shape'
     | 'reference_target'
-    | 'auto_start';
+    | 'auto_start'
+    | 'media_url';
   message: string;
   /** Path into the request body (e.g. `steps[0].triggers[0].when[1]`). */
   path?: string;

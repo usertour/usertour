@@ -169,4 +169,36 @@ describe('collectWriteViolations (single write walk)', () => {
     expect(out.issues).toEqual([]);
     expect(out.refs).toEqual([]);
   });
+
+  it('media_url: image/embed urls must be http(s) — except verbatim stored echoes', () => {
+    const steps = [
+      {
+        name: 'S',
+        type: 'modal',
+        content: [
+          { type: 'image', url: 'hello', link: { url: 'also-not-a-url' } },
+          { type: 'image', url: 'https://ok.example/a.png' },
+          // Stored verbatim echo: legacy junk already on this version passes.
+          { type: 'embed', url: 'legacy-junk' },
+        ],
+      },
+    ];
+    const out = collectWriteViolations({
+      steps,
+      contentType: 'flow',
+      storedUrls: new Set(['legacy-junk']),
+    });
+    expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'media_url', path: 'steps[0].content[0].url' },
+      { rule: 'media_url', path: 'steps[0].content[0].link.url' },
+    ]);
+    // Same junk WITHOUT the stored exemption is rejected (data entry covered too).
+    const fresh = collectWriteViolations({
+      data: { content: [{ type: 'embed', url: 'legacy-junk' }] },
+      contentType: 'banner',
+    });
+    expect(fresh.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'media_url', path: 'data.content[0].url' },
+    ]);
+  });
 });
