@@ -9,30 +9,6 @@ export class UnknownError extends BaseError {
   };
 }
 
-export class ContentTooLargeError extends BaseError {
-  code = 'E2004';
-  messageDict = {
-    en: 'Content is too large. Maximum length is 100k characters.',
-    'zh-CN': '内容过长。最大长度为 10 万字符。',
-  };
-}
-
-export class PayloadTooLargeError extends BaseError {
-  code = 'E2005';
-  messageDict = {
-    en: 'Request payload is too large. Maximum size is 100KB.',
-    'zh-CN': '请求数据过大。最大大小为 100KB。',
-  };
-}
-
-export class ConnectionError extends BaseError {
-  code = 'E0001';
-  messageDict = {
-    en: 'Cannot connect to the Usertour server, please try again later.',
-    'zh-CN': '无法连接到 Usertour 服务器，请稍后重试。',
-  };
-}
-
 export class ParamsError extends BaseError {
   code = 'E0003';
   messageDict = {
@@ -81,35 +57,11 @@ export class InvalidVerificationSession extends BaseError {
   };
 }
 
-export class IncorrectVerificationCode extends BaseError {
-  code = 'E0009';
-  messageDict = {
-    en: 'Verification code is incorrect, please try again',
-    'zh-CN': '验证码错误，请重试',
-  };
-}
-
-export class OperationTooFrequent extends BaseError {
-  code = 'E0010';
-  messageDict = {
-    en: 'Operation too frequent, please try again later',
-    'zh-CN': '操作过于频繁，请稍后再试',
-  };
-}
-
 export class AuthenticationExpiredError extends BaseError {
   code = 'E0011';
   messageDict = {
     en: 'Authentication expired, please log in again',
     'zh-CN': '身份验证已过期，请重新登录',
-  };
-}
-
-export class UnsupportedFileTypeError extends BaseError {
-  code = 'E0012';
-  messageDict = {
-    en: 'This file type is temporarily not supported',
-    'zh-CN': '暂不支持该文件类型',
   };
 }
 
@@ -131,14 +83,6 @@ export class MemberEnvironmentNotAllowedError extends BaseError {
   messageDict = {
     en: 'Your project membership does not allow acting on this environment',
     'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
-  };
-}
-
-export class ContentNotPublishedError extends BaseError {
-  code = 'E0014';
-  messageDict = {
-    en: 'You have reached your Survey questions limit. Please upgrade your Usertour account under Settings → Billing.',
-    'zh-CN': '您已经达到了 Survey 问题的限制，请在设置 → 账单中升级您的 Usertour 账户。',
   };
 }
 
@@ -663,24 +607,6 @@ export class InvalidCursorError extends OpenAPIError {
   };
 }
 
-export class InvalidCursorPreviousError extends OpenAPIError {
-  code = 'E1008';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid previous cursor parameter',
-    'zh-CN': '无效的上一个游标参数',
-  };
-}
-
-export class InvalidRequestError extends OpenAPIError {
-  code = 'E1009';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid request',
-    'zh-CN': '无效的请求',
-  };
-}
-
 export class RateLimitExceededError extends OpenAPIError {
   code = 'E1013';
   statusCode = HttpStatus.TOO_MANY_REQUESTS;
@@ -705,15 +631,6 @@ export class InvalidScopeError extends OpenAPIError {
   messageDict = {
     en: 'Invalid scope parameter',
     'zh-CN': '无效的范围参数',
-  };
-}
-
-export class InvalidOrderByError extends OpenAPIError {
-  code = 'E1016';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid orderBy parameter.',
-    'zh-CN': '无效的排序参数。',
   };
 }
 
@@ -1061,19 +978,14 @@ export class IdentityVerificationRequiresActiveSecretError extends BaseError {
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
-  E0001: ConnectionError,
   E0003: ParamsError,
   E0004: OAuthError,
   E0005: AccountNotFoundError,
   E0006: PasswordIncorrect,
   E0007: EmailAlreadyRegistered,
   E0008: InvalidVerificationSession,
-  E0009: IncorrectVerificationCode,
-  E0010: OperationTooFrequent,
   E0011: AuthenticationExpiredError,
-  E0012: UnsupportedFileTypeError,
   E0013: NoPermissionError,
-  E0014: ContentNotPublishedError,
   E0015: TeamMemberLimitError,
   E0016: InvalidLicenseError,
   E0017: LicenseExpiredError,
@@ -1087,13 +999,10 @@ const errorMap = {
   E1005: ContentSessionNotFoundError,
   E1006: InvalidLimitError,
   E1007: InvalidCursorError,
-  E1008: InvalidCursorPreviousError,
-  E1009: InvalidRequestError,
   E1010: MissingApiKeyError,
   E1013: RateLimitExceededError,
   E1014: ServiceUnavailableError,
   E1015: InvalidScopeError,
-  E1016: InvalidOrderByError,
   E1017: ValidationError,
   E1018: SDKAuthenticationError,
   E1022: AttributeDefinitionNotFoundError,
