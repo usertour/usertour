@@ -135,11 +135,13 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete content',
       capability: Capability.ContentDelete,
       description:
-        'Delete a piece of content (soft delete — recoverable with `restore_content`). Deleting ' +
-        'also UNPUBLISHES it from every environment and permanently discards the per-environment ' +
-        'publish state (which environments, which version, since when) — restore brings back an ' +
-        'UNPUBLISHED draft, not that history. "Was this ever live?" is answerable afterwards only ' +
-        "through the dashboard's audit log (publish / unpublish / delete are recorded there).",
+        'Delete a piece of content (soft delete — recoverable with `restore_content`). It REFUSES ' +
+        'while the content is still published anywhere: E1028, "unpublish it from all environments ' +
+        'first" — deleting does NOT unpublish for you. So the order is unpublish_content (per ' +
+        'environment), then delete. What delete drops is the live-state row: restore brings the ' +
+        'content back as an UNPUBLISHED draft with its versions intact. The publish HISTORY itself ' +
+        'survives — each publish is recorded permanently and still reads back after a delete + ' +
+        'restore, so "was this ever live, and on which version?" stays answerable.',
       inputSchema: { contentId: z.string() },
       handler: async (args, ctx) => {
         await ctx.services.content.remove(String(args.contentId), ctx.projectId);
@@ -153,10 +155,9 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Restore a soft-deleted content (find it via `list_content` with `deleted: true`). It comes ' +
-        'back as an UNPUBLISHED draft with its VERSIONS intact — but not its publish state: the ' +
-        'per-environment publish history was discarded at delete time (the audit log is the only ' +
-        'record). Publish again explicitly to go live. Idempotent if the content is not deleted. ' +
-        'Returns the restored content.',
+        'back as an UNPUBLISHED draft with its VERSIONS intact; its publish HISTORY survived the ' +
+        'delete too (each publish is recorded permanently), but nothing is live again until you ' +
+        'publish explicitly. Idempotent if the content is not deleted. Returns the restored content.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) => ctx.services.content.restore(String(args.contentId), ctx.projectId),
     },
@@ -715,10 +716,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Update an attribute definition',
       capability: Capability.AttributeUpdate,
       description:
-        'Update an attribute definition (displayName / description only). `codeName`, `scope`, and ' +
-        '`dataType` are IMMUTABLE — there is no type-change path; a passed dataType/scope/codeName ' +
-        'is ignored (the call returns the unchanged value, with no error). To change a type, create ' +
-        'a new attribute.',
+        'Update an attribute definition. `codeName` and `scope` are IMMUTABLE — passing either is ' +
+        'silently ignored (the call returns the unchanged value, no error). `dataType` CAN be ' +
+        'changed, but only while nothing conflicts: with stored values that do not fit the new ' +
+        'type the call fails with E1017 naming how many values block it, so a type change is safe ' +
+        'to attempt — it either applies or tells you why not.',
       inputSchema: { id: z.string().describe('The attribute id.'), ...updateAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.update(
