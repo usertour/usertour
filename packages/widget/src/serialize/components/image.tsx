@@ -54,7 +54,11 @@ export const ImageSerialize = memo<ImageSerializeProps>((props) => {
       src={element.url}
       style={transformsStyle(element)}
       className={className}
-      alt={messages.image}
+      // The author's own description wins; the generic localized word is only a
+      // fallback for images that carry none. (`alt` is authored via the API —
+      // it round-trips through storage — so ignoring it made every screen
+      // reader announce "Image" no matter what was written.)
+      alt={element.alt ?? messages.image}
     />
   );
 
