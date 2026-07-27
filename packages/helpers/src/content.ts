@@ -184,7 +184,13 @@ export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilit
     hideRules: true,
   },
   [ContentDataType.LAUNCHER]: { ...NO_AUTO_START_CAPABILITIES },
-  [ContentDataType.BANNER]: { ...NO_AUTO_START_CAPABILITIES },
+  // Banner is a SINGLETON (one shows at a time) but was the only singleton with
+  // no priority: two banners whose rules overlap left the author no way to pick
+  // the winner — the runtime falls back to query order. It already sorts
+  // candidates with priorityCompare, so exposing the knob is all that was
+  // missing. The rest stays off: a banner is re-evaluated every page, so
+  // frequency / wait / if-not-complete / hide rules have nothing to act on.
+  [ContentDataType.BANNER]: { ...NO_AUTO_START_CAPABILITIES, priority: true },
   // Announcements are a FEED, not a popup: their `when` rules act purely as an
   // audience filter for feed inclusion (announcement.service filterByTargeting);
   // none of the session-start knobs (frequency / wait / priority / …) apply, and

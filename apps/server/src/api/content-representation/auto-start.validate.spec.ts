@@ -38,29 +38,50 @@ describe('validateAutoStartForType', () => {
     ]);
   });
 
-  it.each(['launcher', 'banner'])(
-    '%s (show-only) allows conditions but no settings/hide rules',
-    (type) => {
-      // Bare conditions are fine.
-      expect(validateAutoStartForType({ when }, undefined, type)).toEqual([]);
+  it.each(['launcher'])('%s (show-only) allows conditions but no settings/hide rules', (type) => {
+    // Bare conditions are fine.
+    expect(validateAutoStartForType({ when }, undefined, type)).toEqual([]);
 
-      const start: RepresentationStartRules = {
+    const start: RepresentationStartRules = {
+      when,
+      frequency: { mode: 'once' },
+      priority: 'high',
+      waitSeconds: 500,
+      startIfNotComplete: true,
+    };
+    const errs = validateAutoStartForType(start, { when }, type);
+    expect(errs).toEqual([
+      `${type} content does not support a start \`frequency\`.`,
+      `${type} content does not support a start \`priority\`.`,
+      `${type} content does not support a start \`waitSeconds\`.`,
+      `${type} content does not support \`startIfNotComplete\`.`,
+      `${type} content does not support \`hideRules\`.`,
+    ]);
+  });
+
+  it('banner allows priority (it is a singleton and needs a tie-break) but nothing else', () => {
+    // Banner competes for the single banner slot, so the author must be able to
+    // pick the winner. Everything else stays unsupported: it is re-evaluated on
+    // every page, so frequency / wait / if-not-complete / hide rules are moot.
+    expect(validateAutoStartForType({ when, priority: 'high' }, undefined, 'banner')).toEqual([]);
+    const errs = validateAutoStartForType(
+      {
         when,
         frequency: { mode: 'once' },
         priority: 'high',
         waitSeconds: 500,
         startIfNotComplete: true,
-      };
-      const errs = validateAutoStartForType(start, { when }, type);
-      expect(errs).toEqual([
-        `${type} content does not support a start \`frequency\`.`,
-        `${type} content does not support a start \`priority\`.`,
-        `${type} content does not support a start \`waitSeconds\`.`,
-        `${type} content does not support \`startIfNotComplete\`.`,
-        `${type} content does not support \`hideRules\`.`,
-      ]);
-    },
-  );
+      },
+      { when },
+      'banner',
+    );
+    expect(errs).toEqual([
+      'banner content does not support a start `frequency`.',
+      'banner content does not support a start `waitSeconds`.',
+      'banner content does not support `startIfNotComplete`.',
+      'banner content does not support `hideRules`.',
+    ]);
+  });
 
   it('resource-center allows priority + hide rules but not frequency/wait/ifComplete', () => {
     expect(

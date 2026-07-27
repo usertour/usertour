@@ -45,7 +45,7 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(AUTHORING_GUIDE).not.toContain('"type": "flow"');
   });
 
-  it('auto-start knobs: frequency/wait/ifCompleted are flow+checklist; atLeast flow-only; priority adds resource-center; banner+launcher none', () => {
+  it('auto-start knobs: frequency/wait/ifCompleted are flow+checklist; atLeast flow-only; priority adds resource-center + banner; launcher none', () => {
     const typesWith = (cap: 'frequency' | 'atLeast' | 'wait' | 'ifCompleted' | 'priority') =>
       Object.values(ContentDataType)
         .filter((t) => AUTO_START_CAPABILITIES[t][cap])
@@ -55,14 +55,18 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(typesWith('wait')).toEqual(['checklist', 'flow']);
     expect(typesWith('ifCompleted')).toEqual(['checklist', 'flow']);
     expect(typesWith('atLeast')).toEqual(['flow']);
-    expect(typesWith('priority')).toEqual(['checklist', 'flow', 'resource-center']);
+    expect(typesWith('priority')).toEqual(['banner', 'checklist', 'flow', 'resource-center']);
     // guide side: the sentence carrying the claim
     expect(AUTHORING_GUIDE).toContain(
       '`frequency`, `waitSeconds`, `startIfNotComplete` are **flow + checklist** only',
     );
     expect(AUTHORING_GUIDE).toContain('(`frequency.atLeast`, flow only)');
-    expect(AUTHORING_GUIDE).toContain('`priority` is flow + checklist + resource-center');
-    expect(AUTHORING_GUIDE).toContain('Banner and launcher accept none of these');
+    expect(AUTHORING_GUIDE).toContain(
+      '`priority` is flow + checklist + resource-center + **banner**',
+    );
+    expect(AUTHORING_GUIDE).toContain(
+      'Launcher accepts none of these, and banner accepts ONLY `priority`',
+    );
   });
 
   it('cross-content references: target must be a flow or checklist', () => {
