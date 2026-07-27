@@ -1,4 +1,4 @@
-import { ContentDataType, RulesCondition } from '@usertour/types';
+import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service';
@@ -328,9 +328,57 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
       facts({ startRulesActive: false, autoStartRules: stamped }),
       tree,
     );
-    expect(r.blockedBy).toContain('start_rules');
-    expect(r.summary).toMatch(/not blockers/i);
+    // The gate is UNDETERMINED, not failed: the only leaf that fails is one the
+    // server cannot evaluate, so it must stay out of blockedBy — otherwise the
+    // report contradicts its own "`unknown` is not a blocker" contract.
+    expect(r.blockedBy).not.toContain('start_rules');
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('unknown');
+    // With nothing reported as blocked, the old "`unknown` conditions are NOT
+    // blockers" disclaimer is gone too — there is no longer a contradiction to
+    // explain away. The summary just says what to do next.
+    expect(r.summary).toMatch(/no server-side blocker/i);
     expect(r.summary).toContain('pass `companyId`');
+  });
+
+  it('live-only leaf alone → undetermined, not blocked (every tracker hit this)', () => {
+    // A start rule whose only condition is "is this element on the page" can never
+    // be decided server-side. It used to fold to unmatched and put start_rules in
+    // blockedBy, so the summary read "Blocked by: start_rules" and, in the same
+    // sentence, "`unknown` conditions are NOT blockers". Trackers are gated on
+    // exactly this, so 100% of them reported as blocked.
+    const stamped: RulesCondition[] = [
+      { id: 'e1', type: RulesType.ELEMENT, data: {}, operators: 'and', actived: false } as any,
+    ];
+    const readable = [{ type: 'element', state: 'present', target: { selector: '#cta' } }] as any;
+    const tree = annotateConditions(stamped, readable, false);
+    const r = buildDiagnoseReport(
+      facts({ startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    expect(r.blockedBy).not.toContain('start_rules');
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('unknown');
+    expect(r.summary).not.toMatch(/^Blocked by/);
+  });
+
+  it('a definitively unmatched leaf still blocks, even beside an unknown one', () => {
+    // The optimistic re-fold must not swallow real failures: with one leaf that
+    // is genuinely unmatched AND one that is unknown, the AND group fails no
+    // matter what the unknown turns out to be — that is a real block.
+    const stamped: RulesCondition[] = [
+      attr('enterprise', false),
+      { id: 'e1', type: RulesType.ELEMENT, data: {}, operators: 'and', actived: false } as any,
+    ];
+    const readable = [
+      { type: 'attribute', scope: 'user', attribute: 'plan_tier', op: 'is', value: 'enterprise' },
+      { type: 'element', state: 'present', target: { selector: '#cta' } },
+    ] as any;
+    const tree = annotateConditions(stamped, readable, false);
+    const r = buildDiagnoseReport(
+      facts({ startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    expect(r.blockedBy).toContain('start_rules');
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('fail');
   });
 
   it('a passing tracker fires its event — summary says fire, not "show" (headless type)', () => {

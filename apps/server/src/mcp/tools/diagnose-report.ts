@@ -218,6 +218,37 @@ const startRulesUnknownCaveat = (tree?: AnnotatedCondition): string => {
   return ` NOTE: the tree contains \`unknown\` conditions the server could not evaluate — they count as NOT matched in this verdict, so the fail may be an artifact; ${fixes} for a clean verdict.`;
 };
 
+/**
+ * Fold an annotated condition tree, deciding what an `unknown` leaf counts as.
+ * The runtime's own fold treats unknown as NOT matched (it has no other option
+ * server-side); running the same tree optimistically — unknown as matched —
+ * separates two very different verdicts:
+ *
+ *   optimistic ALSO fails  → some leaf is definitively unmatched: a REAL block
+ *   optimistic passes,
+ *   pessimistic fails      → the difference is only the unknowns: UNDETERMINED
+ *
+ * Without this, a rule whose only leaf is live-only (every tracker, any flow
+ * gated on a DOM element) reported "Blocked by: start_rules" while the tool's
+ * own contract says `unknown` is not a blocker — the report contradicted
+ * itself in one sentence, and sent authors to fix targeting that was fine.
+ */
+const foldAssumingUnknown = (
+  node: AnnotatedCondition | undefined,
+  assume: 'matched' | 'unmatched',
+): boolean => {
+  if (!node) return true;
+  const children = (node as { conditions?: AnnotatedCondition[] }).conditions;
+  if (children && children.length > 0) {
+    const results = children.map((c) => foldAssumingUnknown(c, assume));
+    return (node as { match?: string }).match === 'all'
+      ? results.every(Boolean)
+      : results.some(Boolean);
+  }
+  if (node.status === 'unknown') return assume === 'matched';
+  return node.status === 'matched';
+};
+
 export const buildDiagnoseReport = (
   facts: DiagnoseFacts,
   startConditions?: AnnotatedCondition,
@@ -296,21 +327,33 @@ export const buildDiagnoseReport = (
           // For other types, "no rules at all" is usually a DESIGNED on-demand
           // guide (started via start_content / usertour.start()), not a broken
           // one — say so instead of a generic failure that reads like a bug.
+          // A fail whose ONLY cause is not-evaluable leaves is not a fail — it is
+          // "the server can't tell". Re-fold the tree optimistically to separate
+          // the two, so `unknown` stops landing in `blockedBy` against the tool's
+          // own contract (see foldAssumingUnknown).
+          const undetermined =
+            !facts.startRulesActive &&
+            !!startConditions &&
+            foldAssumingUnknown(startConditions, 'matched');
           const startRulesDetail = isAnnouncement
             ? facts.startRulesActive
               ? 'the audience filter matches this user (or there is no targeting).'
-              : 'the audience filter does not match this user — see startConditions.'
+              : undetermined
+                ? 'the audience filter cannot be decided server-side — every condition that fails here is one the server cannot evaluate; confirm it in the running app.'
+                : 'the audience filter does not match this user — see startConditions.'
             : facts.startRulesActive
               ? 'auto-start enabled and start conditions match.'
-              : startConditions
-                ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
-                : 'auto-start is not configured, so it never appears on its own — the normal ' +
-                  'pattern for an on-demand guide launched via a checklist / resource-center ' +
-                  '`start_content` reference or `usertour.start()`. Confirm something ' +
-                  'references it; add startRules only if it should also start by itself.';
+              : undetermined
+                ? `not decidable server-side: nothing here is definitively unmatched — the conditions that fail are the ones the server cannot evaluate (live-only DOM/text leaves, or company-scoped ones without \`companyId\`). This is NOT a block; confirm those leaves in the running app.${startRulesUnknownCaveat(startConditions)}`
+                : startConditions
+                  ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
+                  : 'auto-start is not configured, so it never appears on its own — the normal ' +
+                    'pattern for an on-demand guide launched via a checklist / resource-center ' +
+                    '`start_content` reference or `usertour.start()`. Confirm something ' +
+                    'references it; add startRules only if it should also start by itself.';
           gates.push({
             id: 'start_rules',
-            status: facts.startRulesActive ? 'pass' : 'fail',
+            status: facts.startRulesActive ? 'pass' : undetermined ? 'unknown' : 'fail',
             detail:
               facts.hasActiveSession && !facts.startRulesActive
                 ? `informational, not a blocker here (this user is covered by the active session): ${startRulesDetail}`
