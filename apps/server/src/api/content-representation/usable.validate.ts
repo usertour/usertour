@@ -301,7 +301,15 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
           : '';
       warn(
         'config.autoStartRules',
-        `${input.type} has no start rules, so it never appears on its own — it surfaces only when its auto-start conditions match.${extra} Add at least one auto-start condition; for an always-available surface use a permissive current_url match. It can still be launched programmatically via usertour.start().`,
+        // The old middle clause said it "surfaces only when its auto-start
+        // conditions match" — of a content that HAS no conditions, which reads as
+        // a contradiction and tells the author nothing. State the consequence
+        // instead, then the two ways out.
+        `${input.type} has no start rules, so it never starts on its own for anyone.${extra} Add at least one auto-start condition — for an always-available surface a permissive current_url match. ${
+          input.type === ContentDataType.RESOURCE_CENTER
+            ? 'Or leave it rule-less on purpose and have the host app open it with usertour.start() — that DOES create the first session even with no rules, but then it reaches only the users the app explicitly launches it for.'
+            : 'It can still be launched programmatically via usertour.start().'
+        }`,
       );
     }
   }
