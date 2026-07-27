@@ -138,10 +138,12 @@ export function buildWriteTools(): McpTool[] {
         'Delete a piece of content (soft delete — recoverable with `restore_content`). It REFUSES ' +
         'while the content is still published anywhere: E1028, "unpublish it from all environments ' +
         'first" — deleting does NOT unpublish for you. So the order is unpublish_content (per ' +
-        'environment), then delete. What delete drops is the live-state row: restore brings the ' +
-        'content back as an UNPUBLISHED draft with its versions intact. The publish HISTORY itself ' +
-        'survives — each publish is recorded permanently and still reads back after a delete + ' +
-        'restore, so "was this ever live, and on which version?" stays answerable.',
+        'environment), then delete. Restore brings the content back as an UNPUBLISHED draft with ' +
+        'its versions intact. Note what you lose HERE: `environments[]` goes empty the moment you ' +
+        'unpublish — before any delete — and never comes back, so from this API "was this ever ' +
+        'live, and on which version?" is unanswerable afterwards. The history is retained ' +
+        'server-side and shown in the dashboard, but no v2/MCP endpoint exposes it: capture what ' +
+        'you need (version id, environment, publishedAt) BEFORE unpublishing.',
       inputSchema: { contentId: z.string() },
       handler: async (args, ctx) => {
         await ctx.services.content.remove(String(args.contentId), ctx.projectId);
@@ -155,9 +157,11 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Restore a soft-deleted content (find it via `list_content` with `deleted: true`). It comes ' +
-        'back as an UNPUBLISHED draft with its VERSIONS intact; its publish HISTORY survived the ' +
-        'delete too (each publish is recorded permanently), but nothing is live again until you ' +
-        'publish explicitly. Idempotent if the content is not deleted. Returns the restored content.',
+        'back as an UNPUBLISHED draft with its VERSIONS intact, and nothing is live again until you ' +
+        'publish explicitly. `environments[]` comes back EMPTY: the per-environment publish state ' +
+        'is not restored and this API cannot report what it used to be (the dashboard keeps the ' +
+        'history; no v2/MCP endpoint exposes it). Idempotent if the content is not deleted. ' +
+        'Returns the restored content.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) => ctx.services.content.restore(String(args.contentId), ctx.projectId),
     },
