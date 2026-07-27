@@ -16,6 +16,7 @@ import { BizUser, Environment } from '@/common/types/schema';
 import {
   evaluateCustomContentVersion,
   filterAvailableAutoStartContentVersions,
+  filterSingleSessionContentVersions,
   findLatestActivatedCustomContentVersions,
   isActivedAutoStartRules,
   isActivedHideRules,
@@ -158,10 +159,19 @@ export class ContentDiagnosisService {
         let activeSlotHeldByContentId: string | undefined;
         let outrankedByContentId: string | undefined;
         if (isSingletonContentType(contentType) && !target.session.activeSession) {
+          // The candidate pool must be the orchestrator's, not every evaluated
+          // version: for banner / launcher / resource center it drops the ones
+          // this user has already used up (one session per user, lifetime), so a
+          // sibling the runtime will never consider cannot win the slot. Without
+          // this the tool reported "outranked by X" while X's own diagnosis said
+          // X can never show again — the runtime would in fact start THIS one.
+          const competing = isSingleSessionContentType(contentType)
+            ? filterSingleSessionContentVersions(evaluated)
+            : evaluated;
           // Only meaningful when this content would otherwise auto-start (its own gates
           // pass) — if its start_rules/frequency/hide already fail, THAT is the reason and
           // the slot competition is moot noise. So gate on it being eligible first.
-          const eligible = filterAvailableAutoStartContentVersions(evaluated, contentType, [], []);
+          const eligible = filterAvailableAutoStartContentVersions(competing, contentType, [], []);
           const targetEligible = eligible.some((cv) => cv.content.id === contentId);
           if (targetEligible) {
             // Strategy 1: another content of this type has a live session → it resumes into

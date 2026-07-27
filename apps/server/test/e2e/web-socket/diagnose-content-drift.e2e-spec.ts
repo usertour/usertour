@@ -340,6 +340,34 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
     await check(environment, content, user, ContentDataType.BANNER, false);
   });
 
+  it('a used-up banner cannot outrank a fresh one → runtime starts the fresh, tool must not block', async () => {
+    // The runtime drops single-session content this user already finished BEFORE
+    // picking a winner, so a dismissed banner is not in the race at all. The tool
+    // used to compete against every evaluated version and reported the newcomer
+    // "outranked by" a banner whose own diagnosis said it can never show again —
+    // two contradictory answers, and the runtime in fact starts the newcomer.
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const usedUp = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.BANNER,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { priority: ContentPriority.HIGH },
+      userData: { plan: 'pro' },
+      dismissedSessions: 1,
+    });
+    const fresher = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.BANNER,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { priority: ContentPriority.LOW },
+      user: usedUp.user,
+    });
+    await check(environment, fresher.content, usedUp.user, ContentDataType.BANNER, true);
+  });
+
   it('active session + non-matching start rules → runtime RESUMES it, tool must not block', async () => {
     // A flow with an active session resumes regardless of whether its start rules
     // currently match (findLatestActivatedCustomContentVersions gates only on the
