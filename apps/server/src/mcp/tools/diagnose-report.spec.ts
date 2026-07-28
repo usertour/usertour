@@ -6,6 +6,7 @@ import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service'
 import {
   type AnnotatedCondition,
   annotateConditions,
+  annotateFromVerdicts,
   attachConditionNames,
   attachUserAttributeValues,
   buildDiagnoseReport,
@@ -411,5 +412,60 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(buildDiagnoseReport(facts({ hasActiveSession: true })).summary).toMatch(
       /currently active/i,
     );
+  });
+});
+
+describe('annotateFromVerdicts (segment expansion, three-valued fold)', () => {
+  const leaf = (actived: boolean | undefined): RulesCondition =>
+    ({
+      id: 'l',
+      type: RulesType.USER_ATTR,
+      operators: 'and',
+      data: {},
+      ...(actived === undefined ? {} : { actived }),
+    }) as RulesCondition;
+  const readableLeaf = {
+    type: 'attribute',
+    scope: 'user',
+    attribute: 'plan',
+    op: 'is',
+    value: 'pro',
+  } as any;
+
+  it('leaves map verdicts to matched/unmatched, unset to unknown', () => {
+    const tree = annotateFromVerdicts(
+      [leaf(true), leaf(false), leaf(undefined)],
+      [readableLeaf, readableLeaf, readableLeaf],
+    );
+    expect(tree?.conditions?.map((c) => c.status)).toEqual(['matched', 'unmatched', 'unknown']);
+  });
+
+  it('AND fold: one unmatched forces unmatched; an unknown that could flip keeps unknown', () => {
+    const and = (ls: RulesCondition[]) => ls.map((l) => ({ ...l, operators: 'and' as const }));
+    expect(
+      annotateFromVerdicts(and([leaf(true), leaf(false)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('unmatched');
+    expect(
+      annotateFromVerdicts(and([leaf(true), leaf(undefined)]), [readableLeaf, readableLeaf])
+        ?.status,
+    ).toBe('unknown');
+    expect(
+      annotateFromVerdicts(and([leaf(true), leaf(true)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('matched');
+  });
+
+  it('OR fold: one matched wins; all-unmatched fails; else unknown', () => {
+    // The top-level join comes from the FIRST leaf's `operators` — 'or' here.
+    const or = (ls: RulesCondition[]) => ls.map((l) => ({ ...l, operators: 'or' as const }));
+    expect(
+      annotateFromVerdicts(or([leaf(false), leaf(true)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('matched');
+    expect(
+      annotateFromVerdicts(or([leaf(false), leaf(false)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('unmatched');
+    expect(
+      annotateFromVerdicts(or([leaf(false), leaf(undefined)]), [readableLeaf, readableLeaf])
+        ?.status,
+    ).toBe('unknown');
   });
 });

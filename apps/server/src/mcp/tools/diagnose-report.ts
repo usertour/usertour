@@ -38,6 +38,16 @@ export type AnnotatedCondition = RepresentationCondition & {
   /** Extra human-readable context for this leaf (e.g. why an unmatched attribute
    * can never match yet). */
   note?: string;
+  /** Segment leaves only: how the segment defines membership. */
+  segmentKind?: 'all' | 'manual' | 'condition';
+  /** Segment leaves, kind=condition: the segment's OWN conditions annotated the
+   * same way as the outer tree (status + actual values) — the per-condition
+   * "why is this user outside" that the leaf verdict alone cannot give.
+   * Explanatory: the authoritative in/out verdict is this leaf's own `status`. */
+  segmentConditions?: AnnotatedCondition;
+  /** Segment leaves, kind=manual: list size + whether THIS user/company is on it. */
+  memberCount?: number;
+  isMember?: boolean;
 };
 
 /** Collect the segment + content-state ids referenced anywhere in a condition tree, so the
@@ -166,6 +176,55 @@ export const annotateConditions = (
     match: stamped[0]?.operators === 'and' ? 'all' : 'any',
     status: isConditionsActived(stamped) ? 'matched' : 'unmatched',
     conditions: stamped.map((s, i) => node(s, readable[i])),
+  } as AnnotatedCondition;
+};
+
+/**
+ * Annotate a condition tree from PER-LEAF verdicts (`actived` true/false, unset
+ * = not evaluable) — used for segment expansions, where verdicts come from the
+ * runtime's own filter builder run one leaf at a time. Groups fold three-valued:
+ * a group is matched/unmatched only when the leaves force it; an unknown leaf
+ * that could still flip the outcome keeps the group `unknown`.
+ */
+export const annotateFromVerdicts = (
+  stamped: RulesCondition[],
+  readable: RepresentationCondition[],
+): AnnotatedCondition | undefined => {
+  if (!stamped || stamped.length === 0) return undefined;
+  const leafStatusOf = (s: RulesCondition): ConditionStatus =>
+    s.actived === true ? 'matched' : s.actived === false ? 'unmatched' : 'unknown';
+  const fold = (children: ConditionStatus[], all: boolean): ConditionStatus => {
+    if (all) {
+      if (children.some((c) => c === 'unmatched')) return 'unmatched';
+      return children.every((c) => c === 'matched') ? 'matched' : 'unknown';
+    }
+    if (children.some((c) => c === 'matched')) return 'matched';
+    return children.every((c) => c === 'unmatched') ? 'unmatched' : 'unknown';
+  };
+  const node = (s: RulesCondition, r: RepresentationCondition): AnnotatedCondition => {
+    if (s.conditions?.length) {
+      const rChildren = (r as { conditions?: RepresentationCondition[] }).conditions ?? [];
+      const kids = s.conditions.map((sc, i) => node(sc, rChildren[i]));
+      return {
+        ...(r as object),
+        status: fold(
+          kids.map((k) => k.status),
+          (r as { match?: string }).match === 'all',
+        ),
+        conditions: kids,
+      } as AnnotatedCondition;
+    }
+    return { ...(r as object), status: leafStatusOf(s) } as AnnotatedCondition;
+  };
+  const kids = stamped.map((s, i) => node(s, readable[i]));
+  return {
+    type: 'group',
+    match: stamped[0]?.operators === 'and' ? 'all' : 'any',
+    status: fold(
+      kids.map((k) => k.status),
+      stamped[0]?.operators === 'and',
+    ),
+    conditions: kids,
   } as AnnotatedCondition;
 };
 

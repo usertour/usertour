@@ -12,6 +12,11 @@ import {
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 
 import { BizService } from '@/biz/biz.service';
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import {
+  createBizCompanyConditionsFilter,
+  createBizUserConditionsFilter,
+} from '@/common/attribute/filter';
 import { BizUser, Environment } from '@/common/types/schema';
 import {
   evaluateCustomContentVersion,
@@ -99,6 +104,20 @@ export interface DiagnoseFacts {
   announcementSeen?: boolean;
   /** Distribution level of the published version (silent / badge / popup). */
   announcementDistribution?: string;
+}
+
+/** Per-segment breakdown for the diagnose report's segment leaves — see explainSegments. */
+export interface SegmentExplanation {
+  kind: 'all' | 'manual' | 'condition';
+  bizType: 'user' | 'company';
+  /** manual only. For a company segment with no company context: undefined. */
+  isMember?: boolean;
+  /** manual only. */
+  memberCount?: number;
+  /** condition only: the stored tree with per-LEAF `actived` verdicts stamped
+   * (a leaf left unset = not evaluable). Undefined when nothing is evaluable
+   * (company segment without a company context / user not found). */
+  conditions?: RulesCondition[];
 }
 
 @Injectable()
@@ -304,5 +323,130 @@ export class ContentDiagnosisService {
         (tab.blocks ?? []).some((block) => block?.type === ResourceCenterBlockType.ANNOUNCEMENT),
       );
     });
+  }
+  /**
+   * Explain WHY a user is inside/outside each referenced segment — the
+   * per-condition breakdown the segment leaf in a diagnose report cannot give
+   * on its own (membership is computed as ONE combined query at runtime, with
+   * no per-leaf verdicts).
+   *
+   * Faithfulness rule: every leaf verdict comes from the SAME filter builder
+   * the runtime membership check uses (createBiz*ConditionsFilter), run with
+   * exactly one leaf at a time — so the explanation can never use different
+   * semantics than the verdict it explains. The authoritative in/out answer
+   * stays the content rule's own stamped leaf; this is commentary.
+   *
+   * A company-typed segment diagnosed without a company context returns
+   * `conditions: undefined` (nothing evaluable) rather than guesses.
+   */
+  async explainSegments(
+    segmentIds: string[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<Record<string, SegmentExplanation>> {
+    if (segmentIds.length === 0) return {};
+    const out: Record<string, SegmentExplanation> = {};
+    const [segments, attributes, bizUser] = await Promise.all([
+      this.prisma.segment.findMany({ where: { id: { in: segmentIds } } }),
+      this.prisma.attribute.findMany({ where: { projectId: environment.projectId } }),
+      this.prisma.bizUser.findFirst({
+        where: { environmentId: environment.id, externalId: externalUserId },
+      }),
+    ]);
+    const bizCompany = externalCompanyId
+      ? await this.prisma.bizCompany.findFirst({
+          where: { environmentId: environment.id, externalId: externalCompanyId },
+        })
+      : null;
+
+    for (const segment of segments) {
+      const isUserSegment = segment.bizType === SegmentBizType.USER;
+      const bizType = isUserSegment ? ('user' as const) : ('company' as const);
+
+      if (segment.dataType === SegmentDataType.ALL) {
+        out[segment.id] = { kind: 'all', bizType };
+        continue;
+      }
+
+      if (segment.dataType === SegmentDataType.MANUAL) {
+        if (isUserSegment) {
+          const [memberCount, membership] = await Promise.all([
+            this.prisma.bizUserOnSegment.count({ where: { segmentId: segment.id } }),
+            bizUser
+              ? this.prisma.bizUserOnSegment.findFirst({
+                  where: { segmentId: segment.id, bizUserId: bizUser.id },
+                })
+              : Promise.resolve(null),
+          ]);
+          out[segment.id] = { kind: 'manual', bizType, memberCount, isMember: !!membership };
+        } else {
+          const memberCount = await this.prisma.bizCompanyOnSegment.count({
+            where: { segmentId: segment.id },
+          });
+          const membership = bizCompany
+            ? await this.prisma.bizCompanyOnSegment.findFirst({
+                where: { segmentId: segment.id, bizCompanyId: bizCompany.id },
+              })
+            : null;
+          out[segment.id] = {
+            kind: 'manual',
+            bizType,
+            memberCount,
+            // Without a company context we cannot say which company's membership
+            // to check — leave isMember undefined rather than guessing.
+            isMember: bizCompany ? !!membership : undefined,
+          };
+        }
+        continue;
+      }
+
+      // CONDITION segment: stamp a per-leaf verdict onto a clone of the stored tree.
+      const conditions = Array.isArray(segment.data)
+        ? (JSON.parse(JSON.stringify(segment.data)) as RulesCondition[])
+        : undefined;
+      const canEvaluate = isUserSegment ? !!bizUser : !!bizCompany;
+      if (conditions && canEvaluate) {
+        const stampLeaf = async (leaf: RulesCondition): Promise<void> => {
+          const filter = isUserSegment
+            ? createBizUserConditionsFilter([leaf], attributes)
+            : createBizCompanyConditionsFilter([leaf], attributes);
+          if (!filter) {
+            // The leaf did not compile (attribute deleted / unsupported) — not
+            // evaluable, leave `actived` unset so it reads as unknown.
+            return;
+          }
+          const hit = isUserSegment
+            ? await this.prisma.bizUser.findFirst({
+                where: {
+                  environmentId: environment.id,
+                  externalId: externalUserId,
+                  AND: [filter],
+                },
+              })
+            : await this.prisma.bizCompany.findFirst({
+                where: {
+                  environmentId: environment.id,
+                  externalId: String(externalCompanyId),
+                  AND: [filter],
+                },
+              });
+          leaf.actived = !!hit;
+        };
+        const walk = async (nodes: RulesCondition[]): Promise<void> => {
+          for (const node of nodes) {
+            if (node.conditions?.length) await walk(node.conditions);
+            else await stampLeaf(node);
+          }
+        };
+        await walk(conditions);
+      }
+      out[segment.id] = {
+        kind: 'condition',
+        bizType,
+        conditions: canEvaluate ? conditions : undefined,
+      };
+    }
+    return out;
   }
 }

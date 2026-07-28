@@ -34,7 +34,9 @@ import { editorUrlFor, withEditorUrl } from './editor-url';
 import { READ_ONLY } from './annotations';
 import { AUTHORING_GUIDE } from './authoring-guide';
 import {
+  type AnnotatedCondition,
   annotateConditions,
+  annotateFromVerdicts,
   attachConditionNames,
   attachUserAttributeValues,
   buildDiagnoseReport,
@@ -400,7 +402,9 @@ export function buildReadTools(): McpTool[] {
         'the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
-        'unknown so you can see exactly which branch failed. Only gates listed in `blockedBy` ' +
+        'unknown so you can see exactly which branch failed — and a `segment` leaf expands one ' +
+        "level further: `segmentConditions` holds the segment's own conditions with per-leaf " +
+        "verdicts and the user's actual values (manual segments report `isMember`/`memberCount`). Only gates listed in `blockedBy` " +
         'actually block. `unknown` is NOT a blocker — it is a condition that cannot be evaluated ' +
         'server-side (a live-only DOM element/text leaf; current_url when no `url` is passed; or a ' +
         'company / companyMembership condition when no `companyId` is passed); pass `url` to ' +
@@ -561,6 +565,54 @@ export function buildReadTools(): McpTool[] {
             for (const c of contents) if (c.name) nameById[c.id] = c.name;
             attachConditionNames(startConditions, nameById);
             attachConditionNames(hideConditions, nameById);
+          }
+
+          // Expand each segment leaf one level: the segment's OWN conditions,
+          // per-leaf verdicts from the runtime's filter builder (explainSegments),
+          // decompiled + annotated exactly like the outer tree. Without this,
+          // users excluded for entirely different reasons produced byte-identical
+          // reports ("segment ... unmatched") — the single costliest detour in
+          // every eval round. Explanatory only: the leaf's own status (from the
+          // real membership check) stays authoritative.
+          if (segmentIds.length && asString(args.userId)) {
+            const explanations = await ctx.contentDiagnosis.explainSegments(
+              segmentIds,
+              environment,
+              String(asString(args.userId)),
+              asString(args.companyId),
+            );
+            const expand = (tree?: AnnotatedCondition): void => {
+              if (!tree) return;
+              const walk = (n: AnnotatedCondition): void => {
+                for (const child of n.conditions ?? []) walk(child);
+                const segId = (n as { segment?: string }).segment;
+                if (n.type !== 'segment' || !segId) return;
+                const ex = explanations[segId];
+                if (!ex) return;
+                n.segmentKind = ex.kind;
+                if (ex.kind === 'manual') {
+                  n.memberCount = ex.memberCount;
+                  n.isMember = ex.isMember;
+                } else if (ex.kind === 'condition' && ex.conditions) {
+                  const inner = annotateFromVerdicts(
+                    ex.conditions,
+                    decompileConditions(ex.conditions, resolvers),
+                  );
+                  if (inner) {
+                    if (facts.userAttributes)
+                      attachUserAttributeValues(inner, facts.userAttributes);
+                    n.segmentConditions = inner;
+                  }
+                } else if (ex.kind === 'condition') {
+                  const why =
+                    'Segment conditions not evaluable here (company segment without `companyId`, or user not found).';
+                  n.note = n.note ? `${n.note} ${why}` : why;
+                }
+              };
+              walk(tree);
+            };
+            expand(startConditions);
+            expand(hideConditions);
           }
 
           // Show the user's ACTUAL value next to each user-scoped attribute condition so

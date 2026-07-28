@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { requiresEnvironmentScope } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -10,6 +11,7 @@ import {
   buildBizUser,
   buildBizUserOnCompany,
   buildContent,
+  buildSegment,
   buildVersion,
   buildEnvironment,
   buildProject,
@@ -609,6 +611,140 @@ describe('MCP endpoint (e2e)', () => {
       expect(payload.gates[0]).toMatchObject({ id: 'archived', status: 'fail' });
       expect(payload.gates[0].detail).toContain('restore_content');
       expect(payload.summary).toContain('ARCHIVED');
+    });
+
+    it('diagnose expands a segment leaf: users excluded for DIFFERENT reasons read differently', async () => {
+      // The original complaint (three eval rounds in a row): a plan-mismatch user
+      // and an out-of-window user produced byte-identical reports — just
+      // "segment ... unmatched". The expansion must name the failing inner
+      // condition with the user's actual value, per user.
+      const token = await mint([Capability.ContentRead], [projectA]);
+      // dataType 2 = String (1 is Number — a string value against a Number
+      // attribute compiles to a filter that matches nothing).
+      const planAttr = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'seg_plan',
+          displayName: 'plan',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const regionAttr = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'seg_region',
+          displayName: 'region',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const segment = await buildSegment(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        bizType: 1, // USER
+        dataType: 2, // CONDITION
+        name: 'pro users in eu',
+        data: [
+          {
+            id: 'c1',
+            type: 'user-attr',
+            data: { attrId: planAttr.id, logic: 'is', value: 'pro' },
+            operators: 'and',
+          },
+          {
+            id: 'c2',
+            type: 'user-attr',
+            data: { attrId: regionAttr.id, logic: 'is', value: 'eu' },
+            operators: 'and',
+          },
+        ] as unknown as Prisma.InputJsonValue,
+      });
+      // Two users, each failing a DIFFERENT condition.
+      await prisma.bizUser.create({
+        data: {
+          externalId: 'seg-wrong-plan',
+          environmentId: envA,
+          data: { seg_plan: 'free', seg_region: 'eu' },
+        },
+      });
+      await prisma.bizUser.create({
+        data: {
+          externalId: 'seg-wrong-region',
+          environmentId: envA,
+          data: { seg_plan: 'pro', seg_region: 'us' },
+        },
+      });
+      const gated = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+      const gatedV = await buildVersion(prisma, {
+        contentId: gated.id,
+        sequence: 0,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            {
+              id: 'r1',
+              type: 'segment',
+              data: { segmentId: segment.id, logic: 'is' },
+              operators: 'and',
+            },
+          ],
+          autoStartRulesSetting: {},
+        } as unknown as Prisma.InputJsonValue,
+      });
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId: envA,
+          contentId: gated.id,
+          published: true,
+          publishedVersionId: gatedV.id,
+        },
+      });
+
+      const diagnose = async (userId: string) => {
+        const res = await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'diagnose_content',
+              arguments: {
+                contentId: gated.id,
+                environmentId: envA,
+                url: 'https://app.example.com/',
+                userId,
+              },
+            },
+          },
+          token,
+        );
+        return parseToolContent(extractResult(res));
+      };
+      const wrongPlan = await diagnose('seg-wrong-plan');
+      const wrongRegion = await diagnose('seg-wrong-region');
+
+      const segLeaf = (p: any) =>
+        p.startConditions.conditions.find((c: any) => c.type === 'segment');
+      for (const p of [wrongPlan, wrongRegion]) {
+        expect(p.blockedBy).toContain('start_rules');
+        expect(segLeaf(p).segmentKind).toBe('condition');
+        expect(segLeaf(p).segmentConditions).toBeDefined();
+      }
+      const inner = (p: any, code: string) =>
+        segLeaf(p).segmentConditions.conditions.find((c: any) => c.attribute === code);
+      // wrong-plan user: plan condition failed (actual 'free'), region matched.
+      expect(inner(wrongPlan, 'seg_plan')).toMatchObject({ status: 'unmatched', actual: 'free' });
+      expect(inner(wrongPlan, 'seg_region').status).toBe('matched');
+      // wrong-region user: the exact mirror.
+      expect(inner(wrongRegion, 'seg_plan').status).toBe('matched');
+      expect(inner(wrongRegion, 'seg_region')).toMatchObject({ status: 'unmatched', actual: 'us' });
+      // And the two reports are no longer byte-identical.
+      expect(JSON.stringify(wrongPlan)).not.toBe(JSON.stringify(wrongRegion));
     });
 
     it('get_content_schema batches several types with the shared $defs emitted once', async () => {
