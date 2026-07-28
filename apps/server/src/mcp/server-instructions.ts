@@ -18,6 +18,7 @@ Route by intent:
 - Pick a theme → list_themes (page with nextCursor). Every visual type except tracker requires a themeId; call get_theme_schema before writing theme settings.
 - Non-flow content body → the \`data\` shape is per-type: fetch it with get_content_schema BEFORE writing a checklist / launcher / banner / tracker / resource-center body.
 - "Why isn't my content showing?" → diagnose_content. It evaluates the SAME runtime gates the SDK uses (published / user identified / start rules / frequency / session state). Use it before changing targeting blindly.
+- "What would this USER see right now?" → diagnose_user. One call sorts every published content into showing / queued / blocked / browser-dependent, with the slot races settled — start here for support questions, then deep-dive one content with diagnose_content.
 - End-user data (users / companies / sessions / segments) → these act on ONE environment. A token that can act on multiple environments must pass environmentId; list_environments shows each environment with \`inTokenScope\`.
 - Measure effectiveness → get_content_analytics / get_content_question_analytics (defaults to the last 30 days).
 

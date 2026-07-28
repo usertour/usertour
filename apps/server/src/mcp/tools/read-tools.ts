@@ -915,6 +915,86 @@ export function buildReadTools(): McpTool[] {
     },
 
     {
+      name: 'diagnose_user',
+      title: 'What would this user see?',
+      capability: Capability.ContentRead,
+      annotations: READ_ONLY,
+      description:
+        'The per-USER panorama — one call instead of a per-content diagnose whose conclusions ' +
+        'shift as you go. Sorts everything published in the environment into: `showing` (with ' +
+        'how — resumed session / won the auto-start race / feed), `queued` (eligible but behind ' +
+        'the slot holder or a higher-priority winner — the race is settled with the SAME ' +
+        'selectors the runtime uses, so the winner/loser verdicts cannot drift), `blocked` ' +
+        '(ONE most-relevant gate per content), and `browser_dependent` (undecidable ' +
+        'server-side: browser-only conditions, headless trackers). Deep-dive a single row with ' +
+        '`diagnose_content` — that returns the full gate list and condition trees.',
+      inputSchema: {
+        userId: z
+          .string()
+          .describe('REQUIRED: externalId of the end-user — the panorama is always per-user.'),
+        url: z
+          .string()
+          .describe(
+            'REQUIRED: the page URL to evaluate current_url conditions against — pass the page ' +
+              'the user would be on.',
+          ),
+        companyId: z
+          .string()
+          .optional()
+          .describe('externalId of the company, for company-scoped rules.'),
+        environmentId: environmentIdSchema,
+      },
+      async handler(args, ctx) {
+        const userId = asString(args.userId);
+        const url = asString(args.url);
+        if (!userId) {
+          throw new Error('`userId` is required.');
+        }
+        if (!url) {
+          throw new Error('`url` is required — the page URL to evaluate against.');
+        }
+        const environment = await resolveEnvironment(args, ctx);
+        const { userFound, rows } = await ctx.contentDiagnosis.diagnoseUser({
+          environment,
+          externalUserId: userId,
+          externalCompanyId: asString(args.companyId),
+          url,
+        });
+        if (!userFound) {
+          return {
+            userId,
+            userFound: false,
+            summary:
+              'No user with this externalId exists in the environment — identify (or upsert_user) first.',
+          };
+        }
+        // Resolve queue-winner names so "queued behind X" reads without a lookup.
+        const behindIds = [
+          ...new Set(rows.map((r) => r.behindContentId).filter(Boolean)),
+        ] as string[];
+        if (behindIds.length) {
+          const winners = await ctx.prisma.content.findMany({
+            where: { id: { in: behindIds } },
+            select: { id: true, name: true },
+          });
+          const nameById = new Map(winners.map((w) => [w.id, w.name]));
+          for (const r of rows) {
+            if (r.behindContentId) r.behindName = nameById.get(r.behindContentId) ?? undefined;
+          }
+        }
+        const bucket = (v: string) => rows.filter((r) => r.verdict === v);
+        return {
+          userId,
+          userFound: true,
+          showing: bucket('showing'),
+          queued: bucket('queued'),
+          blocked: bucket('blocked'),
+          browserDependent: bucket('browser_dependent'),
+        };
+      },
+    },
+
+    {
       name: 'list_content_versions',
       title: 'List content versions',
       capability: Capability.ContentRead,

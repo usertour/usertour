@@ -48,6 +48,7 @@ describe('MCP endpoint (e2e)', () => {
   let envA: string;
   let envB: string;
   let themeId: string;
+  let panAttrId: string;
   const bizUserExternalId = 'mcp-biz-1';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -139,6 +140,20 @@ describe('MCP endpoint (e2e)', () => {
     ownerUserId = owner.user.id;
 
     await buildBizUser(prisma, { environmentId: envA, externalId: bizUserExternalId });
+    // Attributes referenced by rule fixtures must exist BEFORE any diagnose call
+    // warms the project attribute cache (5-min TTL; API writes invalidate it,
+    // direct prisma inserts in tests do not).
+    panAttrId = (
+      await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'pan_plan',
+          displayName: 'plan',
+          bizType: 1,
+          dataType: 2,
+        },
+      })
+    ).id;
     await buildContent(prisma, { projectId: projectA, environmentId: envA, type: 'flow' });
     themeId = (await buildTheme(prisma, { projectId: projectA })).id;
   }, 60000);
@@ -204,6 +219,7 @@ describe('MCP endpoint (e2e)', () => {
       expect(names).toEqual(
         [
           'diagnose_content',
+          'diagnose_user',
           'get_attribute_definition',
           'get_authoring_guide',
           'get_content',
@@ -745,6 +761,95 @@ describe('MCP endpoint (e2e)', () => {
       expect(inner(wrongRegion, 'seg_region')).toMatchObject({ status: 'unmatched', actual: 'us' });
       // And the two reports are no longer byte-identical.
       expect(JSON.stringify(wrongPlan)).not.toBe(JSON.stringify(wrongRegion));
+    });
+
+    it('diagnose_user: one call settles the slot race and buckets everything', async () => {
+      // Own environment: other tests publish flows into envA, and a panorama by
+      // definition sees EVERYTHING published — isolate the race to this test.
+      const panEnv = (await buildEnvironment(prisma, { projectId: projectA })).id;
+      const token = await mint([Capability.ContentRead], [projectA], [panEnv]);
+      const attr = { id: panAttrId };
+      await prisma.bizUser.create({
+        data: { externalId: 'pan-user', environmentId: panEnv, data: { pan_plan: 'pro' } },
+      });
+      const mkFlow = async (name: string, rules: unknown[], priority?: string) => {
+        const c = await buildContent(prisma, {
+          projectId: projectA,
+          environmentId: panEnv,
+          type: 'flow',
+          name,
+        });
+        const v = await buildVersion(prisma, {
+          contentId: c.id,
+          sequence: 0,
+          config: {
+            enabledAutoStartRules: true,
+            autoStartRules: rules,
+            autoStartRulesSetting: priority ? { priority } : {},
+          } as unknown as Prisma.InputJsonValue,
+        });
+        await prisma.contentOnEnvironment.create({
+          data: {
+            environmentId: panEnv,
+            contentId: c.id,
+            published: true,
+            publishedVersionId: v.id,
+          },
+        });
+        return c;
+      };
+      const matchRule = [
+        {
+          id: 'r1',
+          type: 'user-attr',
+          data: { attrId: attr.id, logic: 'is', value: 'pro' },
+          operators: 'and',
+        },
+      ];
+      const missRule = [
+        {
+          id: 'r1',
+          type: 'user-attr',
+          data: { attrId: attr.id, logic: 'is', value: 'enterprise' },
+          operators: 'and',
+        },
+      ];
+      const winner = await mkFlow('pan winner', matchRule, 'high');
+      const loser = await mkFlow('pan loser', matchRule, 'low');
+      const excluded = await mkFlow('pan excluded', missRule);
+
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'diagnose_user',
+            arguments: {
+              userId: 'pan-user',
+              environmentId: panEnv,
+              url: 'https://app.example.com/',
+            },
+          },
+        },
+        token,
+      );
+      const p = parseToolContent(extractResult(res));
+      const byId = (list: any[], id: string) => list.find((r: any) => r.contentId === id);
+
+      // The race is settled in one answer: winner shows, loser is queued BEHIND
+      // the named winner (the visibility item 7 asked for), excluded is blocked
+      // with exactly one gate.
+      expect(byId(p.showing, winner.id)).toMatchObject({ via: 'auto_start' });
+      expect(byId(p.queued, loser.id)).toMatchObject({
+        queueReason: 'outranked',
+        behindContentId: winner.id,
+        behindName: 'pan winner',
+      });
+      expect(byId(p.blocked, excluded.id)).toMatchObject({ gate: 'start_rules' });
+      // And nothing leaks between buckets.
+      expect(byId(p.showing, loser.id)).toBeUndefined();
+      expect(byId(p.blocked, winner.id)).toBeUndefined();
     });
 
     it('get_content_schema batches several types with the shared $defs emitted once', async () => {
