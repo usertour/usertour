@@ -172,7 +172,10 @@ export class ContentService {
         const editedVersionPublished = content.contentOnEnvironments?.some(
           (env) => env.published && env.publishedVersionId === editedVersion.id,
         );
-        if (!editedVersionPublished) {
+        // Frozen covers EVER-published too: an unpublished-but-once-live edit
+        // version must fork, not be reused as a draft (same rule as the write
+        // guards — see versionFrozen).
+        if (!this.versionFrozen(editedVersion, editedVersionPublished)) {
           // A concurrent save already forked this into an unpublished draft.
           // Honor the same contract the fork branch does — the returned draft
           // carries THIS caller's config, with regenerated condition ids — by
@@ -457,6 +460,21 @@ export class ContentService {
     const now = new Date();
 
     const { content, supersededVersionId } = await this.prisma.$transaction(async (tx) => {
+      // Freeze stamp: a version that has EVER been live stays read-only for the
+      // rest of its life (see versionEverPublished) — unpublishing used to
+      // unlock it, letting the same version id/number be rewritten in place
+      // with no trace. Stamp only the FIRST publish so the mark means "first
+      // went live at"; re-publishes keep the original date. The column is the
+      // long-dead Version.publishedAt (0 rows set in the wild), adopted here —
+      // deliberately NOT backfilled: only versions published after this ships
+      // get frozen.
+      if (!version.publishedAt) {
+        await tx.version.update({
+          where: { id: version.id },
+          data: { publishedAt: now },
+        });
+      }
+
       // Update Content table
       const content = await tx.content.update({
         where: { id: version.contentId },
@@ -867,6 +885,22 @@ export class ContentService {
     });
   }
 
+  /**
+   * THE freeze rule, defined once: a version is frozen when it is live somewhere
+   * NOW, or has EVER been live (Version.publishedAt is stamped on first publish
+   * and never cleared or copied to forks). "Ever" is what makes version numbers
+   * trustworthy: without it, unpublishing unlocked the version and the same
+   * id/number could be rewritten in place — "what ran in production last week"
+   * became unanswerable AND unverifiable. Editing continues on a fork
+   * (createContentVersion), exactly like editing a currently-live version.
+   */
+  private versionFrozen(
+    version: { publishedAt: Date | null },
+    currentlyLive: boolean | undefined,
+  ): boolean {
+    return !!currentlyLive || version.publishedAt != null;
+  }
+
   async contentVersionIsEditable(versionId: string) {
     const version = await this.prisma.version.findUnique({
       where: { id: versionId, deleted: false },
@@ -886,14 +920,15 @@ export class ContentService {
       throw new ParamsError();
     }
 
-    const isPublished = contentItem.contentOnEnvironments?.find(
+    const isPublished = contentItem.contentOnEnvironments?.some(
       (env) => env.published && env.publishedVersionId === versionId,
     );
 
-    // Not the content's edited version (someone forked a newer one) or
-    // already live in an environment — either way writes are refused with a
-    // dedicated code so clients can tell "stale editor" apart from bad input.
-    if (contentItem.editedVersionId !== versionId || isPublished) {
+    // Not the content's edited version (someone forked a newer one), live in an
+    // environment, or EVER live (frozen history) — either way writes are
+    // refused with a dedicated code so clients can tell "stale editor" apart
+    // from bad input.
+    if (contentItem.editedVersionId !== versionId || this.versionFrozen(version, isPublished)) {
       throw new VersionNotEditableError();
     }
 
@@ -926,7 +961,7 @@ export class ContentService {
     const isPublished = contentItem.contentOnEnvironments?.some(
       (env) => env.published && env.publishedVersionId === versionId,
     );
-    if (contentItem.editedVersionId !== versionId || isPublished) {
+    if (contentItem.editedVersionId !== versionId || this.versionFrozen(version, isPublished)) {
       throw new VersionNotEditableError();
     }
   }

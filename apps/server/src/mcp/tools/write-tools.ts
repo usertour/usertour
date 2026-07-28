@@ -174,7 +174,8 @@ export function buildWriteTools(): McpTool[] {
         'Write steps and/or start/hide rules to a draft (editable) content version. `steps` is ' +
         'the COMPLETE step list, not a patch — any existing step you omit is deleted. Match a ' +
         'step to update by its `cvid` (stable across forks) or primary `id`; omit both to add a ' +
-        'new one. Editing a published version fails with E0049 — fork it first with ' +
+        'new one. Editing a version that is live — or was EVER live (unpublishing does not ' +
+        'unlock it; a shipped version is frozen as history) — fails with E0049; fork first with ' +
         'create_content_version. Text blocks use markdown, with `{{ attribute | default: "x" }}` ' +
         'for user attributes. Returns the updated version with the persisted body decompiled — ' +
         '`steps` for a flow, `data` for other types — so you can confirm the write without a re-read.',
@@ -232,7 +233,8 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Ensure an editable draft version. If the current edited version is an unpublished draft ' +
-        'it is returned AS-IS (no new version); only when it is PUBLISHED (locked) is it forked ' +
+        'it is returned AS-IS (no new version); when it is live, or has EVER been live ' +
+        '(frozen — unpublishing does not unlock a shipped version), it is forked ' +
         'into a fresh draft, which becomes the new editable version while the published one stays ' +
         'frozen as history. A fork copies the steps and data, and each step keeps its `cvid` ' +
         '(only the primary `id` is regenerated), so you can keep targeting steps by `cvid`/`key` ' +
@@ -345,7 +347,10 @@ export function buildWriteTools(): McpTool[] {
       title: 'Unpublish content from an environment',
       capability: Capability.ContentPublish,
       description:
-        "Clear an environment's live version for a content. Per-environment: if the token can act " +
+        "Clear an environment's live version for a content. The version itself STAYS frozen — " +
+        'having shipped once, it can never be edited again (edit by forking); and note ' +
+        '`environments[]` empties here, so capture version/publishedAt first if you need the record. ' +
+        'Per-environment: if the token can act ' +
         'on a single environment it defaults to that one, but with multiple you must pass ' +
         '`environmentId` (it is NOT chosen for you). Returns the content with refreshed ' +
         '`environments[]`.',

@@ -866,8 +866,9 @@ export class ResourceAlreadyExistsError extends BaseError {
 export class VersionNotEditableError extends BaseError {
   code = 'E0049';
   messageDict = {
-    en: 'This version can no longer be edited — it is published, or has been superseded by a newer draft. Create a new editable version to make changes.',
-    'zh-CN': '该版本不可编辑——它已发布,或已被更新的草稿取代。请创建新的可编辑版本后再修改。',
+    en: 'This version can no longer be edited — it is live now, HAS been live before (a version that ever shipped is frozen as history, unpublishing does not unlock it), or has been superseded by a newer draft. Create a new editable version to make changes.',
+    'zh-CN':
+      '该版本不可编辑——它正在线上、曾经上过线(上过线的版本永久封存为历史,下线也不会解锁),或已被更新的草稿取代。请创建新的可编辑版本后再修改。',
   };
 }
 

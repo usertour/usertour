@@ -14,7 +14,7 @@ export const SERVER_INSTRUCTIONS = `You are connected to a Usertour workspace �
 Before AUTHORING or EDITING content, read \`get_authoring_guide\` once. It is the contract for content that actually renders; do not author from guesswork.
 
 Route by intent:
-- Create / edit content → create_content, then update_content_version on the draft, then validate_content_version, then publish_content. A published version is immutable — fork it with create_content_version before editing.
+- Create / edit content → create_content, then update_content_version on the draft, then validate_content_version, then publish_content. A version that is live — or has EVER been live (unpublishing does not unlock it) — is immutable; fork it with create_content_version before editing.
 - Pick a theme → list_themes (page with nextCursor). Every visual type except tracker requires a themeId; call get_theme_schema before writing theme settings.
 - Non-flow content body → the \`data\` shape is per-type: fetch it with get_content_schema BEFORE writing a checklist / launcher / banner / tracker / resource-center body.
 - "Why isn't my content showing?" → diagnose_content. It evaluates the SAME runtime gates the SDK uses (published / user identified / start rules / frequency / session state). Use it before changing targeting blindly.

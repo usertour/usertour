@@ -417,6 +417,67 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(res.body.error.message).toContain('Create a new editable version');
   });
 
+  it('unpublish does NOT unlock an ever-published version — frozen; editing means forking', async () => {
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentUpdate,
+      Capability.ContentPublish,
+    ]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildUsableFlowVersion(prisma, { contentId: content.id, projectId });
+    await prisma.content.update({
+      where: { id: content.id },
+      data: { editedVersionId: version.id },
+    });
+    const base = `/v2/projects/${projectId}/content/${content.id}`;
+
+    // Before publishing: no freeze stamp, and the version is editable.
+    const before = await api('get', `${base}/versions/${version.id}`, token);
+    expect(before.body.firstPublishedAt).toBeNull();
+
+    const pub = await api('post', `${base}/publish`, token).send({
+      versionId: version.id,
+      environmentId,
+    });
+    expect(pub.status).toBe(200);
+    const published = await api('get', `${base}/versions/${version.id}`, token);
+    expect(published.body.firstPublishedAt).not.toBeNull();
+    const stamp = published.body.firstPublishedAt;
+
+    const unpub = await api('post', `${base}/unpublish`, token).send({ environmentId });
+    expect(unpub.status).toBe(200);
+
+    // THE regression this exists for: unpublishing used to unlock the version,
+    // letting the same id/number be rewritten in place with no trace. It must
+    // stay frozen — 409 E0049, not a silent in-place rewrite.
+    const patch = await api('patch', `${base}/versions/${version.id}`, token).send({
+      startRules: { when: [{ type: 'current_url', includes: ['/rewritten'] }] },
+    });
+    expect(patch.status).toBe(409);
+    expect(patch.body.error.code).toBe('E0049');
+
+    // Editing continues on a fork: new id, number+1, no stamp, and writable.
+    const fork = await api('post', `${base}/versions`, token).send({});
+    expect(fork.status).toBe(201);
+    expect(fork.body.id).not.toBe(version.id);
+    expect(fork.body.number).toBe(before.body.number + 1);
+    expect(fork.body.firstPublishedAt).toBeNull();
+    const editFork = await api('patch', `${base}/versions/${fork.body.id}`, token).send({
+      startRules: { when: [{ type: 'current_url', includes: ['/fork-ok'] }] },
+    });
+    expect(editFork.status).toBe(200);
+
+    // Stamp-once: re-publishing the SAME old version (the rollback path) keeps
+    // the ORIGINAL first-published time.
+    const repub = await api('post', `${base}/publish`, token).send({
+      versionId: version.id,
+      environmentId,
+    });
+    expect(repub.status).toBe(200);
+    const after = await api('get', `${base}/versions/${version.id}`, token);
+    expect(after.body.firstPublishedAt).toBe(stamp);
+  });
+
   it('maps a domain ParamsError to 400 E0003 (create version on a version-less content)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const env = await buildEnvironment(prisma, { projectId });

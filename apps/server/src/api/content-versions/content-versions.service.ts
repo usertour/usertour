@@ -59,6 +59,8 @@ import {
 type VersionNode = {
   id: string;
   sequence: number;
+  /** Freeze stamp (first time live); null = never published, still editable. */
+  publishedAt?: Date | null;
   themeId: string | null;
   config?: unknown;
   data?: unknown;

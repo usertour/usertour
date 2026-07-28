@@ -540,6 +540,12 @@ model Version {
   id                    String                  @id @default(cuid())
   createdAt             DateTime                @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
+  /// FIRST time this version went live (freeze stamp). Set once in the publish
+  /// transaction, never cleared (unpublish keeps it) and never copied to forks.
+  /// Non-null = the version is frozen read-only forever (see versionFrozen in
+  /// content.service). NOT live state — that lives on ContentOnEnvironment.
+  /// (Column predates this use and was dead/empty; adopted without backfill,
+  /// so only versions published after the freeze rule shipped carry it.)
   publishedAt           DateTime?               @db.Timestamptz(6)
   scheduledAt           DateTime?               @db.Timestamptz(6)
   deleted               Boolean                 @default(false)
