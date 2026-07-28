@@ -75,11 +75,15 @@ export class ApiThemesController {
   @ApiOperation({ summary: 'Create a theme' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Theme created', type: ThemeDto })
+  // NOTE: an endpoint-level 403 OVERRIDES the shared ApiStandardErrorResponses
+  // 403 in the generated spec — restate the standard refusals alongside E1038
+  // or they vanish from this endpoint's docs.
   @ApiResponse({
     status: 403,
     description:
-      'Custom CSS requires the Growth plan or above (E1038) — below that the runtime strips ' +
-      '`customCss` at delivery, so the write is refused instead of silently stored.',
+      'Refused — E1000 invalid key, E1011 project not in token scope, E1012 insufficient ' +
+      'scope; E1038 custom CSS requires the Growth plan or above (below that the runtime ' +
+      'strips `customCss` at delivery, so the write is refused instead of silently stored).',
     type: ErrorResponseDto,
   })
   async create(@Param('projectId') projectId: string, @Body() body: CreateThemeBodyDto) {
@@ -100,12 +104,14 @@ export class ApiThemesController {
       'isDefault: true alone is allowed (it only moves the project default pointer).',
     type: ErrorResponseDto,
   })
+  // Same override note as create: restate the standard 403 refusals.
   @ApiResponse({
     status: 403,
     description:
-      'Custom CSS requires the Growth plan or above (E1038) — introducing or changing a ' +
-      'non-empty `customCss` is refused below that plan (echoing the stored value back, or ' +
-      'clearing it, always passes).',
+      'Refused — E1000 invalid key, E1011 project not in token scope, E1012 insufficient ' +
+      'scope; E1038 custom CSS requires the Growth plan or above — introducing or changing ' +
+      'a non-empty `customCss` is refused below that plan (echoing the stored value back, ' +
+      'or clearing it, always passes).',
     type: ErrorResponseDto,
   })
   async update(
