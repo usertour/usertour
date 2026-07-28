@@ -50,6 +50,18 @@ function archivedContentError(): ContentNotFoundError {
   );
 }
 
+/** One row of the publish/unpublish ledger (MCP-only surface, hence no zod). */
+export interface PublishRecord {
+  action: 'publish' | 'unpublish';
+  versionId: string;
+  versionSequence: number;
+  environmentId: string;
+  environmentName: string | null;
+  actorName: string | null;
+  actorTokenName: string | null;
+  createdAt: string;
+}
+
 @Injectable()
 export class ApiContentService {
   constructor(
@@ -270,6 +282,62 @@ export class ApiContentService {
       throw archivedContentError();
     }
     return mapContent(node, expand);
+  }
+
+  /**
+   * Publish/unpublish ledger for one content, newest first. Wraps the domain
+   * method (which enriches actor/environment names at read time); this layer
+   * adds what the domain method deliberately leaves out — the project-ownership
+   * check, without which any valid content id from ANOTHER project would leak
+   * its history. Archived content stays readable: "was this ever live?" is asked
+   * about archived content more than live content, so no archived guard here.
+   */
+  async listPublishRecords(
+    requestUrl: string,
+    id: string,
+    projectId: string,
+    query: { limit: number; cursor?: string; environmentId?: string },
+  ): Promise<{ results: PublishRecord[]; next: string | null; previous: string | null }> {
+    const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
+    if (!node) {
+      throw new ContentNotFoundError();
+    }
+    if (query.environmentId) {
+      // Validate the filter so a typo'd id reads as an error, not an empty
+      // history. Deleted environments allowed: their records are still real.
+      const env = await this.prisma.environment.findFirst({
+        where: { id: query.environmentId, projectId },
+        select: { id: true },
+      });
+      if (!env) {
+        throw new ValidationError('Environment not found in this project');
+      }
+    }
+    return paginate({
+      requestUrl,
+      cursor: query.cursor,
+      limit: query.limit,
+      fetch: (params) => this.content.listContentPublishRecords(id, params, query.environmentId),
+      map: (node) => {
+        // The domain method enriches nodes in place (names resolved at read
+        // time); its connection type doesn't carry the enrichment, so re-state it.
+        const n = node as typeof node & {
+          actorName?: string | null;
+          actorTokenName?: string | null;
+          environmentName?: string | null;
+        };
+        return {
+          action: n.action as 'publish' | 'unpublish',
+          versionId: n.versionId,
+          versionSequence: n.versionSequence,
+          environmentId: n.environmentId,
+          environmentName: n.environmentName ?? null,
+          actorName: n.actorName ?? null,
+          actorTokenName: n.actorTokenName ?? null,
+          createdAt: n.createdAt.toISOString(),
+        };
+      },
+    });
   }
 
   // v2 include: editedVersion + the per-environment publish rows; the nested

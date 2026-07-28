@@ -21,6 +21,8 @@ Route by intent:
 - "What would this USER see right now?" → diagnose_user. One call sorts every published content into showing / queued / blocked / browser-dependent, with the slot races settled — start here for support questions, then deep-dive one content with diagnose_content.
 - End-user data (users / companies / sessions / segments) → these act on ONE environment. A token that can act on multiple environments must pass environmentId; list_environments shows each environment with \`inTokenScope\`.
 - Measure effectiveness → get_content_analytics / get_content_question_analytics (defaults to the last 30 days).
+- "When did this go live / who unpublished it?" → list_publish_history: the permanent per-content publish/unpublish ledger (version, environment, actor, timestamp).
+- "Which content is used most?" / "How far did this company get?" → get_usage_overview: every content ranked by reach in one call; companyId + expand: ["users"] adds the account's member-by-member progress roster.
 
 Facts that prevent common mistakes:
 - A "survey" is a flow with question blocks — there is no separate survey type.

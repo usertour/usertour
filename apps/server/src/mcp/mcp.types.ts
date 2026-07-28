@@ -9,6 +9,7 @@ import { ApiContentService } from '@/api/content/content.service';
 import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
+import { ApiUsageOverviewService } from '@/api/analytics/usage-overview.service';
 import { ApiReferencesService } from '@/api/references/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import type { Environment } from '@prisma/client';
@@ -37,6 +38,7 @@ export interface McpServices {
   sessions: ApiContentSessionsService;
   environments: ApiEnvironmentsService;
   analytics: ApiAnalyticsService;
+  usageOverview: ApiUsageOverviewService;
   references: ApiReferencesService;
 }
 

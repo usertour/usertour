@@ -348,8 +348,9 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentPublish,
       description:
         "Clear an environment's live version for a content. The version itself STAYS frozen — " +
-        'having shipped once, it can never be edited again (edit by forking); and note ' +
-        '`environments[]` empties here, so capture version/publishedAt first if you need the record. ' +
+        'having shipped once, it can never be edited again (edit by forking). `environments[]` ' +
+        'empties here, but nothing is lost: every publish/unpublish lands in a permanent ledger — ' +
+        'read it with `list_publish_history`. ' +
         'Per-environment: if the token can act ' +
         'on a single environment it defaults to that one, but with multiple you must pass ' +
         '`environmentId` (it is NOT chosen for you). Returns the content with refreshed ' +

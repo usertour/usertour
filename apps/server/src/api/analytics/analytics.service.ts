@@ -14,7 +14,7 @@ import type { AnalyticsQuery, ContentAnalytics, QuestionAnalytics } from './anal
  * {@link AnalyticsService} the dashboard already uses. Range defaults to the
  * last 30 days; day bucketing defaults to UTC.
  */
-const V2_CONTENT_TYPES = new Set<string>(Object.values(ContentDataType));
+export const V2_CONTENT_TYPES = new Set<string>(Object.values(ContentDataType));
 
 @Injectable()
 export class ApiAnalyticsService {

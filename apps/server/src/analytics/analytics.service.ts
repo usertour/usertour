@@ -107,7 +107,10 @@ const DISMISSED_END_CONFIG: Partial<
   },
 };
 
-const EVENT_TYPE_MAPPING = {
+// Per-type start/"success action" events — the analytics vocabulary (a launcher's
+// "complete" is activation, a banner's is dismissal). Exported as the SSOT for
+// any surface whose numbers must reconcile with queryContentAnalytics.
+export const EVENT_TYPE_MAPPING = {
   [ContentType.FLOW]: {
     start: BizEvents.FLOW_STARTED,
     complete: BizEvents.FLOW_COMPLETED,

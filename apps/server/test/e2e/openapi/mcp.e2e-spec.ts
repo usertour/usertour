@@ -11,7 +11,9 @@ import {
   buildBizUser,
   buildBizUserOnCompany,
   buildContent,
+  buildEvent,
   buildSegment,
+  buildSession,
   buildStep,
   buildVersion,
   buildEnvironment,
@@ -231,6 +233,7 @@ describe('MCP endpoint (e2e)', () => {
           'list_attribute_definitions',
           'list_content',
           'list_content_versions',
+          'list_publish_history',
           'list_references',
           'list_event_definitions',
           'list_users',
@@ -313,6 +316,170 @@ describe('MCP endpoint (e2e)', () => {
       });
       expect(payload).not.toHaveProperty('uniqueViews');
       expect(payload).not.toHaveProperty('tasks');
+    });
+
+    it('get_usage_overview ranks all content and scopes to a company with a member roster', async () => {
+      // Own environment: the overview sweeps EVERY content with activity in the
+      // environment, so suite neighbours' sessions would pollute the table.
+      const envU = (await buildEnvironment(prisma, { projectId: projectA })).id;
+      const token = await mint([Capability.AnalyticsRead], [projectA], [envU]);
+
+      const flowA = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envU,
+        type: 'flow',
+        name: 'Onboarding tour',
+      });
+      const flowAVersion = await buildVersion(prisma, { contentId: flowA.id, sequence: 0 });
+      const flowB = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envU,
+        type: 'flow',
+        name: 'Unused flow',
+      });
+      const flowBVersion = await buildVersion(prisma, { contentId: flowB.id, sequence: 0 });
+      const tracker = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envU,
+        type: 'tracker',
+        name: 'Signup clicks',
+      });
+      const trackerVersion = await buildVersion(prisma, { contentId: tracker.id, sequence: 0 });
+      for (const [contentId, publishedVersionId] of [
+        [flowA.id, flowAVersion.id],
+        [flowB.id, flowBVersion.id],
+        [tracker.id, trackerVersion.id],
+      ] as const) {
+        await prisma.contentOnEnvironment.create({
+          data: { contentId, environmentId: envU, publishedVersionId, published: true },
+        });
+      }
+
+      const u1 = await buildBizUser(prisma, {
+        environmentId: envU,
+        externalId: 'usage-u1',
+        data: { name: 'Ada' },
+      });
+      const u2 = await buildBizUser(prisma, { environmentId: envU, externalId: 'usage-u2' });
+      const co = await buildBizCompany(prisma, { environmentId: envU, externalId: 'usage-co' });
+      await buildBizUserOnCompany(prisma, { bizUserId: u1.id, bizCompanyId: co.id });
+
+      // flowA: two sessions for the member (the LATER one completed at 100%),
+      // one for the non-member. Distinct createdAt keeps "latest" deterministic.
+      await buildSession(prisma, {
+        environmentId: envU,
+        contentId: flowA.id,
+        versionId: flowAVersion.id,
+        bizUserId: u1.id,
+        progress: 20,
+        state: 1,
+        createdAt: new Date(Date.now() - 60_000),
+      });
+      const latest = await buildSession(prisma, {
+        environmentId: envU,
+        contentId: flowA.id,
+        versionId: flowAVersion.id,
+        bizUserId: u1.id,
+        progress: 100,
+        state: 1,
+      });
+      await buildSession(prisma, {
+        environmentId: envU,
+        contentId: flowA.id,
+        versionId: flowAVersion.id,
+        bizUserId: u2.id,
+        progress: 50,
+        state: 0,
+      });
+      // Genuine flow completion by the member → goalUsers + roster `completed`.
+      // No contentId on the event row — production session events don't carry
+      // it (the content resolves through the session), so neither may the fixture.
+      const flowCompleted = await buildEvent(prisma, {
+        projectId: projectA,
+        codeName: 'flow_completed',
+      });
+      await prisma.bizEvent.create({
+        data: { eventId: flowCompleted.id, bizUserId: u1.id, bizSessionId: latest.id },
+      });
+      // Tracker: two firings by the NON-member (no sessions — event-counted).
+      const tracked = await buildEvent(prisma, { projectId: projectA });
+      for (let i = 0; i < 2; i++) {
+        await prisma.bizEvent.create({
+          data: { eventId: tracked.id, bizUserId: u2.id, contentId: tracker.id },
+        });
+      }
+
+      // ── Whole-environment table, ranked by reach ──
+      const res = await callTool('get_usage_overview', { environmentId: envU }, token);
+      expect(res.isError).toBeFalsy();
+      const overview = JSON.parse(res.content[0].text);
+      expect(overview.items.map((r: { id: string }) => r.id)).toEqual([
+        flowA.id,
+        tracker.id,
+        flowB.id,
+      ]);
+      const [rowA, rowT, rowB] = overview.items;
+      expect(rowA).toMatchObject({
+        activity: 3,
+        activityKind: 'sessions',
+        uniqueUsers: 2,
+        goalUsers: 1,
+        goalKind: 'completed',
+        published: true,
+      });
+      expect(rowA.lastActivityAt).toBeTruthy();
+      expect(rowT).toMatchObject({
+        activity: 2,
+        activityKind: 'events',
+        uniqueUsers: 1,
+        goalUsers: null,
+        goalKind: null,
+      });
+      // Published-but-unused stays visible — the dead-content signal.
+      expect(rowB).toMatchObject({ activity: 0, uniqueUsers: 0, published: true });
+
+      // ── Company-scoped with the member roster ──
+      const scoped = await callTool(
+        'get_usage_overview',
+        { environmentId: envU, companyId: 'usage-co', expand: ['users'] },
+        token,
+      );
+      expect(scoped.isError).toBeFalsy();
+      const byCompany = JSON.parse(scoped.content[0].text);
+      expect(byCompany.company).toEqual({ id: 'usage-co', memberCount: 1 });
+      const scopedA = byCompany.items.find((r: { id: string }) => r.id === flowA.id);
+      // Only the member's activity counts now — u2's session is out.
+      expect(scopedA).toMatchObject({ activity: 2, uniqueUsers: 1, goalUsers: 1 });
+      expect(scopedA.users).toEqual([
+        {
+          id: 'usage-u1',
+          name: 'Ada',
+          activity: 2,
+          latestProgress: 100,
+          latestState: 'ended',
+          completed: true,
+          lastActivityAt: expect.any(String),
+        },
+      ]);
+      // The tracker's firings were all the non-member's.
+      const scopedT = byCompany.items.find((r: { id: string }) => r.id === tracker.id);
+      expect(scopedT).toMatchObject({ activity: 0, uniqueUsers: 0 });
+
+      // The roster without a company is refused, not silently global.
+      const bad = await callTool(
+        'get_usage_overview',
+        { environmentId: envU, expand: ['users'] },
+        token,
+      );
+      expect(bad.isError).toBe(true);
+      expect(bad.content[0].text).toContain('companyId');
+
+      // Un-publish the fixtures: a later test asserts NOTHING in the project is
+      // published, and publish state is project-visible across environments.
+      await prisma.contentOnEnvironment.updateMany({
+        where: { environmentId: envU },
+        data: { published: false },
+      });
     });
 
     it('get_content_analytics validates timezone/date at the boundary (clean tool error, no RangeError)', async () => {
@@ -1584,6 +1751,61 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(forked).toMatchObject({ object: 'contentVersion' });
       expect(forked.id).not.toBe(created.editedVersionId);
+    });
+
+    it('list_publish_history returns the publish/unpublish ledger with resolved names', async () => {
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.ContentPublish,
+        ],
+        [projectA],
+      );
+      const created = JSON.parse(
+        (await callTool('create_content', { type: 'flow', name: 'MCP ledger', themeId }, token))
+          .content[0].text,
+      );
+      await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          steps: [{ name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] }],
+        },
+        token,
+      );
+      await callTool(
+        'publish_content',
+        { contentId: created.id, versionId: created.editedVersionId },
+        token,
+      );
+      await callTool('unpublish_content', { contentId: created.id }, token);
+
+      const res = await callTool('list_publish_history', { contentId: created.id }, token);
+      expect(res.isError).toBeFalsy();
+      const page = JSON.parse(res.content[0].text);
+      // Newest first: the unpublish tops the ledger, the original publish follows.
+      expect(page.items.map((r: { action: string }) => r.action)).toEqual(['unpublish', 'publish']);
+      for (const row of page.items) {
+        expect(row.versionId).toBe(created.editedVersionId);
+        expect(typeof row.versionSequence).toBe('number');
+        expect(row.environmentId).toBe(envA);
+        // Names resolve at read time: the environment and the API token that acted.
+        expect(row.environmentName).toBeTruthy();
+        expect(row.actorTokenName).toBe('mcp');
+        expect(row.createdAt).toEqual(expect.any(String));
+      }
+
+      // A typo'd environment filter must read as an error, not an empty history.
+      const bogus = await callTool(
+        'list_publish_history',
+        { contentId: created.id, environmentId: 'env_nope' },
+        token,
+      );
+      expect(bogus.isError).toBe(true);
+      expect(bogus.content[0].text).toContain('Environment not found');
     });
 
     it('update_content_version on a published version returns a readable E0049', async () => {

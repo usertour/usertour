@@ -1080,6 +1080,47 @@ export function buildReadTools(): McpTool[] {
     },
 
     {
+      name: 'list_publish_history',
+      title: 'List publish history',
+      capability: Capability.ContentRead,
+      description:
+        'The permanent publish/unpublish ledger for one content, newest first — who put which ' +
+        'version live in which environment, when, and who took it down. Each record: action ' +
+        '(publish|unpublish), versionSequence (the v-number), environment, actor (dashboard user ' +
+        'name, or API token name for API/MCP publishes), timestamp. Records outlive later ' +
+        'deletion of the version, actor or environment (names then read null). Answers "when did ' +
+        'this go live", "what was live in production last month", "who unpublished it". ' +
+        'Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+      inputSchema: {
+        contentId: z.string().describe('The content id.'),
+        environmentId: z
+          .string()
+          .optional()
+          .describe('Narrow to one environment. Default: records from ALL environments.'),
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      annotations: READ_ONLY,
+      async handler(args, ctx) {
+        const contentId = asString(args.contentId);
+        if (!contentId) {
+          throw new Error('`contentId` is required.');
+        }
+        const result = await ctx.services.content.listPublishRecords(
+          'mcp://publish-history',
+          contentId,
+          ctx.projectId,
+          {
+            limit: asLimit(args.limit),
+            cursor: asString(args.cursor),
+            environmentId: asString(args.environmentId),
+          },
+        );
+        return toListPayload(result);
+      },
+    },
+
+    {
       name: 'get_content_version',
       title: 'Get a content version',
       capability: Capability.ContentRead,
@@ -1390,6 +1431,65 @@ export function buildReadTools(): McpTool[] {
         });
       },
     },
+    {
+      name: 'get_usage_overview',
+      title: 'Get usage overview',
+      capability: Capability.AnalyticsRead,
+      description:
+        'Which content is being used, and by whom — every content in ONE ranked table, no ' +
+        'contentId needed upfront. Per row: `activity` + `activityKind` (sessions for ' +
+        'flow/checklist/launcher/banner/resource-center; events for tracker; seen for ' +
+        'announcement — different units, so rows are ranked by `uniqueUsers`, the one ' +
+        "cross-type comparable number), `goalUsers` + `goalKind` (the type's success action, " +
+        'reconciling with get_content_analytics: flow/checklist completed, launcher activated, ' +
+        'banner dismissed, resource-center clicked; null for tracker/announcement), ' +
+        '`lastActivityAt`, `published`. Zero-activity rows appear only for content LIVE in the ' +
+        'environment — the "published but unused" signal. Defaults to the last 30 days. ' +
+        'Scope to one company with `companyId` (numbers then cover its members); add ' +
+        '`expand: ["users"]` for the per-content member roster (latest progress/state, genuine ' +
+        'completed for flow/checklist) — the "how far did this account get" view. For one ' +
+        "content's funnel and daily series use get_content_analytics; for one user's live " +
+        'gates use diagnose_user.',
+      inputSchema: {
+        environmentId: environmentIdSchema,
+        startDate: analyticsStartDate,
+        endDate: analyticsEndDate,
+        timezone: analyticsTimezone,
+        companyId: z
+          .string()
+          .optional()
+          .describe("External company id — scope every number to this company's members."),
+        contentType: z
+          .string()
+          .optional()
+          .describe(
+            'Filter to one content kind: flow, checklist, launcher, banner, tracker, ' +
+              'resource-center, or announcement.',
+          ),
+        expand: z
+          .array(z.enum(['users']))
+          .optional()
+          .describe(
+            'users: the per-content member roster (requires companyId; capped at 100 ' +
+              'users per content, flagged with usersTruncated).',
+          ),
+      },
+      annotations: READ_ONLY,
+      async handler(args, ctx) {
+        const environment = await resolveEnvironment(args, ctx);
+        const expand = asStringArray(args.expand);
+        return ctx.services.usageOverview.overview(ctx.projectId, {
+          environmentId: environment.id,
+          startDate: asString(args.startDate),
+          endDate: asString(args.endDate),
+          timezone: asString(args.timezone),
+          companyId: asString(args.companyId),
+          contentType: asString(args.contentType),
+          expandUsers: expand?.includes('users') ?? false,
+        });
+      },
+    },
+
     {
       name: 'list_environments',
       title: 'List environments',
