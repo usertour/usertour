@@ -590,25 +590,32 @@ export function buildWriteTools(): McpTool[] {
         action: 'update',
         resourceType: 'segmentMember',
         envScoped: true,
-        resourceId: (args) => `${String(args.id)}:${String(args.externalId)}`,
+        resourceId: (args) => `${String(args.segmentId)}:${String(args.memberId)}`,
       },
       title: 'Add a member to a manual segment',
       capability: Capability.SegmentUpdate,
       description:
-        'Add a user or company (per the segment bizType) to a manual segment. With multiple ' +
-        'environments you must pass `environmentId` (single-env projects default).',
+        'Add a member to a manual segment. Whose id `memberId` is depends on the segment: a ' +
+        'USER external id for a user segment, a COMPANY external id for a company segment ' +
+        '(check `bizType` with get_segment). With multiple environments you must pass ' +
+        '`environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The segment id.'),
-        externalId: z.string().describe('User or company external id (per segment bizType).'),
+        segmentId: z.string().describe('The segment id.'),
+        memberId: z
+          .string()
+          .describe(
+            'The member to add: a user external id (user segment) or company external id ' +
+              '(company segment) — per the segment bizType.',
+          ),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
         await ctx.services.segments.addMember(
-          String(args.id),
+          String(args.segmentId),
           ctx.projectId,
           environment.id,
-          String(args.externalId),
+          String(args.memberId),
         );
         return { success: true };
       },
@@ -619,25 +626,31 @@ export function buildWriteTools(): McpTool[] {
         action: 'delete',
         resourceType: 'segmentMember',
         envScoped: true,
-        resourceId: (args) => `${String(args.id)}:${String(args.externalId)}`,
+        resourceId: (args) => `${String(args.segmentId)}:${String(args.memberId)}`,
       },
       title: 'Remove a member from a manual segment',
       capability: Capability.SegmentUpdate,
       description:
-        'Remove a user or company from a manual segment. With multiple environments you must ' +
-        'pass `environmentId` (single-env projects default).',
+        'Remove a member from a manual segment. `memberId` is a user external id (user ' +
+        'segment) or company external id (company segment) — per the segment bizType. With ' +
+        'multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The segment id.'),
-        externalId: z.string().describe('User or company external id (per segment bizType).'),
+        segmentId: z.string().describe('The segment id.'),
+        memberId: z
+          .string()
+          .describe(
+            'The member to remove: a user external id (user segment) or company external id ' +
+              '(company segment) — per the segment bizType.',
+          ),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
         await ctx.services.segments.removeMember(
-          String(args.id),
+          String(args.segmentId),
           ctx.projectId,
           environment.id,
-          String(args.externalId),
+          String(args.memberId),
         );
         return { success: true };
       },

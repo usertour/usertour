@@ -871,6 +871,11 @@ export function buildReadTools(): McpTool[] {
         'Get a single theme by id. Pass `expand: ["settings"]` to read its ACTUAL stored style ' +
         'settings (colors, fonts, sizes, …) — what create_theme / update_theme persisted and ' +
         'derived (e.g. "Auto" colors resolved); read this to verify a theme you wrote. ' +
+        'Reading a color group you will see up to six keys — the contract: `background`/`color` ' +
+        'always apply; `hover`/`active` apply when set to a concrete color; when they are ' +
+        '"Auto", the runtime uses `autoHover`/`autoActive` instead — DERIVED values recomputed ' +
+        'from the base colors on every write, never authored (while hover/active hold concrete ' +
+        'colors, the auto* keys are ignored). ' +
         '`expand: ["variations"]` for conditional variations. Base fields (id, name, isDefault) ' +
         'always return; settings/variations only when expanded. (get_theme_schema is the writable ' +
         'shape; this returns the actual values.)',
@@ -900,7 +905,11 @@ export function buildReadTools(): McpTool[] {
         'Return the JSON Schema of the writable theme `settings` — the fields you can pass to ' +
         'create_theme / update_theme and their ranges/enums. The tool exposes `settings` as a ' +
         'generic object, so fetch the shape here before theming. Settings is field-merged onto ' +
-        'the current settings; "Auto" hover/active colors are derived server-side.',
+        'the current settings. Color groups: set `hover`/`active` to "Auto" (the default) and ' +
+        'the concrete colors are DERIVED server-side into `autoHover`/`autoActive` on every ' +
+        'write — never author the auto* keys (accepted only so read-modify-write round-trips; ' +
+        'the derivation overwrites the ones the runtime reads), and note they only take effect ' +
+        'while the matching hover/active is "Auto".',
       inputSchema: {},
       async handler(_args, _ctx) {
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
