@@ -995,6 +995,57 @@ export function buildReadTools(): McpTool[] {
     },
 
     {
+      name: 'list_references',
+      title: 'Who references this?',
+      capability: Capability.ContentRead,
+      annotations: READ_ONLY,
+      description:
+        'Reverse lookup: everything still USING an attribute / event / segment / theme / ' +
+        'content — run it BEFORE a delete, since deletes are not blocked and a dangling ' +
+        'reference fails closed (a segment on a deleted attribute matches nobody; gated ' +
+        "content stops showing). Scans the LIVE surfaces only: every content's edited draft + " +
+        'published versions (start/hide rules, step triggers, question bindings, bodies, theme ' +
+        'assignments), segment definitions, and theme variations. Matching is by exact stored ' +
+        'reference, not text search. NOT covered: `{{ codeName }}` mentions inside text ' +
+        '(display bindings that just render empty) and old historical versions. Empty result = ' +
+        'nothing live references it — safe to delete as far as references go.',
+      inputSchema: {
+        kind: z
+          .enum(['attribute', 'event', 'segment', 'theme', 'content'])
+          .describe('What the target id is.'),
+        id: z.string().describe('The target id (internal id, as returned by its list_ tool).'),
+      },
+      async handler(args, ctx) {
+        const kind = asString(args.kind) as
+          | 'attribute'
+          | 'event'
+          | 'segment'
+          | 'theme'
+          | 'content'
+          | undefined;
+        const id = asString(args.id);
+        if (!kind || !id) {
+          throw new Error('`kind` and `id` are required.');
+        }
+        const { referrers, codeName } = await ctx.services.references.listReferences(
+          ctx.projectId,
+          kind,
+          id,
+        );
+        return {
+          kind,
+          id,
+          ...(codeName ? { codeName } : {}),
+          referencedBy: referrers,
+          summary:
+            referrers.length === 0
+              ? 'Nothing live references this — safe to delete as far as references go.'
+              : `Referenced by ${referrers.length} object(s) — rewire them before deleting.`,
+        };
+      },
+    },
+
+    {
       name: 'list_content_versions',
       title: 'List content versions',
       capability: Capability.ContentRead,

@@ -573,7 +573,10 @@ export function buildWriteTools(): McpTool[] {
       ),
       title: 'Delete a segment',
       capability: Capability.SegmentDelete,
-      description: 'Delete a segment.',
+      description:
+        'Delete a segment. Not blocked while referenced: a content start/hide rule gating on it ' +
+        'keeps a dead reference that FAILS CLOSED (the condition never matches again). Check ' +
+        '`list_references(kind: "segment")` first.',
       inputSchema: { id: z.string().describe('The segment id.') },
       handler: async (args, ctx) => {
         await ctx.services.segments.delete(String(args.id), ctx.projectId);
@@ -751,7 +754,8 @@ export function buildWriteTools(): McpTool[] {
         'a survey `bindAttribute`, or a theme variation keeps a now-dead reference and silently ' +
         'FAILS CLOSED — a segment on it then matches nobody, content gated on it stops showing ' +
         '(never fail-open, but silently broken). Stored user values for it are orphaned, not ' +
-        'purged. Rewire / unbind references BEFORE deleting.',
+        'purged. Find every reference first with `list_references(kind: "attribute")`, rewire ' +
+        'or unbind them, THEN delete.',
       inputSchema: { id: z.string().describe('The attribute id.') },
       handler: async (args, ctx) => {
         await ctx.services.attributeDefinitions.delete(String(args.id), ctx.projectId);

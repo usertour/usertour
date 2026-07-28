@@ -13,6 +13,7 @@ import { ApiContentService } from '@/api/content/content.service';
 import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
+import { ApiReferencesService } from '@/api/references/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiSegmentsService } from '@/api/segments/segments.service';
@@ -77,6 +78,7 @@ export class McpService {
     sessionsService: ApiContentSessionsService,
     environmentsService: ApiEnvironmentsService,
     analyticsService: ApiAnalyticsService,
+    referencesService: ApiReferencesService,
   ) {
     this.services = {
       content: contentService,
@@ -90,6 +92,7 @@ export class McpService {
       sessions: sessionsService,
       environments: environmentsService,
       analytics: analyticsService,
+      references: referencesService,
     };
     this.tools = [...buildReadTools(), ...buildWriteTools()];
   }

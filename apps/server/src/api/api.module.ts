@@ -18,6 +18,7 @@ import { ThemesModule } from '@/themes/themes.module';
 
 import { ApiAnalyticsController } from './analytics/analytics.controller';
 import { ApiAnalyticsService } from './analytics/analytics.service';
+import { ApiReferencesService } from './references/references.service';
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesController } from './companies/companies.controller';
@@ -99,6 +100,7 @@ import { ApiUsersService } from './users/users.service';
   ],
   providers: [
     ApiAnalyticsService,
+    ApiReferencesService,
     ApiEventDefinitionsService,
     ApiAttributeDefinitionsService,
     ApiContentService,
@@ -121,6 +123,7 @@ import { ApiUsersService } from './users/users.service';
   // Exported for the MCP module, which binds these read services as tools.
   exports: [
     ApiAnalyticsService,
+    ApiReferencesService,
     ApiContentService,
     ApiContentVersionsService,
     ApiAttributeDefinitionsService,

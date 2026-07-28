@@ -12,6 +12,7 @@ import {
   buildBizUserOnCompany,
   buildContent,
   buildSegment,
+  buildStep,
   buildVersion,
   buildEnvironment,
   buildProject,
@@ -230,6 +231,7 @@ describe('MCP endpoint (e2e)', () => {
           'list_attribute_definitions',
           'list_content',
           'list_content_versions',
+          'list_references',
           'list_event_definitions',
           'list_users',
           'validate_content_version',
@@ -850,6 +852,161 @@ describe('MCP endpoint (e2e)', () => {
       // And nothing leaks between buckets.
       expect(byId(p.showing, loser.id)).toBeUndefined();
       expect(byId(p.blocked, winner.id)).toBeUndefined();
+    });
+
+    it('list_references finds every live holder of an attribute / segment / theme / content', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const refAttr = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'ref_probe',
+          displayName: 'ref',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const refSegment = await buildSegment(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        bizType: 1,
+        dataType: 2,
+        name: 'ref probe segment',
+        data: [
+          {
+            id: 's1',
+            type: 'user-attr',
+            data: { attrId: refAttr.id, logic: 'is', value: 'x' },
+            operators: 'and',
+          },
+        ] as unknown as Prisma.InputJsonValue,
+      });
+      const refTheme = await buildTheme(prisma, { projectId: projectA });
+      const targetFlow = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+        name: 'ref target flow',
+      });
+
+      // One content whose DRAFT holds every reference kind at once: start rules
+      // gate on the attribute AND the segment, the version uses the theme, a
+      // step question binds the attribute BY CODENAME, and a step trigger
+      // starts the target flow.
+      const holder = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+        name: 'ref holder',
+      });
+      const holderV = await buildVersion(prisma, {
+        contentId: holder.id,
+        sequence: 0,
+        themeId: refTheme.id,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            {
+              id: 'r1',
+              type: 'user-attr',
+              data: { attrId: refAttr.id, logic: 'is', value: 'pro' },
+              operators: 'and',
+            },
+            {
+              id: 'r2',
+              type: 'segment',
+              data: { segmentId: refSegment.id, logic: 'is' },
+              operators: 'and',
+            },
+          ],
+          autoStartRulesSetting: {},
+        } as unknown as Prisma.InputJsonValue,
+      });
+      await buildStep(prisma, {
+        versionId: holderV.id,
+        type: 'modal',
+        sequence: 0,
+        data: [
+          {
+            element: {
+              type: 'nps',
+              data: {
+                cvid: 'q1',
+                name: 'q',
+                bindToAttribute: true,
+                selectedAttribute: 'ref_probe',
+              },
+            },
+          },
+        ] as unknown as Prisma.InputJsonValue,
+        trigger: [
+          {
+            conditions: [],
+            actions: [{ type: 'flow-start', data: { contentId: targetFlow.id } }],
+            wait: 0,
+          },
+        ] as unknown as Prisma.InputJsonValue,
+      });
+      await prisma.content.update({
+        where: { id: holder.id },
+        data: { editedVersionId: holderV.id },
+      });
+
+      const refs = async (kind: string, id: string) =>
+        parseToolContent(
+          extractResult(
+            await rpc(
+              {
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: { name: 'list_references', arguments: { kind, id } },
+              },
+              token,
+            ),
+          ),
+        );
+
+      // Attribute: found in start rules AND the question binding (codeName
+      // vocabulary) AND the segment's own definition.
+      const a = await refs('attribute', refAttr.id);
+      const holderRow = a.referencedBy.find((r: any) => r.id === holder.id);
+      expect(holderRow.where).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('start rules'),
+          expect.stringContaining('question binding'),
+        ]),
+      );
+      expect(a.referencedBy.find((r: any) => r.id === refSegment.id)).toMatchObject({
+        referrerKind: 'segment',
+        where: ['segment conditions'],
+      });
+
+      // Segment / theme / content each resolve to the holder with the right spot.
+      const sg = await refs('segment', refSegment.id);
+      expect(sg.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain(
+        'start rules',
+      );
+      const th = await refs('theme', refTheme.id);
+      expect(th.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain(
+        'version theme',
+      );
+      const ct = await refs('content', targetFlow.id);
+      expect(ct.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain('trigger');
+
+      // Nothing references the TARGET flow's own attribute-free sibling query:
+      // an unreferenced probe answers "safe to delete".
+      const lonely = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'ref_lonely',
+          displayName: 'lonely',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const empty = await refs('attribute', lonely.id);
+      expect(empty.referencedBy).toEqual([]);
+      expect(empty.summary).toContain('safe to delete');
     });
 
     it('get_content_schema batches several types with the shared $defs emitted once', async () => {
