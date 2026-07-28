@@ -355,6 +355,10 @@ Table OAuthGrant {
   scopes Json [not null]
   allowedEnvironmentIds Json [note: 'Environment ids this grant\'s issued tokens may act on; null = all (set at consent, Phase 2).']
   hashedRefreshToken String [unique, note: 'SHA-256 hash of the current refresh token; rotated on each refresh.']
+  previousHashedRefreshToken String [unique, note: 'The PREVIOUS refresh hash, honored for a short grace window after rotation
+(rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
+old token instead of bricking the grant. See OAuthModelService.']
+  rotatedAt DateTime
   refreshExpiresAt DateTime
   revokedAt DateTime
 
@@ -450,7 +454,12 @@ Table Version {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  publishedAt DateTime
+  publishedAt DateTime [note: 'FIRST time this version went live (freeze stamp). Set once in the publish
+transaction, never cleared (unpublish keeps it) and never copied to forks.
+Non-null = the version is frozen read-only forever (see versionFrozen in
+content.service). NOT live state — that lives on ContentOnEnvironment.
+(Column predates this use and was dead/empty; adopted without backfill,
+so only versions published after the freeze rule shipped carry it.)']
   scheduledAt DateTime
   deleted Boolean [not null, default: false]
   sequence Int [not null, default: 0]
