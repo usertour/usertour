@@ -369,7 +369,15 @@ export const representationCondition = z.lazy(() =>
         .describe(
           '`present` means VISIBLE IN THE VIEWPORT, not merely in the DOM — an element that is ' +
             'scrolled off-screen, clipped, or covered never satisfies it (and `hidden` is its ' +
-            'negation). Appearances shorter than about a second can be missed entirely.',
+            'negation). Appearances shorter than about a second can be missed entirely. ' +
+            '`disabled`/`enabled` read the element disabled state at evaluation time. ' +
+            '`clicked` LATCHES: the SDK attaches a click listener the FIRST time the condition ' +
+            'is evaluated — clicks before that are invisible — and once a click lands the ' +
+            'condition stays true until the page reloads (`unclicked` is its negation). Two ' +
+            'consequences: a tracker gated on `clicked` fires ONCE per page load (its event is ' +
+            'edge-triggered), so it counts "page loads with at least one click", NOT total ' +
+            'clicks; and a click that happens before the content is distributed to the page ' +
+            'is never seen.',
         ),
     }),
     z.object({
@@ -495,6 +503,16 @@ export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =
 ) as unknown as z.ZodType<CompletionCondition>;
 
 // ── Rules: actions ───────────────────────────────────────────────────────────
+/**
+ * EXECUTION ORDER of an action list (measured in the SDK's action manager):
+ * `navigate` actions ALWAYS run last regardless of where they sit in the
+ * array; everything else runs in the order written, awaited one by one, and a
+ * failing action does not stop the ones after it. So [start_content, dismiss]
+ * hands off then closes as written, while [navigate, start_content] runs
+ * start_content FIRST — the array order is not the execution order once a
+ * navigate is involved. Documented on the union so every carrier (button
+ * actions, trigger `do`, question actions, onClick) shares one truth.
+ */
 export const representationAction = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('goto_step'),
