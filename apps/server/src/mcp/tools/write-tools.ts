@@ -139,11 +139,9 @@ export function buildWriteTools(): McpTool[] {
         'while the content is still published anywhere: E1028, "unpublish it from all environments ' +
         'first" — deleting does NOT unpublish for you. So the order is unpublish_content (per ' +
         'environment), then delete. Restore brings the content back as an UNPUBLISHED draft with ' +
-        'its versions intact. Note what you lose HERE: `environments[]` goes empty the moment you ' +
-        'unpublish — before any delete — and never comes back, so from this API "was this ever ' +
-        'live, and on which version?" is unanswerable afterwards. The history is retained ' +
-        'server-side and shown in the dashboard, but no v2/MCP endpoint exposes it: capture what ' +
-        'you need (version id, environment, publishedAt) BEFORE unpublishing.',
+        'its versions intact. `environments[]` goes empty the moment you unpublish, but "was this ' +
+        'ever live, and on which version?" stays answerable: `list_publish_history` is the ' +
+        'permanent publish/unpublish ledger and survives deletion.',
       inputSchema: { contentId: z.string() },
       handler: async (args, ctx) => {
         await ctx.services.content.remove(String(args.contentId), ctx.projectId);
@@ -158,10 +156,9 @@ export function buildWriteTools(): McpTool[] {
       description:
         'Restore a soft-deleted content (find it via `list_content` with `deleted: true`). It comes ' +
         'back as an UNPUBLISHED draft with its VERSIONS intact, and nothing is live again until you ' +
-        'publish explicitly. `environments[]` comes back EMPTY: the per-environment publish state ' +
-        'is not restored and this API cannot report what it used to be (the dashboard keeps the ' +
-        'history; no v2/MCP endpoint exposes it). Idempotent if the content is not deleted. ' +
-        'Returns the restored content.',
+        'publish explicitly. `environments[]` comes back EMPTY — the per-environment publish state ' +
+        'is not restored; what used to be live, where, reads from `list_publish_history`. ' +
+        'Idempotent if the content is not deleted. Returns the restored content.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) => ctx.services.content.restore(String(args.contentId), ctx.projectId),
     },
@@ -665,8 +662,8 @@ export function buildWriteTools(): McpTool[] {
       description:
         'Create a theme. Starts from a fixed built-in default styling (a neutral base — NOT a ' +
         "copy of your project's default / `isDefault` theme); pass a partial `settings` to " +
-        'override colors / fonts / sizes (field-merged, auto colors derived). `variations` ' +
-        'are not yet editable via the API.',
+        'override colors / fonts / sizes (field-merged, auto colors derived). `variations` are ' +
+        'read-only via the API — edit them in the theme builder.',
       inputSchema: { ...createThemeBody.shape, settings: themeSettingsMcpField },
       handler: (args, ctx) =>
         ctx.services.themes.create(ctx.projectId, args as unknown as CreateThemeBody),
@@ -684,7 +681,7 @@ export function buildWriteTools(): McpTool[] {
         '(`isSystem: true` on list_themes) reject content changes (name / settings) — ' +
         'create_theme your own copy instead — but `isDefault: true` IS allowed on them: it ' +
         'only moves the project default pointer. ' +
-        '`variations` are not yet editable via the API.',
+        '`variations` are read-only via the API — edit them in the theme builder.',
       inputSchema: {
         id: z.string().describe('The theme id.'),
         ...updateThemeBody.shape,
