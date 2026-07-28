@@ -222,8 +222,10 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     expect(refreshed.body.access_token).toMatch(/^uto_/);
     expect(refreshed.body.refresh_token).not.toBe(tok.body.refresh_token);
 
-    // the old refresh token is now rejected (rotation / reuse detection)
-    await http()
+    // the rotated-away token stays honored for a short GRACE window — the
+    // lost-response retry: it succeeds and hands the client another fresh pair
+    // (we store hashes only, so re-sending the lost pair is impossible).
+    const graceRetry = await http()
       .post('/oauth/token')
       .type('form')
       .send({
@@ -231,7 +233,38 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
         refresh_token: tok.body.refresh_token,
         client_id: clientId,
       })
+      .expect(200);
+    expect(graceRetry.body.refresh_token).not.toBe(refreshed.body.refresh_token);
+
+    // outside the window the reuse rejection is intact: rewind rotatedAt past
+    // the grace and the previous-slot token (rotation #2 parked `refreshed`'s
+    // token there) is refused.
+    await prisma.oAuthGrant.updateMany({
+      where: { clientId },
+      data: { rotatedAt: new Date(Date.now() - 10 * 60_000) },
+    });
+    await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        refresh_token: refreshed.body.refresh_token,
+        client_id: clientId,
+      })
       .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+
+    // …while the CURRENT token still refreshes fine — an expired grace window
+    // must never damage the live chain.
+    const current = await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        refresh_token: graceRetry.body.refresh_token,
+        client_id: clientId,
+      })
+      .expect(200);
+    expect(current.body.access_token).toMatch(/^uto_/);
 
     // revoke the access token → MCP now 401
     await http().post('/oauth/revoke').send({ token: refreshed.body.access_token }).expect(201);

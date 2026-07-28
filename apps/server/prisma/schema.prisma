@@ -442,6 +442,11 @@ model OAuthGrant {
   allowedEnvironmentIds Json?     @db.JsonB
   /// SHA-256 hash of the current refresh token; rotated on each refresh.
   hashedRefreshToken    String?   @unique
+  /// The PREVIOUS refresh hash, honored for a short grace window after rotation
+  /// (rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
+  /// old token instead of bricking the grant. See OAuthModelService.
+  previousHashedRefreshToken String? @unique
+  rotatedAt             DateTime? @db.Timestamptz(6)
   refreshExpiresAt      DateTime? @db.Timestamptz(6)
   revokedAt             DateTime? @db.Timestamptz(6)
 
