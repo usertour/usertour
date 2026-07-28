@@ -4,10 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
+import { Prisma } from '@prisma/client';
+
 import {
   buildContent,
   buildEnvironment,
   buildProject,
+  buildSubscription,
   buildTheme,
   buildVersion,
 } from '../factories';
@@ -523,5 +526,74 @@ describe('API v2 themes + version themeId (e2e)', () => {
     const res = await send('post', basePath(), token).send({ name: 'x' });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
+  });
+
+  it('customCss is plan-gated: introduce/change refused below Growth (E1038); echo + clear pass; a subscription unlocks', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const css = '.usertour-widget { border-radius: 0 }';
+    try {
+      // Hobby (this project has no subscription): introducing customCss is
+      // refused on create — the builder shows an upsell here; storing it would
+      // only be stripped at delivery.
+      const blockedCreate = await send('post', basePath(), token).send({
+        name: 'CSS blocked',
+        settings: { customCss: css },
+      });
+      expect(blockedCreate.status).toBe(403);
+      expect(blockedCreate.body.error.code).toBe('E1038');
+
+      // …and on update of an existing css-free theme.
+      const plain = await send('post', basePath(), token).send({ name: 'CSS-free' });
+      expect(plain.status).toBe(201);
+      const blockedUpdate = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: css },
+      });
+      expect(blockedUpdate.status).toBe(403);
+      expect(blockedUpdate.body.error.code).toBe('E1038');
+
+      // A theme that ALREADY stores css (builder-era write before a downgrade):
+      // echoing it back unchanged, and clearing it, must both stay legal —
+      // read-modify-write and cleanup never gate.
+      const stored = await prisma.theme.findUniqueOrThrow({ where: { id: plain.body.id } });
+      await prisma.theme.update({
+        where: { id: plain.body.id },
+        data: {
+          settings: {
+            ...(stored.settings as Record<string, unknown>),
+            customCss: css,
+          } as Prisma.InputJsonValue,
+        },
+      });
+      const echoed = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: css, font: { fontSize: 17 } },
+      });
+      expect(echoed.status).toBe(200);
+      const cleared = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: '' },
+      });
+      expect(cleared.status).toBe(200);
+
+      // A Business subscription opens the gate (the config is resolved fresh
+      // per request — no cache to go stale).
+      await buildSubscription(prisma, { projectId });
+      const allowed = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: css },
+      });
+      expect(allowed.status).toBe(200);
+      const readBack = await send(
+        'get',
+        `${basePath()}/${plain.body.id}?expand=settings`,
+        token,
+      ).send();
+      expect(readBack.body.settings.customCss).toBe(css);
+    } finally {
+      // Restore the hobby state — suite neighbours must not inherit the plan.
+      await prisma.project.update({ where: { id: projectId }, data: { subscriptionId: null } });
+      await prisma.subscription.deleteMany({ where: { projectId } });
+    }
   });
 });

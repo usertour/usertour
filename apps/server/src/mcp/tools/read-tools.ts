@@ -909,7 +909,9 @@ export function buildReadTools(): McpTool[] {
         'the concrete colors are DERIVED server-side into `autoHover`/`autoActive` on every ' +
         'write — never author the auto* keys (accepted only so read-modify-write round-trips; ' +
         'the derivation overwrites the ones the runtime reads), and note they only take effect ' +
-        'while the matching hover/active is "Auto".',
+        'while the matching hover/active is "Auto". `customCss` is plan-gated (Growth and ' +
+        'above): introducing or changing it on a lower plan is refused (E1038) — echoing the ' +
+        'stored value back, or clearing it, always passes.',
       inputSchema: {},
       async handler(_args, _ctx) {
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`

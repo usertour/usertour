@@ -10,11 +10,13 @@ import { PrismaService } from 'nestjs-prisma';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
 import {
+  CustomCssPlanRequiredError,
   DefaultThemeCannotBeDeletedError,
   SystemThemeCannotBeChangedError,
   ThemeNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
+import { ProjectsService } from '@/projects/projects.service';
 import { ThemesService } from '@/themes/themes.service';
 
 import {
@@ -47,6 +49,7 @@ export class ApiThemesService {
   constructor(
     private readonly themes: ThemesService,
     private readonly prisma: PrismaService,
+    private readonly projects: ProjectsService,
   ) {}
 
   async list(
@@ -148,6 +151,34 @@ export class ApiThemesService {
   }
 
   /**
+   * Custom CSS is plan-gated (Growth+). The builder blocks the field behind an
+   * upsell on this same predicate; here, INTRODUCING or CHANGING a non-empty
+   * `customCss` on a plan without it is refused (E1038) instead of being stored
+   * and then silently stripped at delivery. Echoing the stored value unchanged
+   * and clearing it stay legal, so read-modify-write and cleanup never gate.
+   * The predicate is the SAME ProjectConfig the session builder's strip reads
+   * (self-host: always on), so the two can't drift.
+   */
+  private async assertCustomCssAllowed(
+    patch: Partial<ThemeTypesSetting>,
+    base: Partial<ThemeTypesSetting>,
+    projectId: string,
+  ): Promise<void> {
+    const next = (patch as { customCss?: unknown }).customCss;
+    if (typeof next !== 'string' || next.trim() === '') {
+      return; // absent or clearing
+    }
+    const current = (base as { customCss?: unknown }).customCss;
+    if (typeof current === 'string' && current === next) {
+      return; // stored echo
+    }
+    const config = await this.projects.getProjectConfig(projectId);
+    if (!config.customCss) {
+      throw new CustomCssPlanRequiredError();
+    }
+  }
+
+  /**
    * Create a theme. Starts from the fixed built-in `defaultSettings` (a neutral base — NOT a
    * copy of the project's default / isDefault theme); an optional `settings` patch is
    * field-merged onto it and auto colors derived. `variations` are not yet writable.
@@ -157,6 +188,7 @@ export class ApiThemesService {
     if (body.settings) {
       const patch = this.parseSettingsPatch(body.settings);
       this.assertBuilderManagedUnchanged(patch, defaultSettings);
+      await this.assertCustomCssAllowed(patch, defaultSettings, projectId);
       settings = deriveThemeAutoColors(deepMergeThemeSettings(defaultSettings, patch));
     }
     const created = await this.themes.createTheme({
@@ -196,6 +228,11 @@ export class ApiThemesService {
       // Base = the STORED settings (exactly what reads return), so echoing a
       // read response back is always accepted.
       this.assertBuilderManagedUnchanged(patch, theme.settings ?? {});
+      await this.assertCustomCssAllowed(
+        patch,
+        (theme.settings ?? {}) as Partial<ThemeTypesSetting>,
+        projectId,
+      );
       settingsUpdate = {
         settings: deriveThemeAutoColors(
           deepMergeThemeSettings(

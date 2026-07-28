@@ -75,6 +75,13 @@ export class ApiThemesController {
   @ApiOperation({ summary: 'Create a theme' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Theme created', type: ThemeDto })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Custom CSS requires the Growth plan or above (E1038) — below that the runtime strips ' +
+      '`customCss` at delivery, so the write is refused instead of silently stored.',
+    type: ErrorResponseDto,
+  })
   async create(@Param('projectId') projectId: string, @Body() body: CreateThemeBodyDto) {
     return this.service.create(projectId, body);
   }
@@ -91,6 +98,14 @@ export class ApiThemesController {
     description:
       'System themes cannot be modified (E1035) — duplicate one into your own theme; ' +
       'isDefault: true alone is allowed (it only moves the project default pointer).',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Custom CSS requires the Growth plan or above (E1038) — introducing or changing a ' +
+      'non-empty `customCss` is refused below that plan (echoing the stored value back, or ' +
+      'clearing it, always passes).',
     type: ErrorResponseDto,
   })
   async update(

@@ -14,6 +14,7 @@ import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
+import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 
 import { ApiAnalyticsController } from './analytics/analytics.controller';
@@ -80,6 +81,7 @@ import { ApiUsersService } from './users/users.service';
     AnalyticsModule,
     ThemesModule,
     EnvironmentsModule,
+    ProjectsModule,
     UtilitiesModule,
   ],
   // Order here drives the OpenAPI tag order (NestJS emits operations per controller),

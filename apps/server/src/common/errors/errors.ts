@@ -252,6 +252,29 @@ export class DefaultThemeCannotBeDeletedError extends OpenAPIError {
   };
 }
 
+/**
+ * Writing custom CSS on a plan that doesn't include it. The builder blocks the
+ * same field behind an upsell at this predicate; if the API accepted the write,
+ * the CSS would store and round-trip on reads while the session builder strips
+ * it at delivery — the author sees success everywhere and users see nothing.
+ * Refuse upfront and name the requirement instead. Echoing a STORED customCss
+ * back unchanged stays legal (read-modify-write), as does clearing it.
+ */
+export class CustomCssPlanRequiredError extends OpenAPIError {
+  code = 'E1038';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en:
+      "Custom CSS requires the Growth plan or above — on the project's current plan the " +
+      'runtime strips `customCss` before delivery, so the write is refused rather than ' +
+      'silently stored. Remove `customCss` from the settings patch, or upgrade the plan ' +
+      '(Settings → Billing).',
+    'zh-CN':
+      '自定义 CSS 需要 Growth 及以上套餐——当前套餐下运行时会在下发前剥离 customCss,' +
+      '因此写入被拒绝而非静默存储。请从 settings 中移除 customCss,或升级套餐(设置 → 账单)。',
+  };
+}
+
 export class SystemThemeCannotBeChangedError extends OpenAPIError {
   code = 'E1035';
   statusCode = HttpStatus.CONFLICT;
