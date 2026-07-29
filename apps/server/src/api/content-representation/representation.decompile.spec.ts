@@ -37,7 +37,7 @@ const root = (columns: unknown[], id?: string) => ({
 describe('decompileText', () => {
   it('renders bold, links, and user attributes as a Liquid subset', () => {
     expect(decompileText(slate)).toBe(
-      'Hi **there**{{ first_name | default: "friend" }}! See the [docs](https://x.io)',
+      'Hi **there{{ first_name | default: "friend" }}**! See the [docs](https://x.io)',
     );
   });
 

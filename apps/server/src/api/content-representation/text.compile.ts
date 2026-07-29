@@ -150,19 +150,43 @@ function applyMarks(leaf: SlateNode, marks: Marks): SlateNode {
  * while pushing into the same target; a link is a real container node, so it
  * redirects subsequent leaves into its own `children`.
  */
+// The ONE attribute suffix the link syntax recognizes (Pandoc/Kramdown-style):
+// `[text](url){target=_blank}` immediately after the closing paren marks the
+// link "open in a new tab" (Slate `openType: 'new'` — what the builder's link
+// panel stores and the widget renders as target=_blank). Markdown itself has no
+// slot for this, and without a written form a builder-set New tab silently
+// degraded to same-tab whenever an agent edited the surrounding text. Any other
+// `{...}` stays literal text — this is a single recognized form, not an
+// attribute dialect.
+const NEW_TAB_SUFFIX = '{target=_blank}';
+
 function mapInline(tokens: MdToken[] | null): SlateNode[] {
   const root: SlateNode[] = [];
   const stack: Array<{ target: SlateNode[]; marks: Marks }> = [{ target: root, marks: {} }];
   const top = () => stack[stack.length - 1];
+  // Set on link_close, consumed by an IMMEDIATELY following text token that
+  // starts with the suffix (strict adjacency — `[a](u) {target=_blank}` with a
+  // space stays literal, matching the Pandoc convention).
+  let justClosedLink: SlateNode | null = null;
+  const openLinks: SlateNode[] = [];
 
   for (const t of tokens ?? []) {
     const f = top();
+    const pendingLink = justClosedLink;
+    justClosedLink = null;
     switch (t.type) {
       case 'text':
       case 'code_inline': // no inline-code mark in the subset — keep the literal text
       case 'image': // no inline image in the subset — keep its alt text
-        if (t.content) {
-          f.target.push(applyMarks({ text: t.content }, f.marks));
+        {
+          let content = t.content;
+          if (pendingLink && t.type === 'text' && content?.startsWith(NEW_TAB_SUFFIX)) {
+            pendingLink.openType = 'new';
+            content = content.slice(NEW_TAB_SUFFIX.length);
+          }
+          if (content) {
+            f.target.push(applyMarks({ text: content }, f.marks));
+          }
         }
         break;
       case 'softbreak':
@@ -184,12 +208,18 @@ function mapInline(tokens: MdToken[] | null): SlateNode[] {
         const url = t.attrGet('href') ?? '';
         const link: SlateNode = { type: 'link', url, data: compilePlainText(url), children: [] };
         f.target.push(link);
+        openLinks.push(link);
         stack.push({ target: link.children as SlateNode[], marks: f.marks });
         break;
       }
+      case 'link_close':
+        justClosedLink = openLinks.pop() ?? null;
+        if (stack.length > 1) {
+          stack.pop();
+        }
+        break;
       case 'strong_close':
       case 'em_close':
-      case 'link_close':
         if (stack.length > 1) {
           stack.pop();
         }
