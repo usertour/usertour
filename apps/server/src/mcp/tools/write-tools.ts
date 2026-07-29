@@ -56,6 +56,25 @@ import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
 import { editorUrlFor, withEditorUrl } from './editor-url';
 
+// Variations mirror the settings pattern: a permissive array on the tool (the
+// full condition-union schema would bloat every tools/list), validated strictly
+// by the SERVICE against the same rules REST enforces.
+const themeVariationsMcpField = z
+  .array(z.record(z.string(), z.any()))
+  .optional()
+  .describe(
+    'Conditional variations: [{ id?, name, conditions, settings? }] — FULL replacement of the ' +
+      'list when present (a variation you omit is deleted; omit the field to leave them ' +
+      'untouched). Array order is evaluation priority: the browser applies the FIRST variation ' +
+      'whose conditions match on each render, else the base settings. `conditions` take user ' +
+      "attribute / current_url conditions and groups of them (the theme builder's variation " +
+      'set) — e.g. dark mode driven by a user attribute your app sets on identify: ' +
+      '[{ "type": "attribute", "scope": "user", "attribute": "color_scheme", "op": "is", "value": "dark" }]. ' +
+      "`settings` is a partial style patch: onto that variation's current settings when `id` " +
+      'is echoed (from get_theme expand:["variations"]), onto the theme base settings for a ' +
+      'new variation. Auto colors derive per variation; customCss stays plan-gated (E1038).',
+  );
+
 // Theme `settings` is exposed to MCP as a permissive object (its full ~136-field
 // schema would bloat every tools/list); the agent fetches the exact fields/ranges
 // via `get_theme_schema`, and the server validates strictly against the SSOT. Same
@@ -664,9 +683,13 @@ export function buildWriteTools(): McpTool[] {
       description:
         'Create a theme. Starts from a fixed built-in default styling (a neutral base — NOT a ' +
         "copy of your project's default / `isDefault` theme); pass a partial `settings` to " +
-        'override colors / fonts / sizes (field-merged, auto colors derived). `variations` are ' +
-        'read-only via the API — edit them in the theme builder.',
-      inputSchema: { ...createThemeBody.shape, settings: themeSettingsMcpField },
+        'override colors / fonts / sizes (field-merged, auto colors derived); pass `variations` ' +
+        'for conditional styling (e.g. a dark-mode variant).',
+      inputSchema: {
+        ...createThemeBody.shape,
+        settings: themeSettingsMcpField,
+        variations: themeVariationsMcpField,
+      },
       handler: (args, ctx) =>
         ctx.services.themes.create(ctx.projectId, args as unknown as CreateThemeBody),
     },
@@ -682,12 +705,13 @@ export function buildWriteTools(): McpTool[] {
         'patch, field-merged onto the current settings with auto colors derived). System themes ' +
         '(`isSystem: true` on list_themes) reject content changes (name / settings) — ' +
         'create_theme your own copy instead — but `isDefault: true` IS allowed on them: it ' +
-        'only moves the project default pointer. ' +
-        '`variations` are read-only via the API — edit them in the theme builder.',
+        'only moves the project default pointer. `variations` writes REPLACE the whole list ' +
+        '(see the field description).',
       inputSchema: {
         id: z.string().describe('The theme id.'),
         ...updateThemeBody.shape,
         settings: themeSettingsMcpField,
+        variations: themeVariationsMcpField,
       },
       handler: (args, ctx) =>
         ctx.services.themes.update(

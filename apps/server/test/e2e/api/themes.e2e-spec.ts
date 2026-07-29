@@ -7,6 +7,7 @@ import { gqlData, graphql } from '../auth';
 import { Prisma } from '@prisma/client';
 
 import {
+  buildAttribute,
   buildContent,
   buildEnvironment,
   buildProject,
@@ -595,5 +596,197 @@ describe('API v2 themes + version themeId (e2e)', () => {
       await prisma.project.update({ where: { id: projectId }, data: { subscriptionId: null } });
       await prisma.subscription.deleteMany({ where: { projectId } });
     }
+  });
+
+  it('writes conditional variations: create round-trips, patch by id, list is a full replacement', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    // dataType 2 = String, bizType 1 = user — for codeName<->id compile coverage.
+    await buildAttribute(prisma, {
+      projectId,
+      codeName: 'plan_tier',
+      dataType: 2,
+      bizType: 1,
+    });
+    await buildAttribute(prisma, {
+      projectId,
+      codeName: 'color_scheme',
+      dataType: 2,
+      bizType: 1,
+    });
+
+    const created = await send('post', basePath(), token).send({
+      name: 'Varied',
+      settings: { brandColor: { background: '#112233' } },
+      variations: [
+        {
+          name: 'Dark',
+          conditions: [
+            {
+              type: 'attribute',
+              scope: 'user',
+              attribute: 'color_scheme',
+              op: 'is',
+              value: 'dark',
+            },
+          ],
+          settings: { brandColor: { background: '#000000' } },
+        },
+        {
+          name: 'Pro on app pages',
+          conditions: [
+            {
+              type: 'group',
+              match: 'all',
+              conditions: [
+                {
+                  type: 'attribute',
+                  scope: 'user',
+                  attribute: 'plan_tier',
+                  op: 'is',
+                  value: 'pro',
+                },
+                { type: 'current_url', includes: ['*/app/*'] },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(created.status).toBe(201);
+    const [dark, pro] = created.body.variations;
+    // Conditions round-trip through the codec back to the representation vocabulary.
+    expect(dark.conditions).toEqual([
+      expect.objectContaining({
+        type: 'attribute',
+        scope: 'user',
+        attribute: 'color_scheme',
+        op: 'is',
+        value: 'dark',
+      }),
+    ]);
+    expect(pro.conditions[0].conditions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'attribute', attribute: 'plan_tier', value: 'pro' }),
+        expect.objectContaining({ type: 'current_url', includes: ['*/app/*'] }),
+      ]),
+    );
+    // A variation stores a COMPLETE settings copy: the patch applied, the rest
+    // inherited from the theme base, auto colors derived per variation.
+    expect(dark.settings.brandColor.background).toBe('#000000');
+    expect(dark.settings.font.fontSize).toBeTruthy();
+    expect(dark.settings.brandColor.autoHover).toBeTruthy();
+    expect(dark.settings.brandColor.autoHover).not.toBe(created.body.settings.brandColor.autoHover);
+    // No patch on the second variation — it IS the base.
+    expect(pro.settings.brandColor.background).toBe('#112233');
+    expect(dark.id).toBeTruthy();
+
+    // Patch the Dark variation in place by echoing its id, and DROP the second
+    // one — the list is a full replacement.
+    const updated = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      variations: [
+        {
+          id: dark.id,
+          name: 'Dark',
+          conditions: dark.conditions,
+          settings: { mainColor: { background: '#101010' } },
+        },
+      ],
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.variations).toHaveLength(1);
+    const darkAfter = updated.body.variations[0];
+    expect(darkAfter.id).toBe(dark.id);
+    // Merge base was the variation's OWN stored settings, not the theme base.
+    expect(darkAfter.settings.brandColor.background).toBe('#000000');
+    expect(darkAfter.settings.mainColor.background).toBe('#101010');
+
+    // A made-up id must read as an error, not silently create a new variation.
+    const bogus = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      variations: [{ id: 'nope', name: 'x', conditions: dark.conditions }],
+    });
+    expect(bogus.status).toBe(400);
+    expect(bogus.body.error.message).toContain('does not match an existing variation');
+  });
+
+  it('variation guards: browser-only condition types, unknown refs, system themes, plan-gated css', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    // segment conditions are server-evaluated — structurally impossible in a
+    // variation, refused with directions.
+    const seg = await send('post', basePath(), token).send({
+      name: 'Bad seg',
+      variations: [{ name: 'v', conditions: [{ type: 'segment', segment: 'whatever', in: true }] }],
+    });
+    expect(seg.status).toBe(400);
+    expect(seg.body.error.message).toContain('start rules');
+
+    // element is browser-evaluable but NOT in the theme builder's variation
+    // editor — the API aligns with the builder and refuses it too.
+    const el = await send('post', basePath(), token).send({
+      name: 'Bad element',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'element', target: { selector: 'html.dark' }, state: 'present' }],
+        },
+      ],
+    });
+    expect(el.status).toBe(400);
+    expect(el.body.error.message).toContain('theme builder');
+
+    // attribute conditions align to the builder's USER attributes.
+    const co = await send('post', basePath(), token).send({
+      name: 'Bad scope',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'attribute', scope: 'company', attribute: 'plan_tier', op: 'any' }],
+        },
+      ],
+    });
+    expect(co.status).toBe(400);
+    expect(co.body.error.message).toContain('scope "user"');
+
+    // Unknown attribute codeName fails compilation with a real error.
+    const badRef = await send('post', basePath(), token).send({
+      name: 'Bad ref',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'attribute', scope: 'user', attribute: 'no_such_attr', op: 'any' }],
+        },
+      ],
+    });
+    expect(badRef.status).toBe(400);
+
+    // System themes reject variation changes like any content change (E1035).
+    const sys = await buildTheme(prisma, { projectId, name: 'Sys', isSystem: true });
+    const sysRes = await send('patch', `${basePath()}/${sys.id}`, token).send({
+      variations: [],
+    });
+    expect(sysRes.status).toBe(409);
+    expect(sysRes.body.error.code).toBe('E1035');
+
+    // customCss inside a VARIATION is plan-gated exactly like the base (E1038) —
+    // a variation must not smuggle css past the gate.
+    const css = await send('post', basePath(), token).send({
+      name: 'CSS via variation',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'current_url', includes: ['*'] }],
+          settings: { customCss: '.x { color: red }' },
+        },
+      ],
+    });
+    expect(css.status).toBe(403);
+    expect(css.body.error.code).toBe('E1038');
   });
 });

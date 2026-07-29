@@ -71,8 +71,7 @@ export class ListThemesResponseDto extends createZodDto(listThemesResponse) {}
 // `settings` is a partial patch validated against THEME_SETTING_CONSTRAINTS (the
 // neutral SSOT, see settings.schema): a created theme starts from the default
 // styling and a write field-merges onto it, so callers send only what they change.
-// `variations` are still not writable through the API (a later phase). Both remain
-// readable via expand.
+// Both settings and variations are readable via expand.
 const settingsField = themeSettingsPatchSchema
   .optional()
   .describe(
@@ -81,11 +80,56 @@ const settingsField = themeSettingsPatchSchema
       'colors are derived server-side.',
   );
 
+/**
+ * One conditional variation on a write. Validated by the SERVICE (not the body
+ * schema) so the MCP path — which exposes `variations` as a permissive array to
+ * keep tools/list lean, mirroring `settings` — goes through the exact same
+ * checks as REST. Condition types are restricted there to the theme builder's
+ * variation set (user attribute / current_url / group), keeping both authoring
+ * surfaces aligned; the variation is picked client-side at render time.
+ */
+export const themeVariationInput = z
+  .object({
+    id: z
+      .string()
+      .optional()
+      .describe(
+        'Echo an existing variation id (from get_theme expand:["variations"]) to update it in ' +
+          'place — its stored settings are the merge base. Omit to create a new variation ' +
+          '(the theme base settings are the merge base).',
+      ),
+    name: z.string().min(1).describe('Variation label shown in the theme builder.'),
+    conditions: z
+      .array(representationCondition)
+      .min(1)
+      .describe(
+        'When this variation applies — evaluated in the BROWSER on each render; the first ' +
+          'variation (in array order) whose conditions match wins, else the base settings ' +
+          'apply. Takes user attribute / current_url conditions and groups of them (the same ' +
+          "set the theme builder's variation editor offers).",
+      ),
+    settings: themeSettingsPatchSchema
+      .optional()
+      .describe('Partial style patch merged onto the merge base (see `id`).'),
+  })
+  .strict();
+export type ThemeVariationInput = z.infer<typeof themeVariationInput>;
+
+const variationsField = z
+  .array(themeVariationInput)
+  .optional()
+  .describe(
+    'Conditional variations — FULL replacement of the list when present (a variation you ' +
+      'omit is deleted; omit the field entirely to leave variations untouched). Array order ' +
+      'is evaluation priority.',
+  );
+
 export const createThemeBody = z
   .object({
     name: z.string().min(1).describe('Theme name.'),
     isDefault: z.boolean().optional().describe('Make this the project default theme.'),
     settings: settingsField,
+    variations: variationsField,
   })
   .strict();
 export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
@@ -102,6 +146,7 @@ export const updateThemeBody = z
           'theme instead; a project always keeps a default.',
       ),
     settings: settingsField,
+    variations: variationsField,
   })
   .strict();
 export class UpdateThemeBodyDto extends createZodDto(updateThemeBody) {}
