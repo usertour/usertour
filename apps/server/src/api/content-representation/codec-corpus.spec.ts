@@ -54,6 +54,7 @@ describe('codec corpus: markdown text is round-trip idempotent', () => {
     ['liquid with markdown chars', 'Plan: {{ plan | default: "*VIP*" }} now'],
     ['new-tab link suffix', 'Read [the docs](https://docs.x.io){target=_blank} today'],
     ['bold wrapping liquid', '**Hi {{ name }}!** welcome'],
+    ['bold wrapping liquid only', 'Hi **{{ name }}**, welcome!'],
     ['emphasis ending in liquid', '*Hey {{ name }}*'],
     [
       'mixed everything',
@@ -145,6 +146,47 @@ describe('codec corpus: markdown text is round-trip idempotent', () => {
       );
     });
 
+    it('emphasis wrapping ONLY an interpolation lands on the node and round-trips', () => {
+      // The flag has a home now (element-level marks the widget renders as
+      // b/i) — the old behavior normalized the wrap away because storing it
+      // had no renderable meaning.
+      const s1 = compileText('Hi **{{ name | default: "there" }}**, welcome!') as any[];
+      const attr = s1[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBe(true);
+      expect(attr.fallback).toBe('there');
+      const out = decompileText(s1);
+      expect(out).toBe('Hi **{{ name | default: "there" }}**, welcome!');
+      expect(compileText(out)).toEqual(s1);
+    });
+
+    it('emphasis wrapping words AND an interpolation flags the node too', () => {
+      const s1 = compileText('**Hi {{ name }}!** welcome') as any[];
+      const attr = s1[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBe(true);
+      expect(decompileText(s1)).toBe('**Hi {{ name }}!** welcome');
+    });
+
+    it('LEGACY unflagged interpolation between bold leaves stays unbold through write-back', () => {
+      // Builder-era storage: leaves bold, node unflagged (the name never
+      // rendered bold). The read form must keep the node OUTSIDE the emphasis
+      // so an echo does not silently bold it.
+      const legacy = [
+        {
+          type: 'paragraph',
+          children: [
+            { text: 'Hi ', bold: true },
+            { type: 'user-attribute', attrCode: 'name', fallback: '', children: [{ text: '' }] },
+            { text: '!', bold: true },
+          ],
+        },
+      ];
+      const md = decompileText(legacy);
+      expect(md).toBe('**Hi** {{ name }}**!**');
+      const back = compileText(md) as any[];
+      const attr = back[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBeUndefined();
+    });
+
     it('builder-shaped trailing-space bold leaf moves the space outside the markers', () => {
       // Builder data can hold a bold leaf ending in a space (markdown never
       // compiles to this, but decompile must not emit `**Hi **x` — invalid).
@@ -181,15 +223,6 @@ describe('codec corpus: markdown text is round-trip idempotent', () => {
 
     it('degrades strikethrough to plain text', () => {
       expect(norm('Some ~~struck~~ text')).toBe('Some struck text');
-    });
-
-    it('drops emphasis wrapping ONLY an interpolation (value renders unstyled everywhere)', () => {
-      // Not a loss: no surface (builder chip, SDK span) styles an interpolated
-      // value, so preserving the markers would be a LYING round-trip — markdown
-      // that reads bold and renders plain. The default filter must survive.
-      expect(norm('Hi **{{ name | default: "there" }}**, welcome!')).toBe(
-        'Hi {{ name | default: "there" }}, welcome!',
-      );
     });
 
     it('drops liquid filters other than default', () => {

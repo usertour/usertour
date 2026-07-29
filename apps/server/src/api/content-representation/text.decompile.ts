@@ -53,12 +53,12 @@ function inlineNodeToMarkdown(node: SlateNode): string {
  * containing one fragmented into `**Hi **{{ name }}**!**`, and when the liquid
  * ended the span the output was `*Hey *{{ name }}` — a space-before-closer
  * that CommonMark refuses, silently degrading the emphasis to literal
- * asterisks on the next write. In a run, the interpolation is a TRANSPARENT
- * member (it adopts the run's marks — rendering-identical either way), and
- * leading/trailing run whitespace moves OUTSIDE the markers (an emphasis
- * closer must not follow a space; a bold space renders the same as a plain
- * one). Links stay run barriers: their marks live innermost (canonical form
- * `[**text**](url)`).
+ * asterisks on the next write. In a run, the interpolation is a full member
+ * carrying its OWN element flags (set by compile from the surrounding
+ * emphasis, or by the builder chip), and leading/trailing run whitespace
+ * moves OUTSIDE the markers (an emphasis closer must not follow a space; a
+ * bold space renders the same as a plain one). Links stay run barriers:
+ * their marks live innermost (canonical form `[**text**](url)`).
  */
 function childrenToMarkdown(nodes: SlateNode[] | undefined): string {
   type Run = { bold: boolean; italic: boolean; text: string };
@@ -78,10 +78,11 @@ function childrenToMarkdown(nodes: SlateNode[] | undefined): string {
     if (isLeaf(node)) {
       push(Boolean(node.bold), Boolean(node.italic), node.text ?? '');
     } else if (node.type === 'user-attribute') {
-      // Transparent: join the open run (whatever its marks) so it never splits
-      // an emphasis span; standing alone it starts an unmarked run.
-      const last = runs[runs.length - 1];
-      push(last?.bold ?? false, last?.italic ?? false, userAttrToLiquid(node));
+      // The node's OWN element flags decide its run — so `**{{ name }}**`
+      // round-trips, and a legacy unflagged interpolation between bold leaves
+      // stays outside the emphasis (its name never rendered bold; adopting the
+      // neighbours' marks here would bold it on the next write-back).
+      push(Boolean(node.bold), Boolean(node.italic), userAttrToLiquid(node));
     } else {
       // Link (or unknown container): a barrier — emit unmarked, marks stay inside.
       push(false, false, inlineNodeToMarkdown(node));

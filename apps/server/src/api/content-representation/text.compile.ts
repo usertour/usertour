@@ -195,9 +195,21 @@ function mapInline(tokens: MdToken[] | null): SlateNode[] {
       case 'hardbreak':
         f.target.push(applyMarks({ text: '\n' }, f.marks));
         break;
-      case 'liquid':
-        f.target.push(liquidNode(t.content));
+      case 'liquid': {
+        // The surrounding emphasis context lands ON the node as element flags —
+        // `**Hi {{ name }}!**` bolds the interpolated VALUE too (the widget
+        // wraps it per these flags). Without a home for this bit the wrap-only
+        // form `**{{ name }}**` used to be silently normalized away.
+        const node = liquidNode(t.content);
+        if (f.marks.bold) {
+          node.bold = true;
+        }
+        if (f.marks.italic) {
+          node.italic = true;
+        }
+        f.target.push(node);
         break;
+      }
       case 'strong_open':
         stack.push({ target: f.target, marks: { ...f.marks, bold: true } });
         break;

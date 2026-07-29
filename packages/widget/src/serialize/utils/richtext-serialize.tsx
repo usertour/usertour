@@ -187,10 +187,21 @@ interface UserAttrSerializeProps {
 }
 
 const UserAttrSerialize = memo(({ element }: UserAttrSerializeProps) => {
-  // The class is a styling hook: interpolated values render unstyled by design
-  // (leaf marks live on sibling spans and don't reach here), so without a
-  // selector a tenant's customCss could not target them at all.
-  return <span className="usertour-widget-user-attribute">{element.value}</span>;
+  // Marks arrive as ELEMENT flags (a void inline has no text leaves), written
+  // by the markdown codec (`**Hi {{ name }}!**`) or the builder chip — wrap
+  // the value the same way serializeLeaf wraps text. The class is the
+  // customCss hook (without it the value had no selector at all).
+  let content: ReactNode = element.value;
+  if (element.bold) {
+    content = <b>{content}</b>;
+  }
+  if (element.italic) {
+    content = <i>{content}</i>;
+  }
+  if (element.underline) {
+    content = <u>{content}</u>;
+  }
+  return <span className="usertour-widget-user-attribute">{content}</span>;
 });
 UserAttrSerialize.displayName = 'UserAttrSerialize';
 
