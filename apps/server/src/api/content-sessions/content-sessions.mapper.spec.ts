@@ -168,6 +168,25 @@ describe('mapSessionAnswers — typed by question type', () => {
     expect(out.answerValue).toEqual(['email', 'docs']);
   });
 
+  it('a SINGLE-select multiple-choice answer (stored in textAnswer) still yields the array', () => {
+    // allowMultiple: false stores the chosen option in textAnswer, not listAnswer
+    // — the storage contract shared by the SDK write path, aggregate analytics
+    // and the web response view. Reading only listAnswer emitted [] here.
+    const [out] = mapSessionAnswers(
+      [answer('q_mc1', { textAnswer: 'users', listAnswer: null })],
+      [step(ContentEditorElementType.MULTIPLE_CHOICE, 'q_mc1')],
+    );
+    expect(out.answerValue).toEqual(['users']);
+  });
+
+  it('a multiple-choice answer with neither column yields an empty array', () => {
+    const [out] = mapSessionAnswers(
+      [answer('q_mc2', { textAnswer: null, listAnswer: null })],
+      [step(ContentEditorElementType.MULTIPLE_CHOICE, 'q_mc2')],
+    );
+    expect(out.answerValue).toEqual([]);
+  });
+
   it('drops an answer whose cvid matches no question in the version', () => {
     const out = mapSessionAnswers(
       [answer('orphan', { numberAnswer: 3 })],
