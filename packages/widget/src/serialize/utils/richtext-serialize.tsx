@@ -41,19 +41,20 @@ export const serializeLeaf = (node: DescendantNode, key = ''): ReactNode => {
     return null;
   }
 
-  // Semantic elements, not inline styles: the widget stylesheet already themes
-  // them (`.usertour-widget-root strong { font-weight: var(--usertour-font-
-  // weight-bold, 600) }`, `em { font-style: italic }`), so bold follows the
-  // theme's fontWeightBold instead of a hardcoded 700, a tenant's customCss
-  // can restyle marks with plain selectors (inline styles outrank any
-  // stylesheet), and screen readers get real emphasis semantics. Only `color`
-  // stays inline — it is a per-leaf arbitrary value, not a themable role.
+  // Mark ELEMENTS, not inline styles: the widget stylesheet themes them
+  // (`.usertour-widget-root b, strong { font-weight: var(--usertour-font-
+  // weight-bold, 600) }`, `i, em { font-style: italic }`), so bold follows the
+  // theme's fontWeightBold instead of a hardcoded 700, and a tenant's
+  // customCss can restyle marks with plain selectors (inline styles outrank
+  // any stylesheet). Single-letter tags (b/i/u) by house decision — u has no
+  // longhand anyway, and the stylesheet pairs cover b/strong and i/em alike.
+  // Only `color` stays inline — a per-leaf arbitrary value, not a themable role.
   let content: ReactNode = string;
   if (node.bold) {
-    content = <strong>{content}</strong>;
+    content = <b>{content}</b>;
   }
   if (node.italic) {
-    content = <em>{content}</em>;
+    content = <i>{content}</i>;
   }
   if (node.underline) {
     content = <u>{content}</u>;

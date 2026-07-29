@@ -161,19 +161,19 @@ const Element = (props: RenderElementProps) => {
 Element.displayName = 'SlateElement';
 
 /**
- * Leaf renderer for text formatting marks. Same semantic elements as the
- * widget's serializeLeaf (strong/em/u themed by the shared
- * `.usertour-widget-root` stylesheet rules, which the builder surfaces also
- * carry) — so the editing view and the runtime read the same bold weight from
- * the same theme variable. Only `color` is inline (per-leaf arbitrary value).
+ * Leaf renderer for text formatting marks. Same mark elements as the widget's
+ * serializeLeaf (b/i/u, themed by the shared `.usertour-widget-root`
+ * stylesheet rules, which the builder surfaces also carry) — so the editing
+ * view and the runtime read the same bold weight from the same theme
+ * variable. Only `color` is inline (per-leaf arbitrary value).
  */
 const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
   let content = children;
   if (leaf.bold) {
-    content = <strong>{content}</strong>;
+    content = <b>{content}</b>;
   }
   if (leaf.italic) {
-    content = <em>{content}</em>;
+    content = <i>{content}</i>;
   }
   if (leaf.underline) {
     content = <u>{content}</u>;
