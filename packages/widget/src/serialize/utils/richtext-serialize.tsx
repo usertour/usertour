@@ -16,7 +16,6 @@ import {
 import { ALIGN_MAPPING } from '../constants';
 import type { DescendantNode, ElementNode } from '../types';
 import { isTextNode } from '../types';
-import { getTextStyles } from './text-styles';
 import { useLinkDecorator } from '../link-decorator-context';
 // Non-breaking space for empty paragraphs
 const NBSP = '\u00A0';
@@ -42,11 +41,27 @@ export const serializeLeaf = (node: DescendantNode, key = ''): ReactNode => {
     return null;
   }
 
-  const style = getTextStyles(node);
+  // Semantic elements, not inline styles: the widget stylesheet already themes
+  // them (`.usertour-widget-root strong { font-weight: var(--usertour-font-
+  // weight-bold, 600) }`, `em { font-style: italic }`), so bold follows the
+  // theme's fontWeightBold instead of a hardcoded 700, a tenant's customCss
+  // can restyle marks with plain selectors (inline styles outrank any
+  // stylesheet), and screen readers get real emphasis semantics. Only `color`
+  // stays inline — it is a per-leaf arbitrary value, not a themable role.
+  let content: ReactNode = string;
+  if (node.bold) {
+    content = <strong>{content}</strong>;
+  }
+  if (node.italic) {
+    content = <em>{content}</em>;
+  }
+  if (node.underline) {
+    content = <u>{content}</u>;
+  }
 
   return (
-    <span style={style} key={key}>
-      {string}
+    <span style={node.color ? { color: node.color } : undefined} key={key}>
+      {content}
     </span>
   );
 };
@@ -171,7 +186,10 @@ interface UserAttrSerializeProps {
 }
 
 const UserAttrSerialize = memo(({ element }: UserAttrSerializeProps) => {
-  return <span>{element.value}</span>;
+  // The class is a styling hook: interpolated values render unstyled by design
+  // (leaf marks live on sibling spans and don't reach here), so without a
+  // selector a tenant's customCss could not target them at all.
+  return <span className="usertour-widget-user-attribute">{element.value}</span>;
 });
 UserAttrSerialize.displayName = 'UserAttrSerialize';
 

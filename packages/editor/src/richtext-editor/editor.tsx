@@ -6,7 +6,6 @@ import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Editor, Element as SlateElement, Path, Transforms } from 'slate';
 import { Editable, RenderElementProps, RenderLeafProps, Slate } from 'slate-react';
-import { getTextStyles } from '../lib/styles';
 import { toggleTextProps } from '../lib/text';
 import { PopperEditorContextProps, PopperEditorProps } from '../types/editor';
 import { ELEMENTS } from './elements';
@@ -162,15 +161,27 @@ const Element = (props: RenderElementProps) => {
 Element.displayName = 'SlateElement';
 
 /**
- * Leaf renderer for text formatting marks
- * Uses shared getTextStyles utility for consistent styling
+ * Leaf renderer for text formatting marks. Same semantic elements as the
+ * widget's serializeLeaf (strong/em/u themed by the shared
+ * `.usertour-widget-root` stylesheet rules, which the builder surfaces also
+ * carry) — so the editing view and the runtime read the same bold weight from
+ * the same theme variable. Only `color` is inline (per-leaf arbitrary value).
  */
 const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
-  const style = getTextStyles(leaf);
+  let content = children;
+  if (leaf.bold) {
+    content = <strong>{content}</strong>;
+  }
+  if (leaf.italic) {
+    content = <em>{content}</em>;
+  }
+  if (leaf.underline) {
+    content = <u>{content}</u>;
+  }
 
   return (
-    <span {...attributes} style={style}>
-      {children}
+    <span {...attributes} style={leaf.color ? { color: leaf.color } : undefined}>
+      {content}
     </span>
   );
 };
