@@ -1094,14 +1094,18 @@ export const contentVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
   number: z.number(),
-  /**
-   * When this version FIRST went live (ISO), or null if it never has. Non-null
-   * means the version is frozen: it can never be edited again — not even after
-   * unpublishing — so the number/id always denotes exactly what shipped. Edit
-   * by forking (create_content_version). This is history, not live state: for
-   * "is it live NOW, where, since when" read the content's `environments[]`.
-   */
-  firstPublishedAt: z.string().nullable(),
+  firstPublishedAt: z
+    .string()
+    .nullable()
+    .describe(
+      'When this version FIRST went live (ISO). Non-null means the version is frozen: it can ' +
+        'never be edited again — not even after unpublishing — edit by forking ' +
+        '(create_content_version). null means it never went live — OR its first publish ' +
+        'predates this stamp (older versions were never backfilled), so on old data null is ' +
+        'not proof it never shipped. This is history, not live state: for "is it live NOW, ' +
+        'where" read the content\'s `environments[]`; for who published what when, ' +
+        '`list_publish_history`.',
+    ),
   themeId: z.string().nullable(),
   questions: z.array(question).nullable(),
   /** Decompiled steps — only present when the `steps` expand is requested. */

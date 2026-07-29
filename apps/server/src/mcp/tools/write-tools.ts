@@ -169,7 +169,9 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Write steps and/or start/hide rules to a draft (editable) content version. `steps` is ' +
-        'the COMPLETE step list, not a patch — any existing step you omit is deleted. Match a ' +
+        'the COMPLETE step list, not a patch — any existing step you omit is deleted. Omitting ' +
+        'the `steps` FIELD entirely leaves all steps untouched (replacement applies only when ' +
+        'the field is present), so a rules-only or theme-only update need not resend them. Match a ' +
         'step to update by its `cvid` (stable across forks) or primary `id`; omit both to add a ' +
         'new one. Editing a version that is live — or was EVER live (unpublishing does not ' +
         'unlock it; a shipped version is frozen as history) — fails with E0049; fork first with ' +

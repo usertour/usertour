@@ -28,6 +28,6 @@ Facts that prevent common mistakes:
 - A "survey" is a flow with question blocks — there is no separate survey type.
 - An announcement reaches users ONLY through a resource center with an \`announcement\` block — publishing alone does not surface it.
 - Content is project-level; PUBLISHING targets one specific environment.
-- \`steps\` and list-valued \`data\` fields are FULL replacements, not patches — a member you omit is deleted.
+- \`steps\` and list-valued \`data\` fields are FULL replacements, not patches — a member you omit is deleted. Omitting the FIELD itself leaves it untouched (replacement applies only when the field is present).
 - Lists return { items, nextCursor } — page until nextCursor is null before concluding something does not exist.
 - tools/list is scope-gated by this credential: a tool missing from the list is outside its granted scopes, not a missing feature.`;
