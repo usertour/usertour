@@ -1,4 +1,4 @@
-import { ContentDataType } from '@usertour/types';
+import { ContentDataType, ContentEditorElementType } from '@usertour/types';
 import { formatInTimeZone } from 'date-fns-tz';
 
 import { ApiObjectType } from '../shared/object-type';
@@ -200,13 +200,86 @@ const share = (raw: { count?: number; percentage?: number } | undefined) => ({
   percentage: typeof raw?.percentage === 'number' ? raw.percentage : 0,
 });
 
+/** Per-question-kind rolling-window lengths (days) the domain aggregated with. */
+export interface QuestionRollingWindows {
+  nps: number;
+  rate: number;
+  scale: number;
+}
+
+type DistributionCount = { answer: string | number; count: number };
+
+/**
+ * Build the distribution rows. For a choice question every configured option
+ * appears, in option order, count 0 when nobody chose it — the same join the
+ * dashboard does client-side against `question.data.options`, done HERE because
+ * an API consumer has no version at hand to join against. Answers recorded
+ * under options since removed from the question keep their own rows after the
+ * configured ones (NOT collapsed into an "Other" bucket — that is the
+ * dashboard's lossy display choice; a data API keeps the values).
+ */
+// biome-ignore lint/suspicious/noExplicitAny: domain analytics payloads are untyped JSON
+const distributionCounts = (raw: any): DistributionCount[] => {
+  // biome-ignore lint/suspicious/noExplicitAny: see above
+  const recorded: any[] = Array.isArray(raw?.answer) ? raw.answer : [];
+  // biome-ignore lint/suspicious/noExplicitAny: see above
+  const options: any[] = Array.isArray(raw?.question?.data?.options)
+    ? raw.question.data.options
+    : [];
+  const rows = recorded.map((e) => ({ answer: e?.answer ?? '', count: int(e?.count) }));
+  if (options.length === 0) {
+    return rows;
+  }
+  const byValue = new Map(rows.map((row) => [String(row.answer), row]));
+  const optionValues = new Set(options.map((o) => String(o?.value ?? '')));
+  return [
+    ...options.map(
+      (o) => byValue.get(String(o?.value ?? '')) ?? { answer: o?.value ?? '', count: 0 },
+    ),
+    ...rows.filter((row) => !optionValues.has(String(row.answer))),
+  ];
+};
+
+/**
+ * Integer percentages. When the counts are mutually exclusive (they sum to
+ * totalResponses — single select), largest-remainder rounding makes them sum to
+ * exactly 100 (33/33/33 → 34/33/33). Multi-select counts overlap respondents,
+ * so each stays an independent share of respondents (plain rounding, the
+ * domain's own formula) and the sum may legitimately pass 100.
+ */
+const withPercentages = (rows: DistributionCount[], total: number) => {
+  if (total <= 0) {
+    return rows.map((row) => ({ ...row, percentage: 0 }));
+  }
+  if (rows.reduce((sum, row) => sum + row.count, 0) !== total) {
+    return rows.map((row) => ({ ...row, percentage: Math.round((row.count / total) * 100) }));
+  }
+  const exact = rows.map((row) => (row.count * 100) / total);
+  const floors = exact.map(Math.floor);
+  let leftover = 100 - floors.reduce((sum, v) => sum + v, 0);
+  const byRemainder = exact
+    .map((value, i) => ({ frac: value - floors[i], count: rows[i].count, i }))
+    .sort((a, b) => b.frac - a.frac || b.count - a.count || a.i - b.i);
+  for (const { i } of byRemainder) {
+    if (leftover <= 0) break;
+    floors[i] += 1;
+    leftover -= 1;
+  }
+  return rows.map((row, i) => ({ ...row, percentage: floors[i] }));
+};
+
 /**
  * The domain's rolling-series `day` is the first instant of that calendar day
  * in the REQUESTED timezone — label it with the same timezone (a UTC slice
  * would shift the label a day for eastern-timezone requests).
  */
 // biome-ignore lint/suspicious/noExplicitAny: domain analytics payloads are untyped JSON
-export function mapQuestionAnalytics(rawList: any[], timezone: string): QuestionAnalytics[] {
+export function mapQuestionAnalytics(
+  // biome-ignore lint/suspicious/noExplicitAny: see above
+  rawList: any[],
+  timezone: string,
+  windows: QuestionRollingWindows,
+): QuestionAnalytics[] {
   const dayLabel = (value: unknown): string => dayLabelIn(timezone, value);
   return (rawList ?? []).map((raw) => {
     const question = raw?.question ?? {};
@@ -228,18 +301,14 @@ export function mapQuestionAnalytics(rawList: any[], timezone: string): Question
         type: String(question?.type ?? ''),
       },
       totalResponses: int(raw?.totalResponse),
-      // biome-ignore lint/suspicious/noExplicitAny: see above
-      distribution: (Array.isArray(raw?.answer) ? raw.answer : []).map((entry: any) => ({
-        answer: entry?.answer ?? '',
-        count: int(entry?.count),
-        percentage: typeof entry?.percentage === 'number' ? entry.percentage : 0,
-      })),
+      distribution: withPercentages(distributionCounts(raw), int(raw?.totalResponse)),
       nps: npsDays
         ? {
             score: typeof lastNps?.metrics?.npsScore === 'number' ? lastNps.metrics.npsScore : 0,
             promoters: share(lastNps?.metrics?.promoters),
             passives: share(lastNps?.metrics?.passives),
             detractors: share(lastNps?.metrics?.detractors),
+            rollingWindowDays: windows.nps,
             // biome-ignore lint/suspicious/noExplicitAny: see above
             byDay: npsDays.map((day: any) => ({
               date: dayLabel(day.day),
@@ -252,6 +321,10 @@ export function mapQuestionAnalytics(rawList: any[], timezone: string): Question
         ? {
             average:
               typeof lastRating?.metrics?.average === 'number' ? lastRating.metrics.average : 0,
+            rollingWindowDays:
+              String(question?.type) === ContentEditorElementType.SCALE
+                ? windows.scale
+                : windows.rate,
             // biome-ignore lint/suspicious/noExplicitAny: see above
             byDay: ratingDays.map((day: any) => ({
               date: dayLabel(day.day),

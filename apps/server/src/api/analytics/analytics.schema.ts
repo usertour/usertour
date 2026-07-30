@@ -88,6 +88,21 @@ const analyticsBase = {
 
 const date = z.string().describe('ISO date (bucketed in the requested timezone).');
 
+/**
+ * The content-analytics day series is per-day INCREMENTS; the question-analytics
+ * nps/rating byDay is rolling-window CUMULATIVE. Both describes spell out the
+ * contrast — a charting consumer who assumes one convention silently draws the
+ * wrong graph with the other.
+ */
+const dailySeries = <T extends z.ZodRawShape>(shape: T) =>
+  z
+    .array(z.object({ date, ...shape }))
+    .describe(
+      "Per-day activity: each row counts only that calendar day's events (increments — " +
+        'summing rows over the range gives the totals). Note the question-analytics ' +
+        'nps/rating byDay uses the OPPOSITE convention (rolling-window cumulative).',
+    );
+
 // unique* = distinct users in range; total* = events in range, repeats included.
 const startsCompletions = {
   uniqueStarts: int(),
@@ -135,8 +150,11 @@ export const stepAnalytics = z.object({
   totalViews: int(),
   uniqueCompletions: int(),
   totalCompletions: int(),
-  /** Sessions where this tooltip step's target element was never found — the selector-health signal. */
-  uniqueTooltipTargetMissing: int(),
+  uniqueTooltipTargetMissing: int().describe(
+    "Sessions where this tooltip step's target element was never found — the selector-health " +
+      'signal. Only meaningful on tooltip steps; the field is present (and always 0) on other ' +
+      'step types to keep rows uniform.',
+  ),
   totalTooltipTargetMissing: int(),
 });
 
@@ -179,7 +197,7 @@ export const flowAnalytics = z.object({
   uniqueCompletions: startsCompletions.uniqueCompletions.describe(
     'Distinct users who reached the end of the flow (or an explicit completion step).',
   ),
-  byDay: z.array(z.object({ date, ...startsCompletions })),
+  byDay: dailySeries(startsCompletions),
   steps: z.array(stepAnalytics),
 });
 
@@ -190,7 +208,7 @@ export const checklistAnalytics = z.object({
   uniqueCompletions: startsCompletions.uniqueCompletions.describe(
     'Distinct users who completed every visible task.',
   ),
-  byDay: z.array(z.object({ date, ...startsCompletions })),
+  byDay: dailySeries(startsCompletions),
   tasks: z.array(taskAnalytics),
 });
 
@@ -198,21 +216,21 @@ export const launcherAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('launcher'),
   ...seenActivations,
-  byDay: z.array(z.object({ date, ...seenActivations })),
+  byDay: dailySeries(seenActivations),
 });
 
 export const bannerAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('banner'),
   ...seenDismissals,
-  byDay: z.array(z.object({ date, ...seenDismissals })),
+  byDay: dailySeries(seenDismissals),
 });
 
 export const resourceCenterAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('resource-center'),
   ...opensClicks,
-  byDay: z.array(z.object({ date, ...opensClicks })),
+  byDay: dailySeries(opensClicks),
   blocks: z.array(blockAnalytics),
 });
 
@@ -220,14 +238,14 @@ export const trackerAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('tracker'),
   ...usersOccurrences,
-  byDay: z.array(z.object({ date, ...usersOccurrences })),
+  byDay: dailySeries(usersOccurrences),
 });
 
 export const announcementAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('announcement'),
   ...seenOnly,
-  byDay: z.array(z.object({ date, ...seenOnly })),
+  byDay: dailySeries(seenOnly),
 });
 
 export const contentAnalytics = z.discriminatedUnion('contentType', [
@@ -255,6 +273,29 @@ export class AnnouncementAnalyticsDto extends createZodDto(announcementAnalytics
 
 const share = z.object({ count: z.number().int(), percentage: z.number() });
 
+const rollingWindowDays = z
+  .number()
+  .int()
+  .describe(
+    "Length in days of the trailing window each byDay row aggregates — the content's " +
+      'configurable rolling-window setting (web analytics tab), default 365. Echoed here ' +
+      'because the setting is per-content: without it a consumer cannot tell what a point ' +
+      'in the series means.',
+  );
+
+const cumulativeSeriesNote =
+  'Rolling-window CUMULATIVE series: each row aggregates the trailing `rollingWindowDays` ' +
+  'ending on that date, so consecutive rows overlap and the LAST row equals the overall ' +
+  'metrics. NOT per-day increments (daily deltas are not recoverable by differencing); the ' +
+  'content-analytics byDay uses the opposite, per-day convention.';
+
+const npsByDay = z
+  .array(z.object({ date: z.string(), score: z.number(), total: z.number().int() }))
+  .describe(cumulativeSeriesNote);
+const ratingByDay = z
+  .array(z.object({ date: z.string(), average: z.number(), total: z.number().int() }))
+  .describe(cumulativeSeriesNote);
+
 export const questionAnalytics = z.object({
   object: z.literal(ApiObjectType.QUESTION_ANALYTICS),
   /** Slim question reference — cvid is the stable analytics identity. */
@@ -264,31 +305,46 @@ export const questionAnalytics = z.object({
     type: z.string(),
   }),
   totalResponses: z.number().int(),
-  /** Overall answer distribution over the (rolling-window) range. */
-  distribution: z.array(
-    z.object({
-      answer: z.union([z.string(), z.number()]),
-      count: z.number().int(),
-      percentage: z.number(),
-    }),
-  ),
-  /** NPS questions only. */
+  distribution: z
+    .array(
+      z.object({
+        answer: z.union([z.string(), z.number()]),
+        count: z.number().int(),
+        percentage: z.number(),
+      }),
+    )
+    .describe(
+      'Overall answer distribution over the requested range. For choice questions EVERY ' +
+        'configured option appears, in option order, with count 0 when nobody chose it — ' +
+        'render it directly, no join against the version needed; answers recorded under ' +
+        'options since removed from the question follow after. When answers are mutually ' +
+        'exclusive (single select), the integer percentages are reconciled to sum to 100; ' +
+        'multi-select percentages are per-option shares of respondents and may sum past 100.',
+    ),
+  /**
+   * The nps/rating byDay rows are rolling-window CUMULATIVE (the opposite of the
+   * content-analytics per-day series) — each carries `rollingWindowDays` so a
+   * consumer can tell what a point means without knowing the content's settings.
+   */
   nps: z
     .object({
       score: z.number(),
       promoters: share,
       passives: share,
       detractors: share,
-      byDay: z.array(z.object({ date: z.string(), score: z.number(), total: z.number().int() })),
+      rollingWindowDays: rollingWindowDays,
+      byDay: npsByDay,
     })
-    .nullable(),
-  /** Star-rating / scale questions only. */
+    .nullable()
+    .describe('NPS questions only.'),
   rating: z
     .object({
       average: z.number(),
-      byDay: z.array(z.object({ date: z.string(), average: z.number(), total: z.number().int() })),
+      rollingWindowDays: rollingWindowDays,
+      byDay: ratingByDay,
     })
-    .nullable(),
+    .nullable()
+    .describe('Star-rating / scale questions only.'),
 });
 export class QuestionAnalyticsDto extends createZodDto(questionAnalytics) {}
 export type QuestionAnalytics = z.infer<typeof questionAnalytics>;

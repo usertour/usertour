@@ -1418,9 +1418,12 @@ export function buildReadTools(): McpTool[] {
       title: 'Get question analytics',
       capability: Capability.AnalyticsRead,
       description:
-        'Survey results for this content, aggregated per question: answer distribution, NPS ' +
-        'score with promoter/passive/detractor shares, rating averages — each with a ' +
-        'rolling-window daily series. Defaults to the last 30 days, UTC. ' +
+        'Survey results for this content, aggregated per question: answer distribution (choice ' +
+        'questions list EVERY configured option, count 0 when unchosen), NPS score with ' +
+        'promoter/passive/detractor shares, rating averages — each with a rolling-window daily ' +
+        'series: byDay rows are CUMULATIVE over the trailing `rollingWindowDays` (echoed per ' +
+        'series), NOT per-day increments like get_content_analytics byDay. Defaults to the ' +
+        'last 30 days, UTC. ' +
         'Free-text questions (single/multi-line text) are NOT included — there is no ' +
         'aggregate signal for open text. To read what people actually wrote, use ' +
         "list_sessions with expand:['answers'] (each answer carries the raw value, " +

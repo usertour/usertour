@@ -7,7 +7,26 @@ import { AnalyticsService } from '@/analytics/analytics.service';
 import { ContentNotFoundError, EnvironmentNotFoundError } from '@/common/errors/errors';
 
 import { mapContentAnalytics, mapQuestionAnalytics } from './analytics.mapper';
+import type { QuestionRollingWindows } from './analytics.mapper';
 import type { AnalyticsQuery, ContentAnalytics, QuestionAnalytics } from './analytics.schema';
+
+/**
+ * The per-question-kind rolling-window lengths the domain aggregates with —
+ * `content.config.rollWindowConfig` falling back to 365 per kind, mirroring
+ * AnalyticsService.queryContentQuestionAnalytics (the domain resolves this
+ * internally and does NOT stamp it into its payload, so the API re-derives it
+ * to echo `rollingWindowDays`; a parity drift here would mislabel the series,
+ * not change it).
+ */
+function resolveRollingWindows(config: unknown): QuestionRollingWindows {
+  const cfg = ((config as Record<string, unknown> | null)?.rollWindowConfig ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const days = (value: unknown): number =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.trunc(value) : 365;
+  return { nps: days(cfg.nps), rate: days(cfg.rate), scale: days(cfg.scale) };
+}
 
 /**
  * v2 content-analytics handler — a thin, read-only binding over the domain
@@ -53,7 +72,7 @@ export class ApiAnalyticsService {
     projectId: string,
     query: AnalyticsQuery,
   ): Promise<{ results: QuestionAnalytics[] }> {
-    await this.requireContent(id, projectId);
+    const content = await this.requireContent(id, projectId);
     await this.requireEnvironment(query.environmentId, projectId);
     const range = resolveRange(query);
     const raw = await this.analytics.queryContentQuestionAnalytics(
@@ -64,13 +83,17 @@ export class ApiAnalyticsService {
       range.timezone,
     );
     // Domain returns `false` when no version exists yet — no questions, not an error.
-    return { results: Array.isArray(raw) ? mapQuestionAnalytics(raw, range.timezone) : [] };
+    return {
+      results: Array.isArray(raw)
+        ? mapQuestionAnalytics(raw, range.timezone, resolveRollingWindows(content.config))
+        : [],
+    };
   }
 
   private async requireContent(id: string, projectId: string) {
     const content = await this.prisma.content.findFirst({
       where: { id, projectId },
-      select: { id: true, type: true, deleted: true },
+      select: { id: true, type: true, deleted: true, config: true },
     });
     if (content?.deleted) {
       // Same code, archived-specific message — "no such id" and "archived" demand

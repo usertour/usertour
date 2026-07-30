@@ -211,6 +211,8 @@ describe('mapQuestionAnalytics (pure)', () => {
     distribution: [],
     metrics,
   });
+  // Distinct per-kind values so the tests can tell WHICH window each series echoed.
+  const windows = { nps: 30, rate: 90, scale: 7 };
 
   it('maps an NPS question: slim question ref, overall = LAST rolling-window day', () => {
     const raw = [
@@ -238,15 +240,17 @@ describe('mapQuestionAnalytics (pure)', () => {
         ],
       },
     ];
-    const [out] = mapQuestionAnalytics(raw, 'UTC');
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
     expect(out.question).toEqual({ cvid: 'q1', name: 'How satisfied?', type: 'nps' });
     expect(out.totalResponses).toBe(57);
-    expect(out.distribution).toEqual([{ answer: 9, count: 21, percentage: 36.8 }]);
+    // Percentages are recomputed as integers by the mapper (21/57 → 37).
+    expect(out.distribution).toEqual([{ answer: 9, count: 21, percentage: 37 }]);
     expect(out.rating).toBeNull();
     expect(out.nps).toMatchObject({
       score: 42,
       promoters: { count: 30, percentage: 52.6 },
       detractors: { count: 11, percentage: 19.3 },
+      rollingWindowDays: 30,
     });
     expect(out.nps?.byDay).toEqual([
       { date: '2026-07-01', score: 50, total: 2 },
@@ -268,15 +272,82 @@ describe('mapQuestionAnalytics (pure)', () => {
         answer: [{ answer: 'Great', count: 1, percentage: 50 }],
       },
     ];
-    const [rating, text] = mapQuestionAnalytics(raw, 'UTC');
+    const [rating, text] = mapQuestionAnalytics(raw, 'UTC', windows);
     expect(rating.nps).toBeNull();
     expect(rating.rating).toEqual({
       average: 4.2,
+      rollingWindowDays: 90,
       byDay: [{ date: '2026-07-02', average: 4.2, total: 5 }],
     });
     expect(text.nps).toBeNull();
     expect(text.rating).toBeNull();
     expect(text.totalResponses).toBe(2);
+  });
+
+  it('a scale question echoes the SCALE window, not the star-rating one', () => {
+    const raw = [
+      {
+        totalResponse: 3,
+        question: { type: 'scale', data: { cvid: 'q4', name: 'Effort' } },
+        answer: [],
+        averageByDay: [day('2026-07-02', { average: 5.5, total: 3, views: 3 })],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
+    expect(out.rating?.rollingWindowDays).toBe(7);
+  });
+
+  it('choice distribution zero-fills configured options in order; removed-option answers keep their rows', () => {
+    const raw = [
+      {
+        totalResponse: 3,
+        question: {
+          type: 'multiple-choice',
+          data: {
+            cvid: 'q5',
+            name: 'most_used_feature',
+            options: [{ value: 'users' }, { value: 'tasks' }, { value: 'reports' }],
+          },
+        },
+        // 'email' was recorded under an option since removed from the question.
+        answer: [
+          { answer: 'users', count: 1, percentage: 33 },
+          { answer: 'reports', count: 1, percentage: 33 },
+          { answer: 'email', count: 1, percentage: 33 },
+        ],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
+    // Option order, unchosen 'tasks' present at 0, stray 'email' last — and the
+    // exclusive percentages reconcile to 100 (34/33/33, not the domain's 99).
+    expect(out.distribution).toEqual([
+      { answer: 'users', count: 1, percentage: 34 },
+      { answer: 'tasks', count: 0, percentage: 0 },
+      { answer: 'reports', count: 1, percentage: 33 },
+      { answer: 'email', count: 1, percentage: 33 },
+    ]);
+  });
+
+  it('multi-select shares stay per-option (not forced to sum to 100)', () => {
+    const raw = [
+      {
+        totalResponse: 2,
+        question: {
+          type: 'multiple-choice',
+          data: { cvid: 'q6', name: 'areas', options: [{ value: 'perf' }, { value: 'docs' }] },
+        },
+        // Both respondents picked both options — counts overlap respondents.
+        answer: [
+          { answer: 'perf', count: 2, percentage: 100 },
+          { answer: 'docs', count: 2, percentage: 100 },
+        ],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
+    expect(out.distribution).toEqual([
+      { answer: 'perf', count: 2, percentage: 100 },
+      { answer: 'docs', count: 2, percentage: 100 },
+    ]);
   });
 
   it('labels byDay dates in the REQUESTED timezone, not UTC', () => {
@@ -290,7 +361,7 @@ describe('mapQuestionAnalytics (pure)', () => {
         npsAnalysisByDay: [day(shanghaiMidnight.toISOString(), { npsScore: 100, total: 1 })],
       },
     ];
-    const [out] = mapQuestionAnalytics(raw, 'Asia/Shanghai');
+    const [out] = mapQuestionAnalytics(raw, 'Asia/Shanghai', windows);
     expect(out.nps?.byDay).toEqual([{ date: '2026-07-05', score: 100, total: 1 }]);
   });
 });
