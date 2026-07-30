@@ -29,6 +29,7 @@ import useInfiniteScroll from 'react-infinite-scroll-hook';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentRestoreForm } from '../../../shared/content-restore-form';
 import { groupByDay } from './group-by-day';
+import { useVersionActionState } from './use-version-action-state';
 
 /** Who did it: "by S61", "by S61 · via CI key", or "via CI key" when the token has no owner name. */
 const actorText = (record: ContentPublishRecord, t: TFunction): string | null => {
@@ -51,6 +52,9 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
   const [openPublish, setOpenPublish] = useState(false);
   const isPublish = record.action === 'publish';
   const actor = actorText(record, t);
+  // Same disable logic as the version-history rows (shared hook) — publish is
+  // pointless when this version is live everywhere, restore when it IS the draft.
+  const { publishDisabled, restoreDisabled } = useVersionActionState(record.versionId);
   // The restore dialog only reads id + sequence — synthesize the minimal version.
   const restoreTarget = { id: record.versionId, sequence: record.versionSequence };
 
@@ -82,7 +86,7 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
             {/* One-click rollback: publish THIS row's version again (any environment). */}
             <DropdownMenuItem
               className="cursor-pointer"
-              disabled={isViewOnly}
+              disabled={isViewOnly || publishDisabled}
               onClick={() => setOpenPublish(true)}
             >
               <PlaneIcon className="mr-2 h-4 w-4" />
@@ -90,7 +94,7 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
-              disabled={isViewOnly}
+              disabled={isViewOnly || restoreDisabled}
               onClick={() => setOpenRestore(true)}
             >
               <ResetIcon className="mr-2 h-4 w-4" />

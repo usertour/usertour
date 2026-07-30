@@ -1,4 +1,4 @@
-import { Content, ContentDataType, ContentVersion, Environment, Step } from '@usertour/types';
+import { Content, ContentDataType, Environment, Step } from '@usertour/types';
 
 /**
  * Convert content list type (plural) to ContentDataType enum
@@ -20,10 +20,10 @@ export const getQueryType = (contentType: string): ContentDataType => {
 export const isPublishedInAllEnvironments = (
   content: Content | null,
   environmentList: Environment[] | null,
-  version: ContentVersion | null,
+  versionId: string | null | undefined,
 ) => {
   // Early return if any required data is missing
-  if (!content?.contentOnEnvironments?.length || !environmentList?.length || !version?.id) {
+  if (!content?.contentOnEnvironments?.length || !environmentList?.length || !versionId) {
     return false;
   }
 
@@ -31,7 +31,7 @@ export const isPublishedInAllEnvironments = (
   return environmentList.every((env) =>
     content?.contentOnEnvironments?.some(
       (item) =>
-        item.published && item.publishedVersionId === version.id && item.environment.id === env.id,
+        item.published && item.publishedVersionId === versionId && item.environment.id === env.id,
     ),
   );
 };
