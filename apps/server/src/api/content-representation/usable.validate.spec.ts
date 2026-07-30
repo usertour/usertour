@@ -15,6 +15,57 @@ const empty: never[] = [];
 const paths = (issues: { path: string }[]) => issues.map((i) => i.path);
 
 describe('validateVersionUsable', () => {
+  describe('embed resolution (cross-cutting)', () => {
+    const flowWithEmbed = (embed: Record<string, unknown>) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            data: [{ children: [{ children: [{ element: { type: 'embed', ...embed } }] }] }],
+            sequence: 0,
+            cvid: 'a',
+          } as never,
+        ],
+      });
+    const embedWarnings = (embed: Record<string, unknown>) =>
+      flowWithEmbed(embed).warnings.filter((w) => w.path === 'embed');
+
+    it('stays silent when the oEmbed payload is stored', () => {
+      expect(
+        embedWarnings({
+          url: 'https://youtu.be/x',
+          parsedUrl: 'https://youtu.be/x',
+          oembed: { html: '<iframe/>' },
+        }),
+      ).toEqual([]);
+    });
+
+    it('warns EMPTY-placeholder when the embed was never resolved (no parsedUrl)', () => {
+      const w = embedWarnings({ url: 'https://youtu.be/x' });
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('EMPTY placeholder');
+    });
+
+    it('warns provider-refused when a known provider claims the url but no payload is stored', () => {
+      // The field-reported case: an embed-disabled video writes fine and
+      // publishes fine, then renders the provider's unavailable screen.
+      const w = embedWarnings({ url: 'https://youtu.be/x', parsedUrl: 'https://youtu.be/x' });
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('provider refused');
+    });
+
+    it('warns framing-requirement for a raw non-provider iframe url', () => {
+      const w = embedWarnings({
+        url: 'https://internal.example.com/dash',
+        parsedUrl: 'https://internal.example.com/dash',
+      });
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('allows being framed');
+    });
+  });
+
   describe('url patterns (cross-cutting)', () => {
     it('warns when a start-rule URL include is the root-only "*/" pattern', () => {
       const r = validateVersionUsable({

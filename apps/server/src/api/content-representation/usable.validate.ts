@@ -3,6 +3,7 @@ import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers'
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
+import { matchesOembedProvider } from './embed-resolve';
 import {
   type AnnouncementData,
   type BannerData,
@@ -368,7 +369,60 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     collectDeadLaunchTargetWarnings([input.data, input.steps], ctx.contents, warn);
   }
 
+  collectEmbedResolutionWarnings([input.data, input.steps], warn);
+
   return { ok: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Embed blocks whose stored payload carries NO oEmbed markup render degraded,
+ * and nothing said so before publish (field report: the agent hand-curled
+ * YouTube's oEmbed endpoint to check its video allowed embedding — the write
+ * path deliberately never fails on a resolution miss, so this was the only
+ * guard against publishing a "Video unavailable" popup). Three shapes, all
+ * static checks over the stored nodes — no network:
+ * - no `parsedUrl` at all: the widget renders an empty placeholder;
+ * - a KNOWN oEmbed provider claims the url but no payload is stored: the
+ *   provider refused (embedding disabled?) or a transient failure — writes
+ *   retry the resolution (see embed-resolve), so warn until one succeeds;
+ * - no provider claims it: the normal raw-iframe state — works only if the
+ *   site allows being framed, which the server cannot know.
+ */
+function collectEmbedResolutionWarnings(
+  roots: unknown[],
+  warn: (path: string, message: string) => void,
+): void {
+  const seen = new Set<string>();
+  const walk = (x: unknown): void => {
+    if (!x) return;
+    if (Array.isArray(x)) {
+      for (const item of x) walk(item);
+      return;
+    }
+    if (typeof x !== 'object') return;
+    const o = x as { type?: unknown; url?: unknown; parsedUrl?: unknown; oembed?: unknown };
+    if (o.type === 'embed' && typeof o.url === 'string' && o.url && !o.oembed && !seen.has(o.url)) {
+      seen.add(o.url);
+      if (!o.parsedUrl) {
+        warn(
+          'embed',
+          `Embed "${o.url}" was never resolved — it renders as an EMPTY placeholder. Write the url via the API (or confirm it in the builder) to resolve it.`,
+        );
+      } else if (matchesOembedProvider(o.url)) {
+        warn(
+          'embed',
+          `Embed "${o.url}" matches a known embed provider but no embed markup is stored — the provider refused it (embedding may be disabled for this video/resource) or the resolution failed transiently. Any write to this version retries the resolution; while it is missing, end users see the provider's unavailable screen instead of the content.`,
+        );
+      } else {
+        warn(
+          'embed',
+          `Embed "${o.url}" has no oEmbed provider — it renders as a plain iframe of that URL, which works only if the site allows being framed (no X-Frame-Options / CSP frame-ancestors block). Verify it renders inside an iframe before publishing.`,
+        );
+      }
+    }
+    for (const value of Object.values(o)) walk(value);
+  };
+  for (const root of roots) walk(root);
 }
 
 // A question's bindAttribute (stored as `selectedAttribute` with `bindToAttribute`)

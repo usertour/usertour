@@ -29,10 +29,33 @@ describe('resolveStaleEmbeds', () => {
     expect(el.oembed).toBeUndefined(); // provider had no answer — old payload must not survive
   });
 
-  it('skips an untouched echo (parsedUrl === url) without calling the provider', async () => {
-    const el = { type: 'embed', url: 'https://youtu.be/x', parsedUrl: 'https://youtu.be/x' };
+  it('skips an untouched echo (parsedUrl === url, oembed stored) without calling the provider', async () => {
+    const el = {
+      type: 'embed',
+      url: 'https://youtu.be/x',
+      parsedUrl: 'https://youtu.be/x',
+      oembed: { html: '<iframe/>' },
+    };
     const fetch = fetchMock('<iframe/>');
     await resolveStaleEmbeds({ nested: { deep: [el] } }, fetch);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('RETRIES an untouched echo whose oembed is missing when a known provider claims the url', async () => {
+    // A transient failure (or a provider refusal since lifted) froze the embed
+    // as a raw iframe of a watch URL — which the provider's site frame-blocks.
+    // Every write retries, so the failure self-heals instead of persisting.
+    const el = { type: 'embed', url: 'https://youtu.be/x', parsedUrl: 'https://youtu.be/x' };
+    const fetch = fetchMock('<iframe/>');
+    await resolveStaleEmbeds([{ element: el }], fetch);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(el).toMatchObject({ oembed: { html: '<iframe/>' } });
+  });
+
+  it('does NOT retry a non-provider url missing oembed (the normal raw-iframe state)', async () => {
+    const el = { type: 'embed', url: 'https://example.com/x', parsedUrl: 'https://example.com/x' };
+    const fetch = fetchMock('<iframe/>');
+    await resolveStaleEmbeds([{ element: el }], fetch);
     expect(fetch).not.toHaveBeenCalled();
   });
 

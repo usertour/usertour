@@ -8,9 +8,17 @@
  * `url` kept the OLD parsedUrl/oembed via the keep-style merge, silently
  * rendering the previous content (console sweep follow-up).
  *
- * One predicate covers all three states: `parsedUrl !== url` means the embed
- * is new or its url changed → re-resolve; an untouched echo is skipped.
+ * `parsedUrl !== url` means the embed is new or its url changed → resolve.
+ * An untouched echo is skipped — UNLESS a known oEmbed provider claims the
+ * url and no payload is stored (an earlier resolution failed or the provider
+ * refused): those retry on every write, so a transient failure self-heals
+ * instead of freezing as a raw iframe the provider's site then blocks. A
+ * non-provider url missing a payload is the NORMAL raw-iframe state — no
+ * retry, no wasted lookup (validate warns about its framing requirement).
  */
+
+import { oEmbedProviders } from '@/common/ombed/ombed';
+import { isMatchUrlPattern } from '@usertour/helpers';
 
 interface EmbedElementNode {
   type?: unknown;
@@ -18,6 +26,14 @@ interface EmbedElementNode {
   parsedUrl?: unknown;
   oembed?: unknown;
 }
+
+/** Does any provider in the oEmbed registry claim this url? Pattern check only — no network. */
+export const matchesOembedProvider = (url: string): boolean =>
+  oEmbedProviders.some((provider) =>
+    provider.endpoints.some(
+      (endpoint) => endpoint.schemes && isMatchUrlPattern(url, endpoint.schemes, []),
+    ),
+  );
 
 export type OembedFetcher = (
   url: string,
@@ -30,7 +46,12 @@ const collectStale = (node: unknown, out: EmbedElementNode[]): void => {
   }
   if (!node || typeof node !== 'object') return;
   const obj = node as EmbedElementNode;
-  if (obj.type === 'embed' && typeof obj.url === 'string' && obj.url && obj.parsedUrl !== obj.url) {
+  if (
+    obj.type === 'embed' &&
+    typeof obj.url === 'string' &&
+    obj.url &&
+    (obj.parsedUrl !== obj.url || (!obj.oembed && matchesOembedProvider(obj.url)))
+  ) {
     out.push(obj);
   }
   for (const value of Object.values(obj)) collectStale(value, out);
