@@ -856,7 +856,16 @@ export const representationBlock = z.lazy(() =>
     z.object({
       ...blockBase,
       type: z.literal('embed'),
-      url: z.string().min(1, 'An embed block needs a non-empty url.'),
+      url: z
+        .string()
+        .min(1, 'An embed block needs a non-empty url.')
+        .describe(
+          "Paste the page's normal URL (e.g. a youtube.com/watch link) — on write it is " +
+            'resolved through the standard oEmbed provider registry (YouTube, Vimeo, Loom, ' +
+            "Figma, …) and the provider's official embed markup is stored, so you never " +
+            'hand-build /embed/ URLs. A URL no provider claims is iframed as-is — it renders ' +
+            'only if that site allows being framed (no X-Frame-Options/CSP block).',
+        ),
       width: mediaWidthShape,
       height: mediaWidthShape,
       margin: spacingShape,
