@@ -86,8 +86,15 @@ export function SegmentSidebar({
           )}
         </AdminSidebarHeaderTemplate>
 
-        {/* Show skeleton for segment list when loading, otherwise show actual segments */}
-        {loading ? (
+        {/* Skeleton only while loading WITH nothing to show (first load / env
+            switch). A refetch — column settings save on a segment, create /
+            delete / rename all refetchQueries: ['listSegment'] — flips
+            `loading` too (notifyOnNetworkStatusChange), but the cached list is
+            still valid: keep rendering it and let the result swap in place,
+            instead of flashing the whole rail to skeleton for a beat. Every
+            environment carries its system "All" segment, so an empty list
+            reliably means "not loaded yet", never real data. */}
+        {loading && !segmentList?.length ? (
           <SegmentSidebarSkeleton />
         ) : (
           <AdminSidebarBodyTemplate>
