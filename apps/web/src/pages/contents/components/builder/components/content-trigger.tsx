@@ -137,6 +137,9 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               contents={contents}
               currentContent={currentContent}
               token={token}
+              // The 320px builder sidebar is the one conditions host too tight
+              // for the [prefix][chip] two-column layout once a group nests.
+              narrow
               // Trigger `when` conditions are polled live in the browser — only the
               // client-evaluable subset (capability matrix, shared with the server's
               // write guard).
