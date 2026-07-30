@@ -30,7 +30,7 @@ export const listAttributeDefinitionsQuery = z.object({
     .optional()
     .describe(
       'Filter by scope: user, company, companyMembership, or eventDefinition (event attributes ' +
-        '— read-only here; they are managed via the event-definitions surface).',
+        '— attach them to events via the event-definitions surface).',
     ),
   orderBy: singleOrArray(orderByField).describe(
     'Order by createdAt / codeName / displayName (prefix - for descending).',
@@ -63,20 +63,17 @@ export const attribute = z.object({
   displayName: z.string(),
   codeName: z.string(),
   scope: attributeScope.describe(
-    'Which object the attribute belongs to. `eventDefinition` = an event attribute (managed ' +
-      'via the event-definitions surface).',
+    'Which object the attribute belongs to. `eventDefinition` = an event attribute (attach it ' +
+      'to events via the event-definitions surface).',
   ),
 });
 export class AttributeDto extends createZodDto(attribute) {}
 
-// Scope + data type accepted on create. Scope is limited to the three biz-data
-// objects (event attributes are managed via the events surface); the special
-// random_* data types are system-generated and not creatable via the API.
-const createScope = z.enum([
-  ApiObjectType.USER,
-  ApiObjectType.COMPANY,
-  ApiObjectType.COMPANY_MEMBERSHIP,
-]);
+// Scope + data type accepted on create — all four attribute scopes, matching the
+// builder's attributes page (its Events tab hand-creates event attributes too);
+// the special random_* data types are system-generated and not creatable via
+// the API.
+const createScope = attributeScope;
 const createDataType = z.enum([
   AttributeDataTypeNames.Number,
   AttributeDataTypeNames.String,
@@ -88,7 +85,11 @@ const createDataType = z.enum([
 export const createAttributeBody = z
   .object({
     scope: createScope.describe(
-      'Which object the attribute belongs to: user, company, or companyMembership.',
+      'Which object the attribute belongs to: user, company, companyMembership, or ' +
+        'eventDefinition (an event attribute — pre-defines an event property; attach it to ' +
+        'events via the event-definitions surface. Tracking also auto-registers event ' +
+        'properties at ingestion, so pre-defining is only needed to pin the type or attach ' +
+        'before the first track).',
     ),
     dataType: createDataType.describe('The attribute value type.'),
     codeName: codeNameSchema.describe('Stable identifier, unique per project + scope. Immutable.'),

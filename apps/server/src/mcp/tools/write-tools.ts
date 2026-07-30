@@ -745,11 +745,13 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create an attribute definition',
       capability: Capability.AttributeCreate,
       description:
-        'Define a custom attribute on user / company / companyMembership. codeName + scope are ' +
+        'Define a custom attribute on user / company / companyMembership / eventDefinition (an ' +
+        'event property — attach it to events via update_event_definition). codeName + scope are ' +
         'immutable; dataType can be changed later (update_attribute_definition) only while no ' +
         'stored value conflicts with the new type. Note: upsert_user/upsert_company AUTO-CREATE an ' +
-        'undefined attribute (type inferred from the first value), so define it up front only when ' +
-        'you want to pin the type before any write.',
+        'undefined attribute (type inferred from the first value), and tracking auto-registers ' +
+        'event properties at ingestion — so define one up front only to pin the type before any ' +
+        'write.',
       inputSchema: { ...createAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.create(

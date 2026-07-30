@@ -174,9 +174,8 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
   });
 
   it('filters event attributes with scope=eventDefinition (and excludes them from scope=user)', async () => {
-    // Event attributes (bizType 4) are readable through the same list — the
-    // scope filter accepts `eventDefinition` even though CREATE deliberately
-    // doesn't (event attributes are managed via the event-definitions surface).
+    // Event attributes (bizType 4) flow through the same list under the
+    // `eventDefinition` scope, separate from the three biz-data scopes.
     await buildAttribute(prisma, {
       projectId: fx.projectId,
       codeName: 'attr_event_scoped',
@@ -252,6 +251,48 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
     const list = await api('get', basePath(), token);
     expect(list.body.results.map((a: { id: string }) => a.id)).not.toContain(id);
+  });
+
+  it('creates an EVENT-scoped attribute, attaches it to an event, and delete severs the link', async () => {
+    // Builder parity: the attributes page's Events tab hand-creates event
+    // attributes too — pre-define → attach must work without any track.
+    const token = await mint([
+      Capability.AttributeCreate,
+      Capability.AttributeDelete,
+      Capability.AttributeRead,
+      Capability.EventCreate,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      scope: 'eventDefinition',
+      dataType: 'string',
+      codeName: 'evt_attr_via_api',
+      displayName: 'Evt attr',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ scope: 'eventDefinition', codeName: 'evt_attr_via_api' });
+
+    const listed = await api('get', `${basePath()}?scope=eventDefinition&limit=100`, token);
+    expect(listed.body.results.map((a: { codeName: string }) => a.codeName)).toContain(
+      'evt_attr_via_api',
+    );
+    const asUser = await api('get', `${basePath()}?scope=user&limit=100`, token);
+    expect(asUser.body.results.map((a: { codeName: string }) => a.codeName)).not.toContain(
+      'evt_attr_via_api',
+    );
+
+    const evt = await send('post', `/v2/projects/${fx.projectId}/event-definitions`, token).send({
+      codeName: 'evt_predef_attr',
+      displayName: 'Evt',
+      attributes: ['evt_attr_via_api'],
+    });
+    expect(evt.status).toBe(201);
+    expect(evt.body.attributes).toEqual(['evt_attr_via_api']);
+
+    // Delete clears the AttributeOnEvent join in the same transaction — a bare
+    // delete would P2003 on the link the attach above just created.
+    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
+      204,
+    );
   });
 
   it('retypes an attribute when no stored value conflicts, and rejects when one does', async () => {

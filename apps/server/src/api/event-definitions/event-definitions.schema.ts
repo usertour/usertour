@@ -52,11 +52,9 @@ const eventAttributes = z
   .array(z.string())
   .describe(
     'codeNames of EXISTING event-scoped attributes to attach to this event — the built-in / ' +
-      'predefined ones, or custom event properties that were auto-created when your app tracked ' +
-      'this event with a properties payload. Note: you cannot PRE-DEFINE a new event property via ' +
-      'create_attribute_definition (its scope is only user / company / companyMembership); event ' +
-      'properties are created automatically at ingestion when the SDK calls ' +
-      'usertour.track(name, { prop: value }). Unknown codeNames are rejected.',
+      'predefined ones, custom event properties auto-registered at ingestion when your app ' +
+      'tracked an event with a properties payload, or ones pre-defined via ' +
+      'create_attribute_definition with scope `eventDefinition`. Unknown codeNames are rejected.',
   );
 
 export const createEventDefinitionBody = z
