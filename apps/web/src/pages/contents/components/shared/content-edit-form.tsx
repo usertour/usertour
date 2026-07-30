@@ -5,7 +5,6 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
-import { isVersionPublished } from '@/utils/content';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -88,11 +87,11 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
     envToken: string,
   ) => {
     let versionId = content.editedVersionId;
-    // Fork only when the version we'd open is currently live in some
-    // environment. Reads contentOnEnvironments (per-env source of truth)
-    // instead of the legacy Content.publishedVersionId field — same fix
-    // as useContentBuilder, see schema deprecation note on the field.
-    if (versionId && isVersionPublished(content, versionId)) {
+    // Server-resolved fork-or-reuse (same contract as useContentBuilder): a
+    // frozen version — live now or EVER live — forks; an editable draft is
+    // returned unchanged. No client-side freeze predicate (see
+    // resolveEditableVersionId for why one cannot be trusted here).
+    if (versionId) {
       const created = await createContentVersion({ versionId });
       if (!created?.id) {
         return toast({
@@ -100,9 +99,11 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
           title: t('contents.shared.edit.createVersionFailure'),
         });
       }
-      versionId = created.id;
-      await refetch();
-      await refetchVersionList();
+      if (created.id !== versionId) {
+        versionId = created.id;
+        await refetch();
+        await refetchVersionList();
+      }
     }
 
     if (type === BuilderType.WEB) {

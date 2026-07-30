@@ -154,6 +154,8 @@ export type ContentVersion = {
   type: string;
   steps?: Step[];
   scheduledAt?: string | null;
+  /** Non-null = frozen (stamped on first publish, never cleared; forks don't inherit it). */
+  publishedAt?: string | null;
   /** Author attribution (null for rows predating it). */
   createdByUserId?: string | null;
   updatedByUserId?: string | null;
