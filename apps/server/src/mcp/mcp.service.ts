@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -127,7 +128,11 @@ export class McpService {
         {
           title: tool.title,
           description: tool.description,
-          inputSchema: tool.inputSchema,
+          // .strict(): an unknown top-level key is an InvalidParams error naming
+          // the key. Zod's default (strip) made the SDK silently drop unknown
+          // keys before the handler ran — a misspelled field "succeeded" while
+          // doing nothing. Also advertises additionalProperties:false.
+          inputSchema: z.object(tool.inputSchema).strict(),
           ...(tool.annotations ? { annotations: tool.annotations } : {}),
         },
         async (args: Record<string, unknown>) => {

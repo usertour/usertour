@@ -5,6 +5,9 @@ import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
+import { ApiCompaniesService } from '@/api/companies/companies.service';
+import { ApiUsersService } from '@/api/users/users.service';
+
 import { gqlData, graphql } from '../auth';
 import {
   buildBizCompany,
@@ -1291,6 +1294,89 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
       expect(payload.items.map((e: { id: string }) => e.id)).toContain(envA);
+    });
+  });
+
+  describe('argument hardening', () => {
+    it('refuses a blank external id on upsert_user / upsert_company (nothing created)', async () => {
+      const token = await mint([Capability.UserWrite, Capability.CompanyWrite], [projectA]);
+      for (const [name, id] of [
+        ['upsert_user', ''],
+        ['upsert_user', '   '],
+        ['upsert_company', ''],
+        ['upsert_company', '   '],
+      ] as const) {
+        const res = await callTool(name, { id }, token);
+        // Refused at the schema layer, so the handler — and the upsert — never
+        // runs. (The SDK surfaces schema violations as isError tool results.)
+        expect(res.isError).toBe(true);
+        expect(res.content[0].text).toMatch(/Input validation error/i);
+      }
+      expect(
+        await prisma.bizUser.count({
+          where: { environmentId: envA, externalId: { in: ['', '   '] } },
+        }),
+      ).toBe(0);
+      expect(
+        await prisma.bizCompany.count({
+          where: { environmentId: envA, externalId: { in: ['', '   '] } },
+        }),
+      ).toBe(0);
+    });
+
+    it('service chokepoint refuses a blank id even without the schema layer', async () => {
+      // The MCP schema already blocks blank ids; this pins the DEFENSE IN DEPTH:
+      // any other caller of the v2 upsert services (v2 REST path params can
+      // carry '%20') hits the same refusal.
+      const usersService = app.get(ApiUsersService);
+      const environment = await prisma.environment.findUniqueOrThrow({ where: { id: envA } });
+      await expect(usersService.upsert('   ', environment, {} as never)).rejects.toMatchObject({
+        code: 'E1017',
+      });
+      const companiesService = app.get(ApiCompaniesService);
+      await expect(companiesService.upsert('', environment, {} as never)).rejects.toMatchObject({
+        code: 'E1017',
+      });
+    });
+
+    it('rejects unknown argument keys instead of silently dropping them', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      // `contentType` is a plausible misspelling of list_content's `type`.
+      const res = await callTool('list_content', { contentType: 'flow' }, token);
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/unrecognized/i);
+      expect(res.content[0].text).toContain('contentType');
+    });
+
+    it('advertises additionalProperties:false in tools/list JSON Schemas', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const tools = extractResult(await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token))
+        .result.tools;
+      for (const tool of tools) {
+        expect(tool.inputSchema.additionalProperties).toBe(false);
+      }
+    });
+
+    it('get_content refuses conflicting id/contentId aliases and accepts matching ones', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const content = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+
+      const conflict = await callTool(
+        'get_content',
+        { id: content.id, contentId: 'some-other-id' },
+        token,
+      );
+      expect(conflict.isError).toBe(true);
+      expect(conflict.content[0].text).toMatch(/aliases.*different values/);
+
+      const ok = parseToolContent({
+        result: await callTool('get_content', { id: content.id, contentId: content.id }, token),
+      });
+      expect(ok).toMatchObject({ object: 'content', id: content.id });
     });
   });
 

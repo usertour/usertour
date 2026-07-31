@@ -3,7 +3,7 @@ import { toArray } from '../shared/query';
 
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
-import { CompanyNotFoundError, UserNotFoundError } from '@/common/errors/errors';
+import { CompanyNotFoundError, UserNotFoundError, ValidationError } from '@/common/errors/errors';
 import { Environment } from '@/environments/models/environment.model';
 
 import { paginate } from '../shared/pagination';
@@ -77,6 +77,13 @@ export class ApiUsersService {
 
   /** Upsert a user by external id (merges attributes), then return it. */
   async upsert(id: string, environment: Environment, body: UpsertUserBody): Promise<User> {
+    // An empty/whitespace external id must never create an entity: the row is
+    // then unaddressable by every id-keyed read/delete (their guards reject
+    // blank ids), i.e. permanent junk. Field-confirmed: a write audit created
+    // one, and the prod dump carries six SDK-era ones.
+    if (!id.trim()) {
+      throw new ValidationError('User external id must be a non-empty string.');
+    }
     // v2 is strict: a type-mismatched attribute value is rejected, not silently
     // dropped (the SDK identify path keeps the lenient drop-and-log).
     await this.biz.assertAttributeValueTypes(

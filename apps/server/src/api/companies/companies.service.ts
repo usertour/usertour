@@ -7,6 +7,7 @@ import {
   CompanyMembershipNotFoundError,
   CompanyNotFoundError,
   UserNotFoundError,
+  ValidationError,
 } from '@/common/errors/errors';
 import { Environment } from '@/environments/models/environment.model';
 
@@ -85,6 +86,11 @@ export class ApiCompaniesService {
 
   /** Upsert a company by external id (merges attributes), then return it. */
   async upsert(id: string, environment: Environment, body: UpsertCompanyBody): Promise<Company> {
+    // Same rule as users.service.upsert: a blank external id creates a row no
+    // id-keyed read/delete can ever address again.
+    if (!id.trim()) {
+      throw new ValidationError('Company external id must be a non-empty string.');
+    }
     // v2 is strict: a type-mismatched attribute value is rejected, not silently
     // dropped (the SDK identify path keeps the lenient drop-and-log).
     await this.biz.assertAttributeValueTypes(

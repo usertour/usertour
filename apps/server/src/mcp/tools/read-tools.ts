@@ -384,14 +384,21 @@ export function buildReadTools(): McpTool[] {
           .describe('Related objects to inline: editedVersion, publishedVersion.'),
       },
       async handler(args, ctx) {
-        const id = asString(args.id) || asString(args.contentId);
-        if (!id) {
+        const id = asString(args.id);
+        const alias = asString(args.contentId);
+        if (id && alias && id !== alias) {
+          throw new Error(
+            `\`id\` and \`contentId\` are aliases but were given different values ('${id}' vs '${alias}') — pass just one.`,
+          );
+        }
+        const resolved = id || alias;
+        if (!resolved) {
           throw new Error('`id` (or `contentId`) is required.');
         }
         const expand = Array.isArray(args.expand)
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpand[])
           : undefined;
-        const content = await ctx.services.content.get(id, ctx.projectId, { expand });
+        const content = await ctx.services.content.get(resolved, ctx.projectId, { expand });
         return withEditorUrl(content, await editorUrlFor(ctx, content.type, content.id));
       },
     },

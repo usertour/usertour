@@ -407,7 +407,7 @@ export function buildWriteTools(): McpTool[] {
         'codeNames against list_attribute_definitions. With multiple ' +
         'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The user external id.'),
+        id: z.string().trim().min(1).describe('The user external id (non-empty).'),
         environmentId: environmentIdSchema,
         ...upsertUserBody.shape,
       },
@@ -434,7 +434,7 @@ export function buildWriteTools(): McpTool[] {
         'Delete an end-user by external id. With multiple environments you must pass ' +
         '`environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The user external id.'),
+        id: z.string().trim().min(1).describe('The user external id (non-empty).'),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
@@ -458,7 +458,7 @@ export function buildWriteTools(): McpTool[] {
         'codeName silently creates a new attribute and the real one is NOT updated. With multiple ' +
         'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The company external id.'),
+        id: z.string().trim().min(1).describe('The company external id (non-empty).'),
         environmentId: environmentIdSchema,
         ...upsertCompanyBody.shape,
       },
@@ -485,7 +485,7 @@ export function buildWriteTools(): McpTool[] {
         'Delete a company by external id. With multiple environments you must pass ' +
         '`environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The company external id.'),
+        id: z.string().trim().min(1).describe('The company external id (non-empty).'),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
