@@ -182,7 +182,29 @@ const UserActivityCard = ({
       </CardHeader>
       <CardContent>
         {activityView === 'events' && (
-          <UserActivityFeed environmentId={environmentId} userId={bizUser.id} />
+          <UserActivityFeed
+            environmentId={environmentId}
+            userId={bizUser.id}
+            // Mirror of the company page's trailing user link: a B2B user's
+            // events can fire in DIFFERENT company contexts, and without the
+            // label two rows from different companies are indistinguishable.
+            // Events without a company context render nothing here.
+            renderTrailingContent={(event) => {
+              const bizCompany = event.bizCompany;
+              if (!bizCompany) return null;
+              const displayName = bizCompany.data?.name || bizCompany.externalId;
+              return (
+                <Link
+                  to={`/env/${environmentId}/company/${bizCompany.id}`}
+                  className="inline-flex max-w-[160px] items-center gap-1 text-xs hover:text-primary"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <CompanyIcon width={12} height={12} className="shrink-0 text-foreground/60" />
+                  <span className="truncate">{displayName}</span>
+                </Link>
+              );
+            }}
+          />
         )}
         {activityView === 'sessions' && bizUser.externalId && (
           <UserSessions environmentId={environmentId} externalUserId={bizUser.externalId} />
