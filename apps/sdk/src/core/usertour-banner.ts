@@ -7,6 +7,8 @@ import {
 } from '@usertour/types';
 import { BannerStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { isEqual } from '@usertour/helpers';
 import { logger } from '@/utils';
 import { ActionSource } from '@/core/action-handlers';
 import { UsertourElementWatcher } from './usertour-element-watcher';
@@ -30,6 +32,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
   async check(): Promise<void> {
     try {
       await this.checkTargetVisibility();
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in banner checking:', error);
@@ -126,6 +129,29 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       return bannerData.zIndex;
     }
     return this.getBaseZIndex();
+  }
+
+  /**
+   * Re-evaluates banner button disable/hide conditions against the live page —
+   * same defect class as the tour (see usertour-tour.ts
+   * checkAndUpdateButtonConditions): the flags were baked once per session
+   * update and page-state conditions froze.
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const bannerData = store?.bannerData;
+    const contents = bannerData?.contents;
+    if (!bannerData || !contents || !rootsHaveButtonConditions(contents)) {
+      return;
+    }
+    const evaluated = await this.evaluateButtonConditionsInData(contents);
+    if (isEqual(evaluated, contents)) {
+      return;
+    }
+    this.updateStore({
+      bannerData: { ...bannerData, contents: evaluated },
+    } as unknown as Partial<BannerStore>);
   }
 
   protected async getCustomStoreData(

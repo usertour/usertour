@@ -19,10 +19,11 @@ import {
 } from '@usertour/types';
 import { ResourceCenterStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour/constants';
-import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
+import { isDisplayOnlyBlockType, isEqual, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
@@ -36,6 +37,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   async check(): Promise<void> {
     try {
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in resource center checking:', error);
@@ -377,6 +379,51 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       return themeZIndex;
     }
     return this.getBaseZIndex() + WidgetZIndex.RESOURCE_CENTER_OFFSET;
+  }
+
+  /**
+   * Re-evaluates button disable/hide conditions inside rich-text blocks against
+   * the live page — same defect class as the tour (see usertour-tour.ts
+   * checkAndUpdateButtonConditions). Rebuilds tabs immutably (the store must
+   * not share references with the source data).
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const resourceCenterData = store?.resourceCenterData;
+    if (!resourceCenterData || !rootsHaveButtonConditions(resourceCenterData.tabs)) {
+      return;
+    }
+    let changed = false;
+    const tabs = await Promise.all(
+      resourceCenterData.tabs.map(async (tab) => {
+        const blocks = await Promise.all(
+          tab.blocks.map(async (block) => {
+            if (
+              block.type !== ResourceCenterBlockType.RICH_TEXT ||
+              !block.content ||
+              !rootsHaveButtonConditions(block.content)
+            ) {
+              return block;
+            }
+            const evaluated = await this.evaluateButtonConditionsInData(
+              block.content as ContentEditorRoot[],
+            );
+            if (isEqual(evaluated, block.content)) {
+              return block;
+            }
+            changed = true;
+            return { ...block, content: evaluated as typeof block.content };
+          }),
+        );
+        return { ...tab, blocks };
+      }),
+    );
+    if (changed) {
+      this.updateStore({
+        resourceCenterData: { ...resourceCenterData, tabs },
+      } as unknown as Partial<ResourceCenterStore>);
+    }
   }
 
   protected async getCustomStoreData(
