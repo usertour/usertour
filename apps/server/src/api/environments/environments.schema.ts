@@ -18,8 +18,13 @@ export const environment = z.object({
   isPrimary: z.boolean(),
   token: z
     .string()
+    .nullable()
     .describe(
-      "The environment's SDK token — pass it to usertour.init() to load this environment's published content.",
+      "The environment's SDK token — pass it to usertour.init() to load this environment's " +
+        'published content. null when `inTokenScope` is false: an out-of-scope environment is ' +
+        'listed for discovery, but its key is withheld (the SDK token accepts identify/track ' +
+        'ingestion, so handing it out would let a scoped credential act on an environment it ' +
+        'was denied).',
     ),
   /**
    * Whether the CURRENT credential may act on this environment (token

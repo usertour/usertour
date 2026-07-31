@@ -76,8 +76,11 @@ const settingsField = themeSettingsPatchSchema
   .optional()
   .describe(
     'Partial theme styling to merge onto the current settings (colors, fonts, ' +
-      'sizes, …). Send only the fields you change; omitted fields are kept. Auto ' +
-      'colors are derived server-side.',
+      'sizes, …). Send only the fields you change; omitted fields are kept. "Auto" ' +
+      'hover/active colors: the base colors (mainColor/brandColor) and the two button groups ' +
+      'get persisted `auto*` values derived server-side on write; every OTHER color group ' +
+      'resolves "Auto" at render time from the base colors — its objects carry no `auto*` ' +
+      'keys, by design.',
   );
 
 /**

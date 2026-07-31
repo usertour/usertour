@@ -406,9 +406,34 @@ describe('resolveRange default dates (in the requested timezone)', () => {
 
   it('an explicit endDate is respected verbatim', () => {
     const now = new Date('2026-07-04T23:30:00.000Z');
-    expect(resolveRange({ environmentId: 'e', endDate: '2026-06-01' }, now).endDate).toBe(
-      '2026-06-01',
+    expect(
+      resolveRange({ environmentId: 'e', startDate: '2026-05-01', endDate: '2026-06-01' }, now)
+        .endDate,
+    ).toBe('2026-06-01');
+  });
+
+  it('REFUSES an inverted range instead of reporting all-zero analytics', () => {
+    // Swapped bounds match no rows, and every aggregation then returns a
+    // structurally valid all-zero report — indistinguishable from "nobody
+    // used it" (read-only-credential audit). This also covers the sneaky
+    // form: an explicit endDate older than the DEFAULT 30-day startDate.
+    const now = new Date('2026-07-04T23:30:00.000Z');
+    // ValidationError carries its text in messageDict (locale-resolved), not
+    // the native Error.message — assert the class, then the resolved text.
+    const thrown = (fn: () => unknown) => {
+      try {
+        fn();
+      } catch (e) {
+        return e as { messageDict?: { en: string } };
+      }
+      throw new Error('expected resolveRange to throw');
+    };
+    const inverted = thrown(() =>
+      resolveRange({ environmentId: 'e', startDate: '2026-07-31', endDate: '2026-07-01' }, now),
     );
+    expect(inverted.messageDict?.en).toMatch(/after endDate/);
+    const sneaky = thrown(() => resolveRange({ environmentId: 'e', endDate: '2026-06-01' }, now));
+    expect(sneaky.messageDict?.en).toMatch(/after endDate/);
   });
 });
 

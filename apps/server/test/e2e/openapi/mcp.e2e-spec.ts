@@ -2202,6 +2202,27 @@ describe('MCP endpoint (e2e)', () => {
         expect(dead.content[0].text).toContain('E1026');
       });
 
+      it('list_environments withholds the SDK token of out-of-scope environments', async () => {
+        // The confirmed leak from the read-only-credential audit: discovery
+        // listed the out-of-scope environment WITH its SDK token — an
+        // ingestion credential (identify/track), i.e. a usable key to the
+        // very environment the scope denies. Discovery stays; the key goes.
+        const token = await mint([Capability.EnvironmentRead], [projectA], [envA]);
+        const res = await callTool('list_environments', {}, token);
+        expect(res.isError).toBeFalsy();
+        const items = JSON.parse(res.content[0].text).items as {
+          id: string;
+          inTokenScope: boolean;
+          token: string | null;
+        }[];
+        const inScope = items.find((e) => e.id === envA);
+        const outOfScope = items.find((e) => e.id === envB);
+        expect(inScope?.inTokenScope).toBe(true);
+        expect(typeof inScope?.token).toBe('string');
+        expect(outOfScope?.inTokenScope).toBe(false);
+        expect(outOfScope?.token).toBeNull();
+      });
+
       it('duplicate_content works for an env-restricted token (project-level action)', async () => {
         const source = await buildContent(prisma, {
           projectId: projectA,

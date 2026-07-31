@@ -3,7 +3,7 @@ import { toArray } from '../shared/query';
 
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
-import { UserNotFoundError } from '@/common/errors/errors';
+import { CompanyNotFoundError, UserNotFoundError } from '@/common/errors/errors';
 import { Environment } from '@/environments/models/environment.model';
 
 import { paginate } from '../shared/pagination';
@@ -42,6 +42,17 @@ export class ApiUsersService {
     // A foreign segmentId must 404, not silently apply another tenant's segment.
     if (segmentId) {
       await this.biz.assertSegmentInProject(segmentId, environment.projectId);
+    }
+    // Same rule for companyId — an unknown company used to silently yield an
+    // empty page (read as "the company has no users") while the sibling
+    // segmentId filter 404'd; the two filters now fail alike. The filter
+    // matches by EXTERNAL id (see listBizUsersWithRelations), so the
+    // existence check does too.
+    if (companyId) {
+      const company = await this.biz.getBizCompany(companyId, environment.id);
+      if (!company) {
+        throw new CompanyNotFoundError();
+      }
     }
 
     return paginate({

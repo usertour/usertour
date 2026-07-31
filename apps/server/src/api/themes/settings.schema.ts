@@ -222,3 +222,42 @@ addMarkerLeaves(settingsTree, BUILDER_MANAGED_SETTING_PATHS, 'builder-managed');
 addMarkerLeaves(settingsTree, WRITABLE_MEDIA_URL_PATHS, 'media-url');
 export const themeSettingsPatchSchema = treeToZod(settingsTree);
 export type ThemeSettingsPatch = z.infer<typeof themeSettingsPatchSchema>;
+
+/**
+ * READ-side normalization. The builder has always stored some numeric inputs
+ * as strings ("22") and colors with stray whitespace — the WRITE schema accepts
+ * and normalizes those shapes, but reads echoed the raw stored JSON, so a
+ * field the contract declares `number` came back as a string (read-only-
+ * credential audit: border.borderRadius "22"). Walk the stored value against
+ * the constraint SSOT and coerce ONLY known leaves (numeric strings → number,
+ * colors trimmed); unknown keys and non-coercible values pass through
+ * untouched — read fidelity over cleverness.
+ */
+export function normalizeStoredSettings<T>(value: T): T {
+  const walk = (node: unknown, tree: Tree | ThemeSettingConstraint): unknown => {
+    if (isConstraint(tree)) {
+      if (
+        tree.kind === 'number' &&
+        typeof node === 'string' &&
+        /^-?\d+(\.\d+)?$/.test(node.trim())
+      ) {
+        return Number(node.trim());
+      }
+      if (tree.kind === 'color' && typeof node === 'string') {
+        return node.trim();
+      }
+      return node;
+    }
+    if (!node || typeof node !== 'object' || Array.isArray(node)) {
+      return node;
+    }
+    const out: Record<string, unknown> = { ...(node as Record<string, unknown>) };
+    for (const [key, child] of Object.entries(tree)) {
+      if (key in out) {
+        out[key] = walk(out[key], child);
+      }
+    }
+    return out;
+  };
+  return walk(value, settingsTree) as T;
+}

@@ -4,7 +4,11 @@ import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { PrismaService } from 'nestjs-prisma';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { ContentNotFoundError, EnvironmentNotFoundError } from '@/common/errors/errors';
+import {
+  ContentNotFoundError,
+  EnvironmentNotFoundError,
+  ValidationError,
+} from '@/common/errors/errors';
 
 import { mapContentAnalytics, mapQuestionAnalytics } from './analytics.mapper';
 import type { QuestionRollingWindows } from './analytics.mapper';
@@ -149,12 +153,23 @@ export function resolveRange(
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const startDate = query.startDate || formatInTimeZone(monthAgo, timezone, 'yyyy-MM-dd');
   const endDate = query.endDate || formatInTimeZone(now, timezone, 'yyyy-MM-dd');
+  const domainStartDate = toDayBoundary(startDate, timezone, 'start');
+  const domainEndDate = toDayBoundary(endDate, timezone, 'end');
+  // An inverted range matches no rows, and every downstream aggregation then
+  // returns a STRUCTURALLY VALID all-zero report — indistinguishable from
+  // "nobody used it" (read-only-credential audit: 9 real sessions inside the
+  // swapped bounds read back as totalStarts 0). Refuse loudly instead.
+  if (new Date(domainStartDate).getTime() > new Date(domainEndDate).getTime()) {
+    throw new ValidationError(
+      `startDate (${startDate}) is after endDate (${endDate}) — swap the bounds. An inverted range would silently report all-zero analytics.`,
+    );
+  }
   return {
     startDate,
     endDate,
     timezone,
-    domainStartDate: toDayBoundary(startDate, timezone, 'start'),
-    domainEndDate: toDayBoundary(endDate, timezone, 'end'),
+    domainStartDate,
+    domainEndDate,
   };
 }
 

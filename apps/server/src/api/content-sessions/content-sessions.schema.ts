@@ -113,9 +113,16 @@ export const contentSession = z.object({
     .string()
     .nullable()
     .describe(
-      'Why the session ended (null while open) — e.g. `user_closed`, `auto_dismissed`, ' +
-        '`action`, `end_from_program`, `admin_ended`. Distinguishes a genuine finish from a ' +
-        'dismissal even when both leave the session ended.',
+      'Why the session ended (null while open). Vocabulary — user actions: ' +
+        '`close_button_dismiss` (the X), `backdrop_dismiss`, `dismiss_button`, `user_closed`; ' +
+        'authored behavior: `action_dismiss` (a dismiss action ran), `trigger_dismiss`, ' +
+        '`auto_dismissed`, `end_from_program`; displacement: `replaced`, ' +
+        '`user_started_other_content`, `program_started_other_content`; health/diagnostic: ' +
+        '**`tooltip_target_missing`** (the tooltip anchor was never found — the per-session ' +
+        'selector-health signal), `step_not_found`, `content_not_found`, `store_not_found`, ' +
+        '`unpublished_content`, `session_timeout`, `system_closed`, `url_start_closed`, ' +
+        '`launcher_deactivated`; admin: `admin_ended`. Old sessions may carry legacy spellings ' +
+        '(e.g. bare `action`) — treat unknown values as "ended, reason unclassified".',
     ),
   contentId: z.string(),
   content: embeddedContent.nullable(),

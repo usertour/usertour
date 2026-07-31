@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
+import {
+  AttributeDefinitionNotFoundError,
+  ContentNotFoundError,
+  EventDefinitionNotFoundError,
+  SegmentNotFoundError,
+  ThemeNotFoundError,
+} from '@/common/errors/errors';
+
 /**
  * Reverse-reference lookup: "who is still using this attribute / event / theme /
  * segment / content?" — the read that makes the delete tools' blast-radius
@@ -51,23 +59,44 @@ export class ApiReferencesService {
     kind: ReferenceTargetKind,
     targetId: string,
   ): Promise<{ referrers: ReferenceRow[]; codeName?: string }> {
-    // Resolve the target for the dual-vocabulary needles (and to fail fast on a
-    // foreign id — callers get an empty result for an id outside the project).
+    // Resolve the target FIRST, and refuse an unknown/foreign id with the
+    // kind's own not-found code. This tool's whole purpose is the pre-delete
+    // safety check — an empty result for a mistyped id read as an
+    // authoritative "nothing references this, safe to delete", which is the
+    // exact wrong direction to fail in (read-only-credential audit).
     let codeName: string | undefined;
     if (kind === 'attribute') {
       const attr = await this.prisma.attribute.findFirst({
         where: { id: targetId, projectId },
         select: { codeName: true },
       });
-      if (!attr) return { referrers: [] };
+      if (!attr) throw new AttributeDefinitionNotFoundError();
       codeName = attr.codeName;
     } else if (kind === 'event') {
       const ev = await this.prisma.event.findFirst({
         where: { id: targetId, projectId },
         select: { codeName: true },
       });
-      if (!ev) return { referrers: [] };
+      if (!ev) throw new EventDefinitionNotFoundError();
       codeName = ev.codeName;
+    } else if (kind === 'segment') {
+      const seg = await this.prisma.segment.findFirst({
+        where: { id: targetId, projectId },
+        select: { id: true },
+      });
+      if (!seg) throw new SegmentNotFoundError();
+    } else if (kind === 'theme') {
+      const theme = await this.prisma.theme.findFirst({
+        where: { id: targetId, projectId, deleted: false },
+        select: { id: true },
+      });
+      if (!theme) throw new ThemeNotFoundError();
+    } else if (kind === 'content') {
+      const content = await this.prisma.content.findFirst({
+        where: { id: targetId, projectId, deleted: false },
+        select: { id: true },
+      });
+      if (!content) throw new ContentNotFoundError();
     }
 
     const contents = await this.prisma.content.findMany({

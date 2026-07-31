@@ -188,8 +188,11 @@ export class EnvironmentNotInTokenScopeError extends OpenAPIError {
   code = 'E1029';
   statusCode = HttpStatus.FORBIDDEN;
   messageDict = {
-    en: 'API key is not scoped to the requested environment',
-    'zh-CN': 'API 密钥未授权访问该环境',
+    en:
+      'API key is not scoped to the requested environment. List environments ' +
+      '(list_environments / GET /environments) — entries with inTokenScope: true are the ones ' +
+      'this credential may act on.',
+    'zh-CN': 'API 密钥未授权访问该环境。可通过环境列表查看 inTokenScope 为 true 的可用环境。',
   };
 
   /**

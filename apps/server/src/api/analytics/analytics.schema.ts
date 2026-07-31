@@ -328,10 +328,17 @@ export const questionAnalytics = z.object({
    */
   nps: z
     .object({
-      score: z.number(),
-      promoters: share,
-      passives: share,
-      detractors: share,
+      score: z
+        .number()
+        .describe(
+          'ROLLING-WINDOW aggregate (the last byDay row) — computed over the trailing ' +
+            '`rollingWindowDays`, NOT over the requested range. It therefore does not share a ' +
+            'denominator with `totalResponses` (which IS range-scoped): promoter/passive/' +
+            'detractor counts can legitimately dwarf it.',
+        ),
+      promoters: share.describe('Rolling-window share — same window as `score`, see its note.'),
+      passives: share.describe('Rolling-window share — same window as `score`.'),
+      detractors: share.describe('Rolling-window share — same window as `score`.'),
       rollingWindowDays: rollingWindowDays,
       byDay: npsByDay,
     })
@@ -339,7 +346,12 @@ export const questionAnalytics = z.object({
     .describe('NPS questions only.'),
   rating: z
     .object({
-      average: z.number(),
+      average: z
+        .number()
+        .describe(
+          'ROLLING-WINDOW average (the last byDay row) over the trailing `rollingWindowDays` — ' +
+            'not scoped to the requested range like `totalResponses`.',
+        ),
       rollingWindowDays: rollingWindowDays,
       byDay: ratingByDay,
     })

@@ -11,7 +11,11 @@ import { buildDecompileResolversFrom } from '@/api/content-representation/attrib
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
-import { ContentExpand, type ListContentQuery } from '@/api/content/content.schema';
+import {
+  ContentExpand,
+  contentTypeEnum,
+  type ListContentQuery,
+} from '@/api/content/content.schema';
 import { EnvironmentNotInTokenScopeError } from '@/common/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
@@ -309,13 +313,15 @@ export function buildReadTools(): McpTool[] {
         'to page.',
       inputSchema: {
         ...nameSearchField,
-        type: z
-          .string()
+        // Strict enum, matching the REST filter — as a free string a typo
+        // ("flows") silently returned an empty list that read as "no such
+        // content" (read-only-credential audit re-hit the exact bug the REST
+        // side had already fixed).
+        type: contentTypeEnum
           .optional()
           .describe(
-            'Filter by content kind: flow, checklist, launcher, banner, tracker, ' +
-              'resource-center, or announcement. (A "survey" is a flow with question blocks — ' +
-              'not a separate kind.)',
+            'Filter by content kind. (A "survey" is a flow with question blocks — not a ' +
+              'separate kind.)',
           ),
         published: z
           .boolean()
@@ -396,10 +402,14 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
-        'checklist (published / identified / start_rules / frequency / single_session / hidden / ' +
-        'active_session; announcements get their own set: scheduled / rc_reachability / ' +
-        'start_rules-as-audience-filter / seen), each gate evaluated by the SAME runtime function ' +
-        'the websocket uses, plus ' +
+        'checklist drawn from: published / identified / start_rules / frequency / ' +
+        'single_session / hidden / active_session / target (announcements get their own set: ' +
+        'scheduled / rc_reachability / start_rules-as-audience-filter / seen). Gates appear ' +
+        'CONDITIONALLY — only the ones that apply to this content type and state (e.g. ' +
+        'active_session only when a session is currently live; target only for launcher/tooltip ' +
+        'render anchors, always status unknown since the server cannot see your DOM) — so absent ' +
+        'gates are normal, not missing checks. Each present gate is evaluated by the SAME ' +
+        'runtime function the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
         'unknown so you can see exactly which branch failed — and a `segment` leaf expands one ' +
@@ -872,10 +882,12 @@ export function buildReadTools(): McpTool[] {
         'settings (colors, fonts, sizes, …) — what create_theme / update_theme persisted and ' +
         'derived (e.g. "Auto" colors resolved); read this to verify a theme you wrote. ' +
         'Reading a color group you will see up to six keys — the contract: `background`/`color` ' +
-        'always apply; `hover`/`active` apply when set to a concrete color; when they are ' +
-        '"Auto", the runtime uses `autoHover`/`autoActive` instead — DERIVED values recomputed ' +
-        'from the base colors on every write, never authored (while hover/active hold concrete ' +
-        'colors, the auto* keys are ignored). ' +
+        'always apply; `hover`/`active` apply when set to a concrete color. `autoHover`/' +
+        '`autoActive` (the derived values used when hover/active are "Auto") are PERSISTED only ' +
+        'on the base colors (mainColor/brandColor) and the two button groups — recomputed there ' +
+        'on every write, never authored. Every OTHER color group resolves "Auto" at render time ' +
+        'from the base colors and carries NO auto* keys — their absence is by design, not ' +
+        'missing derivation. ' +
         '`expand: ["variations"]` for conditional variations. Base fields (id, name, isDefault) ' +
         'always return; settings/variations only when expanded. (get_theme_schema is the writable ' +
         'shape; this returns the actual values.)',
@@ -1101,7 +1113,12 @@ export function buildReadTools(): McpTool[] {
         'name, or API token name for API/MCP publishes), timestamp. Records outlive later ' +
         'deletion of the version, actor or environment (names then read null). Answers "when did ' +
         'this go live", "what was live in production last month", "who unpublished it". ' +
-        'Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+        'EPOCH: the ledger records events from the moment this feature shipped, forward; at ' +
+        'rollout each then-live (content, environment) pair was seeded with ONE synthetic ' +
+        'publish record (timestamp = its live publishedAt, actor null). Publishes older than ' +
+        'that have no rows — a long-lived content showing a single seeded record is expected, ' +
+        'not a broken ledger. Returns `{ items, nextCursor }`; pass `nextCursor` back as ' +
+        '`cursor` to page.',
       inputSchema: {
         contentId: z.string().describe('The content id.'),
         environmentId: z

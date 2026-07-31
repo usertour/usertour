@@ -1,5 +1,6 @@
 import { type DecompileResolvers, decompileWhen } from '../content-representation/rules.decompile';
 import { ApiObjectType } from '../shared/object-type';
+import { normalizeStoredSettings } from './settings.schema';
 import type { Theme, ThemeExpand } from './themes.schema';
 
 type ThemeNode = {
@@ -28,7 +29,7 @@ function mapVariations(raw: unknown, resolvers: DecompileResolvers) {
     // decompileWhen (not decompileConditions): an OR top-level list must wrap
     // in group{match:'any'} — see segments.mapper for the full reasoning.
     conditions: decompileWhen(v.conditions, resolvers),
-    settings: (v.settings ?? {}) as Record<string, unknown>,
+    settings: normalizeStoredSettings((v.settings ?? {}) as Record<string, unknown>),
   }));
 }
 
@@ -51,7 +52,10 @@ export function mapTheme(
     createdAt: new Date(node.createdAt).toISOString(),
     updatedAt: new Date(node.updatedAt).toISOString(),
     ...(expand.includes('settings')
-      ? { settings: (node.settings ?? {}) as Record<string, unknown> }
+      ? // Read-side coercion of stored builder shapes (numeric strings, padded
+        // colors) so the read matches the declared types — see
+        // normalizeStoredSettings.
+        { settings: normalizeStoredSettings((node.settings ?? {}) as Record<string, unknown>) }
       : {}),
     ...(expand.includes('variations')
       ? { variations: mapVariations(node.variations, resolvers) }

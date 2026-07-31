@@ -162,9 +162,14 @@ export class ApiContentSessionsService {
     return session;
   }
 
-  private async computeAnswers(session: any): Promise<ContentSessionAnswer[] | null> {
+  private async computeAnswers(session: any): Promise<ContentSessionAnswer[]> {
+    // The response contract reserves `answers: null` for "expand not
+    // requested". A session whose content simply HAS no question steps
+    // (checklist / launcher / a stepless version) must answer the requested
+    // expand with [] — returning null here made "didn't ask" and "has none"
+    // indistinguishable (read-only-credential audit).
     if (!session.version) {
-      return null;
+      return [];
     }
     const version = await this.content.getContentVersionWithRelations(
       session.versionId,
@@ -172,7 +177,7 @@ export class ApiContentSessionsService {
       { steps: true },
     );
     if (!version || version.steps.length === 0) {
-      return null;
+      return [];
     }
     const answers = await this.analytics.getSessionAnswers(session.id);
     return mapSessionAnswers(answers, version.steps);
