@@ -33,7 +33,7 @@ export const listAttributeDefinitionsQuery = z.object({
         '— attach them to events via the event-definitions surface).',
     ),
   orderBy: singleOrArray(orderByField).describe(
-    'Order by createdAt / codeName / displayName (prefix - for descending).',
+    'Order by createdAt / codeName / displayName (prefix - for descending). Text sorting is case-sensitive (byte order): uppercase sorts before lowercase.',
   ),
   eventName: singleOrArray(z.string()).describe(
     'Filter to attributes attached to these event(s), matched by event codeName (EXACT match — ' +
@@ -92,7 +92,10 @@ export const createAttributeBody = z
         'before the first track).',
     ),
     dataType: createDataType.describe('The attribute value type.'),
-    codeName: codeNameSchema.describe('Stable identifier, unique per project + scope. Immutable.'),
+    codeName: codeNameSchema.describe(
+      'Stable identifier, unique per project + scope. Immutable. Must start with a letter, then ' +
+        'letters/digits/underscores, 2\u201320 chars.',
+    ),
     displayName: z.string().min(1).describe('Human-readable name.'),
     description: z.string().optional().describe('Optional description.'),
   })

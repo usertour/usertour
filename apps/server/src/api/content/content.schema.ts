@@ -6,6 +6,7 @@ import { orderByField, singleOrArray } from '../shared/query';
 import { contentVersion } from '../content-representation/representation.schema';
 import { createdAtRangeFields, nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
+import { displayName } from '../shared/name';
 import { cursor, limit } from '../shared/pagination.schema';
 
 export const contentExpand = z.enum(['editedVersion', 'publishedVersion']);
@@ -90,9 +91,7 @@ export const createContentBody = z
       'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
         'has an `announcement` block — publish alone does not surface it without one.',
     ),
-    name: z
-      .string()
-      .min(1)
+    name: displayName
       .optional()
       .describe('Display name. For `announcement` it also seeds the draft title.'),
     buildUrl: z.string().optional(),
@@ -112,7 +111,7 @@ export type CreateContentBody = z.infer<typeof createContentBody>;
 /** Write body for PATCH content/:id (metadata only). */
 export const updateContentBody = z
   .object({
-    name: z.string().min(1).optional(),
+    name: displayName.optional(),
     buildUrl: z.string().optional(),
   })
   .strict();
@@ -140,7 +139,7 @@ export type UnpublishContentBody = z.infer<typeof unpublishContentBody>;
 // inert promise the v2 contract does not repeat. Publishing (the actually
 // env-scoped act) stays explicit on the publish endpoint.
 export const duplicateContentBody = z.object({
-  name: z.string().min(1).optional().describe('Name for the copy (defaults to the source name).'),
+  name: displayName.optional().describe('Name for the copy (defaults to the source name).'),
 });
 export class DuplicateContentBodyDto extends createZodDto(duplicateContentBody) {}
 export type DuplicateContentBody = z.infer<typeof duplicateContentBody>;

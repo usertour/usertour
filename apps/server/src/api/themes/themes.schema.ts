@@ -4,6 +4,7 @@ import { orderByField, singleOrArray } from '../shared/query';
 
 import { representationCondition } from '../content-representation/representation.schema';
 import { nameSearchField } from '@/common/filters';
+import { displayName } from '../shared/name';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 import { themeSettingsPatchSchema } from './settings.schema';
@@ -129,7 +130,7 @@ const variationsField = z
 
 export const createThemeBody = z
   .object({
-    name: z.string().min(1).describe('Theme name.'),
+    name: displayName.describe('Theme name.'),
     isDefault: z.boolean().optional().describe('Make this the project default theme.'),
     settings: settingsField,
     variations: variationsField,
@@ -139,7 +140,7 @@ export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
 
 export const updateThemeBody = z
   .object({
-    name: z.string().min(1).optional(),
+    name: displayName.optional(),
     isDefault: z
       .boolean()
       .optional()

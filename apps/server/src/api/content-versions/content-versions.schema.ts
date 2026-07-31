@@ -58,9 +58,17 @@ export const updateVersionBody = z
           'waitSeconds / startIfNotComplete) keeps its stored value — including one inherited from ' +
           'the forked version — so to turn a setting off, send it explicitly (e.g. ' +
           '`startIfNotComplete: false`). `when`, when present, fully replaces the condition list. ' +
-          '`null` clears the rules entirely (content stops auto-starting).',
+          '`null` clears the rules entirely (content stops auto-starting). Which settings and ' +
+          'which `when` condition types the CONTENT TYPE supports varies (e.g. no priority on a ' +
+          'launcher, attribute/segment-only targeting on an announcement) — unsupported ones are ' +
+          'rejected per type.',
       ),
-    hideRules: representationHideRules.nullable().optional(),
+    hideRules: representationHideRules
+      .nullable()
+      .optional()
+      .describe(
+        'Temporarily-hide rules. Only some content types support them (rejected per type).',
+      ),
     themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
     /**
      * Type-specific body for non-flow content — one of the five `*Data` shapes. The

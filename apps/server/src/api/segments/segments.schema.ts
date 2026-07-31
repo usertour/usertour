@@ -62,10 +62,32 @@ export const segment = z.object({
   kind: segmentKind,
   // Present for condition segments (decompiled to stable codes).
   conditions: z.array(segmentCondition).optional(),
+  memberCount: z
+    .number()
+    .optional()
+    .describe(
+      'Members in the requested environment — only with `expand=memberCount` (+ environmentId). ' +
+        'manual = explicit members; condition = users/companies matching the conditions right ' +
+        'now; all = everyone in the environment. Counted with the SAME filter the users/' +
+        'companies list applies for `segmentId`, so the two always agree.',
+    ),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export class SegmentDto extends createZodDto(segment) {}
+
+export const segmentExpand = z.enum(['memberCount']);
+export const getSegmentQuery = z.object({
+  expand: singleOrArray(segmentExpand).describe('Inline: memberCount (needs environmentId).'),
+  environmentId: z
+    .string()
+    .optional()
+    .describe(
+      'Environment whose members to count (segment definitions are project-level, members are ' +
+        'environment-scoped). Required with expand=memberCount.',
+    ),
+});
+export class GetSegmentQueryDto extends createZodDto(getSegmentQuery) {}
 
 export const listSegmentsQuery = z.object({
   bizType: segmentBizType.optional().describe('Filter to user or company segments.'),
@@ -124,6 +146,7 @@ export class UpdateSegmentBodyDto extends createZodDto(updateSegmentBody) {}
 
 export type Segment = z.infer<typeof segment>;
 export type SegmentBizTypeName = z.infer<typeof segmentBizType>;
+export type GetSegmentQuery = z.infer<typeof getSegmentQuery>;
 export type ListSegmentsQuery = z.infer<typeof listSegmentsQuery>;
 export type CreateSegmentBody = z.infer<typeof createSegmentBody>;
 export type UpdateSegmentBody = z.infer<typeof updateSegmentBody>;

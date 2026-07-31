@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -17,6 +18,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
+import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
@@ -28,6 +30,7 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiSegmentsService } from './segments.service';
 import {
   CreateSegmentBodyDto,
+  GetSegmentQueryDto,
   ListSegmentsQueryDto,
   ListSegmentsResponseDto,
   SegmentDto,
@@ -43,7 +46,10 @@ import {
 @UsePipes(ApiValidationPipe)
 @ApiBearerAuth()
 export class ApiSegmentsController {
-  constructor(private readonly service: ApiSegmentsService) {}
+  constructor(
+    private readonly service: ApiSegmentsService,
+    private readonly auth: ApiTokenAuthService,
+  ) {}
 
   @Get()
   @RequireCapability(Capability.SegmentRead)
@@ -65,8 +71,19 @@ export class ApiSegmentsController {
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment found', type: SegmentDto })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
-  async get(@Param('id') id: string, @Param('projectId') projectId: string) {
-    return this.service.get(id, projectId);
+  async get(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Query() query: GetSegmentQueryDto,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    // The env rides in the QUERY (segments are project-routed), so the guard's
+    // path-param environment-scope check never fires — enforce the token
+    // allowlist here; the service validates project membership.
+    if (query.environmentId) {
+      this.auth.assertEnvironmentInScope(req.apiToken, { id: query.environmentId });
+    }
+    return this.service.get(id, projectId, query);
   }
 
   @Post()

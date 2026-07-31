@@ -36,6 +36,58 @@ const CLIENT_EVALUABLE_REP_CONDITION_TYPES: ReadonlySet<string> = new Set(
   ),
 );
 
+/** Discovery-side projection of one type's start/hide-rule capabilities. */
+export type AutoStartCapabilitySummary = {
+  startRules: {
+    /** Condition types `startRules.when` accepts — 'all' = the full vocabulary. */
+    when: 'all' | string[];
+    frequency: boolean;
+    frequencyAtLeast: boolean;
+    priority: boolean;
+    waitSeconds: boolean;
+    startIfNotComplete: boolean;
+  };
+  hideRules: boolean;
+};
+
+/**
+ * What start/hide-rule knobs `update_content_version` accepts for a content
+ * type — the same AUTO_START_CAPABILITIES matrix {@link validateAutoStartForType}
+ * enforces, projected for discovery (get_content_schema). The generic write
+ * tool's input schema cannot express these per-type limits (the type is derived
+ * from the contentId, not an argument), so the discovery tool advertises them
+ * up front instead of the write erroring after the fact.
+ */
+export function autoStartCapabilitySummary(
+  contentType: string,
+): AutoStartCapabilitySummary | undefined {
+  const caps = AUTO_START_CAPABILITIES[contentType as ContentDataType];
+  if (!caps) {
+    return undefined;
+  }
+  let when: 'all' | string[] = 'all';
+  if (caps.clientConditionsOnly) {
+    when = [...CLIENT_EVALUABLE_REP_CONDITION_TYPES].sort();
+  } else if (caps.startConditionTypes) {
+    const allowedInternal = new Set<string>(caps.startConditionTypes);
+    when = Object.entries(REP_CONDITION_TYPE_TO_INTERNAL)
+      .filter(([rep, internal]) => rep !== 'group' && allowedInternal.has(internal))
+      .map(([rep]) => rep)
+      .sort();
+  }
+  return {
+    startRules: {
+      when,
+      frequency: caps.frequency,
+      frequencyAtLeast: caps.atLeast,
+      priority: caps.priority,
+      waitSeconds: caps.wait,
+      startIfNotComplete: caps.ifCompleted,
+    },
+    hideRules: caps.hideRules,
+  };
+}
+
 export function validateAutoStartForType(
   startRules: RepresentationStartRules | null | undefined,
   hideRules: RepresentationHideRules | null | undefined,

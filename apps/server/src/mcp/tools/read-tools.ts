@@ -8,6 +8,7 @@ import { Environment } from '@prisma/client';
 import { z } from 'zod';
 
 import { buildDecompileResolversFrom } from '@/api/content-representation/attribute-resolvers';
+import { autoStartCapabilitySummary } from '@/api/content-representation/auto-start.validate';
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
@@ -247,7 +248,11 @@ export function buildReadTools(): McpTool[] {
         'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. ' +
         'Authoring SEVERAL types? Pass an array — the shared vocabulary (conditions / actions / ' +
         'blocks, ~90% of each schema) is then emitted once in `$defs` instead of once per call. ' +
-        'Pair with get_authoring_guide.',
+        'The response also carries `capabilities`: which startRules knobs (frequency / priority / ' +
+        'waitSeconds / …) and which hideRules the type supports, and which condition types its ' +
+        '`when` accepts — per-type limits the generic update_content_version schema cannot ' +
+        'express (the server rejects what the type does not support). Pair with ' +
+        'get_authoring_guide.',
       inputSchema: {
         type: z
           .union([contentSchemaType, z.array(contentSchemaType).min(1)])
@@ -279,7 +284,12 @@ export function buildReadTools(): McpTool[] {
         const bodyFor = (t: string) => (t === (ContentDataType.FLOW as string) ? 'steps' : 'data');
         if (types.length === 1) {
           const type = types[0];
-          return { type, body: bodyFor(type), schema: toJson(schemaFor[type]) };
+          return {
+            type,
+            body: bodyFor(type),
+            capabilities: autoStartCapabilitySummary(type),
+            schema: toJson(schemaFor[type]),
+          };
         }
         // Several types in ONE toJSONSchema call: wrap them as properties of a
         // synthetic object so zod hoists the sub-schemas they SHARE into a single
@@ -293,6 +303,7 @@ export function buildReadTools(): McpTool[] {
         return {
           types,
           body: Object.fromEntries(types.map((t) => [t, bodyFor(t)])),
+          capabilities: Object.fromEntries(types.map((t) => [t, autoStartCapabilitySummary(t)])),
           note:
             "`schema.properties.<type>` is that type's write-body schema; shared definitions " +
             'are under `schema.$defs`.',
@@ -692,7 +703,10 @@ export function buildReadTools(): McpTool[] {
         orderBy: z
           .enum(['createdAt', '-createdAt', 'codeName', '-codeName', 'displayName', '-displayName'])
           .optional()
-          .describe('Order by createdAt / codeName / displayName (prefix `-` for descending).'),
+          .describe(
+            'Order by createdAt / codeName / displayName (prefix `-` for descending). Text ' +
+              'sorting is case-sensitive (byte order): uppercase sorts before lowercase.',
+          ),
       },
       async handler(args, ctx) {
         const result = await ctx.services.attributeDefinitions.list(
@@ -1316,14 +1330,36 @@ export function buildReadTools(): McpTool[] {
       name: 'get_segment',
       title: 'Get a segment',
       capability: Capability.SegmentRead,
-      description: 'Get a segment by id (condition segments inline their conditions).',
-      inputSchema: { id: z.string().describe('The segment id.') },
+      description:
+        'Get a segment by id (condition segments inline their conditions). ' +
+        '`expand: ["memberCount"]` adds how many users/companies the segment holds in ONE ' +
+        'environment (members are env-scoped; the count uses the same filter list_users/' +
+        'list_companies apply for segmentId, so they always agree).',
+      inputSchema: {
+        id: z.string().describe('The segment id.'),
+        expand: z
+          .array(z.enum(['memberCount']))
+          .optional()
+          .describe('Inline memberCount (env-scoped — see environmentId).'),
+        environmentId: environmentIdSchema,
+      },
       async handler(args, ctx) {
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
         }
-        return ctx.services.segments.get(id, ctx.projectId);
+        const expand = Array.isArray(args.expand)
+          ? (args.expand.filter((e) => typeof e === 'string') as 'memberCount'[])
+          : undefined;
+        // Environment resolution (single-env default / allowlist enforcement)
+        // only when the count was asked for — a plain get stays project-level.
+        const environment = expand?.includes('memberCount')
+          ? await resolveEnvironment(args, ctx)
+          : undefined;
+        return ctx.services.segments.get(id, ctx.projectId, {
+          expand,
+          environmentId: environment?.id,
+        });
       },
     },
 

@@ -16,6 +16,7 @@ import {
 import {
   type CreateContentBody,
   createContentBody,
+  duplicateContentBody,
   updateContentBody,
 } from '@/api/content/content.schema';
 import { isoDateTime } from '@/common/filters';
@@ -209,8 +210,22 @@ export function buildWriteTools(): McpTool[] {
             'The content version id — pass it together with its contentId (the pair is required).',
           ),
         steps: z.array(representationStepInput).optional(),
-        startRules: representationStartRules.nullable().optional(),
-        hideRules: representationHideRules.nullable().optional(),
+        startRules: representationStartRules
+          .nullable()
+          .optional()
+          .describe(
+            'Auto-start rules. Which knobs (frequency / priority / waitSeconds / ' +
+              'startIfNotComplete) and which `when` condition types the CONTENT TYPE supports ' +
+              'varies — check `capabilities` in get_content_schema before setting them; ' +
+              'unsupported ones are rejected. null clears.',
+          ),
+        hideRules: representationHideRules
+          .nullable()
+          .optional()
+          .describe(
+            'Temporarily-hide rules. Only some types support them (see `capabilities` in ' +
+              'get_content_schema). null clears.',
+          ),
         themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
         data: z
           // A permissive object (not z.unknown) so the MCP client can actually
@@ -308,9 +323,11 @@ export function buildWriteTools(): McpTool[] {
         'diverged draft you get the draft, NOT production); the copy starts UNPUBLISHED and carries ' +
         'no version history. Optionally set a `name`. Content is project-level — use publish_content ' +
         'to make the copy live in an environment. Returns the new content.',
+      // Spread the REST body (SSOT) — a hand-inlined `name: z.string()` here
+      // once bypassed the non-blank-name rule the REST DTO enforced.
       inputSchema: {
         contentId: z.string(),
-        name: z.string().optional(),
+        ...duplicateContentBody.shape,
       },
       handler: (args, ctx) =>
         ctx.services.content.duplicate(String(args.contentId), ctx.projectId, {

@@ -14,9 +14,13 @@ import {
 import { ContentService, type WriteActor } from '@/content/content.service';
 import { ApiThemesService } from '../themes/themes.service';
 
+import { loadDecompileResolvers } from '../content-representation/attribute-resolvers';
 import { loadConditionContext } from '../content-representation/condition-context';
+import { ContentVersion } from '../content-representation/representation.schema';
+import { decompileHideRules, decompileStartRules } from '../content-representation/rules.decompile';
 import { requiresTheme, validateVersionUsable } from '../content-representation/usable.validate';
 import { defaultVersionData } from '../content-representation/version-data.defaults';
+import { mapVersion } from '../content-versions/content-versions.mapper';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapContent } from './content.mapper';
@@ -250,6 +254,7 @@ export class ApiContentService {
     const { limit, cursor, name, type, published, createdAfter, createdBefore, deleted } = query;
     const expand = toArray<ContentExpand>(query.expand);
     const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
+    const mapVersionNode = await this.inlineVersionMapper(expand, projectId);
 
     return paginate({
       requestUrl,
@@ -268,7 +273,7 @@ export class ApiContentService {
           name,
           deleted,
         ),
-      map: (node) => mapContent(node, expand),
+      map: (node) => mapContent(node, expand, mapVersionNode),
     });
   }
 
@@ -281,7 +286,35 @@ export class ApiContentService {
     if ((node as { deleted?: boolean }).deleted) {
       throw archivedContentError();
     }
-    return mapContent(node, expand);
+    return mapContent(node, expand, await this.inlineVersionMapper(expand, projectId));
+  }
+
+  /**
+   * Mapper for the versions the editedVersion/publishedVersion expands inline —
+   * the standalone content-versions mapping (rules decompiled from the version
+   * config, questions null = not requested), so an inline version is exactly
+   * `get_content_version` without its expands. The id→code resolver catalogs
+   * load once per request, and only when a version expand actually asks.
+   */
+  private async inlineVersionMapper(
+    expand: ContentExpand[],
+    projectId: string,
+  ): Promise<(version: any) => ContentVersion> {
+    if (!expand.includes('editedVersion') && !expand.includes('publishedVersion')) {
+      // mapContent only invokes the mapper under those expand flags.
+      return () => {
+        throw new Error('inline version mapper invoked without a version expand');
+      };
+    }
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
+    return (version) => {
+      const startRules = decompileStartRules(version.config, resolvers);
+      const hideRules = decompileHideRules(version.config, resolvers);
+      return mapVersion(version, null, undefined, {
+        ...(startRules ? { startRules } : {}),
+        ...(hideRules ? { hideRules } : {}),
+      });
+    };
   }
 
   /**

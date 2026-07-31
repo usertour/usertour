@@ -1,4 +1,4 @@
-import { validateAutoStartForType } from './auto-start.validate';
+import { autoStartCapabilitySummary, validateAutoStartForType } from './auto-start.validate';
 import type { RepresentationStartRules } from './representation.schema';
 
 const when: RepresentationStartRules['when'] = [];
@@ -209,5 +209,49 @@ describe('validateAutoStartForType', () => {
     const start: RepresentationStartRules = { when, frequency: { mode: 'once' }, priority: 'high' };
     expect(validateAutoStartForType(start, { when }, 'mystery')).toEqual([]);
     expect(validateAutoStartForType(start, { when }, undefined)).toEqual([]);
+  });
+});
+
+describe('autoStartCapabilitySummary (discovery projection)', () => {
+  it('mirrors the matrix: full support on flow, nothing on launcher', () => {
+    expect(autoStartCapabilitySummary('flow')).toEqual({
+      startRules: {
+        when: 'all',
+        frequency: true,
+        frequencyAtLeast: true,
+        priority: true,
+        waitSeconds: true,
+        startIfNotComplete: true,
+      },
+      hideRules: true,
+    });
+    expect(autoStartCapabilitySummary('launcher')).toEqual({
+      startRules: {
+        when: 'all',
+        frequency: false,
+        frequencyAtLeast: false,
+        priority: false,
+        waitSeconds: false,
+        startIfNotComplete: false,
+      },
+      hideRules: false,
+    });
+  });
+
+  it('narrowed `when` vocabularies surface as explicit lists', () => {
+    // Announcement: audience filter only.
+    expect(autoStartCapabilitySummary('announcement')?.startRules.when).toEqual([
+      'attribute',
+      'segment',
+    ]);
+    // Tracker: client-evaluable conditions only — never the server-evaluated ones.
+    const trackerWhen = autoStartCapabilitySummary('tracker')?.startRules.when;
+    expect(Array.isArray(trackerWhen)).toBe(true);
+    expect(trackerWhen).toContain('current_url');
+    expect(trackerWhen).not.toContain('segment');
+  });
+
+  it('unknown type yields undefined (same "leave it to others" rule as the validator)', () => {
+    expect(autoStartCapabilitySummary('mystery')).toBeUndefined();
   });
 });

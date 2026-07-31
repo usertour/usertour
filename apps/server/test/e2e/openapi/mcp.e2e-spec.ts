@@ -1380,6 +1380,139 @@ describe('MCP endpoint (e2e)', () => {
     });
   });
 
+  describe('inline version parity & discovery capabilities', () => {
+    it('get_content expand inlines the SAME version object get_content_version returns', async () => {
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Inline parity', themeId },
+          token,
+        ),
+      });
+      await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          startRules: { when: [{ type: 'current_url', includes: ['/app'] }] },
+        },
+        token,
+      );
+
+      const inline = parseToolContent({
+        result: await callTool('get_content', { id: created.id, expand: ['editedVersion'] }, token),
+      }).editedVersion;
+      // The once-dropped fields: the freeze stamp is present-and-null on a
+      // draft, questions is null (= not requested, never []), rules are there.
+      expect(inline.firstPublishedAt).toBeNull();
+      expect(inline.questions).toBeNull();
+      expect(inline.startRules).toMatchObject({
+        when: [{ type: 'current_url', includes: ['/app'] }],
+      });
+
+      // Full equivalence: inline === standalone read without its expands.
+      const standalone = parseToolContent({
+        result: await callTool(
+          'get_content_version',
+          { contentId: created.id, id: created.editedVersionId },
+          token,
+        ),
+      });
+      expect(inline).toEqual(standalone);
+    });
+
+    it('get_segment expand=memberCount counts members in the requested environment', async () => {
+      const token = await mint(
+        [Capability.SegmentCreate, Capability.SegmentRead, Capability.SegmentUpdate],
+        [projectA],
+      );
+      const seg = parseToolContent({
+        result: await callTool(
+          'create_segment',
+          { name: 'Member count seg', bizType: 'user', kind: 'manual' },
+          token,
+        ),
+      });
+      // Plain get: no count (env-scoped data stays opt-in).
+      const plain = parseToolContent({
+        result: await callTool('get_segment', { id: seg.id }, token),
+      });
+      expect(plain).not.toHaveProperty('memberCount');
+
+      const before = parseToolContent({
+        result: await callTool(
+          'get_segment',
+          { id: seg.id, expand: ['memberCount'], environmentId: envA },
+          token,
+        ),
+      });
+      expect(before.memberCount).toBe(0);
+
+      await callTool(
+        'add_segment_member',
+        { segmentId: seg.id, memberId: bizUserExternalId, environmentId: envA },
+        token,
+      );
+      const after = parseToolContent({
+        result: await callTool(
+          'get_segment',
+          { id: seg.id, expand: ['memberCount'], environmentId: envA },
+          token,
+        ),
+      });
+      expect(after.memberCount).toBe(1);
+    });
+
+    it('get_content_schema advertises per-type startRules capabilities', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const single = parseToolContent({
+        result: await callTool('get_content_schema', { type: 'launcher' }, token),
+      });
+      // A launcher supports none of the start knobs — exactly what the write rejects.
+      expect(single.capabilities).toEqual({
+        startRules: {
+          when: 'all',
+          frequency: false,
+          frequencyAtLeast: false,
+          priority: false,
+          waitSeconds: false,
+          startIfNotComplete: false,
+        },
+        hideRules: false,
+      });
+
+      const batch = parseToolContent({
+        result: await callTool('get_content_schema', { type: ['flow', 'announcement'] }, token),
+      });
+      expect(batch.capabilities.flow.startRules.when).toBe('all');
+      expect(batch.capabilities.flow.startRules.priority).toBe(true);
+      // Announcement targeting is an audience filter: attribute/segment only.
+      expect(batch.capabilities.announcement.startRules.when).toEqual(['attribute', 'segment']);
+    });
+
+    it('refuses a whitespace-only display name (same family as blank external ids)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentCreate], [projectA]);
+      const res = await callTool('create_content', { type: 'flow', name: '   ', themeId }, token);
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/non-whitespace/);
+
+      // duplicate_content once bypassed the rule with a hand-inlined `name`
+      // schema (an audit caught it) — pin that its args ride the shared body.
+      const source = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+      const dup = await callTool('duplicate_content', { contentId: source.id, name: '   ' }, token);
+      expect(dup.isError).toBe(true);
+      expect(dup.content[0].text).toMatch(/non-whitespace/);
+    });
+  });
+
   describe('auth guard', () => {
     it('rejects a missing Authorization header (401 E1010)', async () => {
       const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
