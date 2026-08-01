@@ -225,8 +225,12 @@ export const representationResourceCenter = z.object({
     .string()
     .optional()
     .describe(
-      'Panel header title on the home view. Plain string — NO `{{ }}` interpolation (braces ' +
-        'would render literally); for a personalized greeting use a `richtext` block instead.',
+      'Panel header title — but NOT on the default home view: with a styled theme header ' +
+        '(resourceCenter.headerBackground other than "none", the hero look) the home view shows ' +
+        'the logo + background and this text does not render there. It renders on the home view ' +
+        'only under the compact "none" header style, and on SUB-pages as the fallback title ' +
+        '(when the tab/page has no name). For a visible home greeting use a `richtext` block. ' +
+        'Plain string — NO `{{ }}` interpolation (braces would render literally).',
     ),
   tabs: z.array(rcTab).optional(),
 });
