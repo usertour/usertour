@@ -867,7 +867,12 @@ export const representationBlock = z.lazy(() =>
             'only if that site allows being framed (no X-Frame-Options/CSP block).',
         ),
       width: mediaWidthShape,
-      height: mediaWidthShape,
+      height: mediaWidthShape.describe(
+        'Embed height. Optional ONLY for provider embeds (YouTube/Vimeo/… size themselves by ' +
+          'aspect ratio); a URL with NO oEmbed provider has no ratio, and omitting a pixel ' +
+          'height collapses the container to 0px — the embed passes validation yet renders ' +
+          'BLANK. For plain-iframe URLs always set { "unit": "pixels", "value": … }.',
+      ),
       margin: spacingShape,
     }),
     z.object({

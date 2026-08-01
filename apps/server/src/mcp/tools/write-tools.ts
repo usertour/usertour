@@ -19,12 +19,10 @@ import {
   duplicateContentBody,
   updateContentBody,
 } from '@/api/content/content.schema';
+import { updateVersionBody } from '@/api/content-versions/content-versions.schema';
+import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
+import { ValidationError } from '@/common/errors/errors';
 import { isoDateTime } from '@/common/filters';
-import {
-  representationHideRules,
-  representationStartRules,
-  representationStepInput,
-} from '@/api/content-representation/representation.schema';
 import {
   createEnvironmentBody,
   type CreateEnvironmentBody,
@@ -209,22 +207,38 @@ export function buildWriteTools(): McpTool[] {
           .describe(
             'The content version id — pass it together with its contentId (the pair is required).',
           ),
-        steps: z.array(representationStepInput).optional(),
-        startRules: representationStartRules
-          .nullable()
+        // steps/startRules/hideRules are declared LOOSELY on purpose: their full
+        // vocabulary (blocks / actions / conditions) inlined here put ~11k tokens
+        // into every tools/list. get_content_schema serves the exact shapes on
+        // demand, and the handler validates against the SAME zod schema REST
+        // uses — nothing is accepted that the typed surface would reject.
+        steps: z
+          .array(z.record(z.string(), z.any()))
           .optional()
           .describe(
-            'Auto-start rules. Which knobs (frequency / priority / waitSeconds / ' +
-              'startIfNotComplete) and which `when` condition types the CONTENT TYPE supports ' +
-              'varies — check `capabilities` in get_content_schema before setting them; ' +
-              'unsupported ones are rejected. null clears.',
+            'The COMPLETE step list, not a patch (an omitted existing step is deleted; omit the ' +
+              'FIELD to leave steps untouched). Validated server-side against the flow step ' +
+              "schema — fetch it with get_content_schema('flow') before authoring (the step/" +
+              'block/action vocabulary is served there, not inlined here).',
           ),
-        hideRules: representationHideRules
+        startRules: z
+          .record(z.string(), z.any())
           .nullable()
           .optional()
           .describe(
-            'Temporarily-hide rules. Only some types support them (see `capabilities` in ' +
-              'get_content_schema). null clears.',
+            'Auto-start rules: { when: [conditions], frequency?, priority?, waitSeconds?, ' +
+              'startIfNotComplete? }. The condition vocabulary ships with get_content_schema ' +
+              '($defs), and which knobs / which `when` condition types the CONTENT TYPE ' +
+              'supports is its `capabilities` block — unsupported ones are rejected. null ' +
+              'clears. Validated server-side against the same schema REST uses.',
+          ),
+        hideRules: z
+          .record(z.string(), z.any())
+          .nullable()
+          .optional()
+          .describe(
+            'Temporarily-hide rules: { when: [conditions] }. Only some types support them (see ' +
+              '`capabilities` in get_content_schema). null clears.',
           ),
         themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
         data: z
@@ -250,14 +264,23 @@ export function buildWriteTools(): McpTool[] {
               'time). A future value defers visibility.',
           ),
       },
-      handler: (args, ctx) =>
-        ctx.services.contentVersions.update(
-          String(args.versionId),
-          String(args.contentId),
+      handler: (args, ctx) => {
+        const { contentId, versionId, ...body } = args;
+        // The loose tool schema above trades tools/list size for a HERE-parse:
+        // the body runs through the REST write schema, so both surfaces accept
+        // and reject identically, with the same issue paths.
+        const parsed = updateVersionBody.safeParse(body);
+        if (!parsed.success) {
+          throw ValidationError.fromIssues(zodIssuesToValidationIssues(parsed.error));
+        }
+        return ctx.services.contentVersions.update(
+          String(versionId),
+          String(contentId),
           ctx.projectId,
-          args as never,
+          parsed.data as never,
           { userId: ctx.token.userId, tokenId: ctx.token.id },
-        ),
+        );
+      },
     },
     {
       name: 'create_content_version',

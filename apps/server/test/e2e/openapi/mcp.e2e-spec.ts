@@ -1467,6 +1467,34 @@ describe('MCP endpoint (e2e)', () => {
       expect(after.memberCount).toBe(1);
     });
 
+    it('update_content_version validates its loosely-declared body against the REST schema', async () => {
+      // The tool schema declares steps/rules loosely (the full vocabulary would
+      // dominate tools/list); the handler must reject a malformed body with the
+      // SAME issue shape REST produces — not pass garbage to the compiler.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Loose-body parse', themeId },
+          token,
+        ),
+      });
+      const res = await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          steps: [{ name: 'Bad', type: 'modal', content: 'not-an-array' }],
+        },
+        token,
+      );
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/steps\[0\]\.content/);
+    });
+
     it('get_content_schema advertises per-type startRules capabilities', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const single = parseToolContent({

@@ -418,6 +418,17 @@ function collectEmbedResolutionWarnings(
           'embed',
           `Embed "${o.url}" has no oEmbed provider — it renders as a plain iframe of that URL, which works only if the site allows being framed (no X-Frame-Options / CSP frame-ancestors block). Verify it renders inside an iframe before publishing.`,
         );
+        // Provider embeds size themselves from the oEmbed aspect ratio; a plain
+        // iframe has none, and the widget's height fallback is a PERCENTAGE of a
+        // content-sized parent — 100% of 0. Without an explicit pixel height the
+        // block passes every write/publish gate and renders as nothing (acceptance
+        // review: the one defect that was fully green yet blank on screen).
+        if (!(o as { height?: unknown }).height) {
+          warn(
+            'embed',
+            `Embed "${o.url}" also has NO height — with no oEmbed provider there is no aspect ratio to derive one, so the container collapses to 0px and shows as BLANK. Set a pixel height on the embed block (e.g. "height": { "unit": "pixels", "value": 315 }).`,
+          );
+        }
       }
     }
     for (const value of Object.values(o)) walk(value);

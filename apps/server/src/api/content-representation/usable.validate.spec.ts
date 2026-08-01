@@ -56,10 +56,24 @@ describe('validateVersionUsable', () => {
       expect(w[0].message).toContain('provider refused');
     });
 
-    it('warns framing-requirement for a raw non-provider iframe url', () => {
+    it('warns framing-requirement AND height-collapse for a raw non-provider iframe url', () => {
+      // No provider = no aspect ratio; without a pixel height the container
+      // collapses to 0px — green through every gate, blank on screen (field-
+      // reported). Two warnings: frameability + the collapse.
       const w = embedWarnings({
         url: 'https://internal.example.com/dash',
         parsedUrl: 'https://internal.example.com/dash',
+      });
+      expect(w).toHaveLength(2);
+      expect(w[0].message).toContain('allows being framed');
+      expect(w[1].message).toContain('collapses to 0px');
+    });
+
+    it('does not warn height-collapse when the raw iframe has a pixel height', () => {
+      const w = embedWarnings({
+        url: 'https://internal.example.com/dash',
+        parsedUrl: 'https://internal.example.com/dash',
+        height: { type: 'pixels', value: 315 },
       });
       expect(w).toHaveLength(1);
       expect(w[0].message).toContain('allows being framed');
