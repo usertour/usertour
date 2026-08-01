@@ -376,12 +376,22 @@ export const representationBanner = z.object({
             '`position: fixed` bars (top nav, sidebars) do NOT move and will overlap the banner. For such ' +
             'apps, either float the banner over the content (true), or use a container/element-relative ' +
             '`placement` so the banner lives inside the scrolling content area instead of fighting the ' +
-            'fixed bars.',
+            'fixed bars. Floating alone does NOT keep the banner on screen — it still scrolls away ' +
+            'with the page (CSS absolute); pair it with `stickToTop` for the always-visible floating ' +
+            'bar (see the 2x2 there).',
         ),
       stickToTop: z
         .boolean()
         .optional()
-        .describe('Keeps the banner pinned at the top while the user scrolls.'),
+        .describe(
+          'Pins the banner to the viewport edge while the user scrolls — the EDGE follows ' +
+            '`placement`, despite the name: top variants pin to the top, bottom variants to the ' +
+            'BOTTOM. Combines with `overlayOverAppContent` into four modes (CSS position): ' +
+            'neither = in-flow, scrolls away with the page (the default); stick only = keeps its ' +
+            'own space and pins (sticky); overlay only = floats but STILL scrolls away ' +
+            '(absolute); both = floats and stays pinned (fixed) — the classic always-visible ' +
+            'bar. So for "visible while scrolling", set this true regardless of overlay.',
+        ),
       allowDismiss: z
         .boolean()
         .optional()
