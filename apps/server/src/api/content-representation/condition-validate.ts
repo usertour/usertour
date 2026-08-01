@@ -1,5 +1,8 @@
 import { type ValidateContext, validateConditionByType } from '@usertour/helpers';
+import { AttributeDataType } from '@usertour/types';
 import type { RulesCondition } from '@usertour/types';
+
+import { LOGIC_TO_ATTR_OP } from './attr-ops';
 
 /**
  * Shared semantic validator for a compiled rule tree (conditions + action
@@ -67,6 +70,33 @@ const CONDITION_ERROR_MESSAGES: Record<string, string> = {
     'event-attribute condition is missing or references an unknown attribute',
 };
 
+const DATA_TYPE_NAMES: Record<number, string> = {
+  [AttributeDataType.Number]: 'Number',
+  [AttributeDataType.String]: 'String',
+  [AttributeDataType.Boolean]: 'Boolean',
+  [AttributeDataType.List]: 'List',
+  [AttributeDataType.DateTime]: 'DateTime',
+  [AttributeDataType.RandomAB]: 'RandomAB',
+  [AttributeDataType.RandomNumber]: 'RandomNumber',
+};
+
+/**
+ * Key -> message, appending the ALLOWED operator set when the validator supplied
+ * it (invalid-operator issues): agents fix the condition in one round-trip
+ * instead of guessing which ops this dataType takes. The validator reports
+ * internal logic tokens; translate to the representation op names agents write.
+ */
+function conditionMessage(issue: { key: string; values?: Record<string, unknown> }): string {
+  const base = CONDITION_ERROR_MESSAGES[issue.key] ?? `invalid condition (${issue.key})`;
+  const allowed = issue.values?.allowedLogic;
+  if (Array.isArray(allowed) && allowed.length > 0) {
+    const ops = allowed.map((logic) => LOGIC_TO_ATTR_OP[String(logic)] ?? String(logic));
+    const typeName = DATA_TYPE_NAMES[Number(issue.values?.dataType)] ?? 'this';
+    return `${base} — a ${typeName} attribute accepts: ${ops.join(', ')}`;
+  }
+  return base;
+}
+
 // The walk descends the COMPILED (internal) structure, but issue paths face the
 // API author — rename the internal keys that differ from their representation
 // names so a reported path matches what the author actually wrote.
@@ -97,10 +127,7 @@ export function collectRuleIssues(
       if (CONDITION_NODE_TYPES.has(type)) {
         const issue = validateConditionByType(obj as unknown as RulesCondition, ctx);
         if (issue) {
-          issues.push({
-            path: at,
-            message: CONDITION_ERROR_MESSAGES[issue.key] ?? `invalid condition (${issue.key})`,
-          });
+          issues.push({ path: at, message: conditionMessage(issue) });
         }
       } else if (type === 'flow-start' && contentIds) {
         // A start-flow action that points at content not in the project silently

@@ -134,7 +134,17 @@ export function validateUserAttr(
   if (!attribute) return { key: 'conditions.errors.userAttr.selectAttribute' };
   if (!data.logic) return { key: 'conditions.errors.userAttr.selectOperator' };
   if (!isOperatorValidForType(data.logic, attribute.dataType)) {
-    return { key: 'conditions.errors.userAttr.invalidOperator' };
+    // `values` carries machine context for the API surface: the server appends
+    // the operators this dataType DOES accept to its error message (internal
+    // logic tokens; the server maps them to representation op names). i18n
+    // consumers interpolate only the placeholders they know — extras are inert.
+    return {
+      key: 'conditions.errors.userAttr.invalidOperator',
+      values: {
+        dataType: attribute.dataType,
+        allowedLogic: operatorsFor(attribute.dataType).map((o) => o.value),
+      },
+    };
   }
   if (VALUELESS_OPERATORS.has(data.logic)) return undefined;
   if (data.logic === 'between') {
@@ -268,7 +278,17 @@ export function validateEventAttr(
   if (!attribute) return { key: 'conditions.errors.eventAttr.selectAttribute' };
   if (!data.logic) return { key: 'conditions.errors.userAttr.selectOperator' };
   if (!isOperatorValidForType(data.logic, attribute.dataType)) {
-    return { key: 'conditions.errors.userAttr.invalidOperator' };
+    // `values` carries machine context for the API surface: the server appends
+    // the operators this dataType DOES accept to its error message (internal
+    // logic tokens; the server maps them to representation op names). i18n
+    // consumers interpolate only the placeholders they know — extras are inert.
+    return {
+      key: 'conditions.errors.userAttr.invalidOperator',
+      values: {
+        dataType: attribute.dataType,
+        allowedLogic: operatorsFor(attribute.dataType).map((o) => o.value),
+      },
+    };
   }
   if (VALUELESS_OPERATORS.has(data.logic)) return undefined;
   if (data.logic === 'between') {

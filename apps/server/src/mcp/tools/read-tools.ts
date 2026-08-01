@@ -944,16 +944,49 @@ export function buildReadTools(): McpTool[] {
         'the derivation overwrites the ones the runtime reads), and note they only take effect ' +
         'while the matching hover/active is "Auto". `customCss` is plan-gated (Growth and ' +
         'above): introducing or changing it on a lower plan is refused (E1038) — echoing the ' +
-        'stored value back, or clearing it, always passes.',
-      inputSchema: {},
-      async handler(_args, _ctx) {
+        'stored value back, or clearing it, always passes. The full schema is large (~10k ' +
+        'tokens); when you already know which part you are styling, pass `section` for just ' +
+        'that slice (the response lists every section name either way).',
+      inputSchema: {
+        section: z
+          .union([z.string(), z.array(z.string()).min(1)])
+          .optional()
+          .describe(
+            "Top-level settings section(s) to return (e.g. 'checklist', 'buttons') — one name " +
+              'or an array. Omit for the full schema; an unknown name errors listing the valid ' +
+              'sections.',
+          ),
+      },
+      async handler(args, _ctx) {
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails.
         // (No `reused: 'ref'` here — the generated settings leaves are distinct
         // schema objects, so there's nothing for zod to dedupe; it's a no-op.)
+        const full = z.toJSONSchema(themeSettingsPatchSchema, { unrepresentable: 'any' }) as {
+          properties?: Record<string, unknown>;
+          required?: string[];
+        };
+        const sections = Object.keys(full.properties ?? {});
+        if (args.section === undefined) {
+          return { body: 'settings', sections, schema: full };
+        }
+        const requested = (Array.isArray(args.section) ? args.section : [args.section]).map(String);
+        const unknown = requested.filter((s) => !sections.includes(s));
+        if (unknown.length) {
+          throw new Error(
+            `Unknown section(s): ${unknown.join(', ')}. Valid sections: ${sections.join(', ')}.`,
+          );
+        }
         return {
           body: 'settings',
-          schema: z.toJSONSchema(themeSettingsPatchSchema, { unrepresentable: 'any' }),
+          sections,
+          schema: {
+            ...full,
+            properties: Object.fromEntries(requested.map((s) => [s, full.properties?.[s]])),
+            ...(full.required
+              ? { required: full.required.filter((k) => requested.includes(k)) }
+              : {}),
+          },
         };
       },
     },

@@ -10,6 +10,7 @@ import {
   RepresentationTrigger,
 } from './representation.schema';
 import { ATTR_OP_TO_LOGIC } from './attr-ops';
+import { REP_CONDITION_TYPE_TO_INTERNAL } from './contract-map';
 import { compileTargetToElementData } from './target.compile';
 import { compilePlainText } from './text.compile';
 
@@ -61,6 +62,9 @@ type Rule = { id: string; type: string; data: any; operators?: 'and' | 'or'; con
 
 // representation op → internal logic — single source of truth in attr-ops.ts.
 const ATTR_LOGIC: Record<string, string> = ATTR_OP_TO_LOGIC;
+// For the unknown-type rejection message: the writable condition vocabulary,
+// derived from the codec's own name map so the list can't drift.
+const SUPPORTED_CONDITION_TYPES = Object.keys(REP_CONDITION_TYPE_TO_INTERNAL).sort().join(', ');
 const ELEMENT_LOGIC: Record<string, string> = {
   present: 'present',
   hidden: 'unpresent',
@@ -221,7 +225,7 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
     default:
       // `unsupported` is filtered out by compileConditions; nothing else remains.
       throw new ValidationError(
-        `Cannot write a "${(c as { type: string }).type}" condition — this condition type is not supported via the API.`,
+        `Cannot write a "${(c as { type: string }).type}" condition — supported condition types: ${SUPPORTED_CONDITION_TYPES}.`,
       );
   }
 }
@@ -333,7 +337,7 @@ function compileAction(
     }
     default:
       throw new ValidationError(
-        `Cannot write a "${(a as { type: string }).type}" action — this action type is not supported via the API.`,
+        `Cannot write a "${(a as { type: string }).type}" action — writable action types: goto_step, start_content, navigate, dismiss (run_javascript / unsupported are echo-only).`,
       );
   }
 }

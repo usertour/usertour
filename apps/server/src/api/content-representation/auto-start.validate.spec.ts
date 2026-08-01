@@ -139,9 +139,13 @@ describe('validateAutoStartForType', () => {
       ],
     };
     const errs = validateAutoStartForType(start, undefined, 'tracker');
-    expect(errs).toContain('tracker content does not support a `segment` start condition.');
-    expect(errs).toContain('tracker content does not support a `content_state` start condition.');
-    expect(errs).not.toContain('tracker content does not support a `element` start condition.');
+    // Each rejection names the offending type AND the client-evaluable set the
+    // slot does accept (so the fix is one round-trip).
+    const segErr = errs.find((e) => e.includes('a `segment` start condition'));
+    const contentErr = errs.find((e) => e.includes('a `content_state` start condition'));
+    expect(segErr).toContain('client-evaluable types work: attribute, current_url');
+    expect(contentErr).toBeDefined();
+    expect(errs.some((e) => e.includes('a `element` start condition'))).toBe(false);
   });
 
   it('non-tracker types accept any start-condition type (no whitelist)', () => {

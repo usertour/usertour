@@ -133,7 +133,11 @@ export function validateAutoStartForType(
       };
       walk(startRules.when);
       for (const type of offending) {
-        errs.push(unsupported(`a \`${type}\` start condition`));
+        errs.push(
+          unsupported(
+            `a \`${type}\` start condition — this type's start conditions are evaluated live in the browser, so only client-evaluable types work: ${[...allowed].sort().join(', ')}`,
+          ),
+        );
       }
     }
     if (caps.startConditionTypes) {
