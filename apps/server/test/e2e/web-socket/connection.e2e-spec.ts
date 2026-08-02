@@ -71,6 +71,26 @@ describe('WebSocket v2 connection lifecycle (e2e)', () => {
     expect(error).toBeInstanceOf(Error);
   });
 
+  it('rejects a handshake with a DELETED environment’s token', async () => {
+    // Deleting an environment must retire its SDK token — the token lookup is a
+    // credential check, so it filters `deleted` like the api-token path always
+    // has. It did not: a deleted environment kept accepting SDK traffic and
+    // provisioning users, into an environment that no longer appears anywhere.
+    const doomed = await buildEnvironment(prisma, { projectId });
+    await prisma.environment.update({ where: { id: doomed.id }, data: { deleted: true } });
+
+    const error = await connectExpectingError(harness.baseUrl, {
+      token: doomed.token,
+      externalUserId: 'ws-user-deleted-env',
+    });
+    expect(error).toBeInstanceOf(Error);
+    // And no side effects: the connection must be refused BEFORE user provisioning.
+    const leaked = await prisma.bizUser.findFirst({
+      where: { externalId: 'ws-user-deleted-env', environmentId: doomed.id },
+    });
+    expect(leaked).toBeNull();
+  });
+
   it('rejects a handshake without an externalUserId', async () => {
     const error = await connectExpectingError(harness.baseUrl, {
       token: environmentToken,

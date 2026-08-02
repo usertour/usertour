@@ -19,9 +19,15 @@ export class WebSocketAuthGuard implements CanActivate {
       throw new WsException('Missing token');
     }
 
-    // Find environment by token
+    // Find environment by token. `deleted: false` is part of the credential
+    // check, not a display filter: deleting an environment must retire its SDK
+    // token. Without it a deleted environment kept accepting SDK traffic — no
+    // content to serve (its ContentOnEnvironment rows are gone) but still
+    // creating users and recording events, into an environment that no longer
+    // appears in any list. The API-token path has always checked this
+    // (api-token-auth.service); the two websocket entries had not.
     const environment = await this.prisma.environment.findFirst({
-      where: { token },
+      where: { token, deleted: false },
     });
 
     if (!environment) {
