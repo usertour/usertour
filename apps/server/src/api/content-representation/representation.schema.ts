@@ -371,13 +371,21 @@ export const representationCondition = z.lazy(() =>
             'scrolled off-screen, clipped, or covered never satisfies it (and `hidden` is its ' +
             'negation). Appearances shorter than about a second can be missed entirely. ' +
             '`disabled`/`enabled` read the element disabled state at evaluation time. ' +
-            '`clicked` LATCHES: the SDK attaches a click listener the FIRST time the condition ' +
-            'is evaluated — clicks before that are invisible — and once a click lands the ' +
-            'condition stays true until the page reloads (`unclicked` is its negation). Two ' +
-            'consequences: a tracker gated on `clicked` fires ONCE per page load (its event is ' +
-            'edge-triggered), so it counts "page loads with at least one click", NOT total ' +
-            'clicks; and a click that happens before the content is distributed to the page ' +
-            'is never seen.',
+            '**`clicked` means "clicked since page load AND the element is STILL in the DOM ' +
+            'right now"** — both halves, re-checked every evaluation. The click memory latches ' +
+            '(the listener attaches the FIRST time the condition is evaluated, so earlier ' +
+            'clicks are invisible, and the memory survives a re-render), but the element lookup ' +
+            'is redone each poll. Two consequences, one of them silent: (1) **an element that ' +
+            'UNMOUNTS on click can NEVER satisfy it** — the click lands, the element vanishes, ' +
+            'the lookup fails from then on and the condition stays false forever with no error ' +
+            '(measured: a tracker on a button that clears its own toolbar counted ZERO real ' +
+            'clicks); (2) an element that unmounts and REMOUNTS satisfies it again, so a ' +
+            'tracker gated on it fires once per remount — not once per page load. Unlike ' +
+            '`present`, this lookup does NOT require viewport visibility: scrolling the target ' +
+            'off-screen keeps `clicked` true. `unclicked` negates the same pair, so it is also ' +
+            'false while the element is absent. To count a COMPLETED action, condition on what ' +
+            'the app shows afterwards (a success toast, a state change) rather than `clicked` ' +
+            'on the button that starts it.',
         ),
     }),
     z.object({
