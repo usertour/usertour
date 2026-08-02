@@ -874,9 +874,12 @@ export function buildReadTools(): McpTool[] {
       title: 'List themes',
       capability: Capability.ThemeRead,
       description:
-        "List the project's themes (id, name, isDefault) — the theme ids accepted by a version's " +
-        '`themeId`. Optionally filter by `name`. Returns `{ items, nextCursor }` — page until ' +
-        '`nextCursor` is null before concluding a theme does not exist.',
+        "List the project's themes (id, name, isDefault, variationCount) — the theme ids accepted " +
+        "by a version's `themeId`. Optionally filter by `name`. Returns `{ items, nextCursor }` — " +
+        'page until `nextCursor` is null before concluding a theme does not exist. Check ' +
+        '`variationCount` before switching content to another theme: variations do NOT travel ' +
+        'with the content, so moving onto a theme with 0 variations silently drops conditional ' +
+        'styling (dark mode …) for the users those conditions targeted.',
       inputSchema: {
         ...nameSearchField,
         limit: limitSchema,

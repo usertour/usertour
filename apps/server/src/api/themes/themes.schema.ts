@@ -42,6 +42,16 @@ export const theme = z.object({
   isSystem: z.boolean(),
   updatedAt: z.string(),
   createdAt: z.string(),
+  variationCount: z
+    .number()
+    .int()
+    .describe(
+      'How many conditional variations this theme carries (always present, no expand needed). ' +
+        'Check it BEFORE pointing content at another theme: variations do NOT travel with the ' +
+        'content, so moving from a theme with variations to one with 0 silently drops the ' +
+        'conditional styling (e.g. dark mode) for every user those conditions targeted — nothing ' +
+        'errors. Read the variations themselves with expand: ["variations"].',
+    ),
   // Present only when the corresponding expand is requested.
   settings: themeSettings.optional(),
   variations: z.array(themeVariation).optional(),

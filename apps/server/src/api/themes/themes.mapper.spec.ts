@@ -21,7 +21,30 @@ describe('mapTheme (pure)', () => {
       isSystem: false,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      // Always present, no expand — see below.
+      variationCount: 0,
     });
+  });
+
+  // A maintenance reviewer nearly shipped a silent dark-mode regression because
+  // the base projection made a theme WITH variations and one WITHOUT look
+  // identical; the count rides on every read so the risk is visible before the
+  // switch, without paying for the full variations expand.
+  it('always reports variationCount, with no expand', () => {
+    const withVariations = mapTheme(
+      {
+        id: 't3',
+        name: 'Brand',
+        isDefault: false,
+        createdAt: at,
+        updatedAt: at,
+        variations: [{ name: 'Dark' }, { name: 'Compact' }],
+      },
+      [],
+      resolvers,
+    );
+    expect(withVariations.variationCount).toBe(2);
+    expect(withVariations).not.toHaveProperty('variations');
   });
 
   it('accepts ISO string timestamps too', () => {

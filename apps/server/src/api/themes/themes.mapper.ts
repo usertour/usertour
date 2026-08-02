@@ -51,6 +51,11 @@ export function mapTheme(
     isSystem: Boolean(node.isSystem),
     createdAt: new Date(node.createdAt).toISOString(),
     updatedAt: new Date(node.updatedAt).toISOString(),
+    // ALWAYS present, no expand: the base projection otherwise makes two themes
+    // look identical while one carries a dark-mode variation and the other does
+    // not — switching content onto the variation-less one silently downgrades
+    // every user those conditions targeted (maintenance-round finding).
+    variationCount: Array.isArray(node.variations) ? node.variations.length : 0,
     ...(expand.includes('settings')
       ? // Read-side coercion of stored builder shapes (numeric strings, padded
         // colors) so the read matches the declared types — see

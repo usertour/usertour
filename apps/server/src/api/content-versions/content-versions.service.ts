@@ -682,6 +682,14 @@ export class ApiContentVersionsService {
     const startsOnDemandOnly =
       (type === ContentDataType.FLOW || type === ContentDataType.CHECKLIST) &&
       (!rules || rules.length === 0);
+    // THEME-SWITCH guard: variations do NOT travel with content, so pointing a
+    // draft at a theme with fewer variations than the version that is currently
+    // LIVE silently drops conditional styling (dark mode …) for exactly the
+    // users those conditions targeted — green through write, validate, publish
+    // and diagnose alike (maintenance-round finding: the only change in that
+    // round that could have harmed real users).
+    await this.warnOnThemeVariationLoss(v.themeId, contentId, report);
+
     if (startsOnDemandOnly && !(await this.isReferencedByOtherContent(projectId, contentId))) {
       report.warnings.push({
         severity: 'warning',
@@ -690,6 +698,50 @@ export class ApiContentVersionsService {
       });
     }
     return report;
+  }
+
+  /**
+   * Warn when this draft's theme carries FEWER variations than the theme of the
+   * version currently published — the shape a theme migration takes. Compares
+   * against the live version (not an arbitrary sibling), so it fires exactly on
+   * "you switched themes and left the conditional styling behind" and stays
+   * silent for content that simply never had variations.
+   */
+  private async warnOnThemeVariationLoss(
+    draftThemeId: string | null,
+    contentId: string,
+    report: UsabilityReport,
+  ): Promise<void> {
+    if (!draftThemeId) {
+      return;
+    }
+    const live = await this.prisma.contentOnEnvironment.findFirst({
+      where: { contentId, published: true },
+      select: { publishedVersion: { select: { themeId: true } } },
+    });
+    const liveThemeId = live?.publishedVersion?.themeId;
+    if (!liveThemeId || liveThemeId === draftThemeId) {
+      return;
+    }
+    const themes = await this.prisma.theme.findMany({
+      where: { id: { in: [liveThemeId, draftThemeId] } },
+      select: { id: true, name: true, variations: true },
+    });
+    const countOf = (id: string) => {
+      const variations = themes.find((t) => t.id === id)?.variations;
+      return Array.isArray(variations) ? variations.length : 0;
+    };
+    const liveCount = countOf(liveThemeId);
+    const draftCount = countOf(draftThemeId);
+    if (draftCount >= liveCount) {
+      return;
+    }
+    const nameOf = (id: string) => themes.find((t) => t.id === id)?.name ?? id;
+    report.warnings.push({
+      severity: 'warning',
+      path: 'themeId',
+      message: `This version switches theme from "${nameOf(liveThemeId)}" (${liveCount} conditional variation${liveCount === 1 ? '' : 's'}) to "${nameOf(draftThemeId)}" (${draftCount}) — variations do NOT travel with the content, so every user those conditions targeted (e.g. dark mode) silently falls back to base styling. Recreate the variations on the target theme (duplicate_theme copies them verbatim), or keep the current theme.`,
+    });
   }
 
   /**

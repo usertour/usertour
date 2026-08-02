@@ -548,11 +548,26 @@ export class ContentDiagnosisService {
       if (!isAllowedByAutoStartRulesSetting(cv)) {
         return { ...base, verdict: 'blocked', gate: 'frequency', detail: 'frequency cap reached.' };
       }
+      // A start `wait` is a BROWSER timer: the availability filter excludes the
+      // content until the timer fires, which server-side is simply "not yet".
+      // Reporting that as blocked was wrong twice over — it will show, and the
+      // row sent operators to diagnose_content, which correctly answers "no
+      // blocker" (a maintenance-round reviewer chased that loop to a dead end).
+      const waitSeconds = cv.config.autoStartRulesSetting?.wait;
+      if (waitSeconds) {
+        return {
+          ...base,
+          verdict: 'browser_dependent',
+          detail: `starts ${waitSeconds}s after the page loads (a browser timer, so the server cannot say it has elapsed) — confirm in the app.`,
+        };
+      }
       return {
         ...base,
         verdict: 'blocked',
         gate: 'eligibility',
-        detail: 'not eligible to auto-start here — run diagnose_content for the full gate list.',
+        detail:
+          'not eligible to auto-start here, but no single gate explains it — re-check hide rules ' +
+          'and the start-rule settings on this version.',
       };
     };
 

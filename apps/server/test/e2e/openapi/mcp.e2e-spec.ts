@@ -1547,6 +1547,113 @@ describe('MCP endpoint (e2e)', () => {
       expect(moved.steps[0].placement).toMatchObject({ position: 'center' });
     });
 
+    it('validate warns when a theme switch LOSES the live theme’s variations', async () => {
+      // The one change in the maintenance round that could silently harm real
+      // users: variations do not travel with content, so moving onto a
+      // variation-less theme drops dark mode for exactly the users it targeted
+      // — green through write, publish and diagnose alike.
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.ContentPublish,
+          Capability.ThemeCreate,
+          Capability.ThemeRead,
+        ],
+        [projectA],
+      );
+      const themed = parseToolContent({
+        result: await callTool(
+          'create_theme',
+          {
+            name: 'With dark variation',
+            variations: [
+              {
+                name: 'Dark',
+                conditions: [
+                  { type: 'attribute', scope: 'user', attribute: 'pan_plan', op: 'is', value: 'x' },
+                ],
+              },
+            ],
+          },
+          token,
+        ),
+      });
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Theme migration', themeId: themed.id },
+          token,
+        ),
+      });
+      await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          steps: [{ name: 'S', type: 'modal', content: [{ type: 'text', markdown: 'hi' }] }],
+          startRules: { when: [{ type: 'current_url', includes: ['*'] }] },
+        },
+        token,
+      );
+      await callTool(
+        'publish_content',
+        { contentId: created.id, versionId: created.editedVersionId, environmentId: envA },
+        token,
+      );
+
+      // Fork and point the draft at the variation-less theme.
+      const draft = parseToolContent({
+        result: await callTool('create_content_version', { contentId: created.id }, token),
+      });
+      await callTool(
+        'update_content_version',
+        { contentId: created.id, versionId: draft.id, themeId },
+        token,
+      );
+      const report = parseToolContent({
+        result: await callTool(
+          'validate_content_version',
+          { contentId: created.id, id: draft.id },
+          token,
+        ),
+      });
+      const themeWarning = report.warnings.find((w: { path: string }) => w.path === 'themeId');
+      expect(themeWarning?.message).toMatch(/variations do NOT travel/);
+      expect(themeWarning?.message).toContain('(1 conditional variation)');
+    });
+
+    it('rejects an unknown key INSIDE a non-flow data body, naming it', async () => {
+      // Maintenance-round find: `actions` (the real key is `clickActions`) was
+      // stripped by zod's default inside the polymorphic `data`, so the write
+      // returned 200 with the task silently action-less. The type bodies are
+      // strict now — same contract as unknown top-level tool args.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'checklist', name: 'Strict data body', themeId },
+          token,
+        ),
+      });
+      const res = await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          data: { items: [{ name: 'Task', actions: [{ type: 'navigate', url: '/x' }] }] },
+        },
+        token,
+      );
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/Unrecognized key: "actions"/);
+      expect(res.content[0].text).toContain('data.items[0]');
+    });
+
     it('duplicate_theme copies settings + variations into a fresh non-default theme', async () => {
       const token = await mint([Capability.ThemeRead, Capability.ThemeCreate], [projectA]);
       const dup = parseToolContent({

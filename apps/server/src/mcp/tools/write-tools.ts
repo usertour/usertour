@@ -241,7 +241,17 @@ export function buildWriteTools(): McpTool[] {
             'Temporarily-hide rules: { when: [conditions] }. Only some types support them (see ' +
               '`capabilities` in get_content_schema). null clears.',
           ),
-        themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
+        themeId: z
+          .string()
+          .optional()
+          .describe(
+            'Theme to apply to this version (cannot be cleared) — this is how you MIGRATE a ' +
+              'piece of content to another theme; no need to resend steps/data. Variations do ' +
+              'NOT travel with the content: if the current theme has conditional variations ' +
+              '(dark mode …) and the target has none, those users silently fall back to base ' +
+              'styling. Compare `variationCount` on list_themes first, and recreate the ' +
+              'variations on the target (duplicate_theme copies them verbatim).',
+          ),
         data: z
           // A permissive object (not z.unknown) so the MCP client can actually
           // pass a nested body; its real per-type shape comes from
