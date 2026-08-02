@@ -798,7 +798,7 @@ function validateLauncher(
   ) {
     err(
       'icon.type',
-      `"${data.iconType}" is not a registered builtin icon — it renders nothing. Use a RemixIcon kebab name from get_authoring_guide's icon table (e.g. "home-line", "question-line").`,
+      `"${data.iconType}" is not a registered builtin icon — it renders nothing. Use a RemixIcon kebab name from get_authoring_guide's icon table (section: "icons"; e.g. "home-line", "question-line").`,
     );
   }
   const actionType = data?.behavior?.actionType;

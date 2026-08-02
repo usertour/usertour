@@ -7,7 +7,12 @@ import { ContentDataType, StepContentType } from '@usertour/types';
 
 import { REP_CONDITION_TYPE_TO_INTERNAL } from '@/api/content-representation/contract-map';
 
-import { AUTHORING_GUIDE } from './authoring-guide';
+import {
+  AUTHORING_GUIDE,
+  CORE_GUIDE_SECTIONS,
+  GUIDE_SECTIONS,
+  guideSectionNamesFor,
+} from './authoring-guide';
 
 /**
  * Ties the authoring guide's load-bearing capability CLAIMS to the capability
@@ -105,5 +110,57 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(AUTHORING_GUIDE).toContain('**Placement is shaped by the step kind**');
     expect(AUTHORING_GUIDE).toContain('a step-level `placement` on a bubble is ignored');
     expect(AUTHORING_GUIDE).toContain('Tooltip steps with a `target` only');
+  });
+});
+
+describe('guide sections (the structure the slicing tool serves)', () => {
+  it('section names are unique and appliesTo values are real content types', () => {
+    const names = GUIDE_SECTIONS.map((s) => s.name);
+    expect(new Set(names).size).toBe(names.length);
+    const types = Object.values(ContentDataType) as string[];
+    for (const s of GUIDE_SECTIONS) {
+      if (s.appliesTo === 'all') continue;
+      for (const t of s.appliesTo) {
+        expect(types).toContain(t);
+      }
+    }
+  });
+
+  it('core sections exist and every section carries a title, summary, and body', () => {
+    const names = GUIDE_SECTIONS.map((s) => s.name);
+    for (const core of CORE_GUIDE_SECTIONS) {
+      expect(names).toContain(core);
+    }
+    for (const s of GUIDE_SECTIONS) {
+      expect(s.title.trim().length).toBeGreaterThan(0);
+      expect(s.summary.trim().length).toBeGreaterThan(0);
+      expect(s.body.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('type-specific sections land on their type; universal sections reach every type', () => {
+    expect(guideSectionNamesFor(ContentDataType.FLOW)).toEqual(
+      expect.arrayContaining(['flow-steps', 'surveys', 'orchestration']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.RESOURCE_CENTER)).toEqual(
+      expect.arrayContaining(['live-chat', 'announcements', 'icons']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.ANNOUNCEMENT)).toEqual(
+      expect.arrayContaining(['announcements']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.BANNER)).not.toEqual(
+      expect.arrayContaining(['surveys']),
+    );
+    for (const t of Object.values(ContentDataType)) {
+      expect(guideSectionNamesFor(t)).toEqual(
+        expect.arrayContaining([
+          'lifecycle',
+          'conditions',
+          'start-rules',
+          'sdk',
+          'publish-requirements',
+        ]),
+      );
+    }
   });
 });

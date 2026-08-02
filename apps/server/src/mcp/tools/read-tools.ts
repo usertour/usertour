@@ -37,7 +37,7 @@ import { ThemeExpand } from '@/api/themes/themes.schema';
 import { McpTool, McpToolContext } from '../mcp.types';
 import { editorUrlFor, withEditorUrl } from './editor-url';
 import { READ_ONLY } from './annotations';
-import { AUTHORING_GUIDE } from './authoring-guide';
+import { CORE_GUIDE_SECTIONS, GUIDE_SECTIONS, guideSectionNamesFor } from './authoring-guide';
 import {
   type AnnotatedCondition,
   annotateConditions,
@@ -227,13 +227,56 @@ export function buildReadTools(): McpTool[] {
       title: 'How to author content',
       capability: Capability.ContentRead,
       description:
-        'Read this BEFORE authoring content. Returns the conventions for building usable ' +
-        'Usertour content: the create→update→validate→publish lifecycle, step types and ' +
-        'targets, wiring goto_step by key, the markdown subset, frequency, and what each ' +
-        'content type needs to be publishable.',
-      inputSchema: {},
-      async handler(_args, _ctx) {
-        return { guide: AUTHORING_GUIDE };
+        'Read this BEFORE authoring content. Called with no args it returns the core — the ' +
+        'create→update→validate→publish lifecycle and what each type must have to publish — ' +
+        'plus a table of contents (per section: name, one-line summary, which content types ' +
+        'it applies to, approx tokens). Then fetch the sections your task touches in ONE ' +
+        'array call, e.g. `section: ["themes", "conditions", "start-rules"]` — pick the rows ' +
+        'whose `appliesTo` covers your content type (`get_content_schema` also names them as ' +
+        '`guideSections`); `sdk` / `host-dependencies` can wait until you verify. Fetching ' +
+        'every section at once is ~16k tokens — almost no task needs that.',
+      inputSchema: {
+        section: z
+          .union([z.string(), z.array(z.string()).min(1)])
+          .optional()
+          .describe(
+            'Guide section(s) to return — one name or an array (names are in the `sections` ' +
+              'list of the no-arg response). Omit for the core sections plus the table of ' +
+              'contents; an unknown name errors listing the valid sections.',
+          ),
+      },
+      async handler(args, _ctx) {
+        const approxTokens = (body: string) => Math.round(body.length / 4);
+        const render = (sections: readonly (typeof GUIDE_SECTIONS)[number][]) =>
+          sections.map((s) => `## ${s.title}\n${s.body}`).join('\n\n');
+        if (args.section === undefined) {
+          return {
+            guide: `# Authoring Usertour content\n\n${render(
+              GUIDE_SECTIONS.filter((s) => CORE_GUIDE_SECTIONS.includes(s.name)),
+            )}`,
+            sections: GUIDE_SECTIONS.map((s) => ({
+              name: s.name,
+              title: s.title,
+              summary: s.summary,
+              appliesTo: s.appliesTo,
+              approxTokens: approxTokens(s.body),
+            })),
+            totalApproxTokens: GUIDE_SECTIONS.reduce((n, s) => n + approxTokens(s.body), 0),
+          };
+        }
+        const names = GUIDE_SECTIONS.map((s) => s.name);
+        const requested = (Array.isArray(args.section) ? args.section : [args.section]).map(String);
+        const unknown = requested.filter((n) => !names.includes(n));
+        if (unknown.length > 0) {
+          throw new Error(
+            `Unknown section(s): ${unknown.join(', ')}. Valid sections: ${names.join(', ')}.`,
+          );
+        }
+        // requested slices come back in canonical guide order, not request order
+        return {
+          sections: names,
+          guide: render(GUIDE_SECTIONS.filter((s) => requested.includes(s.name))),
+        };
       },
     },
 
@@ -252,7 +295,8 @@ export function buildReadTools(): McpTool[] {
         'waitSeconds / …) and which hideRules the type supports, and which condition types its ' +
         '`when` accepts — per-type limits the generic update_content_version schema cannot ' +
         'express (the server rejects what the type does not support). Pair with ' +
-        'get_authoring_guide.',
+        'get_authoring_guide — the response also carries `guideSections`: the guide sections ' +
+        'that apply to each requested type, fetchable by name.',
       inputSchema: {
         type: z
           .union([contentSchemaType, z.array(contentSchemaType).min(1)])
@@ -288,6 +332,7 @@ export function buildReadTools(): McpTool[] {
             type,
             body: bodyFor(type),
             capabilities: autoStartCapabilitySummary(type),
+            guideSections: guideSectionNamesFor(type),
             schema: toJson(schemaFor[type]),
           };
         }
@@ -304,6 +349,7 @@ export function buildReadTools(): McpTool[] {
           types,
           body: Object.fromEntries(types.map((t) => [t, bodyFor(t)])),
           capabilities: Object.fromEntries(types.map((t) => [t, autoStartCapabilitySummary(t)])),
+          guideSections: Object.fromEntries(types.map((t) => [t, guideSectionNamesFor(t)])),
           note:
             "`schema.properties.<type>` is that type's write-body schema; shared definitions " +
             'are under `schema.$defs`.',

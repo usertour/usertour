@@ -700,7 +700,7 @@ describe('MCP endpoint (e2e)', () => {
       expect(await listContent({ published: true })).toHaveLength(0);
     });
 
-    it('get_authoring_guide returns the guide text', async () => {
+    it('get_authoring_guide with no args returns the core guide + a table of contents', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const res = await rpc(
         {
@@ -713,8 +713,49 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(res.status).toBe(200);
       const payload = parseToolContent(extractResult(res));
+      // core inlined: lifecycle + per-type publish requirements — NOT the full text
       expect(typeof payload.guide).toBe('string');
-      expect(payload.guide).toContain('goto_step');
+      expect(payload.guide).toContain('validate_content_version');
+      expect(payload.guide).toContain('## What each type needs');
+      expect(payload.guide).not.toContain('## Flow steps');
+      // the TOC names every section with the fields an agent picks by
+      expect(payload.sections.map((s: { name: string }) => s.name)).toEqual(
+        expect.arrayContaining(['lifecycle', 'flow-steps', 'conditions', 'start-rules', 'icons']),
+      );
+      for (const s of payload.sections) {
+        expect(typeof s.summary).toBe('string');
+        expect(s.approxTokens).toBeGreaterThan(0);
+        expect(s.appliesTo === 'all' || Array.isArray(s.appliesTo)).toBe(true);
+      }
+      expect(payload.totalApproxTokens).toBeGreaterThan(10000);
+    });
+
+    it('get_authoring_guide serves requested sections in canonical order', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const result = await callTool(
+        'get_authoring_guide',
+        { section: ['surveys', 'flow-steps'] },
+        token,
+      );
+      expect(result.isError).toBeFalsy();
+      const payload = JSON.parse(result.content[0].text);
+      expect(payload.guide).toContain('goto_step'); // flow-steps content
+      expect(payload.guide).toContain('## Surveys & questions');
+      expect(payload.guide).not.toContain('## Themes');
+      // canonical guide order even though the request said surveys first
+      expect(payload.guide.indexOf('## Flow steps')).toBeLessThan(
+        payload.guide.indexOf('## Surveys & questions'),
+      );
+      // the full name list rides along for follow-up fetches
+      expect(payload.sections).toContain('icons');
+    });
+
+    it('get_authoring_guide rejects an unknown section naming the valid set', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const result = await callTool('get_authoring_guide', { section: 'starting-rules' }, token);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('starting-rules');
+      expect(result.content[0].text).toContain('start-rules');
     });
 
     it('get_content_schema returns the data JSON Schema for a non-flow type', async () => {
@@ -731,6 +772,9 @@ describe('MCP endpoint (e2e)', () => {
       expect(res.status).toBe(200);
       const payload = parseToolContent(extractResult(res));
       expect(payload.body).toBe('data');
+      // the type→guide-section pointer: universal sections plus checklist's own
+      expect(payload.guideSections).toEqual(expect.arrayContaining(['lifecycle', 'orchestration']));
+      expect(payload.guideSections).not.toContain('surveys');
       // update_content_version only types `data` as a generic object (its shape is
       // polymorphic); this tool surfaces the full per-type shape incl. nested fields.
       expect(Object.keys(payload.schema.properties)).toEqual(
