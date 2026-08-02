@@ -484,7 +484,10 @@ export function buildReadTools(): McpTool[] {
         "verdicts and the user's actual values (manual segments report `isMember`/`memberCount`). Only gates listed in `blockedBy` " +
         'actually block. `unknown` is NOT a blocker — it is a condition that cannot be evaluated ' +
         'server-side (a live-only DOM element/text leaf; current_url when no `url` is passed; or a ' +
-        'company / companyMembership condition when no `companyId` is passed); pass `url` to ' +
+        'company / companyMembership condition when no `companyId` is passed — EXCEPT when the ' +
+        'user belongs to no company AT ALL, which is decided rather than undecidable: those ' +
+        'leaves report `unmatched` and carry a `note` saying so, and no companyId can change ' +
+        'that verdict); pass `url` to ' +
         'resolve current_url, `companyId` to resolve company-scoped conditions, or confirm ' +
         'live-only ones in the app. Pass `userId` to evaluate the per-user gates, `companyId` for ' +
         'company-scoped rules, `url` to test current_url conditions.',
@@ -1588,7 +1591,14 @@ export function buildReadTools(): McpTool[] {
         'done) and per-task rows; launchers seen + activations; banners seen + dismissals; ' +
         'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
         'event; announcements seen counts (once per user). All with a per-day series. Defaults ' +
-        'to the last 30 days, UTC.',
+        'to the last 30 days, UTC. Reading the numbers: `unique*` counts distinct USERS, ' +
+        '`total*` counts events (repeats included) — a flow shown twice to the same person is ' +
+        '1 unique / 2 total, so a per-user rate uses unique and a per-impression rate uses ' +
+        'total. byDay rows are per-day increments whose `unique*` is unique WITHIN THAT DAY: ' +
+        'summing them reproduces `total*`, never the range-wide `unique*`. In a flow funnel ' +
+        'the drop-off is between consecutive steps’ uniqueViews; a step’s `uniqueCompletions` ' +
+        'is the FLOW completion attributed to the step it fired on (0 on every step but the ' +
+        'last is normal, not a failure).',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,
@@ -1617,6 +1627,13 @@ export function buildReadTools(): McpTool[] {
         'series: byDay rows are CUMULATIVE over the trailing `rollingWindowDays` (echoed per ' +
         'series), NOT per-day increments like get_content_analytics byDay. Defaults to the ' +
         'last 30 days, UTC. ' +
+        'Two consequences worth stating before quoting a number: (1) a rising byDay `score` is ' +
+        'a running average catching up, NOT a per-period trend — for a genuine ' +
+        'week-over-week/cohort comparison read the raw dated answers via list_sessions with ' +
+        "expand:['answers'] and bucket them yourself; (2) `percentage` is an INTEGER share " +
+        'reconciled (largest remainder) to sum to exactly 100 on a single-select question, so ' +
+        'an option can read 1 point above count/totalResponses (26/60 → 44, not 43) — that is ' +
+        'the reconciliation, not a rounding bug; quote the counts when exactness matters. ' +
         'Free-text questions (single/multi-line text) are NOT included — there is no ' +
         'aggregate signal for open text. To read what people actually wrote, use ' +
         "list_sessions with expand:['answers'] (each answer carries the raw value, " +

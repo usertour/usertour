@@ -98,9 +98,13 @@ const dailySeries = <T extends z.ZodRawShape>(shape: T) =>
   z
     .array(z.object({ date, ...shape }))
     .describe(
-      "Per-day activity: each row counts only that calendar day's events (increments — " +
-        'summing rows over the range gives the totals). Note the question-analytics ' +
-        'nps/rating byDay uses the OPPOSITE convention (rolling-window cumulative).',
+      "Per-day activity: each row counts only that calendar day's events (increments, NOT " +
+        'a running total). Summing rows reproduces the `total*` headline; it does NOT ' +
+        'reproduce the `unique*` headline — a `unique*` row is distinct users WITHIN THAT ' +
+        'DAY, so a user active on three days is counted three times and the sum over-counts ' +
+        '(it converges to `total*`). There is no daily series for range-unique users. Note ' +
+        'the question-analytics nps/rating byDay uses the OPPOSITE convention ' +
+        '(rolling-window cumulative).',
     );
 
 // unique* = distinct users in range; total* = events in range, repeats included.
@@ -140,16 +144,31 @@ const seenOnly = {
   totalSeen: int(),
 };
 
-/** Per-step funnel row — a step's own view/complete counts (semantics do not vary here). */
+/**
+ * Per-step funnel row. Views are the step's own; the completion counts are NOT
+ * per-step progress — the flow's completion event carries the cvid of the step it
+ * fired on, so completions land entirely on ONE row (the last step, or an explicit
+ * completion step) and every earlier step legitimately reads 0. Spelled out in the
+ * field descriptions so a funnel reader does not compute "0% step conversion".
+ */
 export const stepAnalytics = z.object({
   name: z.string(),
   cvid: z.string(),
   stepIndex: int(),
   type: z.string(),
-  uniqueViews: int(),
+  uniqueViews: int().describe(
+    'Distinct users who saw this step. This is the funnel: step-to-step drop-off is the ' +
+      'difference between consecutive rows’ uniqueViews.',
+  ),
   totalViews: int(),
-  uniqueCompletions: int(),
-  totalCompletions: int(),
+  uniqueCompletions: int().describe(
+    'Distinct users whose FLOW completion fired on this step — not "users who advanced past ' +
+      'it". Normally 0 on every step but the last (or an explicit completion step); a 0 here ' +
+      'says nothing about that step’s success. Use uniqueViews for step conversion.',
+  ),
+  totalCompletions: int().describe(
+    'Flow completions attributed to this step — see uniqueCompletions.',
+  ),
   uniqueTooltipTargetMissing: int().describe(
     "Sessions where this tooltip step's target element was never found — the selector-health " +
       'signal. Only meaningful on tooltip steps; the field is present (and always 0) on other ' +

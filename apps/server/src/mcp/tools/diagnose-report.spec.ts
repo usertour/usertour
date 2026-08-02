@@ -191,6 +191,34 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     // With a company context it is evaluated against the runtime stamp (actived false → unmatched).
     expect(annotateConditions(stamped, readable, true)?.conditions?.[0].status).toBe('unmatched');
   });
+
+  it('company-scoped condition, user in NO company: decided unmatched AND says why', () => {
+    // Decided, not undecidable — but `unmatched` alone reads as "their company doesn't
+    // qualify". A growth reviewer spent two extra calls (list_users + list_companies)
+    // establishing which of the two it was before trusting the verdict; the note says it.
+    const stamped: RulesCondition[] = [attr('enterprise', false)];
+    const readable = [
+      {
+        type: 'attribute',
+        scope: 'companyMembership',
+        attribute: 'role',
+        op: 'is',
+        value: 'admin',
+      },
+    ] as any;
+    const leaf = annotateConditions(stamped, readable, false, false)?.conditions?.[0];
+    expect(leaf?.status).toBe('unmatched');
+    expect(leaf?.note).toContain('belongs to NO company');
+    expect(leaf?.note).toContain('group()');
+    // Undecidable case keeps its abstention and stays note-free — nothing to explain.
+    expect(
+      annotateConditions(stamped, readable, false, true)?.conditions?.[0].note,
+    ).toBeUndefined();
+    // With a real company context the leaf is a plain runtime verdict, no note.
+    expect(
+      annotateConditions(stamped, readable, true, false)?.conditions?.[0].note,
+    ).toBeUndefined();
+  });
 });
 
 describe('buildDiagnoseReport (gate checklist + summary)', () => {

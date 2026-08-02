@@ -149,6 +149,29 @@ const LIVE_ONLY = new Set<string>([
   RulesType.WAIT,
 ]);
 
+const isCompanyScoped = (readable: RepresentationCondition): boolean => {
+  const scope = (readable as { scope?: string }).scope;
+  return scope === 'company' || scope === 'companyMembership';
+};
+
+/**
+ * A company-scoped leaf decided `unmatched` because the user has no company at all
+ * reads, on its own, as "their company doesn't qualify" — a support reviewer spent
+ * two extra calls (list_users + list_companies) proving which of the two it was, and
+ * only then trusted the verdict. Say it on the leaf.
+ */
+const companylessNote = (
+  readable: RepresentationCondition,
+  hasCompany: boolean,
+  userHasAnyCompany?: boolean,
+): string | undefined =>
+  !hasCompany && userHasAnyCompany === false && isCompanyScoped(readable)
+    ? 'this user belongs to NO company — every company / companyMembership rule is decided ' +
+      'unmatched for them, and passing `companyId` cannot change it (it would what-if a ' +
+      'company they are not in). The fix is in your app: send the company on the SDK group() ' +
+      'call so the user has a company context at all.'
+    : undefined;
+
 const leafStatus = (
   stamped: RulesCondition,
   readable: RepresentationCondition,
@@ -160,8 +183,7 @@ const leafStatus = (
   // context (the diagnose `companyId`). Report unknown — NOT a definitive `unmatched` that
   // would read as "the user's company doesn't qualify" — so the agent passes companyId
   // instead of chasing the wrong cause. Mirrors current_url → unknown when no `url`.
-  const scope = (readable as { scope?: string }).scope;
-  if (!hasCompany && (scope === 'company' || scope === 'companyMembership')) {
+  if (!hasCompany && isCompanyScoped(readable)) {
     // ... UNLESS the user belongs to no company AT ALL. Then it is not
     // undecidable, it is decided: nothing can ever satisfy it, and calling it
     // `unknown` let the report headline read "No server-side blocker" for
@@ -195,10 +217,13 @@ export const annotateConditions = (
         conditions: s.conditions.map((sc, i) => node(sc, rChildren[i])),
       } as AnnotatedCondition;
     }
-    return {
+    const leaf = {
       ...(r as object),
       status: leafStatus(s, r, hasCompany, userHasAnyCompany),
     } as AnnotatedCondition;
+    const note = companylessNote(r, hasCompany, userHasAnyCompany);
+    if (note) leaf.note = note;
+    return leaf;
   };
 
   // The top-level list is itself an AND/OR group (the join is on the first item).
