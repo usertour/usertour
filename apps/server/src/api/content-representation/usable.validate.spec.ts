@@ -513,6 +513,35 @@ describe('validateVersionUsable', () => {
         detailContent: textBlocks,
       });
       expect(on.warnings.some((w) => w.message.includes('unreachable'))).toBe(false);
+
+      // The CREATE path seeds detailContent with a placeholder column holding a
+      // single blank text element. That is not authored content, so a freshly
+      // created announcement must not warn about it (support-round finding: the
+      // API warning about its own default).
+      const seeded = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: false,
+        detailContent: [
+          {
+            element: { type: 'group' },
+            children: [
+              {
+                element: { type: 'column' },
+                children: [
+                  {
+                    element: {
+                      type: 'text',
+                      data: [{ type: 'paragraph', children: [{ text: '' }] }],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ] as never,
+      });
+      expect(seeded.warnings.some((w) => w.message.includes('unreachable'))).toBe(false);
     });
 
     it('accepts a titled announcement with intro content and a filled Read more page', () => {

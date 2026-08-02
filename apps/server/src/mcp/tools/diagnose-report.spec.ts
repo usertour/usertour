@@ -157,6 +157,12 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     const notes = tree.conditions as Array<{ note?: string }>;
     expect(notes[1].note).toContain('NO value');
     expect(notes[1].note).toContain('missing_attr');
+    // The note must name the ONE writer of a user attribute — identify(). It
+    // used to add "event-derived attributes only exist after their first event
+    // lands", which is false for a plain user attribute and sent a support
+    // reviewer hunting a nonexistent event pipeline.
+    expect(notes[1].note).toContain('identify()');
+    expect(notes[1].note).not.toContain('event-derived');
     expect(notes[0].note).toBeUndefined(); // present value, no note
   });
 

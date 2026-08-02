@@ -72,6 +72,9 @@ export interface DiagnoseFacts {
   hidden?: boolean; // isActivedHideRules
   singleSessionApplicable: boolean; // isSingleSessionContentType
   singleSessionDismissed?: boolean;
+  /** Lifetime session count for this (user, content) — lets the report say WHICH
+   * not-dismissed state a single-session type is in (never shown vs still running). */
+  totalSessions?: number;
   hasActiveSession?: boolean;
   /** For singleton types (one shows per type), the content id of a higher-priority
    * sibling that wins the single slot — set only when THIS content is itself eligible
@@ -238,6 +241,11 @@ export class ContentDiagnosisService {
             singleSessionApplicable &&
             !target.session.activeSession &&
             target.session.totalSessions > 0,
+          // Lets the report say WHICH not-dismissed state this is: never shown
+          // at all, or shown and still running. The old detail lumped both into
+          // "not yet shown (or still active)", and a support reviewer read it
+          // as "already used its one session" — the opposite of the truth.
+          totalSessions: target.session.totalSessions,
           hasActiveSession: !!target.session.activeSession,
           outrankedByContentId,
           activeSlotHeldByContentId,

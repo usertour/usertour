@@ -223,7 +223,9 @@ describe('autoStartCapabilitySummary (discovery projection)', () => {
         when: 'all',
         frequency: true,
         frequencyAtLeast: true,
-        priority: true,
+        // The VALUES, not a boolean — a support reviewer otherwise has to guess
+        // that "medium" exists and ship the guess to production.
+        priority: ['highest', 'high', 'medium', 'low', 'lowest'],
         waitSeconds: true,
         startIfNotComplete: true,
       },

@@ -36,6 +36,9 @@ const CLIENT_EVALUABLE_REP_CONDITION_TYPES: ReadonlySet<string> = new Set(
   ),
 );
 
+/** The start-rule priority scale, highest first — mirrors the representation enum. */
+const PRIORITY_VALUES = ['highest', 'high', 'medium', 'low', 'lowest'] as const;
+
 /** Discovery-side projection of one type's start/hide-rule capabilities. */
 export type AutoStartCapabilitySummary = {
   startRules: {
@@ -43,7 +46,8 @@ export type AutoStartCapabilitySummary = {
     when: 'all' | string[];
     frequency: boolean;
     frequencyAtLeast: boolean;
-    priority: boolean;
+    /** false when unsupported; otherwise the allowed values, highest first. */
+    priority: false | readonly string[];
     waitSeconds: boolean;
     startIfNotComplete: boolean;
   };
@@ -80,7 +84,10 @@ export function autoStartCapabilitySummary(
       when,
       frequency: caps.frequency,
       frequencyAtLeast: caps.atLeast,
-      priority: caps.priority,
+      // The allowed VALUES, not just a boolean: a support reviewer had to guess
+      // "medium" existed and shipped the guess straight to production, because
+      // neither the capability block nor the guide ever listed the scale.
+      priority: caps.priority ? PRIORITY_VALUES : false,
       waitSeconds: caps.wait,
       startIfNotComplete: caps.ifCompleted,
     },

@@ -120,6 +120,54 @@ function hasBlocks(roots?: ContentEditorRoot[] | null): boolean {
   );
 }
 
+/**
+ * Does this block tree render anything a user could actually SEE? `hasBlocks`
+ * only proves a column has children, and the announcement create path seeds a
+ * placeholder column holding one empty text element — so a freshly created
+ * announcement, untouched by its author, tripped the "detailContent is
+ * unreachable" warning against content that does not exist (support-round
+ * finding: the API warning about the API's own default).
+ *
+ * Conservative by construction: only a `text` element whose Slate leaves are all
+ * blank counts as empty. Any other element type (button / image / embed /
+ * question / anything future) counts as renderable.
+ */
+function hasRenderableContent(roots?: ContentEditorRoot[] | null): boolean {
+  let found = false;
+  const walk = (node: unknown): void => {
+    if (found || node === null || node === undefined) return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node !== 'object') return;
+    const o = node as {
+      element?: { type?: string; data?: unknown };
+      children?: unknown;
+      text?: unknown;
+    };
+    if (typeof o.text === 'string' && o.text.trim() !== '') {
+      found = true;
+      return;
+    }
+    const type = o.element?.type;
+    if (type && type !== 'group' && type !== 'column') {
+      if (type === 'text' && Array.isArray(o.element?.data)) {
+        // Slate payload lives on element.data — blank leaves mean nothing
+        // renders. Only an ARRAY payload is inspected; any other shape is
+        // treated as renderable rather than assumed empty.
+        walk(o.element?.data);
+      } else {
+        found = true;
+      }
+      return;
+    }
+    walk(o.children);
+  };
+  walk(roots);
+  return found;
+}
+
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
@@ -756,7 +804,7 @@ function validateAnnouncement(
   }
   // The inverse is a silent dead end: authored detail content that no user can
   // ever reach (the runtime ships moreContent=null when the toggle is off).
-  if (!data?.enableReadMore && hasBlocks(data?.detailContent)) {
+  if (!data?.enableReadMore && hasRenderableContent(data?.detailContent)) {
     warn(
       'detailContent',
       'detailContent has content but enableReadMore is false — the detail page is unreachable (no "Read more" affordance renders). Set enableReadMore to true, or remove the unused detailContent.',

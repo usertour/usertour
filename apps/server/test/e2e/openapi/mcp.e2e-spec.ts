@@ -1685,7 +1685,14 @@ describe('MCP endpoint (e2e)', () => {
         result: await callTool('get_content_schema', { type: ['flow', 'announcement'] }, token),
       });
       expect(batch.capabilities.flow.startRules.when).toBe('all');
-      expect(batch.capabilities.flow.startRules.priority).toBe(true);
+      // The scale itself, so nobody has to guess a valid value in production.
+      expect(batch.capabilities.flow.startRules.priority).toEqual([
+        'highest',
+        'high',
+        'medium',
+        'low',
+        'lowest',
+      ]);
       // Announcement targeting is an audience filter: attribute/segment only.
       expect(batch.capabilities.announcement.startRules.when).toEqual(['attribute', 'segment']);
     });

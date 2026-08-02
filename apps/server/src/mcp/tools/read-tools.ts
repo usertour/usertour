@@ -670,7 +670,31 @@ export function buildReadTools(): McpTool[] {
           }
         }
 
-        return buildDiagnoseReport(facts, startConditions, hideConditions, renderTargets);
+        const report = buildDiagnoseReport(facts, startConditions, hideConditions, renderTargets);
+
+        // Gates decide whether the content may START; nothing in them looks
+        // INSIDE it. Run the same usability check publish enforces against the
+        // LIVE version so broken innards (a task completing on a deleted event,
+        // a dangling goto) surface here instead of requiring the operator to
+        // suspect them and validate by hand.
+        if (facts.published && facts.publishedVersionId) {
+          const health = await ctx.services.contentVersions
+            .validate(facts.publishedVersionId, contentId, ctx.projectId)
+            .catch(() => null);
+          if (health && health.errors.length > 0) {
+            report.liveVersionIssues = {
+              count: health.errors.length,
+              note:
+                'The LIVE version has broken internals — these do NOT block the content from ' +
+                'starting (so every gate above can pass) but they misbehave once it renders: a ' +
+                'task that can never complete, an action pointing nowhere. Fix by forking ' +
+                '(create_content_version), repairing, and publishing; validate_content_version ' +
+                'on the live version id reproduces this list.',
+              errors: health.errors.map((e) => ({ path: e.path, message: e.message })),
+            };
+          }
+        }
+        return report;
       },
     },
 
@@ -1063,9 +1087,28 @@ export function buildReadTools(): McpTool[] {
           }
         }
         const bucket = (v: string) => rows.filter((r) => r.verdict === v);
+        // "showing" means the SERVER-SIDE rules admit it — not that anything has
+        // ever actually rendered. In an environment the SDK has never reached,
+        // every row still reads confidently as showing; a support reviewer took
+        // that at face value and only caught it by separately noticing every
+        // analytics number was zero. Say it once, up front.
+        const environmentHasSessions =
+          (await ctx.prisma.bizSession.count({
+            where: { environmentId: environment.id },
+            take: 1,
+          })) > 0;
         return {
           userId,
           userFound: true,
+          ...(environmentHasSessions
+            ? {}
+            : {
+                note:
+                  'This environment has NEVER recorded a session — no Usertour content has ever ' +
+                  'actually rendered here. The verdicts below are what the rules ALLOW, not what ' +
+                  'users have seen; check that the SDK is installed and pointed at THIS ' +
+                  "environment's token before trusting a `showing` row.",
+              }),
           showing: bucket('showing'),
           queued: bucket('queued'),
           blocked: bucket('blocked'),

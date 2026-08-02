@@ -104,11 +104,13 @@ export const attachUserAttributeValues = (
     node.actual = value ?? null;
     if (value === undefined && node.status === 'unmatched') {
       // The condition didn't fail on a wrong VALUE — the user has no value at
-      // all. Event-derived attributes (event_attribute rules, custom
-      // event-written fields) don't exist before their first event lands, so a
-      // rule on one cannot match on the user's earliest evaluations — say so
-      // instead of letting the agent chase targeting logic.
-      node.note = `the user has NO value for "${ref.attribute}" yet — a rule on it cannot match until something writes it (event-derived attributes only exist after their first event lands)`;
+      // all. Name the ONE writer of a user-scoped attribute: the host app's
+      // identify() call. The note used to add "(event-derived attributes only
+      // exist after their first event lands)", which is false for a plain user
+      // attribute and cost a support reviewer a wrong root cause — they went
+      // hunting for the event pipeline that supposedly wrote it, then had to
+      // back it out via list_attribute_definitions.
+      node.note = `the user has NO value for "${ref.attribute}" yet — a user attribute is written by your app's identify() call, so a rule on it cannot match until identify sends it (check list_attribute_definitions for its scope, and whether identify includes this field for THIS user)`;
     }
   }
 };
@@ -118,6 +120,19 @@ export interface DiagnoseReport {
   summary: string;
   blockedBy: string[];
   gates: Gate[];
+  /**
+   * Set when the LIVE version fails the same usability check publish enforces.
+   * The gates answer whether the piece may START; they never look INSIDE it, so
+   * a checklist task whose only completion condition referenced a DELETED event
+   * could never tick while every gate reported pass — a support reviewer spent
+   * their longest detour there and concluded, reasonably, that no tool could
+   * see it. One does; this points at it.
+   */
+  liveVersionIssues?: {
+    count: number;
+    note: string;
+    errors: { path: string; message: string }[];
+  };
   startConditions?: AnnotatedCondition;
   hideConditions?: AnnotatedCondition;
 }
@@ -455,9 +470,15 @@ export const buildDiagnoseReport = (
             gates.push({
               id: 'single_session',
               status: facts.singleSessionDismissed ? 'fail' : 'pass',
+              // Never lump "never shown" and "still running" into one line: a
+              // support reviewer read the old "not yet shown (or still active)"
+              // as "already used its one show" — the opposite of the truth —
+              // and mis-diagnosed a banner that had simply stopped matching.
               detail: facts.singleSessionDismissed
                 ? `a ${facts.contentType} shows once per user and a prior session was already dismissed/ended.`
-                : 'shows once per user; not yet shown (or still active).',
+                : facts.hasActiveSession
+                  ? `a ${facts.contentType} shows once per user; this user's session is ACTIVE right now — showing/resumable, not used up.`
+                  : `a ${facts.contentType} shows once per user; this user has had NO session yet, so the single show is still available.`,
             });
           }
           // Singleton types fill ONE slot. (a) Another content of this type currently has
