@@ -149,6 +149,7 @@ const leafStatus = (
   stamped: RulesCondition,
   readable: RepresentationCondition,
   hasCompany: boolean,
+  userHasAnyCompany?: boolean,
 ): ConditionStatus => {
   if (LIVE_ONLY.has(stamped.type)) return 'unknown';
   // A company / companyMembership attribute condition can't be evaluated without a company
@@ -156,7 +157,15 @@ const leafStatus = (
   // would read as "the user's company doesn't qualify" — so the agent passes companyId
   // instead of chasing the wrong cause. Mirrors current_url → unknown when no `url`.
   const scope = (readable as { scope?: string }).scope;
-  if (!hasCompany && (scope === 'company' || scope === 'companyMembership')) return 'unknown';
+  if (!hasCompany && (scope === 'company' || scope === 'companyMembership')) {
+    // ... UNLESS the user belongs to no company AT ALL. Then it is not
+    // undecidable, it is decided: nothing can ever satisfy it, and calling it
+    // `unknown` let the report headline read "No server-side blocker" for
+    // company-targeted content those users can never receive. There is also no
+    // remedy to suggest — you cannot pass a companyId for a user who has none
+    // (and passing someone else's is taken AS GIVEN, fabricating a pass).
+    return userHasAnyCompany === false ? 'unmatched' : 'unknown';
+  }
   return stamped.actived ? 'matched' : 'unmatched';
 };
 
@@ -169,6 +178,7 @@ export const annotateConditions = (
   stamped: RulesCondition[],
   readable: RepresentationCondition[],
   hasCompany = false,
+  userHasAnyCompany?: boolean,
 ): AnnotatedCondition | undefined => {
   if (!stamped || stamped.length === 0) return undefined;
 
@@ -181,7 +191,10 @@ export const annotateConditions = (
         conditions: s.conditions.map((sc, i) => node(sc, rChildren[i])),
       } as AnnotatedCondition;
     }
-    return { ...(r as object), status: leafStatus(s, r, hasCompany) } as AnnotatedCondition;
+    return {
+      ...(r as object),
+      status: leafStatus(s, r, hasCompany, userHasAnyCompany),
+    } as AnnotatedCondition;
   };
 
   // The top-level list is itself an AND/OR group (the join is on the first item).

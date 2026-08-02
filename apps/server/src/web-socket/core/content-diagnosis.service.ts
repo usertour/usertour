@@ -75,6 +75,11 @@ export interface DiagnoseFacts {
   /** Lifetime session count for this (user, content) — lets the report say WHICH
    * not-dismissed state a single-session type is in (never shown vs still running). */
   totalSessions?: number;
+  /** False when the user belongs to NO company at all. A company-scoped condition
+   * is then definitively unmatched — not merely "undecidable without companyId",
+   * which made the report headline "no server-side blocker" for content the user
+   * can never receive (targeting-round finding). Undefined when unknown. */
+  userHasAnyCompany?: boolean;
   hasActiveSession?: boolean;
   /** For singleton types (one shows per type), the content id of a higher-priority
    * sibling that wins the single slot — set only when THIS content is itself eligible
@@ -150,6 +155,21 @@ export class ContentDiagnosisService {
     private readonly announcementService: AnnouncementService,
     private readonly prisma: PrismaService,
   ) {}
+
+  /**
+   * Does this end-user belong to ANY company? Without it, a company-scoped
+   * condition with no `companyId` supplied reads as `unknown` (undecidable) —
+   * correct for a user who HAS companies, badly wrong for one who has none: the
+   * condition cannot ever match, yet the report concluded "no server-side
+   * blocker" for content the user is structurally excluded from.
+   */
+  private async userHasAnyCompany(bizUserId: string): Promise<boolean> {
+    const count = await this.prisma.bizUserOnCompany.count({
+      where: { bizUserId },
+      take: 1,
+    });
+    return count > 0;
+  }
 
   async diagnose(params: DiagnoseParams): Promise<DiagnoseFacts> {
     const { environment, contentId, contentType, externalUserId, externalCompanyId, url } = params;
@@ -246,6 +266,7 @@ export class ContentDiagnosisService {
           // "not yet shown (or still active)", and a support reviewer read it
           // as "already used its one session" — the opposite of the truth.
           totalSessions: target.session.totalSessions,
+          userHasAnyCompany: bizUser ? await this.userHasAnyCompany(bizUser.id) : undefined,
           hasActiveSession: !!target.session.activeSession,
           outrankedByContentId,
           activeSlotHeldByContentId,

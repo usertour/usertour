@@ -557,6 +557,7 @@ export function buildReadTools(): McpTool[] {
               facts.autoStartRules,
               decompileConditions(facts.autoStartRules, resolvers),
               hasCompany,
+              facts.userHasAnyCompany,
             );
           }
           if (facts.hideRules) {
@@ -564,6 +565,7 @@ export function buildReadTools(): McpTool[] {
               facts.hideRules,
               decompileConditions(facts.hideRules, resolvers),
               hasCompany,
+              facts.userHasAnyCompany,
             );
           }
 

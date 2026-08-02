@@ -80,6 +80,91 @@ describe('validateVersionUsable', () => {
     });
   });
 
+  describe('interpolation scope (cross-cutting)', () => {
+    // `{{ }}` resolves against the USER's attributes only. A token naming a
+    // company / membership attribute renders as an empty gap in live copy and
+    // was invisible to write, validate, publish and diagnose alike — a
+    // targeting reviewer found it only by probing six tokens deliberately.
+    const ctx = {
+      attributes: [
+        { codeName: 'name', bizType: 1 },
+        { codeName: 'trial_ends_at', bizType: 2 },
+      ],
+      segments: [],
+      contents: [],
+      events: [],
+    } as never;
+    // `{{ code }}` is stored as a STRUCTURED Slate node (compiled from the
+    // markdown), never as literal braces — the first version of this check
+    // scanned strings and silently found nothing on real content.
+    const token = (attrCode: string) => ({
+      type: 'user-attribute',
+      attrCode,
+      fallback: '',
+      children: [{ text: '' }],
+    });
+    const withTokens = (...codes: string[]) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            sequence: 0,
+            cvid: 'a',
+            data: [
+              {
+                children: [
+                  {
+                    children: [
+                      {
+                        element: {
+                          type: 'text',
+                          data: [
+                            {
+                              type: 'paragraph',
+                              children: [{ text: 'Hi ' }, ...codes.map(token)],
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          } as never,
+        ],
+        conditionContext: ctx,
+      });
+
+    it('stays silent for a user-scoped token', () => {
+      const r = withTokens('name');
+      expect(r.warnings.some((w) => w.message.includes('{{'))).toBe(false);
+    });
+
+    it('warns when the token names a COMPANY attribute (renders empty)', () => {
+      const w = withTokens('trial_ends_at').warnings.find((x) =>
+        x.message.includes('trial_ends_at'),
+      );
+      expect(w?.message).toContain('EMPTY gap');
+      expect(w?.message).toContain('identify()');
+    });
+
+    it('warns when the token names nothing defined at all', () => {
+      expect(
+        withTokens('company_name').warnings.some(
+          (x) => x.message.includes('company_name') && x.message.includes('EMPTY'),
+        ),
+      ).toBe(true);
+    });
+
+    it('reports each distinct token once, however often it appears', () => {
+      const r = withTokens('mystery', 'mystery', 'name');
+      expect(r.warnings.filter((x) => x.message.includes('mystery'))).toHaveLength(1);
+    });
+  });
+
   describe('url patterns (cross-cutting)', () => {
     it('warns when a start-rule URL include is the root-only "*/" pattern', () => {
       const r = validateVersionUsable({

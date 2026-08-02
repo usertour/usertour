@@ -517,6 +517,7 @@ export const representationAnnouncement = z
           'the default (bubble).',
       ),
   })
+  .strict()
   .describe(
     'The announcement body (`data`). NOTE the "announcement time" is NOT in here — it is the ' +
       'version-level `scheduledAt` field on update_content_version (feed hides the announcement ' +

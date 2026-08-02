@@ -1,5 +1,6 @@
 import { BUILTIN_LAUNCHER_ICON_NAMES } from '@usertour/constants';
 import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
+import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
@@ -404,6 +405,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     if (config?.hideRules) push(collectRuleIssues(config.hideRules, ctx, 'hideRules.when'));
     if (input.data) push(collectRuleIssues(input.data, ctx, 'data'));
     collectBindIssues(input.data, 'data', ctx.attributes, warn);
+    collectInterpolationIssues(input.data, 'data', ctx.attributes, warn);
     const steps = asArray<Step>(input.steps);
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
@@ -413,6 +415,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.content`));
       push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.triggers`));
       collectBindIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
+      collectInterpolationIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
     }
     collectDeadLaunchTargetWarnings([input.data, input.steps], ctx.contents, warn);
   }
@@ -500,6 +503,57 @@ const QUESTION_BIND_TYPE: Record<string, { type: number; label: string }> = {
   'single-line-text': { type: 2, label: 'string' },
   'multi-line-text': { type: 2, label: 'string' },
 };
+
+/**
+ * `{{ token }}` interpolation resolves against the USER's attributes only. A
+ * token naming a company / membership / event attribute — or nothing at all —
+ * writes fine, validates clean, publishes fine, and renders as an empty gap in
+ * live customer copy ("your ___ trial ends Thursday"). A targeting-round
+ * reviewer only caught it by deliberately probing six tokens on a throwaway
+ * flow; nothing in the product said a word.
+ *
+ * WARNING, not error: the SDK auto-creates user attributes on identify(), so a
+ * token may legitimately name one this project has not defined yet — the author
+ * is the one who knows.
+ */
+function collectInterpolationIssues(
+  roots: unknown,
+  base: string,
+  attrs: { codeName?: string; bizType?: number }[] | undefined,
+  warn: (path: string, message: string) => void,
+): void {
+  if (!attrs) return;
+  const seen = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node !== 'object') return;
+    // `{{ code }}` is compiled into a STRUCTURED Slate node, not literal text —
+    // scanning strings for braces finds nothing on stored content.
+    const n = node as { type?: unknown; attrCode?: unknown };
+    if (n.type === 'user-attribute' && typeof n.attrCode === 'string' && n.attrCode) {
+      const code = n.attrCode;
+      if (!seen.has(code)) {
+        seen.add(code);
+        const defined = attrs.filter((a) => a.codeName === code);
+        const userScoped = defined.some((a) => a.bizType === AttributeBizType.USER);
+        if (!userScoped) {
+          warn(
+            base,
+            defined.length > 0
+              ? `\`{{ ${code} }}\` names a NON-user attribute (company / membership / event) — interpolation resolves against the USER's attributes only, so it renders as an EMPTY gap in the copy. Pass the value as a user attribute on identify() and reference that instead.`
+              : `\`{{ ${code} }}\` does not name any attribute defined in this project — it renders as an EMPTY gap unless your app writes \`${code}\` onto the user via identify(). Check the codeName.`,
+          );
+        }
+      }
+    }
+    for (const value of Object.values(node as Record<string, unknown>)) walk(value);
+  };
+  walk(roots);
+}
 
 function collectBindIssues(
   data: unknown,
