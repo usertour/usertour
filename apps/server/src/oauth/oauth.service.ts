@@ -366,7 +366,12 @@ export class OAuthService {
       }),
       envIds.length
         ? this.prisma.environment.findMany({
-            where: { id: { in: envIds } },
+            // deleted: false — a grant made before an environment was deleted keeps
+            // the id (deleting cleans it going forward, but pre-existing grants and
+            // any hard-deleted row can still dangle). Resolving it anyway listed a
+            // deleted environment on the authorization screen as something the app
+            // may act on, which the resolvers had already stopped honouring.
+            where: { id: { in: envIds }, deleted: false },
             select: { id: true, name: true },
           })
         : Promise.resolve([]),
@@ -391,7 +396,11 @@ export class OAuthService {
         projectId: g.projectId,
         projectName: projectName.get(g.projectId) ?? g.projectId,
         scopes: (g.scopes as string[]) ?? [],
-        environmentNames: allowed ? allowed.map((id) => envName.get(id) ?? id) : null,
+        // Drop ids that no longer resolve rather than falling back to the raw id:
+        // the fallback printed a bare cuid in the console next to real names.
+        environmentNames: allowed
+          ? allowed.filter((id) => envName.has(id)).map((id) => envName.get(id) as string)
+          : null,
         createdAt: g.createdAt,
         // Live token rows win (freshest); the grant column is the durable rollup
         // written by the expiry cleanup before it prunes those rows.

@@ -5,6 +5,7 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { OAUTH_TOKEN_PREFIX, hashApiTokenSecret } from '@/api-token/api-token.crypto';
+import { EnvironmentsService } from '@/environments/environments.service';
 
 import { buildEnvironment, buildMembership, buildProject } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
@@ -682,6 +683,30 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
       (c: { clientName: string }) => c.clientName === 'Env MCP',
     );
     expect(conn.environmentNames).toEqual([env.name]);
+
+    // Deleting that environment must take the id OFF the machine allowlists too.
+    // It used to clean only UserOnProject (the human holder of the same third
+    // permission dimension), so the grant kept the dead id — and since a refresh
+    // rebuilds the token row FROM the grant, it kept coming back. The console then
+    // listed a deleted environment as something the app may act on, while the
+    // resolvers (which filter `deleted: false`) had long stopped honouring it.
+    await app.get(EnvironmentsService).delete(env.id);
+    const grantAfter = await prisma.oAuthGrant.findFirst({ where: { clientId: cid } });
+    // Fail-closed, exactly like the member rule: emptied out stays [], never null/all.
+    expect(grantAfter?.allowedEnvironmentIds).toEqual([]);
+    const tokenAfter = await prisma.apiToken.findFirst({ where: { clientId: cid } });
+    expect(tokenAfter?.allowedEnvironmentIds).toEqual([]);
+
+    const connsAfter = await http()
+      .post('/graphql')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ query: '{ oauthConnections { clientName environmentNames } }' })
+      .expect(200);
+    const connAfter = connsAfter.body.data.oauthConnections.find(
+      (c: { clientName: string }) => c.clientName === 'Env MCP',
+    );
+    // Not the raw id either — the old fallback printed a bare cuid beside real names.
+    expect(connAfter.environmentNames).toEqual([]);
 
     await prisma.apiToken.deleteMany({ where: { clientId: cid } });
     await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
