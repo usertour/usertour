@@ -117,6 +117,10 @@ export const attachUserAttributeValues = (
 
 export interface DiagnoseReport {
   contentType: string;
+  /** The version these gates were evaluated against — always the PUBLISHED one.
+   * Rollback verification needs it: "is production back on v0?" was otherwise
+   * unanswerable from a green diagnose and took a second get_content call. */
+  diagnosedVersionId?: string | null;
   summary: string;
   blockedBy: string[];
   gates: Gate[];
@@ -633,6 +637,7 @@ export const buildDiagnoseReport = (
 
   return {
     contentType: facts.contentType,
+    diagnosedVersionId: facts.publishedVersionId ?? null,
     summary,
     blockedBy,
     gates,

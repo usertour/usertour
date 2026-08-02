@@ -37,16 +37,31 @@ import { ProjectCacheService } from '@/shared/project-cache.service';
 export type WriteActor = { userId?: string | null; tokenId?: string | null };
 
 /**
- * Actor columns for a ContentPublishRecord — store BOTH when both are known.
- * OAuth access-token rows are short-lived and hard-deleted by the hourly expiry
- * cleanup, so a token-only record would lose its attribution within the hour;
- * with actorUserId alongside, the owner's name survives (the record just loses
- * the token's pretty name, which is the designed degradation).
+ * Actor columns for a ContentPublishRecord — ids AND their names.
+ *
+ * The ids alone were not enough. OAuth access-token rows are short-lived and
+ * replaced on every refresh, so a read-time join dropped `actorTokenName` to
+ * null within the hour — and the surviving `actorName` then made the row read
+ * exactly like a hand-made dashboard publish. That is worse than "unknown": a
+ * release-ops review watched one publish change hands between two reads
+ * minutes apart and could no longer trust the ledger for its incident report.
+ * So the names are SNAPSHOTTED here, the same denormalization `versionSequence`
+ * already uses; the read side prefers them and only falls back to the join for
+ * rows written before this.
  */
-const publishActorFields = (actor?: WriteActor) => ({
+const publishActorFields = (actor?: WriteActor, names?: PublishActorNames) => ({
   ...(actor?.tokenId ? { actorTokenId: actor.tokenId } : {}),
   ...(actor?.userId ? { actorUserId: actor.userId } : {}),
+  ...(names?.actorName ? { actorName: names.actorName } : {}),
+  ...(names?.actorTokenName ? { actorTokenName: names.actorTokenName } : {}),
+  ...(names?.environmentName ? { environmentName: names.environmentName } : {}),
 });
+
+type PublishActorNames = {
+  actorName?: string | null;
+  actorTokenName?: string | null;
+  environmentName?: string | null;
+};
 
 @Injectable()
 export class ContentService {
@@ -392,12 +407,18 @@ export class ContentService {
         actorTokenName?: string | null;
         environmentName?: string | null;
       };
+      // The SNAPSHOT written with the record wins; the live join is only a
+      // fallback for rows written before the snapshot columns existed. Doing it
+      // the other way round would re-introduce the defect this fixed: an
+      // OAuth token is replaced on every refresh, the join then yields null,
+      // and a row with an actorName but no token name reads as a hand-made
+      // dashboard publish — a false attribution, not a missing one.
       const token = n.actorTokenId ? tokenById.get(n.actorTokenId) : undefined;
-      n.actorName = n.actorUserId
-        ? (userName.get(n.actorUserId) ?? null)
-        : (token?.user?.name ?? null);
-      n.actorTokenName = token?.name ?? null;
-      n.environmentName = envName.get(n.environmentId) ?? null;
+      n.actorName =
+        n.actorName ??
+        (n.actorUserId ? (userName.get(n.actorUserId) ?? null) : (token?.user?.name ?? null));
+      n.actorTokenName = n.actorTokenName ?? token?.name ?? null;
+      n.environmentName = n.environmentName ?? envName.get(n.environmentId) ?? null;
     }
     return connection;
   }
@@ -454,10 +475,41 @@ export class ContentService {
     }
   }
 
+  /**
+   * Look up the display names to SNAPSHOT onto a publish record. One query per
+   * publish (an infrequent, deliberate action), which buys an audit trail that
+   * survives the actor row being deleted or an OAuth token being rotated.
+   */
+  private async resolvePublishActorNames(
+    environmentId: string,
+    actor?: WriteActor,
+  ): Promise<PublishActorNames> {
+    const [user, token, environment] = await Promise.all([
+      actor?.userId
+        ? this.prisma.user.findUnique({ where: { id: actor.userId }, select: { name: true } })
+        : null,
+      actor?.tokenId
+        ? this.prisma.apiToken.findUnique({ where: { id: actor.tokenId }, select: { name: true } })
+        : null,
+      this.prisma.environment.findUnique({
+        where: { id: environmentId },
+        select: { name: true },
+      }),
+    ]);
+    return {
+      actorName: user?.name ?? null,
+      actorTokenName: token?.name ?? null,
+      environmentName: environment?.name ?? null,
+    };
+  }
+
   async publishedContentVersion(versionId: string, environmentId: string, actor?: WriteActor) {
     const version = await this.getContentVersionById(versionId);
     await this.requireEnvironmentInContentProject(environmentId, version.contentId);
     const now = new Date();
+    // Resolved BEFORE the transaction: the names are snapshotted onto the
+    // ledger row so attribution outlives the actor (see publishActorFields).
+    const actorNames = await this.resolvePublishActorNames(environmentId, actor);
 
     const { content, supersededVersionId } = await this.prisma.$transaction(async (tx) => {
       // Freeze stamp: a version that has EVER been live stays read-only for the
@@ -545,7 +597,7 @@ export class ContentService {
           versionSequence: version.sequence,
           environmentId,
           action: 'publish',
-          ...publishActorFields(actor),
+          ...publishActorFields(actor, actorNames),
         },
       });
 
@@ -575,6 +627,7 @@ export class ContentService {
 
   async unpublishedContentVersion(contentId: string, environmentId: string, actor?: WriteActor) {
     await this.requireEnvironmentInContentProject(environmentId, contentId);
+    const actorNames = await this.resolvePublishActorNames(environmentId, actor);
     const result = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
@@ -615,7 +668,7 @@ export class ContentService {
             versionSequence: unpublished?.sequence ?? 0,
             environmentId,
             action: 'unpublish',
-            ...publishActorFields(actor),
+            ...publishActorFields(actor, actorNames),
           },
         });
       }

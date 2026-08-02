@@ -537,6 +537,15 @@ model ContentPublishRecord {
   action          String
   actorUserId     String?
   actorTokenId    String?
+  /// Denormalized at write time, same reason as versionSequence: the ledger is
+  /// the audit record, so attribution must survive the actor row disappearing.
+  /// It does disappear routinely — an OAuth-issued token is REPLACED on every
+  /// refresh, so a read-time join silently dropped `actorTokenName` to null and
+  /// the row then read as a dashboard publish by a human (a release-ops review
+  /// watched one publish change hands between two reads minutes apart).
+  actorName       String?
+  actorTokenName  String?
+  environmentName String?
 
   @@index([contentId, createdAt])
 }

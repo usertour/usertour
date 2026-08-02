@@ -381,7 +381,14 @@ export function buildWriteTools(): McpTool[] {
         'leave the version unpublished and report that publishing needs an environment choice. ' +
         'Returns the content with refreshed `environments[]` and `editorUrl` (a dashboard deep ' +
         'link for human review) — after publishing, share that link so the user can see what ' +
-        'went live.',
+        'went live. **Rolling back is publishing an OLDER versionId** (frozen versions stay ' +
+        'forever, so re-pointing at one is the whole rollback — do NOT use ' +
+        'restore_content_version, which only forks a draft and changes nothing live). One ' +
+        'follow-up the rollback leaves behind: `editedVersionId` still points at the NEWER ' +
+        '(rolled-back-from) draft, so the next publish from the dashboard ships it again — fork ' +
+        'from the restored version if you want the draft to match what is live. Republishing a ' +
+        'version that is ALREADY live is accepted, but it is a real publish event: it moves ' +
+        '`publishedAt` and adds a ledger row, so never use it to probe permissions.',
       inputSchema: {
         contentId: z
           .string()
