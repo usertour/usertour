@@ -9,7 +9,8 @@ const translations = {
       scopesLabel: 'Permissions',
       readOnly: 'Read-only',
       environmentsLabel: 'Environments',
-      environmentsHelp: 'Which environments this connection can act on.',
+      environmentsHelp:
+        'Which environments this connection can act on (publishing, end-user data, analytics). It does not limit which content it can see — content is project-level.',
       environmentsSelect: 'Select environments',
       selectEnvironment: 'Select at least one environment for the selected permissions.',
       noGrantableScopes:
@@ -1092,7 +1093,8 @@ const translations = {
       projectSearch: 'Search projects...',
       projectEmpty: 'No project found.',
       environmentsLabel: 'Environments',
-      environmentsHelp: 'Which environments this key can act on (publish, users, sessions…).',
+      environmentsHelp:
+        'Which environments this key can act on: publishing, end-user data (users / companies / sessions / segment membership), analytics and the environment records themselves. It does NOT limit what content the key can SEE — content, versions and themes are project-level, so any key with content scopes can read (and edit or delete) every piece in the project, including one that is live in an environment it cannot act on. For real isolation, use a separate project.',
       environmentsPickProject: 'Select a project first.',
       environmentsSelect: 'Select environments',
       scopesLabel: 'Scopes',

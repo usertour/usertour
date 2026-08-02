@@ -198,7 +198,10 @@ export const environmentIdSchema = z
     'Environment to target. A token scoped to a single environment defaults to it (omit this); ' +
       'a token that can act on MULTIPLE environments MUST set it — the tool will not choose one ' +
       'for you (it errors and lists the environments the token may use). Holds for reads and ' +
-      "writes alike. (Scope follows the environments the TOKEN may act on, not the project's full list.)",
+      'writes alike. (Scope follows the environments the TOKEN may act on, not the ' +
+      "project's full list.) The allowlist gates env-targeted ACTIONS and end-user data, not " +
+      'content visibility — content / versions / themes are project-level and readable (and ' +
+      'writable, with the matching capability) regardless of it; see list_environments.',
   );
 
 /**
@@ -1702,7 +1705,16 @@ export function buildReadTools(): McpTool[] {
         "List the project's environments — the environment ids that the env-scoped tools and " +
         '`publish_content` accept. Each item carries `inTokenScope`: whether THIS credential may ' +
         'act on that environment — plan against it up front rather than discovering scope limits ' +
-        'from write errors. Optionally filter by `name`. Returns `{ items, nextCursor }`.',
+        'from write errors. **What an environment allowlist actually fences: DELIVERY and ' +
+        'END-USER DATA** — publishing / unpublishing, users / companies / sessions / segment ' +
+        'membership, analytics, and the environment records themselves (an out-of-scope ' +
+        "environment's SDK `token` is withheld as null). It does NOT fence content VISIBILITY: " +
+        'content, versions, themes and definitions are PROJECT-level, so any credential with ' +
+        '`content:read` can read every piece and every version — including the one live in an ' +
+        'environment it may not act on — and `content:update` / `content:delete` can edit or ' +
+        "delete them. To keep someone away from another environment's content entirely, give " +
+        'them a separate PROJECT; a restricted environment allowlist is not an isolation ' +
+        'boundary. Optionally filter by `name`. Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         limit: limitSchema,

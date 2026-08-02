@@ -9,7 +9,8 @@ const translations = {
       scopesLabel: '权限',
       readOnly: '只读',
       environmentsLabel: '环境',
-      environmentsHelp: '此连接可作用的环境。',
+      environmentsHelp:
+        '此连接可作用的环境(发布、终端用户数据、分析)。它不限制可见的内容范围——内容是项目级的。',
       environmentsSelect: '选择环境',
       selectEnvironment: '所选权限需要至少选择一个环境。',
       noGrantableScopes: '你在该项目的角色无法授予此应用请求的任何权限。',
@@ -1033,7 +1034,8 @@ const translations = {
       projectSearch: '搜索项目...',
       projectEmpty: '未找到项目。',
       environmentsLabel: '环境',
-      environmentsHelp: '此密钥可作用的环境(发布、用户、会话等)。',
+      environmentsHelp:
+        '此密钥可作用的环境:发布、终端用户数据(用户 / 公司 / 会话 / 分群成员)、分析,以及环境记录本身。它并不限制此密钥能"看到"哪些内容——内容、版本、主题都是项目级的,只要带内容权限就能读取(并按权限修改或删除)项目里的全部内容,包括正在其他环境上线的那些。要做到真正隔离,请使用独立项目。',
       environmentsPickProject: '请先选择项目。',
       environmentsSelect: '选择环境',
       scopesLabel: '权限范围',
