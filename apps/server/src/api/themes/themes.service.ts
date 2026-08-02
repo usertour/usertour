@@ -30,7 +30,11 @@ import { compileConditions } from '../content-representation/rules.compile';
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
-import { BUILDER_MANAGED_SETTING_PATHS, themeSettingsPatchSchema } from './settings.schema';
+import {
+  BUILDER_MANAGED_SETTING_PATHS,
+  INERT_COLOR_COMPANION_PATHS,
+  themeSettingsPatchSchema,
+} from './settings.schema';
 import { mapTheme } from './themes.mapper';
 import {
   DuplicateThemeBody,
@@ -138,10 +142,11 @@ export class ApiThemesService {
       path
         .split('.')
         .reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], obj);
-    const changed = BUILDER_MANAGED_SETTING_PATHS.filter((path) => {
+    const isChanged = (path: string): boolean => {
       const patched = at(patch, path);
       return patched !== undefined && JSON.stringify(patched) !== JSON.stringify(at(base, path));
-    });
+    };
+    const changed = BUILDER_MANAGED_SETTING_PATHS.filter(isChanged);
     if (changed.length) {
       // Report EVERY violated path at once (issues carry them individually) —
       // the one-at-a-time fail-fast made callers discover this boundary by
@@ -153,6 +158,26 @@ export class ApiThemesService {
           rule: 'schema',
           path,
           message: 'built-in (builder-managed): echo back unchanged or omit',
+        })),
+      );
+    }
+    // Companion keys on a SINGLE-color setting (see INERT_COLOR_COMPANION_PATHS):
+    // stored on some themes, read by nothing. Setting one used to be a silent
+    // no-op — and `background` is the first key anyone reaches for, since it IS
+    // the fill in every real color group. Name the key that actually renders.
+    const inert = INERT_COLOR_COMPANION_PATHS.filter(isChanged);
+    if (inert.length) {
+      const paths = inert.map((path) => `settings.${path}`);
+      throw new ValidationError(
+        `${paths.join(', ')} ${paths.length === 1 ? 'is' : 'are'} not rendered — ${inert
+          .map((path) => path.split('.').slice(0, -1).join('.'))
+          .filter((node, i, all) => all.indexOf(node) === i)
+          .map((node) => `\`${node}\` takes a single color under \`${node}.color\``)
+          .join('; ')}. Set that instead, or omit these.`,
+        paths.map((path) => ({
+          rule: 'schema',
+          path,
+          message: `not rendered — use ${path.split('.').slice(0, -1).join('.')}.color`,
         })),
       );
     }

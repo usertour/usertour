@@ -104,9 +104,48 @@ const buildTree = (flat: Record<string, ThemeSettingConstraint>): Tree => {
 const COLOR_GROUP_KEYS = ['background', 'color', 'hover', 'active'] as const;
 const COLOR_COMPANION_KEYS = [...COLOR_GROUP_KEYS, 'autoHover', 'autoActive'] as const;
 
-const completeColorGroups = (tree: Tree): void => {
+/**
+ * Settings that hold ONE rendered color under `color` — they are NOT color
+ * groups, so the completion above must not turn them into one.
+ *
+ * It used to, and the result was a silent write loss: `resourceCenter.
+ * headerBackground` gained a `background` key that validated, stored, and was
+ * never read. A reviewer theming a resource center reached for it FIRST —
+ * `.background` is the fill everywhere else in this schema — got no error, and
+ * shipped a white-on-white header whose close button was invisible. The fill
+ * for these lives in `color` (the one inversion of the house convention, which
+ * is why guessing goes wrong here).
+ *
+ * The list is explicit because the SSOT cannot discriminate: `banner.textColor`
+ * also declares only `color`, yet IS a real group (the builder persists its
+ * hover/active/background). settings.schema.spec pins the list against the
+ * built-in default theme's stored shape, which is the actual evidence.
+ */
+const SINGLE_COLOR_SETTING_PATHS: readonly string[] = [
+  'backdrop',
+  'backdrop.highlight',
+  'focusHighlight',
+  'launcherBeacon',
+  'progress',
+  'survey',
+  'xbutton',
+  'resourceCenter.headerBackground',
+];
+
+/**
+ * The companion keys those single-color settings must still ACCEPT (themes
+ * written while the completion was too eager carry them, and a read-modify-write
+ * has to round-trip) but may never CHANGE — the renderer does not read them, so
+ * accepting a new value would be the silent no-op all over again.
+ */
+export const INERT_COLOR_COMPANION_PATHS: readonly string[] = SINGLE_COLOR_SETTING_PATHS.flatMap(
+  (node) => COLOR_COMPANION_KEYS.filter((k) => k !== 'color').map((k) => `${node}.${k}`),
+);
+
+const completeColorGroups = (tree: Tree, path = ''): void => {
   const isStandardColorGroup =
     !('foreground' in tree) &&
+    !SINGLE_COLOR_SETTING_PATHS.includes(path) &&
     COLOR_GROUP_KEYS.some((k) => {
       const child = tree[k];
       return child && isConstraint(child) && child.kind === 'color';
@@ -118,9 +157,9 @@ const completeColorGroups = (tree: Tree): void => {
       }
     }
   }
-  for (const child of Object.values(tree)) {
+  for (const [key, child] of Object.entries(tree)) {
     if (!isConstraint(child)) {
-      completeColorGroups(child);
+      completeColorGroups(child, path ? `${path}.${key}` : key);
     }
   }
 };
@@ -190,17 +229,25 @@ const treeToZod = (tree: Tree): z.ZodTypeAny => {
               'Built-in (builder-managed): echo it back unchanged or omit it — a changed value ' +
                 'is rejected.',
             )
-        : (child.kind as string) === 'media-url'
+        : (child.kind as string) === 'inert-color'
           ? z
-              .string()
-              .refine((v) => v === '' || isHttpUrl(v), {
-                message: 'must be an http(s) URL, or an empty string to clear the image',
-              })
+              .unknown()
               .describe(
-                'Image URL rendered to end users (writable). Empty string clears it. The builder ' +
-                  'sets this via upload; the API accepts any http(s) URL you host.',
+                'NOT RENDERED: this setting takes a single color under `color` — it is not a ' +
+                  '{background,color,hover,active} group. Accepted so a read-modify-write ' +
+                  'round-trips; a changed value is rejected rather than silently ignored.',
               )
-          : leafSchema(child)
+          : (child.kind as string) === 'media-url'
+            ? z
+                .string()
+                .refine((v) => v === '' || isHttpUrl(v), {
+                  message: 'must be an http(s) URL, or an empty string to clear the image',
+                })
+                .describe(
+                  'Image URL rendered to end users (writable). Empty string clears it. The builder ' +
+                    'sets this via upload; the API accepts any http(s) URL you host.',
+                )
+            : leafSchema(child)
       : treeToZod(child);
     // Stored settings use null for "unset" in places (e.g. a borderRadius the
     // builder never touched) — treat null exactly like an omitted key: the
@@ -219,6 +266,7 @@ const settingsTree = buildTree(
 );
 completeColorGroups(settingsTree);
 addMarkerLeaves(settingsTree, BUILDER_MANAGED_SETTING_PATHS, 'builder-managed');
+addMarkerLeaves(settingsTree, INERT_COLOR_COMPANION_PATHS, 'inert-color');
 addMarkerLeaves(settingsTree, WRITABLE_MEDIA_URL_PATHS, 'media-url');
 export const themeSettingsPatchSchema = treeToZod(settingsTree);
 export type ThemeSettingsPatch = z.infer<typeof themeSettingsPatchSchema>;

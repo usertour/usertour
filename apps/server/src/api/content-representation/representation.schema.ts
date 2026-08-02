@@ -367,9 +367,16 @@ export const representationCondition = z.lazy(() =>
       state: z
         .enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked'])
         .describe(
-          '`present` means VISIBLE IN THE VIEWPORT, not merely in the DOM — an element that is ' +
-            'scrolled off-screen, clipped, or covered never satisfies it (and `hidden` is its ' +
-            'negation). Appearances shorter than about a second can be missed entirely. ' +
+          '`present` means NOT CLIPPED AWAY: the element is in the DOM and its box lies inside ' +
+            'the viewport / its scroll ancestors — scrolled off-screen or `display:none` never ' +
+            'satisfies it (and `hidden` is its negation). It is NOT "the user can see something ' +
+            'there": an EMPTY, zero-height placeholder node satisfies `present` (measured — a ' +
+            'checklist task keyed on an initially-empty `<p>` status line ticked itself the ' +
+            'moment the checklist appeared, before the shopper did anything). So do not use ' +
+            'element presence as a proxy for "the app has said something": most apps keep the ' +
+            'container mounted and only fill in its text. Match the TEXT instead ' +
+            '(`target.text` + `present`, or the negation trick: the old text `hidden`). ' +
+            'Appearances shorter than about a second can be missed entirely. ' +
             '`disabled`/`enabled` read the element disabled state at evaluation time. ' +
             '**`clicked` means "clicked since page load AND the element is STILL in the DOM ' +
             'right now"** — both halves, re-checked every evaluation. The click memory latches ' +

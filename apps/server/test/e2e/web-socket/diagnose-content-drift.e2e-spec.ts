@@ -212,6 +212,10 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
     content: any,
     user: any,
     type: ContentDataType,
+    // What the BROWSER has reported about live (element / text) conditions. Empty
+    // is the pre-report state; a rule that never gets reported is never "ready",
+    // which is exactly the case the panorama used to mis-read (see the last test).
+    clientConditions: Cond[] = [],
   ) => {
     const socket = { id: `diag-${rid()}`, emit: jest.fn(() => true) } as any;
     const server = { in: () => ({ fetchSockets: async () => [] }) } as any;
@@ -220,7 +224,7 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
       externalUserId: String(user.externalId),
       bizUserId: user.id,
       clientContext: { pageUrl: URL, viewportWidth: 1280, viewportHeight: 800 },
-      clientConditions: [],
+      clientConditions,
       waitTimers: [],
     } as any;
     await socketDataService.set(socket, socketData);
@@ -466,5 +470,101 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
       userData: { plan: 'pro' },
     });
     await check(environment, content, user, ContentDataType.BANNER, true);
+  });
+
+  it('slot holder whose hide rule has a BROWSER-only leaf: still holds the slot in both tools', async () => {
+    // The regression this pins. The panorama used to pick the slot holder with the
+    // runtime's own helper, which additionally requires the hide rules to be READY —
+    // the browser to have reported its element/text leaves. Diagnosis has no browser,
+    // so a holder with ANY element leaf in its hide rules was dropped from the slot
+    // and fell through to the catch-all `eligibility` row ("re-check hide rules and
+    // the start-rule settings") — while diagnose_content on the same content said it
+    // was showing. Measured against a resource center that was on screen at the time.
+    //
+    // Server-side an unreported element leaf is `unknown`, and unknown is not a
+    // blocker: the holder keeps the slot, and the newcomer stays queued behind it.
+    const { projectId, environment } = await fresh();
+    const attr = await planAttr(projectId);
+    const elementRule: Cond = {
+      id: rid(),
+      type: 'element',
+      data: { logic: 'present', elementData: { selector: '#app-drawer' } },
+      operators: 'and',
+    };
+    const holder = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { hideRules: [elementRule] },
+      userData: { plan: 'pro' },
+      activeSessions: 1,
+    });
+    const newcomer = await seed({
+      projectId,
+      environment,
+      type: ContentDataType.FLOW,
+      autoStartRules: [attrRule(attr.id, 'pro')],
+      opts: { priority: ContentPriority.HIGHEST },
+      user: holder.user,
+    });
+
+    const { rows } = await diagnosis.diagnoseUser({
+      environment,
+      externalUserId: String(holder.user.externalId),
+      url: URL,
+    });
+    const holderRow = rows.find((r) => r.contentId === holder.content.id);
+    const newcomerRow = rows.find((r) => r.contentId === newcomer.content.id);
+    expect(holderRow?.verdict).toBe('showing');
+    expect(holderRow?.via).toBe('resume');
+    // Honest about what the server could not judge, instead of silently promising.
+    expect(holderRow?.detail).toContain('browser-only leaf');
+    // The other half of the same bug: with the holder dropped, the newcomer read as
+    // free to start — the runtime would in fact resume the holder.
+    expect(newcomerRow?.verdict).toBe('queued');
+    expect(newcomerRow?.queueReason).toBe('active_slot');
+    expect(newcomerRow?.behindContentId).toBe(holder.content.id);
+
+    // Same verdict from the single-content tool (the contradiction that started this).
+    expect(await toolBlocks(environment, newcomer.content, holder.user, ContentDataType.FLOW)).toBe(
+      true,
+    );
+    expect(await toolBlocks(environment, holder.content, holder.user, ContentDataType.FLOW)).toBe(
+      false,
+    );
+
+    // Runtime oracle, in the steady state the tools are describing: the browser HAS
+    // reported the element leaf and it does not match, so the hide rule is ready and
+    // inactive. The runtime resumes the holder; the newcomer gets no session.
+    const reported = [
+      {
+        contentId: holder.content.id,
+        contentType: ContentDataType.FLOW,
+        versionId: holder.version.id,
+        conditionId: elementRule.id,
+        isActive: false,
+      },
+    ];
+    await runtimeActivated(
+      environment,
+      holder.content,
+      holder.user,
+      ContentDataType.FLOW,
+      reported as unknown as Cond[],
+    );
+    const newcomerSession = await prisma.bizSession.findFirst({
+      where: { contentId: newcomer.content.id, bizUserId: holder.user.id, deleted: false },
+    });
+    expect(newcomerSession).toBeNull();
+    const holderSession = await prisma.bizSession.findFirst({
+      where: {
+        contentId: holder.content.id,
+        bizUserId: holder.user.id,
+        state: 0,
+        deleted: false,
+      },
+    });
+    expect(holderSession).not.toBeNull();
   });
 });

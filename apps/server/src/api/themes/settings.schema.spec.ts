@@ -1,3 +1,4 @@
+import { defaultSettings } from '@usertour/constants';
 import { themeSettingsPatchSchema } from './settings.schema';
 
 // The schema is generated from the builder field schema (the constraint SSOT).
@@ -152,5 +153,58 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
       }),
     ).toBe(true);
     expect(ok({ announcement: { bubbleWidth: 9999 } })).toBe(false);
+  });
+});
+
+describe('single-color settings are not turned into color groups', () => {
+  const ok = (v: unknown) => themeSettingsPatchSchema.safeParse(v).success;
+
+  it('pins the single-color list against the built-in default theme stored shape', () => {
+    // The evidence that these are NOT groups: the built-in theme stores exactly
+    // one color on each (plus non-color siblings). If the builder ever starts
+    // persisting hover/active/background on one, this fails and the path must
+    // move out of SINGLE_COLOR_SETTING_PATHS — otherwise a real field would be
+    // frozen as "not rendered".
+    const at = (path: string): Record<string, unknown> =>
+      path
+        .split('.')
+        .reduce<Record<string, unknown>>(
+          (o, k) => o[k] as Record<string, unknown>,
+          defaultSettings as unknown as Record<string, unknown>,
+        );
+    for (const path of [
+      'backdrop',
+      'backdrop.highlight',
+      'focusHighlight',
+      'launcherBeacon',
+      'progress',
+      'survey',
+      'xbutton',
+      'resourceCenter.headerBackground',
+    ]) {
+      const node = at(path);
+      expect({ path, keys: Object.keys(node).filter((k) => k !== 'color') }).toEqual({
+        path,
+        keys: Object.keys(node).filter(
+          (k) => !['color', 'background', 'hover', 'active', 'autoHover', 'autoActive'].includes(k),
+        ),
+      });
+    }
+  });
+
+  it('accepts the rendered `color` and still round-trips a stored companion', () => {
+    // `color` is the fill for these (the one inversion of the house convention).
+    expect(ok({ resourceCenter: { headerBackground: { type: 'color', color: '#111111' } } })).toBe(
+      true,
+    );
+    // Companions parse (a read-modify-write of a theme that stored them must not
+    // 400) — the service is what rejects a CHANGED value, see themes.service.
+    expect(ok({ resourceCenter: { headerBackground: { background: '#111111' } } })).toBe(true);
+    expect(ok({ xbutton: { hover: 'Auto' } })).toBe(true);
+  });
+
+  it('still extends genuine groups that the SSOT under-declares', () => {
+    // banner.textColor declares only `color` in the SSOT but IS a group.
+    expect(ok({ banner: { textColor: { background: '#FFFFFF', hover: 'Auto' } } })).toBe(true);
   });
 });

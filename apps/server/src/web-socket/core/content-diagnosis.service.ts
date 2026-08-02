@@ -22,10 +22,10 @@ import {
   evaluateCustomContentVersion,
   filterAvailableAutoStartContentVersions,
   filterSingleSessionContentVersions,
-  findLatestActivatedCustomContentVersions,
   isActivedAutoStartRules,
   isActivedHideRules,
   isAllowedByAutoStartRulesSetting,
+  isEnabledHideRules,
   isShowOnlyContentType,
   isSingleSessionContentType,
   isSingletonContentType,
@@ -115,6 +115,54 @@ export interface DiagnoseFacts {
   /** Distribution level of the published version (silent / badge / popup). */
   announcementDistribution?: string;
 }
+
+/**
+ * Condition types only the browser can judge — the server has no DOM, no typed
+ * input, no timer. Shared by both diagnose paths: a rule that fails ONLY on
+ * these is browser-dependent, never "blocked".
+ */
+const LIVE_ONLY = new Set<string>([
+  RulesType.ELEMENT,
+  RulesType.TEXT_INPUT,
+  RulesType.TEXT_FILL,
+  RulesType.TASK_IS_CLICKED,
+  RulesType.WAIT,
+]);
+
+/**
+ * Who holds the singleton slot: the most recently activated session whose hide
+ * rules are not DECIDABLY matched.
+ *
+ * Deliberately NOT the runtime's `findLatestActivatedCustomContentVersions`,
+ * which also requires the hide rules to be READY — i.e. the browser to have
+ * reported its element/text leaves. Diagnosis has no browser, so a hide rule
+ * carrying any browser-only leaf was never ready, its live content was dropped
+ * from the slot, and the panorama fell through to the catch-all `eligibility`
+ * row: "not eligible to auto-start here … re-check hide rules and the
+ * start-rule settings" — pointing at the two things that were fine. Measured
+ * on a resource center that was on screen at that moment, while
+ * diagnose_content simultaneously reported it showing: the two tools
+ * contradicted each other on the same (user, content, url).
+ *
+ * Server-side an undecidable hide leaf is `unknown`, and unknown is not a
+ * blocker (the diagnose contract) — so the session keeps the slot and the
+ * caller is told about the residual browser condition instead.
+ */
+const findSlotHolder = (cvs: CustomContentVersion[]): CustomContentVersion | undefined =>
+  cvs
+    .filter((cv) => cv.session.activeSession?.createdAt && !isActivedHideRules(cv))
+    .sort(
+      (a, b) =>
+        new Date(b.session.activeSession?.createdAt as Date).getTime() -
+        new Date(a.session.activeSession?.createdAt as Date).getTime(),
+    )[0];
+
+/** Do this content's hide rules carry a leaf only the browser can judge? */
+const hasBrowserOnlyHideLeaf = (cv: CustomContentVersion): boolean => {
+  const walk = (nodes: RulesCondition[] = []): boolean =>
+    nodes.some((n) => (n.conditions?.length ? walk(n.conditions) : LIVE_ONLY.has(n.type)));
+  return isEnabledHideRules(cv) && walk(cv.config.hideRules ?? []);
+};
 
 /** Per-segment breakdown for the diagnose report's segment leaves — see explainSegments. */
 export interface SegmentExplanation {
@@ -237,7 +285,10 @@ export class ContentDiagnosisService {
           if (targetEligible) {
             // Strategy 1: another content of this type has a live session → it resumes into
             // the slot before anything fresh starts, so this one can't appear (any priority).
-            const holder = findLatestActivatedCustomContentVersions(evaluated, [])?.[0];
+            // Same slot-holder rule as the panorama (see findSlotHolder): a holder whose hide
+            // rules carry a browser-only leaf still holds the slot here — dropping it would
+            // report this content as free to show when the runtime will resume the holder.
+            const holder = findSlotHolder(evaluated);
             if (holder && holder.content.id !== contentId) {
               activeSlotHeldByContentId = holder.content.id;
             } else if (eligible[0] && eligible[0].content.id !== contentId) {
@@ -519,16 +570,9 @@ export class ContentDiagnosisService {
     }
     const rows: UserPanoramaRow[] = [];
 
-    // Live-only condition types: not evaluable server-side. A rule that fails
-    // ONLY on these must not be reported "blocked" (the diagnose_content
-    // contract, kept here too): it is browser-dependent.
-    const LIVE_ONLY = new Set<string>([
-      RulesType.ELEMENT,
-      RulesType.TEXT_INPUT,
-      RulesType.TEXT_FILL,
-      RulesType.TASK_IS_CLICKED,
-      RulesType.WAIT,
-    ]);
+    // LIVE_ONLY (module scope): a rule that fails ONLY on browser-only leaves
+    // must not be reported "blocked" — that is the diagnose_content contract,
+    // kept here too.
     const foldRules = (conditions: RulesCondition[], unknownAs: boolean): boolean => {
       if (!conditions || conditions.length === 0) return false;
       const one = (c: RulesCondition): boolean => {
@@ -625,9 +669,7 @@ export class ContentDiagnosisService {
 
       if (isSingletonContentType(type)) {
         // Banner is SHOW_ONLY: no resume — it re-evaluates every page.
-        const holder = isShowOnlyContentType(type)
-          ? undefined
-          : findLatestActivatedCustomContentVersions(evaluated, [])?.[0];
+        const holder = isShowOnlyContentType(type) ? undefined : findSlotHolder(evaluated);
         const winner = holder ?? eligible[0];
         for (const cv of evaluated) {
           const base = {
@@ -640,6 +682,13 @@ export class ContentDiagnosisService {
               ...base,
               verdict: 'showing',
               via: holder ? 'resume' : 'auto_start',
+              ...(hasBrowserOnlyHideLeaf(cv)
+                ? {
+                    detail:
+                      'a hide rule has a browser-only leaf (element / text / wait) the server ' +
+                      'cannot judge — it is hidden at the moments that leaf matches in the page.',
+                  }
+                : {}),
             });
           } else if (eligibleIds.has(cv.content.id)) {
             rows.push({
