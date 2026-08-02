@@ -1,5 +1,6 @@
 import type { ContentEditorRoot } from './editor';
 import type { ThemeTypesSetting } from './theme-settings';
+import type { SessionTheme } from './web-socket';
 
 // ============================================================================
 // Enums
@@ -150,9 +151,18 @@ export type MarkAnnouncementsSeenDto = {
 export type PopupAnnouncement = AnnouncementDetail & {
   popupConfig: AnnouncementPopupConfig;
   /**
-   * Theme settings resolved from the announcement version's themeId. Absent
-   * when the theme can't be resolved — the widget then falls back to the
-   * resource center's own theme.
+   * SETTLED theme settings for the popup. The server seeds it with the theme's
+   * base settings; the SDK re-settles it from `sessionTheme` (variations
+   * evaluated in the browser) before and while presenting. Absent when the
+   * theme can't be resolved — the widget then falls back to the resource
+   * center's own theme.
    */
   themeSettings?: ThemeTypesSetting;
+  /**
+   * The announcement theme WITH its variations and the attribute values their
+   * conditions read — the same shape session steps carry — so the SDK resolves
+   * dark-mode/etc. variations exactly like every other surface. Absent on
+   * older servers; the SDK then keeps the seeded `themeSettings` as-is.
+   */
+  sessionTheme?: SessionTheme;
 };

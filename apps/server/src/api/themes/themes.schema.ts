@@ -138,6 +138,15 @@ export const createThemeBody = z
   .strict();
 export class CreateThemeBodyDto extends createZodDto(createThemeBody) {}
 
+/** Write body for POST themes/:id/duplicate. */
+export const duplicateThemeBody = z
+  .object({
+    name: displayName.optional().describe('Name for the copy (defaults to the source name).'),
+  })
+  .strict();
+export class DuplicateThemeBodyDto extends createZodDto(duplicateThemeBody) {}
+export type DuplicateThemeBody = z.infer<typeof duplicateThemeBody>;
+
 export const updateThemeBody = z
   .object({
     name: displayName.optional(),

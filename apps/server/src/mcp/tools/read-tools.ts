@@ -1402,7 +1402,10 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.SessionRead,
       description:
         'List content sessions in an environment. Filter by `contentId`, `userId`, `completed`, ' +
-        'or a created-at range. A single-environment token targets its env; with multiple, pass ' +
+        'or a created-at range. To RE-TEST a single-session surface (banner / launcher / resource ' +
+        'center) for a user, find its session here and delete_session it — and never "clean up" ' +
+        'with usertour.endAll() in the page: ending counts as the lifetime session, deleting is ' +
+        'the reset. A single-environment token targets its env; with multiple, pass ' +
         '`environmentId`. Returns `{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,

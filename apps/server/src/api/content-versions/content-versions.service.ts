@@ -530,11 +530,7 @@ export class ApiContentVersionsService {
       };
 
       content.steps = planned.map((p) =>
-        compileStep(
-          { ...p.input, cvid: p.cvid, sequence: p.sequence, content: p.input.content ?? [] },
-          p.existing,
-          stepResolvers,
-        ),
+        compileStep({ ...p.input, cvid: p.cvid, sequence: p.sequence }, p.existing, stepResolvers),
       );
     }
 

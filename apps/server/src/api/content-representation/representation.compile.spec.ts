@@ -374,6 +374,36 @@ describe('compileStep → decompileStep round-trip', () => {
     expect(back.triggers).toEqual([{ do: [{ type: 'dismiss' }] }]);
   });
 
+  // Regression (acceptance review, measured): a placement-only echo of an
+  // existing step wiped every block, because "omitted content" reached the
+  // compiler as [] (schema default + a service `?? []`) and [] is a full
+  // replacement. Omit must PRESERVE, like triggers; explicit [] still clears.
+  it('omitting `content` on an echoed step preserves the existing blocks', () => {
+    const existing = compileStep(
+      {
+        name: 'Welcome',
+        type: 'modal',
+        sequence: 0,
+        content: [{ object: 'block', type: 'text', markdown: 'Precious **blocks**' }],
+      } as any,
+      undefined,
+      ids,
+    );
+    const updated = compileStep(
+      { cvid: existing.cvid, name: 'Welcome moved', type: 'modal', sequence: 0 } as any,
+      existing as any,
+      ids,
+    );
+    expect(updated.data).toEqual(existing.data);
+
+    const cleared = compileStep(
+      { cvid: existing.cvid, name: 'Welcome', type: 'modal', sequence: 0, content: [] } as any,
+      existing as any,
+      ids,
+    );
+    expect(cleared.data).toEqual([]);
+  });
+
   // Regression: both fields are consumed by compileStep and emitted by decompile,
   // but were absent from the write schema (representationStepInput), so zod silently
   // stripped them on write — readable yet not writable. They must now survive parse.

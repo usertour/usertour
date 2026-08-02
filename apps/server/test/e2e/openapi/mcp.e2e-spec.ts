@@ -1495,6 +1495,67 @@ describe('MCP endpoint (e2e)', () => {
       expect(res.content[0].text).toMatch(/steps\[0\]\.content/);
     });
 
+    it('echoing a step WITHOUT `content` preserves its blocks (placement-only edit)', async () => {
+      // Regression for the acceptance review's S-level find: the schema default
+      // + a service `?? []` turned "omitted content" into a full wipe.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Keep my blocks', themeId },
+          token,
+        ),
+      });
+      const authored = parseToolContent({
+        result: await callTool(
+          'update_content_version',
+          {
+            contentId: created.id,
+            versionId: created.editedVersionId,
+            steps: [
+              {
+                name: 'Step',
+                type: 'modal',
+                content: [{ type: 'text', markdown: 'Precious **blocks**' }],
+              },
+            ],
+          },
+          token,
+        ),
+      });
+      const cvid = authored.steps[0].cvid;
+
+      const moved = parseToolContent({
+        result: await callTool(
+          'update_content_version',
+          {
+            contentId: created.id,
+            versionId: created.editedVersionId,
+            // No `content` — a placement-only echo must keep the blocks.
+            steps: [{ cvid, name: 'Step', type: 'modal', placement: { position: 'center' } }],
+          },
+          token,
+        ),
+      });
+      expect(moved.steps[0].content[0]).toMatchObject({
+        type: 'text',
+        markdown: 'Precious **blocks**',
+      });
+      expect(moved.steps[0].placement).toMatchObject({ position: 'center' });
+    });
+
+    it('duplicate_theme copies settings + variations into a fresh non-default theme', async () => {
+      const token = await mint([Capability.ThemeRead, Capability.ThemeCreate], [projectA]);
+      const dup = parseToolContent({
+        result: await callTool('duplicate_theme', { id: themeId, name: 'Derived copy' }, token),
+      });
+      expect(dup).toMatchObject({ object: 'theme', name: 'Derived copy', isDefault: false });
+      expect(dup.id).not.toBe(themeId);
+    });
+
     it('get_content_schema advertises per-type startRules capabilities', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const single = parseToolContent({

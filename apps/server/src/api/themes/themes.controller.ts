@@ -24,6 +24,7 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiThemesService } from './themes.service';
 import {
+  DuplicateThemeBodyDto,
   CreateThemeBodyDto,
   GetThemeQueryDto,
   ListThemesQueryDto,
@@ -88,6 +89,27 @@ export class ApiThemesController {
   })
   async create(@Param('projectId') projectId: string, @Body() body: CreateThemeBodyDto) {
     return this.service.create(projectId, body);
+  }
+
+  @Post(':id/duplicate')
+  @RequireCapability(Capability.ThemeCreate)
+  @ApiOperation({
+    summary: 'Duplicate a theme',
+    description:
+      'Copy a theme (settings + variations verbatim) into a fresh non-default theme — the same ' +
+      "path the builder's duplicate dialog uses. System themes may be duplicated (the natural " +
+      '"derive from Standard Light" flow).',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Theme ID (the source)' })
+  @ApiResponse({ status: 201, description: 'Theme duplicated', type: ThemeDto })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  async duplicate(
+    @Param('projectId') projectId: string,
+    @Param('id') id: string,
+    @Body() body: DuplicateThemeBodyDto,
+  ) {
+    return this.service.duplicate(id, projectId, body);
   }
 
   @Patch(':id')

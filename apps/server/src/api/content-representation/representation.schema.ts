@@ -1081,7 +1081,13 @@ export const representationStepInput = z.object({
     .boolean()
     .optional()
     .describe('Marks this step as an explicit completion point — reaching it completes the flow.'),
-  content: z.array(representationBlock).default([]),
+  content: z
+    .array(representationBlock)
+    .optional()
+    .describe(
+      "The step's body blocks. On an ECHOED step (matched by cvid/id), omit to keep the stored " +
+        'content unchanged — an explicit [] clears it. Same omit-keeps semantics as `triggers`.',
+    ),
   triggers: z.array(representationTrigger).optional(),
   onClick: z
     .array(representationAction)

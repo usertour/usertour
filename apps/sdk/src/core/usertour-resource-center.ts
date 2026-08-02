@@ -25,6 +25,7 @@ import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour/constants';
 import { isDisplayOnlyBlockType, isEqual, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
+import { UsertourTheme } from '@/core/usertour-theme';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   getAnnouncementBadgeCount(): number {
@@ -39,9 +40,37 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     try {
       await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
+      await this.checkAndUpdatePopupAnnouncementTheme();
     } catch (error) {
       logger.error('Error in resource center checking:', error);
     }
+  }
+
+  /**
+   * Settle the popup announcement's OWN theme from its sessionTheme
+   * (variations evaluated in the browser), mirroring what
+   * checkAndUpdateThemeSettings does for the panel theme. The server seeds
+   * popup.themeSettings with the theme's BASE settings only — without this
+   * settle the popup ignored dark-mode/etc. variations while every other
+   * surface honored them (acceptance-review find). No-op when the payload
+   * carries no sessionTheme (older server) or nothing changed.
+   */
+  private async checkAndUpdatePopupAnnouncementTheme(): Promise<void> {
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    const popup = resourceCenterData?.popupAnnouncement;
+    if (!resourceCenterData || !popup?.sessionTheme) {
+      return;
+    }
+    const settled = await UsertourTheme.getThemeSettings(popup.id, popup.sessionTheme);
+    if (!settled || isEqual(popup.themeSettings, settled)) {
+      return;
+    }
+    this.updateStore({
+      resourceCenterData: {
+        ...resourceCenterData,
+        popupAnnouncement: { ...popup, themeSettings: settled },
+      },
+    });
   }
 
   async show(): Promise<void> {

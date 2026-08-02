@@ -33,6 +33,7 @@ import { parseOrderBy } from '../shared/sort';
 import { BUILDER_MANAGED_SETTING_PATHS, themeSettingsPatchSchema } from './settings.schema';
 import { mapTheme } from './themes.mapper';
 import {
+  DuplicateThemeBody,
   CreateThemeBody,
   GetThemeQuery,
   ListThemesQuery,
@@ -325,6 +326,22 @@ export class ApiThemesService {
     // variation-less create skips the two catalog queries, same as list()/get()).
     const resolvers =
       body.variations !== undefined
+        ? await loadDecompileResolvers(this.prisma, projectId)
+        : buildDecompileResolversFrom([], []);
+    return mapTheme(created, FULL, resolvers);
+  }
+
+  /**
+   * Duplicate a theme into a fresh non-default theme (settings + variations
+   * copied verbatim — the builder's copy dialog path, via the same domain
+   * method). System themes may be duplicated: that is the natural "derive a
+   * custom theme from Standard Light" flow.
+   */
+  async duplicate(id: string, projectId: string, body: DuplicateThemeBody): Promise<Theme> {
+    const source = await this.requireTheme(id, projectId);
+    const created = await this.themes.copyTheme({ id: source.id, name: body.name ?? source.name });
+    const resolvers =
+      Array.isArray(created.variations) && created.variations.length > 0
         ? await loadDecompileResolvers(this.prisma, projectId)
         : buildDecompileResolversFrom([], []);
     return mapTheme(created, FULL, resolvers);

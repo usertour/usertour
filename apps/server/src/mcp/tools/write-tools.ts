@@ -42,6 +42,7 @@ import {
   type UpdateSegmentBody,
 } from '@/api/segments/segments.schema';
 import {
+  duplicateThemeBody,
   createThemeBody,
   type CreateThemeBody,
   updateThemeBody,
@@ -759,6 +760,22 @@ export function buildWriteTools(): McpTool[] {
           ctx.projectId,
           args as unknown as UpdateThemeBody,
         ),
+    },
+    {
+      name: 'duplicate_theme',
+      audit: auditCreate('theme'),
+      title: 'Duplicate a theme',
+      capability: Capability.ThemeCreate,
+      description:
+        "Copy a theme — settings AND variations verbatim — into a fresh non-default theme (the builder's " +
+        'duplicate dialog path). The way to derive "same as X except …": duplicate, then ' +
+        'update_theme the copy. System themes may be duplicated. Returns the new theme.',
+      inputSchema: {
+        id: z.string().describe('The source theme id.'),
+        ...duplicateThemeBody.shape,
+      },
+      handler: (args, ctx) =>
+        ctx.services.themes.duplicate(String(args.id), ctx.projectId, args as { name?: string }),
     },
     {
       name: 'delete_theme',
