@@ -277,6 +277,93 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     expect(after.status).toBe(401);
   });
 
+  it('accepts a trailing-slash redirect_uri against a bare registered loopback URI', async () => {
+    // The VS Code incident shape: it registers `http://127.0.0.1:<port>` and then
+    // sends `http://127.0.0.1:<port>/` on authorize AND token exchange — an RFC
+    // 3986 equivalence the old exact-string compare rejected. The exchange side is
+    // safe because the code stores the authorize-time string verbatim and the
+    // client sends the same form both times.
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Trailing-slash',
+        redirect_uris: ['http://127.0.0.1:33418'],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    const v = randomBytes(40).toString('base64url');
+    const ch = createHash('sha256').update(v).digest('base64url');
+    const slashed = 'http://127.0.0.1:33418/';
+    try {
+      const auth = await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: slashed,
+          scope: 'content:read',
+          code_challenge: ch,
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+      expect(auth.headers.location).toContain('/oauth-consent?transaction=');
+      const transaction = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+      const consent = await http()
+        .post('/oauth/authorize/consent')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ transaction, projectId, approved: true, environmentIds: [envMain] })
+        .expect(201);
+      const code = new URL(consent.body.redirect).searchParams.get('code') as string;
+
+      const tok = await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: slashed,
+          client_id: cid,
+          code_verifier: v,
+        })
+        .expect(200);
+      expect(tok.body.access_token).toMatch(/^uto_/);
+
+      // Loopback also matches on a DIFFERENT port (RFC 8252 §7.3) — native
+      // clients bind a random one per run.
+      await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: 'http://127.0.0.1:51000/',
+          scope: 'content:read',
+          code_challenge: ch,
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+
+      // A fragment-bearing redirect_uri stays rejected (RFC 6749 §3.1.2).
+      await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: 'http://127.0.0.1:33418/#steal',
+          scope: 'content:read',
+          code_challenge: ch,
+          code_challenge_method: 'S256',
+        })
+        .expect(400);
+    } finally {
+      await prisma.apiToken.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
   // Run authorize (PKCE) → consent → token exchange for a client and return the
   // token response. `tokenExtra` carries a confidential client's `client_secret`.
   async function runFlow(cid: string, tokenExtra: Record<string, string> = {}) {

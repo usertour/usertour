@@ -7,7 +7,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { OAuthModelService } from './oauth-model.service';
 import { generateOpaqueSecret, hashSecret, tokenFingerprint } from './oauth.crypto';
-import { isAllowedRedirectUri } from './redirect-allowlist';
+import { isAllowedRedirectUri, matchesRegisteredRedirectUri } from './redirect-allowlist';
 
 // OAuth scopes ARE our Capability strings (mirrors oauth-metadata's scopes_supported).
 const SUPPORTED_SCOPES: ReadonlySet<string> = new Set<string>(Object.values(Capability));
@@ -94,7 +94,7 @@ export class OAuthService {
     const redirectUris = Array.isArray(client.redirectUris)
       ? (client.redirectUris as string[])
       : [];
-    if (!redirectUris.includes(redirectUri)) {
+    if (!matchesRegisteredRedirectUri(redirectUris, redirectUri)) {
       throw new BadRequestException('redirect_uri does not match a registered URI');
     }
     // PKCE is required (public clients) — S256 only.

@@ -22,6 +22,7 @@ import {
   hashSecret,
   tokenFingerprint,
 } from './oauth.crypto';
+import { matchesRegisteredRedirectUri } from './redirect-allowlist';
 
 const ALL_CAPABILITIES = new Set<string>(Object.values(Capability));
 
@@ -75,7 +76,7 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
   }
 
   async validateRedirectUri(redirectUri: string, client: Client): Promise<boolean> {
-    return toUris(client.redirectUris).includes(redirectUri);
+    return matchesRegisteredRedirectUri(toUris(client.redirectUris), redirectUri);
   }
 
   // Requested scopes must all be known Capability strings; the consent screen has
