@@ -251,6 +251,7 @@ const translations = {
   settings: {
     mcp: {
       title: 'MCP server',
+      betaBadge: 'Beta',
       subtitle:
         'Connect AI assistants like Claude, Cursor, and ChatGPT to Usertour — they can build, publish, and manage your onboarding through conversation.',
       docsLink: 'Docs',

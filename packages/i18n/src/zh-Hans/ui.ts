@@ -245,6 +245,7 @@ const translations = {
   settings: {
     mcp: {
       title: 'MCP 服务器',
+      betaBadge: 'Beta',
       subtitle:
         '把 Claude、Cursor、ChatGPT 等 AI 助手连接到 Usertour——它们可以通过对话为你构建、发布和管理引导内容。',
       docsLink: '文档',
