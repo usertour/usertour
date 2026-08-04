@@ -280,9 +280,9 @@ const translations = {
         },
         chatgpt: {
           title: 'ChatGPT',
-          blurb: "Connect via ChatGPT's Developer-mode connectors.",
+          blurb: 'Connect via ChatGPT plugins (Developer mode).',
           step1:
-            'Open Settings → Connectors → Advanced, toggle Developer mode on, and click "Create app".',
+            'Open Settings → Plugins, enable Developer mode, and click "New Plugin". (Requires a paid ChatGPT plan.)',
           step2: 'Set the name and MCP Server URL:',
           step3:
             'Leave Authentication on OAuth and submit — ChatGPT opens the Usertour authorization screen. Approve to connect.',

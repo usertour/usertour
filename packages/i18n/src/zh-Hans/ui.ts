@@ -271,8 +271,9 @@ const translations = {
         },
         chatgpt: {
           title: 'ChatGPT',
-          blurb: '通过 ChatGPT 开发者模式的连接器接入。',
-          step1: '打开 Settings → Connectors → Advanced，开启 Developer mode，点击 "Create app"。',
+          blurb: '通过 ChatGPT 插件(Developer mode)接入。',
+          step1:
+            '打开 Settings → Plugins，开启 Developer mode，点击 "New Plugin"。（需要 ChatGPT 付费账号。）',
           step2: '设置名称和 MCP Server URL：',
           step3: 'Authentication 保持 OAuth 并提交——ChatGPT 会打开 Usertour 授权页，批准即连接。',
         },
