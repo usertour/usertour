@@ -114,3 +114,17 @@ describe('matchesRegisteredRedirectUri', () => {
     expect(matchesRegisteredRedirectUri([], 'http://127.0.0.1/')).toBe(false);
   });
 });
+
+describe('Cursor 3.14 DCR shape', () => {
+  it('accepts every redirect_uri Cursor registers', () => {
+    // The exact trio from a traced Cursor 3.14.7 registration; www.cursor.com
+    // missing from ALLOWED_HOSTS rejected the whole DCR request.
+    for (const uri of [
+      'cursor://anysphere.cursor-mcp/oauth/callback',
+      'https://www.cursor.com/agents/mcp/oauth/callback',
+      'http://localhost:8787/callback',
+    ]) {
+      expect(isAllowedRedirectUri(uri)).toBe(true);
+    }
+  });
+});

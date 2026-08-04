@@ -10,13 +10,18 @@
 // Custom-scheme native clients (Cursor, VS Code, JetBrains, …).
 const ALLOWED_SCHEMES = ['cursor:', 'vscode:', 'vscode-insiders:', 'jetbrains:', 'windsurf:'];
 
-// Vendor-hosted web callbacks (exact host, https only).
+// Vendor-hosted web callbacks (exact host, https only — a `www.` variant is a
+// DIFFERENT host and needs its own entry: Cursor 3.14 registers
+// `https://www.cursor.com/agents/mcp/oauth/callback`, and the bare-apex entry
+// alone rejected its whole DCR request, which Cursor surfaces as an empty
+// "Transient error").
 const ALLOWED_HOSTS = new Set([
   'claude.ai',
   'claude.com',
   'chatgpt.com',
   'chat.openai.com',
   'cursor.com',
+  'www.cursor.com',
   'vscode.dev',
 ]);
 
