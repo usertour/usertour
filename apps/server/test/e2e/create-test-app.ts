@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
+import { PrismaService } from 'nestjs-prisma';
 
 import { AppModule } from '@/app.module';
 import { configureApp } from '@/configure-app';
@@ -24,5 +25,18 @@ export async function createTestApp(
   const app = moduleRef.createNestApplication();
   configureApp(app);
   await app.init();
+
+  // nestjs-prisma's PrismaService implements OnModuleInit only — `app.close()`
+  // never `$disconnect()`s the Postgres pool. Harmless in production (process
+  // exit closes the sockets), fatal here: jest REUSES worker processes across
+  // suites, so every suite's pool (connection_limit=3, set in setup-e2e.ts)
+  // leaked and accumulated — 59 suites × 3 > Postgres max_connections (100),
+  // and the parallel full run drowned in "too many clients" 500s while
+  // individual suites stayed green. Close the pool with the app.
+  const close = app.close.bind(app);
+  app.close = async () => {
+    await close();
+    await app.get(PrismaService).$disconnect();
+  };
   return app;
 }
