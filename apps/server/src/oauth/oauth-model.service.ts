@@ -306,6 +306,17 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
     ) {
       return false;
     }
+    // A disabled owner's grant must stop renewing: the access-token side already
+    // refuses at ApiTokenAuthService.authenticate, and letting refresh keep
+    // minting would extend the credential chain indefinitely. Standard
+    // invalid_grant (false); re-enabling the user restores the grant unchanged.
+    const owner = await this.prisma.user.findUnique({
+      where: { id: grant.userId },
+      select: { disabled: true },
+    });
+    if (!owner || owner.disabled) {
+      return false;
+    }
     const client = await this.getClient(grant.clientId, '');
     if (!client) {
       return false;

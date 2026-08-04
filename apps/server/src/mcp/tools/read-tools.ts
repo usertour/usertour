@@ -17,7 +17,7 @@ import {
   contentTypeEnum,
   type ListContentQuery,
 } from '@/api/content/content.schema';
-import { EnvironmentNotInTokenScopeError } from '@/common/errors';
+import { EnvironmentNotInTokenScopeError, InsufficientScopeError } from '@/common/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
 import {
@@ -466,9 +466,17 @@ export function buildReadTools(): McpTool[] {
     {
       name: 'diagnose_content',
       title: "Diagnose why content isn't showing",
-      capability: Capability.ContentRead,
+      // user:read, NOT content:read: diagnosis is always per end-user and returns
+      // their actual attribute values, segment verdicts and session state — the
+      // same data the purpose-built tools fence behind env-targeted scopes. Under
+      // content:read (project-level, no environment allowlist required) that data
+      // would leak past the environment fence. content:read is asserted in the
+      // handler on top (the gate checklist reads content config too).
+      capability: Capability.UserRead,
       description:
-        'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
+        'Answer "why isn\'t my content showing?" — the #1 targeting question. Requires BOTH ' +
+        '`user:read` (it returns end-user data, environment-fenced) and `content:read` (it reads ' +
+        'the content config). Returns a gate ' +
         'checklist drawn from: published / identified / start_rules / frequency / ' +
         'single_session / hidden / active_session / target (announcements get their own set: ' +
         'scheduled / rc_reachability / start_rules-as-audience-filter / seen). Gates appear ' +
@@ -528,6 +536,20 @@ export function buildReadTools(): McpTool[] {
         }
         if (!asString(args.userId)) {
           throw new Error('`userId` is required — diagnosis is always for a specific end-user.');
+        }
+        // Second capability on top of the dispatch-checked user:read — the gate
+        // checklist also reads content config. Only a SCOPE refusal maps to the
+        // named message; anything else (membership race, DB failure) must keep
+        // its own error, not masquerade as a missing capability.
+        try {
+          await ctx.auth.authorize(ctx.token, ctx.projectId, Capability.ContentRead);
+        } catch (error) {
+          if (error instanceof InsufficientScopeError) {
+            throw new Error(
+              'diagnose_content needs both `user:read` and `content:read` — this credential lacks `content:read`.',
+            );
+          }
+          throw error;
         }
         const environment = await resolveEnvironment(args, ctx);
         // Archived content is the #1 real-world reason content "doesn't show" —
@@ -1075,11 +1097,16 @@ export function buildReadTools(): McpTool[] {
     {
       name: 'diagnose_user',
       title: 'What would this user see?',
-      capability: Capability.ContentRead,
+      // user:read for the same reason as diagnose_content: the panorama is
+      // end-user data (existence, session state, per-content verdicts drawn from
+      // the user's attributes) and must sit behind the environment fence.
+      capability: Capability.UserRead,
       annotations: READ_ONLY,
       description:
         'The per-USER panorama — one call instead of a per-content diagnose whose conclusions ' +
-        'shift as you go. Sorts everything published in the environment into: `showing` (with ' +
+        'shift as you go. Requires BOTH `user:read` (end-user data, environment-fenced) and ' +
+        "`content:read` (it reads each content's config). " +
+        'Sorts everything published in the environment into: `showing` (with ' +
         'how — resumed session / won the auto-start race / feed), `queued` (eligible but behind ' +
         'the slot holder or a higher-priority winner — the race is settled with the SAME ' +
         'selectors the runtime uses, so the winner/loser verdicts cannot drift), `blocked` ' +
@@ -1110,6 +1137,19 @@ export function buildReadTools(): McpTool[] {
         }
         if (!url) {
           throw new Error('`url` is required — the page URL to evaluate against.');
+        }
+        // Second capability on top of the dispatch-checked user:read — the
+        // panorama reads every content's config. Only a SCOPE refusal maps to
+        // the named message; anything else keeps its own error.
+        try {
+          await ctx.auth.authorize(ctx.token, ctx.projectId, Capability.ContentRead);
+        } catch (error) {
+          if (error instanceof InsufficientScopeError) {
+            throw new Error(
+              'diagnose_user needs both `user:read` and `content:read` — this credential lacks `content:read`.',
+            );
+          }
+          throw error;
         }
         const environment = await resolveEnvironment(args, ctx);
         const { userFound, rows } = await ctx.contentDiagnosis.diagnoseUser({
@@ -1724,7 +1764,8 @@ export function buildReadTools(): McpTool[] {
         'act on that environment — plan against it up front rather than discovering scope limits ' +
         'from write errors. **What an environment allowlist actually fences: DELIVERY and ' +
         'END-USER DATA** — publishing / unpublishing, users / companies / sessions / segment ' +
-        'membership, analytics, and the environment records themselves (an out-of-scope ' +
+        'membership, analytics, the diagnose tools (per-user data), and the environment records ' +
+        'themselves (an out-of-scope ' +
         "environment's SDK `token` is withheld as null). It does NOT fence content VISIBILITY: " +
         'content, versions, themes and definitions are PROJECT-level, so any credential with ' +
         '`content:read` can read every piece and every version — including the one live in an ' +

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Headers,
   Param,
@@ -20,6 +21,8 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { environmentSelectionMissing } from '@usertour/helpers';
 
+import { TwoFactorService } from '@/auth/two-factor.service';
+import { TwoFactorEnrollmentRequiredError } from '@/common/errors';
 import { resolveOrigin } from '@/common/http/resolve-origin';
 
 import { OAuthService } from './oauth.service';
@@ -45,7 +48,33 @@ export class OAuthController {
     private readonly oauth: OAuthService,
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly twoFactor: TwoFactorService,
   ) {}
+
+  /**
+   * The instance-level "require 2FA" wall is a GraphQL APP_GUARD, so these REST
+   * consent endpoints sit outside it — yet consent is exactly where a session
+   * turns into a machine credential chain (`uto_` + renewable refresh) that
+   * outlives any session. Without this, a non-enrolled user GraphQL refuses
+   * could still walk away with longer-lived credentials than the ones the
+   * guard exists to cut off.
+   */
+  private async requireEnrollmentSatisfied(req: Request): Promise<void> {
+    try {
+      await this.twoFactor.assertEnrollmentSatisfied(
+        (req as Request & { user: { twoFactorEnabled: boolean } }).user,
+      );
+    } catch (error) {
+      // BaseError renders as a bare 500 on REST (the global filter only passes
+      // HttpExceptions through) — re-shape it into a 403 that keeps the
+      // canonical code, so the consent page can tell "enroll first" apart from
+      // a bad transaction.
+      if (error instanceof TwoFactorEnrollmentRequiredError) {
+        throw new ForbiddenException({ code: error.code, message: error.getMessage('en') });
+      }
+      throw error;
+    }
+  }
 
   // ── Dynamic Client Registration (RFC 7591) ──────────────────────────────────
   @Post('register')
@@ -96,6 +125,8 @@ export class OAuthController {
   @Get('consent-info')
   @UseGuards(AuthGuard('jwt'))
   async consentInfo(@Query('transaction') transaction: string, @Req() req: Request) {
+    // Surface the enrollment wall at page LOAD, not first at the approve click.
+    await this.requireEnrollmentSatisfied(req);
     const claims = this.oauth.verifyTransaction(transaction);
     const client = await this.oauth.getClientDisplay(claims.clientId);
     const userId = (req as Request & { user: { id: string } }).user.id;
@@ -144,6 +175,8 @@ export class OAuthController {
       environmentIds?: string[];
     },
   ) {
+    // The hard gate — approve is the moment the credential chain is minted.
+    await this.requireEnrollmentSatisfied(req);
     const claims = this.oauth.verifyTransaction(body.transaction);
 
     if (!body.approved) {

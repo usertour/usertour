@@ -245,12 +245,12 @@ describe('MCP endpoint (e2e)', () => {
       );
     });
 
-    it('a user:read-only token sees only the user tools', async () => {
+    it('a user:read-only token sees the user tools (diagnose registers here, not under content:read)', async () => {
       const token = await mint([Capability.UserRead], [projectA]);
       const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
       const result = extractResult(res);
       const names = result.result.tools.map((t: { name: string }) => t.name).sort();
-      expect(names).toEqual(['get_user', 'list_users']);
+      expect(names).toEqual(['diagnose_content', 'diagnose_user', 'get_user', 'list_users']);
     });
 
     it('does not list a tool whose capability is outside the token scope', async () => {
@@ -260,6 +260,39 @@ describe('MCP endpoint (e2e)', () => {
       const names = result.result.tools.map((t: { name: string }) => t.name);
       expect(names).toContain('list_content');
       expect(names).not.toContain('list_users');
+      // The diagnose tools return END-USER data (attribute values, session
+      // state), so content:read alone — a project-level scope with no
+      // environment allowlist required — must not surface them.
+      expect(names).not.toContain('diagnose_content');
+      expect(names).not.toContain('diagnose_user');
+    });
+
+    it('diagnose_user without content:read fails with a named both-scopes error', async () => {
+      const token = await mint([Capability.UserRead], [projectA]);
+      const result = await callTool(
+        'diagnose_user',
+        { userId: 'whoever', url: 'https://app.example.com/', environmentId: envA },
+        token,
+      );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('content:read');
+    });
+
+    it('diagnose honors the environment allowlist (out-of-scope env → E1029)', async () => {
+      // The point of the capability change: a diagnose credential is env-fenced.
+      const fencedEnv = (await buildEnvironment(prisma, { projectId: projectA })).id;
+      const token = await mint(
+        [Capability.UserRead, Capability.ContentRead],
+        [projectA],
+        [fencedEnv],
+      );
+      const result = await callTool(
+        'diagnose_user',
+        { userId: 'whoever', url: 'https://app.example.com/', environmentId: envA },
+        token,
+      );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('E1029');
     });
 
     it('exposes MCP tool annotations (read-only vs destructive hints)', async () => {
@@ -808,7 +841,8 @@ describe('MCP endpoint (e2e)', () => {
     });
 
     it('diagnose_content answers for ARCHIVED content with an archived gate instead of E1004', async () => {
-      const token = await mint([Capability.ContentRead], [projectA]);
+      // diagnose returns end-user data → user:read (env-fenced) + content:read.
+      const token = await mint([Capability.ContentRead, Capability.UserRead], [projectA]);
       const archived = await buildContent(prisma, {
         projectId: projectA,
         environmentId: envA,
@@ -850,7 +884,7 @@ describe('MCP endpoint (e2e)', () => {
       // and an out-of-window user produced byte-identical reports — just
       // "segment ... unmatched". The expansion must name the failing inner
       // condition with the user's actual value, per user.
-      const token = await mint([Capability.ContentRead], [projectA]);
+      const token = await mint([Capability.ContentRead, Capability.UserRead], [projectA]);
       // dataType 2 = String (1 is Number — a string value against a Number
       // attribute compiles to a filter that matches nothing).
       const planAttr = await prisma.attribute.create({
@@ -983,7 +1017,7 @@ describe('MCP endpoint (e2e)', () => {
       // Own environment: other tests publish flows into envA, and a panorama by
       // definition sees EVERYTHING published — isolate the race to this test.
       const panEnv = (await buildEnvironment(prisma, { projectId: projectA })).id;
-      const token = await mint([Capability.ContentRead], [projectA], [panEnv]);
+      const token = await mint([Capability.ContentRead, Capability.UserRead], [projectA], [panEnv]);
       const attr = { id: panAttrId };
       await prisma.bizUser.create({
         data: { externalId: 'pan-user', environmentId: panEnv, data: { pan_plan: 'pro' } },

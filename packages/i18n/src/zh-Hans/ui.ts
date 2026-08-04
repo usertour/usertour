@@ -18,6 +18,8 @@ const translations = {
       deny: '拒绝',
       errorTitle: '授权出错',
       invalidRequest: '此授权请求无效或已过期。',
+      twoFactorRequired:
+        '当前实例要求开启二步验证。请先在账号安全设置中启用 2FA,然后从您的应用重新发起连接。',
     },
   },
   admin: {
@@ -997,6 +999,9 @@ const translations = {
       revokeDescription: '这将立即使其访问失效。该应用需重新授权才能再次连接。',
       never: '从未',
       allEnvironments: '全部',
+      noEnvironments: '无可用环境',
+      noEnvironmentsTooltip:
+        '授权给此应用的环境已被删除,它已无法对任何环境操作。请撤销后重新连接,以授权新的环境。',
       columns: {
         app: '应用',
         project: '项目',
@@ -1026,6 +1031,9 @@ const translations = {
       scopesCount_other: '{{count}} 项权限',
       environmentsAllBadge: '全部',
       environmentsCount_other: '{{count}} 个环境',
+      environmentsNoneBadge: '无可用环境',
+      environmentsNoneTooltip:
+        '此密钥圈定的环境已被删除,目前无法对任何环境操作。请编辑重新选择环境,或删除此密钥。',
       lastUsedNever: '从未',
       createTitle: '新建个人 API 密钥',
       nameLabel: '名称',

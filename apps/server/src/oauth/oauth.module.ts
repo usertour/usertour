@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+import { AuthModule } from '@/auth/auth.module';
+
 import { OAuthController } from './oauth.controller';
 import { OAuthDiscoveryController } from './oauth-discovery.controller';
 import { OAuthGrantResolver } from './oauth-grant.resolver';
@@ -17,6 +19,8 @@ import { OAuthService } from './oauth.service';
 @Module({
   imports: [
     ConfigModule,
+    // TwoFactorService: the consent endpoints enforce the instance 2FA wall.
+    AuthModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

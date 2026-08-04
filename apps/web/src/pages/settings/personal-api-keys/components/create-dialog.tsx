@@ -84,7 +84,7 @@ export const CreateDialog = (props: CreateDialogProps) => {
               <DialogHeader>
                 <DialogTitle>{t('settings.personalApiKeys.createTitle')}</DialogTitle>
               </DialogHeader>
-              <TokenFormFields control={form.control} />
+              <TokenFormFields control={form.control} autoSelectSingleEnvironment />
               <DialogFooter className="mt-6">
                 <Button
                   variant="outline"

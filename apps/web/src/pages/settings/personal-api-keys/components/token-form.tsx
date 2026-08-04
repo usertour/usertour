@@ -59,13 +59,20 @@ export const tokenFormDefaults: TokenFormValues = {
 
 interface TokenFormFieldsProps {
   control: Control<TokenFormValues>;
+  /**
+   * Pre-check the project's only environment when there is exactly one (create
+   * dialog only). The EDIT dialog must never set this: there an empty selection
+   * is an existing token's real state ("all environments"), and auto-filling it
+   * would make a plain rename silently pin the key to today's only environment.
+   */
+  autoSelectSingleEnvironment?: boolean;
 }
 
 /**
  * The name / project / environments / scopes fields shared by the create and edit dialogs.
  * Both dialogs wire it to their own react-hook-form instance via `control`.
  */
-export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
+export const TokenFormFields = ({ control, autoSelectSingleEnvironment }: TokenFormFieldsProps) => {
   const { projects } = useAppContext();
   const { t } = useTranslation();
   // Portal the combobox popup inside the dialog so it stays clickable/scrollable
@@ -92,10 +99,14 @@ export const TokenFormFields = ({ control }: TokenFormFieldsProps) => {
   // the list loads (safe-first "none pre-selected" only protects when there is a choice).
   // Keyed on the loaded list, not the selection, so un-checking isn't fought.
   useEffect(() => {
-    if (environmentList?.length === 1 && getValues('environmentIds').length === 0) {
+    if (
+      autoSelectSingleEnvironment &&
+      environmentList?.length === 1 &&
+      getValues('environmentIds').length === 0
+    ) {
       setValue('environmentIds', [environmentList[0].id], { shouldValidate: true });
     }
-  }, [environmentList, getValues, setValue]);
+  }, [autoSelectSingleEnvironment, environmentList, getValues, setValue]);
 
   // Switching to a project where the role grants less must DROP now-out-of-scope
   // selections — the grid only disables them, so they'd otherwise linger in the

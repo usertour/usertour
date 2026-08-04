@@ -19,6 +19,8 @@ const translations = {
       deny: 'Deny',
       errorTitle: 'Authorization error',
       invalidRequest: 'This authorization request is invalid or has expired.',
+      twoFactorRequired:
+        'This instance requires two-factor authentication. Enable 2FA in your account security settings, then start the connection again from your app.',
     },
   },
   admin: {
@@ -1051,6 +1053,9 @@ const translations = {
         'This immediately invalidates its access. The app must be re-authorized to connect again.',
       never: 'Never',
       allEnvironments: 'All',
+      noEnvironments: 'No environments',
+      noEnvironmentsTooltip:
+        'The environments granted to this app have been deleted, so it can no longer act on any environment. Revoke it and reconnect to grant new environments.',
       columns: {
         app: 'App',
         project: 'Project',
@@ -1084,6 +1089,9 @@ const translations = {
       environmentsAllBadge: 'All',
       environmentsCount_one: '{{count}} env',
       environmentsCount_other: '{{count}} envs',
+      environmentsNoneBadge: 'No environments',
+      environmentsNoneTooltip:
+        'The environments this key was scoped to have been deleted, so it can no longer act on any environment. Edit it to select new environments, or delete it.',
       lastUsedNever: 'Never',
       createTitle: 'New personal API key',
       nameLabel: 'Name',

@@ -35,7 +35,8 @@ export interface UpdateApiTokenInput {
   name?: string;
   projectIds?: string[];
   scopes?: string[];
-  environmentIds?: string[];
+  /** Three-state: absent = keep, null = clear (back to "all environments"), array = replace. */
+  environmentIds?: string[] | null;
 }
 
 export interface CreatedApiToken {

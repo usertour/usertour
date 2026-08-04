@@ -3,7 +3,6 @@ import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator';
 import { SKIP_2FA_ENROLLMENT_KEY } from '@/common/decorators/skip-2fa-enrollment.decorator';
-import { TwoFactorEnrollmentRequiredError } from '@/common/errors';
 import { TwoFactorService } from '@/auth/two-factor.service';
 
 /**
@@ -66,9 +65,7 @@ export class TwoFactorEnrollmentGuard implements CanActivate {
       return true;
     }
 
-    if (await this.twoFactorService.isInstanceEnforcing()) {
-      throw new TwoFactorEnrollmentRequiredError();
-    }
+    await this.twoFactorService.assertEnrollmentSatisfied(user);
     return true;
   }
 }

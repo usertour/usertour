@@ -7,7 +7,6 @@ import {
   useRotateApiTokenMutation,
 } from '@usertour/hooks';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
-import { useAppContext } from '@/contexts/app-context';
 import { EditDialog } from './edit-dialog';
 import { RevealDialog } from './reveal-dialog';
 
@@ -18,8 +17,10 @@ interface RowActionsProps {
 /**
  * Row actions for a personal API token: Edit (name/projects/scopes), Rotate
  * (mint a fresh secret on the same record — shown once), and Delete (hard
- * remove). Each mutation refetches the list via `refetchQueries`. View-only
- * roles can't manage tokens.
+ * remove). Each mutation refetches the list via `refetchQueries`. Personal keys
+ * are ACCOUNT-level — the server checks ownership only, so no project-role
+ * gating here (a viewer-everywhere user must still be able to revoke their own
+ * leaked key).
  */
 export const RowActions = (props: RowActionsProps) => {
   const { token } = props;
@@ -27,7 +28,6 @@ export const RowActions = (props: RowActionsProps) => {
   const [rotateOpen, setRotateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [rotatedToken, setRotatedToken] = useState('');
-  const { isViewOnly } = useAppContext();
   const { invoke: rotateApiToken, loading: isRotating } = useRotateApiTokenMutation();
   const { invoke: deleteApiToken, loading: isDeleting } = useDeleteApiTokenMutation();
   const { toast } = useToast();
@@ -70,14 +70,12 @@ export const RowActions = (props: RowActionsProps) => {
             key: 'edit',
             icon: <EditIcon className="w-4 h-4 mr-2" />,
             label: t('settings.personalApiKeys.editMenuItem'),
-            disabled: isViewOnly,
             onSelect: () => setEditOpen(true),
           },
           {
             key: 'rotate',
             icon: <ArrowRightLeftIcon className="w-4 h-4 mr-2" />,
             label: t('settings.personalApiKeys.rotateMenuItem'),
-            disabled: isViewOnly,
             onSelect: () => setRotateOpen(true),
           },
           {
@@ -86,7 +84,6 @@ export const RowActions = (props: RowActionsProps) => {
             label: t('settings.personalApiKeys.deleteMenuItem'),
             destructive: true,
             separatorBefore: true,
-            disabled: isViewOnly,
             onSelect: () => setDeleteOpen(true),
           },
         ]}

@@ -41,6 +41,13 @@ describe('TwoFactorEnrollmentGuard', () => {
     twoFactor = {
       isInstanceEnforcing: jest.fn().mockResolvedValue(true),
     } as any;
+    // The guard delegates to the REAL shared rule (enrolled-or-not-enforcing);
+    // only the instance-setting lookup underneath it is mocked.
+    twoFactor.assertEnrollmentSatisfied = jest
+      .fn()
+      .mockImplementation((user) =>
+        TwoFactorService.prototype.assertEnrollmentSatisfied.call(twoFactor, user),
+      );
     guard = new TwoFactorEnrollmentGuard(reflector, twoFactor);
   });
 

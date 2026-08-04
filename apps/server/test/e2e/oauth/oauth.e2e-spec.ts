@@ -4,7 +4,12 @@ import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
-import { OAUTH_TOKEN_PREFIX, hashApiTokenSecret } from '@/api-token/api-token.crypto';
+import {
+  API_TOKEN_PREFIX,
+  OAUTH_TOKEN_PREFIX,
+  hashApiTokenSecret,
+} from '@/api-token/api-token.crypto';
+import { TwoFactorService } from '@/auth/two-factor.service';
 import { EnvironmentsService } from '@/environments/environments.service';
 
 import { buildEnvironment, buildMembership, buildProject } from '../factories';
@@ -436,6 +441,145 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     } finally {
       await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
       await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
+  it('instance-enforced 2FA walls off consent for a non-enrolled user (E0044)', async () => {
+    // The GraphQL APP_GUARD can't see these REST endpoints, so consent enforces
+    // the same rule itself — otherwise a non-enrolled user could trade their
+    // session for a longer-lived uto_ + refresh chain. Enforcement needs
+    // self-hosted + setting + license; spy on the one predicate instead.
+    const spy = jest
+      .spyOn(app.get(TwoFactorService), 'isInstanceEnforcing')
+      .mockResolvedValue(true);
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Enrollment-wall',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    try {
+      const auth = await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: redirectUri,
+          scope: 'content:read',
+          state: 'st',
+          code_challenge: challenge,
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+      const tx = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+      // The consent PAGE learns at load time…
+      const info = await http()
+        .get('/oauth/consent-info')
+        .query({ transaction: tx })
+        .set('Authorization', `Bearer ${ownerToken}`);
+      expect(info.status).toBe(403);
+      expect(info.body.code).toBe('E0044');
+
+      // …and the approve POST (the minting moment) is a hard wall regardless.
+      const consent = await http()
+        .post('/oauth/authorize/consent')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ transaction: tx, projectId, approved: true, environmentIds: [envMain] });
+      expect(consent.status).toBe(403);
+      expect(consent.body.code).toBe('E0044');
+
+      // Enrolled users pass the wall — the rule is enrollment, not a blanket off-switch.
+      await prisma.user.update({ where: { id: ownerUserId }, data: { twoFactorEnabled: true } });
+      await http()
+        .get('/oauth/consent-info')
+        .query({ transaction: tx })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+    } finally {
+      spy.mockRestore();
+      await prisma.user.update({ where: { id: ownerUserId }, data: { twoFactorEnabled: false } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
+  it('a disabled owner freezes every credential: utp_ use, uto_ use, and refresh renewal', async () => {
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Disabled-owner',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    // A personal key of the same owner, alongside the OAuth chain.
+    const secret = randomBytes(32).toString('base64url');
+    await prisma.apiToken.create({
+      data: {
+        userId: ownerUserId,
+        name: 'Disabled-owner personal key',
+        prefix: API_TOKEN_PREFIX,
+        hashedSecret: hashApiTokenSecret(secret),
+        partialKey: secret.slice(-4),
+        scopes: ['content:read'],
+        isActive: true,
+        projects: { create: [{ projectId }] },
+      },
+    });
+    const utpToken = `${API_TOKEN_PREFIX}${secret}`;
+    try {
+      const tokens = await runFlow(cid);
+      // Both credentials work while the owner is active…
+      await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${utpToken}`)
+        .expect(200);
+      await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${tokens.access_token}`)
+        .expect(200);
+
+      await prisma.user.update({ where: { id: ownerUserId }, data: { disabled: true } });
+      // …then disabling refuses their USE — both prefixes, with the SAME opaque
+      // E1000 an unknown key gets (the holder may not be the owner; the account's
+      // state is not theirs to learn).
+      const utp = await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${utpToken}`);
+      expect(utp.status).toBe(403);
+      expect(utp.body.error.code).toBe('E1000');
+      const uto = await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${tokens.access_token}`);
+      expect(uto.status).toBe(403);
+      expect(uto.body.error.code).toBe('E1000');
+      // …and their RENEWAL (invalid_grant — the 30-day chain must not outlive the account).
+      await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({ grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: cid })
+        .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+
+      // Re-enabling restores the same credentials — the gate is the account flag,
+      // not a destructive sweep of token rows.
+      await prisma.user.update({ where: { id: ownerUserId }, data: { disabled: false } });
+      await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${utpToken}`)
+        .expect(200);
+    } finally {
+      await prisma.user.update({ where: { id: ownerUserId }, data: { disabled: false } });
+      await prisma.apiToken.deleteMany({ where: { hashedSecret: hashApiTokenSecret(secret) } });
+      await prisma.apiToken.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
       await prisma.oAuthClient.deleteMany({ where: { id: cid } });
     }
   });

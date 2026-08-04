@@ -79,17 +79,34 @@ export const PersonalApiKeysList = () => {
     },
     {
       header: t('settings.personalApiKeys.columns.environments'),
-      // null/empty allowlist = all environments; otherwise a compact count (the exact
-      // environments are shown — and editable — in the Edit dialog).
-      cell: (token) => (
-        <Badge variant="secondary" className="cursor-default font-normal">
-          {!token.environmentIds || token.environmentIds.length === 0
-            ? t('settings.personalApiKeys.environmentsAllBadge')
-            : t('settings.personalApiKeys.environmentsCount', {
-                count: token.environmentIds.length,
-              })}
-        </Badge>
-      ),
+      // null/absent allowlist = all environments; otherwise a compact count (the exact
+      // environments are shown — and editable — in the Edit dialog). A present-but-EMPTY
+      // allowlist is neither: every environment it named has been deleted, and the
+      // delete sweep shrinks a list but never widens it to "all" — the key can act on
+      // NOTHING, so rendering it as "All" would state the exact opposite.
+      cell: (token) =>
+        token.environmentIds && token.environmentIds.length === 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive" className="cursor-default font-normal">
+                  {t('settings.personalApiKeys.environmentsNoneBadge')}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {t('settings.personalApiKeys.environmentsNoneTooltip')}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Badge variant="secondary" className="cursor-default font-normal">
+            {!token.environmentIds
+              ? t('settings.personalApiKeys.environmentsAllBadge')
+              : t('settings.personalApiKeys.environmentsCount', {
+                  count: token.environmentIds.length,
+                })}
+          </Badge>
+        ),
     },
     {
       header: t('settings.personalApiKeys.columns.scopes'),
