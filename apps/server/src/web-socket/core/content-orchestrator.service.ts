@@ -313,11 +313,17 @@ export class ContentOrchestratorService {
     );
     const validSessions = sessions.filter((session): session is CustomContentSession => !!session);
 
+    // Same incremental rule as startBatch above: a content-targeted start
+    // carries just that one tracker, so absent sessions must not be treated
+    // as removed. No caller passes a contentId today (trackers start via
+    // toggleContents full syncs), but a future one must not re-introduce the
+    // sibling-removal bug the launchers had.
     return await this.socketOperationService.activateBatchSessions(
       socket,
       socketData,
       validSessions,
       ContentDataType.TRACKER,
+      !!versionId,
     );
   }
 

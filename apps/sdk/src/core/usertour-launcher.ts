@@ -8,6 +8,7 @@ import {
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
+import { isVisibleNode } from '@usertour/dom';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
@@ -185,7 +186,15 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       const el = this.watcher.getElement();
       if (el && this.getSessionId()) {
         if (el.isConnected) {
-          this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+          // Same gate as the banner's reuse branch: a re-send while the
+          // target is CSS-hidden must not force one wrong tick of an open
+          // beacon at a hidden element's position — the check loop reopens
+          // when the target shows.
+          this.setStoreData({
+            ...store,
+            openState: isVisibleNode(el),
+            triggerRef: el as HTMLElement,
+          });
           logger.info('[launcher] handoff complete — beacon opened');
         } else {
           // The found element has since been DETACHED (SPA re-render kept the

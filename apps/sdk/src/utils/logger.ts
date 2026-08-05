@@ -22,7 +22,10 @@ import { window } from './globals';
  *   switch silently did nothing until a reload — a placebo exactly when
  *   someone is mid-debugging. The gate is a cache these two functions update
  *   in place. (Editing localStorage by hand still needs a reload, same as the
- *   npm `debug` convention everywhere else.)
+ *   npm `debug` convention everywhere else.) NOTE: the pair has no public
+ *   exposure yet — until it lands on the Usertour API, the only path a host
+ *   can reach is localStorage + reload; the functions are the ready-made hook
+ *   for that planned exposure, keep them.
  */
 
 const DEBUG_KEY = 'debug';
