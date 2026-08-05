@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -179,62 +180,82 @@ export class OAuthController {
     await this.requireEnrollmentSatisfied(req);
     const claims = this.oauth.verifyTransaction(body.transaction);
 
-    if (!body.approved) {
-      const url = new URL(claims.redirectUri);
-      url.searchParams.set('error', 'access_denied');
-      if (claims.state) url.searchParams.set('state', claims.state);
-      return { redirect: url.toString() };
-    }
-
-    const userId = (req as Request & { user: { id: string } }).user.id;
-    const projectId = body.projectId;
-    if (!projectId) {
-      throw new OAuth2Server.InvalidRequestError('A project must be selected');
-    }
-    const membership = await this.prisma.userOnProject.findFirst({ where: { userId, projectId } });
-    if (!membership) {
-      throw new OAuth2Server.InvalidRequestError('Not a member of the selected project');
-    }
-    const roleCaps = (ROLE_CAPABILITIES[membership.role as Role] ?? []) as Capability[];
-    // Max grantable = what the client requested ∩ the user's role (full role if it asked for
-    // nothing). The consent page may narrow further; clamp to never exceed.
-    const grantable: string[] =
-      claims.scope.length > 0
-        ? claims.scope.filter((s) => roleCaps.includes(s as Capability))
-        : roleCaps;
-    const granted: string[] = body.scopes
-      ? body.scopes.filter((s) => grantable.includes(s))
-      : grantable;
-
-    // Environment scope: every chosen env must belong to the selected project.
-    // Env-targeted scopes must NAME environments (same SSOT rule as personal
-    // keys — the consent page enforces it client-side, this is the server gate).
-    if (environmentSelectionMissing(granted, body.environmentIds)) {
-      throw new OAuth2Server.InvalidRequestError(
-        'Select the environments this connection may act on — the granted scopes act on specific environments.',
-      );
-    }
-    let allowedEnvironmentIds: string[] | null = null;
-    if (body.environmentIds?.length) {
-      const ids = [...new Set(body.environmentIds)];
-      const inProject = await this.prisma.environment.findMany({
-        where: { id: { in: ids }, projectId, deleted: false },
-        select: { id: true },
-      });
-      if (inProject.length !== ids.length) {
-        throw new OAuth2Server.InvalidRequestError('Environment not in the selected project');
+    try {
+      if (!body.approved) {
+        const url = new URL(claims.redirectUri);
+        url.searchParams.set('error', 'access_denied');
+        if (claims.state) url.searchParams.set('state', claims.state);
+        return { redirect: url.toString() };
       }
-      allowedEnvironmentIds = ids;
-    }
 
-    const redirect = await this.oauth.issueAuthorizationCode(
-      claims,
-      userId,
-      projectId,
-      granted,
-      allowedEnvironmentIds,
-    );
-    return { redirect };
+      const userId = (req as Request & { user: { id: string } }).user.id;
+      const projectId = body.projectId;
+      // `typeof`, not just truthiness: the body is unvalidated JSON, and a
+      // filter object smuggled here would reach the Prisma `where` clauses below.
+      if (!projectId || typeof projectId !== 'string') {
+        throw new OAuth2Server.InvalidRequestError('A project must be selected');
+      }
+      if (!isOptionalStringArray(body.scopes) || !isOptionalStringArray(body.environmentIds)) {
+        throw new OAuth2Server.InvalidRequestError(
+          'scopes and environmentIds must be arrays of strings',
+        );
+      }
+      const membership = await this.prisma.userOnProject.findFirst({
+        where: { userId, projectId },
+      });
+      if (!membership) {
+        throw new OAuth2Server.InvalidRequestError('Not a member of the selected project');
+      }
+      const roleCaps = (ROLE_CAPABILITIES[membership.role as Role] ?? []) as Capability[];
+      // Max grantable = what the client requested ∩ the user's role (full role if it asked for
+      // nothing). The consent page may narrow further; clamp to never exceed.
+      const grantable: string[] =
+        claims.scope.length > 0
+          ? claims.scope.filter((s) => roleCaps.includes(s as Capability))
+          : roleCaps;
+      const granted: string[] = body.scopes
+        ? body.scopes.filter((s) => grantable.includes(s))
+        : grantable;
+
+      // Environment scope: every chosen env must belong to the selected project.
+      // Env-targeted scopes must NAME environments (same SSOT rule as personal
+      // keys — the consent page enforces it client-side, this is the server gate).
+      if (environmentSelectionMissing(granted, body.environmentIds)) {
+        throw new OAuth2Server.InvalidRequestError(
+          'Select the environments this connection may act on — the granted scopes act on specific environments.',
+        );
+      }
+      let allowedEnvironmentIds: string[] | null = null;
+      if (body.environmentIds?.length) {
+        const ids = [...new Set(body.environmentIds)];
+        const inProject = await this.prisma.environment.findMany({
+          where: { id: { in: ids }, projectId, deleted: false },
+          select: { id: true },
+        });
+        if (inProject.length !== ids.length) {
+          throw new OAuth2Server.InvalidRequestError('Environment not in the selected project');
+        }
+        allowedEnvironmentIds = ids;
+      }
+
+      const redirect = await this.oauth.issueAuthorizationCode(
+        claims,
+        userId,
+        projectId,
+        granted,
+        allowedEnvironmentIds,
+      );
+      return { redirect };
+    } catch (error) {
+      // The library's OAuthError family is not an HttpException, so uncaught it
+      // falls to the global filter as HTTP 200 + "unknown error" (and an
+      // error-level log). Map it to the token endpoint's named-400 shape; every
+      // other exception (the 2FA 403 E0044, bad-transaction 400) passes through.
+      if (error instanceof OAuth2Server.OAuthError) {
+        throw new BadRequestException({ error: error.name, error_description: error.message });
+      }
+      throw error;
+    }
   }
 
   // ── Token / revoke ───────────────────────────────────────────────────────────
@@ -259,6 +280,11 @@ export class OAuthController {
     await this.oauth.revoke(String(body?.token ?? ''));
     return {};
   }
+}
+
+/** Absent/null, or an array of strings — the only shapes consent accepts. */
+function isOptionalStringArray(value: unknown): value is string[] | undefined | null {
+  return value == null || (Array.isArray(value) && value.every((v) => typeof v === 'string'));
 }
 
 function safeHost(uri: string): string {

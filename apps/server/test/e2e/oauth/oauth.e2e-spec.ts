@@ -116,6 +116,48 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     expect(upper.status).toBe(200);
   });
 
+  it('rejects DCR metadata this AS cannot serve: bad grant_types, oversized redirect_uris', async () => {
+    // grant_types without authorization_code can never complete a flow — it used
+    // to be stored verbatim and only fail at consent-approve, AFTER the user
+    // walked the whole authorize+consent UI. Now it's refused at registration.
+    await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'No auth-code',
+        redirect_uris: [redirectUri],
+        grant_types: ['implicit'],
+      })
+      .expect(400);
+
+    // Open, unauthenticated endpoint — every call writes a row, so entry count
+    // and per-URI length are bounded.
+    await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Too many URIs',
+        redirect_uris: Array.from({ length: 11 }, (_, i) => `http://127.0.0.1:${4100 + i}/cb`),
+      })
+      .expect(400);
+    await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Oversized URI',
+        redirect_uris: [`http://127.0.0.1:4200/${'a'.repeat(2100)}`],
+      })
+      .expect(400);
+
+    // Supported-but-extra grant_types are intersected, not stored verbatim.
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Extra grants',
+        redirect_uris: [redirectUri],
+        grant_types: ['authorization_code', 'refresh_token', 'client_credentials'],
+      })
+      .expect(201);
+    expect(reg.body.grant_types).toEqual(['authorization_code', 'refresh_token']);
+  });
+
   it('requires PKCE on authorize and redirects to consent when valid', async () => {
     await http()
       .get('/oauth/authorize')
@@ -280,6 +322,49 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
       .set('Accept', 'application/json, text/event-stream')
       .send({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
     expect(after.status).toBe(401);
+  });
+
+  it('consent refusals are named 400s, not HTTP-200 "unknown error" bodies', async () => {
+    // These used to throw the library's OAuthError, which is no HttpException —
+    // the global filter turned them into HTTP 200 + a generic UnknownError body
+    // and an error-level log. Now they map to the token endpoint's named shape.
+    const auth = await http()
+      .get('/oauth/authorize')
+      .query({
+        response_type: 'code',
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        scope: 'content:read',
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+      })
+      .expect(302);
+    const transaction = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+    // Malformed body shape: scopes as a string was a TypeError → 200 before.
+    const malformed = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId, approved: true, scopes: 'content:read' })
+      .expect(400);
+    expect(malformed.body.error).toBe('invalid_request');
+    expect(malformed.body.error_description).toBeTruthy();
+
+    // A project the user is not a member of.
+    const foreign = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId: 'clzzzzzzzzzzzzzzzzzzzzzzz', approved: true })
+      .expect(400);
+    expect(foreign.body.error).toBe('invalid_request');
+
+    // A Prisma filter object smuggled as projectId must die at the shape gate,
+    // not reach the membership/environment `where` clauses.
+    await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId: { not: '' }, approved: true, environmentIds: [envMain] })
+      .expect(400);
   });
 
   it('accepts a trailing-slash redirect_uri against a bare registered loopback URI', async () => {

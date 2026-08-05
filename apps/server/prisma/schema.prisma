@@ -431,7 +431,7 @@ model OAuthGrant {
   id                    String    @id @default(cuid()) // = grantId
   createdAt             DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
-  // Rolled up from the grant's short-lived access-token rows before the hourly
+  // Rolled up from the grant's short-lived access-token rows before the daily
   // expiry cleanup deletes them — the durable "last used" for Connected Apps.
   lastUsedAt            DateTime? @db.Timestamptz(6)
   userId                String
